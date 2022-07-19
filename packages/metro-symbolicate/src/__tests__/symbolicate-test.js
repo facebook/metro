@@ -267,7 +267,19 @@ test('symbolicating an attribution file with 1-based column output', async () =>
   ).resolves.toMatchSnapshot());
 
 describe('symbolicating an attribution file specifying unmapped offsets', () => {
-  const attribute = async obj =>
+  const attribute = async (
+    obj:
+      | {
+          functionId: number,
+          location: {bytecodeSize: number, virtualOffset: number},
+          usage: Array<$FlowFixMeEmpty>,
+        }
+      | {
+          functionId: number,
+          location: {virtualOffset: number},
+          usage: Array<$FlowFixMeEmpty>,
+        },
+  ) =>
     (
       await execute(
         [resolve('testfile.partial.js.map'), '--attribution'],

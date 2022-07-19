@@ -35,11 +35,11 @@ const cacheKeyParts = [
 ];
 
 // TS detection conditions copied from metro-react-native-babel-preset
-function isTypeScriptSource(fileName) {
+function isTypeScriptSource(fileName: string) {
   return !!fileName && fileName.endsWith('.ts');
 }
 
-function isTSXSource(fileName) {
+function isTSXSource(fileName: string) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
@@ -51,6 +51,8 @@ function isTSXSource(fileName) {
 const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   return function _getBabelRC({
     projectRoot,
     extendsBabelConfigPath,
@@ -129,7 +131,9 @@ const getBabelRC = (function () {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(
-  filename,
+  filename: string,
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   options,
   plugins?: Plugins = [],
 ): BabelCoreOptions {

@@ -165,4 +165,4 @@ describe('build map from raw mappings', () => {
   });
 });
 
-const lines = n => Array(n).join('\n');
+const lines = (n: number) => Array(n).join('\n');

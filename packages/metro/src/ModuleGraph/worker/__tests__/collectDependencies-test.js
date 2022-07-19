@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {Dependency} from '../collectDependencies';
 
 import type {
   DependencyTransformer,
@@ -819,7 +820,7 @@ it('collects asynchronous dependencies', () => {
   );
 });
 
-it('collects mixed dependencies as being sync', () => {
+it('distinguishes sync and async dependencies on the same module', () => {
   const ast = astFromCode(`
     const a = require("some/async/module");
     import("some/async/module").then(foo => {});
@@ -827,30 +828,32 @@ it('collects mixed dependencies as being sync', () => {
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
     {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[2], "asyncRequire")(${dependencyMapName}[1], "some/async/module").then(foo => {});
     `),
   );
 });
 
-it('collects mixed dependencies as being sync; reverse order', () => {
+it('distinguishes sync and async dependencies on the same module; reverse order', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
     const a = require("some/async/module");
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
-      const a = require(${dependencyMapName}[0], "some/async/module");
+      const a = require(${dependencyMapName}[2], "some/async/module");
     `),
   );
 });
@@ -903,15 +906,19 @@ describe('import() prefetching', () => {
     );
   });
 
-  it('disable prefetch-only flag for mixed import/prefetch calls', () => {
+  it('distinguishes between import and prefetch dependncies on the same module', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       import("some/async/module").then(() => {});
     `);
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'prefetch'}),
+      },
       {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+      {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     ]);
   });
 });
@@ -1186,7 +1193,10 @@ describe('optional dependencies', () => {
     dependencyMapName: null,
     unstable_allowRequireContext: false,
   };
-  const validateDependencies = (dependencies, expectedCount) => {
+  const validateDependencies = (
+    dependencies: $ReadOnlyArray<Dependency<void>>,
+    expectedCount: number,
+  ) => {
     let hasAsync = false;
     let checked = 0;
     dependencies.forEach(d => {
@@ -1377,7 +1387,7 @@ it('uses the dependency transformer specified in the options to transform the de
       require("asyncRequire").async(_dependencyMap[3], "some/async/module").then(foo => {});
       require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
       require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
-      require("asyncRequire").prefetch(_dependencyMap[3], "some/async/module");
+      require("asyncRequire").prefetch(_dependencyMap[4], "some/async/module");
       `),
   );
 });
@@ -1417,7 +1427,10 @@ it('uses the dependency registry specified in the options to register dependenci
   ]);
 });
 
-function formatDependencyLocs(dependencies, code) {
+function formatDependencyLocs(
+  dependencies: $ReadOnlyArray<Dependency<mixed>>,
+  code: any,
+) {
   return (
     '\n' +
     dependencies
@@ -1432,18 +1445,23 @@ function formatDependencyLocs(dependencies, code) {
   );
 }
 
-function adjustPosForCodeFrame(pos) {
+function adjustPosForCodeFrame(pos: {+column: number, +line: number}) {
   return pos ? {...pos, column: pos.column + 1} : pos;
 }
 
-function adjustLocForCodeFrame(loc) {
+function adjustLocForCodeFrame(loc: BabelSourceLocation) {
   return {
     start: adjustPosForCodeFrame(loc.start),
     end: adjustPosForCodeFrame(loc.end),
   };
 }
 
-function formatLoc(loc, depIndex, dep, code) {
+function formatLoc(
+  loc: BabelSourceLocation,
+  depIndex: number,
+  dep: Dependency<mixed>,
+  code: any,
+) {
   return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
     message: `dep #${depIndex} (${dep.name})`,
     linesAbove: 0,
@@ -1476,6 +1494,9 @@ class MockModuleDependencyRegistry<TSplitCondition>
       asyncType: qualifier.asyncType,
       isOptional: qualifier.optional ?? false,
       locs: [],
+
+      // Index = easy key for every dependency since we don't collapse/reorder
+      key: String(this._dependencies.length),
     };
 
     if (qualifier.splitCondition) {

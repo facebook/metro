@@ -205,7 +205,7 @@ function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
     return true;
   }
 
-  const isIgnored = module =>
+  const isIgnored = (module: ?string) =>
     module != null && regExps.some(regExp => regExp.test(module));
 
   // Print the cycle unless any part of it is ignored
@@ -878,7 +878,10 @@ if (__DEV__) {
   };
 
   // Modules that only export components become React Refresh boundaries.
-  var isReactRefreshBoundary = function (Refresh, moduleExports): boolean {
+  var isReactRefreshBoundary = function (
+    Refresh: any,
+    moduleExports: Exports,
+  ): boolean {
     if (Refresh.isLikelyComponentType(moduleExports)) {
       return true;
     }
@@ -907,9 +910,9 @@ if (__DEV__) {
   };
 
   var shouldInvalidateReactRefreshBoundary = (
-    Refresh,
-    prevExports,
-    nextExports,
+    Refresh: any,
+    prevExports: Exports,
+    nextExports: Exports,
   ) => {
     const prevSignature = getRefreshBoundarySignature(Refresh, prevExports);
     const nextSignature = getRefreshBoundarySignature(Refresh, nextExports);
@@ -925,7 +928,10 @@ if (__DEV__) {
   };
 
   // When this signature changes, it's unsafe to stop at this refresh boundary.
-  var getRefreshBoundarySignature = (Refresh, moduleExports): Array<mixed> => {
+  var getRefreshBoundarySignature = (
+    Refresh: any,
+    moduleExports: Exports,
+  ): Array<mixed> => {
     const signature = [];
     signature.push(Refresh.getFamilyByType(moduleExports));
     if (moduleExports == null || typeof moduleExports !== 'object') {
@@ -948,7 +954,11 @@ if (__DEV__) {
     return signature;
   };
 
-  var registerExportsForReactRefresh = (Refresh, moduleExports, moduleID) => {
+  var registerExportsForReactRefresh = (
+    Refresh: any,
+    moduleExports: Exports,
+    moduleID: ModuleID,
+  ) => {
     Refresh.register(moduleExports, moduleID + ' %exports%');
     if (moduleExports == null || typeof moduleExports !== 'object') {
       // Exit if we can't iterate over exports.

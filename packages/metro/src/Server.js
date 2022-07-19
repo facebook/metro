@@ -9,6 +9,8 @@
  */
 
 'use strict';
+
+import type {StackFrameOutput} from './Server/symbolicate';
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -513,6 +515,8 @@ class Server {
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
   }) {
+    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
@@ -735,6 +739,8 @@ class Server {
 
       const serializer =
         this._config.serializer.customSerializer ||
+        /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+         * Flow's LTI update could not be added via codemod */
         ((...args) => bundleToString(baseJSBundle(...args)).code);
 
       const bundle = await serializer(
@@ -1013,7 +1019,10 @@ class Server {
   });
 
   async _symbolicate(req: IncomingMessage, res: ServerResponse) {
-    const getCodeFrame = (urls, symbolicatedStack) => {
+    const getCodeFrame = (
+      urls: Set<string>,
+      symbolicatedStack: $ReadOnlyArray<StackFrameOutput>,
+    ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
         const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
@@ -1165,7 +1174,7 @@ class Server {
   }
 
   async _resolveRelativePath(
-    filePath,
+    filePath: string,
     {
       transformOptions,
       relativeTo,

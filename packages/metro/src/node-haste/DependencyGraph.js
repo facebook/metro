@@ -33,7 +33,7 @@ const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
 function getOrCreate<T>(
   map: Map<string, Map<string, T>>,
-  field,
+  field: string,
 ): Map<string, T> {
   let subMap = map.get(field);
   if (!subMap) {
@@ -131,6 +131,8 @@ class DependencyGraph extends EventEmitter {
     return null;
   }
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
     this._hasteFS = hasteFS;
     this._resolutionCache = new Map();

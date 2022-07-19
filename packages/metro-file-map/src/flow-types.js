@@ -61,6 +61,7 @@ export type ChangeEvent = {
 export type Console = typeof global.console;
 
 export type CrawlerOptions = {
+  abortSignal: ?AbortSignal,
   computeSha1: boolean,
   enableSymlinks: boolean,
   data: InternalData,

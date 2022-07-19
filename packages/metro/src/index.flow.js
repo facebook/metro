@@ -448,7 +448,10 @@ exports.attachMetroCli = function (
     serve: ServeCommandOptions,
     dependencies: any,
     ...
-  } = {},
+  }
+  // prettier-ignore
+  // $FlowFixMe[prop-missing]
+  = {},
 ): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();

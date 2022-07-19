@@ -19,6 +19,8 @@ const path = require('path');
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   (function fillFileSet(fileTree, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);
@@ -491,7 +493,8 @@ describe('redirectModulePath', () => {
 });
 
 describe('resolveRequest', () => {
-  const resolveRequest = jest.fn();
+  // $FlowFixMe[unclear-type]: `resolveRequest` is used too dynamically.
+  const resolveRequest = jest.fn<any, any>();
   const context = {...CONTEXT, resolveRequest};
 
   beforeEach(() => {
@@ -576,7 +579,7 @@ describe('resolveRequest', () => {
   it('is called with the platform and non-redirected module path', () => {
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: filePath => filePath + '.redirected',
+      redirectModulePath: (filePath: string) => filePath + '.redirected',
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
@@ -599,7 +602,7 @@ describe('resolveRequest', () => {
     }));
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: filePath => false,
+      redirectModulePath: (filePath: string) => false,
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`

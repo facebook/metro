@@ -202,7 +202,15 @@ describe('posix support', () => {
       // expect(fs.statSync('/glo.txt').mode).toBe(0o600);
     });
 
-    function readWithReadStream(options, filePath = '/foo.txt') {
+    function readWithReadStream(
+      options:
+        | null
+        | {end: number}
+        | {end: number, start: number}
+        | {flags: string, mode: number}
+        | {start: number},
+      filePath: string = '/foo.txt',
+    ) {
       return new Promise(resolve => {
         const st = fs.createReadStream(
           filePath,
@@ -620,7 +628,13 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    function collectWatchEvents(entPath, options, events) {
+    function collectWatchEvents(
+      entPath: string,
+      /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+       * Flow's LTI update could not be added via codemod */
+      options,
+      events: Array<Array<?(Buffer | string | 'change' | 'rename')>>,
+    ) {
       return fs.watch(entPath, options, (eventName, filePath) => {
         events.push([eventName, filePath]);
       });
@@ -1528,9 +1542,9 @@ describe('promises', () => {
 });
 
 function expectFsError(
-  code,
-  handler,
-  {noSnapshot} = ({...null}: {noSnapshot?: boolean}),
+  code: string,
+  handler: () => $FlowFixMe,
+  {noSnapshot}: {noSnapshot?: boolean} = {...null},
 ) {
   try {
     handler();

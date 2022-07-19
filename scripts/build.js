@@ -51,11 +51,11 @@ const fixedWidth = function(str/*: string*/) {
     .join('\n');
 };
 
-function getPackageName(file) {
+function getPackageName(file /*: string */) {
   return path.relative(PACKAGES_DIR, file).split(path.sep)[0];
 }
 
-function getBuildPath(file, buildFolder) {
+function getBuildPath(file /*: string */, buildFolder /*: string */) {
   const pkgName = getPackageName(file);
   const pkgSrcPath = path.resolve(PACKAGES_DIR, pkgName, SRC_DIR);
   const pkgBuildPath = process.env.PACKAGES_DIR != null
@@ -65,7 +65,7 @@ function getBuildPath(file, buildFolder) {
   return path.resolve(pkgBuildPath, relativeToSrcPath);
 }
 
-function buildPackage(p) {
+function buildPackage(p /*: string */) {
   const srcDir = path.resolve(p, SRC_DIR);
   const pattern = path.resolve(srcDir, '**/*');
   const files = glob.sync(pattern, {nodir: true});
@@ -76,7 +76,7 @@ function buildPackage(p) {
   process.stdout.write(`[  ${chalk.green('OK')}  ]\n`);
 }
 
-function buildFile(file, silent) {
+function buildFile(file /*: string */, silent /*: number | boolean */) {
   const destPath = getBuildPath(file, BUILD_DIR);
 
   fs.mkdirSync(path.dirname(destPath), {recursive: true});

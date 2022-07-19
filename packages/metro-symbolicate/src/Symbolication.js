@@ -533,7 +533,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     this._segments = segments;
   }
 
-  _initSegment(map) {
+  _initSegment(map: MixedSourceMap) {
     const useFunctionNames = this.options.nameSource === 'function_names';
     const {_SourceMapConsumer: SourceMapConsumer} = this;
     return {

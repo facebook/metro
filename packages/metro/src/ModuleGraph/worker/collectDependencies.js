@@ -17,6 +17,7 @@ import type {
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
+const crypto = require('crypto');
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
@@ -52,6 +53,8 @@ export type RequireContextParams = $ReadOnly<{
 }>;
 
 type DependencyData<TSplitCondition> = $ReadOnly<{
+  // A locally unique key for this dependency within the current module.
+  key: string,
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
@@ -175,7 +178,10 @@ function collectDependencies<TSplitCondition = void>(
   };
 
   const visitor = {
-    CallExpression(path, state): void {
+    CallExpression(
+      path: NodePath<BabelNodeCallExpression>,
+      state: State<TSplitCondition>,
+    ): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -254,7 +260,7 @@ function collectDependencies<TSplitCondition = void>(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path, state) {
+    Program(path: NodePath<BabelNodeProgram>, state: State<TSplitCondition>) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -723,8 +729,9 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 
 /**
  * Given an import qualifier, return a key used to register the dependency.
- * Generally this return the `ImportQualifier.name` property, but in the case
- * of `require.context` more attributes can be appended to distinguish various combinations that would otherwise conflict.
+ * Generally this return the `ImportQualifier.name` property, but more
+ * attributes can be appended to distinguish various combinations that would
+ * otherwise conflict.
  *
  * For example, the following case would have collision issues if they all utilized the `name` property:
  * ```
@@ -740,6 +747,11 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 function getKeyForDependency(qualifier: ImportQualifier): string {
   let key = qualifier.name;
 
+  const {asyncType} = qualifier;
+  if (asyncType) {
+    key += ['', asyncType].join('\0');
+  }
+
   const {contextParams} = qualifier;
   // Add extra qualifiers when using `require.context` to prevent collisions.
   if (contextParams) {
@@ -754,7 +766,7 @@ function getKeyForDependency(qualifier: ImportQualifier): string {
       String(contextParams.filter.flags),
       contextParams.mode,
       // Join together and append to the name:
-    ].join('__');
+    ].join('\0');
   }
   return key;
 }
@@ -777,6 +789,7 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
         asyncType: qualifier.asyncType,
         locs: [],
         index: this._dependencies.size,
+        key: crypto.createHash('sha1').update(key).digest('base64'),
       };
 
       if (qualifier.optional) {
@@ -787,14 +800,18 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
       }
 
       dependency = newDependency;
-      this._dependencies.set(key, dependency);
     } else {
-      const original = dependency;
-      dependency = collapseDependencies(original, qualifier);
-      if (original !== dependency) {
-        this._dependencies.set(key, dependency);
+      if (dependency.isOptional && !qualifier.optional) {
+        // A previously optionally required dependency was required non-optionally.
+        // Mark it non optional for the whole module
+        dependency = {
+          ...dependency,
+          isOptional: false,
+        };
       }
     }
+
+    this._dependencies.set(key, dependency);
 
     return dependency;
   }
@@ -802,38 +819,6 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
   getDependencies(): Array<InternalDependency<TSplitCondition>> {
     return Array.from(this._dependencies.values());
   }
-}
-
-function collapseDependencies<TSplitCondition>(
-  dependency: InternalDependency<TSplitCondition>,
-  qualifier: ImportQualifier,
-): InternalDependency<TSplitCondition> {
-  let collapsed = dependency;
-
-  // A previously optionally required dependency was required non-optionaly.
-  // Mark it non optional for the whole module
-  if (collapsed.isOptional && !qualifier.optional) {
-    collapsed = {
-      ...dependency,
-      isOptional: false,
-    };
-  }
-
-  // A previously asynchronously (or prefetch) required module was required synchronously.
-  // Make the dependency sync.
-  if (collapsed.asyncType != null && qualifier.asyncType == null) {
-    collapsed = {...dependency, asyncType: null};
-  }
-
-  // A prefetched dependency was required async in the module. Mark it as async.
-  if (collapsed.asyncType === 'prefetch' && qualifier.asyncType === 'async') {
-    collapsed = {
-      ...dependency,
-      asyncType: 'async',
-    };
-  }
-
-  return collapsed;
 }
 
 module.exports = collectDependencies;

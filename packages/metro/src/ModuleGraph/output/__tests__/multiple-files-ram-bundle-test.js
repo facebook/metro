@@ -20,7 +20,7 @@ let code;
 let map;
 let extraFiles;
 let ids, modules, requireCall;
-const idsForPath = ({path}) => {
+const idsForPath = ({path}: {path: string, ...}) => {
   const id = getId(path);
   return {moduleId: id, localId: id};
 };
@@ -83,7 +83,10 @@ it('bundles each file separately', () => {
   });
 });
 
-function createRamBundle(preloadedModules = new Set(), ramGroups?) {
+function createRamBundle(
+  preloadedModules: Set<string> = new Set(),
+  ramGroups?: empty,
+) {
   const build = multipleFilesRamBundle.createBuilder(
     preloadedModules,
     ramGroups,
@@ -104,8 +107,8 @@ function createRamBundle(preloadedModules = new Set(), ramGroups?) {
 function makeModule(
   name: string,
   deps: Array<string> = [],
-  type = 'module',
-  moduleCode = `var ${name};`,
+  type: string = 'module',
+  moduleCode: string = `var ${name};`,
 ): Module {
   const path = makeModulePath(name);
   return {
@@ -116,6 +119,7 @@ function makeModule(
       functionMap:
         type !== 'module' ? null : {names: ['<global>'], mappings: 'AAA'},
       path,
+      // $FlowFixMe[incompatible-return]
       type,
       libraryIdx: null,
     },
@@ -152,7 +156,7 @@ function makeDependency(name: string) {
   };
 }
 
-function expectedCodeAndMap(module) {
+function expectedCodeAndMap(module: Module) {
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
     dependencyMapReservedName: undefined,
     enableIDInlining: true,
@@ -160,11 +164,11 @@ function expectedCodeAndMap(module) {
   });
 }
 
-function expectedCode(module) {
+function expectedCode(module: Module) {
   return expectedCodeAndMap(module).moduleCode;
 }
 
-function expectedMap(module) {
+function expectedMap(module: Module) {
   return expectedCodeAndMap(module).moduleMap;
 }
 

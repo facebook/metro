@@ -20,7 +20,7 @@ const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/src/Symbolication');
 
-function getAst(source) {
+function getAst(source: string) {
   return parse(source, {
     plugins: ['classProperties', 'dynamicImport', 'jsx', 'flow'],
     sourceType: 'unambiguous',

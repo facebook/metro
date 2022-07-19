@@ -1,6 +1,6 @@
 {
   "name": "metro-file-map",
-  "version": "0.71.1",
+  "version": "0.71.3",
   "description": "[Experimental] - 🚇 File crawling, watching and mapping for Metro",
   "main": "src/index.js",
   "repository": {
@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "abort-controller": "^3.0.0",
     "anymatch": "^3.0.3",
     "debug": "^2.2.0",
     "fb-watchman": "^2.0.0",

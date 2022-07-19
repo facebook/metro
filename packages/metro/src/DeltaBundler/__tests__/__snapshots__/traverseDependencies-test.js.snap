@@ -5,11 +5,12 @@ Object {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
-        "foo" => Object {
+        "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
               "asyncType": null,
+              "key": "C+7Hteo/D9vJXQ3UfzxbwnXaijM=",
               "locs": Array [],
             },
             "name": "foo",
@@ -32,21 +33,23 @@ Object {
     },
     "/foo" => Object {
       "dependencies": Map {
-        "bar" => Object {
+        "Ys23Ag/5IOWqZCw9QGaVDdHwH00=" => Object {
           "absolutePath": "/bar",
           "data": Object {
             "data": Object {
               "asyncType": null,
+              "key": "Ys23Ag/5IOWqZCw9QGaVDdHwH00=",
               "locs": Array [],
             },
             "name": "bar",
           },
         },
-        "baz" => Object {
+        "u+lgol6jEdIdQGaek98gA7qbkKI=" => Object {
           "absolutePath": "/baz",
           "data": Object {
             "data": Object {
               "asyncType": null,
+              "key": "u+lgol6jEdIdQGaek98gA7qbkKI=",
               "locs": Array [],
             },
             "name": "baz",
@@ -127,11 +130,12 @@ Object {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
-        "foo" => Object {
+        "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
               "asyncType": null,
+              "key": "C+7Hteo/D9vJXQ3UfzxbwnXaijM=",
               "locs": Array [],
             },
             "name": "foo",

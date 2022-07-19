@@ -19,7 +19,7 @@ module.exports = {
   },
   root: true,
   extends: ['eslint-config-fb-strict', 'plugin:prettier/recommended'],
-  plugins: ['babel', 'flowtype', 'import', 'lint', 'prettier'],
+  plugins: ['babel', 'ft-flow', 'import', 'lint', 'prettier'],
   parser: 'hermes-eslint',
   rules: {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
@@ -35,7 +35,10 @@ module.exports = {
     'prefer-const': ['warn', {destructuring: 'all'}],
     quotes: 'off',
     'sort-keys': 'off',
+
+    // prettier handles this
     'flowtype/object-type-delimiter': 'off',
+    'ft-flow/object-type-delimiter': 'off',
 
     // These rules are not required with hermes-eslint
     'ft-flow/define-flow-type': 0,
