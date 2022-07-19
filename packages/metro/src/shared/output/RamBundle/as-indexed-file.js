@@ -66,7 +66,7 @@ function saveAsIndexedFile(
       moduleGroups,
       fixWrapperOffset: true,
     });
-    if (sourcemapSourcesRoot !== undefined) {
+    if (sourcemapSourcesRoot != null) {
       relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
     }
 

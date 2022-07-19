@@ -284,11 +284,11 @@ metroRequire.importAll = metroImportAll;
 metroRequire.context = function fallbackRequireContext() {
   if (__DEV__) {
     throw new Error(
-      `The experimental Metro feature \`require.context\` is not enabled in your project.\nThis can be enabled by setting the \`transformer.unstable_allowRequireContext\` property to \`true\` in your Metro configuration.`,
+      'The experimental Metro feature `require.context` is not enabled in your project.\nThis can be enabled by setting the `transformer.unstable_allowRequireContext` property to `true` in your Metro configuration.',
     );
   }
   throw new Error(
-    `The experimental Metro feature \`require.context\` is not enabled in your project.`,
+    'The experimental Metro feature `require.context` is not enabled in your project.',
   );
 };
 
