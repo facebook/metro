@@ -13,10 +13,7 @@
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
-import type {
-  ContextMode,
-  RequireContextParams,
-} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';

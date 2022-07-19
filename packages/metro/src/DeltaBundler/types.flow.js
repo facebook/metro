@@ -10,10 +10,7 @@
 
 'use strict';
 
-import type {
-  RequireContextParams,
-  ContextMode,
-} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {PrivateState} from './graphOperations';
 import type {JsTransformOptions} from 'metro-transform-worker';
 

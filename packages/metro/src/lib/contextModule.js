@@ -10,10 +10,7 @@
 
 import crypto from 'crypto';
 import path from 'path';
-import type {
-  ContextFilter,
-  RequireContextParams,
-} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import nullthrows from 'nullthrows';
 
 /** Get an ID for a context module. */
@@ -59,7 +56,7 @@ export function fileMatchesContext(
   const filter = new RegExp(context.filter.pattern, context.filter.flags);
   if (
     // Ignore everything outside of the provided `root`.
-    !(filePath && !filePath.startsWith('..') && !path.isAbsolute(filePath)) ||
+    !(filePath && !filePath.startsWith('..')) ||
     // Prevent searching in child directories during a non-recursive search.
     (!context.recursive && filePath.includes(path.sep)) ||
     // Test against the filter.

@@ -10,7 +10,6 @@
 
 'use strict';
 
-import * as path from 'path';
 import type {DeltaResult, Graph, Options} from './types.flow';
 
 import {fileMatchesContext} from '../lib/contextModule';
