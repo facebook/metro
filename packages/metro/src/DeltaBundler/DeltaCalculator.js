@@ -13,7 +13,7 @@
 import * as path from 'path';
 import type {DeltaResult, Graph, Options} from './types.flow';
 
-import {ensureRequireContext, fileMatchesContext} from '../lib/contextModule';
+import {fileMatchesContext} from '../lib/contextModule';
 
 const {
   createGraph,
@@ -256,7 +256,7 @@ class DeltaCalculator<T> extends EventEmitter {
             contextParams &&
             contextParams.from != null &&
             !modifiedDependencies.includes(dependency.path) &&
-            fileMatchesContext(filePath, ensureRequireContext(contextParams))
+            fileMatchesContext(filePath, contextParams)
           ) {
             modifiedDependencies.push(dependency.path);
           }

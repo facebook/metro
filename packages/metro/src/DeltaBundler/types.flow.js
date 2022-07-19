@@ -19,17 +19,6 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
 
-export type RequireContext = {
-  /** Absolute file path pointing to the root directory of the context. */
-  from?: string,
-  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
-  recursive: boolean,
-  /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
-  filter: RegExp,
-  /** Mode for resolving dynamic dependencies. Defaults to `sync` */
-  mode: ContextMode,
-};
-
 export type MixedOutput = {
   +data: mixed,
   +type: string,
@@ -80,7 +69,7 @@ export type Dependency = {
 };
 
 export type Module<T = MixedOutput> = {
-  +contextParams?: RequireContext,
+  +contextParams?: RequireContextParams,
   +dependencies: Map<string, Dependency>,
   +inverseDependencies: CountingSet<string>,
   +output: $ReadOnlyArray<T>,
@@ -124,7 +113,7 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
 
 export type TransformFn<T = MixedOutput> = (
   string,
-  ?RequireContext,
+  ?RequireContextParams,
 ) => Promise<TransformResultWithSource<T>>;
 export type AllowOptionalDependenciesWithOptions = {
   +exclude: Array<string>,
@@ -134,7 +123,11 @@ export type AllowOptionalDependencies =
   | AllowOptionalDependenciesWithOptions;
 
 export type Options<T = MixedOutput> = {
-  +resolve: (from: string, to: string, context?: ?RequireContext) => string,
+  +resolve: (
+    from: string,
+    to: string,
+    context?: ?RequireContextParams,
+  ) => string,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,

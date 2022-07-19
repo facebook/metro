@@ -38,14 +38,10 @@ import type {
   Module,
   Options,
   TransformResultDependency,
-  RequireContext,
 } from './types.flow';
 
 import CountingSet from '../lib/CountingSet';
-import {
-  appendContextQueryParam,
-  ensureRequireContext,
-} from '../lib/contextModule';
+import {appendContextQueryParam} from '../lib/contextModule';
 
 import * as path from 'path';
 const invariant = require('invariant');
@@ -274,9 +270,8 @@ async function processModule<T>(
   options: InternalOptions<T>,
   // This fallback is used when a new dependency is added after the initial bundle has been created
   // the invocation comes from `traverseDependenciesForSingleFile`.
-  contextParams:
-    | ?RequireContext
-    | RequireContextParams = graph.dependencies.get(path)?.contextParams,
+  contextParams: ?RequireContextParams = graph.dependencies.get(path)
+    ?.contextParams,
 ): Promise<Module<T>> {
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
@@ -284,7 +279,7 @@ async function processModule<T>(
   if (contextParams != null) {
     result = await options.transform(
       nullthrows(contextParams.from),
-      ensureRequireContext(contextParams),
+      contextParams,
     );
   } else {
     result = await options.transform(path);
@@ -308,7 +303,7 @@ async function processModule<T>(
   // Update the module information.
   const module = {
     ...previousModule,
-    contextParams: contextParams,
+    contextParams: contextParams ?? undefined,
     dependencies: new Map(previousDependencies),
     getSource: result.getSource,
     output: result.output,
@@ -490,9 +485,7 @@ function resolveDependencies<T>(
 
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
-      const absolutePath = appendContextQueryParam(
-        ensureRequireContext(contextParams),
-      );
+      const absolutePath = appendContextQueryParam(contextParams);
 
       resolvedDep = {
         absolutePath,

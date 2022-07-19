@@ -12,17 +12,27 @@ import {
   fileMatchesContext,
   appendContextQueryParam,
   getContextModuleId,
-  ensureRequireContext,
 } from '../contextModule';
 
 describe('getContextModuleId', () => {
   it(`creates a context module ID`, () => {
     for (const [ctx, results] of [
       [
-        {filter: /[a-zA-Z]+/, mode: 'eager', recursive: true},
+        {
+          filter: {pattern: '.*', flags: ''},
+          mode: 'eager',
+          recursive: true,
+        },
         '/path/to eager recursive /[a-zA-Z]+/',
       ],
-      [{filter: /.*/, mode: 'lazy', recursive: false}, '/path/to lazy /.*/'],
+      [
+        {
+          filter: {pattern: '.*', flags: ''},
+          mode: 'lazy',
+          recursive: false,
+        },
+        '/path/to lazy /.*/',
+      ],
     ])
       expect(getContextModuleId('/path/to', ctx)).toBe(results);
   });
@@ -33,7 +43,7 @@ describe('appendContextQueryParam', () => {
     expect(
       appendContextQueryParam({
         from: '/path/to/project',
-        filter: /[a-zA-Z]+/,
+        filter: {pattern: '[a-zA-Z]+', flags: ''},
         mode: 'eager',
         recursive: true,
       }),
@@ -45,8 +55,9 @@ describe('fileMatchesContext', () => {
   it(`matches files`, () => {
     expect(
       fileMatchesContext('/path/to/project/index.js', {
-        inputPath: '/path/to/project',
-        filter: /.*/,
+        mode: 'lazy',
+        from: '/path/to/project',
+        filter: {pattern: '.*', flags: ''},
         recursive: true,
       }),
     ).toBe(true);

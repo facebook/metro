@@ -41,9 +41,10 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
 // TODO: Convert to a Flow enum
 export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
-type ContextFilter = {pattern: string, flags: string};
+export type ContextFilter = {pattern: string, flags: string};
 
 export type RequireContextParams = {
+  /** Absolute file path pointing to the root directory of the context. */
   from?: string,
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,

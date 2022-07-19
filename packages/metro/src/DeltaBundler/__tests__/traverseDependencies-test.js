@@ -203,6 +203,7 @@ function computeInverseDependencies(
     +shallow: boolean,
     +transform: TransformFn<>,
     +transformOptions: TransformInputOptions,
+    +unstable_allowRequireContext: boolean,
   },
 ) {
   const allInverseDependencies = new Map();
@@ -244,6 +245,7 @@ async function traverseDependencies(
     +shallow: boolean,
     +transform: TransformFn<>,
     +transformOptions: TransformInputOptions,
+    +unstable_allowRequireContext: boolean,
   },
 ) {
   // Get a snapshot of the graph before the traversal.
@@ -305,6 +307,7 @@ beforeEach(async () => {
   });
 
   options = {
+    unstable_allowRequireContext: false,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {

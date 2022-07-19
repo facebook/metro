@@ -12,11 +12,11 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {
-  TransformInputOptions,
-  RequireContext,
-} from '../DeltaBundler/types.flow';
-import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
+  ContextMode,
+  RequireContextParams,
+} from '../ModuleGraph/worker/collectDependencies';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
@@ -127,7 +127,7 @@ async function getTransformFn(
     options,
   );
 
-  return async (modulePath: string, requireContext: ?RequireContext) => {
+  return async (modulePath: string, requireContext: ?RequireContextParams) => {
     let templateBuffer: Buffer;
 
     if (requireContext) {
@@ -139,7 +139,10 @@ async function getTransformFn(
       // Search against all files, this is very expensive.
       // TODO: Maybe we could let the user specify which root to check against.
       const files = graph.matchFilesWithContext(modulePath, {
-        filter: requireContext.filter,
+        filter: new RegExp(
+          requireContext.filter.pattern,
+          requireContext.filter.flags,
+        ),
         recursive: requireContext.recursive,
       });
 
