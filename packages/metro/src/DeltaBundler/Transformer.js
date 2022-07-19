@@ -12,7 +12,6 @@
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
-import crypto from 'crypto';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const getTransformCacheKey = require('./getTransformCacheKey');
@@ -26,10 +25,10 @@ class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
-  _getSha1: string => string;
+  _getSha1: (string, ?Buffer) => string;
   _workerFarm: WorkerFarm;
 
-  constructor(config: ConfigT, getSha1Fn: string => string) {
+  constructor(config: ConfigT, getSha1Fn: (string, ?Buffer) => string) {
     this._config = config;
 
     this._config.watchFolders.forEach(verifyRootExists);
@@ -121,13 +120,7 @@ class Transformer {
       unstable_transformProfile,
     ]);
 
-    let sha1: string;
-    if (fileBuffer) {
-      sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
-    } else {
-      sha1 = this._getSha1(filePath);
-    }
-
+    const sha1 = this._getSha1(filePath, fileBuffer);
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
     const result = await cache.get(fullKey);
 

@@ -12,8 +12,8 @@ import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {HasteFS} from 'metro-file-map';
 import type Module from './Module';
-
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
+import crypto from 'crypto';
 
 const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
@@ -186,7 +186,11 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
-  getSha1(filename: string): string {
+  getSha1(filename: string, contents: ?Buffer): string {
+    // Shortcut for virtual modules which provide the contents with the filename.
+    if (contents) {
+      return crypto.createHash('sha1').update(contents).digest('hex');
+    }
     // TODO If it looks like we're trying to get the sha1 from a file located
     // within a Zip archive, then we instead compute the sha1 for what looks
     // like the Zip archive itself.
