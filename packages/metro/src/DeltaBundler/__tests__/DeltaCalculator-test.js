@@ -36,6 +36,7 @@ describe('DeltaCalculator', () => {
   let fileWatcher;
 
   const options = {
+    unstable_allowRequireContext: true,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {

@@ -59,6 +59,8 @@ async function getPrependedScripts(
         config,
         transformOptions,
       ),
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
       transformOptions,
       onProgress: null,
       experimentalImportBundleSupport:

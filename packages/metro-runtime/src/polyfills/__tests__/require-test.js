@@ -478,6 +478,13 @@ describe('require', () => {
       expect(fn.mock.calls.length).toBe(1);
     });
 
+    it('throws when using require.context directly', () => {
+      createModuleSystem(moduleSystem, false, '');
+      expect(() => moduleSystem.__r.context('foobar')).toThrow(
+        'The experimental Metro feature `require.context` is not enabled in your project.',
+      );
+    });
+
     it('throws an error when trying to require an unknown module', () => {
       createModuleSystem(moduleSystem, false, '');
 

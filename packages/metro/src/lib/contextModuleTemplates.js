@@ -1,42 +1,50 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow
+ * @format
+ */
+
 import * as path from 'path';
-import type {
-  ContextMode,
-} from '../ModuleGraph/worker/collectDependencies';
+import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
 
 function createFileMap(
-    modulePath: string,
-    files: string[],
-    processModule: (moduleId: string) => string,
-) {
-    let mapString = '';
+  modulePath: string,
+  files: string[],
+  processModule: (moduleId: string) => string,
+): string {
+  let mapString = '';
 
-    files.map(file => {
-        let filePath = path.relative(modulePath, file);
+  files.map(file => {
+    let filePath = path.relative(modulePath, file);
 
-        // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
-        // but Webpack allows this, keeping it here provides better parity between bundlers.
+    // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
+    // but Webpack allows this, keeping it here provides better parity between bundlers.
 
-        // Ensure relative file paths start with `./` so they match the
-        // patterns (filters) used to include them.
-        if (!filePath.startsWith('.')) {
-        filePath = `.${path.sep}` + filePath;
-        }
-        const key = JSON.stringify(filePath);
-        // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
-        // Metro doesn't have this functionality so it will use getters instead. Modules need to
-        // be loaded on demand because if we imported directly then users would get errors from importing
-        // a file without exports as soon as they create a new file and the context module is updated.
+    // Ensure relative file paths start with `./` so they match the
+    // patterns (filters) used to include them.
+    if (!filePath.startsWith('.')) {
+      filePath = `.${path.sep}` + filePath;
+    }
+    const key = JSON.stringify(filePath);
+    // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
+    // Metro doesn't have this functionality so it will use getters instead. Modules need to
+    // be loaded on demand because if we imported directly then users would get errors from importing
+    // a file without exports as soon as they create a new file and the context module is updated.
 
-        // NOTE: The values are set to `enumerable` so the `context.keys()` method works as expected.
-        mapString += `${key}: { enumerable: true, get() { return ${processModule(
-        file,
-        )}; } },`;
-    });
-    return `Object.defineProperties({}, {${mapString}})`;
+    // NOTE: The values are set to `enumerable` so the `context.keys()` method works as expected.
+    mapString += `${key}: { enumerable: true, get() { return ${processModule(
+      file,
+    )}; } },`;
+  });
+  return `Object.defineProperties({}, {${mapString}})`;
 }
 
 function getEmptyContextModuleTemplate(modulePath: string, id: string): string {
-return `
+  return `
 function metroEmptyContext(request) {
   let e = new Error("No modules for context '" + ${JSON.stringify(id)} + "'");
   e.code = 'MODULE_NOT_FOUND';
@@ -64,12 +72,12 @@ function getLoadableContextModuleTemplate(
   importSyntax: string,
   getContextTemplate: string,
 ): string {
-    return `// All of the requested modules are loaded behind enumerable getters.
+  return `// All of the requested modules are loaded behind enumerable getters.
 const map = ${createFileMap(
-      modulePath,
-      files,
-      moduleId => `${importSyntax}(${JSON.stringify(moduleId)})`,
-)};
+    modulePath,
+    files,
+    moduleId => `${importSyntax}(${JSON.stringify(moduleId)})`,
+  )};
   
 function metroContext(request) {
   ${getContextTemplate}
@@ -91,48 +99,58 @@ metroContext.id = ${JSON.stringify(id)};
 module.exports = metroContext;`;
 }
 
+/**
+ * Generate a context module as a virtual file string.
+ *
+ * @prop {ContextMode} mode indicates how the modules should be loaded.
+ * @prop {string} modulePath virtual file path for the virtual module. Example: `require.context('./src')` -> `'/path/to/project/src'`.
+ * @prop {string[]} files list of absolute file paths that must be exported from the context module. Example: `['/path/to/project/src/index.js']`.
+ * @prop {string} id virtual ID representing the context module. Example: `'/path/to/project/src sync recursive /(?:)/'`
+ *
+ * @returns a string representing a context module (virtual file contents).
+ */
 export function getContextModuleTemplate(
-    mode: ContextMode,
-    modulePath: string,
-    files: string[],
-    id: string,
+  mode: ContextMode,
+  modulePath: string,
+  files: string[],
+  id: string,
 ): string {
-    if (!files.length) {
-        return getEmptyContextModuleTemplate(modulePath, id);
-    }
-    switch (mode) {
-        case 'eager':
-        return getLoadableContextModuleTemplate(
-            modulePath,
-            files,
-            id,
-            // NOTE(EvanBacon): It's unclear if we should use `import` or `require` here so sticking
-            // with the more stable option (`require`) for now.
-            'require',
-            [
-            '  // Here Promise.resolve().then() is used instead of new Promise() to prevent',
-            '  // uncaught exception popping up in devtools',
-            '  return Promise.resolve().then(() => map[request]);',
-            ].join('\n'),
-        );
-        case 'sync':
-        return getLoadableContextModuleTemplate(
-            modulePath,
-            files,
-            id,
-            'require',
-            '  return map[request];',
-        );
-        case 'lazy':
-        case 'lazy-once':
-        return getLoadableContextModuleTemplate(
-            modulePath,
-            files,
-            id,
-            'import',
-            '  return map[request];',
-        );
-        default:
-        throw new Error(`Metro context mode "${mode}" is unimplemented`);
-    }
+  if (!files.length) {
+    return getEmptyContextModuleTemplate(modulePath, id);
+  }
+  switch (mode) {
+    case 'eager':
+      return getLoadableContextModuleTemplate(
+        modulePath,
+        files,
+        id,
+        // NOTE(EvanBacon): It's unclear if we should use `import` or `require` here so sticking
+        // with the more stable option (`require`) for now.
+        'require',
+        [
+          '  // Here Promise.resolve().then() is used instead of new Promise() to prevent',
+          '  // uncaught exception popping up in devtools',
+          '  return Promise.resolve().then(() => map[request]);',
+        ].join('\n'),
+      );
+    case 'sync':
+      return getLoadableContextModuleTemplate(
+        modulePath,
+        files,
+        id,
+        'require',
+        '  return map[request];',
+      );
+    case 'lazy':
+    case 'lazy-once':
+      return getLoadableContextModuleTemplate(
+        modulePath,
+        files,
+        id,
+        'import',
+        '  return map[request];',
+      );
+    default:
+      throw new Error(`Metro context mode "${mode}" is unimplemented`);
+  }
 }

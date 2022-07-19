@@ -13,7 +13,6 @@
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
-  TransformContextFn,
   TransformInputOptions,
   RequireContext,
 } from '../DeltaBundler/types.flow';
@@ -23,7 +22,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
-import {getContextModuleId, fileMatchesContext} from './contextModule';
+import {getContextModuleId} from './contextModule';
 
 const path = require('path');
 
@@ -68,16 +67,6 @@ async function calcTransformerOptions(
   const getDependencies = async (path: string) => {
     const dependencies = await deltaBundler.getDependencies([path], {
       resolve: await getResolveDependencyFn(bundler, options.platform),
-      transformContext: await getTransformContextFn(
-        [path],
-        bundler,
-        deltaBundler,
-        config,
-        {
-          ...options,
-          minify: false,
-        },
-      ),
       transform: await getTransformFn([path], bundler, deltaBundler, config, {
         ...options,
         minify: false,
@@ -123,60 +112,6 @@ function removeInlineRequiresBlockListFromOptions(
   return inlineRequires;
 }
 
-/** Generate the default method for transforming a `require.context` module. */
-async function getTransformContextFn(
-  entryFiles: $ReadOnlyArray<string>,
-  bundler: Bundler,
-  deltaBundler: DeltaBundler<>,
-  config: ConfigT,
-  options: TransformInputOptions,
-): Promise<TransformContextFn<>> {
-  const {inlineRequires, ...transformOptions} = await calcTransformerOptions(
-    entryFiles,
-    bundler,
-    deltaBundler,
-    config,
-    options,
-  );
-
-  return async (modulePath: string, requireContext: RequireContext) => {
-    const graph = await bundler.getDependencyGraph();
-
-    // TODO: Check delta changes to avoid having to look over all files each time
-    // this is a massive performance boost.
-
-    // Search against all files, this is very expensive.
-    // TODO: Maybe we could let the user specify which root to check against.
-    const files = graph.matchFilesWithContext(modulePath, {
-      filter: requireContext.filter,
-      recursive: requireContext.recursive,
-    });
-
-    const template = getContextModuleTemplate(
-      requireContext.mode,
-      modulePath,
-      files,
-      getContextModuleId(modulePath, requireContext),
-    );
-    return await bundler.transformFile(
-      modulePath,
-      {
-        ...transformOptions,
-        type: getType(
-          transformOptions.type,
-          modulePath,
-          config.resolver.assetExts,
-        ),
-        inlineRequires: removeInlineRequiresBlockListFromOptions(
-          modulePath,
-          inlineRequires,
-        ),
-      },
-      Buffer.from(template),
-    );
-  };
-}
-
 async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
@@ -192,15 +127,48 @@ async function getTransformFn(
     options,
   );
 
-  return async (path: string) => {
-    return await bundler.transformFile(path, {
-      ...transformOptions,
-      type: getType(transformOptions.type, path, config.resolver.assetExts),
-      inlineRequires: removeInlineRequiresBlockListFromOptions(
-        path,
-        inlineRequires,
-      ),
-    });
+  return async (modulePath: string, requireContext: ?RequireContext) => {
+    let templateBuffer: Buffer;
+
+    if (requireContext) {
+      const graph = await bundler.getDependencyGraph();
+
+      // TODO: Check delta changes to avoid having to look over all files each time
+      // this is a massive performance boost.
+
+      // Search against all files, this is very expensive.
+      // TODO: Maybe we could let the user specify which root to check against.
+      const files = graph.matchFilesWithContext(modulePath, {
+        filter: requireContext.filter,
+        recursive: requireContext.recursive,
+      });
+
+      const template = getContextModuleTemplate(
+        requireContext.mode,
+        modulePath,
+        files,
+        getContextModuleId(modulePath, requireContext),
+      );
+
+      templateBuffer = Buffer.from(template);
+    }
+
+    return await bundler.transformFile(
+      modulePath,
+      {
+        ...transformOptions,
+        type: getType(
+          transformOptions.type,
+          modulePath,
+          config.resolver.assetExts,
+        ),
+        inlineRequires: removeInlineRequiresBlockListFromOptions(
+          modulePath,
+          inlineRequires,
+        ),
+      },
+      templateBuffer,
+    );
   };
 }
 
@@ -233,6 +201,5 @@ async function getResolveDependencyFn(
 
 module.exports = {
   getTransformFn,
-  getTransformContextFn,
   getResolveDependencyFn,
 };

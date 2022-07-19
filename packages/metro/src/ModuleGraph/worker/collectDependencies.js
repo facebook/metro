@@ -43,14 +43,15 @@ export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
 type ContextFilter = {pattern: string, flags: string};
 
-export type RequireContextParams = $ReadOnly<{
+export type RequireContextParams = {
+  from?: string,
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
   filter: $ReadOnly<ContextFilter>,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
-}>;
+};
 
 type DependencyData<TSplitCondition> = $ReadOnly<{
   // A locally unique key for this dependency within the current module.

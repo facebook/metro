@@ -85,7 +85,11 @@ export default class HasteFS {
     return files;
   }
 
-  /** Given a search context, return a list of file paths matching the query. */
+  /**
+   * Given a search context, return a list of file paths matching the query.
+   * The query matches against normalized paths which start with `./`,
+   * for example: `a/b.js` -> `./a/b.js`
+   */
   matchFilesWithContext(
     root: Path,
     context: $ReadOnly<{
@@ -108,7 +112,7 @@ export default class HasteFS {
       }
 
       // Prevent searching in child directories during a non-recursive search.
-      if (!context.recursive && filePath.includes(sep)) {
+      if (!context.recursive && filePath.includes(path.sep)) {
         continue;
       }
 

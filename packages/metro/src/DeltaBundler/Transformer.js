@@ -12,7 +12,6 @@
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
-import {toRequireContext} from '../lib/contextModule';
 import crypto from 'crypto';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
@@ -141,15 +140,6 @@ class Transformer {
           transformerOptions,
           fileBuffer,
         );
-
-    data.result.dependencies.forEach(dependency => {
-      if (dependency.data.contextParams) {
-        // Convert JSON regular expression into RegExp.
-        dependency.data.contextParams = toRequireContext(
-          dependency.data.contextParams,
-        );
-      }
-    });
 
     // Only re-compute the full key if the SHA-1 changed. This is because
     // references are used by the cache implementation in a weak map to keep

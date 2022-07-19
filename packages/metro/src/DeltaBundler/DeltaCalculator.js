@@ -13,10 +13,7 @@
 import * as path from 'path';
 import type {DeltaResult, Graph, Options} from './types.flow';
 
-import {
-  removeContextQueryParam,
-  fileMatchesContext,
-} from '../lib/contextModule';
+import {ensureRequireContext, fileMatchesContext} from '../lib/contextModule';
 
 const {
   createGraph,
@@ -253,27 +250,25 @@ class DeltaCalculator<T> extends EventEmitter {
     // to enable users to opt out.
     if (this._options.unstable_allowRequireContext) {
       const checkModifiedContextDependencies = (filePath: string) => {
-        this._graph.dependencies.forEach(value => {
+        this._graph.dependencies.forEach(dependency => {
+          const {contextParams} = dependency;
           if (
-            value.contextParams &&
-            !modifiedDependencies.includes(value.path) &&
-            fileMatchesContext(
-              removeContextQueryParam(value.path),
-              filePath,
-              value.contextParams,
-            )
+            contextParams &&
+            contextParams.from != null &&
+            !modifiedDependencies.includes(dependency.path) &&
+            fileMatchesContext(filePath, ensureRequireContext(contextParams))
           ) {
-            modifiedDependencies.push(value.path);
+            modifiedDependencies.push(dependency.path);
           }
         });
       };
 
       // Check if any added or removed files are matched in a context module.
-      Array.from(addedFiles).forEach(filePath =>
+      addedFiles.forEach(filePath =>
         checkModifiedContextDependencies(filePath),
       );
 
-      Array.from(deletedFiles).forEach(filePath =>
+      deletedFiles.forEach(filePath =>
         checkModifiedContextDependencies(filePath),
       );
     }

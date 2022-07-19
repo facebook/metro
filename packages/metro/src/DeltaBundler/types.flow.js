@@ -20,6 +20,8 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 import CountingSet from '../lib/CountingSet';
 
 export type RequireContext = {
+  /** Absolute file path pointing to the root directory of the context. */
+  from?: string,
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
@@ -120,15 +122,10 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
   getSource: () => Buffer,
 }>;
 
-/** Transformer for generating `require.context` virtual module. */
-export type TransformContextFn<T = MixedOutput> = (
+export type TransformFn<T = MixedOutput> = (
   string,
-  RequireContext,
+  ?RequireContext,
 ) => Promise<TransformResultWithSource<T>>;
-
-export type TransformFn<T = MixedOutput> = string => Promise<
-  TransformResultWithSource<T>,
->;
 export type AllowOptionalDependenciesWithOptions = {
   +exclude: Array<string>,
 };
@@ -139,8 +136,6 @@ export type AllowOptionalDependencies =
 export type Options<T = MixedOutput> = {
   +resolve: (from: string, to: string, context?: ?RequireContext) => string,
   +transform: TransformFn<T>,
-  /** Given a path and require context, return a virtual context module. */
-  +transformContext: TransformContextFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,

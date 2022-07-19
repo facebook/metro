@@ -51,6 +51,23 @@ type Data = $ReadOnly<{
   transformFileEndLogEntry: LogEntry,
 }>;
 
+/**
+ * When the `Buffer` is sent over the worker thread it gets serialized into a JSON object.
+ * This helper method will deserialize it if needed.
+ *
+ * @returns `Buffer` representation of the JSON object.
+ * @returns `null` if the given object is nullish or not a serialized `Buffer` object.
+ */
+function asDeserializedBuffer(value: any): Buffer | null {
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+  if (value && value.type === 'Buffer') {
+    return Buffer.from(value.data);
+  }
+  return null;
+}
+
 async function transform(
   filename: string,
   transformOptions: JsTransformOptions,
@@ -60,8 +77,9 @@ async function transform(
 ): Promise<Data> {
   let data;
 
-  if (fileBuffer && fileBuffer.type === 'Buffer') {
-    data = Buffer.from(fileBuffer.data);
+  const fileBufferObject = asDeserializedBuffer(fileBuffer);
+  if (fileBufferObject) {
+    data = fileBufferObject;
   } else {
     data = fs.readFileSync(path.resolve(projectRoot, filename));
   }

@@ -30,6 +30,7 @@
 
 'use strict';
 
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {
   Dependency,
   Graph,
@@ -43,7 +44,7 @@ import type {
 import CountingSet from '../lib/CountingSet';
 import {
   appendContextQueryParam,
-  removeContextQueryParam,
+  ensureRequireContext,
 } from '../lib/contextModule';
 
 import * as path from 'path';
@@ -121,13 +122,11 @@ type InternalOptions<T> = $ReadOnly<{
   onDependencyAdded: () => mixed,
   resolve: Options<T>['resolve'],
   transform: Options<T>['transform'],
-  transformContext: Options<T>['transformContext'],
   shallow: boolean,
 }>;
 
 function getInternalOptions<T>({
   transform,
-  transformContext,
   resolve,
   onProgress,
   experimentalImportBundleSupport,
@@ -139,7 +138,6 @@ function getInternalOptions<T>({
   return {
     experimentalImportBundleSupport,
     transform,
-    transformContext,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
     onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
@@ -264,13 +262,7 @@ async function traverseDependenciesForSingleFile<T>(
 ): Promise<void> {
   options.onDependencyAdd();
 
-  await processModule(
-    path,
-    graph,
-    delta,
-    options,
-    graph.dependencies.get(path)?.contextParams,
-  );
+  await processModule(path, graph, delta, options);
 
   options.onDependencyAdded();
 }
@@ -280,17 +272,20 @@ async function processModule<T>(
   graph: Graph<T>,
   delta: Delta,
   options: InternalOptions<T>,
-  contextParams?: RequireContext,
+  // This fallback is used when a new dependency is added after the initial bundle has been created
+  // the invocation comes from `traverseDependenciesForSingleFile`.
+  contextParams:
+    | ?RequireContext
+    | RequireContextParams = graph.dependencies.get(path)?.contextParams,
 ): Promise<Module<T>> {
-  const resolvedContextParams =
-    contextParams || graph.dependencies.get(path)?.contextParams;
-
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
   let result;
-  if (resolvedContextParams) {
-    const modulePath = removeContextQueryParam(path);
-    result = await options.transformContext(modulePath, resolvedContextParams);
+  if (contextParams != null) {
+    result = await options.transform(
+      nullthrows(contextParams.from),
+      ensureRequireContext(contextParams),
+    );
   } else {
     result = await options.transform(path);
   }
@@ -313,7 +308,7 @@ async function processModule<T>(
   // Update the module information.
   const module = {
     ...previousModule,
-    contextParams: resolvedContextParams,
+    contextParams: contextParams,
     dependencies: new Map(previousDependencies),
     getSource: result.getSource,
     output: result.output,
@@ -489,14 +484,14 @@ function resolveDependencies<T>(
     let resolvedDep;
 
     // `require.context`
-    if (dep.data.contextParams) {
-      let absolutePath = path.join(parentPath, '..', dep.name);
+    const {contextParams} = dep.data;
+    if (contextParams) {
+      contextParams.from = path.join(parentPath, '..', dep.name);
 
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
-      absolutePath = appendContextQueryParam(
-        absolutePath,
-        dep.data.contextParams,
+      const absolutePath = appendContextQueryParam(
+        ensureRequireContext(contextParams),
       );
 
       resolvedDep = {

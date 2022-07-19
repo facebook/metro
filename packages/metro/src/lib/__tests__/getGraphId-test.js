@@ -27,7 +27,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).not.toBe(
       getGraphId(
@@ -41,7 +45,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });
@@ -59,7 +67,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).not.toBe(
       getGraphId(
@@ -73,7 +85,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });
@@ -91,7 +107,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).toBe(
       getGraphId(
@@ -105,7 +125,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });
@@ -127,7 +151,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).toBe(
       getGraphId(
@@ -145,7 +173,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });
@@ -165,7 +197,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).toBe(
       getGraphId(
@@ -179,7 +215,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });
@@ -197,7 +237,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: 48,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     ).not.toBe(
       getGraphId(
@@ -211,7 +255,11 @@ describe('getGraphId', () => {
           runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
-        {shallow: false, experimentalImportBundleSupport: false},
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
+        },
       ),
     );
   });

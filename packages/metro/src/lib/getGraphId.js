@@ -43,7 +43,6 @@ function getGraphId(
         hot: options.hot,
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
-        requireContext: options.requireContext,
         platform: options.platform != null ? options.platform : null,
         runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,
