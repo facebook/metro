@@ -661,6 +661,7 @@ describe('processRequest', () => {
           type: 'module',
           unstable_transformProfile: 'hermes-stable',
         },
+        unstable_allowRequireContext: false,
       },
     );
   });

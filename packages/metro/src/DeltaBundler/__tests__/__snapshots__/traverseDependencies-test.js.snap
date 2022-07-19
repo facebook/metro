@@ -4,6 +4,7 @@ exports[`should do the initial traversal correctly 1`] = `
 Object {
   "dependencies": Map {
     "/bundle" => Object {
+      "contextParams": undefined,
       "dependencies": Map {
         "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
           "absolutePath": "/foo",
@@ -32,6 +33,7 @@ Object {
       "path": "/bundle",
     },
     "/foo" => Object {
+      "contextParams": undefined,
       "dependencies": Map {
         "Ys23Ag/5IOWqZCw9QGaVDdHwH00=" => Object {
           "absolutePath": "/bar",
@@ -73,6 +75,7 @@ Object {
       "path": "/foo",
     },
     "/bar" => Object {
+      "contextParams": undefined,
       "dependencies": Map {},
       "getSource": [Function],
       "inverseDependencies": Array [
@@ -91,6 +94,7 @@ Object {
       "path": "/bar",
     },
     "/baz" => Object {
+      "contextParams": undefined,
       "dependencies": Map {},
       "getSource": [Function],
       "inverseDependencies": Array [
@@ -129,6 +133,7 @@ exports[`should not traverse past the initial module if \`shallow\` is passed 1`
 Object {
   "dependencies": Map {
     "/bundle" => Object {
+      "contextParams": undefined,
       "dependencies": Map {
         "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
           "absolutePath": "/foo",

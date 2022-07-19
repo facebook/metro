@@ -80,7 +80,7 @@ describe('Transformer', function () {
     await transformerInstance.transformFile('./foo.js', {});
 
     // We got the SHA-1 of the file from the dependency graph.
-    expect(getSha1).toBeCalledWith('./foo.js');
+    expect(getSha1).toBeCalledWith('./foo.js', undefined);
 
     // Only one get, with the original SHA-1.
     expect(get).toHaveBeenCalledTimes(1);
@@ -99,6 +99,26 @@ describe('Transformer', function () {
     expect(get.mock.calls[0][0].toString('hex').substr(0, 32)).toBe(
       set.mock.calls[0][0].toString('hex').substr(0, 32),
     );
+  });
+
+  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await transformerInstance.transformFile('./foo.js', {});
+
+    expect(require('../getTransformCacheKey')).not.toBeCalled();
   });
 
   it('short-circuits the transformer cache key when the cache is disabled', async () => {
