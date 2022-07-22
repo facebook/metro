@@ -79,6 +79,7 @@ const {hasOwnProperty} = {};
 
 if (__DEV__) {
   global.$RefreshReg$ = () => {};
+  // $FlowFixMe[missing-local-annot]
   global.$RefreshSig$ = () => type => type;
 }
 
