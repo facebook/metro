@@ -35,7 +35,9 @@ function toHash(value: string): string {
 }
 
 /** Given a fully qualified require context, return a virtual file path that ensures uniqueness between paths with different contexts. */
-export function appendContextQueryParam(context: RequireContextParams): string {
+export function deriveAbsolutePathFromContext(
+  context: RequireContextParams,
+): string {
   // Drop the trailing slash, require.context should always be matched against a folder
   // and we want to normalize the folder name as much as possible to prevent duplicates.
   // This also makes the files show up in the correct location when debugging in Chrome.

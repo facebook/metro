@@ -10,7 +10,7 @@
 
 import {
   fileMatchesContext,
-  appendContextQueryParam,
+  deriveAbsolutePathFromContext,
   getContextModuleId,
 } from '../contextModule';
 
@@ -38,10 +38,10 @@ describe('getContextModuleId', () => {
   });
 });
 
-describe('appendContextQueryParam', () => {
+describe('deriveAbsolutePathFromContext', () => {
   it(`appends a context query parameter to the input path`, () => {
     expect(
-      appendContextQueryParam({
+      deriveAbsolutePathFromContext({
         from: '/path/to/project',
         filter: {pattern: '[a-zA-Z]+', flags: ''},
         mode: 'eager',

@@ -41,7 +41,7 @@ import type {
 } from './types.flow';
 
 import CountingSet from '../lib/CountingSet';
-import {appendContextQueryParam} from '../lib/contextModule';
+import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 
 import * as path from 'path';
 const invariant = require('invariant');
@@ -485,7 +485,7 @@ function resolveDependencies<T>(
 
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
-      const absolutePath = appendContextQueryParam(contextParams);
+      const absolutePath = deriveAbsolutePathFromContext(contextParams);
 
       resolvedDep = {
         absolutePath,
