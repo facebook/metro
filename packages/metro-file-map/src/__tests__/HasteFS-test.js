@@ -10,17 +10,28 @@
 
 import HasteFS from '../HasteFS';
 
+jest.mock('../lib/fast_path', () => ({
+  resolve: (a, b) => b,
+  relative: jest.requireActual('path').relative,
+}));
+
 describe('matchFilesWithContext', () => {
   it(`matches files against context`, () => {
     const hfs = new HasteFS({
       rootDir: '/',
-      files: new Map([]),
+      files: new Map([
+        [
+          '/foo/another.js',
+          // $FlowFixMe: mocking files
+          {},
+        ],
+        [
+          '/bar.js',
+          // $FlowFixMe: mocking files
+          {},
+        ],
+      ]),
     });
-
-    // $FlowFixMe: mocking files
-    hfs.getAbsoluteFileIterator = function () {
-      return ['/foo/another.js', '/bar.js'];
-    };
 
     // Test non-recursive skipping deep paths
     expect(
