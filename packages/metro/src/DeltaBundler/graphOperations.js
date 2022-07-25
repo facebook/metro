@@ -31,6 +31,7 @@
 'use strict';
 
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
   Graph,
@@ -41,7 +42,11 @@ import type {
 } from './types.flow';
 
 import CountingSet from '../lib/CountingSet';
-import {deriveAbsolutePathFromContext} from '../lib/contextModule';
+import {
+  deriveAbsolutePathFromContext,
+  fileMatchesContext,
+  getContextModuleId,
+} from '../lib/contextModule';
 
 import * as path from 'path';
 const invariant = require('invariant');
@@ -66,6 +71,8 @@ type NodeColor =
 
 // Private state for the graph that persists between operations.
 export opaque type PrivateState = {
+  /** Resolved context parameters from `require.context`. */
+  +resolvedContext: Map<string, RequireContext>,
   +gc: {
     // GC state for nodes in the graph (graph.dependencies)
     +color: Map<string, NodeColor>,
@@ -82,6 +89,7 @@ function createGraph<T>(options: GraphInputOptions): Graph<T> {
     dependencies: new Map(),
     importBundleNames: new Set(),
     privateState: {
+      resolvedContext: new Map(),
       gc: {
         color: new Map(),
         possibleCycleRoots: new Set(),
@@ -277,10 +285,10 @@ async function processModule<T>(
   // TODO: Unbind the transform method from options
   let result;
   if (contextParams != null) {
-    result = await options.transform(
-      nullthrows(contextParams.from),
-      contextParams,
+    const resolvedContext = nullthrows(
+      graph.privateState.resolvedContext.get(path),
     );
+    result = await options.transform(resolvedContext.from, resolvedContext);
   } else {
     result = await options.transform(path);
   }
@@ -288,6 +296,7 @@ async function processModule<T>(
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
+    graph,
     path,
     result.dependencies,
     options,
@@ -450,6 +459,10 @@ function removeDependency<T>(
     decrementImportBundleReference(dependency, graph);
   }
 
+  if (dependency.data.data.contextParams) {
+    graph.privateState.resolvedContext.delete(dependency.absolutePath);
+  }
+
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
@@ -469,7 +482,27 @@ function removeDependency<T>(
   }
 }
 
+/**
+ * Collect a list of context modules which include a given file.
+ */
+function getContextModulesMatchingFilePath<T>(
+  graph: Graph<T>,
+  filePath: string,
+  modifiedDependencies: string[],
+): string[] {
+  graph.privateState.resolvedContext.forEach(context => {
+    if (
+      !modifiedDependencies.includes(context.absolutePath) &&
+      fileMatchesContext(filePath, context)
+    ) {
+      modifiedDependencies.push(context.absolutePath);
+    }
+  });
+  return modifiedDependencies;
+}
+
 function resolveDependencies<T>(
+  graph: Graph<T>,
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
@@ -481,11 +514,24 @@ function resolveDependencies<T>(
     // `require.context`
     const {contextParams} = dep.data;
     if (contextParams) {
-      contextParams.from = path.join(parentPath, '..', dep.name);
-
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
-      const absolutePath = deriveAbsolutePathFromContext(contextParams);
+      const from = path.join(parentPath, '..', dep.name);
+      const absolutePath = deriveAbsolutePathFromContext(from, contextParams);
+
+      const resolvedContext: RequireContext = {
+        id: getContextModuleId(from, contextParams),
+        from,
+        absolutePath,
+        mode: contextParams.mode,
+        recursive: contextParams.recursive,
+        filter: new RegExp(
+          contextParams.filter.pattern,
+          contextParams.filter.flags,
+        ),
+      };
+
+      graph.privateState.resolvedContext.set(absolutePath, resolvedContext);
 
       resolvedDep = {
         absolutePath,
@@ -779,4 +825,5 @@ module.exports = {
   initialTraverseDependencies,
   traverseDependencies,
   reorderGraph,
+  getContextModulesMatchingFilePath,
 };

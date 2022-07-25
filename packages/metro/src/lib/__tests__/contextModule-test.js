@@ -41,8 +41,7 @@ describe('getContextModuleId', () => {
 describe('deriveAbsolutePathFromContext', () => {
   it(`appends a context query parameter to the input path`, () => {
     expect(
-      deriveAbsolutePathFromContext({
-        from: '/path/to/project',
+      deriveAbsolutePathFromContext('/path/to/project', {
         filter: {pattern: '[a-zA-Z]+', flags: ''},
         mode: 'eager',
         recursive: true,
@@ -55,9 +54,11 @@ describe('fileMatchesContext', () => {
   it(`matches files`, () => {
     expect(
       fileMatchesContext('/path/to/project/index.js', {
+        absolutePath: '...',
+        id: '...',
         mode: 'lazy',
         from: '/path/to/project',
-        filter: {pattern: '.*', flags: ''},
+        filter: /.*/,
         recursive: true,
       }),
     ).toBe(true);

@@ -41,18 +41,16 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
 // TODO: Convert to a Flow enum
 export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
-export type ContextFilter = {pattern: string, flags: string};
+type ContextFilter = {pattern: string, flags: string};
 
-export type RequireContextParams = {
-  /** Absolute file path pointing to the root directory of the context. */
-  from?: string,
+export type RequireContextParams = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
   filter: $ReadOnly<ContextFilter>,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
-};
+}>;
 
 type DependencyData<TSplitCondition> = $ReadOnly<{
   // A locally unique key for this dependency within the current module.

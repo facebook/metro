@@ -12,7 +12,7 @@
 
 import type {DeltaResult, Graph, Options} from './types.flow';
 
-import {fileMatchesContext} from '../lib/contextModule';
+import {getContextModulesMatchingFilePath} from './graphOperations';
 
 const {
   createGraph,
@@ -191,11 +191,9 @@ class DeltaCalculator<T> extends EventEmitter {
       this._addedFiles.delete(filePath);
     } else if (type === 'add') {
       this._addedFiles.add(filePath);
-
       this._deletedFiles.delete(filePath);
     } else {
       this._modifiedFiles.add(filePath);
-
       this._deletedFiles.delete(filePath);
       this._addedFiles.delete(filePath);
     }
@@ -248,27 +246,21 @@ class DeltaCalculator<T> extends EventEmitter {
     // NOTE(EvanBacon): This check adds extra complexity so we feature gate it
     // to enable users to opt out.
     if (this._options.unstable_allowRequireContext) {
-      const checkModifiedContextDependencies = (filePath: string) => {
-        this._graph.dependencies.forEach(dependency => {
-          const {contextParams} = dependency;
-          if (
-            contextParams &&
-            contextParams.from != null &&
-            !modifiedDependencies.includes(dependency.path) &&
-            fileMatchesContext(filePath, contextParams)
-          ) {
-            modifiedDependencies.push(dependency.path);
-          }
-        });
-      };
-
       // Check if any added or removed files are matched in a context module.
       addedFiles.forEach(filePath =>
-        checkModifiedContextDependencies(filePath),
+        getContextModulesMatchingFilePath(
+          this._graph,
+          filePath,
+          modifiedDependencies,
+        ),
       );
 
       deletedFiles.forEach(filePath =>
-        checkModifiedContextDependencies(filePath),
+        getContextModulesMatchingFilePath(
+          this._graph,
+          filePath,
+          modifiedDependencies,
+        ),
       );
     }
 

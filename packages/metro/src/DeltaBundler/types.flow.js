@@ -11,6 +11,7 @@
 'use strict';
 
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContext} from '../lib/contextModule';
 import type {PrivateState} from './graphOperations';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
@@ -110,7 +111,7 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
 
 export type TransformFn<T = MixedOutput> = (
   string,
-  ?RequireContextParams,
+  ?RequireContext,
 ) => Promise<TransformResultWithSource<T>>;
 export type AllowOptionalDependenciesWithOptions = {
   +exclude: Array<string>,
@@ -120,11 +121,7 @@ export type AllowOptionalDependencies =
   | AllowOptionalDependenciesWithOptions;
 
 export type Options<T = MixedOutput> = {
-  +resolve: (
-    from: string,
-    to: string,
-    context?: ?RequireContextParams,
-  ) => string,
+  +resolve: (from: string, to: string, context?: ?RequireContext) => string,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,

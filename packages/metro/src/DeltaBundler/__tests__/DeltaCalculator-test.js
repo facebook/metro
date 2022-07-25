@@ -315,6 +315,23 @@ describe('DeltaCalculator', () => {
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
   });
 
+  it('should emit an event when a file is added', async () => {
+    jest.useFakeTimers();
+
+    const onChangeFile = jest.fn();
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    deltaCalculator.on('change', onChangeFile);
+
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'add', filePath: '/foo'}],
+    });
+
+    jest.runAllTimers();
+
+    expect(onChangeFile).toHaveBeenCalled();
+  });
+
   it('should not emit an event when there is a file deleted', async () => {
     jest.useFakeTimers();
 
