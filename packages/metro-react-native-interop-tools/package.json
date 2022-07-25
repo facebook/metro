@@ -12,6 +12,8 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
+    "@babel/core": "^7.14.0",
+    "@babel/types": "^7.0.0"
   },
   "license": "MIT"
 }
