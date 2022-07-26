@@ -47,7 +47,8 @@ const getPreset = (src, options) => {
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
     extraPlugins.push([
-      require('@babel/plugin-transform-react-jsx', {runtime: 'automatic'}),
+      require('@babel/plugin-transform-react-jsx'),
+      {runtime: 'automatic'},
     ]);
   }
 
