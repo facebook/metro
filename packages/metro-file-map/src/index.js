@@ -135,7 +135,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '1';
+const CACHE_BREAKER = '2';
 
 const CHANGE_INTERVAL = 30;
 const MAX_WAIT_TIME = 240000;
@@ -867,7 +867,12 @@ export default class HasteMap extends EventEmitter {
     const createWatcher = (root: Path): Promise<Watcher> => {
       const watcher = new WatcherImpl(root, {
         dot: true,
-        glob: extensions.map(extension => '**/*.' + extension),
+        glob: [
+          // Ensure we always include package.json files, which are crucial for
+          /// module resolution.
+          '**/package.json',
+          ...extensions.map(extension => '**/*.' + extension),
+        ],
         ignored: ignorePattern,
         watchmanDeferStates: this._options.watchmanDeferStates,
       });
