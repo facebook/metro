@@ -488,17 +488,18 @@ function removeDependency<T>(
 function getContextModulesMatchingFilePath<T>(
   graph: Graph<T>,
   filePath: string,
-  modifiedDependencies: string[],
+  modifiedFiles: Set<string>,
 ): string[] {
+  const modulePaths: string[] = [];
   graph.privateState.resolvedContext.forEach(context => {
     if (
-      !modifiedDependencies.includes(context.absolutePath) &&
+      !modifiedFiles.has(context.absolutePath) &&
       fileMatchesContext(filePath, context)
     ) {
-      modifiedDependencies.push(context.absolutePath);
+      modulePaths.push(context.absolutePath);
     }
   });
-  return modifiedDependencies;
+  return modulePaths;
 }
 
 function resolveDependencies<T>(

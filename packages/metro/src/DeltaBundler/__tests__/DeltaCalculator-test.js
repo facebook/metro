@@ -15,6 +15,7 @@ jest.mock('../../Bundler');
 const initialTraverseDependencies = jest.fn();
 const traverseDependencies = jest.fn();
 const reorderGraph = jest.fn();
+
 jest.doMock('../graphOperations', () => ({
   ...jest.requireActual('../graphOperations'),
   initialTraverseDependencies,
@@ -207,6 +208,35 @@ describe('DeltaCalculator', () => {
       deleted: new Set(),
       reset: true,
     });
+  });
+
+  it('should calculate a delta after a file addition', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'add', filePath: '/foo'}],
+    });
+
+    traverseDependencies.mockResolvedValueOnce({
+      added: new Map([['/foo', fooModule]]),
+      modified: new Map(),
+      deleted: new Set(),
+    });
+
+    const result = await deltaCalculator.getDelta({
+      reset: false,
+      shallow: false,
+    });
+
+    expect(result).toEqual({
+      added: new Map(),
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
+    });
+
+    // Not called because there were no modified files.
+    expect(traverseDependencies).not.toBeCalled();
   });
 
   it('should calculate a delta after a simple modification', async () => {

@@ -10,16 +10,15 @@
 
 'use strict';
 
-import type {DeltaResult, Graph, Options} from './types.flow';
-
 import {getContextModulesMatchingFilePath} from './graphOperations';
-
-const {
+import {
   createGraph,
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies,
-} = require('./graphOperations');
+} from './graphOperations';
+import type {DeltaResult, Graph, Options} from './types.flow';
+
 const {EventEmitter} = require('events');
 
 /**
@@ -192,6 +191,7 @@ class DeltaCalculator<T> extends EventEmitter {
     } else if (type === 'add') {
       this._addedFiles.add(filePath);
       this._deletedFiles.delete(filePath);
+      this._modifiedFiles.delete(filePath);
     } else {
       this._modifiedFiles.add(filePath);
       this._deletedFiles.delete(filePath);
@@ -238,31 +238,29 @@ class DeltaCalculator<T> extends EventEmitter {
       }
     });
 
-    // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(modifiedFiles).filter(
-      (filePath: string) => this._graph.dependencies.has(filePath),
-    );
-
     // NOTE(EvanBacon): This check adds extra complexity so we feature gate it
     // to enable users to opt out.
     if (this._options.unstable_allowRequireContext) {
       // Check if any added or removed files are matched in a context module.
-      addedFiles.forEach(filePath =>
-        getContextModulesMatchingFilePath(
+      // We only need to do this for added files because deleted files will contain a context
+      // module as an inverse dependency.
+      addedFiles.forEach(filePath => {
+        const contextModulePaths = getContextModulesMatchingFilePath(
           this._graph,
           filePath,
-          modifiedDependencies,
-        ),
-      );
+          modifiedFiles,
+        );
 
-      deletedFiles.forEach(filePath =>
-        getContextModulesMatchingFilePath(
-          this._graph,
-          filePath,
-          modifiedDependencies,
-        ),
-      );
+        contextModulePaths.forEach(modulePath => {
+          modifiedFiles.add(modulePath);
+        });
+      });
     }
+
+    // We only want to process files that are in the bundle.
+    const modifiedDependencies = Array.from(modifiedFiles).filter(
+      (filePath: string) => this._graph.dependencies.has(filePath),
+    );
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {
