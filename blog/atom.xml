@@ -9,10 +9,11 @@
     <icon>https://facebook.github.io/metro/img/favicon.png</icon>
     <entry>
         <title type="html"><![CDATA[Train Approaching]]></title>
-        <id>Train Approaching</id>
+        <id>/2017/11/22/train-approaching</id>
         <link href="https://facebook.github.io/metro/blog/2017/11/22/train-approaching"/>
         <updated>2017-11-22T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[The Metro website is live.]]></summary>
+        <content type="html"><![CDATA[<p>The Metro website is live.</p>]]></content>
         <author>
             <name>Christoph Pojer</name>
             <uri>http://twitter.com/cpojer</uri>
