@@ -68,6 +68,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -224,6 +225,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -380,6 +382,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -536,6 +539,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
