@@ -28,6 +28,7 @@ const {
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies: traverseDependenciesImpl,
+  getContextModulesMatchingFilePath,
 } = require('../graphOperations');
 
 const {objectContaining} = expect;
@@ -59,6 +60,14 @@ let moduleBaz;
 
 let mockTransform;
 
+const getMockDependency = (path: string) => {
+  const deps = mockedDependencyTree.get(path);
+  if (!deps) {
+    throw new Error(`No mock dependency named: ${path}`);
+  }
+  return deps;
+};
+
 const Actions = {
   modifyFile(path: string) {
     if (mockedDependencies.has(path)) {
@@ -89,7 +98,7 @@ const Actions = {
     name?: string,
     data?: DependencyDataInput,
   ) {
-    const deps = nullthrows(mockedDependencyTree.get(path));
+    const deps = getMockDependency(path);
     const depName = name ?? dependencyPath.replace('/', '');
     const key = require('crypto')
       .createHash('sha1')
@@ -307,11 +316,11 @@ beforeEach(async () => {
   });
 
   options = {
-    unstable_allowRequireContext: false,
+    unstable_allowRequireContext: true,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
-      const deps = nullthrows(mockedDependencyTree.get(from));
+      const deps = getMockDependency(from);
       const {path} = deps.filter(dep => dep.name === to)[0];
 
       if (!mockedDependencies.has(path)) {
@@ -1391,6 +1400,138 @@ describe('edge cases', () => {
     });
   });
 
+  it('should add a context module and pass resolved context to the transform function', async () => {
+    // Create a context module
+    Actions.addDependency('/bundle', '/ctx', undefined, undefined, {
+      contextParams: {
+        recursive: true,
+        mode: 'sync',
+        filter: {pattern: '.*', flags: ''},
+      },
+    });
+    files.clear();
+
+    await initialTraverseDependencies(graph, options);
+
+    expect(mockTransform).toHaveBeenCalledTimes(5);
+    // Ensure the resolved context is passed to the transform function
+    // this triggers the context module generation.
+    expect(mockTransform).toHaveBeenNthCalledWith(3, '/ctx', {
+      absolutePath: '/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a',
+      filter: /.*/,
+      from: '/ctx',
+      id: '/ctx sync recursive /.*/',
+      mode: 'sync',
+      recursive: true,
+    });
+  });
+
+  it('should remove resolved context module when a dependency is removed', async () => {
+    // Create a context module
+    Actions.addDependency('/bundle', '/ctx', undefined, undefined, {
+      contextParams: {
+        recursive: true,
+        mode: 'sync',
+        filter: {pattern: '.*', flags: ''},
+      },
+    });
+    files.clear();
+
+    await initialTraverseDependencies(graph, options);
+
+    // Ensure the resolved context exists
+    expect(graph.privateState.resolvedContext).toEqual(
+      new Map([
+        [
+          '/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a',
+          expect.anything(),
+        ],
+      ]),
+    );
+
+    Actions.removeDependency('/bundle', '/ctx');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set([]),
+      deleted: new Set(['/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a']),
+      modified: new Set(['/bundle']),
+    });
+
+    // Ensure the resolved context was removed
+    expect(graph.privateState.resolvedContext).toEqual(new Map());
+  });
+
+  it('should modify the context module when its dependencies change', async () => {
+    // Create a context module
+    Actions.addDependency('/bundle', '/ctx', undefined, undefined, {
+      contextParams: {
+        recursive: true,
+        mode: 'sync',
+        filter: {pattern: '.*', flags: ''},
+      },
+    });
+
+    Actions.createFile('/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a');
+    files.clear();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.createFile('/ctx/foo');
+    Actions.addDependency(
+      '/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a',
+      '/ctx/foo',
+    );
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a']),
+      deleted: new Set([]),
+    });
+  });
+
+  it('should modify a single context module from different origins when the dependencies change', async () => {
+    // Create a context module
+    Actions.addDependency('/bundle', '/ctx', undefined, undefined, {
+      contextParams: {
+        recursive: true,
+        mode: 'sync',
+        filter: {pattern: '.*', flags: ''},
+      },
+    });
+
+    Actions.createFile('/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a');
+
+    Actions.addDependency('/foo', '/ctx', undefined, undefined, {
+      contextParams: {
+        recursive: true,
+        mode: 'sync',
+        filter: {pattern: '.*', flags: ''},
+      },
+    });
+
+    files.clear();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.createFile('/ctx/foo');
+    Actions.addDependency(
+      '/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a',
+      '/ctx/foo',
+    );
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a']),
+      deleted: new Set([]),
+    });
+  });
+
   describe('lazy traversal of async imports', () => {
     let localOptions;
     beforeEach(() => {
@@ -2334,5 +2475,37 @@ describe('parallel edges', () => {
       modified: new Set(['/foo']),
       deleted: new Set(['/bar']),
     });
+  });
+});
+
+describe('getContextModulesMatchingFilePath', () => {
+  it(`matches a file against internally resolved context modules`, () => {
+    graph.privateState.resolvedContext.set('/ctx?ctx=xxx', {
+      absolutePath: '/ctx?ctx=xxx',
+      from: '/',
+      recursive: true,
+      filter: /.*/,
+    });
+    graph.privateState.resolvedContext.set('/ctx?ctx=xxx2', {
+      absolutePath: '/ctx?ctx=xxx2',
+      from: '/',
+      recursive: true,
+      filter: /foobar/,
+    });
+
+    // This won't match
+    graph.privateState.resolvedContext.set('/ctx?ctx=xxx3', {
+      absolutePath: '/ctx?ctx=xxx3',
+      from: '/',
+      recursive: true,
+      filter: /no-match/,
+    });
+
+    const contextModules = getContextModulesMatchingFilePath(
+      graph,
+      '/ctx/foobar',
+      new Set(),
+    );
+    expect(contextModules).toEqual(['/ctx?ctx=xxx', '/ctx?ctx=xxx2']);
   });
 });
