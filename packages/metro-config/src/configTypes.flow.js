@@ -168,8 +168,9 @@ type SymbolicatorConfigT = {
 };
 
 type WatcherConfigT = {
+  additionalExts: $ReadOnlyArray<string>,
   watchman: {
-    deferStates?: $ReadOnlyArray<string>,
+    deferStates: $ReadOnlyArray<string>,
   },
 };
 

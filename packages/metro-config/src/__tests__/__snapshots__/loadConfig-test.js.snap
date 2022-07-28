@@ -148,6 +148,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -305,6 +309,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -462,6 +470,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -619,6 +631,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",

@@ -69,7 +69,13 @@ function createHasteMap(
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
-    extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
+    extensions: Array.from(
+      new Set([
+        ...config.resolver.sourceExts,
+        ...config.resolver.assetExts,
+        ...config.watcher.additionalExts,
+      ]),
+    ),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
     ignorePattern: getIgnorePattern(config),

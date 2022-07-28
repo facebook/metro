@@ -16,6 +16,7 @@ const {
   DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
+  additionalExts,
   defaultCreateModuleIdFactory,
   platforms,
   sourceExts,
@@ -129,6 +130,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_compactOutput: false,
   },
   watcher: {
+    additionalExts,
     watchman: {
       deferStates: ['hg.update'],
     },

@@ -74,6 +74,9 @@ let resolver;
       sourceExts: ['js', 'json'],
       useWatchman: false,
     },
+    watcher: {
+      additionalExts: ['cjs', 'mjs'],
+    },
     maxWorkers: 1,
     projectRoot: p('/root'),
     reporter: require('../../lib/reporting').nullReporter,
@@ -275,7 +278,7 @@ let resolver;
         );
       });
 
-      it('fails when trying to require a non supported extension', async () => {
+      it('fails when trying to implicitly require an extension not listed in sourceExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import root from './a.another';"),
           'a.another': '',
@@ -324,6 +327,46 @@ let resolver;
         expect(resolver.resolve(p('/root/index.js'), './folder.js')).toBe(
           p('/root/folder.js'),
         );
+      });
+
+      describe('with additional files included in the file map (watcher.additionalExts)', () => {
+        it('resolves modules outside sourceExts when required explicitly', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a.cjs';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(resolver.resolve(p('/root/index.js'), './a.cjs')).toBe(
+            p('/root/a.cjs'),
+          );
+        });
+
+        it('fails when implicitly requiring a file outside sourceExts', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), './a'),
+          ).toThrowErrorMatchingSnapshot();
+        });
       });
     });
 
@@ -604,6 +647,30 @@ let resolver;
         resolver = await createResolver();
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
           p('/root/node_modules/aPackage/lib/index.js'),
+        );
+      });
+
+      it('resolves main field correctly for a fully specified module included by watcher.additionalExts', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            foo: {
+              'package.json': JSON.stringify({
+                name: 'foo',
+                main: './main.cjs',
+              }),
+              'main.cjs': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          watcher: {
+            additionalExts: ['cjs'],
+          },
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
+          p('/root/node_modules/foo/main.cjs'),
         );
       });
 

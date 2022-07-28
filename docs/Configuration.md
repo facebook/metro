@@ -130,7 +130,11 @@ An array of asset extensions to include in the bundle. For example, if you would
 
 Type: `Array<string>`
 
-An array of source extensions to include in the bundle. For example, if you would give `['ts']` you would be able to include `.ts` files in the bundle.
+The list of source file extensions to include in the bundle. For example, including `'ts'` allows Metro to include `.ts` files in the bundle.
+
+The order of these extensions defines the order to match files on disk. For more info, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+
+Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
 #### `resolverMainFields`
 
@@ -400,6 +404,19 @@ Options for the filesystem watcher.
 Dot notation in this section indicates a nested configuration object, e.g. `watchman.deferStates` → `watchman: { deferStates: ... }`.
 
 :::
+
+#### `additionalExts`
+
+Type: `Array<string>`
+
+The extensions which Metro should watch in addition to `sourceExts`, but which will not be automatically tried by the resolver.
+
+Therefore, the two behaviour differences from `resolver.sourceExts` when importing a module are:
+
+- Modules can only be required when fully specified (e.g. `import moduleA from 'moduleA.mjs'`).
+- No platform-specific resolution is performed.
+
+Defaults to `['cjs', 'mjs']`.
 
 #### `watchman.deferStates`
 
