@@ -8,6 +8,7 @@
  * @flow strict-local
  */
 
+import type {FileMetaData} from './flow-types';
 import type {FileData, Path} from './flow-types';
 
 import H from './constants';
@@ -97,7 +98,7 @@ export default class HasteFS {
     return files;
   }
 
-  _getFileData(file: Path) {
+  _getFileData(file: Path): void | FileMetaData {
     const relativePath = fastPath.relative(this._rootDir, file);
     return this._files.get(relativePath);
   }

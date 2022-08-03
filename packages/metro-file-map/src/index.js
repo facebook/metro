@@ -778,7 +778,14 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  _crawl(hasteMap: InternalData) {
+  _crawl(hasteMap: InternalData): Promise<?(
+    | Promise<{
+        changedFiles?: FileData,
+        hasteMap: InternalData,
+        removedFiles: FileData,
+      }>
+    | {changedFiles?: FileData, hasteMap: InternalData, removedFiles: FileData}
+  )> {
     this._options.perfLogger?.point('crawl_start');
     const options = this._options;
     const ignore = (filePath: string) => this._ignore(filePath);

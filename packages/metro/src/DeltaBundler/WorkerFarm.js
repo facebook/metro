@@ -107,7 +107,7 @@ class WorkerFarm {
     workerPath: string,
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
-  ) {
+  ): any {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.

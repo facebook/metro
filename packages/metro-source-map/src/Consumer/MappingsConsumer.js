@@ -91,7 +91,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
     return {...EMPTY_POSITION};
   }
 
-  *_decodeMappings() {
+  *_decodeMappings(): Generator<Mapping, void, void> {
     let generatedLine = FIRST_LINE;
     let generatedColumn = FIRST_COLUMN;
     let originalLine = FIRST_LINE;

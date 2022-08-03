@@ -61,7 +61,8 @@ export default class FSEventsWatcher extends EventEmitter {
 
   static _normalizeProxy(
     callback: (normalizedPath: string, stats: fs.Stats) => void,
-  ) {
+    // $FlowFixMe[cannot-resolve-name]
+  ): (filepath: string, stats: Stats) => void {
     return (filepath: string, stats: fs.Stats): void =>
       callback(path.normalize(filepath), stats);
   }
@@ -149,7 +150,7 @@ export default class FSEventsWatcher extends EventEmitter {
     }
   }
 
-  _isFileIncluded(relativePath: string) {
+  _isFileIncluded(relativePath: string): boolean {
     if (this.doIgnore(relativePath)) {
       return false;
     }

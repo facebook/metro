@@ -179,7 +179,7 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
-  _createModuleCache() {
+  _createModuleCache(): ModuleCache {
     return new ModuleCache({
       // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       getClosestPackage: this._getClosestPackage.bind(this),
