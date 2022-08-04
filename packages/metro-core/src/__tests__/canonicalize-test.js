@@ -151,10 +151,14 @@ describe('canonicalize', () => {
 
   it('works with JSON.stringify for objects with no prototype', () => {
     const obj1 = Object.create(null);
+    // $FlowFixMe[prop-missing]
     obj1.b = true;
+    // $FlowFixMe[prop-missing]
     obj1.a = true;
     const obj2 = Object.create(null);
+    // $FlowFixMe[prop-missing]
     obj2.a = true;
+    // $FlowFixMe[prop-missing]
     obj2.b = true;
 
     expect(JSON.stringify(obj1, canonicalize)).toBe(
