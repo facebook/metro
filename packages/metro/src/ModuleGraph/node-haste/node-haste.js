@@ -213,9 +213,7 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    const allowHaste = !isNodeModules(from.path);
     // $FlowFixMe -- error revealed by types-first codemod
-    return moduleResolver.resolveDependency(from, id, allowHaste, platform)
-      .path;
+    return moduleResolver.resolveDependency(from, id, true, platform).path;
   };
 };
