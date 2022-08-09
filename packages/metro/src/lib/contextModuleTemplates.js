@@ -18,28 +18,32 @@ function createFileMap(
 ): string {
   let mapString = '';
 
-  files.map(file => {
-    let filePath = path.relative(modulePath, file);
+  files
+    .slice()
+    // Sort for deterministic output
+    .sort()
+    .forEach(file => {
+      let filePath = path.relative(modulePath, file);
 
-    // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
-    // but Webpack allows this, keeping it here provides better parity between bundlers.
+      // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
+      // but Webpack allows this, keeping it here provides better parity between bundlers.
 
-    // Ensure relative file paths start with `./` so they match the
-    // patterns (filters) used to include them.
-    if (!filePath.startsWith('.')) {
-      filePath = `.${path.sep}` + filePath;
-    }
-    const key = JSON.stringify(filePath);
-    // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
-    // Metro doesn't have this functionality so it will use getters instead. Modules need to
-    // be loaded on demand because if we imported directly then users would get errors from importing
-    // a file without exports as soon as they create a new file and the context module is updated.
+      // Ensure relative file paths start with `./` so they match the
+      // patterns (filters) used to include them.
+      if (!filePath.startsWith('.')) {
+        filePath = `.${path.sep}` + filePath;
+      }
+      const key = JSON.stringify(filePath);
+      // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
+      // Metro doesn't have this functionality so it will use getters instead. Modules need to
+      // be loaded on demand because if we imported directly then users would get errors from importing
+      // a file without exports as soon as they create a new file and the context module is updated.
 
-    // NOTE: The values are set to `enumerable` so the `context.keys()` method works as expected.
-    mapString += `${key}: { enumerable: true, get() { return ${processModule(
-      file,
-    )}; } },`;
-  });
+      // NOTE: The values are set to `enumerable` so the `context.keys()` method works as expected.
+      mapString += `${key}: { enumerable: true, get() { return ${processModule(
+        file,
+      )}; } },`;
+    });
   return `Object.defineProperties({}, {${mapString}})`;
 }
 
