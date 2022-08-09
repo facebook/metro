@@ -459,10 +459,6 @@ function removeDependency<T>(
     decrementImportBundleReference(dependency, graph);
   }
 
-  if (dependency.data.data.contextParams) {
-    graph.privateState.resolvedContexts.delete(dependency.absolutePath);
-  }
-
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
@@ -488,7 +484,7 @@ function removeDependency<T>(
 function getContextModulesMatchingFilePath<T>(
   graph: Graph<T>,
   filePath: string,
-  modifiedFiles: Set<string>,
+  modifiedFiles: $ReadOnlySet<string>,
 ): string[] {
   const modulePaths: string[] = [];
   graph.privateState.resolvedContexts.forEach(context => {
@@ -682,6 +678,9 @@ function releaseModule<T>(
   options: InternalOptions<T>,
 ) {
   for (const [key, dependency] of module.dependencies) {
+    if (dependency.data.data.contextParams) {
+      graph.privateState.resolvedContexts.delete(dependency.absolutePath);
+    }
     removeDependency(module, key, dependency, graph, delta, options);
   }
   graph.privateState.gc.color.set(module.path, 'black');
