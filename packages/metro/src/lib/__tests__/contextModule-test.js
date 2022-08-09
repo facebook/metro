@@ -54,7 +54,6 @@ describe('fileMatchesContext', () => {
   it(`matches files`, () => {
     expect(
       fileMatchesContext('/path/to/project/index.js', {
-        absolutePath: '...',
         id: '...',
         mode: 'lazy',
         from: '/path/to/project',

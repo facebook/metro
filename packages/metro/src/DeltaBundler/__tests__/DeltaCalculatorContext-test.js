@@ -15,13 +15,13 @@ jest.mock('../../Bundler');
 const initialTraverseDependencies = jest.fn();
 const traverseDependencies = jest.fn();
 const reorderGraph = jest.fn();
-const getContextModulesMatchingFilePath = jest.fn();
+const markModifiedContextModules = jest.fn();
 jest.doMock('../graphOperations', () => ({
   ...jest.requireActual('../graphOperations'),
   initialTraverseDependencies,
   traverseDependencies,
   reorderGraph,
-  getContextModulesMatchingFilePath,
+  markModifiedContextModules,
 }));
 
 const DeltaCalculator = require('../DeltaCalculator');
@@ -61,7 +61,7 @@ describe('DeltaCalculator', () => {
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
 
-    getContextModulesMatchingFilePath.mockReset();
+    markModifiedContextModules.mockReset();
     // ~/
     // ├─ bundle
     // ├─ ctx/
@@ -203,16 +203,16 @@ describe('DeltaCalculator', () => {
     });
 
     // We rely on inverse dependencies to update a context module.
-    expect(getContextModulesMatchingFilePath).not.toBeCalled();
+    expect(markModifiedContextModules).not.toBeCalled();
 
     expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
   it('should calculate a delta after adding/removing dependencies', async () => {
     // Emulate matching the deleted file against the first context module
-    getContextModulesMatchingFilePath.mockImplementationOnce(
+    markModifiedContextModules.mockImplementationOnce(
       (graph, filePath, modifiedDependencies) => {
-        return ['/ctx?ctx=xxx'];
+        modifiedDependencies.add('/ctx?ctx=xxx');
       },
     );
 
@@ -246,7 +246,7 @@ describe('DeltaCalculator', () => {
     });
 
     // Test if the new module matches any of the context modules.
-    expect(getContextModulesMatchingFilePath).toBeCalledWith(
+    expect(markModifiedContextModules).toBeCalledWith(
       expect.anything(),
       '/qux',
       new Set(['/ctx?ctx=xxx']),

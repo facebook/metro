@@ -72,7 +72,7 @@ type NodeColor =
 // Private state for the graph that persists between operations.
 export opaque type PrivateState = {
   /** Resolved context parameters from `require.context`. */
-  +resolvedContext: Map<string, RequireContext>,
+  +resolvedContexts: Map<string, RequireContext>,
   +gc: {
     // GC state for nodes in the graph (graph.dependencies)
     +color: Map<string, NodeColor>,
@@ -89,7 +89,7 @@ function createGraph<T>(options: GraphInputOptions): Graph<T> {
     dependencies: new Map(),
     importBundleNames: new Set(),
     privateState: {
-      resolvedContext: new Map(),
+      resolvedContexts: new Map(),
       gc: {
         color: new Map(),
         possibleCycleRoots: new Set(),
@@ -281,17 +281,13 @@ async function processModule<T>(
   contextParams: ?RequireContextParams = graph.dependencies.get(path)
     ?.contextParams,
 ): Promise<Module<T>> {
+  let resolvedContext;
+  if (contextParams != null) {
+    resolvedContext = nullthrows(graph.privateState.resolvedContexts.get(path));
+  }
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
-  let result;
-  if (contextParams != null) {
-    const resolvedContext = nullthrows(
-      graph.privateState.resolvedContext.get(path),
-    );
-    result = await options.transform(resolvedContext.from, resolvedContext);
-  } else {
-    result = await options.transform(path);
-  }
+  const result = await options.transform(path, resolvedContext);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
@@ -459,10 +455,6 @@ function removeDependency<T>(
     decrementImportBundleReference(dependency, graph);
   }
 
-  if (dependency.data.data.contextParams) {
-    graph.privateState.resolvedContext.delete(dependency.absolutePath);
-  }
-
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
@@ -485,21 +477,19 @@ function removeDependency<T>(
 /**
  * Collect a list of context modules which include a given file.
  */
-function getContextModulesMatchingFilePath<T>(
+function markModifiedContextModules<T>(
   graph: Graph<T>,
   filePath: string,
-  modifiedFiles: Set<string>,
-): string[] {
-  const modulePaths: string[] = [];
-  graph.privateState.resolvedContext.forEach(context => {
+  modifiedPaths: Set<string>,
+) {
+  for (const [absolutePath, context] of graph.privateState.resolvedContexts) {
     if (
-      !modifiedFiles.has(context.absolutePath) &&
+      !modifiedPaths.has(absolutePath) &&
       fileMatchesContext(filePath, context)
     ) {
-      modulePaths.push(context.absolutePath);
+      modifiedPaths.add(absolutePath);
     }
-  });
-  return modulePaths;
+  }
 }
 
 function resolveDependencies<T>(
@@ -523,7 +513,6 @@ function resolveDependencies<T>(
       const resolvedContext: RequireContext = {
         id: getContextModuleId(from, contextParams),
         from,
-        absolutePath,
         mode: contextParams.mode,
         recursive: contextParams.recursive,
         filter: new RegExp(
@@ -532,7 +521,7 @@ function resolveDependencies<T>(
         ),
       };
 
-      graph.privateState.resolvedContext.set(absolutePath, resolvedContext);
+      graph.privateState.resolvedContexts.set(absolutePath, resolvedContext);
 
       resolvedDep = {
         absolutePath,
@@ -708,6 +697,7 @@ function freeModule<T>(module: Module<T>, graph: Graph<T>, delta: Delta) {
   delta.earlyInverseDependencies.delete(module.path);
   graph.privateState.gc.possibleCycleRoots.delete(module.path);
   graph.privateState.gc.color.delete(module.path);
+  graph.privateState.resolvedContexts.delete(module.path);
 }
 
 // Mark a module as a possible cycle root
@@ -826,5 +816,5 @@ module.exports = {
   initialTraverseDependencies,
   traverseDependencies,
   reorderGraph,
-  getContextModulesMatchingFilePath,
+  markModifiedContextModules,
 };

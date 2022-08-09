@@ -26,9 +26,8 @@ export type RequireContext = $ReadOnly<{
 
   from: string,
 
+  // TODO: derive this later, shouldn't be in the type
   id: string,
-
-  absolutePath: string,
 }>;
 
 /** Get an ID for a context module. */

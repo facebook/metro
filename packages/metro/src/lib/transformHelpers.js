@@ -141,7 +141,7 @@ async function getTransformFn(
 
       const template = getContextModuleTemplate(
         requireContext.mode,
-        modulePath,
+        requireContext.from,
         files,
         requireContext.id,
       );

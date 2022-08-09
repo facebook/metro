@@ -10,7 +10,7 @@
 
 'use strict';
 
-import {getContextModulesMatchingFilePath} from './graphOperations';
+import {markModifiedContextModules} from './graphOperations';
 import {
   createGraph,
   initialTraverseDependencies,
@@ -242,18 +242,11 @@ class DeltaCalculator<T> extends EventEmitter {
     // to enable users to opt out.
     if (this._options.unstable_allowRequireContext) {
       // Check if any added or removed files are matched in a context module.
-      // We only need to do this for added files because deleted files will contain a context
-      // module as an inverse dependency.
+      // We only need to do this for added files because (1) deleted files will have a context
+      // module as an inverse dependency, (2) modified files don't invalidate the contents
+      // of the context module.
       addedFiles.forEach(filePath => {
-        const contextModulePaths = getContextModulesMatchingFilePath(
-          this._graph,
-          filePath,
-          modifiedFiles,
-        );
-
-        contextModulePaths.forEach(modulePath => {
-          modifiedFiles.add(modulePath);
-        });
+        markModifiedContextModules(this._graph, filePath, modifiedFiles);
       });
     }
 
