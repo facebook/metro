@@ -2,7 +2,9 @@
 
 exports[`getContextModuleTemplate creates a lazy template 1`] = `
 "// All of the requested modules are loaded behind enumerable getters.
-const map = Object.defineProperties({}, {\\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },});
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
+});
   
 function metroContext(request) {
     return map[request];
@@ -26,7 +28,10 @@ module.exports = metroContext;"
 
 exports[`getContextModuleTemplate creates a lazy-once template 1`] = `
 "// All of the requested modules are loaded behind enumerable getters.
-const map = Object.defineProperties({}, {\\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },\\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },});
+const map = Object.defineProperties({}, {
+  \\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },
+  \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
+});
   
 function metroContext(request) {
     return map[request];
@@ -50,7 +55,9 @@ module.exports = metroContext;"
 
 exports[`getContextModuleTemplate creates a sync template 1`] = `
 "// All of the requested modules are loaded behind enumerable getters.
-const map = Object.defineProperties({}, {\\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },});
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
+});
   
 function metroContext(request) {
     return map[request];
@@ -74,7 +81,9 @@ module.exports = metroContext;"
 
 exports[`getContextModuleTemplate creates an eager template 1`] = `
 "// All of the requested modules are loaded behind enumerable getters.
-const map = Object.defineProperties({}, {\\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },});
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
+});
   
 function metroContext(request) {
     // Here Promise.resolve().then() is used instead of new Promise() to prevent

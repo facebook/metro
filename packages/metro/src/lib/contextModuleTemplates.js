@@ -16,7 +16,7 @@ function createFileMap(
   files: string[],
   processModule: (moduleId: string) => string,
 ): string {
-  let mapString = '';
+  let mapString = '\n';
 
   files
     .slice()
@@ -40,9 +40,9 @@ function createFileMap(
       // a file without exports as soon as they create a new file and the context module is updated.
 
       // NOTE: The values are set to `enumerable` so the `context.keys()` method works as expected.
-      mapString += `${key}: { enumerable: true, get() { return ${processModule(
+      mapString += `  ${key}: { enumerable: true, get() { return ${processModule(
         file,
-      )}; } },`;
+      )}; } },\n`;
     });
   return `Object.defineProperties({}, {${mapString}})`;
 }
