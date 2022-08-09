@@ -30,6 +30,7 @@
 
 'use strict';
 
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
@@ -311,10 +312,7 @@ async function processModule<T>(
     const curDependency = currentDependencies.get(key);
     if (
       !curDependency ||
-      curDependency.absolutePath !== prevDependency.absolutePath ||
-      (options.experimentalImportBundleSupport &&
-        curDependency.data.data.asyncType !==
-          prevDependency.data.data.asyncType)
+      !dependenciesEqual(prevDependency, curDependency, options)
     ) {
       removeDependency(module, key, prevDependency, graph, delta, options);
     }
@@ -326,10 +324,7 @@ async function processModule<T>(
     const prevDependency = previousDependencies.get(key);
     if (
       !prevDependency ||
-      prevDependency.absolutePath !== curDependency.absolutePath ||
-      (options.experimentalImportBundleSupport &&
-        prevDependency.data.data.asyncType !==
-          curDependency.data.data.asyncType)
+      !dependenciesEqual(prevDependency, curDependency, options)
     ) {
       promises.push(
         addDependency(module, key, curDependency, graph, delta, options),
@@ -355,6 +350,36 @@ async function processModule<T>(
   module.dependencies = currentDependencies;
 
   return module;
+}
+
+function dependenciesEqual(
+  a: Dependency,
+  b: Dependency,
+  options: $ReadOnly<{experimentalImportBundleSupport: boolean, ...}>,
+): boolean {
+  return (
+    a === b ||
+    (a.absolutePath === b.absolutePath &&
+      (!options.experimentalImportBundleSupport ||
+        a.data.data.asyncType === b.data.data.asyncType) &&
+      contextParamsEqual(a.data.data.contextParams, b.data.data.contextParams))
+  );
+}
+
+function contextParamsEqual(
+  a: ?RequireContextParams,
+  b: ?RequireContextParams,
+): boolean {
+  return (
+    a === b ||
+    (a == null && b == null) ||
+    (a != null &&
+      b != null &&
+      a.recursive === b.recursive &&
+      a.filter.pattern === b.filter.pattern &&
+      a.filter.flags === b.filter.flags &&
+      a.mode === b.mode)
+  );
 }
 
 async function addDependency<T>(
@@ -518,6 +543,10 @@ function resolveDependencies<T>(
           absolutePath: options.resolve(parentPath, dep.name),
           data: dep,
         };
+
+        // This dependency may have existed previously as a require.context -
+        // clean it up.
+        graph.privateState.resolvedContexts.delete(resolvedDep.absolutePath);
       } catch (error) {
         // Ignore unavailable optional dependencies. They are guarded
         // with a try-catch block and will be handled during runtime.
