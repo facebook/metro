@@ -134,7 +134,7 @@ async function getTransformFn(
 
       // Search against all files, this is very expensive.
       // TODO: Maybe we could let the user specify which root to check against.
-      const files = graph.matchFilesWithContext(modulePath, {
+      const files = graph.matchFilesWithContext(requireContext.from, {
         filter: requireContext.filter,
         recursive: requireContext.recursive,
       });
