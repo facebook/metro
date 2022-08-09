@@ -1440,7 +1440,7 @@ describe('edge cases', () => {
     await initialTraverseDependencies(graph, options);
 
     // Ensure the resolved context exists
-    expect(graph.privateState.resolvedContext).toEqual(
+    expect(graph.privateState.resolvedContexts).toEqual(
       new Map([
         [
           '/ctx?ctx=7855fe0b1074e361e66650cb2e83816836dc652a',
@@ -1460,7 +1460,7 @@ describe('edge cases', () => {
     });
 
     // Ensure the resolved context was removed
-    expect(graph.privateState.resolvedContext).toEqual(new Map());
+    expect(graph.privateState.resolvedContexts).toEqual(new Map());
   });
 
   it('should modify the context module when its dependencies change', async () => {
@@ -2480,13 +2480,13 @@ describe('parallel edges', () => {
 
 describe('getContextModulesMatchingFilePath', () => {
   it(`matches a file against internally resolved context modules`, () => {
-    graph.privateState.resolvedContext.set('/ctx?ctx=xxx', {
+    graph.privateState.resolvedContexts.set('/ctx?ctx=xxx', {
       absolutePath: '/ctx?ctx=xxx',
       from: '/',
       recursive: true,
       filter: /.*/,
     });
-    graph.privateState.resolvedContext.set('/ctx?ctx=xxx2', {
+    graph.privateState.resolvedContexts.set('/ctx?ctx=xxx2', {
       absolutePath: '/ctx?ctx=xxx2',
       from: '/',
       recursive: true,
@@ -2494,7 +2494,7 @@ describe('getContextModulesMatchingFilePath', () => {
     });
 
     // This won't match
-    graph.privateState.resolvedContext.set('/ctx?ctx=xxx3', {
+    graph.privateState.resolvedContexts.set('/ctx?ctx=xxx3', {
       absolutePath: '/ctx?ctx=xxx3',
       from: '/',
       recursive: true,

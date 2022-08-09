@@ -72,7 +72,7 @@ type NodeColor =
 // Private state for the graph that persists between operations.
 export opaque type PrivateState = {
   /** Resolved context parameters from `require.context`. */
-  +resolvedContext: Map<string, RequireContext>,
+  +resolvedContexts: Map<string, RequireContext>,
   +gc: {
     // GC state for nodes in the graph (graph.dependencies)
     +color: Map<string, NodeColor>,
@@ -89,7 +89,7 @@ function createGraph<T>(options: GraphInputOptions): Graph<T> {
     dependencies: new Map(),
     importBundleNames: new Set(),
     privateState: {
-      resolvedContext: new Map(),
+      resolvedContexts: new Map(),
       gc: {
         color: new Map(),
         possibleCycleRoots: new Set(),
@@ -286,7 +286,7 @@ async function processModule<T>(
   let result;
   if (contextParams != null) {
     const resolvedContext = nullthrows(
-      graph.privateState.resolvedContext.get(path),
+      graph.privateState.resolvedContexts.get(path),
     );
     result = await options.transform(resolvedContext.from, resolvedContext);
   } else {
@@ -460,7 +460,7 @@ function removeDependency<T>(
   }
 
   if (dependency.data.data.contextParams) {
-    graph.privateState.resolvedContext.delete(dependency.absolutePath);
+    graph.privateState.resolvedContexts.delete(dependency.absolutePath);
   }
 
   const module = graph.dependencies.get(absolutePath);
@@ -491,7 +491,7 @@ function getContextModulesMatchingFilePath<T>(
   modifiedFiles: Set<string>,
 ): string[] {
   const modulePaths: string[] = [];
-  graph.privateState.resolvedContext.forEach(context => {
+  graph.privateState.resolvedContexts.forEach(context => {
     if (
       !modifiedFiles.has(context.absolutePath) &&
       fileMatchesContext(filePath, context)
@@ -532,7 +532,7 @@ function resolveDependencies<T>(
         ),
       };
 
-      graph.privateState.resolvedContext.set(absolutePath, resolvedContext);
+      graph.privateState.resolvedContexts.set(absolutePath, resolvedContext);
 
       resolvedDep = {
         absolutePath,
