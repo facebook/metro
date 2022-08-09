@@ -26,7 +26,7 @@ module.exports = metroContext;"
 
 exports[`getContextModuleTemplate creates a lazy-once template 1`] = `
 "// All of the requested modules are loaded behind enumerable getters.
-const map = Object.defineProperties({}, {\\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },\\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },});
+const map = Object.defineProperties({}, {\\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },\\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },});
   
 function metroContext(request) {
     return map[request];
