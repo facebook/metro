@@ -88,14 +88,6 @@ describe('DeltaCalculator', () => {
           name: 'ctx',
         },
         path: '/ctx?ctx=xxx',
-        contextParams: {
-          recursive: true,
-          filter: {
-            pattern: '.*',
-            flags: '',
-          },
-          mode: 'sync',
-        },
       };
 
       fooModule = {
@@ -128,8 +120,6 @@ describe('DeltaCalculator', () => {
       options,
     );
   });
-
-  // Entry -> ctx -> [foo, bar]
 
   afterEach(() => {
     deltaCalculator.end();

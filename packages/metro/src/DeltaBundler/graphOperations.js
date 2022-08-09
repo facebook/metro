@@ -30,7 +30,6 @@
 
 'use strict';
 
-import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
@@ -276,15 +275,8 @@ async function processModule<T>(
   graph: Graph<T>,
   delta: Delta,
   options: InternalOptions<T>,
-  // This fallback is used when a new dependency is added after the initial bundle has been created
-  // the invocation comes from `traverseDependenciesForSingleFile`.
-  contextParams: ?RequireContextParams = graph.dependencies.get(path)
-    ?.contextParams,
 ): Promise<Module<T>> {
-  let resolvedContext;
-  if (contextParams != null) {
-    resolvedContext = nullthrows(graph.privateState.resolvedContexts.get(path));
-  }
+  const resolvedContext = graph.privateState.resolvedContexts.get(path);
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
   const result = await options.transform(path, resolvedContext);
@@ -308,7 +300,6 @@ async function processModule<T>(
   // Update the module information.
   const module = {
     ...previousModule,
-    contextParams: contextParams ?? undefined,
     dependencies: new Map(previousDependencies),
     getSource: result.getSource,
     output: result.output,
@@ -410,13 +401,7 @@ async function addDependency<T>(
         delta.earlyInverseDependencies.set(path, new CountingSet());
 
         options.onDependencyAdd();
-        module = await processModule(
-          path,
-          graph,
-          delta,
-          options,
-          dependency.data.data.contextParams,
-        );
+        module = await processModule(path, graph, delta, options);
         options.onDependencyAdded();
 
         graph.dependencies.set(module.path, module);

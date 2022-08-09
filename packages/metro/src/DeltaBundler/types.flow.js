@@ -67,7 +67,6 @@ export type Dependency = {
 };
 
 export type Module<T = MixedOutput> = {
-  +contextParams?: RequireContextParams,
   +dependencies: Map<string, Dependency>,
   +inverseDependencies: CountingSet<string>,
   +output: $ReadOnlyArray<T>,
