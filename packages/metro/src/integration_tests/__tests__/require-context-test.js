@@ -47,6 +47,12 @@ it('require-context/mode-sync.js', async () => {
   ).resolves.toMatchSnapshot();
 });
 
+it('require-context/conflict.js', async () => {
+  await expect(
+    execTest('require-context/conflict.js'),
+  ).resolves.toMatchSnapshot();
+});
+
 async function execTest(entry) {
   const config = await Metro.loadConfig(
     {

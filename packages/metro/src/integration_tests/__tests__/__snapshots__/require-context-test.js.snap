@@ -1,5 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`require-context/conflict.js 1`] = `
+Object {
+  "contextModule": Object {
+    "./index.js": "contents of subdir-conflict/index.js",
+  },
+  "normalModule": "contents of subdir-conflict/index.js",
+}
+`;
+
 exports[`require-context/matching.js 1`] = `
 Object {
   "ab": Array [
