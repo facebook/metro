@@ -15,10 +15,18 @@ import {
   getTypeAnnotation,
   getFunctionTypeParameter,
   getFunctionTypeAnnotation,
+  getNameFromTypeProperty,
   getObjectTypeAnnotation,
   getObjectTypeProperty,
-  getNameFromTypeProperty,
   getObjectTypeSpreadProperty,
+  getGenericTypeAnnotation,
+  getTupleTypeAnnotation,
+  getUnionTypeAnnotation,
+  getIntersectionTypeAnnotation,
+  getArrayTypeAnnotation,
+  getNameFromGenericNode,
+  getStringLiteralTypeAnnotation,
+  getNumberLiteralTypeAnnotation,
 } from '../ast-helpers.js';
 
 test('isTurboModule returns true, name is "TurboModule" and typeParams is null', () => {
@@ -152,7 +160,7 @@ test('getFunctionTypeParameter, testig basic type parameter', () => {
   });
 });
 
-test('getObjectTypeAnnotation, testing object type annotation', () => {
+test('getObjectTypeAnnotation, testing an object with a AnyTypeAnnotation property', () => {
   const property: BabelNodeObjectTypeProperty = t.objectTypeProperty(
     t.identifier('setKeepScreenOn'),
     t.anyTypeAnnotation(),
@@ -199,7 +207,7 @@ test('getObjectTypeProperty, testing AnyTypeAnnotation property', () => {
   });
 });
 
-test('getObjectTypeSpreadProperty getting unknown type', () => {
+test('getObjectTypeSpreadProperty returns unknown type', () => {
   const spreadProperty: BabelNodeObjectTypeSpreadProperty =
     t.objectTypeSpreadProperty(t.anyTypeAnnotation());
   expect(getObjectTypeSpreadProperty(spreadProperty)).toEqual({
@@ -221,4 +229,116 @@ test('getNameFromTypeProperty, testing BabelNodeIdentifier', () => {
 test('getNameFromTypeProperty, testing BabelNodeStringLiteral', () => {
   const node: BabelNodeStringLiteral = t.stringLiteral('test');
   expect(getNameFromTypeProperty(node)).toBe('test');
+});
+
+test('getTupleTypeAnnotation, testing basic tuple', () => {
+  const typeNode: BabelNodeTupleTypeAnnotation = t.tupleTypeAnnotation([
+    t.anyTypeAnnotation(),
+    t.anyTypeAnnotation(),
+  ]);
+  expect(getTupleTypeAnnotation(typeNode)).toEqual({
+    type: 'TupleTypeAnnotation',
+    loc: null,
+    types: [
+      {type: 'AnyTypeAnnotation', loc: null},
+      {type: 'AnyTypeAnnotation', loc: null},
+    ],
+  });
+});
+
+test('getNameFromGenericNode, testing BabelNodeIdentifier', () => {
+  const node: BabelNodeIdentifier = t.identifier('test');
+  expect(getNameFromGenericNode(node)).toBe('test');
+});
+
+test('getNameFromGenericNode, testing BabelNodeQualifiedTypeIdentifier', () => {
+  const node: BabelNodeQualifiedTypeIdentifier = t.qualifiedTypeIdentifier(
+    t.identifier('test'),
+    t.identifier('testQualifier'),
+  );
+  expect(getNameFromGenericNode(node)).toBe('test');
+});
+
+test('getGenericTypeAnnotation, testing a generic type', () => {
+  const typeNode: BabelNodeGenericTypeAnnotation = t.genericTypeAnnotation(
+    t.identifier('testGeneric'),
+    t.typeParameterInstantiation([
+      t.anyTypeAnnotation(),
+      t.anyTypeAnnotation(),
+    ]),
+  );
+  expect(getGenericTypeAnnotation(typeNode)).toEqual({
+    type: 'GenericTypeAnnotation',
+    loc: null,
+    name: 'testGeneric',
+    typeParameters: [
+      {type: 'AnyTypeAnnotation', loc: null},
+      {type: 'AnyTypeAnnotation', loc: null},
+    ],
+  });
+});
+
+test('getUnionTypeAnnotation, testing an union type', () => {
+  const typeNode: BabelNodeUnionTypeAnnotation = t.unionTypeAnnotation([
+    t.anyTypeAnnotation(),
+    t.anyTypeAnnotation(),
+  ]);
+  expect(getUnionTypeAnnotation(typeNode)).toEqual({
+    type: 'UnionTypeAnnotation',
+    loc: null,
+    types: [
+      {type: 'AnyTypeAnnotation', loc: null},
+      {type: 'AnyTypeAnnotation', loc: null},
+    ],
+  });
+});
+
+test('getIntersectionTypeAnnotation, testing an intersection type', () => {
+  const typeNode: BabelNodeIntersectionTypeAnnotation =
+    t.intersectionTypeAnnotation([
+      t.anyTypeAnnotation(),
+      t.anyTypeAnnotation(),
+    ]);
+  expect(getIntersectionTypeAnnotation(typeNode)).toEqual({
+    type: 'IntersectionTypeAnnotation',
+    loc: null,
+    types: [
+      {type: 'AnyTypeAnnotation', loc: null},
+      {type: 'AnyTypeAnnotation', loc: null},
+    ],
+  });
+});
+
+test('getArrayTypeAnnotation, testing an array of AnyTypeAnnotation', () => {
+  const arrayNode: BabelNodeArrayTypeAnnotation = t.arrayTypeAnnotation(
+    t.anyTypeAnnotation(),
+  );
+  expect(getArrayTypeAnnotation(arrayNode)).toEqual({
+    type: 'ArrayTypeAnnotation',
+    loc: null,
+    elementType: {
+      type: 'AnyTypeAnnotation',
+      loc: null,
+    },
+  });
+});
+
+test('getNumberLiteralTypeAnnotation, testing NumberLiteralType', () => {
+  const typeNode: BabelNodeNumberLiteralTypeAnnotation =
+    t.numberLiteralTypeAnnotation(4);
+  expect(getNumberLiteralTypeAnnotation(typeNode)).toEqual({
+    type: 'NumberLiteralTypeAnnotation',
+    loc: null,
+    value: 4,
+  });
+});
+
+test('getStringLiteralTypeAnnotation, testing StringLiteralType', () => {
+  const typeNode: BabelNodeStringLiteralTypeAnnotation =
+    t.stringLiteralTypeAnnotation('test');
+  expect(getStringLiteralTypeAnnotation(typeNode)).toEqual({
+    type: 'StringLiteralTypeAnnotation',
+    loc: null,
+    value: 'test',
+  });
 });
