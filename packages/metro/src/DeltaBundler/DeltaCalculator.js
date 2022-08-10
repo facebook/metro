@@ -184,18 +184,45 @@ class DeltaCalculator<T> extends EventEmitter {
     filePath: string,
     ...
   }): mixed => {
+    let state: void | 'deleted' | 'modified' | 'added';
+    if (this._deletedFiles.has(filePath)) {
+      state = 'deleted';
+    } else if (this._modifiedFiles.has(filePath)) {
+      state = 'modified';
+    } else if (this._addedFiles.has(filePath)) {
+      state = 'added';
+    }
+
+    let nextState: 'deleted' | 'modified' | 'added';
     if (type === 'delete') {
-      this._deletedFiles.add(filePath);
-      this._modifiedFiles.delete(filePath);
-      this._addedFiles.delete(filePath);
+      nextState = 'deleted';
     } else if (type === 'add') {
-      this._addedFiles.add(filePath);
-      this._deletedFiles.delete(filePath);
-      this._modifiedFiles.delete(filePath);
+      // A deleted+added file is modified
+      nextState = state === 'deleted' ? 'modified' : 'added';
     } else {
-      this._modifiedFiles.add(filePath);
-      this._deletedFiles.delete(filePath);
-      this._addedFiles.delete(filePath);
+      // type === 'change'
+      // An added+modified file is added
+      nextState = state === 'added' ? 'added' : 'modified';
+    }
+
+    switch (nextState) {
+      case 'deleted':
+        this._deletedFiles.add(filePath);
+        this._modifiedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      case 'added':
+        this._addedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._modifiedFiles.delete(filePath);
+        break;
+      case 'modified':
+        this._modifiedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      default:
+        (nextState: empty);
     }
 
     // Notify users that there is a change in some of the bundle files. This

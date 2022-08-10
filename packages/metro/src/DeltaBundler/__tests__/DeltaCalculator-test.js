@@ -37,7 +37,7 @@ describe('DeltaCalculator', () => {
   let fileWatcher;
 
   const options = {
-    unstable_allowRequireContext: true,
+    unstable_allowRequireContext: false,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
@@ -242,7 +242,9 @@ describe('DeltaCalculator', () => {
   it('should calculate a delta after a simple modification', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -271,7 +273,9 @@ describe('DeltaCalculator', () => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -300,7 +304,9 @@ describe('DeltaCalculator', () => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     const quxModule = {
       dependencies: new Map(),
@@ -342,7 +348,9 @@ describe('DeltaCalculator', () => {
 
     deltaCalculator.on('change', () => done());
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
   });
 
   it('should emit an event when a file is added', async () => {
@@ -382,7 +390,9 @@ describe('DeltaCalculator', () => {
   it('should retry to build the last delta after getting an error', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     traverseDependencies.mockReturnValue(Promise.reject(new Error()));
 
@@ -400,7 +410,9 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // First modify the file
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     // Then delete that same file
     fileWatcher.emit('change', {
@@ -466,7 +478,9 @@ describe('DeltaCalculator', () => {
     });
 
     // Then add it again
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'change', filePath: '/foo'}],
+    });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
