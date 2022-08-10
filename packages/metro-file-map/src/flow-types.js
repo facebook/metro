@@ -126,6 +126,8 @@ export type FileMetaData = [
   /* sha1 */ ?string,
 ];
 
+export type Glob = string;
+
 export interface IModuleMap<S = SerializableModuleMap> {
   getModule(
     name: string,
