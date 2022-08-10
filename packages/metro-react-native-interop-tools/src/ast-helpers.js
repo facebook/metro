@@ -10,6 +10,7 @@
  */
 
 import type {
+  File as BabelNodeFile,
   FunctionTypeAnnotation as BabelNodeFunctionTypeAnnotation,
   FunctionTypeParam as BabelNodeFunctionTypeParam,
   ObjectTypeAnnotation as BabelNodeObjectTypeAnnotation,
@@ -24,9 +25,13 @@ import type {
   InterfaceExtends as BabelNodeInterfaceExtends,
   StringLiteralTypeAnnotation as BabelNodeStringLiteralTypeAnnotation,
   NumberLiteralTypeAnnotation as BabelNodeNumberLiteralTypeAnnotation,
+  InterfaceDeclaration as BabelNodeInterfaceDeclaration,
+  FlowType as BabelNodeFlowType,
+  Statement as BabelNodeStatement,
 } from '@babel/types';
 
 import type {
+  InterfaceExtends,
   AnyTypeAnnotation,
   ArrayTypeAnnotation,
   NullableTypeAnnotation,
@@ -42,8 +47,9 @@ import type {
   NumberLiteralTypeAnnotation,
 } from './type-annotation.js';
 
-export type Schema = {
+export type BoundarySchema = {
   typegenSchema: {},
+  source: string,
   ...
 };
 
@@ -172,19 +178,10 @@ export function getObjectTypeProperty(
 ): ObjectTypeProperty {
   return {
     loc: getNodeLoc(typeProperty.loc),
-    name: getNameFromTypeProperty(typeProperty.key),
+    name: getNameFromID(typeProperty.key),
     optional: typeProperty.optional,
     typeAnnotation: getTypeAnnotation(typeProperty.value),
   };
-}
-
-export function getNameFromTypeProperty(
-  node: BabelNodeIdentifier | BabelNodeStringLiteral,
-): string {
-  if (node.type === 'StringLiteral') {
-    return node.value;
-  }
-  return node.name;
 }
 
 export function getTupleTypeAnnotation(
@@ -207,13 +204,22 @@ export function getNullableTypeAnnotation(
   };
 }
 
-export function getNameFromGenericNode(
-  node: BabelNodeIdentifier | BabelNodeQualifiedTypeIdentifier,
+// Flow can check for exhaustive switch cases where eslint can not, using flow to cover all possible cases is better than having default fallbacks.
+// eslint-disable-next-line consistent-return
+export function getNameFromID(
+  node:
+    | BabelNodeIdentifier
+    | BabelNodeQualifiedTypeIdentifier
+    | BabelNodeStringLiteral,
 ): string {
-  if (node.type === 'Identifier') {
-    return node.name;
+  switch (node.type) {
+    case 'QualifiedTypeIdentifier':
+      return node.id.name;
+    case 'StringLiteral':
+      return node.value;
+    case 'Identifier':
+      return node.name;
   }
-  return node.id.name;
 }
 
 export function getGenericTypeAnnotation(
@@ -222,7 +228,7 @@ export function getGenericTypeAnnotation(
   return {
     type: typeNode.type,
     loc: getNodeLoc(typeNode.loc),
-    name: getNameFromGenericNode(typeNode.id),
+    name: getNameFromID(typeNode.id),
     typeParameters: typeNode.typeParameters?.params
       ? typeNode.typeParameters.params?.map(getTypeAnnotation)
       : [],
@@ -277,4 +283,65 @@ export function getNumberLiteralTypeAnnotation(
     loc: getNodeLoc(typeNode.loc),
     value: typeNode.value,
   };
+}
+
+export function getInterfaceExtends(
+  interfaceNode: BabelNodeInterfaceExtends,
+): InterfaceExtends {
+  return {
+    loc: getNodeLoc(interfaceNode.loc),
+    name: getNameFromID(interfaceNode.id),
+    typeParameters: getTypeParameters(interfaceNode.typeParameters?.params),
+  };
+}
+
+function interfaceDeclarationReducer(
+  interfaceDeclaration: ?BabelNodeInterfaceDeclaration,
+  bodyNode: BabelNodeStatement,
+): ?BabelNodeInterfaceDeclaration {
+  if (
+    bodyNode.type === 'ExportNamedDeclaration' &&
+    bodyNode.declaration != null
+  ) {
+    return interfaceDeclarationReducer(
+      interfaceDeclaration,
+      bodyNode.declaration,
+    );
+  } else if (
+    bodyNode.type === 'InterfaceDeclaration' &&
+    bodyNode.extends?.some(isTurboModule)
+  ) {
+    return bodyNode;
+  }
+  return interfaceDeclaration;
+}
+
+export function getTypeParameters(
+  params: ?Array<BabelNodeFlowType>,
+): Array<AnyTypeAnnotation> {
+  return params?.map(getTypeAnnotation) ?? [];
+}
+
+export function getBoundarySchemaFromAST(
+  ast: BabelNodeFile,
+  source: string,
+): BoundarySchema {
+  const schema: BoundarySchema = {
+    typegenSchema: {},
+    source,
+  };
+  const interfaceNode: ?BabelNodeInterfaceDeclaration = ast.program.body.reduce(
+    interfaceDeclarationReducer,
+    null,
+  );
+  if (interfaceNode != null) {
+    schema.typegenSchema[interfaceNode.id.name] = {
+      typeAnnotation: {
+        type: 'InterfaceDeclarationTypeAnnotation',
+        innerType: getTypeAnnotation(interfaceNode.body),
+        extends: interfaceNode.extends?.map(getInterfaceExtends),
+      },
+    };
+  }
+  return schema;
 }

@@ -15,7 +15,6 @@ import {
   getTypeAnnotation,
   getFunctionTypeParameter,
   getFunctionTypeAnnotation,
-  getNameFromTypeProperty,
   getObjectTypeAnnotation,
   getObjectTypeProperty,
   getObjectTypeSpreadProperty,
@@ -24,10 +23,15 @@ import {
   getUnionTypeAnnotation,
   getIntersectionTypeAnnotation,
   getArrayTypeAnnotation,
-  getNameFromGenericNode,
   getStringLiteralTypeAnnotation,
   getNumberLiteralTypeAnnotation,
+  getInterfaceExtends,
+  getTypeParameters,
+  getNameFromID,
+  getNodeLoc,
+  getBoundarySchemaFromAST,
 } from '../ast-helpers.js';
+import {parse} from 'hermes-parser';
 
 test('isTurboModule returns true, name is "TurboModule" and typeParams is null', () => {
   expect(
@@ -221,16 +225,6 @@ test('getObjectTypeSpreadProperty returns unknown type', () => {
   });
 });
 
-test('getNameFromTypeProperty, testing BabelNodeIdentifier', () => {
-  const node: BabelNodeIdentifier = t.identifier('test');
-  expect(getNameFromTypeProperty(node)).toBe('test');
-});
-
-test('getNameFromTypeProperty, testing BabelNodeStringLiteral', () => {
-  const node: BabelNodeStringLiteral = t.stringLiteral('test');
-  expect(getNameFromTypeProperty(node)).toBe('test');
-});
-
 test('getTupleTypeAnnotation, testing basic tuple', () => {
   const typeNode: BabelNodeTupleTypeAnnotation = t.tupleTypeAnnotation([
     t.anyTypeAnnotation(),
@@ -244,19 +238,6 @@ test('getTupleTypeAnnotation, testing basic tuple', () => {
       {type: 'AnyTypeAnnotation', loc: null},
     ],
   });
-});
-
-test('getNameFromGenericNode, testing BabelNodeIdentifier', () => {
-  const node: BabelNodeIdentifier = t.identifier('test');
-  expect(getNameFromGenericNode(node)).toBe('test');
-});
-
-test('getNameFromGenericNode, testing BabelNodeQualifiedTypeIdentifier', () => {
-  const node: BabelNodeQualifiedTypeIdentifier = t.qualifiedTypeIdentifier(
-    t.identifier('test'),
-    t.identifier('testQualifier'),
-  );
-  expect(getNameFromGenericNode(node)).toBe('test');
 });
 
 test('getGenericTypeAnnotation, testing a generic type', () => {
@@ -341,4 +322,115 @@ test('getStringLiteralTypeAnnotation, testing StringLiteralType', () => {
     loc: null,
     value: 'test',
   });
+});
+
+test('getTypeParameters, testing AnyTypeAnnotation parameter', () => {
+  const params: Array<BabelNodeFlowType> = [t.anyTypeAnnotation()];
+  expect(getTypeParameters(params)).toEqual([
+    {
+      type: 'AnyTypeAnnotation',
+      loc: null,
+    },
+  ]);
+});
+
+test('getInterfaceExtends, testing interface with no parameters', () => {
+  const interfaceNode: BabelNodeInterfaceExtends = t.interfaceExtends(
+    t.identifier('test'),
+    undefined,
+  );
+  expect(getInterfaceExtends(interfaceNode)).toEqual({
+    loc: null,
+    name: 'test',
+    typeParameters: [],
+  });
+});
+
+test('getNameFromID, testing BabelNodeIdentifier', () => {
+  const node: BabelNodeIdentifier = t.identifier('test');
+  expect(getNameFromID(node)).toBe('test');
+});
+
+test('getNameFromID, testing BabelNodeQualifiedTypeIdentifier', () => {
+  const node: BabelNodeQualifiedTypeIdentifier = t.qualifiedTypeIdentifier(
+    t.identifier('test'),
+    t.identifier('testQualifier'),
+  );
+  expect(getNameFromID(node)).toBe('test');
+});
+
+test('getNameFromID, testing BabelNodeStringLiteral', () => {
+  const node: BabelNodeStringLiteral = t.stringLiteral('test');
+  expect(getNameFromID(node)).toBe('test');
+});
+
+test('getNodeLoc, testing basic loc', () => {
+  const ast: BabelNodeFile = parse('test', {
+    babel: true,
+    sourceType: 'module',
+    sourceFilename: 'test.js',
+  });
+  expect(getNodeLoc(ast.loc)).toEqual({
+    start: {
+      line: 1,
+      column: 0,
+    },
+    end: {
+      line: 1,
+      column: 4,
+    },
+  });
+});
+
+test('getNodeLoc, testing undefined loc', () => {
+  expect(getNodeLoc(undefined)).toBe(null);
+});
+
+test('getBoundarySchemaFromAST, integration test', () => {
+  const code: string = `
+    export interface Spec extends TurboModule {
+      +getConstants: () => {|
+        +testGeneric0: Object,
+        +testUnion0?: string | string,
+        +testIntersection0?: string & string,
+        +testTuple0?: [string, number],
+        +scale?: number,
+        +isSimulator?: boolean,
+        +majorOsVersion?: number,
+        +isTablet?: boolean,
+        +deviceID: string,
+      |};
+      +setKeepScreenOn: (screenShouldBeKeptOn: boolean) => void;
+    }
+
+    const NativeModule: ?Spec = TurboModuleRegistry.get<Spec>('DeviceManager');
+
+    let NativeDeviceManager: ?Spec = null;
+    let constants = null;
+
+    if (NativeModule != null) {
+      NativeDeviceManager = {
+        getConstants(): {|
+          +scale?: number,
+          +isSimulator?: boolean,
+          +majorOsVersion?: number,
+          +isTablet?: boolean,
+          +deviceID: string,
+        |} {
+          if (constants == null) {
+            constants = NativeModule.getConstants();
+          }
+          return constants;
+        },
+        setKeepScreenOn(screenShouldBeKeptOn: boolean): void {
+          NativeModule.setKeepScreenOn(screenShouldBeKeptOn);
+        },
+      };
+    }`;
+  const ast: BabelNodeFile = parse(code, {
+    babel: true,
+    sourceType: 'module',
+    sourceFilename: 'NativeDeviceManager.js',
+  });
+  expect(getBoundarySchemaFromAST(ast, 'test.js')).toMatchSnapshot();
 });
