@@ -10,7 +10,7 @@
  */
 
 import * as t from '@babel/types';
-import {isTurboModule} from '../ast-helpers.js';
+import {isTurboModule, getTypeAnnotation} from '../ast-helpers.js';
 
 test('isTurboModule returns true, name is "TurboModule" and typeParams is null', () => {
   expect(
@@ -33,4 +33,47 @@ test('isTurboModule returns false, typeParameters it is not empty', () => {
       ),
     ),
   ).toEqual(false);
+});
+
+test('getTypeAnnotation testing BooleanTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.booleanTypeAnnotation()).type).toBe(
+    t.booleanTypeAnnotation().type,
+  );
+});
+
+test('getTypeAnnotation testing NumberTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.numberTypeAnnotation()).type).toBe(
+    t.numberTypeAnnotation().type,
+  );
+});
+
+test('getTypeAnnotation testing StringTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.stringTypeAnnotation()).type).toBe(
+    t.stringTypeAnnotation().type,
+  );
+});
+
+test('getTypeAnnotation testing VoidTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.voidTypeAnnotation()).type).toBe(
+    t.voidTypeAnnotation().type,
+  );
+});
+
+test('getTypeAnnotation testing UnknownTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true)).type).toBe(
+    'UnknownTypeAnnotation',
+  );
+});
+
+test('getTypeAnnotation testing NullableTypeAnnotation', () => {
+  expect(
+    getTypeAnnotation(t.nullableTypeAnnotation(t.anyTypeAnnotation())),
+  ).toEqual({
+    type: 'NullableTypeAnnotation',
+    loc: null,
+    typeAnnotation: {
+      type: 'AnyTypeAnnotation',
+      loc: null,
+    },
+  });
 });
