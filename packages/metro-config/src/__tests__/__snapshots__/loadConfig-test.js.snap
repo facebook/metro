@@ -68,6 +68,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -147,6 +148,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -224,6 +229,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -303,6 +309,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -380,6 +390,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -459,6 +470,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -536,6 +551,7 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
@@ -615,6 +631,10 @@ Object {
     "/",
   ],
   "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
     "watchman": Object {
       "deferStates": Array [
         "hg.update",

@@ -9,7 +9,7 @@
 
 'use strict';
 
-const {fbContent} = require('internaldocs-fb-helpers');
+const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 const siteConfig = {
   // TODO: Reenable broken link detection after docusaurus upgrade
@@ -36,6 +36,9 @@ const siteConfig = {
         },
         staticDocsProject: 'metro',
         enableEditor: true,
+        gtag: {
+          trackingID: 'UA-44373548-17',
+        },
       },
     ],
   ],
@@ -115,9 +118,6 @@ const siteConfig = {
       apiKey: 'd51e7fbd21ccab3db4c83f0f736f6a3a',
       appId: 'T38HJZTD87',
       indexName: 'metro',
-    },
-    gtag: {
-      trackingID: 'UA-44373548-17',
     },
   },
   scripts: ['https://buttons.github.io/buttons.js'],

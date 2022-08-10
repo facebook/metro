@@ -300,14 +300,6 @@ async function loadConfig(
 
   const overriddenConfig: {[string]: mixed} = {};
 
-  // The resolver breaks if "json" is missing from `resolver.sourceExts`
-  const sourceExts = configWithArgs.resolver.sourceExts;
-  if (!configWithArgs.resolver.sourceExts.includes('json')) {
-    overriddenConfig.resolver = {
-      sourceExts: [...sourceExts, 'json'],
-    };
-  }
-
   overriddenConfig.watchFolders = [
     configWithArgs.projectRoot,
     ...configWithArgs.watchFolders,

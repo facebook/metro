@@ -19,7 +19,6 @@ import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
 import {readFileSync, writeFileSync} from 'graceful-fs';
 import {tmpdir} from 'os';
 import path from 'path';
-// $FlowFixMe[missing-export] - serialize and deserialize missing typedefs
 import {deserialize, serialize} from 'v8';
 
 type DiskCacheConfig = {

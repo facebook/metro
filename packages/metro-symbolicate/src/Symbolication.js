@@ -533,6 +533,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     this._segments = segments;
   }
 
+  // $FlowFixMe[missing-local-annot]
   _initSegment(map: MixedSourceMap) {
     const useFunctionNames = this.options.nameSource === 'function_names';
     const {_SourceMapConsumer: SourceMapConsumer} = this;

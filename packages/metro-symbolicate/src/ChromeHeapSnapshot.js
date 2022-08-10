@@ -463,7 +463,7 @@ class ChromeHeapSnapshotRecordAccessor {
   }
 
   // Writes the raw value of a field.
-  _setRaw(field: string, rawValue: number | RawBuffer) {
+  _setRaw(field: string, rawValue: number | RawBuffer): void {
     this._validatePosition();
     const offset = this._fieldToOffset.get(field);
     if (offset == null) {
@@ -477,7 +477,7 @@ class ChromeHeapSnapshotRecordAccessor {
   _set(
     field: string,
     value: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
-  ) {
+  ): void {
     if (typeof value === 'string') {
       this.setString(field, value);
     } else if (typeof value === 'number') {
@@ -491,7 +491,10 @@ class ChromeHeapSnapshotRecordAccessor {
 
   // Writes a children array to `field` by appending each element of `value` to
   // a new buffer using `append()`s semantics.
-  _setChildren(field: string, value: $ReadOnlyArray<DenormalizedRecordInput>) {
+  _setChildren(
+    field: string,
+    value: $ReadOnlyArray<DenormalizedRecordInput>,
+  ): void {
     const fieldType = this._fieldToType.get(field);
     if (fieldType !== CHILDREN_FIELD_TYPE) {
       throw new Error('Not a children field: ' + field);
@@ -505,7 +508,7 @@ class ChromeHeapSnapshotRecordAccessor {
 
   // Encodes a string value according to its field schema.
   // The global string table may be updated as a side effect.
-  _encodeString(field: string, value: string) {
+  _encodeString(field: string, value: string): number {
     const fieldType = this._fieldToType.get(field);
     if (Array.isArray(fieldType)) {
       const index = fieldType.indexOf(value);
@@ -524,7 +527,7 @@ class ChromeHeapSnapshotRecordAccessor {
   _validatePosition(
     allowEnd?: boolean = false,
     position?: number = this._position,
-  ) {
+  ): void {
     if (!Number.isInteger(position)) {
       throw new Error(`Position ${position} is not an integer`);
     }
@@ -600,6 +603,7 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowIssue[unsupported-syntax]
+  // $FlowFixMe[missing-local-annot]
   [Symbol.iterator](): this {
     return this;
   }

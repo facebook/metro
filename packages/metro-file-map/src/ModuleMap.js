@@ -184,7 +184,7 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     platform: string,
     supportsNativePlatform: boolean,
     relativePathSet: ?DuplicatesSet,
-  ) {
+  ): void {
     if (relativePathSet == null) {
       return;
     }

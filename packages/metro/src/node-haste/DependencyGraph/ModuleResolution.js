@@ -94,7 +94,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     };
   }
 
-  _getEmptyModule() {
+  _getEmptyModule(): TModule | Moduleish {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
@@ -252,6 +252,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         invariant(arbitrary != null, 'invalid asset resolution');
         return this._options.moduleCache.getModule(arbitrary);
       case 'empty':
+        // $FlowFixMe[incompatible-return]
         return this._getEmptyModule();
       default:
         (resolution.type: empty);
@@ -259,7 +260,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
   }
 
-  _removeRoot(candidates: FileCandidates) {
+  _removeRoot(candidates: FileCandidates): FileCandidates {
     if (candidates.filePathPrefix) {
       candidates.filePathPrefix = path.relative(
         this._options.projectRoot,

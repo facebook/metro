@@ -351,7 +351,7 @@ class Server {
     res: ServerResponse,
     data: string | Buffer,
     assetPath: string,
-  ) {
+  ): Buffer | string {
     if (req.headers && req.headers.range) {
       const [rangeStart, rangeEnd] = req.headers.range
         .replace(/bytes=/, '')
@@ -373,7 +373,10 @@ class Server {
     return data;
   }
 
-  async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
+  async _processSingleAssetRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const urlObj = url.parse(decodeURI(req.url), true);
     let [, assetPath] =
       (urlObj &&
@@ -514,7 +517,11 @@ class Server {
     +build: (context: ProcessStartContext) => Promise<T>,
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
-  }) {
+  }): (
+    req: IncomingMessage,
+    res: ServerResponse,
+    bundleOptions: BundleOptions,
+  ) => Promise<void> {
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
      * Flow's LTI update could not be added via codemod */
     return async function requestProcessor(
@@ -696,7 +703,11 @@ class Server {
     };
   }
 
-  _processBundleRequest = this._createRequestProcessor({
+  _processBundleRequest: (
+    req: IncomingMessage,
+    res: ServerResponse,
+    bundleOptions: BundleOptions,
+  ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting bundle',
@@ -815,7 +826,11 @@ class Server {
     },
   });
 
-  _processBytecodeBundleRequest = this._createRequestProcessor({
+  _processBytecodeBundleRequest: (
+    req: IncomingMessage,
+    res: ServerResponse,
+    bundleOptions: BundleOptions,
+  ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting bundle',
@@ -933,7 +948,11 @@ class Server {
     );
   }
 
-  _processSourceMapRequest = this._createRequestProcessor({
+  _processSourceMapRequest: (
+    req: IncomingMessage,
+    res: ServerResponse,
+    bundleOptions: BundleOptions,
+  ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting sourcemap',
@@ -983,7 +1002,11 @@ class Server {
     },
   });
 
-  _processAssetsRequest = this._createRequestProcessor({
+  _processAssetsRequest: (
+    req: IncomingMessage,
+    res: ServerResponse,
+    bundleOptions: BundleOptions,
+  ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting assets',
@@ -1182,7 +1205,7 @@ class Server {
       transformOptions: TransformInputOptions,
       relativeTo: 'project' | 'server',
     }>,
-  ) {
+  ): Promise<string> {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
@@ -1244,11 +1267,11 @@ class Server {
     sourceUrl: null,
   };
 
-  _getServerRootDir() {
+  _getServerRootDir(): string {
     return this._config.server.unstable_serverRoot ?? this._config.projectRoot;
   }
 
-  _getEntryPointAbsolutePath(entryFile: string) {
+  _getEntryPointAbsolutePath(entryFile: string): string {
     return path.resolve(this._getServerRootDir(), entryFile);
   }
 

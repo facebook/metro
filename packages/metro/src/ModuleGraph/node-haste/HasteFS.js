@@ -58,7 +58,7 @@ module.exports = class HasteFS {
     return Array.from<string>(this.files.keys());
   }
 
-  matchFiles() {
+  matchFiles(): $FlowFixMeEmpty {
     throw new Error('HasteFS.matchFiles is not implemented yet.');
   }
 

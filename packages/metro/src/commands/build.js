@@ -13,6 +13,7 @@
 import type {RunBuildOptions} from '../index';
 import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+import type {ModuleObject} from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
 const TerminalReporter = require('../lib/TerminalReporter');
@@ -22,16 +23,12 @@ const {Terminal} = require('metro-core');
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
-module.exports = (): ({
-  builder: (yargs: Yargs) => void,
-  command: string,
-  description: string,
-  handler: (argv: YargArguments) => void,
-}) => ({
+module.exports = (): {
+  ...ModuleObject,
+  handler: Function,
+} => ({
   command: 'build <entry>',
-
-  description:
-    'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
+  desc: 'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
 
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {

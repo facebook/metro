@@ -43,7 +43,7 @@ class AbstractConsumer implements IConsumer {
     callback: (mapping: Mapping) => mixed,
     context?: mixed = null,
     order?: IterationOrder = GENERATED_ORDER,
-  ) {
+  ): void {
     invariant(
       order === GENERATED_ORDER,
       `Iteration order not implemented: ${iterationOrderToString(order)}`,

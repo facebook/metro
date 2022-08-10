@@ -8,11 +8,11 @@
  * @flow strict-local
  */
 
-import * as path from 'path';
+import type {FileData, FileMetaData, Path} from './flow-types';
 
-import type {FileData, Path} from './flow-types';
 import H from './constants';
 import * as fastPath from './lib/fast_path';
+import * as path from 'path';
 // $FlowFixMe[untyped-import] - jest-util
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
@@ -145,7 +145,7 @@ export default class HasteFS {
     return files;
   }
 
-  _getFileData(file: Path) {
+  _getFileData(file: Path): void | FileMetaData {
     const relativePath = fastPath.relative(this._rootDir, file);
     return this._files.get(relativePath);
   }

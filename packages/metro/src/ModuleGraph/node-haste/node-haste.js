@@ -10,7 +10,7 @@
 
 import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
-import type {Extensions, Path} from './node-haste.flow';
+import type {Path} from './node-haste.flow';
 import type {ModuleMapData, ModuleMapItem} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 
@@ -27,7 +27,19 @@ const defaults = require('metro-config/src/defaults/defaults');
 const path = require('path');
 
 type ResolveOptions = {
-  assetExts: Extensions,
+  /**
+   * (Used by the resolver) The extensions tried (in order) to implicitly
+   * locate a source file.
+   */
+  sourceExts: $ReadOnlyArray<string>,
+
+  /**
+   * The additional extensions to include in the file map as source files that
+   * can be explicitly imported.
+   */
+  additionalExts: $ReadOnlyArray<string>,
+
+  assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
   +disableHierarchicalLookup: boolean,
   +emptyModulePath: string,
@@ -37,7 +49,6 @@ type ResolveOptions = {
   +platform: string,
   platforms?: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
-  +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
 };
 
@@ -63,12 +74,14 @@ const createModuleMap = ({
   files,
   moduleCache,
   sourceExts,
+  additionalExts,
   platforms,
 }: {
   files: Array<string>,
   moduleCache: ModuleCache,
+  sourceExts: $ReadOnlySet<string>,
+  additionalExts: $ReadOnlySet<string>,
   platforms: void | $ReadOnlyArray<string>,
-  sourceExts: Extensions,
 }): ModuleMapData => {
   const platformSet = new Set(
     (platforms ?? defaults.platforms).concat([NATIVE_PLATFORM]),
@@ -82,10 +95,12 @@ const createModuleMap = ({
     }
     let id;
     let module;
+    const fileExt = path.extname(filePath).substr(1);
+
     if (filePath.endsWith(PACKAGE_JSON)) {
       module = moduleCache.getPackage(filePath);
       id = module.data.name;
-    } else if (sourceExts.indexOf(path.extname(filePath).substr(1)) !== -1) {
+    } else if (sourceExts.has(fileExt) || additionalExts.has(fileExt)) {
       module = moduleCache.getModule(filePath);
       id = module.name;
     }
@@ -128,6 +143,7 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
     extraNodeModules,
     transformedFiles,
     sourceExts,
+    additionalExts,
     platform,
     platforms,
   } = options;
@@ -161,7 +177,13 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
-      map: createModuleMap({files, moduleCache, sourceExts, platforms}),
+      map: createModuleMap({
+        files,
+        moduleCache,
+        sourceExts: new Set(sourceExts),
+        additionalExts: new Set(additionalExts),
+        platforms,
+      }),
       mocks: new Map(),
       rootDir: '',
     }),
@@ -191,9 +213,7 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    const allowHaste = !isNodeModules(from.path);
     // $FlowFixMe -- error revealed by types-first codemod
-    return moduleResolver.resolveDependency(from, id, allowHaste, platform)
-      .path;
+    return moduleResolver.resolveDependency(from, id, true, platform).path;
   };
 };

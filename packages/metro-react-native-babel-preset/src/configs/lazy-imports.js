@@ -24,7 +24,6 @@ module.exports = new Set([
   'ImageBackground',
   'InputAccessoryView',
   'KeyboardAvoidingView',
-  'MaskedViewIOS',
   'Modal',
   'Pressable',
   'ProgressBarAndroid',

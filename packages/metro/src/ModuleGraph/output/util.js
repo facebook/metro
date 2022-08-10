@@ -181,6 +181,7 @@ function inlineModuleIds(
       ? parseSync(code, babelConfig)
       : HermesParser.parse(code, {
           babel: true,
+          // $FlowFixMe[prop-missing]
           sourceType: babelConfig.sourceType,
         });
 
