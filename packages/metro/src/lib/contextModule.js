@@ -25,9 +25,6 @@ export type RequireContext = $ReadOnly<{
   mode: ContextMode,
 
   from: string,
-
-  // TODO: derive this later, shouldn't be in the type
-  id: string,
 }>;
 
 /** Get an ID for a context module. */
@@ -60,7 +57,17 @@ export function deriveAbsolutePathFromContext(
   // and we want to normalize the folder name as much as possible to prevent duplicates.
   // This also makes the files show up in the correct location when debugging in Chrome.
   const filePath = from.endsWith(path.sep) ? from.slice(0, -1) : from;
-  return filePath + '?ctx=' + toHash(getContextModuleId(filePath, context));
+  return (
+    filePath +
+    '?ctx=' +
+    toHash(
+      getContextModuleId(
+        // NOTE: No need to make the hash sensitive to filePath since it is already part of the generated path
+        '',
+        context,
+      ),
+    )
+  );
 }
 
 /** Match a file against a require context. */

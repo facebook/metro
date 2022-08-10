@@ -46,7 +46,7 @@ describe('deriveAbsolutePathFromContext', () => {
         mode: 'eager',
         recursive: true,
       }),
-    ).toBe('/path/to/project?ctx=7d330128a8fe64375c6932e9204a6a5f40087f99');
+    ).toBe('/path/to/project?ctx=fd99d04afc2c8f6f913c8a955e33e978aa1e9977');
   });
 });
 
@@ -54,7 +54,6 @@ describe('fileMatchesContext', () => {
   it(`matches files`, () => {
     expect(
       fileMatchesContext('/path/to/project/index.js', {
-        id: '...',
         mode: 'lazy',
         from: '/path/to/project',
         filter: /.*/,

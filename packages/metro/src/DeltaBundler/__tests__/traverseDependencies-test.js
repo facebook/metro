@@ -2209,7 +2209,6 @@ describe('require.context', () => {
     mode: 'sync',
     filter: /.*/,
     from: '/ctx',
-    id: '/ctx sync recursive /.*/',
   };
 
   const ctxPath = deriveAbsolutePathFromContext('/ctx', ctxParams);
@@ -2544,7 +2543,6 @@ describe('require.context', () => {
       mode: 'sync',
       filter: /\.\/narrow\/.*/,
       from: '/ctx',
-      id: '/ctx sync recursive /\\.\\/narrow\\/.*/',
     };
 
     const narrowCtxPath = deriveAbsolutePathFromContext(

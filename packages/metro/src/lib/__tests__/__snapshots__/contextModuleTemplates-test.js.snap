@@ -20,8 +20,10 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroContext.id = \\"/path/to/project/src lazy /(?:)/\\";
+metroContext.debugId = \\"/path/to/project/src lazy /(?:)/\\";
+}
 
 module.exports = metroContext;"
 `;
@@ -47,8 +49,10 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroContext.id = \\"/path/to/project/src lazy recursive /(?:)/\\";
+metroContext.debugId = \\"/path/to/project/src lazy recursive /(?:)/\\";
+}
 
 module.exports = metroContext;"
 `;
@@ -73,8 +77,10 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroContext.id = \\"/path/to/project/src sync recursive /(?:)/\\";
+metroContext.debugId = \\"/path/to/project/src sync recursive /(?:)/\\";
+}
 
 module.exports = metroContext;"
 `;
@@ -101,8 +107,10 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroContext.id = \\"/path/to/project/src eager /(?:)/\\";
+metroContext.debugId = \\"/path/to/project/src eager /(?:)/\\";
+}
 
 module.exports = metroContext;"
 `;
@@ -110,7 +118,9 @@ module.exports = metroContext;"
 exports[`getContextModuleTemplate creates an empty template 1`] = `
 "
 function metroEmptyContext(request) {
-  let e = new Error(\\"No modules for context '\\" + \\"/path/to/project/src sync recursive /(?:)/\\" + \\"'\\");
+  let e = new Error(\\"No modules for context '\\" + (
+    metroEmptyContext.debugId || '<unknown>'
+  ) + \\"'\\");
   e.code = 'MODULE_NOT_FOUND';
   throw e;
 }
@@ -123,8 +133,10 @@ metroEmptyContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroEmptyContext.id = \\"/path/to/project/src sync recursive /(?:)/\\";
+metroEmptyContext.debugId = \\"/path/to/project/src sync recursive /(?:)/\\";
+}
 
 module.exports = metroEmptyContext;"
 `;

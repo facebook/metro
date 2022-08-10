@@ -47,10 +47,15 @@ function createFileMap(
   return `Object.defineProperties({}, {${mapString}})`;
 }
 
-function getEmptyContextModuleTemplate(modulePath: string, id: string): string {
+function getEmptyContextModuleTemplate(
+  modulePath: string,
+  debugId: string,
+): string {
   return `
 function metroEmptyContext(request) {
-  let e = new Error("No modules for context '" + ${JSON.stringify(id)} + "'");
+  let e = new Error("No modules for context '" + (
+    metroEmptyContext.debugId || '<unknown>'
+  ) + "'");
   e.code = 'MODULE_NOT_FOUND';
   throw e;
 }
@@ -63,8 +68,10 @@ metroEmptyContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroEmptyContext.id = ${JSON.stringify(id)};
+metroEmptyContext.debugId = ${JSON.stringify(debugId)};
+}
 
 module.exports = metroEmptyContext;`;
 }
@@ -72,7 +79,7 @@ module.exports = metroEmptyContext;`;
 function getLoadableContextModuleTemplate(
   modulePath: string,
   files: string[],
-  id: string,
+  debugId: string,
   importSyntax: string,
   getContextTemplate: string,
 ): string {
@@ -97,8 +104,10 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
+if (__DEV__) {
 // Readable identifier for the context module.
-metroContext.id = ${JSON.stringify(id)};
+metroContext.debugId = ${JSON.stringify(debugId)};
+}
 
 module.exports = metroContext;`;
 }
@@ -109,7 +118,7 @@ module.exports = metroContext;`;
  * @prop {ContextMode} mode indicates how the modules should be loaded.
  * @prop {string} modulePath virtual file path for the virtual module. Example: `require.context('./src')` -> `'/path/to/project/src'`.
  * @prop {string[]} files list of absolute file paths that must be exported from the context module. Example: `['/path/to/project/src/index.js']`.
- * @prop {string} id virtual ID representing the context module. Example: `'/path/to/project/src sync recursive /(?:)/'`
+ * @prop {string} debugId virtual ID representing the context module. Example: `'/path/to/project/src sync recursive /(?:)/'`
  *
  * @returns a string representing a context module (virtual file contents).
  */
@@ -117,17 +126,17 @@ export function getContextModuleTemplate(
   mode: ContextMode,
   modulePath: string,
   files: string[],
-  id: string,
+  debugId: string,
 ): string {
   if (!files.length) {
-    return getEmptyContextModuleTemplate(modulePath, id);
+    return getEmptyContextModuleTemplate(modulePath, debugId);
   }
   switch (mode) {
     case 'eager':
       return getLoadableContextModuleTemplate(
         modulePath,
         files,
-        id,
+        debugId,
         // NOTE(EvanBacon): It's unclear if we should use `import` or `require` here so sticking
         // with the more stable option (`require`) for now.
         'require',
@@ -141,7 +150,7 @@ export function getContextModuleTemplate(
       return getLoadableContextModuleTemplate(
         modulePath,
         files,
-        id,
+        debugId,
         'require',
         '  return map[request];',
       );
@@ -150,7 +159,7 @@ export function getContextModuleTemplate(
       return getLoadableContextModuleTemplate(
         modulePath,
         files,
-        id,
+        debugId,
         'import',
         '  return map[request];',
       );

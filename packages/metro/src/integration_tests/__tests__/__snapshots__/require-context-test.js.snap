@@ -9,6 +9,24 @@ Object {
 }
 `;
 
+exports[`require-context/empty.js - release 1`] = `
+Object {
+  "error": Object {
+    "code": "MODULE_NOT_FOUND",
+    "message": "No modules for context '<unknown>'",
+  },
+}
+`;
+
+exports[`require-context/empty.js 1`] = `
+Object {
+  "error": Object {
+    "code": "MODULE_NOT_FOUND",
+    "message": "No modules for context 'require-context/no-such-dir sync recursive /.*/'",
+  },
+}
+`;
+
 exports[`require-context/matching.js 1`] = `
 Object {
   "ab": Array [

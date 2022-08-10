@@ -45,7 +45,6 @@ import CountingSet from '../lib/CountingSet';
 import {
   deriveAbsolutePathFromContext,
   fileMatchesContext,
-  getContextModuleId,
 } from '../lib/contextModule';
 
 import * as path from 'path';
@@ -521,7 +520,6 @@ function resolveDependencies<T>(
       const absolutePath = deriveAbsolutePathFromContext(from, contextParams);
 
       const resolvedContext: RequireContext = {
-        id: getContextModuleId(from, contextParams),
         from,
         mode: contextParams.mode,
         recursive: contextParams.recursive,

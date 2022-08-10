@@ -53,7 +53,17 @@ it('require-context/conflict.js', async () => {
   ).resolves.toMatchSnapshot();
 });
 
-async function execTest(entry) {
+it('require-context/empty.js', async () => {
+  await expect(execTest('require-context/empty.js')).resolves.toMatchSnapshot();
+});
+
+it('require-context/empty.js - release', async () => {
+  await expect(
+    execTest('require-context/empty.js', {dev: false}),
+  ).resolves.toMatchSnapshot();
+});
+
+async function execTest(entry, {dev = true}: $ReadOnly<{dev: boolean}> = {}) {
   const config = await Metro.loadConfig(
     {
       config: require.resolve('../metro.config.js'),
@@ -67,6 +77,8 @@ async function execTest(entry) {
 
   const result = await Metro.runBuild(config, {
     entry,
+    dev,
+    minify: !dev,
   });
 
   return execBundle(result.code);
