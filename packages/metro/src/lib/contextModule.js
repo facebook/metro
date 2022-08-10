@@ -23,25 +23,9 @@ export type RequireContext = $ReadOnly<{
   filter: RegExp,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
-
+  /** Absolute path of the directory to search in */
   from: string,
 }>;
-
-/** Get an ID for a context module. */
-export function getContextModuleId(
-  modulePath: string,
-  context: RequireContextParams,
-): string {
-  // Similar to other `require.context` implementations.
-  return [
-    modulePath,
-    context.mode,
-    context.recursive ? 'recursive' : '',
-    new RegExp(context.filter.pattern, context.filter.flags).toString(),
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
 
 function toHash(value: string): string {
   // Use `hex` to ensure filepath safety.
@@ -61,11 +45,13 @@ export function deriveAbsolutePathFromContext(
     filePath +
     '?ctx=' +
     toHash(
-      getContextModuleId(
-        // NOTE: No need to make the hash sensitive to filePath since it is already part of the generated path
-        '',
-        context,
-      ),
+      [
+        context.mode,
+        context.recursive ? 'recursive' : '',
+        new RegExp(context.filter.pattern, context.filter.flags).toString(),
+      ]
+        .filter(Boolean)
+        .join(' '),
     )
   );
 }

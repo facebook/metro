@@ -11,32 +11,7 @@
 import {
   fileMatchesContext,
   deriveAbsolutePathFromContext,
-  getContextModuleId,
 } from '../contextModule';
-
-describe('getContextModuleId', () => {
-  it(`creates a context module ID`, () => {
-    for (const [ctx, results] of [
-      [
-        {
-          filter: {pattern: '.*', flags: ''},
-          mode: 'eager',
-          recursive: true,
-        },
-        '/path/to eager recursive /.*/',
-      ],
-      [
-        {
-          filter: {pattern: '.*', flags: ''},
-          mode: 'lazy',
-          recursive: false,
-        },
-        '/path/to lazy /.*/',
-      ],
-    ])
-      expect(getContextModuleId('/path/to', ctx)).toBe(results);
-  });
-});
 
 describe('deriveAbsolutePathFromContext', () => {
   it(`appends a context query parameter to the input path`, () => {
@@ -47,6 +22,30 @@ describe('deriveAbsolutePathFromContext', () => {
         recursive: true,
       }),
     ).toBe('/path/to/project?ctx=fd99d04afc2c8f6f913c8a955e33e978aa1e9977');
+
+    expect(
+      deriveAbsolutePathFromContext('/path/to/elsewhere', {
+        filter: {pattern: '[a-zA-Z]+', flags: ''},
+        mode: 'eager',
+        recursive: true,
+      }),
+    ).toBe('/path/to/elsewhere?ctx=fd99d04afc2c8f6f913c8a955e33e978aa1e9977');
+
+    expect(
+      deriveAbsolutePathFromContext('/path/to/project', {
+        filter: {pattern: '.*', flags: ''},
+        mode: 'eager',
+        recursive: true,
+      }),
+    ).toBe('/path/to/project?ctx=84326df05531bdd74cf80ae1c288b203517fd25a');
+
+    expect(
+      deriveAbsolutePathFromContext('/path/to/project', {
+        filter: {pattern: '.*', flags: ''},
+        mode: 'lazy',
+        recursive: false,
+      }),
+    ).toBe('/path/to/project?ctx=a22638608f758d428784408c78f67162c8c0dd53');
   });
 });
 

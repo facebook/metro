@@ -20,11 +20,6 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
-if (__DEV__) {
-// Readable identifier for the context module.
-metroContext.debugId = \\"/path/to/project/src lazy /(?:)/\\";
-}
-
 module.exports = metroContext;"
 `;
 
@@ -49,11 +44,6 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
-if (__DEV__) {
-// Readable identifier for the context module.
-metroContext.debugId = \\"/path/to/project/src lazy recursive /(?:)/\\";
-}
-
 module.exports = metroContext;"
 `;
 
@@ -75,11 +65,6 @@ metroContext.keys = function metroContextKeys() {
 // Return the module identifier for a user request.
 metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
-}
-
-if (__DEV__) {
-// Readable identifier for the context module.
-metroContext.debugId = \\"/path/to/project/src sync recursive /(?:)/\\";
 }
 
 module.exports = metroContext;"
@@ -107,20 +92,13 @@ metroContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
 }
 
-if (__DEV__) {
-// Readable identifier for the context module.
-metroContext.debugId = \\"/path/to/project/src eager /(?:)/\\";
-}
-
 module.exports = metroContext;"
 `;
 
 exports[`getContextModuleTemplate creates an empty template 1`] = `
 "
 function metroEmptyContext(request) {
-  let e = new Error(\\"No modules for context '\\" + (
-    metroEmptyContext.debugId || '<unknown>'
-  ) + \\"'\\");
+  let e = new Error('No modules in context');
   e.code = 'MODULE_NOT_FOUND';
   throw e;
 }
@@ -131,11 +109,6 @@ metroEmptyContext.keys = () => ([]);
 // Return the module identifier for a user request.
 metroEmptyContext.resolve = function metroContextResolve(request) {
   throw new Error('Unimplemented Metro module context functionality');
-}
-
-if (__DEV__) {
-// Readable identifier for the context module.
-metroEmptyContext.debugId = \\"/path/to/project/src sync recursive /(?:)/\\";
 }
 
 module.exports = metroEmptyContext;"

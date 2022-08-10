@@ -13,7 +13,7 @@ exports[`require-context/empty.js - release 1`] = `
 Object {
   "error": Object {
     "code": "MODULE_NOT_FOUND",
-    "message": "No modules for context '<unknown>'",
+    "message": "No modules in context",
   },
 }
 `;
@@ -22,7 +22,7 @@ exports[`require-context/empty.js 1`] = `
 Object {
   "error": Object {
     "code": "MODULE_NOT_FOUND",
-    "message": "No modules for context 'require-context/no-such-dir sync recursive /.*/'",
+    "message": "No modules in context",
   },
 }
 `;

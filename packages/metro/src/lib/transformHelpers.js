@@ -21,7 +21,6 @@ import type {RequireContext} from './contextModule';
 import {getContextModuleTemplate} from './contextModuleTemplates';
 
 const path = require('path');
-import {getContextModuleId} from './contextModule';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 
@@ -144,17 +143,6 @@ async function getTransformFn(
         requireContext.mode,
         requireContext.from,
         files,
-        getContextModuleId(
-          path.relative(config.projectRoot, requireContext.from),
-          {
-            recursive: requireContext.recursive,
-            mode: requireContext.mode,
-            filter: {
-              pattern: requireContext.filter.source,
-              flags: requireContext.filter.flags,
-            },
-          },
-        ),
       );
 
       templateBuffer = Buffer.from(template);
