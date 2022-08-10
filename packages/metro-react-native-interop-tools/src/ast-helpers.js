@@ -9,7 +9,16 @@
  * @format
  */
 
-import type {InterfaceExtends} from '@babel/types';
+import type {
+  InterfaceExtends,
+  FunctionTypeAnnotation as BabelNodeFunctionTypeAnnotation,
+  FunctionTypeParam as BabelNodeFunctionTypeParam,
+} from '@babel/types';
+
+export type FunctionTypeParam = {|
+  name: ?string,
+  typeAnnotation: AnyTypeAnnotation,
+|};
 
 export type BasicTypeAnnotation = $ReadOnly<{
   type:
@@ -28,7 +37,17 @@ export type NullableTypeAnnotation = $ReadOnly<{
   typeAnnotation: AnyTypeAnnotation,
 }>;
 
-export type AnyTypeAnnotation = BasicTypeAnnotation | NullableTypeAnnotation;
+export type FunctionTypeAnnotation = {
+  type: 'FunctionTypeAnnotation',
+  loc: ?BabelSourceLocation,
+  params: $ReadOnlyArray<FunctionTypeParam>,
+  returnTypeAnnotation: AnyTypeAnnotation,
+};
+
+export type AnyTypeAnnotation =
+  | BasicTypeAnnotation
+  | NullableTypeAnnotation
+  | FunctionTypeAnnotation;
 
 export function isTurboModule(i: InterfaceExtends): boolean {
   return (
@@ -65,7 +84,30 @@ export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
         loc: getNodeLoc(typeNode.loc),
         typeAnnotation: getTypeAnnotation(typeNode.typeAnnotation),
       };
+    case 'FunctionTypeAnnotation':
+      return getFunctionTypeAnnotation(typeNode);
+
     default:
       return {type: 'UnknownTypeAnnotation', loc: null};
   }
+}
+
+export function getFunctionTypeAnnotation(
+  typeNode: BabelNodeFunctionTypeAnnotation,
+): FunctionTypeAnnotation {
+  return {
+    type: 'FunctionTypeAnnotation',
+    loc: getNodeLoc(typeNode.loc),
+    params: typeNode.params.map(getFunctionTypeParameter),
+    returnTypeAnnotation: getTypeAnnotation(typeNode.returnType),
+  };
+}
+
+export function getFunctionTypeParameter(
+  param: BabelNodeFunctionTypeParam,
+): FunctionTypeParam {
+  return {
+    name: param.name?.name,
+    typeAnnotation: getTypeAnnotation(param.typeAnnotation),
+  };
 }

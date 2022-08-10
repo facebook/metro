@@ -10,7 +10,12 @@
  */
 
 import * as t from '@babel/types';
-import {isTurboModule, getTypeAnnotation} from '../ast-helpers.js';
+import {
+  isTurboModule,
+  getTypeAnnotation,
+  getFunctionTypeParameter,
+  getFunctionTypeAnnotation,
+} from '../ast-helpers.js';
 
 test('isTurboModule returns true, name is "TurboModule" and typeParams is null', () => {
   expect(
@@ -73,6 +78,70 @@ test('getTypeAnnotation testing NullableTypeAnnotation', () => {
     loc: null,
     typeAnnotation: {
       type: 'AnyTypeAnnotation',
+      loc: null,
+    },
+  });
+});
+
+test('getFunctionTypeAnnotation, function has a function as parameter', () => {
+  const callback: t.FunctionTypeAnnotation = t.functionTypeAnnotation(
+    undefined,
+    [],
+    undefined,
+    t.voidTypeAnnotation(),
+  );
+  const functionNode: t.FunctionTypeAnnotation = t.functionTypeAnnotation(
+    undefined,
+    [
+      t.functionTypeParam(
+        t.identifier('screenShoudBeKeptOn'),
+        t.booleanTypeAnnotation(),
+      ),
+      t.functionTypeParam(t.identifier('callback'), callback),
+    ],
+    undefined,
+    t.voidTypeAnnotation(),
+  );
+  expect(getFunctionTypeAnnotation(functionNode)).toEqual({
+    type: 'FunctionTypeAnnotation',
+    loc: null,
+    params: [
+      {
+        name: 'screenShoudBeKeptOn',
+        typeAnnotation: {
+          type: 'BooleanTypeAnnotation',
+          loc: null,
+        },
+      },
+      {
+        name: 'callback',
+        typeAnnotation: {
+          type: 'FunctionTypeAnnotation',
+          loc: null,
+          params: [],
+          returnTypeAnnotation: {
+            type: 'VoidTypeAnnotation',
+            loc: null,
+          },
+        },
+      },
+    ],
+    returnTypeAnnotation: {
+      type: 'VoidTypeAnnotation',
+      loc: null,
+    },
+  });
+});
+
+test('getFunctionTypeParameter, testig basic type parameter', () => {
+  const param: BabelNodeFunctionTypeParam = t.functionTypeParam(
+    t.identifier('testParam'),
+    t.booleanTypeAnnotation(),
+  );
+  expect(getFunctionTypeParameter(param)).toEqual({
+    name: 'testParam',
+    typeAnnotation: {
+      type: 'BooleanTypeAnnotation',
       loc: null,
     },
   });
