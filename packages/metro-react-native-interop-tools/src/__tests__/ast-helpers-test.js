@@ -15,6 +15,10 @@ import {
   getTypeAnnotation,
   getFunctionTypeParameter,
   getFunctionTypeAnnotation,
+  getObjectTypeAnnotation,
+  getObjectTypeProperty,
+  getNameFromTypeProperty,
+  getObjectTypeSpreadProperty,
 } from '../ast-helpers.js';
 
 test('isTurboModule returns true, name is "TurboModule" and typeParams is null', () => {
@@ -40,37 +44,37 @@ test('isTurboModule returns false, typeParameters it is not empty', () => {
   ).toEqual(false);
 });
 
-test('getTypeAnnotation testing BooleanTypeAnnotation', () => {
+test('getTypeAnnotation, testing BooleanTypeAnnotation', () => {
   expect(getTypeAnnotation(t.booleanTypeAnnotation()).type).toBe(
     t.booleanTypeAnnotation().type,
   );
 });
 
-test('getTypeAnnotation testing NumberTypeAnnotation', () => {
+test('getTypeAnnotation, testing NumberTypeAnnotation', () => {
   expect(getTypeAnnotation(t.numberTypeAnnotation()).type).toBe(
     t.numberTypeAnnotation().type,
   );
 });
 
-test('getTypeAnnotation testing StringTypeAnnotation', () => {
+test('getTypeAnnotation, testing StringTypeAnnotation', () => {
   expect(getTypeAnnotation(t.stringTypeAnnotation()).type).toBe(
     t.stringTypeAnnotation().type,
   );
 });
 
-test('getTypeAnnotation testing VoidTypeAnnotation', () => {
+test('getTypeAnnotation, testing VoidTypeAnnotation', () => {
   expect(getTypeAnnotation(t.voidTypeAnnotation()).type).toBe(
     t.voidTypeAnnotation().type,
   );
 });
 
-test('getTypeAnnotation testing UnknownTypeAnnotation', () => {
+test('getTypeAnnotation, testing UnknownTypeAnnotation', () => {
   expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true)).type).toBe(
     'UnknownTypeAnnotation',
   );
 });
 
-test('getTypeAnnotation testing NullableTypeAnnotation', () => {
+test('getTypeAnnotation, testing NullableTypeAnnotation', () => {
   expect(
     getTypeAnnotation(t.nullableTypeAnnotation(t.anyTypeAnnotation())),
   ).toEqual({
@@ -84,24 +88,25 @@ test('getTypeAnnotation testing NullableTypeAnnotation', () => {
 });
 
 test('getFunctionTypeAnnotation, function has a function as parameter', () => {
-  const callback: t.FunctionTypeAnnotation = t.functionTypeAnnotation(
+  const callback: BabelNodeFunctionTypeAnnotation = t.functionTypeAnnotation(
     undefined,
     [],
     undefined,
     t.voidTypeAnnotation(),
   );
-  const functionNode: t.FunctionTypeAnnotation = t.functionTypeAnnotation(
-    undefined,
-    [
-      t.functionTypeParam(
-        t.identifier('screenShoudBeKeptOn'),
-        t.booleanTypeAnnotation(),
-      ),
-      t.functionTypeParam(t.identifier('callback'), callback),
-    ],
-    undefined,
-    t.voidTypeAnnotation(),
-  );
+  const functionNode: BabelNodeFunctionTypeAnnotation =
+    t.functionTypeAnnotation(
+      undefined,
+      [
+        t.functionTypeParam(
+          t.identifier('screenShoudBeKeptOn'),
+          t.anyTypeAnnotation(),
+        ),
+        t.functionTypeParam(t.identifier('callback'), callback),
+      ],
+      undefined,
+      t.anyTypeAnnotation(),
+    );
   expect(getFunctionTypeAnnotation(functionNode)).toEqual({
     type: 'FunctionTypeAnnotation',
     loc: null,
@@ -109,7 +114,7 @@ test('getFunctionTypeAnnotation, function has a function as parameter', () => {
       {
         name: 'screenShoudBeKeptOn',
         typeAnnotation: {
-          type: 'BooleanTypeAnnotation',
+          type: 'AnyTypeAnnotation',
           loc: null,
         },
       },
@@ -127,7 +132,7 @@ test('getFunctionTypeAnnotation, function has a function as parameter', () => {
       },
     ],
     returnTypeAnnotation: {
-      type: 'VoidTypeAnnotation',
+      type: 'AnyTypeAnnotation',
       loc: null,
     },
   });
@@ -136,13 +141,84 @@ test('getFunctionTypeAnnotation, function has a function as parameter', () => {
 test('getFunctionTypeParameter, testig basic type parameter', () => {
   const param: BabelNodeFunctionTypeParam = t.functionTypeParam(
     t.identifier('testParam'),
-    t.booleanTypeAnnotation(),
+    t.anyTypeAnnotation(),
   );
   expect(getFunctionTypeParameter(param)).toEqual({
     name: 'testParam',
     typeAnnotation: {
-      type: 'BooleanTypeAnnotation',
+      type: 'AnyTypeAnnotation',
       loc: null,
     },
   });
+});
+
+test('getObjectTypeAnnotation, testing object type annotation', () => {
+  const property: BabelNodeObjectTypeProperty = t.objectTypeProperty(
+    t.identifier('setKeepScreenOn'),
+    t.anyTypeAnnotation(),
+    t.variance('minus'),
+  );
+  const objectNode: BabelNodeObjectTypeAnnotation = t.objectTypeAnnotation(
+    [property],
+    [],
+    [],
+    [],
+    false,
+  );
+  expect(getObjectTypeAnnotation(objectNode)).toEqual({
+    type: 'ObjectTypeAnnotation',
+    loc: null,
+    properties: [
+      {
+        loc: null,
+        name: 'setKeepScreenOn',
+        optional: undefined,
+        typeAnnotation: {
+          type: 'AnyTypeAnnotation',
+          loc: null,
+        },
+      },
+    ],
+  });
+});
+
+test('getObjectTypeProperty, testing AnyTypeAnnotation property', () => {
+  const property: BabelNodeObjectTypeProperty = t.objectTypeProperty(
+    t.identifier('testProp'),
+    t.anyTypeAnnotation(),
+    t.variance('plus'),
+  );
+  expect(getObjectTypeProperty(property)).toEqual({
+    loc: null,
+    name: 'testProp',
+    optional: undefined,
+    typeAnnotation: {
+      type: 'AnyTypeAnnotation',
+      loc: null,
+    },
+  });
+});
+
+test('getObjectTypeSpreadProperty getting unknown type', () => {
+  const spreadProperty: BabelNodeObjectTypeSpreadProperty =
+    t.objectTypeSpreadProperty(t.anyTypeAnnotation());
+  expect(getObjectTypeSpreadProperty(spreadProperty)).toEqual({
+    loc: null,
+    name: '',
+    optional: false,
+    typeAnnotation: {
+      loc: null,
+      type: 'UnknownTypeAnnotation',
+    },
+  });
+});
+
+test('getNameFromTypeProperty, testing BabelNodeIdentifier', () => {
+  const node: BabelNodeIdentifier = t.identifier('test');
+  expect(getNameFromTypeProperty(node)).toBe('test');
+});
+
+test('getNameFromTypeProperty, testing BabelNodeStringLiteral', () => {
+  const node: BabelNodeStringLiteral = t.stringLiteral('test');
+  expect(getNameFromTypeProperty(node)).toBe('test');
 });
