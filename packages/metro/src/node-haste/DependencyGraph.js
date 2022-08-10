@@ -12,6 +12,7 @@ import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {HasteFS} from 'metro-file-map';
 import type Module from './Module';
+
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
 
 const createHasteMap = require('./DependencyGraph/createHasteMap');
@@ -99,7 +100,7 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
-  // Waits for the dependency graph to become ready after initialization.
+  // Waits for the dependency graph to become ready after initialisation.
   // Don't read anything from the graph until this resolves.
   async ready(): Promise<void> {
     await this._readyPromise;

@@ -120,7 +120,7 @@ export type AllowOptionalDependencies =
   | AllowOptionalDependenciesWithOptions;
 
 export type Options<T = MixedOutput> = {
-  +resolve: (from: string, to: string, context?: ?RequireContext) => string,
+  +resolve: (from: string, to: string) => string,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
