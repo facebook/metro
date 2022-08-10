@@ -10,15 +10,17 @@
  */
 
 import type {
-  TransformInputOptions,
-  TransformFn,
-  Module,
-  MixedOutput,
-  Dependency,
   Dependencies,
+  Dependency,
+  Graph,
+  MixedOutput,
+  Module,
+  TransformFn,
+  TransformInputOptions,
+  TransformResultDependency,
+  TransformResultWithSource,
 } from '../types.flow';
 import type {PrivateState} from '../graphOperations';
-import type {Graph, TransformResultDependency} from '../types.flow';
 
 import CountingSet from '../../lib/CountingSet';
 import nullthrows from 'nullthrows';
@@ -322,7 +324,10 @@ beforeEach(async () => {
   mockedDependencyTree = new Map();
 
   mockTransform = jest
-    .fn()
+    .fn<
+      [string, ?RequireContext],
+      Promise<TransformResultWithSource<MixedOutput>>,
+    >()
     .mockImplementation(async (path: string, context: ?RequireContext) => {
       return {
         dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
@@ -493,12 +498,12 @@ it('should retry traversing dependencies after a transform error', async () => {
 
   const localOptions = {
     ...options,
-    transform(path: string) {
+    transform(path: string, context: ?RequireContext) {
       if (path === '/bad') {
         throw new BadError();
       }
       // $FlowFixMe[object-this-reference]: transform should not be bound to anything
-      return options.transform.apply(this, arguments);
+      return options.transform.call(this, path, context);
     },
   };
 
@@ -2110,29 +2115,31 @@ describe('edge cases', () => {
       let deferredSlow;
       let fastResolved = false;
 
-      localMockTransform.mockImplementation(async (path, context) => {
-        const result = await mockTransform(path, context);
+      localMockTransform.mockImplementation(
+        async (path: string, context: ?RequireContext) => {
+          const result = await mockTransform(path, context);
 
-        if (path === slowPath && !fastResolved) {
-          // Return a Promise that won't be resolved after fastPath.
-          deferredSlow = deferred(result);
-          return deferredSlow.promise;
-        }
-
-        if (path === fastPath) {
-          fastResolved = true;
-
-          if (deferredSlow) {
-            return new Promise(async resolve => {
-              await resolve(result);
-
-              deferredSlow.resolve();
-            });
+          if (path === slowPath && !fastResolved) {
+            // Return a Promise that won't be resolved after fastPath.
+            deferredSlow = deferred(result);
+            return deferredSlow.promise;
           }
-        }
 
-        return result;
-      });
+          if (path === fastPath) {
+            fastResolved = true;
+
+            if (deferredSlow) {
+              return new Promise(async resolve => {
+                await resolve(result);
+
+                deferredSlow.resolve();
+              });
+            }
+          }
+
+          return result;
+        },
+      );
     }
 
     const assertOrder = async function () {
@@ -2838,7 +2845,7 @@ describe('optional dependencies', () => {
      * Flow's LTI update could not be added via codemod */
     return async function (path: string, context: ?RequireContext) {
       // $FlowFixMe[object-this-reference]: transform should not be bound to anything
-      const result = await mockTransform.apply(this, arguments);
+      const result = await mockTransform.call(this, path, context);
       return {
         ...result,
         dependencies: result.dependencies.map(dep => {
