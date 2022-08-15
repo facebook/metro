@@ -8,16 +8,12 @@
  * @flow strict-local
  */
 
-import type {FileData, FileMetaData, Path} from './flow-types';
+import type {FileData, FileMetaData, Glob, Path} from './flow-types';
 
 import H from './constants';
 import * as fastPath from './lib/fast_path';
 import * as path from 'path';
-// $FlowFixMe[untyped-import] - jest-util
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
-
-// $FlowFixMe[unclear-type] - Check TS Config.Glob
-type Glob = any;
 
 export default class HasteFS {
   +_rootDir: Path;
