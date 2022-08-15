@@ -79,7 +79,7 @@ describe('heap snapshots/timelines', () => {
 // Returns a node in the heap snapshot that has an incoming property edge with
 // the name passed as `propertyName`.
 function findObjectByInboundProperty(
-  propertyName: $TEMPORARY$string<'RETAIN_ME'>,
+  propertyName: string,
   data: ChromeHeapSnapshotProcessor,
   rawData: $FlowFixMe,
 ) {

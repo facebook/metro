@@ -54,7 +54,7 @@ type RangeMapping = {
   start: Position,
   ...
 };
-type Context = {filename?: string, ...};
+export type Context = {filename?: string, ...};
 
 /**
  * Generate a map of source positions to function names. The names are meant to
@@ -190,8 +190,7 @@ function getNameForPath(path: NodePath<>): string {
     return node.id.name;
   }
   let propertyPath;
-  let kind: ?(string | $TEMPORARY$string<'get'> | $TEMPORARY$string<'set'>) =
-    '';
+  let kind: ?string;
 
   // Find or construct an AST node that names the current node.
   if (isObjectMethod(node) || isClassMethod(node)) {
@@ -276,7 +275,7 @@ function getNameForPath(path: NodePath<>): string {
   }
 
   // Annotate getters and setters.
-  if (kind) {
+  if (kind != null) {
     name = kind + '__' + name;
   }
 
@@ -512,12 +511,7 @@ class RelativeValue {
   }
 }
 
-function positionGreater(
-  x: {column: number, line: number},
-  y:
-    | {column: number, line: number}
-    | $TEMPORARY$object<{column: number, line: number}>,
-) {
+function positionGreater(x: Position, y: Position) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 

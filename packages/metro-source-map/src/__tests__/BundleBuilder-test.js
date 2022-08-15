@@ -611,14 +611,7 @@ describe('BundleBuilder', () => {
   });
 });
 
-function find(
-  text: string,
-  string:
-    | $TEMPORARY$string<'abc'>
-    | $TEMPORARY$string<'def'>
-    | $TEMPORARY$string<'g'>
-    | $TEMPORARY$string<'hi'>,
-) {
+function find(text: string, string: string) {
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const column = lines[i].indexOf(string);

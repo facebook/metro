@@ -9,8 +9,6 @@
  */
 
 'use strict';
-import type {IdsForPathFn} from '../types.flow';
-
 import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
 import type {IndexMap} from 'metro-source-map';
 
@@ -30,18 +28,10 @@ function asMultipleFilesRamBundle({
   modules,
   requireCalls,
   preloadedModules,
-}: $TEMPORARY$object<{
-  dependencyMapReservedName?: ?string,
-  enableIDInlining: boolean,
-  filename: string,
-  globalPrefix: string,
-  idsForPath: IdsForPathFn,
-  modules: Iterable<Module>,
-  preloadedModules: Set<string>,
+}: $ReadOnly<{
+  ...OutputFnArg,
+  preloadedModules: $ReadOnlySet<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
-  requireCalls: Iterable<Module>,
-  segmentID: number,
-  sourceMapPath?: ?string,
 }>): OutputResult<IndexMap> {
   const idForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
@@ -96,7 +86,7 @@ function asMultipleFilesRamBundle({
 }
 
 function createBuilder(
-  preloadedModules: Set<string>,
+  preloadedModules: $ReadOnlySet<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
 ): OutputFn<IndexMap> {
   return (x: OutputFnArg) =>

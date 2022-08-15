@@ -34,7 +34,7 @@ beforeEach(() => {
           mockSocket.onclose();
         }
       }),
-      mockEmit: (type: string, data: $TEMPORARY$object<{data: string}>) => {
+      mockEmit: (type: string, data: {data: string}) => {
         if (mockSocket) {
           if (type === 'error') {
             mockSocket.onerror(data);

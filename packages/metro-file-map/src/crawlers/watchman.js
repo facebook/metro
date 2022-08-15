@@ -269,11 +269,7 @@ module.exports = async function watchmanCrawl(
            * repo but Haste map projects are focused on a handful of
            * directories. Therefore `glob` < `suffix`.
            */
-          let queryGenerator: ?(
-            | $TEMPORARY$string<'glob'>
-            | $TEMPORARY$string<'since'>
-            | $TEMPORARY$string<'suffix'>
-          ) = undefined;
+          let queryGenerator: ?string;
           if (since != null) {
             // Use the `since` generator and filter by both path and extension.
             query.since = since;

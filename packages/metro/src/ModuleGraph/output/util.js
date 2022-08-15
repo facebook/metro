@@ -318,7 +318,7 @@ exports.requireCallsTo = function* (
 // the ones loaded deferredly (lazy loaded).
 exports.partition = (
   modules: Iterable<Module>,
-  preloadedModules: Set<string>,
+  preloadedModules: $ReadOnlySet<string>,
 ): Array<Array<Module>> => {
   const startup = [];
   const deferred = [];

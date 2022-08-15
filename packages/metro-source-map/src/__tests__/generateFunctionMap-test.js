@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+js_symbolication
- * @flow
+ * @flow strict-local
  * @format
  */
 
 'use strict';
+
+import type {Context} from '../generateFunctionMap';
 
 const {
   generateFunctionMap,
@@ -28,10 +30,7 @@ function getAst(source: string) {
 }
 
 // A test helper for compact, readable snapshots
-function generateCompactRawMappings(
-  ast: BabelNodeFile,
-  context: void | $TEMPORARY$object<{filename?: string}>,
-) {
+function generateCompactRawMappings(ast: BabelNodeFile, context?: Context) {
   const mappings = generateFunctionMappingsArray(ast, context);
   return (
     '\n' +

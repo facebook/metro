@@ -9,7 +9,7 @@
  */
 
 'use strict';
-import type {IdsForPathFn, Dependency} from '../types.flow';
+import type {Dependency} from '../types.flow';
 import type {BasicSourceMap} from '../../../../metro-source-map/src/source-map';
 
 import type {Module, OutputFn, OutputFnArg} from '../types.flow';
@@ -33,18 +33,10 @@ function asIndexedRamBundle({
   preloadedModules,
   ramGroupHeads,
   requireCalls,
-}: $TEMPORARY$object<{
-  dependencyMapReservedName?: ?string,
-  enableIDInlining: boolean,
-  filename: string,
-  globalPrefix: string,
-  idsForPath: IdsForPathFn,
-  modules: Iterable<Module>,
-  preloadedModules: Set<string>,
+}: $ReadOnly<{
+  ...OutputFnArg,
+  preloadedModules: $ReadOnlySet<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
-  requireCalls: Iterable<Module>,
-  segmentID: number,
-  sourceMapPath?: ?string,
 }>): {
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
@@ -137,7 +129,7 @@ function* subtree(
 }
 
 function createBuilder(
-  preloadedModules: Set<string>,
+  preloadedModules: $ReadOnlySet<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
 ): OutputFn<IndexMap> {
   return (x: OutputFnArg) =>
