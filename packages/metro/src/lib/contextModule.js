@@ -76,19 +76,11 @@ export function fileMatchesContext(
       // NOTE(EvanBacon): Ensure files start with `./` for matching purposes
       // this ensures packages work across Metro and Webpack (ex: Storybook for React DOM / React Native).
       // `a/b.js` -> `./a/b.js`
-      './' + normalizeSlashes(filePath),
+      './' + filePath.replace(/\\/g, '/'),
     )
   ) {
     return false;
   }
 
   return true;
-}
-
-/** Convert back slashes (windows) to forward slashes. */
-function normalizeSlashes(path: string): string {
-  if (/^\\\\\?\\/.test(path) || /[^\u0000-\u0080]+/.test(path)) {
-    return path;
-  }
-  return path.replace(/\\/g, '/');
 }

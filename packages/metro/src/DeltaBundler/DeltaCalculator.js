@@ -10,10 +10,10 @@
 
 'use strict';
 
-import {markModifiedContextModules} from './graphOperations';
 import {
   createGraph,
   initialTraverseDependencies,
+  markModifiedContextModules,
   reorderGraph,
   traverseDependencies,
 } from './graphOperations';
