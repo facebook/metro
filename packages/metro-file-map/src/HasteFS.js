@@ -105,10 +105,10 @@ export default class HasteFS {
     for (const file of this.getAbsoluteFileIterator()) {
       const filePath = fastPath.relative(root, file);
 
-      const isRelative =
+      const isUnderRoot =
         filePath && !filePath.startsWith('..') && !path.isAbsolute(filePath);
       // Ignore everything outside of the provided `root`.
-      if (!isRelative) {
+      if (!isUnderRoot) {
         continue;
       }
 
