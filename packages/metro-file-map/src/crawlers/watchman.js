@@ -358,6 +358,12 @@ module.exports = async function watchmanCrawl(
   }
 
   if (clientError) {
+    perfLogger?.annotate({
+      string: {
+        'watchmanCrawl/client_error':
+          clientError.message ?? '[message missing]',
+      },
+    });
     perfLogger?.point('watchmanCrawl_end');
     throw clientError;
   }
