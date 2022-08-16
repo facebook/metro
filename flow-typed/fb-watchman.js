@@ -50,22 +50,30 @@ declare module 'fb-watchman' {
   };
 
   declare class Client {
-    // $FlowFixMe[unclear-type] - Check implementation for types
-    capabilityCheck(config: Object, callback: (error: any) => void): void;
+    capabilityCheck(
+      config: $ReadOnly<{
+        optional?: $ReadOnlyArray<string>,
+        required?: $ReadOnlyArray<string>,
+      }>,
+      callback: (
+        error: ?Error,
+        response: ?{
+          version: string,
+          capabilities: $ReadOnly<{[string]: boolean}>,
+        },
+      ) => void,
+    ): void;
     command(
       config: ['watch-project', string],
-      // $FlowFixMe[unclear-type] - Check implementation for types
-      callback: (error: any, response: WatchmanWatchResponse) => void,
+      callback: (error: ?Error, response: WatchmanWatchResponse) => void,
     ): void;
     command(
       config: ['query', string, WatchmanQuery],
-      // $FlowFixMe[unclear-type] - Check implementation for types
-      callback: (error: any, response: WatchmanQueryResponse) => void,
+      callback: (error: ?Error, response: WatchmanQueryResponse) => void,
     ): void;
     command(
       config: ['find', string, string],
-      // $FlowFixMe[unclear-type] - Check implementation for types
-      callback: (error: any, response: WatchmanQueryResponse) => void,
+      callback: (error: ?Error, response: WatchmanQueryResponse) => void,
     ): void;
     end(): void;
   }

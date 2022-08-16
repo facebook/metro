@@ -91,8 +91,8 @@ async function capabilityCheck(
       // @ts-expect-error: incorrectly typed
       caps,
       (error, response) => {
-        if (error) {
-          reject(error);
+        if (error != null || response == null) {
+          reject(error ?? new Error('capabilityCheck: Response missing'));
         } else {
           resolve(response);
         }
