@@ -336,6 +336,7 @@ module.exports = async function watchmanCrawl(
   const changedFiles = new Map();
   let results: Map<string, WatchmanQueryResponse>;
   let isFresh = false;
+  let queryError: ?Error;
   try {
     const watchmanRoots = await getWatchmanRoots(roots);
     const watchmanFileResults = await queryWatchmanForDirs(watchmanRoots);
@@ -349,19 +350,32 @@ module.exports = async function watchmanCrawl(
     }
 
     results = watchmanFileResults.results;
-  } finally {
-    client.end();
+  } catch (e) {
+    queryError = e;
   }
+  client.end();
 
-  if (clientError) {
-    perfLogger?.annotate({
-      string: {
-        'watchmanCrawl/client_error':
-          clientError.message ?? '[message missing]',
-      },
-    });
+  if (results == null) {
+    if (clientError) {
+      perfLogger?.annotate({
+        string: {
+          'watchmanCrawl/client_error':
+            clientError.message ?? '[message missing]',
+        },
+      });
+    }
+    if (queryError) {
+      perfLogger?.annotate({
+        string: {
+          'watchmanCrawl/query_error':
+            queryError.message ?? '[message missing]',
+        },
+      });
+    }
     perfLogger?.point('watchmanCrawl_end');
-    throw clientError;
+    throw (
+      queryError ?? clientError ?? new Error('Watchman file results missing')
+    );
   }
 
   perfLogger?.point('watchmanCrawl/processResults_start');
