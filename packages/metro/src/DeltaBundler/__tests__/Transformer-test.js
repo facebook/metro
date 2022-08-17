@@ -120,4 +120,24 @@ describe('Transformer', function () {
 
     expect(require('../getTransformCacheKey')).not.toBeCalled();
   });
+
+  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await transformerInstance.transformFile('./foo.js', {});
+
+    expect(require('../getTransformCacheKey')).not.toBeCalled();
+  });
 });

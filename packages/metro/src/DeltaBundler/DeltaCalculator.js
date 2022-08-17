@@ -10,14 +10,15 @@
 
 'use strict';
 
-import type {DeltaResult, Graph, Options} from './types.flow';
-
-const {
+import {
   createGraph,
   initialTraverseDependencies,
+  markModifiedContextModules,
   reorderGraph,
   traverseDependencies,
-} = require('./graphOperations');
+} from './graphOperations';
+import type {DeltaResult, Graph, Options} from './types.flow';
+
 const {EventEmitter} = require('events');
 
 /**
@@ -33,6 +34,7 @@ class DeltaCalculator<T> extends EventEmitter {
   _currentBuildPromise: ?Promise<DeltaResult<T>>;
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
+  _addedFiles: Set<string> = new Set();
 
   _graph: Graph<T>;
 
@@ -72,6 +74,7 @@ class DeltaCalculator<T> extends EventEmitter {
     });
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
+    this._addedFiles = new Set();
   }
 
   /**
@@ -99,6 +102,8 @@ class DeltaCalculator<T> extends EventEmitter {
     this._modifiedFiles = new Set();
     const deletedFiles = this._deletedFiles;
     this._deletedFiles = new Set();
+    const addedFiles = this._addedFiles;
+    this._addedFiles = new Set();
 
     // Concurrent requests should reuse the same bundling process. To do so,
     // this method stores the promise as an instance variable, and then it's
@@ -106,6 +111,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._currentBuildPromise = this._getChangedDependencies(
       modifiedFiles,
       deletedFiles,
+      addedFiles,
     );
 
     let result;
@@ -121,6 +127,7 @@ class DeltaCalculator<T> extends EventEmitter {
       // which is not correct.
       modifiedFiles.forEach((file: string) => this._modifiedFiles.add(file));
       deletedFiles.forEach((file: string) => this._deletedFiles.add(file));
+      addedFiles.forEach((file: string) => this._addedFiles.add(file));
 
       // If after an error the number of modules has changed, we could be in
       // a weird state. As a safe net we clean the dependency modules to force
@@ -177,12 +184,45 @@ class DeltaCalculator<T> extends EventEmitter {
     filePath: string,
     ...
   }): mixed => {
+    let state: void | 'deleted' | 'modified' | 'added';
+    if (this._deletedFiles.has(filePath)) {
+      state = 'deleted';
+    } else if (this._modifiedFiles.has(filePath)) {
+      state = 'modified';
+    } else if (this._addedFiles.has(filePath)) {
+      state = 'added';
+    }
+
+    let nextState: 'deleted' | 'modified' | 'added';
     if (type === 'delete') {
-      this._deletedFiles.add(filePath);
-      this._modifiedFiles.delete(filePath);
+      nextState = 'deleted';
+    } else if (type === 'add') {
+      // A deleted+added file is modified
+      nextState = state === 'deleted' ? 'modified' : 'added';
     } else {
-      this._deletedFiles.delete(filePath);
-      this._modifiedFiles.add(filePath);
+      // type === 'change'
+      // An added+modified file is added
+      nextState = state === 'added' ? 'added' : 'modified';
+    }
+
+    switch (nextState) {
+      case 'deleted':
+        this._deletedFiles.add(filePath);
+        this._modifiedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      case 'added':
+        this._addedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._modifiedFiles.delete(filePath);
+        break;
+      case 'modified':
+        this._modifiedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      default:
+        (nextState: empty);
     }
 
     // Notify users that there is a change in some of the bundle files. This
@@ -193,6 +233,7 @@ class DeltaCalculator<T> extends EventEmitter {
   async _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
+    addedFiles: Set<string>,
   ): Promise<DeltaResult<T>> {
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
@@ -223,6 +264,18 @@ class DeltaCalculator<T> extends EventEmitter {
         });
       }
     });
+
+    // NOTE(EvanBacon): This check adds extra complexity so we feature gate it
+    // to enable users to opt out.
+    if (this._options.unstable_allowRequireContext) {
+      // Check if any added or removed files are matched in a context module.
+      // We only need to do this for added files because (1) deleted files will have a context
+      // module as an inverse dependency, (2) modified files don't invalidate the contents
+      // of the context module.
+      addedFiles.forEach(filePath => {
+        markModifiedContextModules(this._graph, filePath, modifiedFiles);
+      });
+    }
 
     // We only want to process files that are in the bundle.
     const modifiedDependencies = Array.from(modifiedFiles).filter(

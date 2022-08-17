@@ -9,8 +9,10 @@
  */
 
 import type {FileData, FileMetaData, Glob, Path} from './flow-types';
+
 import H from './constants';
 import * as fastPath from './lib/fast_path';
+import * as path from 'path';
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
 export default class HasteFS {
@@ -76,6 +78,52 @@ export default class HasteFS {
         files.push(file);
       }
     }
+    return files;
+  }
+
+  /**
+   * Given a search context, return a list of file paths matching the query.
+   * The query matches against normalized paths which start with `./`,
+   * for example: `a/b.js` -> `./a/b.js`
+   */
+  matchFilesWithContext(
+    root: Path,
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
+      recursive: boolean,
+      /* Filter relative paths against a pattern. */
+      filter: RegExp,
+    }>,
+  ): Array<Path> {
+    const files = [];
+    const prefix = './';
+
+    for (const file of this.getAbsoluteFileIterator()) {
+      const filePath = fastPath.relative(root, file);
+
+      const isUnderRoot = filePath && !filePath.startsWith('..');
+      // Ignore everything outside of the provided `root`.
+      if (!isUnderRoot) {
+        continue;
+      }
+
+      // Prevent searching in child directories during a non-recursive search.
+      if (!context.recursive && filePath.includes(path.sep)) {
+        continue;
+      }
+
+      if (
+        context.filter.test(
+          // NOTE(EvanBacon): Ensure files start with `./` for matching purposes
+          // this ensures packages work across Metro and Webpack (ex: Storybook for React DOM / React Native).
+          // `a/b.js` -> `./a/b.js`
+          prefix + filePath.replace(/\\/g, '/'),
+        )
+      ) {
+        files.push(file);
+      }
+    }
+
     return files;
   }
 

@@ -544,6 +544,8 @@ class Server {
         shallow: graphOptions.shallow,
         experimentalImportBundleSupport:
           this._config.transformer.experimentalImportBundleSupport,
+        unstable_allowRequireContext:
+          this._config.transformer.unstable_allowRequireContext,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -1166,6 +1168,8 @@ class Server {
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        this._config.transformer.unstable_allowRequireContext,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);

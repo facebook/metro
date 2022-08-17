@@ -51,8 +51,50 @@ type Data = $ReadOnly<{
   transformFileEndLogEntry: LogEntry,
 }>;
 
+/**
+ * When the `Buffer` is sent over the worker thread it gets serialized into a JSON object.
+ * This helper method will deserialize it if needed.
+ *
+ * @returns `Buffer` representation of the JSON object.
+ * @returns `null` if the given object is nullish or not a serialized `Buffer` object.
+ */
+function asDeserializedBuffer(value: any): Buffer | null {
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+  if (value && value.type === 'Buffer') {
+    return Buffer.from(value.data);
+  }
+  return null;
+}
+
 async function transform(
   filename: string,
+  transformOptions: JsTransformOptions,
+  projectRoot: string,
+  transformerConfig: TransformerConfig,
+  fileBuffer?: Buffer,
+): Promise<Data> {
+  let data;
+
+  const fileBufferObject = asDeserializedBuffer(fileBuffer);
+  if (fileBufferObject) {
+    data = fileBufferObject;
+  } else {
+    data = fs.readFileSync(path.resolve(projectRoot, filename));
+  }
+  return transformFile(
+    filename,
+    data,
+    transformOptions,
+    projectRoot,
+    transformerConfig,
+  );
+}
+
+async function transformFile(
+  filename: string,
+  data: Buffer,
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
@@ -71,7 +113,6 @@ async function transform(
     start_timestamp: process.hrtime(),
   };
 
-  const data = fs.readFileSync(path.resolve(projectRoot, filename));
   const sha1 = crypto.createHash('sha1').update(data).digest('hex');
 
   const result = await Transformer.transform(

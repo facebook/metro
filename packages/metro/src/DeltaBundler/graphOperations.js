@@ -30,6 +30,8 @@
 
 'use strict';
 
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
   Graph,
@@ -40,7 +42,12 @@ import type {
 } from './types.flow';
 
 import CountingSet from '../lib/CountingSet';
+import {
+  deriveAbsolutePathFromContext,
+  fileMatchesContext,
+} from '../lib/contextModule';
 
+import * as path from 'path';
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
@@ -63,6 +70,8 @@ type NodeColor =
 
 // Private state for the graph that persists between operations.
 export opaque type PrivateState = {
+  /** Resolved context parameters from `require.context`. */
+  +resolvedContexts: Map<string, RequireContext>,
   +gc: {
     // GC state for nodes in the graph (graph.dependencies)
     +color: Map<string, NodeColor>,
@@ -79,6 +88,7 @@ function createGraph<T>(options: GraphInputOptions): Graph<T> {
     dependencies: new Map(),
     importBundleNames: new Set(),
     privateState: {
+      resolvedContexts: new Map(),
       gc: {
         color: new Map(),
         possibleCycleRoots: new Set(),
@@ -144,7 +154,7 @@ function getInternalOptions<T>({
  * dependency graph.
  * Instead of traversing the whole graph each time, it just calculates the
  * difference between runs by only traversing the added/removed dependencies.
- * To do so, it uses the passed passed graph dependencies and it mutates it.
+ * To do so, it uses the passed graph dependencies and it mutates it.
  * The paths parameter contains the absolute paths of the root files that the
  * method should traverse. Normally, these paths should be the modified files
  * since the last traversal.
@@ -266,13 +276,15 @@ async function processModule<T>(
   delta: Delta,
   options: InternalOptions<T>,
 ): Promise<Module<T>> {
+  const resolvedContext = graph.privateState.resolvedContexts.get(path);
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
-  const result = await options.transform(path);
+  const result = await options.transform(path, resolvedContext);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
+    graph,
     path,
     result.dependencies,
     options,
@@ -299,10 +311,7 @@ async function processModule<T>(
     const curDependency = currentDependencies.get(key);
     if (
       !curDependency ||
-      curDependency.absolutePath !== prevDependency.absolutePath ||
-      (options.experimentalImportBundleSupport &&
-        curDependency.data.data.asyncType !==
-          prevDependency.data.data.asyncType)
+      !dependenciesEqual(prevDependency, curDependency, options)
     ) {
       removeDependency(module, key, prevDependency, graph, delta, options);
     }
@@ -314,10 +323,7 @@ async function processModule<T>(
     const prevDependency = previousDependencies.get(key);
     if (
       !prevDependency ||
-      prevDependency.absolutePath !== curDependency.absolutePath ||
-      (options.experimentalImportBundleSupport &&
-        prevDependency.data.data.asyncType !==
-          curDependency.data.data.asyncType)
+      !dependenciesEqual(prevDependency, curDependency, options)
     ) {
       promises.push(
         addDependency(module, key, curDependency, graph, delta, options),
@@ -343,6 +349,36 @@ async function processModule<T>(
   module.dependencies = currentDependencies;
 
   return module;
+}
+
+function dependenciesEqual(
+  a: Dependency,
+  b: Dependency,
+  options: $ReadOnly<{experimentalImportBundleSupport: boolean, ...}>,
+): boolean {
+  return (
+    a === b ||
+    (a.absolutePath === b.absolutePath &&
+      (!options.experimentalImportBundleSupport ||
+        a.data.data.asyncType === b.data.data.asyncType) &&
+      contextParamsEqual(a.data.data.contextParams, b.data.data.contextParams))
+  );
+}
+
+function contextParamsEqual(
+  a: ?RequireContextParams,
+  b: ?RequireContextParams,
+): boolean {
+  return (
+    a === b ||
+    (a == null && b == null) ||
+    (a != null &&
+      b != null &&
+      a.recursive === b.recursive &&
+      a.filter.pattern === b.filter.pattern &&
+      a.filter.flags === b.filter.flags &&
+      a.mode === b.mode)
+  );
 }
 
 async function addDependency<T>(
@@ -447,7 +483,26 @@ function removeDependency<T>(
   }
 }
 
+/**
+ * Collect a list of context modules which include a given file.
+ */
+function markModifiedContextModules<T>(
+  graph: Graph<T>,
+  filePath: string,
+  modifiedPaths: Set<string>,
+) {
+  for (const [absolutePath, context] of graph.privateState.resolvedContexts) {
+    if (
+      !modifiedPaths.has(absolutePath) &&
+      fileMatchesContext(filePath, context)
+    ) {
+      modifiedPaths.add(absolutePath);
+    }
+  }
+}
+
 function resolveDependencies<T>(
+  graph: Graph<T>,
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
@@ -455,18 +510,50 @@ function resolveDependencies<T>(
   const maybeResolvedDeps = new Map();
   for (const dep of dependencies) {
     let resolvedDep;
-    try {
+
+    // `require.context`
+    const {contextParams} = dep.data;
+    if (contextParams) {
+      // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
+      // statements can be used to target the same file with different properties.
+      const from = path.join(parentPath, '..', dep.name);
+      const absolutePath = deriveAbsolutePathFromContext(from, contextParams);
+
+      const resolvedContext: RequireContext = {
+        from,
+        mode: contextParams.mode,
+        recursive: contextParams.recursive,
+        filter: new RegExp(
+          contextParams.filter.pattern,
+          contextParams.filter.flags,
+        ),
+      };
+
+      graph.privateState.resolvedContexts.set(absolutePath, resolvedContext);
+
       resolvedDep = {
-        absolutePath: options.resolve(parentPath, dep.name),
+        absolutePath,
         data: dep,
       };
-    } catch (error) {
-      // Ignore unavailable optional dependencies. They are guarded
-      // with a try-catch block and will be handled during runtime.
-      if (dep.data.isOptional !== true) {
-        throw error;
+    } else {
+      try {
+        resolvedDep = {
+          absolutePath: options.resolve(parentPath, dep.name),
+          data: dep,
+        };
+
+        // This dependency may have existed previously as a require.context -
+        // clean it up.
+        graph.privateState.resolvedContexts.delete(resolvedDep.absolutePath);
+      } catch (error) {
+        // Ignore unavailable optional dependencies. They are guarded
+        // with a try-catch block and will be handled during runtime.
+        if (dep.data.isOptional !== true) {
+          throw error;
+        }
       }
     }
+
     const key = dep.data.key;
     if (maybeResolvedDeps.has(key)) {
       throw new Error(
@@ -622,6 +709,7 @@ function freeModule<T>(module: Module<T>, graph: Graph<T>, delta: Delta) {
   delta.earlyInverseDependencies.delete(module.path);
   graph.privateState.gc.possibleCycleRoots.delete(module.path);
   graph.privateState.gc.color.delete(module.path);
+  graph.privateState.resolvedContexts.delete(module.path);
 }
 
 // Mark a module as a possible cycle root
@@ -740,4 +828,5 @@ module.exports = {
   initialTraverseDependencies,
   traverseDependencies,
   reorderGraph,
+  markModifiedContextModules,
 };

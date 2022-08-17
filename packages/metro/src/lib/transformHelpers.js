@@ -16,6 +16,9 @@ import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
+import type {RequireContext} from './contextModule';
+
+import {getContextModuleTemplate} from './contextModuleTemplates';
 
 const path = require('path');
 
@@ -68,6 +71,8 @@ async function calcTransformerOptions(
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
       shallow: false,
     });
 
@@ -118,15 +123,47 @@ async function getTransformFn(
     options,
   );
 
-  return async (path: string) => {
-    return await bundler.transformFile(path, {
-      ...transformOptions,
-      type: getType(transformOptions.type, path, config.resolver.assetExts),
-      inlineRequires: removeInlineRequiresBlockListFromOptions(
-        path,
-        inlineRequires,
-      ),
-    });
+  return async (modulePath: string, requireContext: ?RequireContext) => {
+    let templateBuffer: Buffer;
+
+    if (requireContext) {
+      const graph = await bundler.getDependencyGraph();
+
+      // TODO: Check delta changes to avoid having to look over all files each time
+      // this is a massive performance boost.
+
+      // Search against all files, this is very expensive.
+      // TODO: Maybe we could let the user specify which root to check against.
+      const files = graph.matchFilesWithContext(requireContext.from, {
+        filter: requireContext.filter,
+        recursive: requireContext.recursive,
+      });
+
+      const template = getContextModuleTemplate(
+        requireContext.mode,
+        requireContext.from,
+        files,
+      );
+
+      templateBuffer = Buffer.from(template);
+    }
+
+    return await bundler.transformFile(
+      modulePath,
+      {
+        ...transformOptions,
+        type: getType(
+          transformOptions.type,
+          modulePath,
+          config.resolver.assetExts,
+        ),
+        inlineRequires: removeInlineRequiresBlockListFromOptions(
+          modulePath,
+          inlineRequires,
+        ),
+      },
+      templateBuffer,
+    );
   };
 }
 

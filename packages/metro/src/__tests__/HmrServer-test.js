@@ -101,6 +101,7 @@ describe('HmrServer', () => {
     options.serializer.experimentalSerializerHook = () => {};
     options.reporter.update = jest.fn();
     options.transformer.experimentalImportBundleSupport = false;
+    options.transformer.unstable_allowRequireContext = false;
     options.resolver.platforms = [];
     options.server.rewriteRequestUrl = function (requrl) {
       const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
@@ -160,6 +161,7 @@ describe('HmrServer', () => {
         {
           shallow: false,
           experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
         },
       ),
     );
@@ -185,6 +187,7 @@ describe('HmrServer', () => {
         {
           shallow: false,
           experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
         },
       ),
     );
@@ -210,6 +213,7 @@ describe('HmrServer', () => {
         {
           shallow: false,
           experimentalImportBundleSupport: false,
+          unstable_allowRequireContext: false,
         },
       ),
     );
@@ -235,6 +239,7 @@ describe('HmrServer', () => {
       {
         shallow: false,
         experimentalImportBundleSupport: false,
+        unstable_allowRequireContext: false,
       },
     )}\` was not found.`;
 

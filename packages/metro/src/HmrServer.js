@@ -125,6 +125,8 @@ class HmrServer<TClient: Client> {
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        this._config.transformer.unstable_allowRequireContext,
     });
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (!revPromise) {
