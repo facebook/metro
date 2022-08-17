@@ -13,7 +13,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.0.0"
+    "@babel/runtime": "^7.0.0",
+    "react-refresh": "^0.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.0"
