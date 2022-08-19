@@ -18,7 +18,6 @@ const generate = require('../worker/generate');
 const mergeSourceMaps = require('../worker/mergeSourceMaps');
 const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
 const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
 // flowlint-next-line untyped-import:off
 const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
@@ -179,7 +178,7 @@ function inlineModuleIds(
   const sourceAst =
     isTypeScriptSource(path) || isTSXSource(path) || !hermesParser
       ? parseSync(code, babelConfig)
-      : HermesParser.parse(code, {
+      : require('hermes-parser').parse(code, {
           babel: true,
           // $FlowFixMe[prop-missing]
           sourceType: babelConfig.sourceType,

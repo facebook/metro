@@ -14,7 +14,6 @@ import type {BabelCoreOptions} from '@babel/core';
 import type {FBSourceFunctionMap} from 'metro-source-map';
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
 
@@ -81,7 +80,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       sourceType: 'module',
     };
     const sourceAst = options.hermesParser
-      ? HermesParser.parse(src, {
+      ? require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
         })
