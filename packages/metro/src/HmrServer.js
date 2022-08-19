@@ -105,7 +105,7 @@ class HmrServer<TClient: Client> {
       new Set(this._config.resolver.platforms),
       BYTECODE_VERSION,
     );
-    const {entryFile, transformOptions, graphOptions} =
+    const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 
     /**
@@ -122,6 +122,7 @@ class HmrServer<TClient: Client> {
       entryFile,
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+      resolverOptions,
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,

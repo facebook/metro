@@ -548,11 +548,12 @@ class Server {
         relativeTo: 'server',
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        shallow: graphOptions.shallow,
         experimentalImportBundleSupport:
           this._config.transformer.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
+        resolverOptions,
+        shallow: graphOptions.shallow,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -744,6 +745,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -751,10 +753,15 @@ class Server {
 
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(entryFile, transformOptions, {
-            onProgress,
-            shallow: graphOptions.shallow,
-          }));
+        : this._bundler.initializeGraph(
+            entryFile,
+            transformOptions,
+            resolverOptions,
+            {
+              onProgress,
+              shallow: graphOptions.shallow,
+            },
+          ));
 
       const serializer =
         this._config.serializer.customSerializer ||
@@ -867,6 +874,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -874,10 +882,15 @@ class Server {
 
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(entryFile, transformOptions, {
-            onProgress,
-            shallow: graphOptions.shallow,
-          }));
+        : this._bundler.initializeGraph(
+            entryFile,
+            transformOptions,
+            resolverOptions,
+            {
+              onProgress,
+              shallow: graphOptions.shallow,
+            },
+          ));
 
       const bundle = bundleToBytecode(
         baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
@@ -979,6 +992,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -988,6 +1002,7 @@ class Server {
         ({revision} = await this._bundler.initializeGraph(
           entryFile,
           transformOptions,
+          resolverOptions,
           {onProgress, shallow: graphOptions.shallow},
         ));
       } else {
@@ -1159,6 +1174,7 @@ class Server {
       entryFile,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     } = splitBundleOptions(options);
@@ -1173,11 +1189,12 @@ class Server {
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-      shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
+      resolverOptions,
+      shallow: graphOptions.shallow,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1185,6 +1202,7 @@ class Server {
       ({revision} = await this._bundler.initializeGraph(
         resolvedEntryFilePath,
         transformOptions,
+        resolverOptions,
         {onProgress, shallow: graphOptions.shallow},
       ));
     } else {

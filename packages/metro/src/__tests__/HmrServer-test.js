@@ -209,6 +209,7 @@ describe('HmrServer', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -236,6 +237,7 @@ describe('HmrServer', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -263,6 +265,7 @@ describe('HmrServer', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -290,6 +293,7 @@ describe('HmrServer', () => {
         shallow: false,
         experimentalImportBundleSupport: false,
         unstable_allowRequireContext: false,
+        resolverOptions: {},
       },
     )}\` was not found.`;
 
