@@ -36,6 +36,8 @@ import type {
   ActionStartLogEntry,
   LogEntry,
 } from 'metro-core/src/Logger';
+import type {CustomResolverOptions} from 'metro-resolver/src/types';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const {getAsset} = require('./Assets');
 const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
@@ -529,8 +531,13 @@ class Server {
       res: ServerResponse,
       bundleOptions: BundleOptions,
     ): Promise<void> {
-      const {entryFile, graphOptions, transformOptions, serializerOptions} =
-        splitBundleOptions(bundleOptions);
+      const {
+        entryFile,
+        graphOptions,
+        resolverOptions,
+        serializerOptions,
+        transformOptions,
+      } = splitBundleOptions(bundleOptions);
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -639,6 +646,7 @@ class Server {
         mres,
         onProgress,
         req,
+        resolverOptions,
         serializerOptions,
         transformOptions,
       };
@@ -1149,10 +1157,10 @@ class Server {
 
     const {
       entryFile,
-      transformOptions,
-      serializerOptions,
       graphOptions,
       onProgress,
+      serializerOptions,
+      transformOptions,
     } = splitBundleOptions(options);
 
     /**
@@ -1229,14 +1237,16 @@ class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS: {
-    customTransformOptions: any,
+  static DEFAULT_GRAPH_OPTIONS: $ReadOnly<{
+    customResolverOptions: CustomResolverOptions,
+    customTransformOptions: CustomTransformOptions,
     dev: boolean,
     hot: boolean,
     minify: boolean,
     runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
-  } = {
+  }> = {
+    customResolverOptions: Object.create(null),
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,

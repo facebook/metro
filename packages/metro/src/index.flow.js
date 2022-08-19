@@ -424,8 +424,10 @@ exports.buildGraph = async function (
   const bundler = new IncrementalBundler(mergedConfig);
 
   try {
+    const {customResolverOptions: _, ...defaultTransformInputOptions} =
+      MetroServer.DEFAULT_GRAPH_OPTIONS;
     return await bundler.buildGraphForEntries(entries, {
-      ...MetroServer.DEFAULT_GRAPH_OPTIONS,
+      ...defaultTransformInputOptions,
       customTransformOptions,
       dev,
       minify,
