@@ -112,7 +112,7 @@ class DeltaBundler<T = MixedOutput> {
     return await deltaCalculator.getDelta({reset, shallow});
   }
 
-  listen(graph: Graph<T>, callback: () => mixed): () => void {
+  listen(graph: Graph<T>, callback: () => Promise<void>): () => void {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {

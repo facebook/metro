@@ -38,7 +38,7 @@ const url = require('url');
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;
 
-type Client = {
+export type Client = {
   optedIntoHMR: boolean,
   revisionIds: Array<RevisionId>,
   +sendFn: string => void,
