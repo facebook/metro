@@ -190,8 +190,7 @@ async function getResolveDependencyFn(
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
-    // $FlowFixMe[incompatible-call]
-    dependencyGraph.resolveDependency(from, to, platform);
+    dependencyGraph.resolveDependency(from, to, platform ?? null);
 }
 
 module.exports = {
