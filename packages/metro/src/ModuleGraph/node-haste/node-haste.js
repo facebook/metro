@@ -173,7 +173,6 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
     extraNodeModules,
     isAssetFile,
     mainFields: options.mainFields,
-    // $FlowFixMe -- error revealed by types-first codemod
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
@@ -213,7 +212,6 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    // $FlowFixMe -- error revealed by types-first codemod
     return moduleResolver.resolveDependency(from, id, true, platform).path;
   };
 };

@@ -117,11 +117,15 @@ export type OutputResult<M: MixedSourceMap> = {
   map: M,
 };
 
+export type Replacements = $ReadOnly<{
+  [filename: string]: string | false,
+}>;
+
 export type PackageData = {
-  browser?: Object | string,
+  browser?: Replacements | string,
   main?: string,
   name?: string,
-  'react-native'?: Object | string,
+  'react-native'?: Replacements | string,
 };
 
 export type ResolveFn = (id: string, source: ?string) => string;
