@@ -28,6 +28,7 @@ const {
 const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
+import type {ResolverInputOptions} from '../shared/types.flow';
 
 const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
@@ -247,6 +248,9 @@ class DependencyGraph extends EventEmitter {
     from: string,
     to: string,
     platform: string | null,
+    resolverOptions: ResolverInputOptions,
+
+    // TODO: Fold assumeFlatNodeModules into resolverOptions and add to graphId
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
@@ -274,6 +278,7 @@ class DependencyGraph extends EventEmitter {
           to,
           true,
           platform,
+          resolverOptions,
         ).path;
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {

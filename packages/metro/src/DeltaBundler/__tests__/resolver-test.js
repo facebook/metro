@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {ResolverInputOptions} from '../../shared/types.flow';
 import type {InputConfigT} from 'metro-config/src/configTypes.flow';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
@@ -103,9 +104,16 @@ type MockFSDirContents = $ReadOnly<{
       resolve: (
         from: string,
         to: string,
+        resolverOptions?: ResolverInputOptions = {},
         options: void | {assumeFlatNodeModules: boolean},
       ) =>
-        dependencyGraph.resolveDependency(from, to, platform ?? null, options),
+        dependencyGraph.resolveDependency(
+          from,
+          to,
+          platform ?? null,
+          resolverOptions,
+          options,
+        ),
       end: () => dependencyGraph.end(),
     };
   }
@@ -537,7 +545,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/lib/index.js'), 'foo', {
+          resolver.resolve(p('/root/lib/index.js'), 'foo', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/root/node_modules/foo/index.js'));
@@ -545,6 +553,7 @@ type MockFSDirContents = $ReadOnly<{
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
             'foo',
+            undefined,
             {assumeFlatNodeModules: true},
           ),
         ).toBe(p('/root/node_modules/foo/index.js'));
@@ -2299,12 +2308,12 @@ type MockFSDirContents = $ReadOnly<{
           filePath: p('/target-always.js'),
         });
         expect(
-          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+          resolver.resolve(p('/root1/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
@@ -2314,12 +2323,12 @@ type MockFSDirContents = $ReadOnly<{
           filePath: p('/target-never.js'),
         });
         expect(
-          resolver.resolve(p('/root2/dir/a.js'), 'target', {
+          resolver.resolve(p('/root2/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
         expect(
-          resolver.resolve(p('/root2/dir/b.js'), 'target', {
+          resolver.resolve(p('/root2/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));

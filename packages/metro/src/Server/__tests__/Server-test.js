@@ -168,80 +168,82 @@ describe('processRequest', () => {
 
   beforeEach(() => {
     const currentGraphs = new Set();
-    buildGraph.mockImplementation(async (entryPoints, options) => {
-      dependencies = new Map([
-        [
-          '/root/mybundle.js',
-          {
-            path: '/root/mybundle.js',
-            dependencies: new Map([
-              [
-                'foo',
+    buildGraph.mockImplementation(
+      async (entryPoints, options, resolverOptions, otherOptions) => {
+        dependencies = new Map([
+          [
+            '/root/mybundle.js',
+            {
+              path: '/root/mybundle.js',
+              dependencies: new Map([
+                [
+                  'foo',
+                  {
+                    absolutePath: '/root/foo.js',
+                    data: {isAsync: false, name: 'foo'},
+                  },
+                ],
+              ]),
+              getSource: () => Buffer.from('code-mybundle'),
+              output: [
                 {
-                  absolutePath: '/root/foo.js',
-                  data: {isAsync: false, name: 'foo'},
+                  type: 'js/module',
+                  data: {
+                    code: '__d(function() {entry();});',
+                    lineCount: 1,
+                    map: [[1, 16, 1, 0]],
+                  },
+                },
+                {
+                  type: 'bytecode/module',
+                  data: {
+                    bytecode: compile('__d(function() {entry();});', {
+                      sourceURL: '/root/mybundle.js',
+                    }).bytecode,
+                  },
                 },
               ],
-            ]),
-            getSource: () => Buffer.from('code-mybundle'),
+            },
+          ],
+        ]);
+        if (!options.shallow) {
+          dependencies.set('/root/foo.js', {
+            path: '/root/foo.js',
+            dependencies: new Map(),
+            getSource: () => Buffer.from('code-foo'),
             output: [
               {
                 type: 'js/module',
                 data: {
-                  code: '__d(function() {entry();});',
+                  code: '__d(function() {foo();});',
                   lineCount: 1,
                   map: [[1, 16, 1, 0]],
+                  functionMap: {names: ['<global>'], mappings: 'AAA'},
                 },
               },
               {
                 type: 'bytecode/module',
                 data: {
-                  bytecode: compile('__d(function() {entry();});', {
-                    sourceURL: '/root/mybundle.js',
+                  bytecode: compile('__d(function() {foo();});', {
+                    sourceURL: '/root/foo.js',
                   }).bytecode,
                 },
               },
             ],
-          },
-        ],
-      ]);
-      if (!options.shallow) {
-        dependencies.set('/root/foo.js', {
-          path: '/root/foo.js',
-          dependencies: new Map(),
-          getSource: () => Buffer.from('code-foo'),
-          output: [
-            {
-              type: 'js/module',
-              data: {
-                code: '__d(function() {foo();});',
-                lineCount: 1,
-                map: [[1, 16, 1, 0]],
-                functionMap: {names: ['<global>'], mappings: 'AAA'},
-              },
-            },
-            {
-              type: 'bytecode/module',
-              data: {
-                bytecode: compile('__d(function() {foo();});', {
-                  sourceURL: '/root/foo.js',
-                }).bytecode,
-              },
-            },
-          ],
-        });
-      }
+          });
+        }
 
-      const graph = {
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
-        importBundleNames: new Set(),
-        transformOptions: options.transformOptions,
-      };
-      currentGraphs.add(graph);
+        const graph = {
+          entryPoints: ['/root/mybundle.js'],
+          dependencies,
+          importBundleNames: new Set(),
+          transformOptions: options.transformOptions,
+        };
+        currentGraphs.add(graph);
 
-      return graph;
-    });
+        return graph;
+      },
+    );
     getDelta.mockImplementation(async (graph, {reset}) => {
       if (!currentGraphs.has(graph)) {
         throw new Error('Graph not found');
@@ -652,6 +654,7 @@ describe('processRequest', () => {
       expect.objectContaining({
         platform: 'ios',
       }),
+      expect.any(Object),
     );
     expect(getResolveDependencyFn).toBeCalled();
 
@@ -686,6 +689,7 @@ describe('processRequest', () => {
       expect.objectContaining({
         unstable_transformProfile: 'hermes-stable',
       }),
+      expect.any(Object),
     );
     expect(getResolveDependencyFn).toBeCalled();
 
@@ -870,6 +874,7 @@ describe('processRequest', () => {
           type: 'module',
           unstable_transformProfile: 'default',
         },
+        expect.any(Object),
       );
       expect(getResolveDependencyFn).toBeCalled();
 

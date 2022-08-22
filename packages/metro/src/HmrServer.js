@@ -115,6 +115,7 @@ class HmrServer<TClient: Client> {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
+      resolverOptions,
     );
     const resolvedEntryFilePath = resolutionFn(
       (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +

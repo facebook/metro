@@ -101,6 +101,7 @@ class IncrementalBundler {
   async buildGraphForEntries(
     entryFiles: $ReadOnlyArray<string>,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -112,6 +113,7 @@ class IncrementalBundler {
       resolve: await transformHelpers.getResolveDependencyFn(
         this._bundler,
         transformOptions.platform,
+        resolverOptions,
       ),
       transform: await transformHelpers.getTransformFn(
         absoluteEntryFiles,
@@ -119,6 +121,7 @@ class IncrementalBundler {
         this._deltaBundler,
         this._config,
         transformOptions,
+        resolverOptions,
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
@@ -142,6 +145,7 @@ class IncrementalBundler {
   async getDependencies(
     entryFiles: $ReadOnlyArray<string>,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -155,6 +159,7 @@ class IncrementalBundler {
         resolve: await transformHelpers.getResolveDependencyFn(
           this._bundler,
           transformOptions.platform,
+          resolverOptions,
         ),
         transform: await transformHelpers.getTransformFn(
           absoluteEntryFiles,
@@ -162,6 +167,7 @@ class IncrementalBundler {
           this._deltaBundler,
           this._config,
           transformOptions,
+          resolverOptions,
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
@@ -179,6 +185,7 @@ class IncrementalBundler {
   async buildGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -187,6 +194,7 @@ class IncrementalBundler {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,
+      resolverOptions,
       otherOptions,
     );
 
@@ -195,6 +203,7 @@ class IncrementalBundler {
     const prepend = await getPrependedScripts(
       this._config,
       transformOptionsWithoutType,
+      resolverOptions,
       this._bundler,
       this._deltaBundler,
     );
@@ -233,6 +242,7 @@ class IncrementalBundler {
       const {graph, prepend} = await this.buildGraph(
         entryFile,
         transformOptions,
+        resolverOptions,
         otherOptions,
       );
       return {
