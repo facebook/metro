@@ -26,6 +26,7 @@ import type {Reporter} from './lib/reporting';
 import type {
   BundleOptions,
   GraphOptions,
+  ResolverInputOptions,
   SplitBundleOptions,
 } from './shared/types.flow';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -36,6 +37,8 @@ import type {
   ActionStartLogEntry,
   LogEntry,
 } from 'metro-core/src/Logger';
+import type {CustomResolverOptions} from 'metro-resolver/src/types';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const {getAsset} = require('./Assets');
 const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
@@ -178,6 +181,7 @@ class Server {
       entryFile,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     } = splitBundleOptions(options);
@@ -185,6 +189,7 @@ class Server {
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
+      resolverOptions,
       {
         onProgress,
         shallow: graphOptions.shallow,
@@ -196,7 +201,11 @@ class Server {
     const bundleOptions = {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions, relativeTo: 'project'},
+        {
+          relativeTo: 'project',
+          resolverOptions,
+          transformOptions,
+        },
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -255,6 +264,7 @@ class Server {
       entryFile,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     } = splitBundleOptions(options);
@@ -262,6 +272,7 @@ class Server {
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
+      resolverOptions,
       {onProgress, shallow: graphOptions.shallow},
     );
 
@@ -270,7 +281,11 @@ class Server {
     return await getRamBundleInfo(entryPoint, prepend, graph, {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions, relativeTo: 'project'},
+        {
+          relativeTo: 'project',
+          resolverOptions,
+          transformOptions,
+        },
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -295,12 +310,13 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, transformOptions, onProgress} =
+    const {entryFile, onProgress, resolverOptions, transformOptions} =
       splitBundleOptions(options);
 
     const dependencies = await this._bundler.getDependencies(
       [entryFile],
       transformOptions,
+      resolverOptions,
       {onProgress, shallow: false},
     );
 
@@ -320,10 +336,15 @@ class Server {
     +platform: string,
     ...
   }): Promise<Array<string>> {
-    /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.122.0 was deployed. To see the error, delete
-     * this comment and run Flow. */
-    const {entryFile, transformOptions, onProgress} = splitBundleOptions({
+    const {
+      entryFile,
+      onProgress,
+      resolverOptions,
+      transformOptions,
+      /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.122.0 was deployed. To see the error, delete
+       * this comment and run Flow. */
+    } = splitBundleOptions({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
       bundleType: 'bundle',
@@ -332,6 +353,7 @@ class Server {
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
+      resolverOptions,
       {onProgress, shallow: false},
     );
 
@@ -522,30 +544,36 @@ class Server {
     res: ServerResponse,
     bundleOptions: BundleOptions,
   ) => Promise<void> {
-    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
-     * Flow's LTI update could not be added via codemod */
     return async function requestProcessor(
+      this: Server,
       req: IncomingMessage,
       res: ServerResponse,
       bundleOptions: BundleOptions,
     ): Promise<void> {
-      const {entryFile, graphOptions, transformOptions, serializerOptions} =
-        splitBundleOptions(bundleOptions);
+      const {
+        entryFile,
+        graphOptions,
+        resolverOptions,
+        serializerOptions,
+        transformOptions,
+      } = splitBundleOptions(bundleOptions);
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
        * to find the appropriate file with supported extensions.
        */
       const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
-        transformOptions,
         relativeTo: 'server',
+        resolverOptions,
+        transformOptions,
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        shallow: graphOptions.shallow,
         experimentalImportBundleSupport:
           this._config.transformer.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
+        resolverOptions,
+        shallow: graphOptions.shallow,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -639,6 +667,7 @@ class Server {
         mres,
         onProgress,
         req,
+        resolverOptions,
         serializerOptions,
         transformOptions,
       };
@@ -736,6 +765,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -743,10 +773,15 @@ class Server {
 
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(entryFile, transformOptions, {
-            onProgress,
-            shallow: graphOptions.shallow,
-          }));
+        : this._bundler.initializeGraph(
+            entryFile,
+            transformOptions,
+            resolverOptions,
+            {
+              onProgress,
+              shallow: graphOptions.shallow,
+            },
+          ));
 
       const serializer =
         this._config.serializer.customSerializer ||
@@ -761,7 +796,11 @@ class Server {
         {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions, relativeTo: 'project'},
+            {
+              relativeTo: 'project',
+              resolverOptions,
+              transformOptions,
+            },
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -859,6 +898,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -866,16 +906,25 @@ class Server {
 
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(entryFile, transformOptions, {
-            onProgress,
-            shallow: graphOptions.shallow,
-          }));
+        : this._bundler.initializeGraph(
+            entryFile,
+            transformOptions,
+            resolverOptions,
+            {
+              onProgress,
+              shallow: graphOptions.shallow,
+            },
+          ));
 
       const bundle = bundleToBytecode(
         baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions, relativeTo: 'project'},
+            {
+              relativeTo: 'project',
+              resolverOptions,
+              transformOptions,
+            },
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -971,6 +1020,7 @@ class Server {
       graphId,
       graphOptions,
       onProgress,
+      resolverOptions,
       serializerOptions,
       transformOptions,
     }) => {
@@ -980,6 +1030,7 @@ class Server {
         ({revision} = await this._bundler.initializeGraph(
           entryFile,
           transformOptions,
+          resolverOptions,
           {onProgress, shallow: graphOptions.shallow},
         ));
       } else {
@@ -1020,10 +1071,16 @@ class Server {
         bundler: 'delta',
       };
     },
-    build: async ({entryFile, transformOptions, onProgress}) => {
+    build: async ({
+      entryFile,
+      onProgress,
+      resolverOptions,
+      transformOptions,
+    }) => {
       const dependencies = await this._bundler.getDependencies(
         [entryFile],
         transformOptions,
+        resolverOptions,
         {onProgress, shallow: false},
       );
 
@@ -1149,10 +1206,11 @@ class Server {
 
     const {
       entryFile,
-      transformOptions,
-      serializerOptions,
       graphOptions,
       onProgress,
+      resolverOptions,
+      serializerOptions,
+      transformOptions,
     } = splitBundleOptions(options);
 
     /**
@@ -1160,16 +1218,18 @@ class Server {
      * to find the appropriate file with supported extensions.
      */
     const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
-      transformOptions,
       relativeTo: 'server',
+      resolverOptions,
+      transformOptions,
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-      shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
+      resolverOptions,
+      shallow: graphOptions.shallow,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1177,6 +1237,7 @@ class Server {
       ({revision} = await this._bundler.initializeGraph(
         resolvedEntryFilePath,
         transformOptions,
+        resolverOptions,
         {onProgress, shallow: graphOptions.shallow},
       ));
     } else {
@@ -1199,16 +1260,19 @@ class Server {
   async _resolveRelativePath(
     filePath: string,
     {
-      transformOptions,
       relativeTo,
+      resolverOptions,
+      transformOptions,
     }: $ReadOnly<{
-      transformOptions: TransformInputOptions,
       relativeTo: 'project' | 'server',
+      resolverOptions: ResolverInputOptions,
+      transformOptions: TransformInputOptions,
     }>,
   ): Promise<string> {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
+      resolverOptions,
     );
     const rootDir =
       relativeTo === 'server'
@@ -1229,14 +1293,16 @@ class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS: {
-    customTransformOptions: any,
+  static DEFAULT_GRAPH_OPTIONS: $ReadOnly<{
+    customResolverOptions: CustomResolverOptions,
+    customTransformOptions: CustomTransformOptions,
     dev: boolean,
     hot: boolean,
     minify: boolean,
     runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
-  } = {
+  }> = {
+    customResolverOptions: Object.create(null),
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,

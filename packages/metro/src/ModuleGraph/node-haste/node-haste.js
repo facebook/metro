@@ -9,6 +9,7 @@
  */
 
 import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
+import type {ResolverInputOptions} from '../../shared/types.flow';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Path} from './node-haste.flow';
 import type {ModuleMapData, ModuleMapItem} from 'metro-file-map';
@@ -26,13 +27,7 @@ const ModuleCache = require('./ModuleCache');
 const defaults = require('metro-config/src/defaults/defaults');
 const path = require('path');
 
-type ResolveOptions = {
-  /**
-   * (Used by the resolver) The extensions tried (in order) to implicitly
-   * locate a source file.
-   */
-  sourceExts: $ReadOnlyArray<string>,
-
+type ResolveOptions = $ReadOnly<{
   /**
    * The additional extensions to include in the file map as source files that
    * can be explicitly imported.
@@ -41,16 +36,24 @@ type ResolveOptions = {
 
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
-  +disableHierarchicalLookup: boolean,
-  +emptyModulePath: string,
+  disableHierarchicalLookup: boolean,
+  emptyModulePath: string,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
   nodeModulesPaths: $ReadOnlyArray<string>,
-  +platform: string,
+  platform: string,
   platforms?: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
+  resolverOptions: ResolverInputOptions,
+
+  /**
+   * (Used by the resolver) The extensions tried (in order) to implicitly
+   * locate a source file.
+   */
+  sourceExts: $ReadOnlyArray<string>,
+
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
-};
+}>;
 
 const NATIVE_PLATFORM = 'native';
 const GENERIC_PLATFORM = 'g';
@@ -173,7 +176,6 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
     extraNodeModules,
     isAssetFile,
     mainFields: options.mainFields,
-    // $FlowFixMe -- error revealed by types-first codemod
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
@@ -213,7 +215,12 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    // $FlowFixMe -- error revealed by types-first codemod
-    return moduleResolver.resolveDependency(from, id, true, platform).path;
+    return moduleResolver.resolveDependency(
+      from,
+      id,
+      true,
+      platform,
+      options.resolverOptions,
+    ).path;
   };
 };

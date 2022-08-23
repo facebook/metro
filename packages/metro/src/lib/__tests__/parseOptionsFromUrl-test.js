@@ -11,8 +11,6 @@
 
 'use strict';
 
-jest.mock('../parseCustomTransformOptions', () => () => ({}));
-
 const BYTECODE_VERSION = 48;
 
 const parseOptionsFromUrl = require('../parseOptionsFromUrl');

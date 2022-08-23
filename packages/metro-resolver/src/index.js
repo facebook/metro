@@ -14,6 +14,7 @@ export type {
   AssetFileResolution,
   CustomResolutionContext,
   CustomResolver,
+  CustomResolverOptions,
   DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,

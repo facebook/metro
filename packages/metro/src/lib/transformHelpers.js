@@ -21,6 +21,7 @@ import type {RequireContext} from './contextModule';
 import {getContextModuleTemplate} from './contextModuleTemplates';
 
 const path = require('path');
+import type {ResolverInputOptions} from '../shared/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 
@@ -37,6 +38,7 @@ async function calcTransformerOptions(
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
   options: TransformInputOptions,
+  resolverOptions: ResolverInputOptions,
 ): Promise<TransformOptionsWithRawInlines> {
   const baseOptions = {
     customTransformOptions: options.customTransformOptions,
@@ -62,11 +64,22 @@ async function calcTransformerOptions(
 
   const getDependencies = async (path: string) => {
     const dependencies = await deltaBundler.getDependencies([path], {
-      resolve: await getResolveDependencyFn(bundler, options.platform),
-      transform: await getTransformFn([path], bundler, deltaBundler, config, {
-        ...options,
-        minify: false,
-      }),
+      resolve: await getResolveDependencyFn(
+        bundler,
+        options.platform,
+        resolverOptions,
+      ),
+      transform: await getTransformFn(
+        [path],
+        bundler,
+        deltaBundler,
+        config,
+        {
+          ...options,
+          minify: false,
+        },
+        resolverOptions,
+      ),
       transformOptions: options,
       onProgress: null,
       experimentalImportBundleSupport:
@@ -114,6 +127,7 @@ async function getTransformFn(
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
   options: TransformInputOptions,
+  resolverOptions: ResolverInputOptions,
 ): Promise<TransformFn<>> {
   const {inlineRequires, ...transformOptions} = await calcTransformerOptions(
     entryFiles,
@@ -121,6 +135,7 @@ async function getTransformFn(
     deltaBundler,
     config,
     options,
+    resolverOptions,
   );
 
   return async (modulePath: string, requireContext: ?RequireContext) => {
@@ -186,12 +201,17 @@ function getType(
 async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
+  resolverOptions: ResolverInputOptions,
 ): Promise<(from: string, to: string) => string> {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
-    // $FlowFixMe[incompatible-call]
-    dependencyGraph.resolveDependency(from, to, platform);
+    dependencyGraph.resolveDependency(
+      from,
+      to,
+      platform ?? null,
+      resolverOptions,
+    );
 }
 
 module.exports = {

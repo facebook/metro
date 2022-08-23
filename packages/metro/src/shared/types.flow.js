@@ -23,6 +23,7 @@ import type {
   CustomTransformOptions,
   MinifierOptions,
 } from 'metro-transform-worker';
+import type {CustomResolverOptions} from 'metro-resolver';
 
 type BundleType =
   | 'bundle'
@@ -41,6 +42,7 @@ type MetroSourceMapOrMappings =
 
 export type BundleOptions = {
   bundleType: BundleType,
+  +customResolverOptions: CustomResolverOptions,
   customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
@@ -61,6 +63,10 @@ export type BundleOptions = {
   ...
 };
 
+export type ResolverInputOptions = $ReadOnly<{
+  customResolverOptions?: CustomResolverOptions,
+}>;
+
 export type SerializerOptions = {
   +sourceMapUrl: ?string,
   +sourceUrl: ?string,
@@ -77,6 +83,7 @@ export type GraphOptions = {
 // Stricter representation of BundleOptions.
 export type SplitBundleOptions = {
   +entryFile: string,
+  +resolverOptions: ResolverInputOptions,
   +transformOptions: TransformInputOptions,
   +serializerOptions: SerializerOptions,
   +graphOptions: GraphOptions,
