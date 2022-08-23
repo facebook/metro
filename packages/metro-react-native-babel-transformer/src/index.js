@@ -23,7 +23,6 @@ const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const crypto = require('crypto');
 const fs = require('fs');
-const HermesParser = require('hermes-parser');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
@@ -211,7 +210,7 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
       isTSXSource(filename) ||
       !options.hermesParser
         ? parseSync(src, babelConfig)
-        : HermesParser.parse(src, {
+        : require('hermes-parser').parse(src, {
             babel: true,
             sourceType: babelConfig.sourceType,
           });
