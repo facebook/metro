@@ -38,7 +38,7 @@ const url = require('url');
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;
 
-type Client = {
+export type Client = {
   optedIntoHMR: boolean,
   revisionIds: Array<RevisionId>,
   +sendFn: string => void,
@@ -105,7 +105,7 @@ class HmrServer<TClient: Client> {
       new Set(this._config.resolver.platforms),
       BYTECODE_VERSION,
     );
-    const {entryFile, transformOptions, graphOptions} =
+    const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 
     /**
@@ -115,6 +115,7 @@ class HmrServer<TClient: Client> {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
+      resolverOptions,
     );
     const resolvedEntryFilePath = resolutionFn(
       (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
@@ -122,6 +123,7 @@ class HmrServer<TClient: Client> {
       entryFile,
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+      resolverOptions,
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,

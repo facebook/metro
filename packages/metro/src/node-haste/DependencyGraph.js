@@ -28,13 +28,16 @@ const {
 const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
+import type {ResolverInputOptions} from '../shared/types.flow';
 
 const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
+const NULL_PLATFORM = Symbol();
+
 function getOrCreate<T>(
-  map: Map<string, Map<string, T>>,
+  map: Map<string | symbol, Map<string | symbol, T>>,
   field: string,
-): Map<string, T> {
+): Map<string | symbol, T> {
   let subMap = map.get(field);
   if (!subMap) {
     subMap = new Map();
@@ -51,7 +54,10 @@ class DependencyGraph extends EventEmitter {
   _moduleCache: ModuleCache;
   _moduleMap: MetroFileMapModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
-  _resolutionCache: Map<string, Map<string, Map<string, string>>>;
+  _resolutionCache: Map<
+    string | symbol,
+    Map<string | symbol, Map<string | symbol, string>>,
+  >;
   _readyPromise: Promise<void>;
 
   constructor(
@@ -241,7 +247,10 @@ class DependencyGraph extends EventEmitter {
   resolveDependency(
     from: string,
     to: string,
-    platform: string,
+    platform: string | null,
+    resolverOptions: ResolverInputOptions,
+
+    // TODO: Fold assumeFlatNodeModules into resolverOptions and add to graphId
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
@@ -260,7 +269,7 @@ class DependencyGraph extends EventEmitter {
       isSensitiveToOriginFolder ? path.dirname(from) : '',
     );
     const mapByPlatform = getOrCreate(mapByDirectory, to);
-    let modulePath = mapByPlatform.get(platform);
+    let modulePath = mapByPlatform.get(platform ?? NULL_PLATFORM);
 
     if (!modulePath) {
       try {
@@ -269,6 +278,7 @@ class DependencyGraph extends EventEmitter {
           to,
           true,
           platform,
+          resolverOptions,
         ).path;
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
@@ -285,7 +295,7 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platform, modulePath);
+    mapByPlatform.set(platform ?? NULL_PLATFORM, modulePath);
     return modulePath;
   }
 

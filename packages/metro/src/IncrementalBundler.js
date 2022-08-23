@@ -17,6 +17,7 @@ import type {
   TransformInputOptions,
 } from './DeltaBundler/types.flow';
 import type {GraphId} from './lib/getGraphId';
+import type {ResolverInputOptions} from './shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const Bundler = require('./Bundler');
@@ -33,10 +34,10 @@ export opaque type RevisionId: string = string;
 
 export type OutputGraph = Graph<>;
 
-type OtherOptions = {
-  +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
-  +shallow: boolean,
-};
+type OtherOptions = $ReadOnly<{
+  onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+  shallow: boolean,
+}>;
 
 export type GraphRevision = {
   // Identifies the last computed revision.
@@ -100,6 +101,7 @@ class IncrementalBundler {
   async buildGraphForEntries(
     entryFiles: $ReadOnlyArray<string>,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -111,6 +113,7 @@ class IncrementalBundler {
       resolve: await transformHelpers.getResolveDependencyFn(
         this._bundler,
         transformOptions.platform,
+        resolverOptions,
       ),
       transform: await transformHelpers.getTransformFn(
         absoluteEntryFiles,
@@ -118,6 +121,7 @@ class IncrementalBundler {
         this._deltaBundler,
         this._config,
         transformOptions,
+        resolverOptions,
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
@@ -141,6 +145,7 @@ class IncrementalBundler {
   async getDependencies(
     entryFiles: $ReadOnlyArray<string>,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -154,6 +159,7 @@ class IncrementalBundler {
         resolve: await transformHelpers.getResolveDependencyFn(
           this._bundler,
           transformOptions.platform,
+          resolverOptions,
         ),
         transform: await transformHelpers.getTransformFn(
           absoluteEntryFiles,
@@ -161,6 +167,7 @@ class IncrementalBundler {
           this._deltaBundler,
           this._config,
           transformOptions,
+          resolverOptions,
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
@@ -178,6 +185,7 @@ class IncrementalBundler {
   async buildGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -186,6 +194,7 @@ class IncrementalBundler {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,
+      resolverOptions,
       otherOptions,
     );
 
@@ -194,6 +203,7 @@ class IncrementalBundler {
     const prepend = await getPrependedScripts(
       this._config,
       transformOptionsWithoutType,
+      resolverOptions,
       this._bundler,
       this._deltaBundler,
     );
@@ -209,6 +219,7 @@ class IncrementalBundler {
   async initializeGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
+    resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
@@ -219,6 +230,7 @@ class IncrementalBundler {
     ...
   }> {
     const graphId = getGraphId(entryFile, transformOptions, {
+      resolverOptions,
       shallow: otherOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
@@ -230,6 +242,7 @@ class IncrementalBundler {
       const {graph, prepend} = await this.buildGraph(
         entryFile,
         transformOptions,
+        resolverOptions,
         otherOptions,
       );
       return {

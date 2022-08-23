@@ -5716,6 +5716,16 @@ mkdirp@~0.5.0:
   dependencies:
     minimist "^1.2.5"
 
+mock-req@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/mock-req/-/mock-req-0.2.0.tgz#749446804d2c006169342ee7be6bba1cffd534c2"
+  integrity sha512-IUuwS0W5GjoPyjhuXPQJXpaHfHW7UYFRia8Cchm/xRuyDDclpSQdEoakt3krOpSYvgVlQsbnf0ePDsTRDfp7Dg==
+
+mock-res@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/mock-res/-/mock-res-0.6.0.tgz#0543879ba2a1eb9511806c490a0c256e61eb74da"
+  integrity sha512-FCX7To1rh+0d+CaZNTU+3TF7IyhTRfsw5zwg6l8g+g7p6l46CwIyGMWV9dL8KuCrVx+ONPKrWi7C5J1eAUVPKA==
+
 modify-values@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/modify-values/-/modify-values-1.0.1.tgz#b3939fa605546474e3e3e3c63d64bd43b4ee6022"

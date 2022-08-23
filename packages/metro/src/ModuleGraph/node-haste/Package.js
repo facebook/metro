@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {PackageData} from '../types.flow';
+import type {PackageData, Replacements} from '../types.flow';
 
 const nullthrows = require('nullthrows');
 const path = require('path');
@@ -57,7 +57,7 @@ module.exports = class Package {
     return !!this.data.name;
   }
 
-  redirectRequire(name: string): any | boolean | string {
+  redirectRequire(name: string): string | false {
     // Copied from node-haste/Package.js
     const replacements = getReplacements(this.data);
 
@@ -104,7 +104,7 @@ function getMain(pkg: PackageData): string {
 }
 
 // Copied from node-haste/Package.js
-function getReplacements(pkg: PackageData) {
+function getReplacements(pkg: PackageData): ?(string | Replacements) {
   let rn = pkg['react-native'];
   let browser = pkg.browser;
   if (rn == null) {
@@ -117,11 +117,11 @@ function getReplacements(pkg: PackageData) {
 
   const main = getMain(pkg);
   if (typeof rn !== 'object') {
-    rn = {[main]: rn};
+    rn = ({[main]: rn}: Replacements);
   }
 
   if (typeof browser !== 'object') {
-    browser = {[main]: browser};
+    browser = ({[main]: browser}: Replacements);
   }
 
   // merge with "browser" as default,

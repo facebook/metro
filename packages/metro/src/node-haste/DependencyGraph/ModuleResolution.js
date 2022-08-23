@@ -26,6 +26,7 @@ const invariant = require('invariant');
 const Resolver = require('metro-resolver');
 const path = require('path');
 const util = require('util');
+import type {ResolverInputOptions} from '../../shared/types.flow';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -102,6 +103,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         this._options.emptyModulePath,
         false,
         null,
+        /* resolverOptions */ {},
       );
       this._cachedEmptyModule = emptyModule;
     }
@@ -166,6 +168,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     moduleName: string,
     allowHaste: boolean,
     platform: string | null,
+    resolverOptions: ResolverInputOptions,
   ): TModule {
     try {
       const result = Resolver.resolve(

@@ -14,6 +14,7 @@ import type {BundleOptions} from '../shared/types.flow';
 import type {TransformProfile} from 'metro-babel-transformer';
 
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const parseCustomResolverOptions = require('./parseCustomResolverOptions');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
 const nullthrows = require('nullthrows');
 const path = require('path');
@@ -68,6 +69,7 @@ module.exports = function parseOptionsFromUrl(
     bundleType,
     runtimeBytecodeVersion:
       bytecodeVersion === runtimeBytecodeVersion ? bytecodeVersion : null,
+    customResolverOptions: parseCustomResolverOptions(parsedURL),
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
     entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),

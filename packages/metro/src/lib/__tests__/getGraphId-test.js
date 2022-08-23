@@ -31,6 +31,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     ).not.toBe(
@@ -49,6 +50,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -71,6 +73,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     ).not.toBe(
@@ -89,6 +92,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -111,6 +115,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     ).toBe(
@@ -129,6 +134,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -155,6 +161,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     ).toBe(
@@ -177,8 +184,83 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
+    );
+  });
+
+  it('generates different graph IDs for different custom resolver options', () => {
+    const transformOptions = {
+      customTransformOptions: {},
+      dev: true,
+      hot: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      runtimeBytecodeVersion: null,
+      unstable_transformProfile: 'default',
+    };
+    expect(
+      getGraphId('/root/waddup', transformOptions, {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+        unstable_allowRequireContext: false,
+        resolverOptions: {
+          customResolverOptions: {
+            foo: 'bar',
+          },
+        },
+      }),
+    ).not.toBe(
+      getGraphId('/root/waddup', transformOptions, {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+        unstable_allowRequireContext: false,
+        resolverOptions: {
+          customResolverOptions: {
+            something: 'else',
+          },
+        },
+      }),
+    );
+  });
+
+  it("order of keys in custom resolver options doesn't matter", () => {
+    const transformOptions = {
+      customTransformOptions: {},
+      dev: true,
+      hot: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      runtimeBytecodeVersion: null,
+      unstable_transformProfile: 'default',
+    };
+    expect(
+      getGraphId('/root/waddup', transformOptions, {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+        unstable_allowRequireContext: false,
+        resolverOptions: {
+          customResolverOptions: {
+            a: true,
+            b: false,
+          },
+        },
+      }),
+    ).toBe(
+      getGraphId('/root/waddup', transformOptions, {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+        unstable_allowRequireContext: false,
+        resolverOptions: {
+          customResolverOptions: {
+            b: false,
+            a: true,
+          },
+        },
+      }),
     );
   });
 
@@ -201,6 +283,9 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {
+            customResolverOptions: undefined,
+          },
         },
       ),
     ).toBe(
@@ -219,6 +304,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -241,6 +327,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     ).not.toBe(
@@ -259,6 +346,7 @@ describe('getGraphId', () => {
           shallow: false,
           experimentalImportBundleSupport: false,
           unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );

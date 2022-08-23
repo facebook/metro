@@ -74,6 +74,8 @@
     "metro-memory-fs": "0.72.1",
     "metro-react-native-babel-preset": "0.72.1",
     "metro-react-native-babel-transformer": "0.72.1",
+    "mock-req": "^0.2.0",
+    "mock-res": "^0.6.0",
     "stack-trace": "^0.0.10"
   },
   "license": "MIT"

@@ -13,6 +13,7 @@
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {ResolverInputOptions} from '../shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 import CountingSet from './CountingSet';
@@ -29,6 +30,7 @@ async function getPrependedScripts(
     TransformInputOptions,
     {type: $PropertyType<TransformInputOptions, 'type'>, ...},
   >,
+  resolverOptions: ResolverInputOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
 ): Promise<$ReadOnlyArray<Module<>>> {
@@ -51,6 +53,7 @@ async function getPrependedScripts(
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,
         options.platform,
+        resolverOptions,
       ),
       transform: await transformHelpers.getTransformFn(
         [defaults.moduleSystem, ...polyfillModuleNames],
@@ -58,6 +61,7 @@ async function getPrependedScripts(
         deltaBundler,
         config,
         transformOptions,
+        resolverOptions,
       ),
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
