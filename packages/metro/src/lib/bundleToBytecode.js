@@ -15,8 +15,6 @@ import type {
   BytecodeBundle,
 } from 'metro-runtime/src/modules/types.flow';
 
-const {getFileLength} = require('metro-hermes-compiler');
-
 // The magic number is used as a header for bytecode.
 // It represents a Metro tunnel in binary.
 //
@@ -34,6 +32,8 @@ function getFileHeader(moduleCount: number): Buffer {
 }
 
 function addModuleHeader(buffer: Buffer): [Buffer, Buffer] {
+  const {getFileLength} = require('metro-hermes-compiler');
+
   const fileLength = getFileLength(buffer, 0);
   const header = Buffer.alloc(4);
   header.writeUInt32LE(fileLength, 0);

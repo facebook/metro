@@ -21,7 +21,6 @@ import type {BytecodeBundle} from 'metro-runtime/src/modules/types.flow';
 const getAppendScripts = require('../../lib/getAppendScripts');
 const {getJsOutput} = require('./helpers/js');
 const processBytecodeModules = require('./helpers/processBytecodeModules');
-const {compile} = require('metro-hermes-compiler');
 
 function baseBytecodeBundle(
   entryPoint: string,
@@ -49,6 +48,8 @@ function baseBytecodeBundle(
     (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
       options.createModuleId(a.path) - options.createModuleId(b.path),
   );
+
+  const {compile} = require('metro-hermes-compiler');
 
   const post = processBytecodeModules(
     getAppendScripts(
