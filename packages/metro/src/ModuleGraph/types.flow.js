@@ -263,14 +263,27 @@ export type AssetContentsByPath = {
 };
 
 export type ResolvedCodeFile = {
-  +codeFile: TransformedCodeFile,
+  codeFile: TransformedCodeFile,
   /**
    * Imagine we have a source file that contains a `require('foo')`. The library
    * will resolve the path of the module `foo` and store it in this field along
    * all the other dependencies. For example, it could be
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
-  +filePathsByDependencyName: {[dependencyName: string]: string, ...},
+  filePathsByDependencyName: {
+    [dependencyName: string]:
+      | string
+
+      // requireCond
+      | {
+          type: string,
+          condition: string,
+          modules: {
+            [string]: string | null,
+          },
+        },
+    ...
+  },
 };
 
 export type LibraryBoundCodeFile = {
@@ -298,8 +311,14 @@ export type Library = {
  * path it resolves to, ex. `beep/glo/foo.js`.
  */
 export type ResolvedLibrary = {
-  +files: $ReadOnlyArray<ResolvedCodeFile>,
+  +files: $ReadOnlyArray<$DeepReadOnly<ResolvedCodeFile>>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
   +isPartiallyResolved?: boolean,
 };
+
+type DeepReadOnlyFn = (<T>(Array<T>) => $ReadOnlyArray<$DeepReadOnly<T>>) &
+  (<T: {}>(T) => $ReadOnly<$ObjMap<T, DeepReadOnlyFn>>) &
+  (<T>(T) => T);
+
+type $DeepReadOnly<T> = $Call<DeepReadOnlyFn, T>;
