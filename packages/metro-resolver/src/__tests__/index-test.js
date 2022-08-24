@@ -17,11 +17,13 @@ const FailedToResolvePathError = require('../FailedToResolvePathError');
 const Resolver = require('../index');
 const path = require('path');
 
+type FileTreeNode = $ReadOnly<{
+  [name: string]: true | FileTreeNode,
+}>;
+
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
-  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
-   * LTI update could not be added via codemod */
-  (function fillFileSet(fileTree, prefix: string) {
+  (function fillFileSet(fileTree: FileTreeNode, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);
       if (fileTree[entName] === true) {
@@ -91,6 +93,7 @@ const CONTEXT: ResolutionContext = (() => {
   );
   return {
     allowHaste: true,
+    customResolverOptions: {},
     disableHierarchicalLookup: false,
     doesFileExist: (filePath: string) => fileSet.has(filePath),
     extraNodeModules: null,
@@ -713,6 +716,30 @@ describe('resolveRequest', () => {
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
       {...context, resolveRequest: Resolver.resolve},
+      '/root/project/foo.js',
+      'android',
+    );
+  });
+
+  it('receives customTransformOptions', () => {
+    expect(
+      Resolver.resolve(
+        {...context, customTransformOptions: {key: 'value'}},
+        '/root/project/foo.js',
+        'android',
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {
+        ...context,
+        resolveRequest: Resolver.resolve,
+        customTransformOptions: {key: 'value'},
+      },
       '/root/project/foo.js',
       'android',
     );

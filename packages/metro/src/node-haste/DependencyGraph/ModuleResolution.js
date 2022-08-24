@@ -174,6 +174,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       const result = Resolver.resolve(
         {
           ...this._options,
+          customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           redirectModulePath: (modulePath: string) =>
             this._redirectRequire(fromModule, modulePath),

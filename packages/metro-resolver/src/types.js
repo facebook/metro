@@ -120,6 +120,7 @@ export type ResolutionContext = $ReadOnly<{
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
+  customResolverOptions: CustomResolverOptions,
   ...
 }>;
 

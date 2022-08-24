@@ -15,6 +15,7 @@ import type Module from './Module';
 
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
 
+const canonicalize = require('metro-core/src/canonicalize');
 const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const ModuleCache = require('./ModuleCache');
@@ -34,7 +35,7 @@ const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
 const NULL_PLATFORM = Symbol();
 
-function getOrCreate<T>(
+function getOrCreateMap<T>(
   map: Map<string | symbol, Map<string | symbol, T>>,
   field: string,
 ): Map<string | symbol, T> {
@@ -55,8 +56,21 @@ class DependencyGraph extends EventEmitter {
   _moduleMap: MetroFileMapModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
   _resolutionCache: Map<
+    // Custom resolver options
     string | symbol,
-    Map<string | symbol, Map<string | symbol, string>>,
+    Map<
+      // Origin folder
+      string | symbol,
+      Map<
+        // Dependency name
+        string | symbol,
+        Map<
+          // Platform
+          string | symbol,
+          string,
+        >,
+      >,
+    >,
   >;
   _readyPromise: Promise<void>;
 
@@ -264,12 +278,26 @@ class DependencyGraph extends EventEmitter {
       to === '..' ||
       // Preserve standard assumptions under node_modules
       from.includes(path.sep + 'node_modules' + path.sep);
-    const mapByDirectory = getOrCreate(
-      this._resolutionCache,
-      isSensitiveToOriginFolder ? path.dirname(from) : '',
+
+    // Compound key for the resolver cache
+    const resolverOptionsKey =
+      JSON.stringify(
+        resolverOptions.customResolverOptions ?? {},
+        canonicalize,
+      ) ?? '';
+    const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
+    const targetKey = to;
+    const platformKey = platform ?? NULL_PLATFORM;
+
+    // Traverse the resolver cache, which is a tree of maps
+    const mapByResolverOptions = this._resolutionCache;
+    const mapByOrigin = getOrCreateMap(
+      mapByResolverOptions,
+      resolverOptionsKey,
     );
-    const mapByPlatform = getOrCreate(mapByDirectory, to);
-    let modulePath = mapByPlatform.get(platform ?? NULL_PLATFORM);
+    const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
+    const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
+    let modulePath = mapByPlatform.get(platformKey);
 
     if (!modulePath) {
       try {
@@ -295,7 +323,7 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platform ?? NULL_PLATFORM, modulePath);
+    mapByPlatform.set(platformKey, modulePath);
     return modulePath;
   }
 

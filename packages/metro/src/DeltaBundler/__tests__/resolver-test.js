@@ -2335,6 +2335,70 @@ type MockFSDirContents = $ReadOnly<{
 
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
+
+      it('forks the cache by customResolverOptions', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            customResolverOptions: {
+              foo: 'bar',
+              key: 'value',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: reverse order from what we passed above
+              key: 'value',
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: only a subset of the options passed above
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              something: 'else',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

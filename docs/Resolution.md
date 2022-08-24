@@ -194,6 +194,10 @@ A mapping of package names to directories that is consulted after the standard l
 
 The path to the current module, e.g. the one containing the `import` we are currently resolving.
 
+#### `customResolverOptions: {[string]: mixed}`
+
+Any custom options passed to the resolver. By default, Metro populates this based on URL parameters in the bundle request, e.g. `http://localhost:8081/index.bundle?resolver.key=value` becomes `{key: 'value'}`.
+
 #### `resolveRequest: CustomResolver`
 
 A alternative resolver function to which the current request may be delegated. Defaults to [`resolver.resolveRequest`](./Configuration.md#resolvereqeuest).
@@ -206,7 +210,9 @@ Inside a custom resolver, `resolveRequest` is set to the default resolver functi
 
 Resolver results may be cached under the following conditions:
 
-1. For given origin module paths _A_ and _B_ and target module name _M_, the resolution for _M_ may be reused if _A_ and _B_ are in the same directory.
+1. For given origin module paths _A_ and _B_ and target module name _M_, the resolution for _M_ may be reused if **all** of the following conditions hold:
+    1. _A_ and _B_ are in the same directory.
+    2. The contents of [`customResolverOptions`](#customresolveroptions-string-mixed) are equivalent ( = serialize to JSON the same) in both calls to the resolver.
 2. Any cache of resolutions must be invalidated if any file in the project has changed.
 
-Custom resolvers must adhere to these assumptions, e.g. they may not return different resolutions for origin modules in the same directory.
+Custom resolvers must adhere to these assumptions, e.g. they may not return different resolutions for origin modules in the same directory under the same `customResolverOptions`.
