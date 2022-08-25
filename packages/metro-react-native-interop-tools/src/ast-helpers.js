@@ -31,6 +31,11 @@ import type {
 } from '@babel/types';
 
 import type {
+  AnyType,
+  NumberTypeAnnotation,
+  StringTypeAnnotation,
+  VoidTypeAnnotation,
+  BooleanTypeAnnotation,
   InterfaceExtends,
   AnyTypeAnnotation,
   ArrayTypeAnnotation,
@@ -45,6 +50,7 @@ import type {
   IntersectionTypeAnnotation,
   StringLiteralTypeAnnotation,
   NumberLiteralTypeAnnotation,
+  BooleanLiteralTypeAnnotation,
 } from './type-annotation.js';
 
 export type BoundarySchema = {
@@ -74,14 +80,37 @@ export function getNodeLoc(
 export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
   switch (typeNode.type) {
     case 'BooleanTypeAnnotation':
-    case 'NumberTypeAnnotation':
-    case 'StringTypeAnnotation':
-    case 'VoidTypeAnnotation':
-    case 'AnyTypeAnnotation':
-      return {
+      return ({
         type: typeNode.type,
         loc: getNodeLoc(typeNode.loc),
-      };
+      }: BooleanTypeAnnotation);
+
+    case 'NumberTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: NumberTypeAnnotation);
+
+    case 'StringTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: StringTypeAnnotation);
+
+    case 'VoidTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: VoidTypeAnnotation);
+
+    case 'AnyTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: AnyType);
+
+    case 'BooleanLiteralTypeAnnotation':
+      return getBooleanLiteralTypeAnnotation(typeNode);
 
     case 'NumberLiteralTypeAnnotation':
       return getNumberLiteralTypeAnnotation(typeNode);
@@ -114,7 +143,7 @@ export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
       return getIntersectionTypeAnnotation(typeNode);
 
     default:
-      return {type: 'UnknownTypeAnnotation', loc: null};
+      throw new Error(typeNode.type + ' not supported');
   }
 }
 
@@ -167,7 +196,7 @@ export function getObjectTypeSpreadProperty(
     name: '',
     optional: false,
     typeAnnotation: {
-      type: 'UnknownTypeAnnotation',
+      type: 'AnyTypeAnnotation',
       loc: null,
     },
   };
@@ -278,6 +307,16 @@ export function getStringLiteralTypeAnnotation(
 export function getNumberLiteralTypeAnnotation(
   typeNode: BabelNodeNumberLiteralTypeAnnotation,
 ): NumberLiteralTypeAnnotation {
+  return {
+    type: typeNode.type,
+    loc: getNodeLoc(typeNode.loc),
+    value: typeNode.value,
+  };
+}
+
+export function getBooleanLiteralTypeAnnotation(
+  typeNode: BabelNodeBooleanLiteralTypeAnnotation,
+): BooleanLiteralTypeAnnotation {
   return {
     type: typeNode.type,
     loc: getNodeLoc(typeNode.loc),

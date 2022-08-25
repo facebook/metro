@@ -80,12 +80,6 @@ test('getTypeAnnotation, testing VoidTypeAnnotation', () => {
   );
 });
 
-test('getTypeAnnotation, testing UnknownTypeAnnotation', () => {
-  expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true)).type).toBe(
-    'UnknownTypeAnnotation',
-  );
-});
-
 test('getTypeAnnotation, testing NullableTypeAnnotation', () => {
   expect(
     getTypeAnnotation(t.nullableTypeAnnotation(t.anyTypeAnnotation())),
@@ -220,7 +214,7 @@ test('getObjectTypeSpreadProperty returns unknown type', () => {
     optional: false,
     typeAnnotation: {
       loc: null,
-      type: 'UnknownTypeAnnotation',
+      type: 'AnyTypeAnnotation',
     },
   });
 });
@@ -301,6 +295,14 @@ test('getArrayTypeAnnotation, testing an array of AnyTypeAnnotation', () => {
       type: 'AnyTypeAnnotation',
       loc: null,
     },
+  });
+});
+
+test('getTypeAnnotation, testing BooleanLiteralTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true))).toEqual({
+    type: 'BooleanLiteralTypeAnnotation',
+    loc: null,
+    value: true,
   });
 });
 

@@ -9,27 +9,43 @@
  * @format
  */
 
+import type {SourceLocation} from '@babel/types';
+
+export type AnyType = $ReadOnly<{
+  type: 'AnyTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
+export type BooleanTypeAnnotation = $ReadOnly<{
+  type: 'BooleanTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
+export type NumberTypeAnnotation = $ReadOnly<{
+  type: 'NumberTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
+export type StringTypeAnnotation = $ReadOnly<{
+  type: 'StringTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
+export type VoidTypeAnnotation = $ReadOnly<{
+  type: 'VoidTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
 export type FunctionTypeParam = $ReadOnly<{|
   name: ?string,
   typeAnnotation: AnyTypeAnnotation,
 |}>;
 
 export type ObjectTypeProperty = $ReadOnly<{
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   name: string,
   optional: boolean,
   typeAnnotation: AnyTypeAnnotation,
-}>;
-
-export type BasicTypeAnnotation = $ReadOnly<{
-  type:
-    | 'BooleanTypeAnnotation'
-    | 'NumberTypeAnnotation'
-    | 'StringTypeAnnotation'
-    | 'VoidTypeAnnotation'
-    | 'UnknownTypeAnnotation'
-    | 'AnyTypeAnnotation',
-  loc: ?BabelNodeSourceLocation,
 }>;
 
 export type InterfaceExtends = $ReadOnly<{
@@ -46,62 +62,72 @@ export type NullableTypeAnnotation = $ReadOnly<{
 
 export type FunctionTypeAnnotation = $ReadOnly<{
   type: 'FunctionTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   params: $ReadOnlyArray<FunctionTypeParam>,
   returnTypeAnnotation: AnyTypeAnnotation,
 }>;
 
 export type ObjectTypeAnnotation = $ReadOnly<{
   type: 'ObjectTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   properties: $ReadOnlyArray<ObjectTypeProperty>,
 }>;
 
 export type TupleTypeAnnotation = $ReadOnly<{
   type: 'TupleTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   types: $ReadOnlyArray<AnyTypeAnnotation>,
 }>;
 
 export type GenericTypeAnnotation = $ReadOnly<{
   type: 'GenericTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   name: string,
   typeParameters: $ReadOnlyArray<AnyTypeAnnotation>,
 }>;
 
 export type UnionTypeAnnotation = $ReadOnly<{
   type: 'UnionTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   types: $ReadOnlyArray<AnyTypeAnnotation>,
 }>;
 
 export type IntersectionTypeAnnotation = $ReadOnly<{
   type: 'IntersectionTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   types: $ReadOnlyArray<AnyTypeAnnotation>,
 }>;
 
 export type ArrayTypeAnnotation = $ReadOnly<{
   type: 'ArrayTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   elementType: AnyTypeAnnotation,
 }>;
 
 export type StringLiteralTypeAnnotation = $ReadOnly<{
   type: 'StringLiteralTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   value: string,
 }>;
 
 export type NumberLiteralTypeAnnotation = $ReadOnly<{
   type: 'NumberLiteralTypeAnnotation',
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
   value: number,
 }>;
 
+export type BooleanLiteralTypeAnnotation = $ReadOnly<{
+  type: 'BooleanLiteralTypeAnnotation',
+  loc: ?SourceLocation,
+  value: boolean,
+}>;
+
 export type AnyTypeAnnotation =
-  | BasicTypeAnnotation
+  | BooleanTypeAnnotation
+  | NumberTypeAnnotation
+  | StringTypeAnnotation
+  | VoidTypeAnnotation
+  | AnyType
   | NullableTypeAnnotation
   | FunctionTypeAnnotation
   | ObjectTypeAnnotation
@@ -111,4 +137,5 @@ export type AnyTypeAnnotation =
   | IntersectionTypeAnnotation
   | ArrayTypeAnnotation
   | StringLiteralTypeAnnotation
-  | NumberLiteralTypeAnnotation;
+  | NumberLiteralTypeAnnotation
+  | BooleanLiteralTypeAnnotation;
