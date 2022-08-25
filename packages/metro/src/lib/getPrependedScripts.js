@@ -22,7 +22,6 @@ const countLines = require('./countLines');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
 const defaults = require('metro-config/src/defaults/defaults');
-const {compile} = require('metro-hermes-compiler');
 
 async function getPrependedScripts(
   config: ConfigT,
@@ -93,6 +92,8 @@ function _getPrelude({
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
+  const {compile} = require('metro-hermes-compiler');
+
   const code = getPreludeCode({
     isDev: dev,
     globalPrefix,

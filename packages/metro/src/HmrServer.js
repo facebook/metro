@@ -31,7 +31,6 @@ const transformHelpers = require('./lib/transformHelpers');
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
 const nullthrows = require('nullthrows');
 const url = require('url');
 
@@ -50,6 +49,10 @@ type ClientGroup = {
   revisionId: RevisionId,
   +unlisten: () => void,
 };
+
+function getBytecodeVersion() {
+  return require('metro-hermes-compiler').VERSION;
+}
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -103,7 +106,7 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
-      BYTECODE_VERSION,
+      getBytecodeVersion(),
     );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);

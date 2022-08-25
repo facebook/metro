@@ -40,7 +40,6 @@ const babylon = require('@babel/parser');
 const types = require('@babel/types');
 const {stableHash} = require('metro-cache');
 const getCacheKey = require('metro-cache-key');
-const HermesCompiler = require('metro-hermes-compiler');
 const {
   fromRawMappings,
   toBabelSegments,
@@ -260,6 +259,7 @@ const compileToBytecode = (
       ',$$METRO_D[0],$$METRO_D[1],$$METRO_D[2]' +
       code.slice(index);
   }
+  const HermesCompiler = require('metro-hermes-compiler');
   return HermesCompiler.compile(code, options);
 };
 

@@ -69,7 +69,7 @@ const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
+
 const mime = require('mime-types');
 const nullthrows = require('nullthrows');
 const path = require('path');
@@ -117,6 +117,10 @@ export type ServerOptions = $ReadOnly<{
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
+
+function getBytecodeVersion() {
+  return require('metro-hermes-compiler').VERSION;
+}
 
 class Server {
   _bundler: IncrementalBundler;
@@ -467,7 +471,7 @@ class Server {
     return parseOptionsFromUrl(
       url,
       new Set(this._config.resolver.platforms),
-      BYTECODE_VERSION,
+      getBytecodeVersion(),
     );
   }
 
@@ -1201,7 +1205,7 @@ class Server {
     const options = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
-      BYTECODE_VERSION,
+      getBytecodeVersion(),
     );
 
     const {

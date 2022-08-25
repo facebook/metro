@@ -14,7 +14,6 @@ import type {Module} from '../../types.flow';
 import type {BytecodeOutput} from 'metro-transform-worker';
 
 const invariant = require('invariant');
-const {compile} = require('metro-hermes-compiler');
 const path = require('path');
 
 export type Options = {
@@ -47,6 +46,8 @@ function wrapModule(module: Module<>, options: Options): Array<Buffer> {
       JSON.stringify(path.relative(options.projectRoot, module.path)),
     );
   }
+
+  const {compile} = require('metro-hermes-compiler');
 
   const headerCode = `globalThis.$$METRO_D=[${params.join(',')}];`;
   return [
