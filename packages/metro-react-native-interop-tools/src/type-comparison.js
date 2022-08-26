@@ -80,6 +80,22 @@ export function compareTypeAnnotation(
         return [];
       }
       return [makeError('incompatible-types', left, right)];
+    case 'NullLiteralTypeAnnotation':
+      if (right.type !== 'NullLiteralTypeAnnotation') {
+        return [makeError('incompatible-types', left, right)];
+      }
+      return [];
+    case 'NullableTypeAnnotation':
+      if (right.type === 'NullableTypeAnnotation') {
+        return compareTypeAnnotation(left.typeAnnotation, right.typeAnnotation);
+      }
+      if (
+        right.type === 'NullLiteralTypeAnnotation' ||
+        right.type === 'VoidTypeAnnotation'
+      ) {
+        return [];
+      }
+      return compareTypeAnnotation(left.typeAnnotation, right);
     default:
       return [makeError('unknown-types', left, right)];
   }

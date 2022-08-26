@@ -122,6 +122,11 @@ export type BooleanLiteralTypeAnnotation = $ReadOnly<{
   value: boolean,
 }>;
 
+export type NullLiteralTypeAnnotation = $ReadOnly<{
+  type: 'NullLiteralTypeAnnotation',
+  loc: ?SourceLocation,
+}>;
+
 export type AnyTypeAnnotation =
   | BooleanTypeAnnotation
   | NumberTypeAnnotation
@@ -138,4 +143,5 @@ export type AnyTypeAnnotation =
   | ArrayTypeAnnotation
   | StringLiteralTypeAnnotation
   | NumberLiteralTypeAnnotation
-  | BooleanLiteralTypeAnnotation;
+  | BooleanLiteralTypeAnnotation
+  | NullLiteralTypeAnnotation;

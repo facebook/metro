@@ -48,12 +48,21 @@ test.each([
   ["'a'", 'string'],
   ['true', 'true'],
   ['true', 'false'],
+  ['string', '?string'],
+  ['?number', 'number'],
+  ['?boolean', 'true'],
+  ['?string', '?string'],
+  ['?string', "?'foo'"],
+  ['?string', '?number'],
+  ['null', 'null'],
+  ['?string', 'null'],
+  ['?boolean', 'void'],
 ])('comparing basic types', (left, right) => {
-  const result = JSON.stringify(
-    compareTypeAnnotation(getTypeFromCode(left), getTypeFromCode(right)),
-    null,
-    '\t',
-  );
+  let result = compareTypeAnnotation(
+    getTypeFromCode(left),
+    getTypeFromCode(right),
+  ).join('\n\t\t\t');
+  result = result !== '' ? result : 'no errors';
   expect(`
     left-type:
       ${left}

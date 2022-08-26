@@ -51,6 +51,7 @@ import type {
   StringLiteralTypeAnnotation,
   NumberLiteralTypeAnnotation,
   BooleanLiteralTypeAnnotation,
+  NullLiteralTypeAnnotation,
 } from './type-annotation.js';
 
 export type BoundarySchema = {
@@ -108,6 +109,12 @@ export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
         type: typeNode.type,
         loc: getNodeLoc(typeNode.loc),
       }: AnyType);
+
+    case 'NullLiteralTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: NullLiteralTypeAnnotation);
 
     case 'BooleanLiteralTypeAnnotation':
       return getBooleanLiteralTypeAnnotation(typeNode);

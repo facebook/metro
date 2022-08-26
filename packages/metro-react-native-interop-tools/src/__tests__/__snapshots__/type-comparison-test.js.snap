@@ -7,7 +7,7 @@ exports[`comparing basic types 1`] = `
     right-type:
       boolean
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 2`] = `
@@ -17,7 +17,7 @@ exports[`comparing basic types 2`] = `
     right-type:
       string
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 3`] = `
@@ -27,7 +27,7 @@ exports[`comparing basic types 3`] = `
     right-type:
       number
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 4`] = `
@@ -37,7 +37,7 @@ exports[`comparing basic types 4`] = `
     right-type:
       void
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 5`] = `
@@ -47,9 +47,7 @@ exports[`comparing basic types 5`] = `
     right-type:
       number
     output:
-      [
-	\\"Error: NumberTypeAnnotation cannot be assigned to BooleanTypeAnnotation\\"
-]"
+      Error: NumberTypeAnnotation cannot be assigned to BooleanTypeAnnotation"
 `;
 
 exports[`comparing basic types 6`] = `
@@ -59,7 +57,7 @@ exports[`comparing basic types 6`] = `
     right-type:
       'a'
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 7`] = `
@@ -69,9 +67,7 @@ exports[`comparing basic types 7`] = `
     right-type:
       'b'
     output:
-      [
-	\\"Error: StringLiteralTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation\\"
-]"
+      Error: StringLiteralTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation"
 `;
 
 exports[`comparing basic types 8`] = `
@@ -81,7 +77,7 @@ exports[`comparing basic types 8`] = `
     right-type:
       8
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 9`] = `
@@ -91,9 +87,7 @@ exports[`comparing basic types 9`] = `
     right-type:
       8
     output:
-      [
-	\\"Error: NumberLiteralTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation\\"
-]"
+      Error: NumberLiteralTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation"
 `;
 
 exports[`comparing basic types 10`] = `
@@ -103,9 +97,7 @@ exports[`comparing basic types 10`] = `
     right-type:
       number
     output:
-      [
-	\\"Error: NumberTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation\\"
-]"
+      Error: NumberTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation"
 `;
 
 exports[`comparing basic types 11`] = `
@@ -115,7 +107,7 @@ exports[`comparing basic types 11`] = `
     right-type:
       2
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 12`] = `
@@ -125,7 +117,7 @@ exports[`comparing basic types 12`] = `
     right-type:
       'a'
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 13`] = `
@@ -135,9 +127,7 @@ exports[`comparing basic types 13`] = `
     right-type:
       string
     output:
-      [
-	\\"Error: StringTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation\\"
-]"
+      Error: StringTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation"
 `;
 
 exports[`comparing basic types 14`] = `
@@ -147,7 +137,7 @@ exports[`comparing basic types 14`] = `
     right-type:
       true
     output:
-      []"
+      no errors"
 `;
 
 exports[`comparing basic types 15`] = `
@@ -157,7 +147,95 @@ exports[`comparing basic types 15`] = `
     right-type:
       false
     output:
-      [
-	\\"Error: BooleanLiteralTypeAnnotation cannot be assigned to BooleanLiteralTypeAnnotation\\"
-]"
+      Error: BooleanLiteralTypeAnnotation cannot be assigned to BooleanLiteralTypeAnnotation"
+`;
+
+exports[`comparing basic types 16`] = `
+"
+    left-type:
+      string
+    right-type:
+      ?string
+    output:
+      Error: NullableTypeAnnotation cannot be assigned to StringTypeAnnotation"
+`;
+
+exports[`comparing basic types 17`] = `
+"
+    left-type:
+      ?number
+    right-type:
+      number
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 18`] = `
+"
+    left-type:
+      ?boolean
+    right-type:
+      true
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 19`] = `
+"
+    left-type:
+      ?string
+    right-type:
+      ?string
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 20`] = `
+"
+    left-type:
+      ?string
+    right-type:
+      ?'foo'
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 21`] = `
+"
+    left-type:
+      ?string
+    right-type:
+      ?number
+    output:
+      Error: NumberTypeAnnotation cannot be assigned to StringTypeAnnotation"
+`;
+
+exports[`comparing basic types 22`] = `
+"
+    left-type:
+      null
+    right-type:
+      null
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 23`] = `
+"
+    left-type:
+      ?string
+    right-type:
+      null
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 24`] = `
+"
+    left-type:
+      ?boolean
+    right-type:
+      void
+    output:
+      no errors"
 `;

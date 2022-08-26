@@ -306,6 +306,14 @@ test('getTypeAnnotation, testing BooleanLiteralTypeAnnotation', () => {
   });
 });
 
+//TODO:T130441624 add test.each instead of creating each test individualy
+test('getTypeAnnotation, testing NullLiteralTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.nullLiteralTypeAnnotation())).toEqual({
+    type: 'NullLiteralTypeAnnotation',
+    loc: null,
+  });
+});
+
 test('getNumberLiteralTypeAnnotation, testing NumberLiteralType', () => {
   const typeNode: BabelNodeNumberLiteralTypeAnnotation =
     t.numberLiteralTypeAnnotation(4);
