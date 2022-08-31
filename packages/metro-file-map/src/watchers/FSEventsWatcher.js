@@ -97,6 +97,7 @@ export default class FSEventsWatcher extends EventEmitter {
       dot: boolean,
       ...
     }>,
+    // $FlowFixMe[missing-local-annot]
   ) {
     if (!fsevents) {
       throw new Error(

@@ -245,6 +245,7 @@ export default class HasteMap extends EventEmitter {
     return new HasteMap(options);
   }
 
+  // $FlowFixMe[missing-local-annot]
   constructor(options: InputOptions) {
     if (options.perfLogger) {
       options.perfLogger?.point('constructor_start');

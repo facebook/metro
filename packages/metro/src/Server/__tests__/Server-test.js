@@ -399,6 +399,7 @@ describe('processRequest', () => {
     const lastModified = response.getHeader('Last-Modified');
 
     global.Date = class {
+      // $FlowFixMe[missing-local-annot]
       constructor() {
         return new NativeDate('2017-07-07T00:10:20.000Z');
       }
@@ -430,6 +431,7 @@ describe('processRequest', () => {
     );
 
     global.Date = class {
+      // $FlowFixMe[missing-local-annot]
       constructor() {
         return new NativeDate('2017-07-07T00:10:20.000Z');
       }

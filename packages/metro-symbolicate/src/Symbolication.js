@@ -539,16 +539,20 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     const {_SourceMapConsumer: SourceMapConsumer} = this;
     return {
       get consumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'consumer', {
           value: new SourceMapConsumer(map),
         });
+        // $FlowFixMe[object-this-reference]
         return this.consumer;
       },
       moduleOffsets: map.x_facebook_offsets || [],
       get sourceFunctionsConsumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'sourceFunctionsConsumer', {
           value: useFunctionNames ? new SourceMetadataMapConsumer(map) : null,
         });
+        // $FlowFixMe[object-this-reference]
         return this.sourceFunctionsConsumer;
       },
       hermesOffsets: map.x_hermes_function_offsets,

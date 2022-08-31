@@ -79,6 +79,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?TModule;
 
+  // $FlowFixMe[missing-local-annot]
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
     const {projectRoot, moduleCache} = this._options;
