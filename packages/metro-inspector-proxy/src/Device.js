@@ -45,7 +45,11 @@ type DebuggerInfo = {
   ...
 };
 
-const REACT_NATIVE_RELOADABLE_PAGE_ID = '-1';
+type ReloadablePage = {
+  _lastConnectedPage: ?Page;
+  _originialName: string;
+  _reloadableName: string;
+};
 
 /**
  * Device class represents single device connection to Inspector Proxy. Each device
@@ -70,12 +74,7 @@ class Device {
   // Stores information about currently connected debugger (if any).
   _debuggerConnection: ?DebuggerInfo = null;
 
-  // Last known Page ID of the React Native page.
-  // This is used by debugger connections that don't have PageID specified
-  // (and will interact with the latest React Native page).
-  _lastConnectedReactNativePage: ?Page = null;
-
-  // Whether we are in the middle of a reload in the REACT_NATIVE_RELOADABLE_PAGE.
+  // Whether we are in the middle of a reload.
   _isReloading: boolean = false;
 
   // The previous "GetPages" message, for deduplication in debug logs.
@@ -86,6 +85,15 @@ class Device {
 
   // Root of the project used for relative to absolute source path conversion.
   _projectRoot: string;
+
+  // A map from reloadable IDs to the latest available pages
+  //
+  // I was wondering if it should be id -> page or name -> page, because we often
+  // iterate over the map to find the correct entry. I reached the conclusion that
+  // it is better this way, as we only search through map values on reloads
+  // but _mapToDevicePageId is called very often throughout the debugging
+  // process, so I optimized this use-case.
+  _reloadablePages: Map<number, ReloadablePage> = new Map();
 
   constructor(
     id: number,
@@ -133,17 +141,21 @@ class Device {
   }
 
   getPagesList(): Array<Page> {
-    if (this._lastConnectedReactNativePage) {
-      const reactNativeReloadablePage = {
-        id: REACT_NATIVE_RELOADABLE_PAGE_ID,
-        title: 'React Native Experimental (Improved Chrome Reloads)',
-        vm: "don't use",
-        app: this._app,
-      };
-      return this._pages.concat(reactNativeReloadablePage);
-    } else {
-      return this._pages;
-    }
+    let pagesList = this._pages;
+
+    this._reloadablePages.forEach((value, key) => {
+      if (value._lastConnectedPage) {
+        const reloadablePage = {
+          id: key,
+          title: value._reloadableName,
+          vm: "don't use",
+          app: this._app,
+        }
+        pagesList = pagesList.concat(reloadablePage);
+      }
+    });
+
+    return pagesList;
   }
 
   // Handles new debugger connection to this device:
@@ -222,18 +234,13 @@ class Device {
     if (message.event === 'getPages') {
       this._pages = message.payload;
 
-      // Check if device have new React Native page.
+      // Check if device has a new page.
       // There is usually no more than 2-3 pages per device so this operation
       // is not expensive.
       // TODO(hypuk): It is better for VM to send update event when new page is
       // created instead of manually checking this on every getPages result.
       for (let i = 0; i < this._pages.length; ++i) {
-        if (this._pages[i].title.indexOf('React') >= 0) {
-          if (this._pages[i].id != this._lastConnectedReactNativePage?.id) {
-            this._newReactNativePage(this._pages[i]);
-            break;
-          }
-        }
+        this._newReloadablePage(this._pages[i]);
       }
     } else if (message.event === 'disconnect') {
       // Device sends disconnect events only when page is reloaded or
@@ -295,21 +302,37 @@ class Device {
     );
   }
 
-  // We received new React Native Page ID.
-  _newReactNativePage(page: Page) {
-    debug(`React Native page updated to ${page.id}`);
+  // We recieved a new page ID
+  _newReloadablePage(page: Page) {
     if (
       this._debuggerConnection == null ||
-      this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE_ID
+      this._debuggerConnection.pageId >= 0
     ) {
       // We can just remember new page ID without any further actions if no
       // debugger is currently attached or attached debugger is not
-      // "Reloadable React Native" connection.
-      this._lastConnectedReactNativePage = page;
+      // a reloadable connection.
+      for (const value of this._reloadablePages.values()) {
+        if (page.title === value._originialName) {
+          value._lastConnectedPage = page;
+          return;
+        }
+      }
+      // The page was not mapped earlier
+      const newReloadablePage: ReloadablePage = {
+        _lastConnectedPage: page,
+        _originialName: page.title,
+        _reloadableName: page.title + ' Experimental (Improved Chrome Reloads)',
+      };
+      const newReloadableId = -(this._reloadablePages.size + 1);
+
+      this._reloadablePages.set(newReloadableId, newReloadablePage);
       return;
     }
-    const oldPageId = this._lastConnectedReactNativePage?.id;
-    this._lastConnectedReactNativePage = page;
+    
+    const reloadablePage = this._reloadablePages.get(page.id);
+
+    const oldPageId = reloadablePage._lastConnectedPage?.id;
+    reloadablePage._lastConnectedPage = page;
     this._isReloading = true;
 
     // We already had a debugger connected to React Native page and a
@@ -393,6 +416,7 @@ class Device {
         }
       }
 
+      // TODO: I still don't know what to do with this
       if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE_ID) {
         // Chrome won't use the source map unless it appears to be new.
         if (payload.params.sourceMapURL) {
@@ -511,10 +535,10 @@ class Device {
 
   _mapToDevicePageId(pageId: string): string {
     if (
-      pageId === REACT_NATIVE_RELOADABLE_PAGE_ID &&
-      this._lastConnectedReactNativePage != null
+      this._reloadablePages.has(pageId) &&
+      this._reloadablePages.get(pageId)._lastConnectedPage != null
     ) {
-      return this._lastConnectedReactNativePage.id;
+      return this._reloadablePages.get(pageId)._lastConnectedPage.id;
     } else {
       return pageId;
     }
