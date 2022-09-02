@@ -240,7 +240,20 @@ class Device {
       // TODO(hypuk): It is better for VM to send update event when new page is
       // created instead of manually checking this on every getPages result.
       for (let i = 0; i < this._pages.length; ++i) {
-        this._newReloadablePage(this._pages[i]);
+        let isListed = false;
+
+        this._reloadablePages.forEach(value => {
+          if (
+            value._originialName == this._pages[i].title &&
+            value._lastConnectedPage?.id == this._pages[i].id
+          ) {
+            isListed = true;
+          }
+        })
+
+        if (!isListed) {
+          this._newReloadablePage(this._pages[i]);
+        }
       }
     } else if (message.event === 'disconnect') {
       // Device sends disconnect events only when page is reloaded or
@@ -252,7 +265,7 @@ class Device {
       if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
         if (
           this._debuggerConnection != null &&
-          this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE_ID
+          !this._reloadablePages.has(Number(pageId))
         ) {
           debug(`Page ${pageId} is reloading.`);
           debuggerSocket.send(JSON.stringify({method: 'reload'}));
@@ -306,7 +319,7 @@ class Device {
   _newReloadablePage(page: Page) {
     if (
       this._debuggerConnection == null ||
-      this._debuggerConnection.pageId >= 0
+      !this._reloadablePages.has(Number(this._debuggerConnection.pageId))
     ) {
       // We can just remember new page ID without any further actions if no
       // debugger is currently attached or attached debugger is not
@@ -328,8 +341,9 @@ class Device {
       this._reloadablePages.set(newReloadableId, newReloadablePage);
       return;
     }
-    
-    const reloadablePage = this._reloadablePages.get(page.id);
+
+    const reloadablePage = this._reloadablePages.get(
+      Number(this._debuggerConnection.pageId));
 
     const oldPageId = reloadablePage._lastConnectedPage?.id;
     reloadablePage._lastConnectedPage = page;
@@ -416,13 +430,14 @@ class Device {
         }
       }
 
-      // TODO: I still don't know what to do with this
-      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE_ID) {
+      if (Number(debuggerInfo.pageId) < 0) {
         // Chrome won't use the source map unless it appears to be new.
-        if (payload.params.sourceMapURL) {
-          payload.params.sourceMapURL +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
-        }
+
+        // TODO: Appending the source map is not safe
+        // if (payload.params.sourceMapURL) {
+        //   payload.params.sourceMapURL +=
+        //     '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
+        // }
         if (payload.params.url) {
           payload.params.url +=
             '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
@@ -535,10 +550,10 @@ class Device {
 
   _mapToDevicePageId(pageId: string): string {
     if (
-      this._reloadablePages.has(pageId) &&
-      this._reloadablePages.get(pageId)._lastConnectedPage != null
+      this._reloadablePages.has(Number(pageId)) &&
+      this._reloadablePages.get(Number(pageId))._lastConnectedPage != null
     ) {
-      return this._reloadablePages.get(pageId)._lastConnectedPage.id;
+      return this._reloadablePages.get(Number(pageId))._lastConnectedPage.id;
     } else {
       return pageId;
     }
