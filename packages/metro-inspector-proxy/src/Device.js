@@ -46,10 +46,12 @@ type DebuggerInfo = {
 };
 
 type ReloadablePage = {
-  _lastConnectedPage: ?Page;
+  _lastConnectedPage: Page;
   _originialName: string;
   _reloadableName: string;
 };
+
+const RELOADABLE_PAGE_TITLE_SUFFIX = ' Experimental (Improved Chrome Reloads)';
 
 /**
  * Device class represents single device connection to Inspector Proxy. Each device
@@ -141,7 +143,7 @@ class Device {
   }
 
   getPagesList(): Array<Page> {
-    let pagesList = this._pages;
+    const pagesList = [...this._pages];
 
     this._reloadablePages.forEach((value, key) => {
       if (value._lastConnectedPage) {
@@ -151,7 +153,7 @@ class Device {
           vm: "don't use",
           app: this._app,
         }
-        pagesList = pagesList.concat(reloadablePage);
+        pagesList.push(reloadablePage);
       }
     });
 
@@ -244,8 +246,8 @@ class Device {
 
         this._reloadablePages.forEach(value => {
           if (
-            value._originialName == this._pages[i].title &&
-            value._lastConnectedPage?.id == this._pages[i].id
+            value._originialName === this._pages[i].title &&
+            value._lastConnectedPage.id === this._pages[i].id
           ) {
             isListed = true;
           }
@@ -317,13 +319,17 @@ class Device {
 
   // We recieved a new page ID
   _newReloadablePage(page: Page) {
+    const reloadablePage = this._reloadablePages.get(
+      Number(this._debuggerConnection.pageId));
+    
     if (
       this._debuggerConnection == null ||
-      !this._reloadablePages.has(Number(this._debuggerConnection.pageId))
+      !this._reloadablePages.has(Number(this._debuggerConnection.pageId)) ||
+      reloadablePage._originialName !== page.title
     ) {
       // We can just remember new page ID without any further actions if no
-      // debugger is currently attached or attached debugger is not
-      // a reloadable connection.
+      // debugger is currently attached, the debugger is not
+      // a reloadable connection or the debugger is not currently connected to this page
       for (const value of this._reloadablePages.values()) {
         if (page.title === value._originialName) {
           value._lastConnectedPage = page;
@@ -342,10 +348,7 @@ class Device {
       return;
     }
 
-    const reloadablePage = this._reloadablePages.get(
-      Number(this._debuggerConnection.pageId));
-
-    const oldPageId = reloadablePage._lastConnectedPage?.id;
+    const oldPageId = reloadablePage._lastConnectedPage.id;
     reloadablePage._lastConnectedPage = page;
     this._isReloading = true;
 
