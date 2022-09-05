@@ -88,7 +88,7 @@ class Device {
   // Root of the project used for relative to absolute source path conversion.
   _projectRoot: string;
 
-  // A map from reloadable IDs to the latest available pages
+  // A map from reloadable IDs to the latest available pages.
   //
   // I was wondering if it should be id -> page or name -> page, because we often
   // iterate over the map to find the correct entry. I reached the conclusion that
@@ -320,7 +320,7 @@ class Device {
   // We recieved a new page ID
   _newReloadablePage(page: Page) {
     const reloadablePage = this._reloadablePages.get(
-      Number(this._debuggerConnection.pageId));
+      Number(this._debuggerConnection?.pageId));
     
     if (
       this._debuggerConnection == null ||
@@ -328,19 +328,19 @@ class Device {
       reloadablePage._originialName !== page.title
     ) {
       // We can just remember new page ID without any further actions if no
-      // debugger is currently attached, the debugger is not
-      // a reloadable connection or the debugger is not currently connected to this page
+      // debugger is currently attached, the debugger is not a reloadable
+      // connection or the debugger is not currently connected to this page
       for (const value of this._reloadablePages.values()) {
         if (page.title === value._originialName) {
           value._lastConnectedPage = page;
           return;
         }
       }
+      
+      // The page was not mapped earlier
       const newReloadablePageTitle = page.title === 'Hermes React Native'
         ? 'React Native' + RELOADABLE_PAGE_TITLE_SUFFIX
         : page.title + RELOADABLE_PAGE_TITLE_SUFFIX;
-
-      // The page was not mapped earlier
       const newReloadablePage: ReloadablePage = {
         _lastConnectedPage: page,
         _originialName: page.title,
@@ -434,20 +434,6 @@ class Device {
         // $FlowFixMe[prop-missing]
         if (params.scriptId != null) {
           this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
-        }
-      }
-
-      if (Number(debuggerInfo.pageId) < 0) {
-        // Chrome won't use the source map unless it appears to be new.
-
-        // TODO: Appending the source map is not safe
-        // if (payload.params.sourceMapURL) {
-        //   payload.params.sourceMapURL +=
-        //     '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
-        // }
-        if (payload.params.url) {
-          payload.params.url +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
         }
       }
     }
