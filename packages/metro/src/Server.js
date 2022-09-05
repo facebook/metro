@@ -60,9 +60,9 @@ const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
-const MultipartResponse = require('./Server/MultipartResponse');
 const symbolicate = require('./Server/symbolicate');
 const {codeFrameColumns} = require('@babel/code-frame');
+const MultipartResponse = require('./Server/MultipartResponse');
 const debug = require('debug')('Metro:Server');
 const fs = require('graceful-fs');
 const {
@@ -91,8 +91,7 @@ type ProcessStartContext = {
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
   +graphOptions: GraphOptions,
-  // $FlowFixMe[value-as-type]
-  +mres: MultipartResponse,
+  +mres: MultipartResponse | ServerResponse,
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
   ...SplitBundleOptions,
@@ -601,7 +600,7 @@ class Server {
         return;
       }
 
-      const mres = MultipartResponse.wrap(req, res);
+      const mres = MultipartResponse.wrapIfSupported(req, res);
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
@@ -618,13 +617,15 @@ class Server {
           // that, we check the percentage, and only send percentages that are
           // actually different and that have increased from the last one we sent.
           if (currentProgress > lastProgress || totalFileCount < 10) {
-            mres.writeChunk(
-              {'Content-Type': 'application/json'},
-              JSON.stringify({
-                done: transformedFileCount,
-                total: totalFileCount,
-              }),
-            );
+            if (mres instanceof MultipartResponse) {
+              mres.writeChunk(
+                {'Content-Type': 'application/json'},
+                JSON.stringify({
+                  done: transformedFileCount,
+                  total: totalFileCount,
+                }),
+              );
+            }
 
             // The `uncork` called internally in Node via `promise.nextTick()` may not fire
             // until all of the Promises are resolved because the microtask queue we're
