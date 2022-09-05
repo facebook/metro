@@ -336,11 +336,15 @@ class Device {
           return;
         }
       }
+      const newReloadablePageTitle = page.title === 'Hermes React Native'
+        ? 'React Native' + RELOADABLE_PAGE_TITLE_SUFFIX
+        : page.title + RELOADABLE_PAGE_TITLE_SUFFIX;
+
       // The page was not mapped earlier
       const newReloadablePage: ReloadablePage = {
         _lastConnectedPage: page,
         _originialName: page.title,
-        _reloadableName: page.title + ' Experimental (Improved Chrome Reloads)',
+        _reloadableName: newReloadablePageTitle,
       };
       const newReloadableId = -(this._reloadablePages.size + 1);
 
