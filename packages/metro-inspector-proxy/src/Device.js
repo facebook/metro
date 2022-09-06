@@ -47,7 +47,7 @@ type DebuggerInfo = {
 
 type ReloadablePage = {
   _lastConnectedPage: Page;
-  _originialName: string;
+  _originalName: string;
   _reloadableName: string;
 };
 
@@ -95,7 +95,7 @@ class Device {
   // it is better this way, as we only search through map values on reloads
   // but _mapToDevicePageId is called very often throughout the debugging
   // process, so I optimized this use-case.
-  _reloadablePages: Map<number, ReloadablePage> = new Map();
+  _reloadablePages: Map<string, ReloadablePage> = new Map();
 
   constructor(
     id: number,
@@ -143,7 +143,7 @@ class Device {
   }
 
   getPagesList(): Array<Page> {
-    const pagesList = [...this._pages];
+    const reloadablePagesList = [];
 
     this._reloadablePages.forEach((value, key) => {
       if (value._lastConnectedPage) {
@@ -152,12 +152,12 @@ class Device {
           title: value._reloadableName,
           vm: "don't use",
           app: this._app,
-        }
-        pagesList.push(reloadablePage);
+        };
+        reloadablePagesList.push(reloadablePage);
       }
     });
 
-    return pagesList;
+    return [...this._pages, ...reloadablePagesList];
   }
 
   // Handles new debugger connection to this device:
@@ -242,19 +242,14 @@ class Device {
       // TODO(hypuk): It is better for VM to send update event when new page is
       // created instead of manually checking this on every getPages result.
       for (let i = 0; i < this._pages.length; ++i) {
-        let isListed = false;
+        const testIfPageAlreadyRegistered = (page: ReloadablePage) =>
+          page._originalName === this._pages[i].title &&
+          page._lastConnectedPage.id === this._pages[i].id;
 
-        this._reloadablePages.forEach(value => {
-          if (
-            value._originialName === this._pages[i].title &&
-            value._lastConnectedPage.id === this._pages[i].id
-          ) {
-            isListed = true;
-          }
-        })
+        const mapValues = [...this._reloadablePages.values()];
 
-        if (!isListed) {
-          this._newReloadablePage(this._pages[i]);
+        if (!mapValues.some(testIfPageAlreadyRegistered)) {
+          this._handleNewReloadablePage(this._pages[i]);
         }
       }
     } else if (message.event === 'disconnect') {
@@ -267,7 +262,7 @@ class Device {
       if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
         if (
           this._debuggerConnection != null &&
-          !this._reloadablePages.has(Number(pageId))
+          !this._reloadablePages.has(pageId)
         ) {
           debug(`Page ${pageId} is reloading.`);
           debuggerSocket.send(JSON.stringify({method: 'reload'}));
@@ -317,38 +312,43 @@ class Device {
     );
   }
 
-  // We recieved a new page ID
-  _newReloadablePage(page: Page) {
+  // We received a new page ID.
+  _handleNewReloadablePage(page: Page) {
     const reloadablePage = this._reloadablePages.get(
-      Number(this._debuggerConnection?.pageId));
-    
+      this._debuggerConnection?.pageId,
+    );
+
     if (
       this._debuggerConnection == null ||
-      !this._reloadablePages.has(Number(this._debuggerConnection.pageId)) ||
-      reloadablePage._originialName !== page.title
+      reloadablePage == null ||
+      reloadablePage._originalName !== page.title
     ) {
       // We can just remember new page ID without any further actions if no
       // debugger is currently attached, the debugger is not a reloadable
       // connection or the debugger is not currently connected to this page
       for (const value of this._reloadablePages.values()) {
-        if (page.title === value._originialName) {
+        if (page.title === value._originalName) {
           value._lastConnectedPage = page;
           return;
         }
       }
-      
+
       // The page was not mapped earlier
-      const newReloadablePageTitle = page.title === 'Hermes React Native'
-        ? 'React Native' + RELOADABLE_PAGE_TITLE_SUFFIX
-        : page.title + RELOADABLE_PAGE_TITLE_SUFFIX;
+      const newReloadablePageTitle =
+        page.title === 'Hermes React Native'
+          ? 'React Native' + RELOADABLE_PAGE_TITLE_SUFFIX
+          : page.title + RELOADABLE_PAGE_TITLE_SUFFIX;
       const newReloadablePage: ReloadablePage = {
         _lastConnectedPage: page,
-        _originialName: page.title,
+        _originalName: page.title,
         _reloadableName: newReloadablePageTitle,
       };
+      // We want to find the next available negative pageID.
+      // We assing them in a decreasing order starting from -1. We use negative
+      // numbers as metro doesn't use them for normal runtimes.
       const newReloadableId = -(this._reloadablePages.size + 1);
 
-      this._reloadablePages.set(newReloadableId, newReloadablePage);
+      this._reloadablePages.set(newReloadableId.toString(), newReloadablePage);
       return;
     }
 
@@ -543,10 +543,10 @@ class Device {
 
   _mapToDevicePageId(pageId: string): string {
     if (
-      this._reloadablePages.has(Number(pageId)) &&
-      this._reloadablePages.get(Number(pageId))._lastConnectedPage != null
+      this._reloadablePages.has(pageId) &&
+      this._reloadablePages.get(pageId)._lastConnectedPage != null
     ) {
-      return this._reloadablePages.get(Number(pageId))._lastConnectedPage.id;
+      return this._reloadablePages.get(pageId)._lastConnectedPage.id;
     } else {
       return pageId;
     }
