@@ -314,7 +314,6 @@ export type ResolvedLibrary = {
   +files: $ReadOnlyArray<$DeepReadOnly<ResolvedCodeFile>>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
-  +isPartiallyResolved?: boolean,
 };
 
 type DeepReadOnlyFn = (<T>(Array<T>) => $ReadOnlyArray<$DeepReadOnly<T>>) &
