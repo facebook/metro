@@ -113,6 +113,10 @@ export type ModulePathContext = $ReadOnly<{
   ...
 }>;
 
+export type ModuleishCache = interface {
+  _getClosestPackage(modulePath: string): string,
+};
+
 export type ResolutionContext = $ReadOnly<{
   ...HasteContext,
   allowHaste: boolean,
@@ -121,6 +125,7 @@ export type ResolutionContext = $ReadOnly<{
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
   customResolverOptions: CustomResolverOptions,
+  moduleCache: ModuleishCache,
   ...
 }>;
 

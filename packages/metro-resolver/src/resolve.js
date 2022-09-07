@@ -59,18 +59,15 @@ function resolve(
     return {type: 'empty'};
   }
 
-  const {originModulePath} = context;
+  const {moduleCache, originModulePath} = context;
 
   const isDirectImport =
     isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
 
   if (isDirectImport) {
-    // derive absolute path /.../node_modules/originModuleDir/realModuleName
-    const fromModuleParentIdx =
-      originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
-    const originModuleDir = originModulePath.slice(
-      0,
-      originModulePath.indexOf(path.sep, fromModuleParentIdx),
+    // derive absolute path from originModulePath closest package
+    const originModuleDir = path.dirname(
+      moduleCache._getClosestPackage(originModulePath),
     );
     const absPath = path.join(originModuleDir, realModuleName);
     return resolveModulePath(context, absPath, platform);

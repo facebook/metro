@@ -100,6 +100,10 @@ const CONTEXT: ResolutionContext = (() => {
     getPackageMainPath: (dirPath: string) =>
       path.join(path.dirname(dirPath), 'main'),
     isAssetFile: () => false,
+    moduleCache: {
+      _getClosestPackage: (modulePath: string) =>
+        path.join(modulePath, '..', 'package.json'),
+    },
     nodeModulesPaths: [],
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
