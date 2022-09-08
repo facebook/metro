@@ -58,16 +58,21 @@ test.each([
   ['?string', 'null'],
   ['?boolean', 'void'],
 ])('comparing basic types', (left, right) => {
-  let result = compareTypeAnnotation(
+  const result = compareTypeAnnotation(
     getTypeFromCode(left),
     getTypeFromCode(right),
-  ).join('\n\t\t\t');
-  result = result !== '' ? result : 'no errors';
+    'right',
+  );
+  let messages: string = '';
+  result.forEach(error => {
+    messages = messages + error.message + '\n\t\t';
+  });
+  messages = messages === '' ? 'no errors' : messages;
   expect(`
     left-type:
       ${left}
     right-type:
       ${right}
     output:
-      ${result}`).toMatchSnapshot();
+      ${messages}`).toMatchSnapshot();
 });

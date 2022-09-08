@@ -47,7 +47,8 @@ exports[`comparing basic types 5`] = `
     right-type:
       number
     output:
-      Error: NumberTypeAnnotation cannot be assigned to BooleanTypeAnnotation"
+      Error: cannot change boolean to number because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 6`] = `
@@ -67,7 +68,8 @@ exports[`comparing basic types 7`] = `
     right-type:
       'b'
     output:
-      Error: StringLiteralTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation"
+      Error: cannot change string literal to string literal because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 8`] = `
@@ -87,7 +89,8 @@ exports[`comparing basic types 9`] = `
     right-type:
       8
     output:
-      Error: NumberLiteralTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation"
+      Error: cannot change number literal to number literal because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 10`] = `
@@ -97,7 +100,8 @@ exports[`comparing basic types 10`] = `
     right-type:
       number
     output:
-      Error: NumberTypeAnnotation cannot be assigned to NumberLiteralTypeAnnotation"
+      Error: cannot change number literal to number because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 11`] = `
@@ -127,7 +131,8 @@ exports[`comparing basic types 13`] = `
     right-type:
       string
     output:
-      Error: StringTypeAnnotation cannot be assigned to StringLiteralTypeAnnotation"
+      Error: cannot change string literal to string because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 14`] = `
@@ -147,7 +152,8 @@ exports[`comparing basic types 15`] = `
     right-type:
       false
     output:
-      Error: BooleanLiteralTypeAnnotation cannot be assigned to BooleanLiteralTypeAnnotation"
+      Error: cannot change boolean literal to boolean literal because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 16`] = `
@@ -157,7 +163,8 @@ exports[`comparing basic types 16`] = `
     right-type:
       ?string
     output:
-      Error: NullableTypeAnnotation cannot be assigned to StringTypeAnnotation"
+      Error: cannot change string to nullable string because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 17`] = `
@@ -207,7 +214,8 @@ exports[`comparing basic types 21`] = `
     right-type:
       ?number
     output:
-      Error: NumberTypeAnnotation cannot be assigned to StringTypeAnnotation"
+      Error: cannot change string to number because it will break the native code.
+		"
 `;
 
 exports[`comparing basic types 22`] = `

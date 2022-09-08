@@ -9,23 +9,53 @@
  * @format
  */
 
-import type {AnyTypeAnnotation} from './type-annotation.js';
+import type {
+  AnyTypeAnnotation,
+  NullableTypeAnnotation,
+} from './type-annotation.js';
+import type {SourceLocation} from '@babel/types';
 
-function makeError(
-  status: 'incompatible-types' | 'unknown-types',
-  left: AnyTypeAnnotation,
-  right: AnyTypeAnnotation,
-): string {
-  if (status === 'incompatible-types') {
-    return `Error: ${right.type} cannot be assigned to ${left.type}`;
+type ComparisonResult = $ReadOnly<{
+  message: string,
+  typeLoc: ?SourceLocation,
+}>;
+
+function removeNullable(annotation: NullableTypeAnnotation) {
+  if (annotation.typeAnnotation.type === 'NullableTypeAnnotation') {
+    return removeNullable(annotation.typeAnnotation);
   }
-  throw new Error(left.type + ' is not supported');
+  return annotation.typeAnnotation;
+}
+
+function getSimplifiedType(annotation: AnyTypeAnnotation): string {
+  switch (annotation.type) {
+    case 'BooleanTypeAnnotation':
+      return 'boolean';
+    case 'StringTypeAnnotation':
+      return 'string';
+    case 'NumberTypeAnnotation':
+      return 'number';
+    case 'VoidTypeAnnotation':
+      return 'void';
+    case 'StringLiteralTypeAnnotation':
+      return 'string literal';
+    case 'NumberLiteralTypeAnnotation':
+      return 'number literal';
+    case 'BooleanLiteralTypeAnnotation':
+      return 'boolean literal';
+    case 'NullLiteralTypeAnnotation':
+      return 'null';
+    case 'NullableTypeAnnotation':
+      return `nullable ${getSimplifiedType(removeNullable(annotation))}`;
+  }
+  throw new Error(annotation.type + ' is not supported');
 }
 
 export function compareTypeAnnotation(
   left: AnyTypeAnnotation,
   right: AnyTypeAnnotation,
-): $ReadOnlyArray<string> {
+  newVersion: 'left' | 'right',
+): Array<ComparisonResult> {
   switch (left.type) {
     case 'BooleanTypeAnnotation':
       if (
@@ -34,7 +64,7 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [makeError('incompatible-types', left, right)];
+      return [basicError(left, right, newVersion)];
     case 'NumberTypeAnnotation':
       if (
         left.type === right.type ||
@@ -42,7 +72,7 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [makeError('incompatible-types', left, right)];
+      return [basicError(left, right, newVersion)];
     case 'StringTypeAnnotation':
       if (
         left.type === right.type ||
@@ -50,44 +80,31 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [makeError('incompatible-types', left, right)];
+      return [basicError(left, right, newVersion)];
     case 'VoidTypeAnnotation':
       if (right.type === 'VoidTypeAnnotation') {
         return [];
       }
-      return [makeError('incompatible-types', left, right)];
+      return [basicError(left, right, newVersion)];
     case 'StringLiteralTypeAnnotation':
-      if (
-        right.type === 'StringLiteralTypeAnnotation' &&
-        right.value === left.value
-      ) {
-        return [];
-      }
-      return [makeError('incompatible-types', left, right)];
-    case 'NumberLiteralTypeAnnotation':
-      if (
-        right.type === 'NumberLiteralTypeAnnotation' &&
-        right.value === left.value
-      ) {
-        return [];
-      }
-      return [makeError('incompatible-types', left, right)];
     case 'BooleanLiteralTypeAnnotation':
-      if (
-        right.type === 'BooleanLiteralTypeAnnotation' &&
-        right.value === left.value
-      ) {
+    case 'NumberLiteralTypeAnnotation':
+      if (right.type === left.type && right.value === left.value) {
         return [];
       }
-      return [makeError('incompatible-types', left, right)];
+      return [basicError(left, right, newVersion)];
     case 'NullLiteralTypeAnnotation':
       if (right.type !== 'NullLiteralTypeAnnotation') {
-        return [makeError('incompatible-types', left, right)];
+        return [basicError(left, right, newVersion)];
       }
       return [];
     case 'NullableTypeAnnotation':
       if (right.type === 'NullableTypeAnnotation') {
-        return compareTypeAnnotation(left.typeAnnotation, right.typeAnnotation);
+        return compareTypeAnnotation(
+          left.typeAnnotation,
+          right.typeAnnotation,
+          newVersion,
+        );
       }
       if (
         right.type === 'NullLiteralTypeAnnotation' ||
@@ -95,8 +112,23 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return compareTypeAnnotation(left.typeAnnotation, right);
+      return compareTypeAnnotation(left.typeAnnotation, right, newVersion);
     default:
-      return [makeError('unknown-types', left, right)];
+      throw new Error(left.type + 'not supported');
   }
+}
+
+function basicError(
+  left: AnyTypeAnnotation,
+  right: AnyTypeAnnotation,
+  newVersion: 'left' | 'right',
+): ComparisonResult {
+  const newAnnotationType = newVersion === 'right' ? right : left;
+  const oldAnnotationType = newVersion === 'right' ? left : right;
+  const newType = getSimplifiedType(newAnnotationType);
+  const oldType = getSimplifiedType(oldAnnotationType);
+  return {
+    message: `Error: cannot change ${oldType} to ${newType} because it will break the native code.`,
+    typeLoc: newAnnotationType.loc,
+  };
 }
