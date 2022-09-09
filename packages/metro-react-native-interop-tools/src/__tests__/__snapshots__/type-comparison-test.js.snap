@@ -68,7 +68,7 @@ exports[`comparing basic types 7`] = `
     right-type:
       'b'
     output:
-      Error: cannot change string literal to string literal because it will break the native code.
+      Error: cannot change string literal with value 'a' to string literal with value 'b' because it will break the native code.
 		"
 `;
 
@@ -89,7 +89,7 @@ exports[`comparing basic types 9`] = `
     right-type:
       8
     output:
-      Error: cannot change number literal to number literal because it will break the native code.
+      Error: cannot change number literal with value '2' to number literal with value '8' because it will break the native code.
 		"
 `;
 
@@ -152,7 +152,7 @@ exports[`comparing basic types 15`] = `
     right-type:
       false
     output:
-      Error: cannot change boolean literal to boolean literal because it will break the native code.
+      Error: cannot change boolean literal with value 'true' to boolean literal with value 'false' because it will break the native code.
 		"
 `;
 

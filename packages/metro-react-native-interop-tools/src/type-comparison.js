@@ -12,12 +12,14 @@
 import type {
   AnyTypeAnnotation,
   NullableTypeAnnotation,
+  LiteralTypeAnnotation,
 } from './type-annotation.js';
 import type {SourceLocation} from '@babel/types';
 
 type ComparisonResult = $ReadOnly<{
   message: string,
-  typeLoc: ?SourceLocation,
+  newTypeLoc: ?SourceLocation,
+  oldTypeLoc: ?SourceLocation,
 }>;
 
 function removeNullable(annotation: NullableTypeAnnotation) {
@@ -89,8 +91,11 @@ export function compareTypeAnnotation(
     case 'StringLiteralTypeAnnotation':
     case 'BooleanLiteralTypeAnnotation':
     case 'NumberLiteralTypeAnnotation':
-      if (right.type === left.type && right.value === left.value) {
-        return [];
+      if (right.type === left.type) {
+        if (right.value === left.value) {
+          return [];
+        }
+        return [literalError(left, right, newVersion)];
       }
       return [basicError(left, right, newVersion)];
     case 'NullLiteralTypeAnnotation':
@@ -129,6 +134,32 @@ function basicError(
   const oldType = getSimplifiedType(oldAnnotationType);
   return {
     message: `Error: cannot change ${oldType} to ${newType} because it will break the native code.`,
-    typeLoc: newAnnotationType.loc,
+    newTypeLoc: newAnnotationType.loc,
+    oldTypeLoc: oldAnnotationType.loc,
+  };
+}
+
+function getValueFromType(annotation: LiteralTypeAnnotation): string {
+  if (annotation.type === 'StringLiteralTypeAnnotation') {
+    return annotation.value;
+  }
+  return JSON.stringify(annotation.value);
+}
+
+function literalError(
+  left: LiteralTypeAnnotation,
+  right: LiteralTypeAnnotation,
+  newVersion: 'left' | 'right',
+): ComparisonResult {
+  const newAnnotationType = newVersion === 'right' ? right : left;
+  const oldAnnotationType = newVersion === 'right' ? left : right;
+  const newType = getSimplifiedType(newAnnotationType);
+  const oldType = getSimplifiedType(oldAnnotationType);
+  const newValue = getValueFromType(newAnnotationType);
+  const oldValue = getValueFromType(oldAnnotationType);
+  return {
+    message: `Error: cannot change ${oldType} with value '${oldValue}' to ${newType} with value '${newValue}' because it will break the native code.`,
+    newTypeLoc: newAnnotationType.loc,
+    oldTypeLoc: oldAnnotationType.loc,
   };
 }
