@@ -182,28 +182,21 @@ class TerminalReporter {
 
   _logInitializing(port: number, hasReducedPerformance: boolean): void {
     const logo = [
-      '                                                      ',
-      '                        #######                       ',
-      '                   ################                   ',
-      '                #########     #########               ',
-      '            #########             ##########          ',
-      '        #########        ######        #########      ',
-      '       ##########################################     ',
-      '      #####      #####################       #####    ',
-      '      #####          ##############          #####    ',
-      '      #####    ###       ######       ###    #####    ',
-      '      #####    #######            #######    #####    ',
-      '      #####    ###########    ###########    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####      ######################     ######    ',
-      '       ######        #############        #######     ',
-      '         #########        ####       #########        ',
-      '              #########          #########            ',
-      '                  ######### #########                 ',
-      '                       #########                      ',
-      '                                                      ',
-      '                                                      ',
+      '',
+      '                        ▒▒▓▓▓▓▒▒',
+      '                     ▒▓▓▓▒▒░░▒▒▓▓▓▒',
+      '                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒',
+      '                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓',
+      '                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓',
+      '                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓',
+      '                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓',
+      '                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒',
+      '                     ▒▓▓▓▒░░░░▒▓▓▓▒',
+      '                        ▒▒▓▓▓▓▒▒',
+      '',
+      '',
     ];
 
     const color = hasReducedPerformance ? chalk.red : chalk.blue;
@@ -275,9 +268,12 @@ class TerminalReporter {
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
+        const version = 'v' + require('../../package.json').version;
         this.terminal.log(
-          color.bold('                    Welcome to Metro!\n') +
-            chalk.dim('              Fast - Scalable - Integrated\n\n'),
+          color.bold(
+            ' '.repeat(19 - version.length / 2),
+            'Welcome to Metro ' + chalk.white(version) + '\n',
+          ) + chalk.dim('              Fast - Scalable - Integrated\n\n'),
         );
 
         if (event.hasReducedPerformance) {
