@@ -812,10 +812,11 @@ function collectWhite<T>(module: Module<T>, graph: Graph<T>, delta: Delta) {
   ) {
     graph.privateState.gc.color.set(module.path, 'black');
     for (const dependency of module.dependencies.values()) {
-      const childModule = nullthrows(
-        graph.dependencies.get(dependency.absolutePath),
-      );
-      collectWhite(childModule, graph, delta);
+      const childModule = graph.dependencies.get(dependency.absolutePath);
+      // The child may already have been collected.
+      if (childModule) {
+        collectWhite(childModule, graph, delta);
+      }
     }
     freeModule(module, graph, delta);
   }

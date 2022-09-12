@@ -2188,6 +2188,42 @@ describe('edge cases', () => {
     expect(mockTransform).toHaveBeenCalledWith('/bar', undefined);
     expect(mockTransform).toHaveBeenCalledWith('/foo', undefined);
   });
+
+  it('removing a cycle with multiple outgoing edges to the same module', async () => {
+    /*
+                      ┌─────────────────────────┐
+                      │                         ▼
+    ┌─────────┐     ┌──────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ──▶ │ /baz │
+    └─────────┘     └──────┘     └──────┘     └──────┘
+                      ▲            │
+                      └────────────┘
+    */
+    Actions.addDependency('/bar', '/foo');
+    Actions.addDependency('/bar', '/baz');
+    files.clear();
+
+    await initialTraverseDependencies(graph, options);
+
+    /*
+                      ┌─────────────────────────┐
+                      │                         ▼
+    ┌─────────┐   / ┌──────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │ ──▶ │ /baz │
+    └─────────┘ /   └──────┘     └──────┘     └──────┘
+                      ▲            │
+                      └────────────┘
+    */
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
 });
 
 describe('require.context', () => {
