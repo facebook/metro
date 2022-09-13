@@ -81,7 +81,6 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
 
   // Iterate over unique entries
   // $FlowIssue[unsupported-syntax]
-  // $FlowFixMe[missing-local-annot]
   [Symbol.iterator](): Iterator<T> {
     return this.values();
   }

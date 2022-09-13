@@ -220,7 +220,6 @@ function createRamBundle(
     filename: 'arbitrary/filename.js',
     globalPrefix: '',
     idsForPath,
-    // $FlowFixMe[incompatible-call]
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,

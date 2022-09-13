@@ -75,7 +75,6 @@ describe('wrapModule()', () => {
   });
 
   it('should not wrap a script', () => {
-    // $FlowFixMe[cannot-write]
     myModule.output[0].type = 'js/script';
 
     expect(
@@ -84,7 +83,6 @@ describe('wrapModule()', () => {
         dev: true,
         projectRoot: '/root',
       }),
-      // $FlowFixMe[incompatible-use]
     ).toEqual(myModule.output[0].data.code);
   });
 

@@ -77,7 +77,6 @@ class Package {
       }
     }
 
-    /* $FlowFixMe: `getReplacements` doesn't validate the return value. */
     return path.join(this._root, main);
   }
 

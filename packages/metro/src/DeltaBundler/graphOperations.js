@@ -345,7 +345,6 @@ async function processModule<T>(
     'Failed to add the correct dependencies',
   );
 
-  // $FlowFixMe[cannot-write]
   module.dependencies = currentDependencies;
 
   return module;
