@@ -52,7 +52,6 @@ describe('processRequest', () => {
   let getAsset;
 
   beforeEach(() => {
-    jest.useFakeTimers();
     jest.resetModules();
 
     global.Date = NativeDate;

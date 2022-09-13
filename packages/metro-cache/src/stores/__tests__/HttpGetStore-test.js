@@ -38,7 +38,11 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest.resetModules().resetAllMocks().useFakeTimers().mock('http');
+    jest
+      .resetModules()
+      .resetAllMocks()
+      .useFakeTimers('legacy') // Legacy fake timers are reset by `resetAllMocks()`
+      .mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);

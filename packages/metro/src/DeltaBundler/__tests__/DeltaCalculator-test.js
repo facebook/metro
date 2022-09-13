@@ -343,19 +343,19 @@ describe('DeltaCalculator', () => {
     });
   });
 
-  it('should emit an event when there is a relevant file change', async done => {
-    await deltaCalculator.getDelta({reset: false, shallow: false});
-
-    deltaCalculator.on('change', () => done());
-
-    fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
-    });
+  it('should emit an event when there is a relevant file change', done => {
+    deltaCalculator
+      .getDelta({reset: false, shallow: false})
+      .then(() => {
+        deltaCalculator.on('change', () => done());
+        fileWatcher.emit('change', {
+          eventsQueue: [{type: 'change', filePath: '/foo'}],
+        });
+      })
+      .catch(done);
   });
 
   it('should emit an event when a file is added', async () => {
-    jest.useFakeTimers();
-
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -371,8 +371,6 @@ describe('DeltaCalculator', () => {
   });
 
   it('should not emit an event when there is a file deleted', async () => {
-    jest.useFakeTimers();
-
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 

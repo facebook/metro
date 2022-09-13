@@ -19,7 +19,7 @@ describe('AutoCleanFileStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers()
+      .useFakeTimers('legacy') // Legacy fake timers are reset by `resetAllMocks()`
       .mock('fs', () => new (require('metro-memory-fs'))());
 
     AutoCleanFileStore = require('../AutoCleanFileStore');
@@ -38,11 +38,13 @@ describe('AutoCleanFileStore', () => {
     await fileStore.set(cache, {foo: 42});
     expect(await fileStore.get(cache)).toEqual({foo: 42});
 
-    jest.runTimersToTime(30);
+    // At 30ms the file should still be cached
+    jest.advanceTimersByTime(30);
 
     expect(await fileStore.get(cache)).toEqual({foo: 42});
 
-    jest.runTimersToTime(40);
+    // Run to 50ms so that we've exceeded the 49ms cleanup interval
+    jest.advanceTimersByTime(20);
 
     // mtime doesn't work very well in in-memory-store, so we couldn't test that
     // functionality

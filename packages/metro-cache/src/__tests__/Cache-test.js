@@ -120,8 +120,6 @@ describe('Cache', () => {
   });
 
   it('throws on a buggy store set', async () => {
-    jest.useFakeTimers();
-
     const store1 = createStore();
     const store2 = createStore();
     const cache = new Cache([store1, store2]);

@@ -10,11 +10,11 @@
 
 'use strict';
 
-const babelJest = require('babel-jest');
+const {createTransformer} = require('babel-jest');
 
 const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 
-const transformer /*: any */ = babelJest.createTransformer({
+const transformer /*: any */ = createTransformer({
   configFile: BABEL_CONFIG_PATH,
 });
 

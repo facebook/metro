@@ -52,7 +52,7 @@ describe('HttpStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers()
+      .useFakeTimers('legacy') // Legacy fake timers are reset by `resetAllMocks()`
       .mock('http')
       .mock('https');
 
