@@ -37,7 +37,6 @@ function reverseDependencyMapReferences({types: t}: {types: Types, ...}): {
         if (node.callee.name === `${state.opts.globalPrefix}__d`) {
           // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const lastArg = node.arguments[0].params.slice(-1)[0];
-          // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const depMapName: ?string = lastArg && lastArg.name;
 
           if (depMapName == null) {

@@ -2879,7 +2879,6 @@ describe('optional dependencies', () => {
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
      * Flow's LTI update could not be added via codemod */
     return async function (path: string, context: ?RequireContext) {
-      // $FlowFixMe[object-this-reference]: transform should not be bound to anything
       const result = await mockTransform.call(this, path, context);
       return {
         ...result,

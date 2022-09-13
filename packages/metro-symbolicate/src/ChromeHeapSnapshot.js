@@ -603,7 +603,6 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowIssue[unsupported-syntax]
-  // $FlowFixMe[missing-local-annot]
   [Symbol.iterator](): this {
     return this;
   }

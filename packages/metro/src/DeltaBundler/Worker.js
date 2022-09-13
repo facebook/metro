@@ -15,7 +15,6 @@ export type * from './Worker.flow';
 */
 
 try {
-  // $FlowFixMe[untyped-import]
   require('metro-babel-register').unstable_registerForMetroMonorepo();
 } catch {}
 

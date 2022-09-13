@@ -282,10 +282,9 @@ function getNameForPath(path: NodePath<>): string {
   // Annotate members with the name of their containing object/class.
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
-      // $FlowFixMe Disvoered when typing babel-traverse
+      // $FlowFixMe Discovered when typing babel-traverse
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         const separator = propertyPath.node.static ? '.' : '#';
         name = className + separator + name;
       }

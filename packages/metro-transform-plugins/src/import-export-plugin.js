@@ -401,7 +401,6 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           }
 
           specifiers.forEach(s => {
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
             const imported = s.imported;
             const local = s.local;
 

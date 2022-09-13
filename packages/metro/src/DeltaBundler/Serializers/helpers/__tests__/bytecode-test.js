@@ -77,7 +77,6 @@ it('produces a bytecode header buffer for each module', () => {
 });
 
 it('does not produce a bytecode header buffer for a script', () => {
-  // $FlowFixMe[cannot-write]
   myModule.output[1].type = 'bytecode/script';
 
   const buffers = wrapModule(myModule, {
