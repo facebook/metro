@@ -27,6 +27,7 @@
     "flow-bin": "^0.186.0",
     "glob": "^7.1.1",
     "hermes-eslint": "0.8.0",
+    "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
     "jest": "^26.6.3",
