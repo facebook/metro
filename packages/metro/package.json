@@ -67,7 +67,7 @@
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "acorn": "^8.7.1",
-    "babel-jest": "^26.6.3",
+    "babel-jest": "^27.5.1",
     "dedent": "^0.7.0",
     "jest-snapshot": "^26.5.2",
     "metro-babel-register": "0.72.3",

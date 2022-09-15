@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {createTransformer} = require('babel-jest');
+const {createTransformer} = require('babel-jest').default;
 
 const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 

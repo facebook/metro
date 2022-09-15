@@ -8,7 +8,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
     "acorn": "^8.7.1",
-    "babel-jest": "^26.6.3",
+    "babel-jest": "^27.5.1",
     "chalk": "^4.0.0",
     "codecov": "^3.6.5",
     "debug": "^2.2.0",
@@ -30,8 +30,8 @@
     "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
-    "jest": "^26.6.3",
-    "jest-watch-typeahead": "^0.6.0",
+    "jest": "^27.5.1",
+    "jest-watch-typeahead": "~1.0.0",
     "lerna": "2.4.0",
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
@@ -68,7 +68,7 @@
     ],
     "testEnvironment": "node",
     "testRegex": "/__tests__/.*-test\\.js$",
-    "timers": "fake",
+    "timers": "legacy",
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
     },
