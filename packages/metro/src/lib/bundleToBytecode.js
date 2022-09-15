@@ -93,4 +93,5 @@ function bundleToBytecode(bundle: BytecodeBundle): {
 }
 
 module.exports = bundleToBytecode;
+// $FlowFixMe[prop-missing]
 module.exports.MAGIC_NUMBER = MAGIC_NUMBER;

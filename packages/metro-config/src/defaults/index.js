@@ -160,4 +160,5 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 module.exports = getDefaultConfig;
+// $FlowFixMe[prop-missing]
 module.exports.getDefaultValues = getDefaultValues;

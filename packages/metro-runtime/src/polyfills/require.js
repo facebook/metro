@@ -504,10 +504,12 @@ function moduleThrewError(id: ModuleID, error: any): Error {
 }
 
 if (__DEV__) {
+  // $FlowFixMe[prop-missing]
   metroRequire.Systrace = {
     beginEvent: (): void => {},
     endEvent: (): void => {},
   };
+  // $FlowFixMe[prop-missing]
   metroRequire.getModules = (): ModuleList => {
     return modules;
   };
@@ -992,12 +994,14 @@ if (__DEV__) {
 
   var requireSystrace = function requireSystrace() {
     return (
+      // $FlowFixMe[prop-missing]
       global[__METRO_GLOBAL_PREFIX__ + '__SYSTRACE'] || metroRequire.Systrace
     );
   };
 
   var requireRefresh = function requireRefresh() {
     return (
+      // $FlowFixMe[prop-missing]
       global[__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] || metroRequire.Refresh
     );
   };
