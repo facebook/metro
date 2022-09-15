@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @emails oncall+metro_bundler
+ * @oncall metro_bundler
  */
 
 import CountingSet from '../CountingSet';

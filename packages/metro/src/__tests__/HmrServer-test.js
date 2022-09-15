@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow strict-local
- * @emails oncall+metro_bundler
+ * @format
+ * @oncall metro_bundler
  */
 
 import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
