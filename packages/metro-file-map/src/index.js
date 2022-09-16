@@ -411,7 +411,15 @@ export default class HasteMap extends EventEmitter {
     this._options.perfLogger?.point('read_start');
     try {
       data = await this._cacheManager.read();
-    } catch {}
+    } catch (e) {
+      this._console.warn(
+        'Error while reading cache, falling back to a full crawl:\n',
+        e,
+      );
+      this._options.perfLogger?.annotate({
+        string: {cacheReadError: e.toString()},
+      });
+    }
     data = data ?? this._createEmptyMap();
     this._options.perfLogger?.point('read_end');
 

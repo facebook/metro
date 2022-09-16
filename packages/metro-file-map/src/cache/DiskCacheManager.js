@@ -68,8 +68,14 @@ export class DiskCacheManager implements CacheManager {
   async read(): Promise<?InternalData> {
     try {
       return deserialize(readFileSync(this._cachePath));
-    } catch {}
-    return null;
+    } catch (e) {
+      if (e?.code === 'ENOENT') {
+        // Cache file not found - not considered an error.
+        return null;
+      }
+      // Rethrow anything else.
+      throw e;
+    }
   }
 
   async write(
