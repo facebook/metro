@@ -56,7 +56,7 @@ export type InterfaceExtends = $ReadOnly<{
 
 export type NullableTypeAnnotation = $ReadOnly<{
   type: 'NullableTypeAnnotation',
-  loc: ?BabelNodeSourceLocation,
+  loc: ?SourceLocation,
   typeAnnotation: AnyTypeAnnotation,
 }>;
 

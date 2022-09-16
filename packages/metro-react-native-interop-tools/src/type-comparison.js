@@ -56,7 +56,7 @@ function getSimplifiedType(annotation: AnyTypeAnnotation): string {
 export function compareTypeAnnotation(
   left: AnyTypeAnnotation,
   right: AnyTypeAnnotation,
-  newVersion: 'left' | 'right',
+  isInFunctionReturn: boolean,
 ): Array<ComparisonResult> {
   switch (left.type) {
     case 'BooleanTypeAnnotation':
@@ -66,7 +66,7 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [basicError(left, right, newVersion)];
+      return [basicError(left, right, isInFunctionReturn)];
     case 'NumberTypeAnnotation':
       if (
         left.type === right.type ||
@@ -74,7 +74,7 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [basicError(left, right, newVersion)];
+      return [basicError(left, right, isInFunctionReturn)];
     case 'StringTypeAnnotation':
       if (
         left.type === right.type ||
@@ -82,12 +82,12 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return [basicError(left, right, newVersion)];
+      return [basicError(left, right, isInFunctionReturn)];
     case 'VoidTypeAnnotation':
       if (right.type === 'VoidTypeAnnotation') {
         return [];
       }
-      return [basicError(left, right, newVersion)];
+      return [basicError(left, right, isInFunctionReturn)];
     case 'StringLiteralTypeAnnotation':
     case 'BooleanLiteralTypeAnnotation':
     case 'NumberLiteralTypeAnnotation':
@@ -95,12 +95,12 @@ export function compareTypeAnnotation(
         if (right.value === left.value) {
           return [];
         }
-        return [literalError(left, right, newVersion)];
+        return [literalError(left, right, isInFunctionReturn)];
       }
-      return [basicError(left, right, newVersion)];
+      return [basicError(left, right, isInFunctionReturn)];
     case 'NullLiteralTypeAnnotation':
       if (right.type !== 'NullLiteralTypeAnnotation') {
-        return [basicError(left, right, newVersion)];
+        return [basicError(left, right, isInFunctionReturn)];
       }
       return [];
     case 'NullableTypeAnnotation':
@@ -108,7 +108,7 @@ export function compareTypeAnnotation(
         return compareTypeAnnotation(
           left.typeAnnotation,
           right.typeAnnotation,
-          newVersion,
+          isInFunctionReturn,
         );
       }
       if (
@@ -117,23 +117,30 @@ export function compareTypeAnnotation(
       ) {
         return [];
       }
-      return compareTypeAnnotation(left.typeAnnotation, right, newVersion);
+      return compareTypeAnnotation(
+        left.typeAnnotation,
+        right,
+        isInFunctionReturn,
+      );
     default:
-      throw new Error(left.type + 'not supported');
+      throw new Error(left.type + 'is not supported');
   }
 }
 
 function basicError(
   left: AnyTypeAnnotation,
   right: AnyTypeAnnotation,
-  newVersion: 'left' | 'right',
+  isInFunctionReturn: boolean,
 ): ComparisonResult {
-  const newAnnotationType = newVersion === 'right' ? right : left;
-  const oldAnnotationType = newVersion === 'right' ? left : right;
+  const newAnnotationType = isInFunctionReturn ? left : right;
+  const oldAnnotationType = isInFunctionReturn ? right : left;
   const newType = getSimplifiedType(newAnnotationType);
   const oldType = getSimplifiedType(oldAnnotationType);
+  const reason = isInFunctionReturn
+    ? 'is incompatible with what the native code returns'
+    : 'native code will break when js calls it';
   return {
-    message: `Error: cannot change ${oldType} to ${newType} because it will break the native code.`,
+    message: `Error: cannot change ${oldType} to ${newType} because ${reason}.`,
     newTypeLoc: newAnnotationType.loc,
     oldTypeLoc: oldAnnotationType.loc,
   };
@@ -149,16 +156,19 @@ function getValueFromType(annotation: LiteralTypeAnnotation): string {
 function literalError(
   left: LiteralTypeAnnotation,
   right: LiteralTypeAnnotation,
-  newVersion: 'left' | 'right',
+  isInFunctionReturn: boolean,
 ): ComparisonResult {
-  const newAnnotationType = newVersion === 'right' ? right : left;
-  const oldAnnotationType = newVersion === 'right' ? left : right;
+  const newAnnotationType = isInFunctionReturn ? left : right;
+  const oldAnnotationType = isInFunctionReturn ? right : left;
   const newType = getSimplifiedType(newAnnotationType);
   const oldType = getSimplifiedType(oldAnnotationType);
   const newValue = getValueFromType(newAnnotationType);
   const oldValue = getValueFromType(oldAnnotationType);
+  const reason = isInFunctionReturn
+    ? 'is incompatible with what the native code returns'
+    : 'native code will break when js calls it';
   return {
-    message: `Error: cannot change ${oldType} with value '${oldValue}' to ${newType} with value '${newValue}' because it will break the native code.`,
+    message: `Error: cannot change ${oldType} with value '${oldValue}' to ${newType} with value '${newValue}' because ${reason}.`,
     newTypeLoc: newAnnotationType.loc,
     oldTypeLoc: oldAnnotationType.loc,
   };

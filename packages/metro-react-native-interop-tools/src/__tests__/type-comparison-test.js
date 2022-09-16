@@ -61,11 +61,11 @@ test.each([
   const result = compareTypeAnnotation(
     getTypeFromCode(left),
     getTypeFromCode(right),
-    'right',
+    false,
   );
   let messages: string = '';
   result.forEach(error => {
-    messages = messages + error.message + '\n\t\t';
+    messages = messages + error.message + '\n  \t\t';
   });
   messages = messages === '' ? 'no errors' : messages;
   expect(`
