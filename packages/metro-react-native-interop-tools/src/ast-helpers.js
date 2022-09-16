@@ -169,7 +169,9 @@ export function getFunctionTypeParameter(
   param: BabelNodeFunctionTypeParam,
 ): FunctionTypeParam {
   return {
+    loc: getNodeLoc(param.loc),
     name: param.name?.name,
+    optional: param.optional,
     typeAnnotation: getTypeAnnotation(param.typeAnnotation),
   };
 }

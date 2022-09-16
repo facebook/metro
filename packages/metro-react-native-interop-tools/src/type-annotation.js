@@ -37,7 +37,9 @@ export type VoidTypeAnnotation = $ReadOnly<{
 }>;
 
 export type FunctionTypeParam = $ReadOnly<{|
+  loc: ?SourceLocation,
   name: ?string,
+  optional: ?boolean,
   typeAnnotation: AnyTypeAnnotation,
 |}>;
 

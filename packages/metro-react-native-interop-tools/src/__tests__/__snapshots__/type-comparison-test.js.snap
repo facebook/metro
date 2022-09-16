@@ -247,3 +247,97 @@ exports[`comparing basic types 24`] = `
     output:
       no errors"
 `;
+
+exports[`comparing basic types 25`] = `
+"
+    left-type:
+      () => boolean
+    right-type:
+      () => ?boolean
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 26`] = `
+"
+    left-type:
+      () => ?boolean
+    right-type:
+      () => boolean
+    output:
+      Error: cannot change nullable boolean to boolean because is incompatible with what the native code returns.
+  		"
+`;
+
+exports[`comparing basic types 27`] = `
+"
+    left-type:
+      () => true
+    right-type:
+      () => boolean
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 28`] = `
+"
+    left-type:
+      (test: ?boolean) => true
+    right-type:
+      (test: boolean) => true
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 29`] = `
+"
+    left-type:
+      (test?: string) => void
+    right-type:
+      () => void
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 30`] = `
+"
+    left-type:
+      (test: string) => void
+    right-type:
+      () => void
+    output:
+      Error: cannot remove required parameter string because native code will break when js calls it.
+  		"
+`;
+
+exports[`comparing basic types 31`] = `
+"
+    left-type:
+      () => void
+    right-type:
+      (test?: string) => void
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 32`] = `
+"
+    left-type:
+      () => void
+    right-type:
+      (test?: string, test2: number) => void
+    output:
+      Error: cannot add new required parameter number because native will not provide it.
+  		"
+`;
+
+exports[`comparing basic types 33`] = `
+"
+    left-type:
+      (test?: boolean) => true
+    right-type:
+      (test?: string) => true
+    output:
+      Error: cannot change boolean to string because native code will break when js calls it.
+  		"
+`;

@@ -57,6 +57,15 @@ test.each([
   ['null', 'null'],
   ['?string', 'null'],
   ['?boolean', 'void'],
+  ['() => boolean', '() => ?boolean'],
+  ['() => ?boolean', '() => boolean'],
+  ['() => true', '() => boolean'],
+  ['(test: ?boolean) => true', '(test: boolean) => true'],
+  ['(test?: string) => void', '() => void'],
+  ['(test: string) => void', '() => void'],
+  ['() => void', '(test?: string) => void'],
+  ['() => void', '(test?: string, test2: number) => void'],
+  ['(test?: boolean) => true', '(test?: string) => true'],
 ])('comparing basic types', (left, right) => {
   const result = compareTypeAnnotation(
     getTypeFromCode(left),

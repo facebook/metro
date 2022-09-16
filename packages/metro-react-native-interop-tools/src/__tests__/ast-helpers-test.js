@@ -118,14 +118,18 @@ test('getFunctionTypeAnnotation, function has a function as parameter', () => {
     loc: null,
     params: [
       {
+        loc: null,
         name: 'screenShoudBeKeptOn',
+        optional: undefined,
         typeAnnotation: {
           type: 'AnyTypeAnnotation',
           loc: null,
         },
       },
       {
+        loc: null,
         name: 'callback',
+        optional: undefined,
         typeAnnotation: {
           type: 'FunctionTypeAnnotation',
           loc: null,
@@ -150,7 +154,9 @@ test('getFunctionTypeParameter, testig basic type parameter', () => {
     t.anyTypeAnnotation(),
   );
   expect(getFunctionTypeParameter(param)).toEqual({
+    loc: null,
     name: 'testParam',
+    optional: undefined,
     typeAnnotation: {
       type: 'AnyTypeAnnotation',
       loc: null,

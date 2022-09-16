@@ -432,7 +432,18 @@ Object {
                 },
                 "params": Array [
                   Object {
+                    "loc": Object {
+                      "end": Object {
+                        "column": 54,
+                        "line": 14,
+                      },
+                      "start": Object {
+                        "column": 25,
+                        "line": 14,
+                      },
+                    },
                     "name": "screenShouldBeKeptOn",
+                    "optional": false,
                     "typeAnnotation": Object {
                       "loc": Object {
                         "end": Object {

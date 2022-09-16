@@ -13,6 +13,9 @@ import type {
   AnyTypeAnnotation,
   NullableTypeAnnotation,
   LiteralTypeAnnotation,
+  FunctionTypeAnnotation,
+  FunctionTypeParam,
+  ObjectTypeProperty,
 } from './type-annotation.js';
 import type {SourceLocation} from '@babel/types';
 
@@ -49,6 +52,8 @@ function getSimplifiedType(annotation: AnyTypeAnnotation): string {
       return 'null';
     case 'NullableTypeAnnotation':
       return `nullable ${getSimplifiedType(removeNullable(annotation))}`;
+    case 'FunctionTypeAnnotation':
+      return 'function';
   }
   throw new Error(annotation.type + ' is not supported');
 }
@@ -122,9 +127,121 @@ export function compareTypeAnnotation(
         right,
         isInFunctionReturn,
       );
+    case 'FunctionTypeAnnotation':
+      if (right.type === 'FunctionTypeAnnotation') {
+        return compareFunctionType(left, right, isInFunctionReturn);
+      }
+      return [basicError(left, right, isInFunctionReturn)];
     default:
       throw new Error(left.type + 'is not supported');
   }
+}
+
+function compareFunctionType(
+  left: FunctionTypeAnnotation,
+  right: FunctionTypeAnnotation,
+  isInFunctionReturn: boolean,
+): Array<ComparisonResult> {
+  /*
+   * For the returned type comparison the comparison should be made
+   * other way around, because it will return from native something
+   * instead of native to be called from js
+   */
+  const finalResult = [];
+  finalResult.push(
+    ...compareTypeAnnotation(
+      right.returnTypeAnnotation,
+      left.returnTypeAnnotation,
+      true,
+    ),
+  );
+  let minimumLength = right.params.length;
+  if (left.params.length < right.params.length) {
+    minimumLength = left.params.length;
+    for (let index = left.params.length; index < right.params.length; ++index) {
+      if (right.params[index].optional !== true) {
+        finalResult.push(
+          addedRequiredParamError(left, right.params[index].typeAnnotation),
+        );
+      }
+    }
+  }
+  for (let index = 0; index < minimumLength; ++index) {
+    finalResult.push(
+      ...compareTypeAnnotation(
+        left.params[index].typeAnnotation,
+        right.params[index].typeAnnotation,
+        isInFunctionReturn,
+      ),
+    );
+    if (
+      left.params[index].optional === false &&
+      right.params[index].optional === true
+    ) {
+      finalResult.push(
+        optionalError(
+          left.params[index],
+          right.params[index],
+          isInFunctionReturn,
+        ),
+      );
+    }
+  }
+  for (let index = right.params.length; index < left.params.length; ++index) {
+    if (left.params[index].optional !== true) {
+      finalResult.push(
+        removedRequiredParamError(left.params[index].typeAnnotation, right),
+      );
+    }
+  }
+  return finalResult;
+}
+
+function addedRequiredParamError(
+  oldType: FunctionTypeAnnotation,
+  newType: AnyTypeAnnotation,
+): ComparisonResult {
+  const addedType = getSimplifiedType(newType);
+  return {
+    message: `Error: cannot add new required parameter ${addedType} because native will not provide it.`,
+    oldTypeLoc: oldType.loc,
+    newTypeLoc: newType.loc,
+  };
+}
+
+function removedRequiredParamError(
+  oldType: AnyTypeAnnotation,
+  newType: FunctionTypeAnnotation,
+) {
+  const removedType = getSimplifiedType(oldType);
+  return {
+    message: `Error: cannot remove required parameter ${removedType} because native code will break when js calls it.`,
+    oldTypeLoc: oldType.loc,
+    newTypeLoc: newType.loc,
+  };
+}
+
+function optionalError(
+  left: FunctionTypeParam | ObjectTypeProperty,
+  right: FunctionTypeParam | ObjectTypeProperty,
+  isInFunctionReturn: boolean,
+): ComparisonResult {
+  const newAnnotationType = isInFunctionReturn ? left : right;
+  const oldAnnotationType = isInFunctionReturn ? right : left;
+  const newOptionality =
+    newAnnotationType.optional === true ? 'optional' : 'required';
+  const oldOptionality =
+    oldAnnotationType.optional === true ? 'optional' : 'required';
+  const newType = getSimplifiedType(newAnnotationType.typeAnnotation);
+  const oldType = getSimplifiedType(oldAnnotationType.typeAnnotation);
+  const reason = isInFunctionReturn
+    ? 'is incompatible with what the native code returns'
+    : 'native code will break when js calls it';
+  return {
+    message: `Error: cannot change ${oldOptionality} ${oldType} to ${newOptionality} ${newType} because ${reason}.`,
+    newTypeLoc: newAnnotationType.loc,
+    oldTypeLoc: oldAnnotationType.loc,
+  };
 }
 
 function basicError(
