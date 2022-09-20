@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "metro-memory-fs": "0.72.3",
-    "metro-minify-uglify": "0.72.3",
+    "metro-minify-terser": "0.72.3",
     "metro-react-native-babel-transformer": "0.72.3"
   }
 }

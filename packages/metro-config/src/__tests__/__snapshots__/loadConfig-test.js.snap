@@ -129,7 +129,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -290,7 +290,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -451,7 +451,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -612,7 +612,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
