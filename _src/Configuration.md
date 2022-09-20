@@ -289,9 +289,9 @@ Use the hermes-parser package to use call Hermes parser via WASM instead of the 
 
 #### `minifierPath`
 
-Type: `string`
+Type: `string` (default: `'metro-minify-terser'`)
 
-Path to the minifier that minifies the code after transformation.
+Path, or package name resolvable from `metro-transform-worker`, to the minifier that minifies the code after transformation.
 
 #### `minifierConfig`
 
