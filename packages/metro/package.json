@@ -44,6 +44,7 @@
     "metro-file-map": "0.72.3",
     "metro-hermes-compiler": "0.72.3",
     "metro-inspector-proxy": "0.72.3",
+    "metro-minify-terser": "0.72.3",
     "metro-minify-uglify": "0.72.3",
     "metro-react-native-babel-preset": "0.72.3",
     "metro-resolver": "0.72.3",

@@ -21,7 +21,7 @@ jest
     inlinePlugin: () => ({}),
     constantFoldingPlugin: () => ({}),
   }))
-  .mock('metro-minify-uglify');
+  .mock('metro-minify-terser');
 
 import type {JsTransformerConfig} from '../index';
 import typeof TransformerType from '../index';
