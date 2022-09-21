@@ -123,11 +123,6 @@ const getPreset = (src, options) => {
     ]);
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
-  if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
   if (
     isNull ||
     src.indexOf('React.createClass') !== -1 ||
