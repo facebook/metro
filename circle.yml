@@ -36,7 +36,7 @@ version: 2.1
 jobs:
   run-js-checks:
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:14
     steps:
       - checkout
       - yarn_install
@@ -46,9 +46,9 @@ jobs:
           command: test-smoke
 
 
-  test-node-12:
+  test-node-14:
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:14
     steps:
       - checkout
       - yarn_install
@@ -57,7 +57,7 @@ jobs:
 
   publish-to-npm:
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:14
     steps:
       - checkout
       - yarn_install
@@ -71,7 +71,7 @@ workflows:
   build-and-deploy:
     jobs:
       - run-js-checks
-      - test-node-12
+      - test-node-14
       - publish-to-npm:
           filters:
             branches:
