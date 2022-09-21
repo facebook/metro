@@ -36,7 +36,7 @@ version: 2.1
 jobs:
   run-js-checks:
     docker:
-      - image: circleci/node:14
+      - image: cimg/node:14.17
     steps:
       - checkout
       - yarn_install
@@ -48,7 +48,7 @@ jobs:
 
   test-node-14:
     docker:
-      - image: circleci/node:14
+      - image: cimg/node:14.17
     steps:
       - checkout
       - yarn_install
@@ -57,7 +57,7 @@ jobs:
 
   publish-to-npm:
     docker:
-      - image: circleci/node:14
+      - image: cimg/node:lts
     steps:
       - checkout
       - yarn_install
