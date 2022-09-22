@@ -16,8 +16,11 @@ import type {
   FunctionTypeAnnotation,
   FunctionTypeParam,
   ObjectTypeProperty,
+  ObjectTypeAnnotation,
 } from './type-annotation.js';
 import type {SourceLocation} from '@babel/types';
+
+import nullthrows from 'nullthrows';
 
 type ComparisonResult = $ReadOnly<{
   message: string,
@@ -54,6 +57,8 @@ function getSimplifiedType(annotation: AnyTypeAnnotation): string {
       return `nullable ${getSimplifiedType(removeNullable(annotation))}`;
     case 'FunctionTypeAnnotation':
       return 'function';
+    case 'ObjectTypeAnnotation':
+      return 'object';
   }
   throw new Error(annotation.type + ' is not supported');
 }
@@ -132,9 +137,93 @@ export function compareTypeAnnotation(
         return compareFunctionType(left, right, isInFunctionReturn);
       }
       return [basicError(left, right, isInFunctionReturn)];
+    case 'ObjectTypeAnnotation':
+      if (right.type === 'ObjectTypeAnnotation') {
+        return compareObjectType(left, right, isInFunctionReturn);
+      }
+      return [basicError(left, right, isInFunctionReturn)];
     default:
       throw new Error(left.type + 'is not supported');
   }
+}
+
+function unsafeMadeOptional(
+  leftOptional: boolean,
+  rightOptional: boolean,
+  isInFunctionReturn: boolean,
+): boolean {
+  /*
+   * For object properties in an object that's part of function return
+   * statement we can't change from optional to required because the
+   * native code might still return a nullable value where js no longer expects it.
+   * For function parameters or object properties that are not
+   * in the function return we can't change from required to optional because
+   * native code still requires this parameter as part of its function signature.
+   */
+  return (
+    (leftOptional === false && rightOptional === true && !isInFunctionReturn) ||
+    (leftOptional === true && rightOptional === false && isInFunctionReturn)
+  );
+}
+
+function compareObjectType(
+  left: ObjectTypeAnnotation,
+  right: ObjectTypeAnnotation,
+  isInFunctionReturn: boolean,
+): Array<ComparisonResult> {
+  const leftProps = new Map();
+  const rightProps = new Map();
+  const finalResult = [];
+  left.properties.forEach(prop => {
+    leftProps.set(prop.name, prop);
+  });
+  right.properties.forEach(prop => {
+    rightProps.set(prop.name, prop);
+  });
+
+  for (const key of leftProps.keys()) {
+    const leftType = nullthrows(leftProps.get(key));
+    const rightType = rightProps.get(key);
+    if (rightType != null) {
+      const leftOptional = leftType.optional;
+      const rightOptional = rightType.optional;
+      const comparisonResult = compareTypeAnnotation(
+        leftType.typeAnnotation,
+        rightType.typeAnnotation,
+        isInFunctionReturn,
+      );
+      if (comparisonResult.length > 0) {
+        finalResult.push(...comparisonResult);
+      }
+      if (unsafeMadeOptional(leftOptional, rightOptional, isInFunctionReturn)) {
+        finalResult.push(
+          optionalError(leftType, rightType, isInFunctionReturn),
+        );
+      }
+    } else if (leftType.optional === false) {
+      finalResult.push(
+        differentPropertiesError(
+          leftType.typeAnnotation,
+          right,
+          isInFunctionReturn,
+        ),
+      );
+    }
+  }
+  for (const key of rightProps.keys()) {
+    const leftType = leftProps.get(key);
+    const rightType = nullthrows(rightProps.get(key));
+    if (leftType == null && rightType.optional === false) {
+      finalResult.push(
+        differentPropertiesError(
+          left,
+          rightType.typeAnnotation,
+          isInFunctionReturn,
+        ),
+      );
+    }
+  }
+  return finalResult;
 }
 
 function compareFunctionType(
@@ -286,6 +375,31 @@ function literalError(
     : 'native code will break when js calls it';
   return {
     message: `Error: cannot change ${oldType} with value '${oldValue}' to ${newType} with value '${newValue}' because ${reason}.`,
+    newTypeLoc: newAnnotationType.loc,
+    oldTypeLoc: oldAnnotationType.loc,
+  };
+}
+
+function differentPropertiesError(
+  left: AnyTypeAnnotation,
+  right: AnyTypeAnnotation,
+  isInFunctionReturn: boolean,
+): ComparisonResult {
+  const newAnnotationType = isInFunctionReturn ? left : right;
+  const oldAnnotationType = isInFunctionReturn ? right : left;
+  const newType = getSimplifiedType(newAnnotationType);
+  const oldType = getSimplifiedType(oldAnnotationType);
+  let message = '';
+  const reason = isInFunctionReturn
+    ? 'it is incompatible with what the native code returns'
+    : 'native code will break when js calls it';
+  if (newAnnotationType.type === 'ObjectTypeAnnotation') {
+    message = `Error: cannot remove ${oldType} from object properties because ${reason}.`;
+  } else {
+    message = `Error: cannot add ${newType} to object properties because ${reason}.`;
+  }
+  return {
+    message,
     newTypeLoc: newAnnotationType.loc,
     oldTypeLoc: oldAnnotationType.loc,
   };
