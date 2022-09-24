@@ -25,6 +25,7 @@ const argv = yargs
     describe: 'root folder of metro project',
     type: 'string',
     default: '',
-  }).argv;
+  })
+  .parseSync();
 
 runInspectorProxy((argv.port: any), (argv.root: any));
