@@ -15,14 +15,6 @@ const path = require('path');
 jest.mock('fb-watchman', () => {
   const normalizePathSep = require('../../lib/normalizePathSep').default;
   const Client = jest.fn();
-  Client.prototype.capabilityCheck = jest.fn((args, callback) =>
-    setImmediate(() => {
-      callback(null, {
-        capabilities: {'suffix-set': true},
-        version: '2021.06.07.00',
-      });
-    }),
-  );
   Client.prototype.command = jest.fn((args, callback) =>
     setImmediate(() => {
       const path = args[1] ? normalizePathSep(args[1]) : undefined;
@@ -75,11 +67,6 @@ describe('watchman watch', () => {
     watchman = require('fb-watchman');
 
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: 'c:fake-clock:1',
@@ -179,11 +166,6 @@ describe('watchman watch', () => {
 
   test('updates file map and removedFiles when the clock is given', async () => {
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: 'c:fake-clock:2',
@@ -257,11 +239,6 @@ describe('watchman watch', () => {
     const mockTomatoSha1 = '321f6b7e8bf7f29aab89c5e41a555b1b0baa41a9';
 
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: 'c:fake-clock:3',
@@ -350,11 +327,6 @@ describe('watchman watch', () => {
 
   test('properly resets the file map when only one watcher is reset', async () => {
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [FRUITS]: {
           clock: 'c:fake-clock:3',
@@ -435,11 +407,6 @@ describe('watchman watch', () => {
 
   test('does not add directory filters to query when watching a ROOT', async () => {
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: 'c:fake-clock:1',
@@ -512,11 +479,6 @@ describe('watchman watch', () => {
 
   test('SHA-1 requested and available', async () => {
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: 'c:fake-clock:1',
@@ -546,57 +508,11 @@ describe('watchman watch', () => {
     const client = watchman.Client.mock.instances[0];
     const calls = client.command.mock.calls;
 
-    expect(calls[0][0]).toEqual(['list-capabilities']);
-    expect(calls[2][0][2].fields).toContain('content.sha1hex');
-  });
-
-  test('SHA-1 requested and NOT available', async () => {
-    mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: [],
-        },
-      },
-      query: {
-        [ROOT_MOCK]: {
-          clock: 'c:fake-clock:1',
-          files: [],
-          is_fresh_instance: false,
-          version: '4.5.0',
-        },
-      },
-      'watch-project': {
-        [ROOT_MOCK]: {
-          watch: forcePOSIXPaths(ROOT_MOCK),
-        },
-      },
-    };
-
-    await watchmanCrawl({
-      computeSha1: true,
-      data: {
-        clocks: new Map(),
-        files: new Map(),
-      },
-      extensions: ['js', 'json'],
-      rootDir: ROOT_MOCK,
-      roots: [ROOT_MOCK],
-    });
-
-    const client = watchman.Client.mock.instances[0];
-    const calls = client.command.mock.calls;
-
-    expect(calls[0][0]).toEqual(['list-capabilities']);
-    expect(calls[2][0][2].fields).not.toContain('content.sha1hex');
+    expect(calls[1][0][2].fields).toContain('content.sha1hex');
   });
 
   test('source control query', async () => {
     mockResponse = {
-      'list-capabilities': {
-        [undefined]: {
-          capabilities: ['field-content.sha1hex'],
-        },
-      },
       query: {
         [ROOT_MOCK]: {
           clock: {
