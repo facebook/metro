@@ -15,14 +15,26 @@ declare module 'fb-watchman' {
     ...
   }>;
 
-  declare type WatchmanFile = $ReadOnly<{
-    +exists: true,
-    +name: string,
-    +'content.sha1hex': string,
+  declare type SavedStateInfo = $ReadOnly<{
+    'manifold-path': ?string,
+    'manifold-bucket': ?string,
+    error: ?string,
   }>;
 
-  declare type WatchmanQueryResponse = $ReadOnly<{
+  declare export type WatchmanFile = $ReadOnly<{
+    exists: true,
+    name: string,
+    'content.sha1hex': string,
+  }>;
+
+  declare export type WatchmanQueryResponse = $ReadOnly<{
+    'saved-state-info'?: SavedStateInfo,
     files: $ReadOnlyArray<WatchmanFile>,
+    clock: {
+      scm: {'mergebase-with': string, mergebase: string},
+      clock: string,
+    },
+    is_fresh_instance: boolean,
   }>;
 
   declare type WatchmanExpression = Array<
@@ -32,6 +44,11 @@ declare module 'fb-watchman' {
   declare type WatchmanQuerySince = {
     scm: {
       'mergebase-with': string,
+      'saved-state'?: {
+        storage: string,
+        config: {project: string, ...},
+        ...
+      },
       ...
     },
   };
