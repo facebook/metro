@@ -36,6 +36,7 @@ import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
 import HasteFS from './HasteFS';
+import canUseWatchman from './lib/canUseWatchman';
 import deepCloneInternalData from './lib/deepCloneInternalData';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
@@ -48,7 +49,6 @@ import NodeWatcher from './watchers/NodeWatcher';
 // $FlowFixMe[untyped-import] - WatchmanWatcher
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import {getSha1, worker} from './worker';
-import {execSync} from 'child_process';
 import EventEmitter from 'events';
 import invariant from 'invariant';
 // $FlowFixMe[untyped-import] - jest-regex-util
@@ -145,14 +145,6 @@ const VCS_DIRECTORIES = ['.git', '.hg']
   .map(vcs => escapePathForRegex(path.sep + vcs + path.sep))
   .join('|');
 
-const canUseWatchman = ((): boolean => {
-  try {
-    execSync('watchman --version', {stdio: ['ignore']});
-    return true;
-  } catch {}
-  return false;
-})();
-
 /**
  * HasteMap is a JavaScript implementation of Facebook's haste module system.
  *
@@ -233,6 +225,7 @@ const canUseWatchman = ((): boolean => {
 export default class HasteMap extends EventEmitter {
   _buildPromise: ?Promise<InternalDataObject>;
   _cachePath: Path;
+  _canUseWatchmanPromise: Promise<boolean>;
   _changeInterval: ?IntervalID;
   _console: Console;
   _options: InternalOptions;
@@ -787,7 +780,7 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  _crawl(hasteMap: InternalData): Promise<?(
+  async _crawl(hasteMap: InternalData): Promise<?(
     | Promise<{
         changedFiles?: FileData,
         hasteMap: InternalData,
@@ -798,8 +791,7 @@ export default class HasteMap extends EventEmitter {
     this._options.perfLogger?.point('crawl_start');
     const options = this._options;
     const ignore = (filePath: string) => this._ignore(filePath);
-    const crawl =
-      canUseWatchman && this._options.useWatchman ? watchmanCrawl : nodeCrawl;
+    const crawl = (await this._shouldUseWatchman()) ? watchmanCrawl : nodeCrawl;
     const crawlerOptions: CrawlerOptions = {
       abortSignal: this._crawlerAbortController.signal,
       computeSha1: options.computeSha1,
@@ -851,11 +843,11 @@ export default class HasteMap extends EventEmitter {
   /**
    * Watch mode
    */
-  _watch(hasteMap: InternalData): Promise<void> {
+  async _watch(hasteMap: InternalData): Promise<void> {
     this._options.perfLogger?.point('watch_start');
     if (!this._options.watch) {
       this._options.perfLogger?.point('watch_end');
-      return Promise.resolve();
+      return;
     }
 
     // In watch mode, we'll only warn about module collisions and we'll retain
@@ -864,12 +856,11 @@ export default class HasteMap extends EventEmitter {
     this._options.retainAllFiles = true;
 
     // WatchmanWatcher > FSEventsWatcher > sane.NodeWatcher
-    const WatcherImpl =
-      canUseWatchman && this._options.useWatchman
-        ? WatchmanWatcher
-        : FSEventsWatcher.isSupported()
-        ? FSEventsWatcher
-        : NodeWatcher;
+    const WatcherImpl = (await this._shouldUseWatchman())
+      ? WatchmanWatcher
+      : FSEventsWatcher.isSupported()
+      ? FSEventsWatcher
+      : NodeWatcher;
 
     const extensions = this._options.extensions;
     const ignorePattern = this._options.ignorePattern;
@@ -1067,12 +1058,10 @@ export default class HasteMap extends EventEmitter {
 
     this._changeInterval = setInterval(emitChange, CHANGE_INTERVAL);
 
-    return Promise.all(this._options.roots.map(createWatcher)).then(
-      watchers => {
-        this._watchers = watchers;
-        this._options.perfLogger?.point('watch_end');
-      },
-    );
+    await Promise.all(this._options.roots.map(createWatcher)).then(watchers => {
+      this._watchers = watchers;
+      this._options.perfLogger?.point('watch_end');
+    });
   }
 
   /**
@@ -1161,6 +1150,16 @@ export default class HasteMap extends EventEmitter {
       ignoreMatched ||
       (!this._options.retainAllFiles && filePath.includes(NODE_MODULES))
     );
+  }
+
+  async _shouldUseWatchman(): Promise<boolean> {
+    if (!this._options.useWatchman) {
+      return false;
+    }
+    if (!this._canUseWatchmanPromise) {
+      this._canUseWatchmanPromise = canUseWatchman();
+    }
+    return this._canUseWatchmanPromise;
   }
 
   _createEmptyMap(): InternalData {
