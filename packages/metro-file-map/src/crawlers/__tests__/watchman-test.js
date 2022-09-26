@@ -456,7 +456,7 @@ describe('watchman watch', () => {
     const query = calls[3][0];
     expect(query[0]).toEqual('query');
 
-    expect(query[2].expression).toEqual(['allof', ['type', 'f']]);
+    expect(query[2].expression).toEqual(['type', 'f']);
 
     expect(query[2].fields).toEqual(['name', 'exists', 'mtime_ms', 'size']);
 
