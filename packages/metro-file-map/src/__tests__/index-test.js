@@ -17,9 +17,9 @@ function mockHashContents(contents) {
   return crypto.createHash('sha1').update(contents).digest('hex');
 }
 
-jest.mock('child_process', () => ({
-  // If this does not throw, we'll use the (mocked) watchman crawler
-  execSync() {},
+jest.mock('../lib/canUseWatchman', () => ({
+  __esModule: true,
+  default: async () => true,
 }));
 
 jest.mock('jest-worker', () => ({
