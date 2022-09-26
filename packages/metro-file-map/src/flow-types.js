@@ -174,7 +174,9 @@ export type SerializableModuleMap = {
   rootDir: Path,
 };
 
-export type WatchmanClockSpec = string | {scm: {'mergebase-with': string}};
+export type WatchmanClockSpec =
+  | string
+  | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = $ReadOnly<{
