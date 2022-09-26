@@ -36,7 +36,7 @@ import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
 import HasteFS from './HasteFS';
-import canUseWatchman from './lib/canUseWatchman';
+import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import deepCloneInternalData from './lib/deepCloneInternalData';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
@@ -1157,7 +1157,19 @@ export default class HasteMap extends EventEmitter {
       return false;
     }
     if (!this._canUseWatchmanPromise) {
-      this._canUseWatchmanPromise = canUseWatchman();
+      // TODO: Ensure minimum capabilities here
+      this._canUseWatchmanPromise = checkWatchmanCapabilities([])
+        .then(() => true)
+        .catch(e => {
+          // TODO: Advise people to either install Watchman or set
+          // `useWatchman: false` here?
+          this._options.perfLogger?.annotate({
+            string: {
+              watchmanFailedCapabilityCheck: e?.message ?? '[missing]',
+            },
+          });
+          return false;
+        });
     }
     return this._canUseWatchmanPromise;
   }
