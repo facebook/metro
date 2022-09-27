@@ -16,42 +16,18 @@ import type {
   InternalData,
   Path,
 } from '../../flow-types';
+import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
+import {planQuery} from './planQuery';
 import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import normalizePathSep from '../../lib/normalizePathSep';
+import invariant from 'invariant';
 import * as path from 'path';
 
 const watchman = require('fb-watchman');
 
-// $FlowFixMe[unclear-type] - Improve fb-watchman types to cover our uses
-type WatchmanQuery = any;
-
 type WatchmanRoots = Map<string, Array<string>>;
-
-type WatchmanWatchProjectResponse = {
-  watch: string,
-  relative_path: string,
-};
-
-type WatchmanQueryResponse = {
-  warning?: string,
-  is_fresh_instance: boolean,
-  version: string,
-  clock:
-    | string
-    | {
-        scm: {'mergebase-with': string, mergebase: string},
-        clock: string,
-      },
-  files: Array<{
-    name: string,
-    exists: boolean,
-    mtime_ms: number | {toNumber: () => number},
-    size: number,
-    'content.sha1hex'?: string,
-  }>,
-};
 
 const WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS = 10000;
 const WATCHMAN_WARNING_INTERVAL_MILLISECONDS = 20000;
@@ -81,10 +57,6 @@ module.exports = async function watchmanCrawl({
 }> {
   perfLogger?.point('watchmanCrawl_start');
 
-  const fields = ['name', 'exists', 'mtime_ms', 'size'];
-  if (computeSha1) {
-    fields.push('content.sha1hex');
-  }
   const clocks = data.clocks;
 
   const client = new watchman.Client();
@@ -130,7 +102,7 @@ module.exports = async function watchmanCrawl({
     await Promise.all(
       roots.map(async (root, index) => {
         perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
-        const response = await cmd<WatchmanWatchProjectResponse>(
+        const response = await cmd<WatchmanWatchResponse>(
           'watch-project',
           root,
         );
@@ -182,61 +154,12 @@ module.exports = async function watchmanCrawl({
             },
           });
 
-          const query: WatchmanQuery = {
-            fields,
-            expression: [
-              'allof',
-              // Match regular files only. Different Watchman generators treat
-              // symlinks differently, so this ensures consistent results.
-              ['type', 'f'],
-            ],
-          };
-
-          /**
-           * Watchman "query planner".
-           *
-           * Watchman file queries consist of 1 or more generators that feed
-           * files through the expression evaluator.
-           *
-           * Strategy:
-           * 1. Select the narrowest possible generator so that the expression
-           *    evaluator has fewer candidates to process.
-           * 2. Evaluate expressions from narrowest to broadest.
-           * 3. Don't use an expression to recheck a condition that the
-           *    generator already guarantees.
-           * 4. Compose expressions to avoid combinatorial explosions in the
-           *    number of terms.
-           *
-           * The ordering of generators/filters, from narrow to broad, is:
-           * - since          = O(changes)
-           * - glob / dirname = O(files in a subtree of the repo)
-           * - suffix         = O(files in the repo)
-           *
-           * We assume that file extensions are ~uniformly distributed in the
-           * repo but Haste map projects are focused on a handful of
-           * directories. Therefore `glob` < `suffix`.
-           */
-          let queryGenerator: ?string;
-          if (since != null) {
-            // Use the `since` generator and filter by both path and extension.
-            query.since = since;
-            queryGenerator = 'since';
-            query.expression.push(
-              ['anyof', ...directoryFilters.map(dir => ['dirname', dir])],
-              ['suffix', extensions],
-            );
-          } else if (directoryFilters.length > 0) {
-            // Use the `glob` generator and filter only by extension.
-            query.glob = directoryFilters.map(directory => `${directory}/**`);
-            query.glob_includedotfiles = true;
-            queryGenerator = 'glob';
-
-            query.expression.push(['suffix', extensions]);
-          } else {
-            // Use the `suffix` generator with no path/extension filtering.
-            query.suffix = extensions;
-            queryGenerator = 'suffix';
-          }
+          const {query, queryGenerator} = planQuery({
+            since,
+            extensions,
+            directoryFilters,
+            includeSha1: computeSha1,
+          });
 
           perfLogger?.annotate({
             string: {
@@ -361,11 +284,13 @@ module.exports = async function watchmanCrawl({
           }
         }
       } else if (!ignore(filePath)) {
+        const {mtime_ms, size} = fileData;
+        invariant(
+          mtime_ms != null && size != null,
+          'missing file data in watchman response',
+        );
         const mtime =
-          typeof fileData.mtime_ms === 'number'
-            ? fileData.mtime_ms
-            : fileData.mtime_ms.toNumber();
-        const size = fileData.size;
+          typeof mtime_ms === 'number' ? mtime_ms : mtime_ms.toNumber();
 
         let sha1hex = fileData['content.sha1hex'];
         if (typeof sha1hex !== 'string' || sha1hex.length !== 40) {
