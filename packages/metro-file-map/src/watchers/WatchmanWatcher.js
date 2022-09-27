@@ -32,212 +32,202 @@ const SUB_NAME = 'sane-sub';
  * @param {Object} opts
  * @public
  */
-
-export default function WatchmanWatcher(dir, opts) {
-  common.assignOptions(this, opts);
-  this.root = path.resolve(dir);
-  this.init();
-}
-
-// eslint-disable-next-line no-proto
-WatchmanWatcher.prototype.__proto__ = EventEmitter.prototype;
-
-/**
- * Run the watchman `watch` command on the root and subscribe to changes.
- *
- * @private
- */
-
-WatchmanWatcher.prototype.init = function () {
-  if (this.client) {
-    this.client.removeAllListeners();
+export default class WatchmanWatcher extends EventEmitter {
+  constructor(dir, opts) {
+    super();
+    common.assignOptions(this, opts);
+    this.root = path.resolve(dir);
+    this.init();
   }
 
-  const self = this;
-  this.client = new watchman.Client();
-  this.client.on('error', error => {
-    self.emit('error', error);
-  });
-  this.client.on('subscription', this.handleChangeEvent.bind(this));
-  this.client.on('end', () => {
-    console.warn('[sane] Warning: Lost connection to watchman, reconnecting..');
-    self.init();
-  });
-
-  this.watchProjectInfo = null;
-
-  function getWatchRoot() {
-    return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
-  }
-
-  function onWatchProject(error, resp) {
-    if (handleError(self, error)) {
-      return;
+  /**
+   * Run the watchman `watch` command on the root and subscribe to changes.
+   *
+   * @private
+   */
+  init() {
+    if (this.client) {
+      this.client.removeAllListeners();
     }
 
-    handleWarning(resp);
+    const self = this;
+    this.client = new watchman.Client();
+    this.client.on('error', error => {
+      self.emit('error', error);
+    });
+    this.client.on('subscription', this.handleChangeEvent.bind(this));
+    this.client.on('end', () => {
+      console.warn(
+        '[sane] Warning: Lost connection to watchman, reconnecting..',
+      );
+      self.init();
+    });
 
-    self.watchProjectInfo = {
-      relativePath: resp.relative_path ? resp.relative_path : '',
-      root: resp.watch,
-    };
+    this.watchProjectInfo = null;
 
-    self.client.command(['clock', getWatchRoot()], onClock);
-  }
-
-  function onClock(error, resp) {
-    if (handleError(self, error)) {
-      return;
+    function getWatchRoot() {
+      return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
     }
 
-    handleWarning(resp);
-
-    const options = {
-      fields: ['name', 'exists', 'new'],
-      since: resp.clock,
-      defer: self.watchmanDeferStates,
-      relative_root: self.watchProjectInfo.relativePath,
-    };
-
-    // Make sure we honor the dot option if even we're not using globs.
-    if (self.globs.length === 0 && !self.dot) {
-      options.expression = [
-        'match',
-        '**',
-        'wholename',
-        {
-          includedotfiles: false,
-        },
-      ];
-    }
-
-    self.client.command(
-      ['subscribe', getWatchRoot(), SUB_NAME, options],
-      onSubscribe,
-    );
-  }
-
-  function onSubscribe(error, resp) {
-    if (handleError(self, error)) {
-      return;
-    }
-
-    handleWarning(resp);
-
-    self.emit('ready');
-  }
-
-  self.client.command(['watch-project', getWatchRoot()], onWatchProject);
-};
-
-/**
- * Handles a change event coming from the subscription.
- *
- * @param {Object} resp
- * @private
- */
-
-WatchmanWatcher.prototype.handleChangeEvent = function (resp) {
-  assert.equal(resp.subscription, SUB_NAME, 'Invalid subscription event.');
-  if (resp.is_fresh_instance) {
-    this.emit('fresh_instance');
-  }
-  if (resp.is_fresh_instance) {
-    this.emit('fresh_instance');
-  }
-  if (Array.isArray(resp.files)) {
-    resp.files.forEach(this.handleFileChange, this);
-  }
-  if ((this.watchmanDeferStates ?? []).includes(resp['state-enter'])) {
-    debug(
-      `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
-    );
-  }
-  if ((this.watchmanDeferStates ?? []).includes(resp['state-leave'])) {
-    debug(
-      `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
-    );
-  }
-};
-
-/**
- * Handles a single change event record.
- *
- * @param {Object} changeDescriptor
- * @private
- */
-
-WatchmanWatcher.prototype.handleFileChange = function (changeDescriptor) {
-  const self = this;
-
-  const relativePath = changeDescriptor.name;
-  const absPath = path.join(
-    this.watchProjectInfo.root,
-    this.watchProjectInfo.relativePath,
-    relativePath,
-  );
-
-  if (
-    this.hasIgnore &&
-    !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
-  ) {
-    return;
-  }
-
-  if (!changeDescriptor.exists) {
-    self.emitEvent(DELETE_EVENT, relativePath, self.root);
-  } else {
-    fs.lstat(absPath, (error, stat) => {
-      // Files can be deleted between the event and the lstat call
-      // the most reliable thing to do here is to ignore the event.
-      if (error && error.code === 'ENOENT') {
-        return;
-      }
-
+    function onWatchProject(error, resp) {
       if (handleError(self, error)) {
         return;
       }
 
-      const eventType = changeDescriptor.new ? ADD_EVENT : CHANGE_EVENT;
+      handleWarning(resp);
 
-      // Change event on dirs are mostly useless.
-      if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
-        self.emitEvent(eventType, relativePath, self.root, stat);
+      self.watchProjectInfo = {
+        relativePath: resp.relative_path ? resp.relative_path : '',
+        root: resp.watch,
+      };
+
+      self.client.command(['clock', getWatchRoot()], onClock);
+    }
+
+    function onClock(error, resp) {
+      if (handleError(self, error)) {
+        return;
       }
-    });
+
+      handleWarning(resp);
+
+      const options = {
+        fields: ['name', 'exists', 'new'],
+        since: resp.clock,
+        defer: self.watchmanDeferStates,
+        relative_root: self.watchProjectInfo.relativePath,
+      };
+
+      // Make sure we honor the dot option if even we're not using globs.
+      if (self.globs.length === 0 && !self.dot) {
+        options.expression = [
+          'match',
+          '**',
+          'wholename',
+          {
+            includedotfiles: false,
+          },
+        ];
+      }
+
+      self.client.command(
+        ['subscribe', getWatchRoot(), SUB_NAME, options],
+        onSubscribe,
+      );
+    }
+
+    function onSubscribe(error, resp) {
+      if (handleError(self, error)) {
+        return;
+      }
+
+      handleWarning(resp);
+
+      self.emit('ready');
+    }
+
+    self.client.command(['watch-project', getWatchRoot()], onWatchProject);
   }
-};
 
-/**
- * Dispatches the event.
- *
- * @param {string} eventType
- * @param {string} filepath
- * @param {string} root
- * @param {fs.Stat} stat
- * @private
- */
+  /**
+   * Handles a change event coming from the subscription.
+   *
+   * @param {Object} resp
+   * @private
+   */
+  handleChangeEvent(resp) {
+    assert.equal(resp.subscription, SUB_NAME, 'Invalid subscription event.');
+    if (resp.is_fresh_instance) {
+      this.emit('fresh_instance');
+    }
+    if (resp.is_fresh_instance) {
+      this.emit('fresh_instance');
+    }
+    if (Array.isArray(resp.files)) {
+      resp.files.forEach(this.handleFileChange, this);
+    }
+    if ((this.watchmanDeferStates ?? []).includes(resp['state-enter'])) {
+      debug(
+        `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
+      );
+    }
+    if ((this.watchmanDeferStates ?? []).includes(resp['state-leave'])) {
+      debug(
+        `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
+      );
+    }
+  }
 
-WatchmanWatcher.prototype.emitEvent = function (
-  eventType,
-  filepath,
-  root,
-  stat,
-) {
-  this.emit(eventType, filepath, root, stat);
-  this.emit(ALL_EVENT, eventType, filepath, root, stat);
-};
+  /**
+   * Handles a single change event record.
+   *
+   * @param {Object} changeDescriptor
+   * @private
+   */
+  handleFileChange(changeDescriptor) {
+    const self = this;
 
-/**
- * Closes the watcher.
- *
- */
+    const relativePath = changeDescriptor.name;
+    const absPath = path.join(
+      this.watchProjectInfo.root,
+      this.watchProjectInfo.relativePath,
+      relativePath,
+    );
 
-WatchmanWatcher.prototype.close = function () {
-  this.client.removeAllListeners();
-  this.client.end();
-  return Promise.resolve();
-};
+    if (
+      this.hasIgnore &&
+      !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
+    ) {
+      return;
+    }
+
+    if (!changeDescriptor.exists) {
+      self.emitEvent(DELETE_EVENT, relativePath, self.root);
+    } else {
+      fs.lstat(absPath, (error, stat) => {
+        // Files can be deleted between the event and the lstat call
+        // the most reliable thing to do here is to ignore the event.
+        if (error && error.code === 'ENOENT') {
+          return;
+        }
+
+        if (handleError(self, error)) {
+          return;
+        }
+
+        const eventType = changeDescriptor.new ? ADD_EVENT : CHANGE_EVENT;
+
+        // Change event on dirs are mostly useless.
+        if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
+          self.emitEvent(eventType, relativePath, self.root, stat);
+        }
+      });
+    }
+  }
+
+  /**
+   * Dispatches the event.
+   *
+   * @param {string} eventType
+   * @param {string} filepath
+   * @param {string} root
+   * @param {fs.Stat} stat
+   * @private
+   */
+  emitEvent(eventType, filepath, root, stat) {
+    this.emit(eventType, filepath, root, stat);
+    this.emit(ALL_EVENT, eventType, filepath, root, stat);
+  }
+
+  /**
+   * Closes the watcher.
+   *
+   */
+  async close() {
+    this.client.removeAllListeners();
+    this.client.end();
+  }
+}
 
 /**
  * Handles an error and returns true if exists.
@@ -246,7 +236,6 @@ WatchmanWatcher.prototype.close = function () {
  * @param {Error} error
  * @private
  */
-
 function handleError(self, error) {
   if (error != null) {
     self.emit('error', error);
@@ -262,7 +251,6 @@ function handleError(self, error) {
  * @param {object} resp
  * @private
  */
-
 function handleWarning(resp) {
   if ('warning' in resp) {
     if (RecrawlWarning.isRecrawlWarningDupe(resp.warning)) {
