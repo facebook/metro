@@ -6,7 +6,7 @@
  *
  * @flow strict
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';

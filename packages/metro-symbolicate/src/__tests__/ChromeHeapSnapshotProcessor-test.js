@@ -6,7 +6,7 @@
  *
  * @flow strict
  * @format
- * @oncall js_symbolication
+ * @oncall react_native
  */
 
 'use strict';
