@@ -7,6 +7,7 @@
  * @polyfill
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';

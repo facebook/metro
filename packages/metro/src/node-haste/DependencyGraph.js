@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type Package from './Package';

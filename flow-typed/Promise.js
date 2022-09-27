@@ -7,6 +7,7 @@
  * @flow
  * @nolint
  * @format
+ * @oncall react_native
  */
 
 /* eslint-disable */

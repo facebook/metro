@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 // Symbolicates a JavaScript stack trace using a source map.

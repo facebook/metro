@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {ConfigT} from 'metro-config/src/configTypes.flow';

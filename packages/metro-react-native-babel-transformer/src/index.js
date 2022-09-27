@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // Note: This is a fork of the fb-specific transform.js
