@@ -10,11 +10,40 @@
  */
 
 declare module 'fb-watchman' {
+  declare type WatchmanClockResponse = $ReadOnly<{
+    clock: string,
+    warning?: string,
+    ...
+  }>;
+
+  declare type WatchmanSubscribeResponse = $ReadOnly<{
+    warning?: string,
+    ...
+  }>;
+
   declare type WatchmanWatchResponse = $ReadOnly<{
     watch: string,
     relative_path: string,
+    warning?: string,
     ...
   }>;
+
+  declare type WatchmanFileChange = $ReadOnly<{
+    name: string,
+    exists: boolean,
+    new: boolean,
+    ...
+  }>;
+
+  declare type WatchmanSubscriptionEvent = {
+    subscription: string,
+    is_fresh_instance: boolean,
+    files: $ReadOnlyArray<WatchmanFileChange>,
+    'state-enter'?: ?string,
+    'state-leave'?: ?string,
+  };
+
+  declare type WatchmanLogEvent = mixed;
 
   declare type SavedStateInfo = $ReadOnly<{
     'manifold-path': ?string,
@@ -103,6 +132,7 @@ declare module 'fb-watchman' {
       }>;
 
   declare type WatchmanQuery = {
+    defer?: $ReadOnlyArray<string>,
     expression?: WatchmanExpression,
     fields: $ReadOnlyArray<string>,
     glob?: $ReadOnlyArray<string>,
@@ -142,7 +172,22 @@ declare module 'fb-watchman' {
       config: ['find', string, string],
       callback: (error: ?Error, response: WatchmanQueryResponse) => void,
     ): void;
+    command(
+      config: ['clock', string],
+      callback: (error: ?Error, response: WatchmanClockResponse) => void,
+    ): void;
+    command(
+      config: ['subscribe', string, string, WatchmanQuery],
+      callback: (error: ?Error, response: WatchmanSubscribeResponse) => void,
+    ): void;
     end(): void;
+
+    on('connect', () => void): void;
+    on('end', () => void): void;
+    on('error', (error: Error) => void): void;
+    on('subscription', (event: WatchmanSubscriptionEvent) => void): void;
+    on('log', (event: WatchmanLogEvent) => void): void;
+    removeAllListeners: (eventName?: string) => void;
   }
 
   declare module.exports: {Client: Class<Client>};

@@ -31,6 +31,7 @@ import type {
   SerializableModuleMap,
   WorkerMetadata,
 } from './flow-types';
+import type {WatcherOptions} from './watchers/common';
 import type {Stats} from 'graceful-fs';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
@@ -47,7 +48,6 @@ import HasteModuleMap from './ModuleMap';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 // $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
 import NodeWatcher from './watchers/NodeWatcher';
-// $FlowFixMe[untyped-import] - WatchmanWatcher
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import {getSha1, worker} from './worker';
 import EventEmitter from 'events';
@@ -879,7 +879,7 @@ export default class HasteMap extends EventEmitter {
     let mustCopy = true;
 
     const createWatcher = (root: Path): Promise<Watcher> => {
-      const watcher = new WatcherImpl(root, {
+      const watcherOptions: WatcherOptions = {
         dot: true,
         glob: [
           // Ensure we always include package.json files, which are crucial for
@@ -889,7 +889,8 @@ export default class HasteMap extends EventEmitter {
         ],
         ignored: ignorePattern,
         watchmanDeferStates: this._options.watchmanDeferStates,
-      });
+      };
+      const watcher = new WatcherImpl(root, watcherOptions);
 
       return new Promise((resolve, reject) => {
         const rejectTimeout = setTimeout(

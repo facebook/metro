@@ -64,8 +64,9 @@ module.exports = async function watchmanCrawl({
   abortSignal?.addEventListener('abort', () => client.end());
 
   let clientError;
-  // $FlowFixMe[prop-missing] - Client is not typed as an EventEmitter
-  client.on('error', error => (clientError = makeWatchmanError(error)));
+  client.on('error', error => {
+    clientError = makeWatchmanError(error);
+  });
 
   let didLogWatchmanWaitMessage = false;
 

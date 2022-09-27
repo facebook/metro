@@ -1,18 +1,35 @@
 /**
- * vendored from https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/utils/recrawl-warning-dedupe.js
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
  * @format
  * @oncall react_native
  */
 
+/**
+ * Originally vendored from
+ * https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/utils/recrawl-warning-dedupe.js
+ */
+
 'use strict';
 
-class RecrawlWarning {
-  constructor(root, count) {
+export default class RecrawlWarning {
+  static RECRAWL_WARNINGS: Array<RecrawlWarning> = [];
+  static REGEXP: RegExp =
+    /Recrawled this watch (\d+) times, most recently because:\n([^:]+)/;
+
+  root: string;
+  count: number;
+
+  constructor(root: string, count: number) {
     this.root = root;
     this.count = count;
   }
 
-  static findByRoot(root) {
+  static findByRoot(root: string): ?RecrawlWarning {
     for (let i = 0; i < this.RECRAWL_WARNINGS.length; i++) {
       const warning = this.RECRAWL_WARNINGS[i];
       if (warning.root === root) {
@@ -23,7 +40,7 @@ class RecrawlWarning {
     return undefined;
   }
 
-  static isRecrawlWarningDupe(warningMessage) {
+  static isRecrawlWarningDupe(warningMessage: mixed): boolean {
     if (typeof warningMessage !== 'string') {
       return false;
     }
@@ -52,9 +69,3 @@ class RecrawlWarning {
     }
   }
 }
-
-RecrawlWarning.RECRAWL_WARNINGS = [];
-RecrawlWarning.REGEXP =
-  /Recrawled this watch (\d+) times, most recently because:\n([^:]+)/;
-
-module.exports = RecrawlWarning;
