@@ -17,9 +17,9 @@ function mockHashContents(contents) {
   return crypto.createHash('sha1').update(contents).digest('hex');
 }
 
-jest.mock('../lib/canUseWatchman', () => ({
+jest.mock('../lib/checkWatchmanCapabilities', () => ({
   __esModule: true,
-  default: async () => true,
+  default: async () => {},
 }));
 
 jest.mock('jest-worker', () => ({
