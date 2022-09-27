@@ -70,23 +70,6 @@ WatchmanWatcher.prototype.init = function () {
     return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
   }
 
-  function onCapability(error, resp) {
-    if (handleError(self, error)) {
-      // The Watchman watcher is unusable on this system, we cannot continue
-      return;
-    }
-
-    handleWarning(resp);
-
-    self.capabilities = resp.capabilities;
-
-    if (self.capabilities.relative_root) {
-      self.client.command(['watch-project', getWatchRoot()], onWatchProject);
-    } else {
-      self.client.command(['watch', getWatchRoot()], onWatch);
-    }
-  }
-
   function onWatchProject(error, resp) {
     if (handleError(self, error)) {
       return;
@@ -102,16 +85,6 @@ WatchmanWatcher.prototype.init = function () {
     self.client.command(['clock', getWatchRoot()], onClock);
   }
 
-  function onWatch(error, resp) {
-    if (handleError(self, error)) {
-      return;
-    }
-
-    handleWarning(resp);
-
-    self.client.command(['clock', getWatchRoot()], onClock);
-  }
-
   function onClock(error, resp) {
     if (handleError(self, error)) {
       return;
@@ -123,43 +96,19 @@ WatchmanWatcher.prototype.init = function () {
       fields: ['name', 'exists', 'new'],
       since: resp.clock,
       defer: self.watchmanDeferStates,
+      relative_root: self.watchProjectInfo.relativePath,
     };
 
-    // If the server has the wildmatch capability available it supports
-    // the recursive **/*.foo style match and we can offload our globs
-    // to the watchman server.  This saves both on data size to be
-    // communicated back to us and compute for evaluating the globs
-    // in our node process.
-    if (self.capabilities.wildmatch) {
-      if (self.globs.length === 0) {
-        if (!self.dot) {
-          // Make sure we honor the dot option if even we're not using globs.
-          options.expression = [
-            'match',
-            '**',
-            'wholename',
-            {
-              includedotfiles: false,
-            },
-          ];
-        }
-      } else {
-        options.expression = ['anyof'];
-        for (const i in self.globs) {
-          options.expression.push([
-            'match',
-            self.globs[i],
-            'wholename',
-            {
-              includedotfiles: self.dot,
-            },
-          ]);
-        }
-      }
-    }
-
-    if (self.capabilities.relative_root) {
-      options.relative_root = self.watchProjectInfo.relativePath;
+    // Make sure we honor the dot option if even we're not using globs.
+    if (self.globs.length === 0 && !self.dot) {
+      options.expression = [
+        'match',
+        '**',
+        'wholename',
+        {
+          includedotfiles: false,
+        },
+      ];
     }
 
     self.client.command(
@@ -178,12 +127,7 @@ WatchmanWatcher.prototype.init = function () {
     self.emit('ready');
   }
 
-  self.client.capabilityCheck(
-    {
-      optional: ['wildmatch', 'relative_root'],
-    },
-    onCapability,
-  );
+  self.client.command(['watch-project', getWatchRoot()], onWatchProject);
 };
 
 /**
@@ -225,23 +169,16 @@ WatchmanWatcher.prototype.handleChangeEvent = function (resp) {
 
 WatchmanWatcher.prototype.handleFileChange = function (changeDescriptor) {
   const self = this;
-  let absPath;
-  let relativePath;
 
-  if (this.capabilities.relative_root) {
-    relativePath = changeDescriptor.name;
-    absPath = path.join(
-      this.watchProjectInfo.root,
-      this.watchProjectInfo.relativePath,
-      relativePath,
-    );
-  } else {
-    absPath = path.join(this.root, changeDescriptor.name);
-    relativePath = changeDescriptor.name;
-  }
+  const relativePath = changeDescriptor.name;
+  const absPath = path.join(
+    this.watchProjectInfo.root,
+    this.watchProjectInfo.relativePath,
+    relativePath,
+  );
 
   if (
-    !(self.capabilities.wildmatch && !this.hasIgnore) &&
+    this.hasIgnore &&
     !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
   ) {
     return;

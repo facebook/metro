@@ -29,17 +29,6 @@ type WatchmanQuery = any;
 
 type WatchmanRoots = Map<string, Array<string>>;
 
-type WatchmanListCapabilitiesResponse = {
-  capabilities: Array<string>,
-};
-
-type WatchmanCapabilityCheckResponse = {
-  // { 'suffix-set': true }
-  capabilities: $ReadOnly<{[string]: boolean}>,
-  // '2021.06.07.00'
-  version: string,
-};
-
 type WatchmanWatchProjectResponse = {
   watch: string,
   relative_path: string,
@@ -76,61 +65,30 @@ function makeWatchmanError(error: Error): Error {
   return error;
 }
 
-/**
- * Wrap watchman capabilityCheck method as a promise.
- *
- * @param client watchman client
- * @param caps capabilities to verify
- * @returns a promise resolving to a list of verified capabilities
- */
-async function capabilityCheck(
-  client: watchman.Client,
-  caps: $ReadOnly<{optional?: $ReadOnlyArray<string>}>,
-): Promise<WatchmanCapabilityCheckResponse> {
-  return new Promise((resolve, reject) => {
-    client.capabilityCheck(
-      // @ts-expect-error: incorrectly typed
-      caps,
-      (error, response) => {
-        if (error != null || response == null) {
-          reject(error ?? new Error('capabilityCheck: Response missing'));
-        } else {
-          resolve(response);
-        }
-      },
-    );
-  });
-}
-
-module.exports = async function watchmanCrawl(
-  options: CrawlerOptions,
-): Promise<{
+module.exports = async function watchmanCrawl({
+  abortSignal,
+  computeSha1,
+  data,
+  extensions,
+  ignore,
+  rootDir,
+  roots,
+  perfLogger,
+}: CrawlerOptions): Promise<{
   changedFiles?: FileData,
   removedFiles: FileData,
   hasteMap: InternalData,
 }> {
+  perfLogger?.point('watchmanCrawl_start');
+
   const fields = ['name', 'exists', 'mtime_ms', 'size'];
-  const {data, extensions, ignore, rootDir, roots, perfLogger} = options;
+  if (computeSha1) {
+    fields.push('content.sha1hex');
+  }
   const clocks = data.clocks;
 
-  perfLogger?.point('watchmanCrawl_start');
   const client = new watchman.Client();
-  options.abortSignal?.addEventListener('abort', () => client.end());
-
-  perfLogger?.point('watchmanCrawl/negotiateCapabilities_start');
-  // https://facebook.github.io/watchman/docs/capabilities.html
-  // Check adds about ~28ms
-  const capabilities = await capabilityCheck(client, {
-    // If a required capability is missing then an error will be thrown,
-    // we don't need this assertion, so using optional instead.
-    optional: ['suffix-set'],
-  });
-
-  const suffixExpression = capabilities?.capabilities['suffix-set']
-    ? // If available, use the optimized `suffix-set` operation:
-      // https://facebook.github.io/watchman/docs/expr/suffix.html#suffix-set
-      ['suffix', extensions]
-    : ['anyof', ...extensions.map(extension => ['suffix', extension])];
+  abortSignal?.addEventListener('abort', () => client.end());
 
   let clientError;
   // $FlowFixMe[prop-missing] - Client is not typed as an EventEmitter
@@ -163,18 +121,6 @@ module.exports = async function watchmanCrawl(
       clearInterval(intervalOrTimeoutId);
     }
   };
-
-  if (options.computeSha1) {
-    const {capabilities} = await cmd<WatchmanListCapabilitiesResponse>(
-      'list-capabilities',
-    );
-
-    if (capabilities.indexOf('field-content.sha1hex') !== -1) {
-      fields.push('content.sha1hex');
-    }
-  }
-
-  perfLogger?.point('watchmanCrawl/negotiateCapabilities_end');
 
   async function getWatchmanRoots(
     roots: $ReadOnlyArray<Path>,
@@ -277,7 +223,7 @@ module.exports = async function watchmanCrawl(
             queryGenerator = 'since';
             query.expression.push(
               ['anyof', ...directoryFilters.map(dir => ['dirname', dir])],
-              suffixExpression,
+              ['suffix', extensions],
             );
           } else if (directoryFilters.length > 0) {
             // Use the `glob` generator and filter only by extension.
@@ -285,7 +231,7 @@ module.exports = async function watchmanCrawl(
             query.glob_includedotfiles = true;
             queryGenerator = 'glob';
 
-            query.expression.push(suffixExpression);
+            query.expression.push(['suffix', extensions]);
           } else {
             // Use the `suffix` generator with no path/extension filtering.
             query.suffix = extensions;

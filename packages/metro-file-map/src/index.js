@@ -145,6 +145,12 @@ const PACKAGE_JSON = path.sep + 'package.json';
 const VCS_DIRECTORIES = ['.git', '.hg']
   .map(vcs => escapePathForRegex(path.sep + vcs + path.sep))
   .join('|');
+const WATCHMAN_REQUIRED_CAPABILITIES = [
+  'field-content.sha1hex',
+  'relative_root',
+  'suffix-set',
+  'wildmatch',
+];
 
 /**
  * HasteMap is a JavaScript implementation of Facebook's haste module system.
@@ -1158,8 +1164,9 @@ export default class HasteMap extends EventEmitter {
       return false;
     }
     if (!this._canUseWatchmanPromise) {
-      // TODO: Ensure minimum capabilities here
-      this._canUseWatchmanPromise = checkWatchmanCapabilities([])
+      this._canUseWatchmanPromise = checkWatchmanCapabilities(
+        WATCHMAN_REQUIRED_CAPABILITIES,
+      )
         .then(() => true)
         .catch(e => {
           // TODO: Advise people to either install Watchman or set
