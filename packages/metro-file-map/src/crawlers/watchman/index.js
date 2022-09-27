@@ -15,11 +15,11 @@ import type {
   FileMetaData,
   InternalData,
   Path,
-} from '../flow-types';
+} from '../../flow-types';
 
-import H from '../constants';
-import * as fastPath from '../lib/fast_path';
-import normalizePathSep from '../lib/normalizePathSep';
+import H from '../../constants';
+import * as fastPath from '../../lib/fast_path';
+import normalizePathSep from '../../lib/normalizePathSep';
 import * as path from 'path';
 
 const watchman = require('fb-watchman');
