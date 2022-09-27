@@ -10,6 +10,7 @@
 
 import type {
   WatchmanDirnameExpression,
+  WatchmanExpression,
   WatchmanQuery,
   WatchmanQuerySince,
 } from 'fb-watchman';
@@ -19,11 +20,13 @@ export function planQuery({
   directoryFilters,
   extensions,
   includeSha1,
+  includeSymlinks,
 }: $ReadOnly<{
   since: ?WatchmanQuerySince,
   directoryFilters: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,
   includeSha1: boolean,
+  includeSymlinks: boolean,
 }>): {
   query: WatchmanQuery,
   queryGenerator: string,
@@ -32,18 +35,21 @@ export function planQuery({
   if (includeSha1) {
     fields.push('content.sha1hex');
   }
+  if (includeSymlinks) {
+    fields.push('symlink_target');
+  }
 
-  const expression = [
-    'allof',
-    // Match regular files only. Different Watchman generators treat
-    // symlinks differently, so this ensures consistent results.
-    ['type', 'f'],
-  ];
+  const allOfTerms: Array<WatchmanExpression> = includeSymlinks
+    ? [
+        [
+          'anyof',
+          ['allof', ['type', 'f'], ['suffix', extensions]],
+          ['type', 'l'],
+        ],
+      ]
+    : [['type', 'f']];
 
-  const query: WatchmanQuery = {
-    fields,
-    expression,
-  };
+  const query: WatchmanQuery = {fields};
 
   /**
    * Watchman "query planner".
@@ -71,30 +77,46 @@ export function planQuery({
    */
   let queryGenerator: ?string;
   if (since != null) {
-    // Use the `since` generator and filter by both path and extension.
+    // Prefer the since generator whenever we have a clock
     query.since = since;
     queryGenerator = 'since';
-    expression.push(
-      [
+
+    // Filter on directories using an anyof expression
+    if (directoryFilters.length > 0) {
+      allOfTerms.push([
         'anyof',
         ...directoryFilters.map(
           dir => (['dirname', dir]: WatchmanDirnameExpression),
         ),
-      ],
-      ['suffix', extensions],
-    );
+      ]);
+    }
   } else if (directoryFilters.length > 0) {
     // Use the `glob` generator and filter only by extension.
     query.glob = directoryFilters.map(directory => `${directory}/**`);
     query.glob_includedotfiles = true;
     queryGenerator = 'glob';
-
-    expression.push(['suffix', extensions]);
-  } else {
-    // Use the `suffix` generator with no path/extension filtering.
+  } else if (!includeSymlinks) {
+    // Use the `suffix` generator with no path/extension filtering, as long
+    // as we don't need (suffixless) directory symlinks.
     query.suffix = extensions;
     queryGenerator = 'suffix';
+  } else {
+    // Fall back to `all` if we need symlinks and don't have a clock or
+    // directory filters.
+    queryGenerator = 'all';
   }
+
+  // `includeSymlinks` implies we need (suffixless) directory links. In the
+  // case of the `suffix` generator, a suffix expression would be redundant.
+  if (!includeSymlinks && queryGenerator !== 'suffix') {
+    allOfTerms.push(['suffix', extensions]);
+  }
+
+  // If we only have one "all of" expression we can use it directly, otherwise
+  // wrap in ['allof', ...expressions]. By construction we should never have
+  // length 0.
+  query.expression =
+    allOfTerms.length === 1 ? allOfTerms[0] : ['allof', ...allOfTerms];
 
   return {query, queryGenerator};
 }

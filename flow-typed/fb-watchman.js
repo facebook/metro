@@ -22,12 +22,25 @@ declare module 'fb-watchman' {
     error: ?string,
   }>;
 
+  declare type WatchmanFileType =
+    | 'b' // block special file
+    | 'c' // character special file
+    | 'd' // directory
+    | 'f' // regular file
+    | 'l' // symbolic link
+    | 'p' // named pipe (fifo)
+    | 's' // socket
+    | 'D' // Solaris Door
+    | '?'; // An unknown file type
+
   declare type WatchmanFile = $ReadOnly<{
     name: string,
     exists: boolean,
+    type?: WatchmanFileType,
     mtime_ms?: number | $ReadOnly<{toNumber: () => number}>,
     size?: number,
     'content.sha1hex'?: string,
+    symlink_target?: string,
   }>;
 
   declare type WatchmanQueryResponse = $ReadOnly<{
@@ -61,7 +74,7 @@ declare module 'fb-watchman' {
     string | $ReadOnlyArray<string>,
   ];
 
-  declare type WatchmanTypeExpression = ['type', 'f'];
+  declare type WatchmanTypeExpression = ['type', WatchmanFileType];
 
   // Would be ['allof' | 'anyof', ...WatchmanExpression] if Flow supported
   // variadic tuples
@@ -90,7 +103,7 @@ declare module 'fb-watchman' {
       }>;
 
   declare type WatchmanQuery = {
-    expression: WatchmanExpression,
+    expression?: WatchmanExpression,
     fields: $ReadOnlyArray<string>,
     glob?: $ReadOnlyArray<string>,
     glob_includedotfiles?: boolean,

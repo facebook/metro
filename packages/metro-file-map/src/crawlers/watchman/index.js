@@ -45,6 +45,7 @@ module.exports = async function watchmanCrawl({
   abortSignal,
   computeSha1,
   data,
+  enableSymlinks,
   extensions,
   ignore,
   rootDir,
@@ -159,6 +160,7 @@ module.exports = async function watchmanCrawl({
             extensions,
             directoryFilters,
             includeSha1: computeSha1,
+            includeSymlinks: enableSymlinks,
           });
 
           perfLogger?.annotate({
@@ -262,6 +264,10 @@ module.exports = async function watchmanCrawl({
     );
 
     for (const fileData of response.files) {
+      if (fileData.symlink_target != null) {
+        // TODO: Process symlinks
+        continue;
+      }
       const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
       const existingFileData = data.files.get(relativeFilePath);
