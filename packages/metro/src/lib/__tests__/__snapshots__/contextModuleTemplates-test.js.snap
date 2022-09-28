@@ -5,11 +5,11 @@ exports[`getContextModuleTemplate creates a lazy template 1`] = `
 const map = Object.defineProperties({}, {
   \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
 });
-  
+
 function metroContext(request) {
     return map[request];
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);
@@ -29,11 +29,11 @@ const map = Object.defineProperties({}, {
   \\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },
   \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
 });
-  
+
 function metroContext(request) {
     return map[request];
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);
@@ -52,11 +52,11 @@ exports[`getContextModuleTemplate creates a sync template 1`] = `
 const map = Object.defineProperties({}, {
   \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
 });
-  
+
 function metroContext(request) {
     return map[request];
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);
@@ -75,13 +75,13 @@ exports[`getContextModuleTemplate creates an eager template 1`] = `
 const map = Object.defineProperties({}, {
   \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
 });
-  
+
 function metroContext(request) {
     // Here Promise.resolve().then() is used instead of new Promise() to prevent
   // uncaught exception popping up in devtools
   return Promise.resolve().then(() => map[request]);
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);

@@ -34,6 +34,10 @@ function createFileMap(
       if (!filePath.startsWith('.')) {
         filePath = `.${path.sep}` + filePath;
       }
+      // NOTE(byCedric): On Windows, normalize the backslashes to forward slashes to match the behavior in Webpack.
+      if (path.sep === '\\') {
+        filePath = filePath.replace(/\\/g, '/');
+      }
       const key = JSON.stringify(filePath);
       // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
       // Metro doesn't have this functionality so it will use getters instead. Modules need to
@@ -79,11 +83,11 @@ const map = ${createFileMap(
     files,
     moduleId => `${importSyntax}(${JSON.stringify(moduleId)})`,
   )};
-  
+
 function metroContext(request) {
   ${getContextTemplate}
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);
