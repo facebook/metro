@@ -58,6 +58,7 @@ Object {
       "windows",
       "web",
     ],
+    "preferNativePlatform": true,
     "requireCycleIgnorePatterns": Array [
       /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
@@ -219,6 +220,7 @@ Object {
       "windows",
       "web",
     ],
+    "preferNativePlatform": true,
     "requireCycleIgnorePatterns": Array [
       /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
@@ -380,6 +382,7 @@ Object {
       "windows",
       "web",
     ],
+    "preferNativePlatform": true,
     "requireCycleIgnorePatterns": Array [
       /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
@@ -541,6 +544,7 @@ Object {
       "windows",
       "web",
     ],
+    "preferNativePlatform": true,
     "requireCycleIgnorePatterns": Array [
       /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
