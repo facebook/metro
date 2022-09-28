@@ -113,3 +113,26 @@ metroEmptyContext.resolve = function metroContextResolve(request) {
 
 module.exports = metroEmptyContext;"
 `;
+
+exports[`getContextModuleTemplate creates posix paths on windows for sync template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"C:\\\\\\\\path\\\\\\\\to\\\\\\\\project\\\\\\\\src\\\\\\\\foo.js\\"); } },
+});
+
+function metroContext(request) {
+    return map[request];
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;
