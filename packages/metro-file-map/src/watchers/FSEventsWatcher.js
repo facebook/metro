@@ -16,13 +16,17 @@ import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
 
+// $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
+import type {FSEvents} from 'fsevents';
+
 // $FlowFixMe[untyped-import] - micromatch
 const micromatch = require('micromatch');
 
+const debug = require('debug')('Metro:FSEventsWatcher');
+
 type Matcher = typeof anymatch.Matcher;
 
-// $FlowFixMe[unclear-type] - fsevents
-let fsevents: any = null;
+let fsevents: ?FSEvents = null;
 try {
   // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
   fsevents = require('fsevents');
@@ -116,11 +120,12 @@ export default class FSEventsWatcher extends EventEmitter {
     this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
 
     this.root = path.resolve(dir);
-    this.fsEventsWatchStopper = fsevents.watch(
-      this.root,
-      // $FlowFixMe[method-unbinding] - Refactor
-      this._handleEvent.bind(this),
+
+    this.fsEventsWatchStopper = fsevents.watch(this.root, path =>
+      this._handleEvent(path),
     );
+
+    debug(`Watching ${this.root}`);
 
     this._tracked = new Set();
     FSEventsWatcher._recReaddir(
