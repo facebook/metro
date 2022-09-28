@@ -59,7 +59,7 @@ type HasteMapOptions = {
   files: Array<string>,
   moduleCache: ModuleCache,
   platforms: Platforms,
-  preferNativePlatform: true,
+  preferNativePlatform: boolean,
 };
 
 // eslint-disable-next-line no-unused-vars

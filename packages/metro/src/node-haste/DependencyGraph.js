@@ -183,7 +183,10 @@ class DependencyGraph extends EventEmitter {
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
-      preferNativePlatform: true,
+      preferNativePlatform:
+        typeof this._config.resolver.preferNativePlatform === 'boolean'
+          ? this._config.resolver.preferNativePlatform
+          : true,
       projectRoot: this._config.projectRoot,
       resolveAsset: (dirPath: string, assetName: string, extension: string) => {
         const basePath = dirPath + path.sep + assetName;

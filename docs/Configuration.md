@@ -154,6 +154,12 @@ Type: `boolean`
 
 Whether to disable [looking up modules in `node_modules` folders](https://nodejs.org/api/modules.html#modules_loading_from_node_modules_folders). This only affects the default search through the directory tree, not other Metro options like `extraNodeModules` or `nodeModulesPaths`. Defaults to `false`.
 
+#### `preferNativePlatform`
+
+Type: `boolean`
+
+If set to false, will disable lookups for `.native` file extensions (used in react-native) and will use only extensions specified in `platforms`.
+
 #### `emptyModulePath`
 
 Type: `string`
