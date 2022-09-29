@@ -11,7 +11,6 @@
 
 import * as path from 'path';
 import * as os from 'os';
-import slash from 'slash';
 import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
 
 function createFileMap(
@@ -29,7 +28,7 @@ function createFileMap(
       let filePath = path.relative(modulePath, file);
 
       if (os.platform() === 'win32') {
-        filePath = slash(filePath);
+        filePath = filePath.replaceAll(path.sep, '/');
       }
 
       // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
