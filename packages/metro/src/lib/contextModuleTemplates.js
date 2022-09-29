@@ -10,6 +10,8 @@
  */
 
 import * as path from 'path';
+import * as os from 'os';
+import slash from 'slash';
 import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
 
 function createFileMap(
@@ -34,10 +36,11 @@ function createFileMap(
       if (!filePath.startsWith('.')) {
         filePath = `.${path.sep}` + filePath;
       }
-      // NOTE(byCedric): On Windows, normalize the backslashes to forward slashes to match the behavior in Webpack.
-      if (path.sep === '\\') {
-        filePath = filePath.replace(/\\/g, '/');
+
+      if (os.platform() === 'win32') {
+        filePath = slash(filePath);
       }
+
       const key = JSON.stringify(filePath);
       // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
       // Metro doesn't have this functionality so it will use getters instead. Modules need to
