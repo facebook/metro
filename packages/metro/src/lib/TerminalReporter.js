@@ -322,6 +322,7 @@ class TerminalReporter {
     }
 
     if (error.filename && !message.includes(error.filename)) {
+      // $FlowFixMe[incompatible-type]
       message += ` [${error.filename}]`;
     }
 

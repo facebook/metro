@@ -176,6 +176,7 @@ export default class WatchmanWatcher extends EventEmitter {
       (this.watchmanDeferStates ?? []).includes(resp['state-enter'])
     ) {
       debug(
+        // $FlowFixMe[incompatible-type]
         `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
       );
     }
@@ -184,6 +185,7 @@ export default class WatchmanWatcher extends EventEmitter {
       (this.watchmanDeferStates ?? []).includes(resp['state-leave'])
     ) {
       debug(
+        // $FlowFixMe[incompatible-type]
         `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
       );
     }
