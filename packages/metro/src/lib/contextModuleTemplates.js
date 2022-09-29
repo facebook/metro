@@ -28,17 +28,17 @@ function createFileMap(
     .forEach(file => {
       let filePath = path.relative(modulePath, file);
 
+      if (os.platform() === 'win32') {
+        filePath = slash(filePath);
+      }
+
       // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
       // but Webpack allows this, keeping it here provides better parity between bundlers.
 
       // Ensure relative file paths start with `./` so they match the
       // patterns (filters) used to include them.
       if (!filePath.startsWith('.')) {
-        filePath = `.${path.sep}` + filePath;
-      }
-
-      if (os.platform() === 'win32') {
-        filePath = slash(filePath);
+        filePath = `./${filePath}`;
       }
 
       const key = JSON.stringify(filePath);
