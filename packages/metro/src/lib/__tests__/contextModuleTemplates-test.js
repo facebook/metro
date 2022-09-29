@@ -53,7 +53,9 @@ describe('getContextModuleTemplate', () => {
   test('creates posix paths on windows for sync template', () => {
     jest.resetModules();
     jest.mock('path', () => jest.requireActual('path').win32);
-    const { getContextModuleTemplate: getWindowsTemplate } = require('../contextModuleTemplates');
+    const {
+      getContextModuleTemplate: getWindowsTemplate,
+    } = require('../contextModuleTemplates');
     const template = getWindowsTemplate('sync', 'c:/path/to/project/src', [
       'C:\\path\\to\\project\\src\\foo.js',
     ]);
