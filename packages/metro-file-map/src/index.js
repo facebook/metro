@@ -62,6 +62,7 @@ import AbortController from 'abort-controller';
 
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
+const debug = require('debug')('Metro:FileMap');
 
 export type {
   BuildParameters,
@@ -868,6 +869,15 @@ export default class HasteMap extends EventEmitter {
       : FSEventsWatcher.isSupported()
       ? FSEventsWatcher
       : NodeWatcher;
+
+    let watcher = 'node';
+    if (WatcherImpl === WatchmanWatcher) {
+      watcher = 'watchman';
+    } else if (WatcherImpl === FSEventsWatcher) {
+      watcher = 'fsevents';
+    }
+    debug(`Using watcher: ${watcher}`);
+    this._options.perfLogger?.annotate({string: {watcher}});
 
     const extensions = this._options.extensions;
     const ignorePattern = this._options.ignorePattern;

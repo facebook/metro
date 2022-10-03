@@ -79,7 +79,7 @@ export default class WatchmanWatcher extends EventEmitter {
     );
     this.client.on('end', () => {
       console.warn(
-        '[sane] Warning: Lost connection to watchman, reconnecting..',
+        '[metro-file-map] Warning: Lost connection to Watchman, reconnecting..',
       );
       self._init();
     });
@@ -94,6 +94,7 @@ export default class WatchmanWatcher extends EventEmitter {
       if (handleError(self, error)) {
         return;
       }
+      debug('Received watch-project response: %s', resp.relative_path);
 
       handleWarning(resp);
 
@@ -110,6 +111,7 @@ export default class WatchmanWatcher extends EventEmitter {
         return;
       }
 
+      debug('Received clock response: %s', resp.clock);
       const watchProjectInfo = self.watchProjectInfo;
 
       invariant(
@@ -148,6 +150,7 @@ export default class WatchmanWatcher extends EventEmitter {
       if (handleError(self, error)) {
         return;
       }
+      debug('Received subscribe response: %s', resp.subscribe);
 
       handleWarning(resp);
 
@@ -161,6 +164,14 @@ export default class WatchmanWatcher extends EventEmitter {
    * Handles a change event coming from the subscription.
    */
   _handleChangeEvent(resp: WatchmanSubscriptionEvent) {
+    debug(
+      'Received subscription response: %s (fresh: %s}, files: %s, enter: %s, leave: %s)',
+      resp.subscription,
+      resp.is_fresh_instance,
+      resp.files?.length,
+      resp['state-enter'],
+      resp['state-leave'],
+    );
     assert.equal(resp.subscription, SUB_NAME, 'Invalid subscription event.');
     if (resp.is_fresh_instance) {
       this.emit('fresh_instance');
@@ -176,8 +187,8 @@ export default class WatchmanWatcher extends EventEmitter {
       (this.watchmanDeferStates ?? []).includes(resp['state-enter'])
     ) {
       debug(
-        // $FlowFixMe[incompatible-type]
-        `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
+        'Watchman reports "%s" just started. Filesystem notifications are paused.',
+        resp['state-enter'],
       );
     }
     if (
@@ -185,8 +196,8 @@ export default class WatchmanWatcher extends EventEmitter {
       (this.watchmanDeferStates ?? []).includes(resp['state-leave'])
     ) {
       debug(
-        // $FlowFixMe[incompatible-type]
-        `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
+        'Watchman reports "%s" ended. Filesystem notifications resumed.',
+        resp['state-leave'],
       );
     }
   }
@@ -203,7 +214,19 @@ export default class WatchmanWatcher extends EventEmitter {
       'watch-project response should have been set before receiving subscription events',
     );
 
-    const relativePath = changeDescriptor.name;
+    const {
+      name: relativePath,
+      new: isNew = false,
+      exists = false,
+    } = changeDescriptor;
+
+    debug(
+      'Handling change to: %s (new: %s, exists: %s)',
+      relativePath,
+      isNew,
+      exists,
+    );
+
     const absPath = path.join(
       watchProjectInfo.root,
       watchProjectInfo.relativePath,
@@ -217,7 +240,7 @@ export default class WatchmanWatcher extends EventEmitter {
       return;
     }
 
-    if (!changeDescriptor.exists) {
+    if (!exists) {
       self._emitEvent(DELETE_EVENT, relativePath, self.root);
     } else {
       fs.lstat(absPath, (error, stat) => {
@@ -231,7 +254,7 @@ export default class WatchmanWatcher extends EventEmitter {
           return;
         }
 
-        const eventType = changeDescriptor.new ? ADD_EVENT : CHANGE_EVENT;
+        const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
 
         // Change event on dirs are mostly useless.
         if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
