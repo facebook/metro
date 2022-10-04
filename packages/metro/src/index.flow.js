@@ -444,22 +444,19 @@ exports.buildGraph = async function (
   }
 };
 
+type AttachMetroCLIOptions = {
+  build?: BuildCommandOptions,
+  serve?: ServeCommandOptions,
+  dependencies?: any,
+  ...
+};
+
 exports.attachMetroCli = function (
   yargs: Yargs,
-  {
-    build = {},
-    serve = {},
-    dependencies = {},
-  }: {
-    build: BuildCommandOptions,
-    serve: ServeCommandOptions,
-    dependencies: any,
-    ...
-  }
-  // prettier-ignore
-  // $FlowFixMe[prop-missing]
-  = {},
+  options?: AttachMetroCLIOptions = {},
 ): Yargs {
+  const {build = {}, serve = {}, dependencies = {}} = options;
+
   yargs.strict();
 
   if (build) {
