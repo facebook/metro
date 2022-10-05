@@ -24,6 +24,7 @@ import type {Stats} from 'fs';
 import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
 import assert from 'assert';
+import {createHash} from 'crypto';
 import EventEmitter from 'events';
 import watchman from 'fb-watchman';
 import * as fs from 'graceful-fs';
@@ -36,7 +37,7 @@ const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
-const SUB_NAME = 'sane-sub';
+const SUB_PREFIX = 'metro-file-map';
 
 /**
  * Watches `dir`.
@@ -48,6 +49,7 @@ export default class WatchmanWatcher extends EventEmitter {
   globs: $ReadOnlyArray<string>;
   hasIgnore: boolean;
   root: string;
+  subscriptionName: string;
   watchProjectInfo: ?$ReadOnly<{
     relativePath: string,
     root: string,
@@ -56,8 +58,17 @@ export default class WatchmanWatcher extends EventEmitter {
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
+
     common.assignOptions(this, opts);
     this.root = path.resolve(dir);
+
+    // Use a unique subscription name per process per watched directory
+    const watchKey = createHash('md5').update(this.root).digest('hex');
+    const readablePath = this.root
+      .replace(/[\/\\]/g, '-') // \ and / to -
+      .replace(/[^\-\w]/g, ''); // Remove non-word/hyphen
+    this.subscriptionName = `${SUB_PREFIX}-${process.pid}-${readablePath}-${watchKey}`;
+
     this._init();
   }
 
@@ -141,7 +152,7 @@ export default class WatchmanWatcher extends EventEmitter {
       }
 
       self.client.command(
-        ['subscribe', getWatchRoot(), SUB_NAME, options],
+        ['subscribe', getWatchRoot(), self.subscriptionName, options],
         onSubscribe,
       );
     }
@@ -165,14 +176,20 @@ export default class WatchmanWatcher extends EventEmitter {
    */
   _handleChangeEvent(resp: WatchmanSubscriptionEvent) {
     debug(
-      'Received subscription response: %s (fresh: %s}, files: %s, enter: %s, leave: %s)',
+      'Received subscription response: %s (fresh: %s, files: %s, enter: %s, leave: %s)',
       resp.subscription,
       resp.is_fresh_instance,
       resp.files?.length,
       resp['state-enter'],
       resp['state-leave'],
     );
-    assert.equal(resp.subscription, SUB_NAME, 'Invalid subscription event.');
+
+    assert.equal(
+      resp.subscription,
+      this.subscriptionName,
+      'Invalid subscription event.',
+    );
+
     if (resp.is_fresh_instance) {
       this.emit('fresh_instance');
     }
