@@ -35,7 +35,7 @@ export function copyContextToObject<T>(ctx: ContextModule<T>): {
 export function awaitProperties<T>(
   obj: $ReadOnly<{[key: string]: Promise<T>}>,
 ): Promise<{[key: string]: T}> {
-  const result = {};
+  const result: {[string]: T} = {};
   return Promise.all(
     Object.keys(obj).map(key => {
       return obj[key].then(value => (result[key] = value));
