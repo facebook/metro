@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "metro-core": "0.73.1",
-    "rimraf": "^2.5.4"
+    "rimraf": "^3.0.2"
   },
   "devDependencies": {
     "metro-memory-fs": "0.73.1"
