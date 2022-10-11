@@ -10,17 +10,16 @@
  */
 
 import type {
-  Dependencies,
   Dependency,
   Graph,
   MixedOutput,
   Module,
-  TransformFn,
-  TransformInputOptions,
+  Options,
+  ReadOnlyDependencies,
+  ReadOnlyGraph,
   TransformResultDependency,
   TransformResultWithSource,
 } from '../types.flow';
-import type {PrivateState} from '../graphOperations';
 import type {RequireContext} from '../../lib/contextModule';
 
 import CountingSet from '../../lib/CountingSet';
@@ -197,7 +196,7 @@ function getPaths({added, modified, deleted}) {
 // because our mocks don't actually model file contents.
 function computeDelta(
   modules1: Set<string>,
-  modules2: Dependencies<>,
+  modules2: ReadOnlyDependencies<>,
   modifiedPaths: Set<string>,
 ) {
   const added = new Set();
@@ -226,22 +225,8 @@ function computeDelta(
 }
 
 function computeInverseDependencies(
-  graph: {
-    dependencies: Dependencies<>,
-    entryPoints: $ReadOnlySet<string>,
-    importBundleNames: Set<string>,
-    privateState: PrivateState,
-    transformOptions: TransformInputOptions,
-  },
-  options: {
-    +experimentalImportBundleSupport: boolean,
-    +onProgress: ?(numProcessed: number, total: number) => mixed,
-    +resolve: (from: string, to: string) => string,
-    +shallow: boolean,
-    +transform: TransformFn<>,
-    +transformOptions: TransformInputOptions,
-    +unstable_allowRequireContext: boolean,
-  },
+  graph: ReadOnlyGraph<>,
+  options: Options<>,
 ) {
   const allInverseDependencies = new Map();
   for (const path of graph.dependencies.keys()) {
@@ -268,22 +253,8 @@ function computeInverseDependencies(
 
 async function traverseDependencies(
   paths: Array<string>,
-  graph: {
-    dependencies: Dependencies<>,
-    entryPoints: $ReadOnlySet<string>,
-    importBundleNames: Set<string>,
-    privateState: PrivateState,
-    transformOptions: TransformInputOptions,
-  },
-  options: {
-    +experimentalImportBundleSupport: boolean,
-    +onProgress: ?(numProcessed: number, total: number) => mixed,
-    +resolve: (from: string, to: string) => string,
-    +shallow: boolean,
-    +transform: TransformFn<>,
-    +transformOptions: TransformInputOptions,
-    +unstable_allowRequireContext: boolean,
-  },
+  graph: Graph<>,
+  options: Options<>,
 ) {
   // Get a snapshot of the graph before the traversal.
   const dependenciesBefore = new Set(graph.dependencies.keys());

@@ -38,7 +38,7 @@ type Options<T: number | string> = {
 function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
-  importBundleNames: Set<string>,
+  importBundleNames: $ReadOnlySet<string>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
   const output = [];

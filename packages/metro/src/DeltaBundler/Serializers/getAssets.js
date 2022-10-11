@@ -12,7 +12,7 @@
 'use strict';
 
 import type {AssetData} from '../../Assets';
-import type {Dependencies, Module} from '../types.flow';
+import type {Module, ReadOnlyDependencies} from '../types.flow';
 
 const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
@@ -27,7 +27,7 @@ type Options = {
 };
 
 async function getAssets(
-  dependencies: Dependencies<>,
+  dependencies: ReadOnlyDependencies<>,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const promises = [];

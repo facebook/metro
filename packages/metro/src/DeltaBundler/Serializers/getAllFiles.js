@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Graph, Module} from '../types.flow';
+import type {Module, ReadOnlyGraph} from '../types.flow';
 
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
@@ -23,7 +23,7 @@ type Options = {
 
 async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<$ReadOnlyArray<string>> {
   const modules = graph.dependencies;

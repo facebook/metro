@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Graph} from './DeltaBundler';
+import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
@@ -419,7 +419,7 @@ exports.buildGraph = async function (
     platform = 'web',
     type = 'module',
   }: BuildGraphOptions,
-): Promise<Graph<>> {
+): Promise<ReadOnlyGraph<>> {
   const mergedConfig = await getConfig(config);
 
   const bundler = new IncrementalBundler(mergedConfig);

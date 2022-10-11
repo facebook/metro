@@ -15,7 +15,7 @@ import type {
   ModuleTransportLike,
   RamModuleTransport,
 } from '../../shared/types.flow';
-import type {Graph, Module, SerializerOptions} from '../types.flow';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
@@ -43,7 +43,7 @@ export type RamBundleInfo = {
 async function getRamBundleInfo(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
   let modules: $ReadOnlyArray<Module<>> = [

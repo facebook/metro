@@ -12,7 +12,7 @@
 'use strict';
 
 import type {EntryPointURL} from '../../HmrServer';
-import type {DeltaResult, Graph, Module} from '../types.flow';
+import type {DeltaResult, Module, ReadOnlyGraph} from '../types.flow';
 import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
 
 const {isJsModule, wrapModule} = require('./helpers/js');
@@ -29,7 +29,7 @@ type Options = {
 
 function generateModules(
   sourceModules: Iterable<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): $ReadOnlyArray<HmrModule> {
   const modules = [];
@@ -70,7 +70,7 @@ function generateModules(
 
 function prepareModule(
   module: Module<>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): string {
   const code = wrapModule(module, {
@@ -97,7 +97,7 @@ function prepareModule(
  */
 function getInverseDependencies(
   path: string,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   inverseDependencies: {[key: string]: Array<string>, ...} = {},
 ): {[key: string]: Array<string>, ...} {
   // Dependency alredy traversed.
@@ -121,7 +121,7 @@ function getInverseDependencies(
 
 function hmrJSBundle(
   delta: DeltaResult<>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): {
   +added: $ReadOnlyArray<HmrModule>,

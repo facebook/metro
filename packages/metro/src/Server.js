@@ -16,11 +16,12 @@ import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {
-  Graph,
+  MixedOutput,
   Module,
+  ReadOnlyGraph,
   TransformInputOptions,
+  TransformResult,
 } from './DeltaBundler/types.flow';
-import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
@@ -988,7 +989,7 @@ class Server {
 
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
-  _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
+  _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
     const modules = [...graph.dependencies.values()];
     // Assign IDs to modules in a consistent order
     for (const module of modules) {

@@ -76,6 +76,10 @@ export type Module<T = MixedOutput> = {
 };
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
+export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
+  string,
+  Module<T>,
+>;
 
 export type TransformInputOptions = $Diff<
   JsTransformOptions,
@@ -91,6 +95,14 @@ export type GraphInputOptions = $ReadOnly<{
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions,
 }>;
+
+export interface ReadOnlyGraph<T = MixedOutput> {
+  +entryPoints: $ReadOnlySet<string>;
+  // Unused in core but useful for custom serializers / experimentalSerializerHook
+  +transformOptions: $ReadOnly<TransformInputOptions>;
+  +dependencies: ReadOnlyDependencies<T>;
+  +importBundleNames: $ReadOnlySet<string>;
+}
 
 export type Graph<T = MixedOutput> = {
   ...$ReadOnly<GraphInputOptions>,

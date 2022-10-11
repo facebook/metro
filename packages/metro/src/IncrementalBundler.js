@@ -13,8 +13,8 @@
 
 import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {
-  Dependencies,
   Options as DeltaBundlerOptions,
+  ReadOnlyDependencies,
   TransformInputOptions,
 } from './DeltaBundler/types.flow';
 import type {GraphId} from './lib/getGraphId';
@@ -151,7 +151,7 @@ class IncrementalBundler {
       onProgress: null,
       shallow: false,
     },
-  ): Promise<Dependencies<>> {
+  ): Promise<ReadOnlyDependencies<>> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
 
     const dependencies = await this._deltaBundler.getDependencies(

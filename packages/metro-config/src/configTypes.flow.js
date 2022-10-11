@@ -20,8 +20,8 @@ import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
   DeltaResult,
-  Graph,
   Module,
+  ReadOnlyGraph,
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
@@ -110,10 +110,13 @@ type SerializerConfigT = {
   customSerializer: ?(
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,
-    graph: Graph<>,
+    graph: ReadOnlyGraph<>,
     options: SerializerOptions,
   ) => Promise<string | {code: string, map: string}>,
-  experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
+  experimentalSerializerHook: (
+    graph: ReadOnlyGraph<>,
+    delta: DeltaResult<>,
+  ) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
