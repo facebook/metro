@@ -11,14 +11,8 @@
 
 'use strict';
 
-import {
-  createGraph,
-  initialTraverseDependencies,
-  markModifiedContextModules,
-  reorderGraph,
-  traverseDependencies,
-} from './graphOperations';
-import type {DeltaResult, Graph, Options} from './types.flow';
+import {Graph} from './Graph';
+import type {DeltaResult, Options} from './types.flow';
 
 const {EventEmitter} = require('events');
 
@@ -49,7 +43,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._options = options;
     this._changeEventSource = changeEventSource;
 
-    this._graph = createGraph({
+    this._graph = new Graph({
       entryPoints,
       transformOptions: this._options.transformOptions,
     });
@@ -69,7 +63,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this.removeAllListeners();
 
     // Clean up all the cache data structures to deallocate memory.
-    this._graph = createGraph({
+    this._graph = new Graph({
       entryPoints: this._graph.entryPoints,
       transformOptions: this._options.transformOptions,
     });
@@ -134,7 +128,7 @@ class DeltaCalculator<T> extends EventEmitter {
       // a weird state. As a safe net we clean the dependency modules to force
       // a clean traversal of the graph next time.
       if (this._graph.dependencies.size !== numDependencies) {
-        this._graph.dependencies = new Map();
+        this._graph.dependencies.clear();
       }
 
       throw error;
@@ -144,7 +138,7 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // Return all the modules if the client requested a reset delta.
     if (reset) {
-      reorderGraph(this._graph, {shallow});
+      this._graph.reorderGraph({shallow});
 
       return {
         added: this._graph.dependencies,
@@ -237,8 +231,7 @@ class DeltaCalculator<T> extends EventEmitter {
     addedFiles: Set<string>,
   ): Promise<DeltaResult<T>> {
     if (!this._graph.dependencies.size) {
-      const {added} = await initialTraverseDependencies(
-        this._graph,
+      const {added} = await this._graph.initialTraverseDependencies(
         this._options,
       );
 
@@ -274,7 +267,7 @@ class DeltaCalculator<T> extends EventEmitter {
       // module as an inverse dependency, (2) modified files don't invalidate the contents
       // of the context module.
       addedFiles.forEach(filePath => {
-        markModifiedContextModules(this._graph, filePath, modifiedFiles);
+        this._graph.markModifiedContextModules(filePath, modifiedFiles);
       });
     }
 
@@ -293,9 +286,8 @@ class DeltaCalculator<T> extends EventEmitter {
       };
     }
 
-    const {added, modified, deleted} = await traverseDependencies(
+    const {added, modified, deleted} = await this._graph.traverseDependencies(
       modifiedDependencies,
-      this._graph,
       this._options,
     );
 

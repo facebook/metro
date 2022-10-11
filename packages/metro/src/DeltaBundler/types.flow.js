@@ -13,7 +13,7 @@
 
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
-import type {PrivateState} from './graphOperations';
+import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
@@ -104,12 +104,7 @@ export interface ReadOnlyGraph<T = MixedOutput> {
   +importBundleNames: $ReadOnlySet<string>;
 }
 
-export type Graph<T = MixedOutput> = {
-  ...$ReadOnly<GraphInputOptions>,
-  dependencies: Dependencies<T>,
-  +importBundleNames: Set<string>,
-  +privateState: PrivateState,
-};
+export type {Graph};
 
 export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,

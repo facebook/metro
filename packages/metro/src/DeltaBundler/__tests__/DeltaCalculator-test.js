@@ -9,22 +9,24 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {Options} from '../types.flow';
+import type {Result} from '../Graph';
+import CountingSet from '../../lib/CountingSet';
+import {Graph} from '../Graph';
 
 jest.mock('../../Bundler');
-const initialTraverseDependencies = jest.fn();
-const traverseDependencies = jest.fn();
-const reorderGraph = jest.fn();
-
-jest.doMock('../graphOperations', () => ({
-  ...jest.requireActual('../graphOperations'),
-  initialTraverseDependencies,
-  traverseDependencies,
-  reorderGraph,
-}));
 
 const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
+
+const traverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'traverseDependencies',
+);
+const initialTraverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'initialTraverseDependencies',
+);
 
 describe('DeltaCalculator', () => {
   let entryModule;
@@ -61,58 +63,93 @@ describe('DeltaCalculator', () => {
 
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
-
-    initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
+    initialTraverseDependencies.mockImplementationOnce(async function <T>(
+      this: Graph<T>,
+      options: Options<T>,
+    ): Promise<Result<T>> {
       entryModule = {
         dependencies: new Map([
-          ['foo', '/foo'],
-          ['bar', '/bar'],
-          ['baz', '/baz'],
+          [
+            'foo',
+            {
+              absolutePath: '/foo',
+              data: {
+                name: 'foo',
+                data: {key: 'foo', asyncType: null, locs: []},
+              },
+            },
+          ],
+          [
+            'bar',
+            {
+              absolutePath: '/bar',
+              data: {
+                name: 'bar',
+                data: {key: 'bar', asyncType: null, locs: []},
+              },
+            },
+          ],
+          [
+            'baz',
+            {
+              absolutePath: '/baz',
+              data: {
+                name: 'baz',
+                data: {key: 'baz', asyncType: null, locs: []},
+              },
+            },
+          ],
         ]),
-        inverseDependencies: [],
-        output: {
-          name: 'bundle',
-        },
+        inverseDependencies: new CountingSet(),
+        output: [],
         path: '/bundle',
+        getSource: () => Buffer.of(),
       };
       fooModule = {
-        dependencies: new Map([['qux', '/qux']]),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'foo',
-        },
+        dependencies: new Map([
+          [
+            'qux',
+            {
+              absolutePath: '/qux',
+              data: {
+                name: 'qux',
+                data: {key: 'qux', asyncType: null, locs: []},
+              },
+            },
+          ],
+        ]),
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/foo',
+        getSource: () => Buffer.of(),
       };
       barModule = {
         dependencies: new Map(),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'bar',
-        },
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/bar',
+        getSource: () => Buffer.of(),
       };
       bazModule = {
         dependencies: new Map(),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'baz',
-        },
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/baz',
+        getSource: () => Buffer.of(),
       };
       quxModule = {
         dependencies: new Map(),
-        inverseDependencies: ['/foo'],
-        output: {
-          name: 'qux',
-        },
+        inverseDependencies: new CountingSet(['/foo']),
+        output: [],
         path: '/qux',
+        getSource: () => Buffer.of(),
       };
 
-      graph.dependencies.set('/bundle', entryModule);
-      graph.dependencies.set('/foo', fooModule);
-      graph.dependencies.set('/bar', barModule);
-      graph.dependencies.set('/baz', bazModule);
-      graph.dependencies.set('/qux', quxModule);
+      this.dependencies.set('/bundle', entryModule);
+      this.dependencies.set('/foo', fooModule);
+      this.dependencies.set('/bar', barModule);
+      this.dependencies.set('/baz', bazModule);
+      this.dependencies.set('/qux', quxModule);
 
       return {
         added: new Map([
@@ -310,13 +347,18 @@ describe('DeltaCalculator', () => {
 
     const quxModule = {
       dependencies: new Map(),
-      inverseDependencies: [],
-      output: {name: 'qux'},
+      inverseDependencies: new CountingSet(),
+      output: [],
       path: '/qux',
+      getSource: () => Buffer.of(),
     };
 
-    traverseDependencies.mockImplementation(async (path, graph, options) => {
-      graph.dependencies.set('/qux', quxModule);
+    traverseDependencies.mockImplementation(async function <T>(
+      this: Graph<T>,
+      paths: $ReadOnlyArray<string>,
+      options: Options<T>,
+    ): Promise<Result<T>> {
+      this.dependencies.set('/qux', quxModule);
 
       return {
         added: new Map(),

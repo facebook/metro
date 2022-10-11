@@ -11,7 +11,6 @@
 
 import type {
   Dependency,
-  Graph,
   MixedOutput,
   Module,
   Options,
@@ -20,19 +19,14 @@ import type {
   TransformResultDependency,
   TransformResultWithSource,
 } from '../types.flow';
+import type {Result} from '../Graph';
 import type {RequireContext} from '../../lib/contextModule';
 
 import CountingSet from '../../lib/CountingSet';
 import {deriveAbsolutePathFromContext} from '../../lib/contextModule';
 import nullthrows from 'nullthrows';
 
-const {
-  createGraph,
-  initialTraverseDependencies,
-  reorderGraph,
-  traverseDependencies: traverseDependenciesImpl,
-  markModifiedContextModules,
-} = require('../graphOperations');
+import {Graph} from '../Graph';
 
 const {objectContaining} = expect;
 
@@ -50,10 +44,7 @@ let mockedDependencyTree: Map<
   >,
 > = new Map();
 const files = new Set();
-let graph: {
-  // For convenience, we mutate the graph sometimes
-  ...Graph<>,
-};
+let graph: TestGraph;
 let options;
 
 let entryModule;
@@ -251,43 +242,44 @@ function computeInverseDependencies(
   return allInverseDependencies;
 }
 
-async function traverseDependencies(
-  paths: Array<string>,
-  graph: Graph<>,
-  options: Options<>,
-) {
-  // Get a snapshot of the graph before the traversal.
-  const dependenciesBefore = new Set(graph.dependencies.keys());
-  const pathsBefore = new Set(paths);
+class TestGraph extends Graph<> {
+  async traverseDependencies(
+    paths: $ReadOnlyArray<string>,
+    options: Options<>,
+  ): Promise<Result<MixedOutput>> {
+    // Get a snapshot of the graph before the traversal.
+    const dependenciesBefore = new Set(this.dependencies.keys());
+    const pathsBefore = new Set(paths);
 
-  // Mutate the graph and calculate a delta.
-  const delta = await traverseDependenciesImpl(paths, graph, options);
+    // Mutate the graph and calculate a delta.
+    const delta = await super.traverseDependencies(paths, options);
 
-  // Validate the delta against the current state of the graph.
-  const expectedDelta = computeDelta(
-    dependenciesBefore,
-    graph.dependencies,
-    pathsBefore,
-  );
-  expect(getPaths(delta)).toEqual(expectedDelta);
+    // Validate the delta against the current state of the graph.
+    const expectedDelta = computeDelta(
+      dependenciesBefore,
+      this.dependencies,
+      pathsBefore,
+    );
+    expect(getPaths(delta)).toEqual(expectedDelta);
 
-  // Ensure the inverseDependencies and dependencies sets are in sync.
-  const expectedInverseDependencies = computeInverseDependencies(
-    graph,
-    options,
-  );
-  const actualInverseDependencies = new Map();
-  for (const [path, module] of graph.dependencies) {
-    actualInverseDependencies.set(path, new Set(module.inverseDependencies));
+    // Ensure the inverseDependencies and dependencies sets are in sync.
+    const expectedInverseDependencies = computeInverseDependencies(
+      this,
+      options,
+    );
+    const actualInverseDependencies = new Map();
+    for (const [path, module] of graph.dependencies) {
+      actualInverseDependencies.set(path, new Set(module.inverseDependencies));
+    }
+    expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
+
+    return delta;
   }
-  expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
-
-  return delta;
 }
 
 function getMatchingContextModules<T>(graph: Graph<T>, filePath: string) {
   const contextPaths = new Set();
-  markModifiedContextModules(graph, filePath, contextPaths);
+  graph.markModifiedContextModules(filePath, contextPaths);
   return contextPaths;
 }
 
@@ -376,14 +368,14 @@ beforeEach(async () => {
 
   files.clear();
 
-  graph = createGraph({
+  graph = new TestGraph({
     entryPoints: new Set(['/bundle']),
     transformOptions: options.transformOptions,
   });
 });
 
 it('should do the initial traversal correctly', async () => {
-  const result = await initialTraverseDependencies(graph, options);
+  const result = await graph.initialTraverseDependencies(options);
 
   expect(getPaths(result)).toEqual({
     added: new Set(['/bundle', '/foo', '/bar', '/baz']),
@@ -391,8 +383,6 @@ it('should do the initial traversal correctly', async () => {
     deleted: new Set(),
   });
 
-  // $FlowIgnore[incompatible-type] for snapshot purposes
-  delete graph.privateState;
   expect(graph).toMatchSnapshot();
 });
 
@@ -400,7 +390,7 @@ it('should populate all the inverse dependencies', async () => {
   // create a second inverse dependency on /bar.
   Actions.addDependency('/bundle', '/bar');
 
-  await initialTraverseDependencies(graph, options);
+  await graph.initialTraverseDependencies(options);
 
   expect(
     nullthrows(graph.dependencies.get('/bar')).inverseDependencies,
@@ -408,10 +398,10 @@ it('should populate all the inverse dependencies', async () => {
 });
 
 it('should return an empty result when there are no changes', async () => {
-  await initialTraverseDependencies(graph, options);
+  await graph.initialTraverseDependencies(options);
 
   expect(
-    getPaths(await traverseDependencies(['/bundle'], graph, options)),
+    getPaths(await graph.traverseDependencies(['/bundle'], options)),
   ).toEqual({
     added: new Set(),
     modified: new Set(['/bundle']),
@@ -420,12 +410,12 @@ it('should return an empty result when there are no changes', async () => {
 });
 
 it('should return a removed dependency', async () => {
-  await initialTraverseDependencies(graph, options);
+  await graph.initialTraverseDependencies(options);
 
   Actions.removeDependency('/foo', '/bar');
 
   expect(
-    getPaths(await traverseDependencies([...files], graph, options)),
+    getPaths(await graph.traverseDependencies([...files], options)),
   ).toEqual({
     added: new Set(),
     modified: new Set(['/foo']),
@@ -434,14 +424,14 @@ it('should return a removed dependency', async () => {
 });
 
 it('should return added/removed dependencies', async () => {
-  await initialTraverseDependencies(graph, options);
+  await graph.initialTraverseDependencies(options);
 
   Actions.addDependency('/foo', '/qux');
   Actions.removeDependency('/foo', '/bar');
   Actions.removeDependency('/foo', '/baz');
 
   expect(
-    getPaths(await traverseDependencies([...files], graph, options)),
+    getPaths(await graph.traverseDependencies([...files], options)),
   ).toEqual({
     added: new Set(['/qux']),
     modified: new Set(['/foo']),
@@ -450,18 +440,18 @@ it('should return added/removed dependencies', async () => {
 });
 
 it('should retry to traverse the dependencies as it was after getting an error', async () => {
-  await initialTraverseDependencies(graph, options);
+  await graph.initialTraverseDependencies(options);
 
   Actions.deleteFile(moduleBar);
 
   await expect(
-    traverseDependencies(['/foo'], graph, options),
+    graph.traverseDependencies(['/foo'], options),
   ).rejects.toBeInstanceOf(Error);
 
   // Second time that the traversal of dependencies we still have to throw an
   // error (no matter if no file has been changed).
   await expect(
-    traverseDependencies(['/foo'], graph, options),
+    graph.traverseDependencies(['/foo'], options),
   ).rejects.toBeInstanceOf(Error);
 });
 
@@ -479,23 +469,23 @@ it('should retry traversing dependencies after a transform error', async () => {
     },
   };
 
-  await initialTraverseDependencies(graph, localOptions);
+  await graph.initialTraverseDependencies(localOptions);
 
   Actions.createFile('/bad');
   Actions.addDependency('/foo', '/bad');
 
   await expect(
-    traverseDependencies(['/foo'], graph, localOptions),
+    graph.traverseDependencies(['/foo'], localOptions),
   ).rejects.toBeInstanceOf(BadError);
 
   // Repeated attempt should give the same error.
   await expect(
-    traverseDependencies(['/foo'], graph, localOptions),
+    graph.traverseDependencies(['/foo'], localOptions),
   ).rejects.toBeInstanceOf(BadError);
 
   // Finally, pass normal `options` that don't reject the '/bad' module:
   expect(
-    getPaths(await traverseDependencies([...files], graph, options)),
+    getPaths(await graph.traverseDependencies([...files], options)),
   ).toEqual({
     added: new Set(['/bad']),
     modified: new Set(['/foo']),
@@ -504,7 +494,7 @@ it('should retry traversing dependencies after a transform error', async () => {
 });
 
 it('should not traverse past the initial module if `shallow` is passed', async () => {
-  const result = await initialTraverseDependencies(graph, {
+  const result = await graph.initialTraverseDependencies({
     ...options,
     shallow: true,
   });
@@ -515,8 +505,6 @@ it('should not traverse past the initial module if `shallow` is passed', async (
     deleted: new Set(),
   });
 
-  // $FlowIgnore[incompatible-type] for snapshot purposes
-  delete graph.privateState;
   expect(graph).toMatchSnapshot();
 });
 
@@ -524,7 +512,7 @@ describe('Progress updates', () => {
   it('calls back for each finished module', async () => {
     const onProgress = jest.fn();
 
-    await initialTraverseDependencies(graph, {...options, onProgress});
+    await graph.initialTraverseDependencies({...options, onProgress});
 
     // We get a progress change twice per dependency
     // (when we discover it and when we process it).
@@ -534,7 +522,7 @@ describe('Progress updates', () => {
   it('increases the number of discover/finished modules in steps of one', async () => {
     const onProgress = jest.fn();
 
-    await initialTraverseDependencies(graph, {...options, onProgress});
+    await graph.initialTraverseDependencies({...options, onProgress});
 
     const lastCall = {
       num: 0,
@@ -557,9 +545,12 @@ describe('Progress updates', () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/qux');
     Actions.addDependency('/bundle-2', '/foo');
-    graph.entryPoints = new Set(['/bundle', '/bundle-2']);
+    graph = new TestGraph({
+      entryPoints: new Set(['/bundle', '/bundle-2']),
+      transformOptions: options.transformOptions,
+    });
 
-    await initialTraverseDependencies(graph, {...options, onProgress});
+    await graph.initialTraverseDependencies({...options, onProgress});
 
     const lastCall = {
       num: 0,
@@ -581,13 +572,11 @@ describe('edge cases', () => {
     Actions.addDependency('/baz', '/foo');
     files.clear();
 
-    expect(getPaths(await initialTraverseDependencies(graph, options))).toEqual(
-      {
-        added: new Set(['/bundle', '/foo', '/bar', '/baz']),
-        modified: new Set(),
-        deleted: new Set(),
-      },
-    );
+    expect(getPaths(await graph.initialTraverseDependencies(options))).toEqual({
+      added: new Set(['/bundle', '/foo', '/bar', '/baz']),
+      modified: new Set(),
+      deleted: new Set(),
+    });
 
     expect(
       nullthrows(graph.dependencies.get('/foo')).inverseDependencies,
@@ -595,14 +584,14 @@ describe('edge cases', () => {
   });
 
   it('should handle renames correctly', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/baz');
     Actions.moveFile('/baz', '/qux');
     Actions.addDependency('/foo', '/qux');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(['/qux']),
       modified: new Set(['/foo']),
@@ -611,7 +600,7 @@ describe('edge cases', () => {
   });
 
   it('should not try to remove wrong dependencies when renaming files', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // Rename /foo to /foo-renamed, but keeping all its dependencies.
     Actions.addDependency('/bundle', '/foo-renamed');
@@ -622,7 +611,7 @@ describe('edge cases', () => {
     Actions.addDependency('/foo-renamed', '/baz');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(['/foo-renamed']),
       modified: new Set(['/bundle']),
@@ -633,13 +622,13 @@ describe('edge cases', () => {
   });
 
   it('should handle file extension changes correctly', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/baz');
     Actions.addDependency('/foo', '/baz.js', {name: 'baz'});
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(['/baz.js']),
       modified: new Set(['/foo']),
@@ -648,13 +637,13 @@ describe('edge cases', () => {
   });
 
   it('modify a file and delete it afterwards', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.modifyFile('/baz');
     Actions.removeDependency('/foo', '/baz');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/foo']),
@@ -665,13 +654,13 @@ describe('edge cases', () => {
   });
 
   it('remove a dependency and modify it afterwards', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
     Actions.modifyFile('/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -690,12 +679,12 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle', '/bar');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -714,12 +703,12 @@ describe('edge cases', () => {
     Actions.addDependency('/foo', '/core');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/core');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -729,7 +718,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle', '/core');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -739,7 +728,7 @@ describe('edge cases', () => {
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -753,12 +742,12 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle', '/toFoo');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -770,12 +759,12 @@ describe('edge cases', () => {
     Actions.addDependency('/baz', '/foo');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -788,12 +777,12 @@ describe('edge cases', () => {
 
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -808,12 +797,12 @@ describe('edge cases', () => {
 
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -829,12 +818,12 @@ describe('edge cases', () => {
 
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -843,13 +832,13 @@ describe('edge cases', () => {
   });
 
   it('move a file to a different folder', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.addDependency('/foo', '/baz-moved');
     Actions.removeDependency('/foo', '/baz');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(['/baz-moved']),
       modified: new Set(['/foo']),
@@ -860,12 +849,12 @@ describe('edge cases', () => {
   });
 
   it('maintain the order of module dependencies', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     Actions.addDependency('/foo', '/qux', {position: 0});
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(['/qux']),
       modified: new Set(['/foo']),
@@ -930,7 +919,7 @@ describe('edge cases', () => {
      *   * A "dead" edge is one that is pruned from the final graph.
      */
     it('all in one delta, adding the live edge first', async () => {
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
@@ -996,7 +985,7 @@ describe('edge cases', () => {
       (modified)       (added)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set(['/quux']),
         deleted: new Set(['/foo', '/bar', '/baz']),
@@ -1005,7 +994,7 @@ describe('edge cases', () => {
     });
 
     it('all in one delta, adding the live edge after the dead edge', async () => {
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
@@ -1073,7 +1062,7 @@ describe('edge cases', () => {
       (modified)       (added)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set(['/quux']),
         deleted: new Set(['/foo', '/bar', '/baz']),
@@ -1082,7 +1071,7 @@ describe('edge cases', () => {
     });
 
     it('add the dead edge, compute a delta, then add the live edge', async () => {
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
@@ -1128,7 +1117,7 @@ describe('edge cases', () => {
            (added)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set(['/quux']),
         deleted: new Set([]),
@@ -1174,7 +1163,7 @@ describe('edge cases', () => {
       (modified)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set(['/foo', '/bar', '/baz']),
@@ -1183,7 +1172,7 @@ describe('edge cases', () => {
     });
 
     it('create the module, compute a delta, then add the dead edge and the live edge', async () => {
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
@@ -1211,7 +1200,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set([]),
@@ -1250,7 +1239,7 @@ describe('edge cases', () => {
            (added)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set(['/quux']),
         deleted: new Set([]),
@@ -1296,7 +1285,7 @@ describe('edge cases', () => {
       (modified)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set(['/foo', '/bar', '/baz']),
@@ -1305,7 +1294,7 @@ describe('edge cases', () => {
     });
 
     it('more than two state transitions in one delta calculation', async () => {
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐     ┏━━━━━━━┓
@@ -1333,7 +1322,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set([]),
@@ -1402,7 +1391,7 @@ describe('edge cases', () => {
           (added)
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, options)),
+        getPaths(await graph.traverseDependencies([...files], options)),
       ).toEqual({
         added: new Set(['/quux']),
         deleted: new Set(['/bar']),
@@ -1440,7 +1429,7 @@ describe('edge cases', () => {
                           └──────┘
       */
       expect(
-        getPaths(await initialTraverseDependencies(graph, localOptions)),
+        getPaths(await graph.initialTraverseDependencies(localOptions)),
       ).toEqual({
         added: new Set(['/bundle']),
         deleted: new Set([]),
@@ -1468,7 +1457,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       expect(graph.importBundleNames).toEqual(new Set(['/foo']));
     });
 
@@ -1491,7 +1480,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.createFile('/quux');
@@ -1513,7 +1502,7 @@ describe('edge cases', () => {
       └─────────┘          └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set([]),
@@ -1534,7 +1523,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.removeDependency('/bundle', '/foo');
@@ -1556,7 +1545,7 @@ describe('edge cases', () => {
                           └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set(['/foo', '/bar', '/baz']),
@@ -1576,7 +1565,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.removeDependency('/bundle', '/foo');
@@ -1597,7 +1586,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
-      await traverseDependencies([...files], graph, localOptions);
+      await graph.traverseDependencies([...files], localOptions);
       expect(graph.importBundleNames).toEqual(new Set(['/foo']));
     });
 
@@ -1620,7 +1609,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.removeDependency('/bundle', '/foo');
@@ -1638,7 +1627,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set(['/foo', '/bar', '/baz']),
         modified: new Set(['/bundle']),
@@ -1665,7 +1654,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.removeDependency('/bundle', '/foo');
@@ -1682,7 +1671,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await traverseDependencies([...files], graph, localOptions);
+      await graph.traverseDependencies([...files], localOptions);
       expect(graph.importBundleNames).toEqual(new Set());
     });
 
@@ -1707,7 +1696,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
 
       expect(graph.importBundleNames).toEqual(new Set(['/foo']));
       expect(graph.dependencies.get('/foo')).not.toBeUndefined();
@@ -1725,7 +1714,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, options);
+      await graph.initialTraverseDependencies(options);
 
       Actions.addDependency('/bar', '/foo', {
         data: {
@@ -1748,7 +1737,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         modified: new Set(['/bar']),
@@ -1776,7 +1765,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.addDependency('/bundle', '/bar');
@@ -1795,7 +1784,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set(['/bar']),
         modified: new Set(['/bundle']),
@@ -1828,7 +1817,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await initialTraverseDependencies(graph, localOptions)),
+        getPaths(await graph.initialTraverseDependencies(localOptions)),
       ).toEqual({
         added: new Set(['/bundle']),
         deleted: new Set([]),
@@ -1858,7 +1847,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.removeDependency('/bundle', '/foo');
@@ -1877,7 +1866,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set(['/foo', '/baz']),
@@ -1904,7 +1893,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.addDependency('/foo', '/bar', {
@@ -1928,7 +1917,7 @@ describe('edge cases', () => {
       */
       // At this point neither of /foo and /bar is reachable from /bundle.
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set([]),
@@ -1954,7 +1943,7 @@ describe('edge cases', () => {
                       │ /baz │
                       └──────┘
       */
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
       files.clear();
 
       Actions.addDependency('/foo', '/bar', {
@@ -1978,7 +1967,7 @@ describe('edge cases', () => {
                       └──────┘
       */
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         deleted: new Set(['/foo', '/baz']),
@@ -1993,7 +1982,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle', '/bar');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     expect(mockTransform.mock.calls.length).toBe(4);
   });
@@ -2004,21 +1993,24 @@ describe('edge cases', () => {
     files.clear();
 
     // Add a second entry point to the graph.
-    graph.entryPoints = new Set(['/bundle', '/bundle-2']);
+    graph = new TestGraph({
+      entryPoints: new Set(['/bundle', '/bundle-2']),
+      transformOptions: options.transformOptions,
+    });
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     expect(mockTransform.mock.calls.length).toBe(5);
   });
 
   it('should create two entries when requiring the same file in different forms', async () => {
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // We're adding a new reference from bundle to foo.
     Actions.addDependency('/bundle', '/foo', {position: 0, name: 'foo.js'});
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -2060,12 +2052,12 @@ describe('edge cases', () => {
 
     files.clear();
 
-    graph = createGraph({
+    graph = new TestGraph({
       entryPoints: new Set(['/bundle', '/bundle-2']),
       transformOptions: options.transformOptions,
     });
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     expect([...graph.dependencies.keys()]).toEqual([
       '/bundle',
@@ -2115,7 +2107,7 @@ describe('edge cases', () => {
     }
 
     const assertOrder = async function () {
-      graph = createGraph({
+      graph = new TestGraph({
         entryPoints: new Set(['/bundle']),
         transformOptions: options.transformOptions,
       });
@@ -2123,7 +2115,7 @@ describe('edge cases', () => {
       expect(
         Array.from(
           getPaths(
-            await initialTraverseDependencies(graph, {
+            await graph.initialTraverseDependencies({
               ...options,
               transform: localMockTransform,
             }),
@@ -2174,7 +2166,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bar', '/baz');
     files.clear();
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     /*
                       ┌─────────────────────────┐
@@ -2188,7 +2180,7 @@ describe('edge cases', () => {
     Actions.removeDependency('/bundle', '/foo');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/bundle']),
@@ -2231,7 +2223,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // The transformer receives the arguments necessary to generate a context module
     expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved);
@@ -2250,7 +2242,7 @@ describe('require.context', () => {
   it('a context module is created incrementally', async () => {
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
@@ -2261,7 +2253,7 @@ describe('require.context', () => {
 
     // Compute the new graph incrementally
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([ctxPath]),
       deleted: new Set([]),
@@ -2287,14 +2279,14 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Remove the reference to the context module
     Actions.removeDependency('/bundle', '/ctx');
 
     // Compute the new graph incrementally
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([]),
       deleted: new Set([ctxPath]),
@@ -2322,7 +2314,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Ensure the context module and the matched file are in the graph
     expect(graph.dependencies.get(ctxPath)).not.toBe(undefined);
@@ -2333,7 +2325,7 @@ describe('require.context', () => {
 
     // Compute the new graph incrementally
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([]),
       deleted: new Set([ctxPath, '/ctx/matched-file']),
@@ -2361,7 +2353,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Ensure we recorded an inverse dependency between the matched file and the context module
     expect([
@@ -2379,7 +2371,7 @@ describe('require.context', () => {
     // Compute the new graph incrementally
     mockTransform.mockClear();
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([]),
       modified: new Set([ctxPath]),
@@ -2405,7 +2397,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Modify the matched file
     Actions.modifyFile('/ctx/matched-file');
@@ -2415,7 +2407,7 @@ describe('require.context', () => {
     // Compute the new graph incrementally
     mockTransform.mockClear();
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([]),
       modified: new Set(['/ctx/matched-file']),
@@ -2436,19 +2428,19 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Create the file matched by the context
     Actions.createFile('/ctx/matched-file');
     // Create a dependency between the context module and the new file, for mockTransform
     Actions.addInferredDependency(ctxPath, '/ctx/matched-file');
     // Propagate the addition to the context module (normally DeltaCalculator's responsibility)
-    markModifiedContextModules(graph, '/ctx/matched-file', files);
+    graph.markModifiedContextModules('/ctx/matched-file', files);
 
     // Compute the new graph incrementally
     mockTransform.mockClear();
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set(['/ctx/matched-file']),
       modified: new Set([ctxPath]),
@@ -2476,18 +2468,18 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Create the file matched by the context
     Actions.createFile('/ctx/matched-file');
     Actions.addInferredDependency(ctxPath, '/ctx/matched-file');
     // Propagate the addition to the context module (normally DeltaCalculator's responsibility)
-    markModifiedContextModules(graph, '/ctx/matched-file', files);
+    graph.markModifiedContextModules('/ctx/matched-file', files);
 
     // Compute the new graph incrementally
     mockTransform.mockClear();
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set(['/ctx/matched-file']),
       modified: new Set([ctxPath]),
@@ -2515,7 +2507,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Remove one reference
     Actions.removeDependency('/bundle', '/ctx');
@@ -2523,7 +2515,7 @@ describe('require.context', () => {
     // Compute the new graph incrementally
     mockTransform.mockClear();
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set([]),
       modified: new Set(['/bundle']),
@@ -2576,7 +2568,7 @@ describe('require.context', () => {
 
       // Compute the initial graph
       files.clear();
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
 
       // The transformer receives the arguments necessary to generate each context module
       expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved);
@@ -2620,18 +2612,18 @@ describe('require.context', () => {
 
       // Compute the initial graph
       files.clear();
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
 
       // Create the file matched by the contexts
       Actions.createFile('/ctx/narrow/matched-file');
       Actions.addInferredDependency(ctxPath, '/ctx/narrow/matched-file');
       Actions.addInferredDependency(narrowCtxPath, '/ctx/narrow/matched-file');
       // Propagate the addition to the context modules (normally DeltaCalculator's responsibility)
-      markModifiedContextModules(graph, '/ctx/narrow/matched-file', files);
+      graph.markModifiedContextModules('/ctx/narrow/matched-file', files);
 
       // Compute the new graph incrementally
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set(['/ctx/narrow/matched-file']),
         modified: new Set([ctxPath, narrowCtxPath]),
@@ -2662,14 +2654,14 @@ describe('require.context', () => {
 
       // Compute the initial graph
       files.clear();
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
 
       // Remove the reference to one of the context modules
       Actions.removeDependency('/bundle', '/ctx');
 
       // Compute the new graph incrementally
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([]),
         modified: new Set(['/bundle']),
@@ -2691,7 +2683,7 @@ describe('require.context', () => {
 
       // Compute the initial graph
       files.clear();
-      await initialTraverseDependencies(graph, localOptions);
+      await graph.initialTraverseDependencies(localOptions);
 
       // Remove the reference to one of the context modules
       Actions.removeDependency('/bundle', '/ctx');
@@ -2706,7 +2698,7 @@ describe('require.context', () => {
 
       // Compute the new graph incrementally
       expect(
-        getPaths(await traverseDependencies([...files], graph, localOptions)),
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
         added: new Set([narrowCtxPath]),
         modified: new Set(['/bundle']),
@@ -2737,7 +2729,7 @@ describe('require.context', () => {
 
     // Compute the initial graph
     files.clear();
-    await initialTraverseDependencies(graph, localOptions);
+    await graph.initialTraverseDependencies(localOptions);
 
     // Remove the reference to the context module
     Actions.removeDependency('/bundle', '/ctx');
@@ -2750,7 +2742,7 @@ describe('require.context', () => {
 
     // Compute the new graph incrementally
     expect(
-      getPaths(await traverseDependencies([...files], graph, localOptions)),
+      getPaths(await graph.traverseDependencies([...files], localOptions)),
     ).toEqual({
       added: new Set(['/other-file']),
       modified: new Set(['/bundle', ctxPath]),
@@ -2790,21 +2782,24 @@ describe('reorderGraph', () => {
       inverseDependencies: new CountingSet(),
     });
 
-    const graph = createGraph({
+    const graph = new TestGraph({
       entryPoints: new Set(['/a', '/b']),
       transformOptions: options.transformOptions,
     });
     // prettier-ignore
-    graph.dependencies = new Map([
+    const deps = [
       ['/2', mod({path: '/2', dependencies: new Map()})],
       ['/0', mod({path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])})],
       ['/1', mod({path: '/1', dependencies: new Map([['/2', dep('/2')]])})],
       ['/3', mod({path: '/3', dependencies: new Map([])})],
       ['/b', mod({path: '/b', dependencies: new Map([['/3', dep('/3')]])})],
       ['/a', mod({path: '/a', dependencies: new Map([['/0', dep('/0')]])})],
-    ]);
+    ];
+    for (const [key, dep] of deps) {
+      graph.dependencies.set(key, dep);
+    }
 
-    reorderGraph(graph, {shallow: false});
+    graph.reorderGraph({shallow: false});
 
     expect([...graph.dependencies.keys()]).toEqual([
       '/a',
@@ -2883,7 +2878,7 @@ describe('optional dependencies', () => {
 
     Actions.deleteFile('/optional-b');
 
-    localGraph = createGraph({
+    localGraph = new TestGraph({
       entryPoints: new Set(['/bundle-o']),
       transformOptions: options.transformOptions,
     });
@@ -2895,7 +2890,7 @@ describe('optional dependencies', () => {
       transform: createMockTransform(),
     };
 
-    const result = await initialTraverseDependencies(localGraph, localOptions);
+    const result = await localGraph.initialTraverseDependencies(localOptions);
 
     const dependencies = result.added;
     assertResults(dependencies, ['optional-b']);
@@ -2906,7 +2901,7 @@ describe('optional dependencies', () => {
       transform: createMockTransform(['optional-b']),
     };
     await expect(
-      initialTraverseDependencies(localGraph, localOptions),
+      localGraph.initialTraverseDependencies(localOptions),
     ).rejects.toThrow();
   });
 });
@@ -2920,13 +2915,13 @@ describe('parallel edges', () => {
       },
     });
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // Remove one of the edges between /foo and /bar (arbitrarily)
     Actions.removeDependency('/foo', '/bar');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/foo']),
@@ -2942,14 +2937,14 @@ describe('parallel edges', () => {
       },
     });
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // Remove both edges between /foo and /bar
     Actions.removeDependency('/foo', '/bar');
     Actions.removeDependency('/foo', '/bar');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/foo']),
@@ -2961,13 +2956,13 @@ describe('parallel edges', () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', {name: 'bar-second'});
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // Remove one of the edges between /foo and /bar (arbitrarily)
     Actions.removeDependency('/foo', '/bar');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/foo']),
@@ -2979,14 +2974,14 @@ describe('parallel edges', () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', {name: 'bar-second'});
 
-    await initialTraverseDependencies(graph, options);
+    await graph.initialTraverseDependencies(options);
 
     // Remove both edges between /foo and /bar
     Actions.removeDependency('/foo', '/bar');
     Actions.removeDependency('/foo', '/bar');
 
     expect(
-      getPaths(await traverseDependencies([...files], graph, options)),
+      getPaths(await graph.traverseDependencies([...files], options)),
     ).toEqual({
       added: new Set(),
       modified: new Set(['/foo']),

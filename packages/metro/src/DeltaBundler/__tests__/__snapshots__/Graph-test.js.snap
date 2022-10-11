@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should do the initial traversal correctly 1`] = `
-Object {
+TestGraph {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
@@ -126,7 +126,7 @@ Object {
 `;
 
 exports[`should not traverse past the initial module if \`shallow\` is passed 1`] = `
-Object {
+TestGraph {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
