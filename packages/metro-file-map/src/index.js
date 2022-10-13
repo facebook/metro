@@ -15,7 +15,6 @@ import type {
   CacheManagerFactory,
   ChangeEvent,
   Console,
-  CrawlerOptions,
   EventsQueue,
   FileData,
   FileMetaData,
@@ -31,7 +30,6 @@ import type {
   SerializableModuleMap,
   WorkerMetadata,
 } from './flow-types';
-import type {WatcherOptions} from './watchers/common';
 import type {Stats} from 'graceful-fs';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
@@ -45,10 +43,7 @@ import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
 import rootRelativeCacheKeys from './lib/rootRelativeCacheKeys';
 import HasteModuleMap from './ModuleMap';
-import FSEventsWatcher from './watchers/FSEventsWatcher';
-// $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
-import NodeWatcher from './watchers/NodeWatcher';
-import WatchmanWatcher from './watchers/WatchmanWatcher';
+import {Watcher} from './Watcher';
 import {getSha1, worker} from './worker';
 import EventEmitter from 'events';
 import invariant from 'invariant';
@@ -59,10 +54,6 @@ import {Worker} from 'jest-worker';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - this is a polyfill
 import AbortController from 'abort-controller';
-
-const nodeCrawl = require('./crawlers/node');
-const watchmanCrawl = require('./crawlers/watchman');
-const debug = require('debug')('Metro:FileMap');
 
 export type {
   BuildParameters,
@@ -114,10 +105,6 @@ type InternalOptions = {
   watchmanDeferStates: $ReadOnlyArray<string>,
 };
 
-interface Watcher {
-  close(): Promise<void>;
-}
-
 type WorkerInterface = {worker: typeof worker, getSha1: typeof getSha1};
 
 export const DuplicateHasteCandidatesError =
@@ -140,7 +127,6 @@ export type {
 const CACHE_BREAKER = '2';
 
 const CHANGE_INTERVAL = 30;
-const MAX_WAIT_TIME = 240000;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const PACKAGE_JSON = path.sep + 'package.json';
 const VCS_DIRECTORIES = ['.git', '.hg']
@@ -237,7 +223,7 @@ export default class HasteMap extends EventEmitter {
   _changeInterval: ?IntervalID;
   _console: Console;
   _options: InternalOptions;
-  _watchers: Array<Watcher>;
+  _watcher: ?Watcher;
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
   _crawlerAbortController: typeof AbortController;
@@ -322,7 +308,6 @@ export default class HasteMap extends EventEmitter {
     }
 
     this._buildPromise = null;
-    this._watchers = [];
     this._worker = null;
     this._options.perfLogger?.point('constructor_end');
     this._crawlerAbortController = new AbortController();
@@ -455,7 +440,39 @@ export default class HasteMap extends EventEmitter {
     } catch {
       hasteMap = this._createEmptyMap();
     }
-    return this._crawl(hasteMap).then(result => {
+
+    const {
+      computeSha1,
+      enableSymlinks,
+      extensions,
+      forceNodeFilesystemAPI,
+      ignorePattern,
+      perfLogger,
+      roots,
+      rootDir,
+      watch,
+      watchmanDeferStates,
+    } = this._options;
+
+    this._watcher = new Watcher({
+      abortSignal: this._crawlerAbortController.signal,
+      computeSha1,
+      console: this._console,
+      enableSymlinks,
+      extensions,
+      forceNodeFilesystemAPI,
+      ignore: path => this._ignore(path),
+      ignorePattern,
+      initialData: hasteMap,
+      perfLogger,
+      roots,
+      rootDir,
+      useWatchman: await this._shouldUseWatchman(),
+      watch,
+      watchmanDeferStates,
+    });
+
+    return this._watcher.crawl().then(result => {
       this._options.perfLogger?.point('buildFileMap_end');
       return result;
     });
@@ -788,66 +805,6 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  async _crawl(hasteMap: InternalData): Promise<?(
-    | Promise<{
-        changedFiles?: FileData,
-        hasteMap: InternalData,
-        removedFiles: FileData,
-      }>
-    | {changedFiles?: FileData, hasteMap: InternalData, removedFiles: FileData}
-  )> {
-    this._options.perfLogger?.point('crawl_start');
-    const options = this._options;
-    const ignore = (filePath: string) => this._ignore(filePath);
-    const crawl = (await this._shouldUseWatchman()) ? watchmanCrawl : nodeCrawl;
-    const crawlerOptions: CrawlerOptions = {
-      abortSignal: this._crawlerAbortController.signal,
-      computeSha1: options.computeSha1,
-      data: hasteMap,
-      enableSymlinks: options.enableSymlinks,
-      extensions: options.extensions,
-      forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,
-      ignore,
-      perfLogger: options.perfLogger,
-      rootDir: options.rootDir,
-      roots: options.roots,
-    };
-
-    const retry = (error: Error) => {
-      if (crawl === watchmanCrawl) {
-        this._console.warn(
-          'metro-file-map: Watchman crawl failed. Retrying once with node ' +
-            'crawler.\n' +
-            "  Usually this happens when watchman isn't running. Create an " +
-            "empty `.watchmanconfig` file in your project's root folder or " +
-            'initialize a git or hg repository in your project.\n' +
-            '  ' +
-            error.toString(),
-        );
-        return nodeCrawl(crawlerOptions).catch(e => {
-          throw new Error(
-            'Crawler retry failed:\n' +
-              `  Original error: ${error.message}\n` +
-              `  Retry error: ${e.message}\n`,
-          );
-        });
-      }
-
-      throw error;
-    };
-
-    const logEnd = <T>(result: T): T => {
-      this._options.perfLogger?.point('crawl_end');
-      return result;
-    };
-
-    try {
-      return crawl(crawlerOptions).catch(retry).then(logEnd);
-    } catch (error) {
-      return retry(error).then(logEnd);
-    }
-  }
-
   /**
    * Watch mode
    */
@@ -863,58 +820,13 @@ export default class HasteMap extends EventEmitter {
     this._options.throwOnModuleCollision = false;
     this._options.retainAllFiles = true;
 
-    // WatchmanWatcher > FSEventsWatcher > sane.NodeWatcher
-    const WatcherImpl = (await this._shouldUseWatchman())
-      ? WatchmanWatcher
-      : FSEventsWatcher.isSupported()
-      ? FSEventsWatcher
-      : NodeWatcher;
-
-    let watcher = 'node';
-    if (WatcherImpl === WatchmanWatcher) {
-      watcher = 'watchman';
-    } else if (WatcherImpl === FSEventsWatcher) {
-      watcher = 'fsevents';
-    }
-    debug(`Using watcher: ${watcher}`);
-    this._options.perfLogger?.annotate({string: {watcher}});
-
     const extensions = this._options.extensions;
-    const ignorePattern = this._options.ignorePattern;
     const rootDir = this._options.rootDir;
 
     let changeQueue: Promise<null | void> = Promise.resolve();
     let eventsQueue: EventsQueue = [];
     // We only need to copy the entire haste map once on every "frame".
     let mustCopy = true;
-
-    const createWatcher = (root: Path): Promise<Watcher> => {
-      const watcherOptions: WatcherOptions = {
-        dot: true,
-        glob: [
-          // Ensure we always include package.json files, which are crucial for
-          /// module resolution.
-          '**/package.json',
-          ...extensions.map(extension => '**/*.' + extension),
-        ],
-        ignored: ignorePattern,
-        watchmanDeferStates: this._options.watchmanDeferStates,
-      };
-      const watcher = new WatcherImpl(root, watcherOptions);
-
-      return new Promise((resolve, reject) => {
-        const rejectTimeout = setTimeout(
-          () => reject(new Error('Failed to start watch mode.')),
-          MAX_WAIT_TIME,
-        );
-
-        watcher.once('ready', () => {
-          clearTimeout(rejectTimeout);
-          watcher.on('all', onChange);
-          resolve(watcher);
-        });
-      });
-    };
 
     const emitChange = () => {
       if (eventsQueue.length) {
@@ -1076,10 +988,13 @@ export default class HasteMap extends EventEmitter {
 
     this._changeInterval = setInterval(emitChange, CHANGE_INTERVAL);
 
-    await Promise.all(this._options.roots.map(createWatcher)).then(watchers => {
-      this._watchers = watchers;
-      this._options.perfLogger?.point('watch_end');
-    });
+    invariant(
+      this._watcher != null,
+      'Expected _watcher to have been initialised by _buildFileMap',
+    );
+    await this._watcher.watch(onChange);
+
+    this._options.perfLogger?.point('watch_end');
   }
 
   /**
@@ -1144,13 +1059,10 @@ export default class HasteMap extends EventEmitter {
       clearInterval(this._changeInterval);
     }
 
-    if (!this._watchers.length) {
+    if (!this._watcher) {
       return;
     }
-
-    await Promise.all(this._watchers.map(watcher => watcher.close()));
-
-    this._watchers = [];
+    await this._watcher.close();
     this._crawlerAbortController.abort();
   }
 
