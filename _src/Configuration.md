@@ -186,7 +186,7 @@ resolveRequest: (context, moduleName, platform) => {
     // Resolve file path logic...
     // NOTE: Throw an error if there is no resolution.
     return {
-      filePath: "path/to/file",
+      filePath: 'path/to/file',
       type: 'sourceFile',
     };
   }
@@ -445,7 +445,7 @@ This allows overriding and removing default config parameters such as `platforms
 
 ```js
 // metro.config.js
-const { mergeConfig } = require("metro-config");
+const { mergeConfig } = require('metro-config');
 
 const configA = {
   /* general options */
