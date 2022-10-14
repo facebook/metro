@@ -383,6 +383,7 @@ export function getBoundarySchemaFromAST(
     null,
   );
   if (interfaceNode != null) {
+    // $FlowFixMe[prop-missing]
     schema.typegenSchema[interfaceNode.id.name] = {
       typeAnnotation: {
         type: 'InterfaceDeclarationTypeAnnotation',
