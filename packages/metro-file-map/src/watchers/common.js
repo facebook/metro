@@ -46,11 +46,11 @@ export type WatcherOptions = $ReadOnly<{
 }>;
 
 interface Watcher {
-  globs: $ReadOnlyArray<string>;
-  dot: boolean;
-  ignored?: ?(boolean | RegExp);
-  hasIgnore: boolean;
   doIgnore: string => boolean;
+  dot: boolean;
+  globs: $ReadOnlyArray<string>;
+  hasIgnore: boolean;
+  ignored?: ?(boolean | RegExp);
   watchmanDeferStates: $ReadOnlyArray<string>;
   watchmanPath?: ?string;
 }
@@ -115,7 +115,7 @@ export function recReaddir(
   fileCallback: (string, Stats) => void,
   endCallback: () => void,
   errorCallback: Error => void,
-  ignored: boolean,
+  ignored: ?(boolean | RegExp),
 ) {
   walker(dir)
     .filterDir(currentDir => !anymatch(ignored, currentDir))
