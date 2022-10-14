@@ -26,7 +26,6 @@ module.exports = function parseCustomTransformOptions(urlObj: {
 
   Object.keys(query).forEach((key: string) => {
     if (key.startsWith(PREFIX)) {
-      // $FlowFixMe[prop-missing]
       customTransformOptions[key.substr(PREFIX.length)] = query[key];
     }
   });

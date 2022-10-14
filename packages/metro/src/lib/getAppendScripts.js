@@ -47,7 +47,6 @@ function getAppendScripts<T: number | string>(
     const importBundleNamesObject = Object.create(null);
     importBundleNames.forEach(absolutePath => {
       const bundlePath = path.relative(options.serverRoot, absolutePath);
-      // $FlowFixMe[prop-missing]
       importBundleNamesObject[options.createModuleId(absolutePath)] =
         bundlePath.slice(0, -path.extname(bundlePath).length);
     });
