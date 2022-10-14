@@ -64,6 +64,7 @@ export type ReportableEvent =
   | {
       buildID: string,
       bundleDetails: BundleDetails,
+      isPrefetch?: boolean,
       type: 'bundle_build_started',
       ...
     }

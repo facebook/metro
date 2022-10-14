@@ -662,6 +662,7 @@ class Server {
           platform: transformOptions.platform,
           runtimeBytecodeVersion: transformOptions.runtimeBytecodeVersion,
         },
+        isPrefetch: req.method === 'HEAD',
         type: 'bundle_build_started',
       });
 
