@@ -31,6 +31,7 @@ type BundleProgress = {
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
+  isPrefetch?: boolean,
   ...
 };
 
@@ -104,11 +105,16 @@ class TerminalReporter {
       transformedFileCount,
       totalFileCount,
       ratio,
+      isPrefetch,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
     if (runtimeBytecodeVersion) {
       bundleType = 'bytecodebundle';
+    }
+
+    if (isPrefetch) {
+      bundleType = 'PREBUNDLE';
     }
 
     const localPath = path.relative('.', entryFile);
@@ -393,6 +399,7 @@ class TerminalReporter {
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
+          isPrefetch: event.isPrefetch,
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;
