@@ -11,7 +11,7 @@
 
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type MetroFileMap, {HasteFS} from 'metro-file-map';
+import type MetroFileMap, {HasteFS, HealthCheckResult} from 'metro-file-map';
 import type Module from './Module';
 
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
@@ -115,10 +115,17 @@ class DependencyGraph extends EventEmitter {
 
       // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       this._haste.on('change', this._onHasteChange.bind(this));
+      this._haste.on('healthCheck', result =>
+        this._onWatcherHealthCheck(result),
+      );
       this._resolutionCache = new Map();
       this._moduleCache = this._createModuleCache();
       this._createModuleResolver();
     });
+  }
+
+  _onWatcherHealthCheck(result: HealthCheckResult) {
+    this._config.reporter.update({type: 'watcher_health_check_result', result});
   }
 
   // Waits for the dependency graph to become ready after initialisation.

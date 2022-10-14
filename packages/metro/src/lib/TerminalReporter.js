@@ -17,6 +17,7 @@ import type {
   ReportableEvent,
 } from './reporting';
 import type {Terminal} from 'metro-core';
+import type {HealthCheckResult} from 'metro-file-map';
 
 const logToConsole = require('./logToConsole');
 const reporting = require('./reporting');
@@ -79,6 +80,7 @@ class TerminalReporter {
     }): void,
     cancel(): void,
   };
+  _prevHealthCheckResult: ?HealthCheckResult;
 
   +terminal: Terminal;
 
@@ -287,6 +289,10 @@ class TerminalReporter {
         }
 
         break;
+
+      case 'watcher_health_check_result':
+        this._logWatcherHealthCheckResult(event.result);
+        break;
     }
   }
 
@@ -418,6 +424,39 @@ class TerminalReporter {
         'to get HMR working again: %s',
       e,
     );
+  }
+
+  _logWatcherHealthCheckResult(result: HealthCheckResult) {
+    // Don't be spammy; only report changes in status.
+    if (
+      !this._prevHealthCheckResult ||
+      result.type !== this._prevHealthCheckResult.type
+    ) {
+      const watcherName = "'" + (result.watcher ?? 'unknown') + "'";
+      switch (result.type) {
+        case 'success':
+          // Only report success after a prior failure.
+          if (this._prevHealthCheckResult) {
+            this.terminal.log(
+              chalk.green(`Watcher ${watcherName} is now healthy.`),
+            );
+          }
+          break;
+        case 'error':
+          reporting.logWarning(
+            this.terminal,
+            'Failed to perform watcher health check. Check whether the project root is writable.',
+          );
+          break;
+        case 'timeout':
+          reporting.logWarning(
+            this.terminal,
+            `Watcher ${watcherName} failed to detect a file change within ${result.timeout}ms.`,
+          );
+          break;
+      }
+    }
+    this._prevHealthCheckResult = result;
   }
 
   /**

@@ -170,6 +170,11 @@ function mergeConfig<T: InputConfigT>(
           ...totalConfig.watcher?.watchman,
           ...nextConfig.watcher?.watchman,
         },
+        healthCheck: {
+          ...totalConfig.watcher?.healthCheck,
+          // $FlowFixMe: Spreading shapes creates an explosion of union types
+          ...nextConfig.watcher?.healthCheck,
+        },
       },
     }),
     defaultConfig,

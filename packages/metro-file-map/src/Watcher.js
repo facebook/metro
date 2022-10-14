@@ -25,6 +25,11 @@ import WatchmanWatcher from './watchers/WatchmanWatcher';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 // $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
 import NodeWatcher from './watchers/NodeWatcher';
+import * as path from 'path';
+import * as fs from 'fs';
+import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
+import {performance} from 'perf_hooks';
+import nullthrows from 'nullthrows';
 
 const debug = require('debug')('Metro:Watcher');
 
@@ -37,6 +42,7 @@ type WatcherOptions = {
   enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
+  healthCheckFilePrefix: string,
   ignore: string => boolean,
   ignorePattern: RegExp,
   initialData: InternalData,
@@ -52,12 +58,25 @@ interface WatcherBackend {
   close(): Promise<void>;
 }
 
+let nextInstanceId = 0;
+
+export type HealthCheckResult =
+  | {type: 'error', timeout: number, error: Error, watcher: ?string}
+  | {type: 'success', timeout: number, timeElapsed: number, watcher: ?string}
+  | {type: 'timeout', timeout: number, watcher: ?string};
+
 export class Watcher {
   _options: WatcherOptions;
   _backends: $ReadOnlyArray<WatcherBackend> = [];
+  _instanceId: number;
+  _nextHealthCheckId: number = 0;
+  _pendingHealthChecks: Map</* basename */ string, /* resolve */ () => void> =
+    new Map();
+  _activeWatcher: ?string;
 
   constructor(options: WatcherOptions) {
     this._options = options;
+    this._instanceId = nextInstanceId++;
   }
 
   async crawl(): Promise<?(
@@ -71,7 +90,9 @@ export class Watcher {
     this._options.perfLogger?.point('crawl_start');
 
     const options = this._options;
-    const ignore = (filePath: string) => options.ignore(filePath);
+    const ignore = (filePath: string) =>
+      options.ignore(filePath) ||
+      path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
@@ -146,6 +167,7 @@ export class Watcher {
     }
     debug(`Using watcher: ${watcher}`);
     this._options.perfLogger?.annotate({string: {watcher}});
+    this._activeWatcher = watcher;
 
     const createWatcherBackend = (root: Path): Promise<WatcherBackend> => {
       const watcherOptions: WatcherBackendOptions = {
@@ -154,6 +176,8 @@ export class Watcher {
           // Ensure we always include package.json files, which are crucial for
           /// module resolution.
           '**/package.json',
+          // Ensure we always watch any health check files
+          '**/' + this._options.healthCheckFilePrefix + '*',
           ...extensions.map(extension => '**/*.' + extension),
         ],
         ignored: ignorePattern,
@@ -169,7 +193,24 @@ export class Watcher {
 
         watcher.once('ready', () => {
           clearTimeout(rejectTimeout);
-          watcher.on('all', onChange);
+          watcher.on(
+            'all',
+            (type: string, filePath: string, root: string, stat?: Stats) => {
+              const basename = path.basename(filePath);
+              if (basename.startsWith(this._options.healthCheckFilePrefix)) {
+                if (type === ADD_EVENT || type === CHANGE_EVENT) {
+                  debug(
+                    'Observed possible health check cookie: %s in %s',
+                    filePath,
+                    root,
+                  );
+                  this._handleHealthCheckObservation(basename);
+                }
+                return;
+              }
+              onChange(type, filePath, root, stat);
+            },
+          );
           resolve(watcher);
         });
       });
@@ -180,7 +221,83 @@ export class Watcher {
     );
   }
 
+  _handleHealthCheckObservation(basename: string) {
+    const resolveHealthCheck = this._pendingHealthChecks.get(basename);
+    if (!resolveHealthCheck) {
+      return;
+    }
+    resolveHealthCheck();
+  }
+
   async close() {
     await Promise.all(this._backends.map(watcher => watcher.close()));
+    this._activeWatcher = null;
+  }
+
+  async checkHealth(timeout: number): Promise<HealthCheckResult> {
+    const healthCheckId = this._nextHealthCheckId++;
+    if (healthCheckId === Number.MAX_SAFE_INTEGER) {
+      this._nextHealthCheckId = 0;
+    }
+    const watcher = this._activeWatcher;
+    const basename =
+      this._options.healthCheckFilePrefix +
+      '-' +
+      process.pid +
+      '-' +
+      this._instanceId +
+      '-' +
+      healthCheckId;
+    const healthCheckPath = path.join(this._options.rootDir, basename);
+    let result;
+    const timeoutPromise = new Promise(resolve =>
+      setTimeout(resolve, timeout),
+    ).then(() => {
+      if (!result) {
+        result = {
+          type: 'timeout',
+          timeout,
+          watcher,
+        };
+      }
+    });
+    const startTime = performance.now();
+    debug('Creating health check cookie: %s', healthCheckPath);
+    const creationPromise = fs.promises
+      .writeFile(healthCheckPath, String(startTime))
+      .catch(error => {
+        if (!result) {
+          result = {
+            type: 'error',
+            error,
+            timeout,
+            watcher,
+          };
+        }
+      });
+    const observationPromise = new Promise(resolve => {
+      this._pendingHealthChecks.set(basename, resolve);
+    }).then(() => {
+      if (!result) {
+        result = {
+          type: 'success',
+          timeElapsed: performance.now() - startTime,
+          timeout,
+          watcher,
+        };
+      }
+    });
+    await Promise.race([
+      timeoutPromise,
+      creationPromise.then(() => observationPromise),
+    ]);
+    this._pendingHealthChecks.delete(basename);
+    // Chain a deletion to the creation promise (which may not have even settled yet!),
+    // don't await it, and swallow errors. This is just best-effort cleanup.
+    creationPromise.then(() =>
+      fs.promises.unlink(healthCheckPath).catch(() => {}),
+    );
+    debug('Health check result: %o', result);
+    return nullthrows(result);
   }
 }

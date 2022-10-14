@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -21,18 +22,22 @@ const commonOptions = {
   retainAllFiles: true,
   rootDir,
   roots: [rootDir],
+  healthCheck: {
+    enabled: false,
+    interval: 10000,
+    timeout: 1000,
+    filePrefix: '.metro-file-map-health-check',
+  },
 };
 
 test('watchman crawler and node crawler both include dotfiles', async () => {
   const hasteMapWithWatchman = new HasteMap({
     ...commonOptions,
-    name: 'withWatchman',
     useWatchman: true,
   });
 
   const hasteMapWithNode = new HasteMap({
     ...commonOptions,
-    name: 'withNode',
     useWatchman: false,
   });
 

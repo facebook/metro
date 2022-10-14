@@ -31,6 +31,7 @@ import type {
   WorkerMetadata,
 } from './flow-types';
 import type {Stats} from 'graceful-fs';
+import type {HealthCheckResult} from './Watcher';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
@@ -60,6 +61,7 @@ export type {
   FileData,
   HasteFS,
   HasteMap,
+  HealthCheckResult,
   InternalData,
   ModuleMapData,
   ModuleMapItem,
@@ -92,10 +94,20 @@ export type InputOptions = $ReadOnly<{
   watch?: ?boolean,
   console?: Console,
   cacheManagerFactory?: ?CacheManagerFactory,
+
+  healthCheck: HealthCheckOptions,
+}>;
+
+type HealthCheckOptions = $ReadOnly<{
+  enabled: boolean,
+  interval: number,
+  timeout: number,
+  filePrefix: string,
 }>;
 
 type InternalOptions = {
   ...BuildParameters,
+  healthCheck: HealthCheckOptions,
   perfLogger: ?PerfLogger,
   resetCache: ?boolean,
   maxWorkers: number,
@@ -227,6 +239,7 @@ export default class HasteMap extends EventEmitter {
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
   _crawlerAbortController: typeof AbortController;
+  _healthCheckInterval: ?IntervalID;
 
   static create(options: InputOptions): HasteMap {
     return new HasteMap(options);
@@ -283,6 +296,7 @@ export default class HasteMap extends EventEmitter {
 
     this._options = {
       ...buildParameters,
+      healthCheck: options.healthCheck,
       maxWorkers: options.maxWorkers,
       perfLogger: options.perfLogger,
       resetCache: options.resetCache,
@@ -461,6 +475,7 @@ export default class HasteMap extends EventEmitter {
       enableSymlinks,
       extensions,
       forceNodeFilesystemAPI,
+      healthCheckFilePrefix: this._options.healthCheck.filePrefix,
       ignore: path => this._ignore(path),
       ignorePattern,
       initialData: hasteMap,
@@ -994,6 +1009,23 @@ export default class HasteMap extends EventEmitter {
     );
     await this._watcher.watch(onChange);
 
+    if (this._options.healthCheck.enabled) {
+      const performHealthCheck = () => {
+        if (!this._watcher) {
+          return;
+        }
+        this._watcher
+          .checkHealth(this._options.healthCheck.timeout)
+          .then(result => {
+            this.emit('healthCheck', result);
+          });
+      };
+      performHealthCheck();
+      this._healthCheckInterval = setInterval(
+        performHealthCheck,
+        this._options.healthCheck.interval,
+      );
+    }
     this._options.perfLogger?.point('watch_end');
   }
 
@@ -1057,6 +1089,9 @@ export default class HasteMap extends EventEmitter {
   async end(): Promise<void> {
     if (this._changeInterval) {
       clearInterval(this._changeInterval);
+    }
+    if (this._healthCheckInterval) {
+      clearInterval(this._healthCheckInterval);
     }
 
     if (!this._watcher) {

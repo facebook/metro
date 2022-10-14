@@ -135,6 +135,12 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     watchman: {
       deferStates: ['hg.update'],
     },
+    healthCheck: {
+      enabled: false,
+      filePrefix: '.metro-health-check',
+      interval: 30000,
+      timeout: 5000,
+    },
   },
   cacheStores: [
     new FileStore({

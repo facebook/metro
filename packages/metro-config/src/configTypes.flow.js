@@ -175,6 +175,12 @@ type WatcherConfigT = {
   watchman: {
     deferStates: $ReadOnlyArray<string>,
   },
+  healthCheck: {
+    enabled: boolean,
+    interval: number,
+    timeout: number,
+    filePrefix: string,
+  },
 };
 
 export type InputConfigT = $Shape<{
@@ -188,7 +194,10 @@ export type InputConfigT = $Shape<{
     serializer: $Shape<SerializerConfigT>,
     symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
-    watcher: $Shape<WatcherConfigT>,
+    watcher: $Shape<{
+      ...WatcherConfigT,
+      healthCheck?: $Shape<WatcherConfigT['healthCheck']>,
+    }>,
   }>,
 }>;
 

@@ -24,6 +24,7 @@
     "jest-util": "^27.2.0",
     "jest-worker": "^27.2.0",
     "micromatch": "^4.0.4",
+    "nullthrows": "^1.1.1",
     "walker": "^1.0.7"
   },
   "devDependencies": {

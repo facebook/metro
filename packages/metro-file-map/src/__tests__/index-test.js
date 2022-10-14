@@ -215,6 +215,12 @@ describe('HasteMap', () => {
     defaultConfig = {
       extensions: ['js', 'json'],
       hasteImplModulePath: require.resolve('./haste_impl.js'),
+      healthCheck: {
+        enabled: false,
+        interval: 10000,
+        timeout: 1000,
+        filePrefix: '.metro-file-map-health-check',
+      },
       maxWorkers: 1,
       name: 'haste-map-test',
       platforms: ['ios', 'android'],

@@ -79,6 +79,7 @@ function createHasteMap(
     ),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
+    healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',

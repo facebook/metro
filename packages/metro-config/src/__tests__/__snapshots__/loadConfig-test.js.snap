@@ -152,6 +152,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -313,6 +319,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -474,6 +486,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -635,6 +653,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",

@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {HealthCheckResult} from 'metro-file-map';
 import type {Terminal} from 'metro-core';
 
 const chalk = require('chalk');
@@ -134,6 +135,10 @@ export type ReportableEvent =
   | {
       type: 'transformer_load_failed',
       error: Error,
+    }
+  | {
+      type: 'watcher_health_check_result',
+      result: HealthCheckResult,
     };
 
 /**
