@@ -512,7 +512,9 @@ describe('posix support', () => {
 
   describe('watch', () => {
     it('reports changed files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       fs.writeFileSync('/bar.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -526,7 +528,9 @@ describe('posix support', () => {
     });
 
     it('does not report nested changed files if non-recursive', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.mkdirSync('/foo');
       fs.writeFileSync('/foo/bar.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -536,7 +540,9 @@ describe('posix support', () => {
     });
 
     it('does report nested changed files if recursive', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.mkdirSync('/foo');
       fs.writeFileSync('/foo/bar.txt', '');
       const watcher = collectWatchEvents('/', {recursive: true}, changedPaths);
@@ -546,7 +552,9 @@ describe('posix support', () => {
     });
 
     it('reports created files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       const watcher = collectWatchEvents('/', {}, changedPaths);
       const fd = fs.openSync('/foo.txt', 'w');
       expect(changedPaths).toEqual([['rename', 'foo.txt']]);
@@ -555,7 +563,9 @@ describe('posix support', () => {
     });
 
     it('reports unlinked files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/bar.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.unlinkSync('/bar.txt');
@@ -564,7 +574,9 @@ describe('posix support', () => {
     });
 
     it('reports changed files when watching a file directly', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       const watcher = collectWatchEvents('/foo.txt', {}, changedPaths);
       fs.writeFileSync('/foo.txt', 'test');
@@ -573,7 +585,9 @@ describe('posix support', () => {
     });
 
     it('does not report changes when just reading a file', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.readFileSync('/foo.txt');
@@ -582,7 +596,9 @@ describe('posix support', () => {
     });
 
     it('reports source and destination files when renaming', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/src.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.renameSync('/src.txt', '/dest.txt');
@@ -594,7 +610,9 @@ describe('posix support', () => {
     });
 
     it('reports destination file twice when renaming and overwriting ', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/src.txt', 'text');
       fs.writeFileSync('/dest.txt', 'overwriteThis');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -608,7 +626,9 @@ describe('posix support', () => {
     });
 
     it('reports new hard links', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.linkSync('/foo.txt', '/bar.txt');
@@ -617,7 +637,9 @@ describe('posix support', () => {
     });
 
     it('reports truncated files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/bar.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.truncateSync('/bar.txt');

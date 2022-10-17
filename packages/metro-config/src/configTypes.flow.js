@@ -39,7 +39,7 @@ export type PostProcessBundleSourcemap = ({
   ...
 };
 
-type ExtraTransformOptions = {
+export type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true, ...} | false,
   +ramGroups: Array<string>,
   +transform: {

@@ -320,8 +320,8 @@ exports.partition = (
   modules: Iterable<Module>,
   preloadedModules: $ReadOnlySet<string>,
 ): Array<Array<Module>> => {
-  const startup = [];
-  const deferred = [];
+  const startup: Array<Module> = [];
+  const deferred: Array<Module> = [];
   for (const module of modules) {
     (preloadedModules.has(module.file.path) ? startup : deferred).push(module);
   }

@@ -38,7 +38,9 @@ describe('Cache', () => {
       });
     });
 
-    log = [];
+    log = ([]: Array<
+      $FlowFixMe | {a: void | string, l: string, p: void | string},
+    >);
   });
 
   afterEach(() => {

@@ -29,7 +29,7 @@ async function getAllFiles(
   const modules = graph.dependencies;
   const {processModuleFilter} = options;
 
-  const promises = [];
+  const promises: Array<Promise<Array<string>> | Array<string>> = [];
 
   for (const module of pre) {
     if (processModuleFilter(module)) {
@@ -50,7 +50,7 @@ async function getAllFiles(
   }
 
   const dependencies = await Promise.all(promises);
-  const output = [];
+  const output: Array<string> = [];
 
   for (const dependencyArray of dependencies) {
     output.push(...dependencyArray);

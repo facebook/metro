@@ -482,8 +482,8 @@ describe('BundleBuilder', () => {
     const abcMap = {
       version: 3,
       mappings: 'A',
-      names: [],
-      sources: [],
+      names: ([]: Array<string>),
+      sources: ([]: Array<string>),
     };
 
     const builderBase = new BundleBuilder('bundle.js');

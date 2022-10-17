@@ -205,7 +205,7 @@ function readArgsAndExecCommand(
     }
 
     let commandName;
-    let args = [];
+    let args: Array<string> = [];
     let structuredArgs = null;
 
     // If it starts with a left brace, we assume it's JSON-encoded. This works

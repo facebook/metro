@@ -184,9 +184,9 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
   const result = {
     isInitialUpdate: next.isInitialUpdate,
     revisionId: next.revisionId,
-    added: [],
-    modified: [],
-    deleted: [],
+    added: ([]: Array<HmrModule>),
+    modified: ([]: Array<HmrModule>),
+    deleted: ([]: Array<number>),
   };
   deletedIDs.forEach(id => {
     result.deleted.push(id);

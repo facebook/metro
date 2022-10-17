@@ -54,7 +54,7 @@ function bundleToBytecode(bundle: BytecodeBundle): {
   +bytecode: Buffer,
   +metadata: BundleMetadata,
 } {
-  const buffers = [];
+  const buffers: Array<Buffer> = [];
 
   if (bundle.pre.length) {
     buffers.push(...bundle.pre);

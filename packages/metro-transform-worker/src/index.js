@@ -568,7 +568,7 @@ async function transformJSON(
     config.unstable_disableModuleWrapping === true
       ? JsFileWrapping.jsonToCommonJS(file.code)
       : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
-  let map = [];
+  let map: Array<MetroSourceMapSegmentTuple> = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
   const minify =

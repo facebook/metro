@@ -257,7 +257,7 @@ function makeModuleMap(name: string, path: string) {
   return {
     version: 3,
     mappings: '',
-    names: [],
+    names: ([]: Array<string>),
     sources: [path],
     x_facebook_sources: [[null]],
   };
