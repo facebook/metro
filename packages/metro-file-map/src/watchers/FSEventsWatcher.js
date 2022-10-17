@@ -204,4 +204,8 @@ export default class FSEventsWatcher extends EventEmitter {
     this.emit(type, file, this.root, stat);
     this.emit(ALL_EVENT, type, file, this.root, stat);
   }
+
+  getPauseReason(): ?string {
+    return null;
+  }
 }

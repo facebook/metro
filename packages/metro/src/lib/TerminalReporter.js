@@ -437,7 +437,11 @@ class TerminalReporter {
     // Don't be spammy; only report changes in status.
     if (
       !this._prevHealthCheckResult ||
-      result.type !== this._prevHealthCheckResult.type
+      result.type !== this._prevHealthCheckResult.type ||
+      (result.type === 'timeout' &&
+        this._prevHealthCheckResult.type === 'timeout' &&
+        (result.pauseReason ?? null) !==
+          (this._prevHealthCheckResult.pauseReason ?? null))
     ) {
       const watcherName = "'" + (result.watcher ?? 'unknown') + "'";
       switch (result.type) {
@@ -456,9 +460,14 @@ class TerminalReporter {
           );
           break;
         case 'timeout':
+          const why =
+            result.pauseReason != null
+              ? ` This may be because: ${result.pauseReason}`
+              : '';
           reporting.logWarning(
             this.terminal,
-            `Watcher ${watcherName} failed to detect a file change within ${result.timeout}ms.`,
+            `Watcher ${watcherName} failed to detect a file change within ${result.timeout}ms.` +
+              why,
           );
           break;
       }

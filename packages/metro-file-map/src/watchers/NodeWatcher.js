@@ -330,6 +330,10 @@ module.exports = class NodeWatcher extends EventEmitter {
     this.emit(type, file, this.root, stat);
     this.emit(ALL_EVENT, type, file, this.root, stat);
   }
+
+  getPauseReason(): ?string {
+    return null;
+  }
 };
 /**
  * Determine if a given FS error can be ignored

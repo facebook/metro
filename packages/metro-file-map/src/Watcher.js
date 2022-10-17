@@ -55,6 +55,7 @@ type WatcherOptions = {
 };
 
 interface WatcherBackend {
+  getPauseReason(): ?string;
   close(): Promise<void>;
 }
 
@@ -63,7 +64,7 @@ let nextInstanceId = 0;
 export type HealthCheckResult =
   | {type: 'error', timeout: number, error: Error, watcher: ?string}
   | {type: 'success', timeout: number, timeElapsed: number, watcher: ?string}
-  | {type: 'timeout', timeout: number, watcher: ?string};
+  | {type: 'timeout', timeout: number, watcher: ?string, pauseReason: ?string};
 
 export class Watcher {
   _options: WatcherOptions;
@@ -249,13 +250,14 @@ export class Watcher {
       '-' +
       healthCheckId;
     const healthCheckPath = path.join(this._options.rootDir, basename);
-    let result;
+    let result: ?HealthCheckResult;
     const timeoutPromise = new Promise(resolve =>
       setTimeout(resolve, timeout),
     ).then(() => {
       if (!result) {
         result = {
           type: 'timeout',
+          pauseReason: this._backends[0]?.getPauseReason(),
           timeout,
           watcher,
         };

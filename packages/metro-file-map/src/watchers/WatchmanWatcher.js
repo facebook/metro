@@ -55,6 +55,7 @@ export default class WatchmanWatcher extends EventEmitter {
     root: string,
   }>;
   watchmanDeferStates: $ReadOnlyArray<string>;
+  #deferringStates: Set<string> = new Set();
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
@@ -157,7 +158,7 @@ export default class WatchmanWatcher extends EventEmitter {
       );
     }
 
-    function onSubscribe(error: ?Error, resp: WatchmanSubscribeResponse) {
+    const onSubscribe = (error: ?Error, resp: WatchmanSubscribeResponse) => {
       if (handleError(self, error)) {
         return;
       }
@@ -165,8 +166,12 @@ export default class WatchmanWatcher extends EventEmitter {
 
       handleWarning(resp);
 
+      for (const state of resp['asserted-states']) {
+        this.#deferringStates.add(state);
+      }
+
       self.emit('ready');
-    }
+    };
 
     self.client.command(['watch-project', getWatchRoot()], onWatchProject);
   }
@@ -199,22 +204,25 @@ export default class WatchmanWatcher extends EventEmitter {
     if (Array.isArray(resp.files)) {
       resp.files.forEach(change => this._handleFileChange(change));
     }
+    const {'state-enter': stateEnter, 'state-leave': stateLeave} = resp;
     if (
-      resp['state-enter'] != null &&
-      (this.watchmanDeferStates ?? []).includes(resp['state-enter'])
+      stateEnter != null &&
+      (this.watchmanDeferStates ?? []).includes(stateEnter)
     ) {
+      this.#deferringStates.add(stateEnter);
       debug(
         'Watchman reports "%s" just started. Filesystem notifications are paused.',
-        resp['state-enter'],
+        stateEnter,
       );
     }
     if (
-      resp['state-leave'] != null &&
-      (this.watchmanDeferStates ?? []).includes(resp['state-leave'])
+      stateLeave != null &&
+      (this.watchmanDeferStates ?? []).includes(stateLeave)
     ) {
+      this.#deferringStates.delete(stateLeave);
       debug(
         'Watchman reports "%s" ended. Filesystem notifications resumed.',
-        resp['state-leave'],
+        stateLeave,
       );
     }
   }
@@ -295,6 +303,21 @@ export default class WatchmanWatcher extends EventEmitter {
   async close() {
     this.client.removeAllListeners();
     this.client.end();
+    this.#deferringStates.clear();
+  }
+
+  getPauseReason(): ?string {
+    if (this.#deferringStates.size) {
+      const states = [...this.#deferringStates];
+      if (states.length === 1) {
+        return `The watch is in the '${states[0]}' state.`;
+      }
+      return `The watch is in the ${states
+        .slice(0, -1)
+        .map(s => `'${s}'`)
+        .join(', ')} and '${states[states.length - 1]}' states.`;
+    }
+    return null;
   }
 }
 
