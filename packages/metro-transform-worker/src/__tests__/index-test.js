@@ -53,7 +53,6 @@ const baseConfig: JsTransformerConfig = {
   dynamicDepsInPackages: 'reject',
   enableBabelRCLookup: false,
   enableBabelRuntime: true,
-  experimentalImportBundleSupport: false,
   globalPrefix: '',
   hermesParser: false,
   minifierConfig: {},

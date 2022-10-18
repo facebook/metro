@@ -131,7 +131,6 @@ type TransformerConfigT = {
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
-  experimentalImportBundleSupport: boolean,
 };
 
 type MetalConfigT = {
@@ -152,11 +151,12 @@ type MetalConfigT = {
 
 type ServerConfigT = {
   enhanceMiddleware: (Middleware, Server) => Middleware,
-  useGlobalHotkey: boolean,
+  experimentalImportBundleSupport: boolean,
   port: number,
-  unstable_serverRoot: ?string,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
+  unstable_serverRoot: ?string,
+  useGlobalHotkey: boolean,
   verifyConnections: boolean,
 };
 

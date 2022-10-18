@@ -129,7 +129,7 @@ class HmrServer<TClient: Client> {
       resolverOptions,
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });

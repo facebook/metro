@@ -88,6 +88,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -108,7 +109,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -255,6 +255,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -275,7 +276,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -422,6 +422,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -442,7 +443,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -589,6 +589,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -609,7 +610,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,

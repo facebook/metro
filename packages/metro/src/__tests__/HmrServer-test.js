@@ -120,11 +120,11 @@ describe('HmrServer', () => {
       serializer: {experimentalSerializerHook: () => {}},
       reporter: {update: jest.fn()},
       transformer: {
-        experimentalImportBundleSupport: false,
         unstable_allowRequireContext: false,
       },
       resolver: {platforms: []},
       server: {
+        experimentalImportBundleSupport: false,
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
             /__REMOVE_THIS_WHEN_REWRITING__/g,

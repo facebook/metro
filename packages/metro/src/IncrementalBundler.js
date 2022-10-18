@@ -127,7 +127,7 @@ class IncrementalBundler {
       transformOptions,
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       shallow: otherOptions.shallow,
@@ -173,7 +173,7 @@ class IncrementalBundler {
         transformOptions,
         onProgress: otherOptions.onProgress,
         experimentalImportBundleSupport:
-          this._config.transformer.experimentalImportBundleSupport,
+          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         shallow: otherOptions.shallow,
@@ -234,7 +234,7 @@ class IncrementalBundler {
       resolverOptions,
       shallow: otherOptions.shallow,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });

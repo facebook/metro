@@ -86,7 +86,6 @@ export type JsTransformerConfig = $ReadOnly<{
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean | string,
-  experimentalImportBundleSupport: boolean,
   globalPrefix: string,
   hermesParser: boolean,
   minifierConfig: MinifierConfig,

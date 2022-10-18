@@ -574,7 +574,7 @@ class Server {
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         experimentalImportBundleSupport:
-          this._config.transformer.experimentalImportBundleSupport,
+          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         resolverOptions,
@@ -1231,7 +1231,7 @@ class Server {
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       resolverOptions,
