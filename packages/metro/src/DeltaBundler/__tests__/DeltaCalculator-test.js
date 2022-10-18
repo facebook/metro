@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Options} from '../types.flow';
+import type {Module, Options} from '../types.flow';
 import type {Result} from '../Graph';
 import CountingSet from '../../lib/CountingSet';
 import {Graph} from '../Graph';
@@ -29,11 +29,11 @@ const initialTraverseDependencies = jest.spyOn(
 );
 
 describe('DeltaCalculator', () => {
-  let entryModule;
-  let fooModule;
-  let barModule;
-  let bazModule;
-  let quxModule;
+  let entryModule: Module<$FlowFixMe>;
+  let fooModule: Module<$FlowFixMe>;
+  let barModule: Module<$FlowFixMe>;
+  let bazModule: Module<$FlowFixMe>;
+  let quxModule: Module<$FlowFixMe>;
 
   let deltaCalculator;
   let fileWatcher;
@@ -345,7 +345,7 @@ describe('DeltaCalculator', () => {
       eventsQueue: [{type: 'change', filePath: '/foo'}],
     });
 
-    const quxModule = {
+    const quxModule: Module<$FlowFixMe> = {
       dependencies: new Map(),
       inverseDependencies: new CountingSet(),
       output: [],

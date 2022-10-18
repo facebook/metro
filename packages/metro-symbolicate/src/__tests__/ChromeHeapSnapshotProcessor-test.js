@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {ChromeHeapSnapshot} from '../ChromeHeapSnapshot';
+
 const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
 
 const SNAPSHOT_COMMON = {
@@ -89,16 +91,16 @@ const SNAPSHOT_COMMON = {
 
 describe('ChromeHeapSnapshotProcessor', () => {
   describe('empty buffers', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
-        edges: ([]: Array<number>),
-        locations: ([]: Array<number>),
-        nodes: ([]: Array<number>),
+        edges: [],
+        locations: [],
+        nodes: [],
         samples: [],
-        strings: ([]: Array<string>),
-        trace_function_infos: ([]: Array<number>),
+        strings: [],
+        trace_function_infos: [],
         trace_tree: [],
       };
     });
@@ -189,7 +191,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
   });
 
   describe('accessing data', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
@@ -581,7 +583,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
   });
 
   describe('field type checking', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
@@ -868,7 +870,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
     });
 
     test('data truncated while iterating', () => {
-      const data = {
+      const data: ChromeHeapSnapshot = {
         ...SNAPSHOT_COMMON,
         edges: ([]: Array<number>),
         locations: ([]: Array<number>),

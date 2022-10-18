@@ -2758,7 +2758,7 @@ describe('require.context', () => {
 
 describe('reorderGraph', () => {
   it('should reorder any unordered graph in DFS order', async () => {
-    const dep = (path: string) => ({
+    const dep = (path: string): Dependency => ({
       absolutePath: path,
       data: {
         data: {
@@ -2773,7 +2773,7 @@ describe('reorderGraph', () => {
     const mod = (moduleData: {
       dependencies: Map<string, Dependency>,
       path: string,
-    }) => ({
+    }): Module<MixedOutput> => ({
       ...moduleData,
       output: [],
       getSource: () => Buffer.from('// source'),
