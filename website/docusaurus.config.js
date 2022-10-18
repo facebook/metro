@@ -13,8 +13,6 @@
 const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 const siteConfig = {
-  // TODO: Reenable broken link detection after docusaurus upgrade
-  onBrokenLinks: 'warn',
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
