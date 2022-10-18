@@ -66,7 +66,7 @@ function createHasteMap(
             config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
           cacheFilePrefix: options?.cacheFilePrefix,
         })),
-    perfLogger: config.unstable_perfLogger?.subSpan('hasteMap') ?? null,
+    perfLogger: config.unstable_perfLogger?.().subSpan('hasteMap') ?? null,
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,

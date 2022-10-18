@@ -86,6 +86,8 @@ export interface PerfLogger {
   subSpan(label: string): PerfLogger;
 }
 
+export type PerfLoggerFactory = () => PerfLogger;
+
 type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
@@ -140,7 +142,7 @@ type MetalConfigT = {
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
-  unstable_perfLogger?: ?PerfLogger,
+  unstable_perfLogger?: ?PerfLoggerFactory,
   projectRoot: string,
   stickyWorkers: boolean,
   transformerPath: string,
