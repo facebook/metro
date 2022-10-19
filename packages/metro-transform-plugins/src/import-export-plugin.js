@@ -267,7 +267,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
 
             if (remote.type === 'StringLiteral') {
               // https://babeljs.io/docs/en/babel-plugin-syntax-module-string-names
-              throw path.buildCodeFrameError(
+              throw path.buildCodeFrameError<$FlowFixMeEmpty>(
                 'Module string names are not supported',
               );
             }

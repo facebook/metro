@@ -1158,7 +1158,7 @@ class Server {
         return frame;
       });
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
-      const urls = new Set();
+      const urls = new Set<string>();
 
       stack.forEach(frame => {
         const sourceUrl = frame.file;

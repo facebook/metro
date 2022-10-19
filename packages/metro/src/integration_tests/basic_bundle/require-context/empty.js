@@ -12,7 +12,7 @@ import type {RequireWithContext} from './utils';
 
 declare var require: RequireWithContext;
 
-const empty = require.context('./no-such-dir');
+const empty = require.context<$FlowFixMe>('./no-such-dir');
 
 function main() {
   try {

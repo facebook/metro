@@ -64,11 +64,19 @@ async function symbolicate(
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
 ): Promise<$ReadOnlyArray<StackFrameOutput>> {
-  const mapsByUrl = new Map();
+  const mapsByUrl = new Map<?string, ExplodedSourceMap>();
   for (const [url, map] of maps) {
     mapsByUrl.set(url, map);
   }
-  const functionNameGetters = new Map();
+  const functionNameGetters = new Map<
+    {
+      +firstLine1Based: number,
+      +functionMap: ?FBSourceFunctionMap,
+      +map: Array<MetroSourceMapSegmentTuple>,
+      +path: string,
+    },
+    (Position) => ?string,
+  >();
 
   function findModule(frame: StackFrameInput): ?ExplodedSourceMapModule {
     const map = mapsByUrl.get(frame.file);

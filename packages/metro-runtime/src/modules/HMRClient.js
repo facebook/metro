@@ -147,9 +147,9 @@ class HMRClient extends EventEmitter {
 }
 
 function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
-  const addedIDs = new Set();
-  const deletedIDs = new Set();
-  const moduleMap = new Map();
+  const addedIDs = new Set<number>();
+  const deletedIDs = new Set<number>();
+  const moduleMap = new Map<number, HmrModule>();
 
   // Fill in the temporary maps and sets from both updates in their order.
   applyUpdateLocally(base);

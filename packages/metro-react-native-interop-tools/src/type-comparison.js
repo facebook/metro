@@ -171,8 +171,8 @@ function compareObjectType(
   right: ObjectTypeAnnotation,
   isInFunctionReturn: boolean,
 ): Array<ComparisonResult> {
-  const leftProps = new Map();
-  const rightProps = new Map();
+  const leftProps = new Map<string, ObjectTypeProperty>();
+  const rightProps = new Map<string, ObjectTypeProperty>();
   const finalResult = [];
   left.properties.forEach(prop => {
     leftProps.set(prop.name, prop);

@@ -43,7 +43,7 @@ let mockedDependencyTree: Map<
     }>,
   >,
 > = new Map();
-const files = new Set();
+const files = new Set<string>();
 let graph: TestGraph;
 let options;
 
@@ -190,9 +190,9 @@ function computeDelta(
   modules2: ReadOnlyDependencies<>,
   modifiedPaths: Set<string>,
 ) {
-  const added = new Set();
-  const modified = new Set();
-  const deleted = new Set();
+  const added = new Set<string>();
+  const modified = new Set<string>();
+  const deleted = new Set<string>();
 
   for (const id of modules1.keys()) {
     if (!modules2.has(id)) {
@@ -219,7 +219,7 @@ function computeInverseDependencies(
   graph: ReadOnlyGraph<>,
   options: Options<>,
 ) {
-  const allInverseDependencies = new Map();
+  const allInverseDependencies = new Map<string, Set<string>>();
   for (const path of graph.dependencies.keys()) {
     allInverseDependencies.set(path, new Set());
   }
@@ -267,7 +267,7 @@ class TestGraph extends Graph<> {
       this,
       options,
     );
-    const actualInverseDependencies = new Map();
+    const actualInverseDependencies = new Map<string, Set<string>>();
     for (const [path, module] of graph.dependencies) {
       actualInverseDependencies.set(path, new Set(module.inverseDependencies));
     }
@@ -278,7 +278,7 @@ class TestGraph extends Graph<> {
 }
 
 function getMatchingContextModules<T>(graph: Graph<T>, filePath: string) {
-  const contextPaths = new Set();
+  const contextPaths = new Set<string>();
   graph.markModifiedContextModules(filePath, contextPaths);
   return contextPaths;
 }
@@ -2816,7 +2816,7 @@ describe('optional dependencies', () => {
   let localGraph;
   let localOptions;
   const getAllDependencies = () => {
-    const all = new Set();
+    const all = new Set<string>();
     mockedDependencyTree.forEach(deps => {
       deps.forEach(r => all.add(r.name));
     });

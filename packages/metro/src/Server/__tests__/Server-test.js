@@ -166,7 +166,56 @@ describe('processRequest', () => {
     });
 
   beforeEach(() => {
-    const currentGraphs = new Set();
+    const currentGraphs = new Set<
+      | $FlowFixMe
+      | {
+          dependencies: Map<
+            string,
+            | {
+                dependencies: Map<
+                  string,
+                  {
+                    absolutePath: string,
+                    data: {isAsync: boolean, name: string},
+                  },
+                >,
+                getSource: () => Buffer,
+                output: Array<
+                  | {
+                      data: {
+                        code: string,
+                        lineCount: number,
+                        map: Array<Array<number>>,
+                      },
+                      type: string,
+                    }
+                  | {data: {bytecode: Buffer}, type: string},
+                >,
+                path: string,
+              }
+            | {
+                dependencies: Map<empty, empty>,
+                getSource: () => Buffer,
+                output: Array<
+                  | {
+                      data: {
+                        code: string,
+                        functionMap: {mappings: string, names: Array<string>},
+                        lineCount: number,
+                        map: Array<Array<number>>,
+                      },
+                      type: string,
+                    }
+                  | {data: {bytecode: Buffer}, type: string},
+                >,
+                path: string,
+              },
+          >,
+          entryPoints: Array<string>,
+          importBundleNames: Set<empty>,
+          transformOptions: $FlowFixMe,
+        },
+    >();
     buildGraph.mockImplementation(
       async (entryPoints, options, resolverOptions, otherOptions) => {
         dependencies = new Map([
@@ -235,7 +284,7 @@ describe('processRequest', () => {
         const graph = {
           entryPoints: ['/root/mybundle.js'],
           dependencies,
-          importBundleNames: new Set(),
+          importBundleNames: new Set<$FlowFixMe>(),
           transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);

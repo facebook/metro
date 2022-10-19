@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Module, Options} from '../types.flow';
+import type {Module, Options, Dependency} from '../types.flow';
 import type {Result} from '../Graph';
 import CountingSet from '../../lib/CountingSet';
 import {Graph} from '../Graph';
@@ -124,21 +124,21 @@ describe('DeltaCalculator', () => {
         getSource: () => Buffer.of(),
       };
       barModule = {
-        dependencies: new Map(),
+        dependencies: new Map<string, Dependency>(),
         inverseDependencies: new CountingSet(['/bundle']),
         output: [],
         path: '/bar',
         getSource: () => Buffer.of(),
       };
       bazModule = {
-        dependencies: new Map(),
+        dependencies: new Map<string, Dependency>(),
         inverseDependencies: new CountingSet(['/bundle']),
         output: [],
         path: '/baz',
         getSource: () => Buffer.of(),
       };
       quxModule = {
-        dependencies: new Map(),
+        dependencies: new Map<string, Dependency>(),
         inverseDependencies: new CountingSet(['/foo']),
         output: [],
         path: '/qux',
@@ -346,7 +346,7 @@ describe('DeltaCalculator', () => {
     });
 
     const quxModule: Module<$FlowFixMe> = {
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       inverseDependencies: new CountingSet(),
       output: [],
       path: '/qux',

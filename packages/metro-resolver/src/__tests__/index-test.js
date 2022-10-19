@@ -22,7 +22,7 @@ type FileTreeNode = $ReadOnly<{
 }>;
 
 const CONTEXT: ResolutionContext = (() => {
-  const fileSet = new Set();
+  const fileSet = new Set<string>();
   (function fillFileSet(fileTree: FileTreeNode, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);

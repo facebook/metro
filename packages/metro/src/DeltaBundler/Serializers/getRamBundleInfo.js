@@ -110,7 +110,7 @@ async function getRamBundleInfo(
       dependenciesByPath: Map<string, ModuleTransportLike>,
     ): Set<number> => {
       const deps = getTransitiveDependencies(module.sourcePath, graph);
-      const output = new Set();
+      const output = new Set<number>();
 
       for (const dependency of deps) {
         const module = dependenciesByPath.get(dependency);

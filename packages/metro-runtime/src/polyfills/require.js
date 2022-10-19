@@ -558,7 +558,7 @@ if (__DEV__) {
     }
 
     const Refresh = requireRefresh();
-    const refreshBoundaryIDs = new Set();
+    const refreshBoundaryIDs = new Set<ModuleID>();
 
     // In this loop, we will traverse the dependency tree upwards from the
     // changed module. Updates "bubble" up to the closest accepted parent.
@@ -646,7 +646,7 @@ if (__DEV__) {
 
     // If we reached here, it is likely that hot reload will be successful.
     // Run the actual factories.
-    const seenModuleIDs = new Set();
+    const seenModuleIDs = new Set<ModuleID>();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
       const updatedID = updatedModuleIDs[i];
       if (seenModuleIDs.has(updatedID)) {
@@ -754,8 +754,8 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): Array<T> {
     const result = [];
-    const visited = new Set();
-    const stack = new Set();
+    const visited = new Set<mixed>();
+    const stack = new Set<mixed>();
     function traverseDependentNodes(node: T) {
       if (stack.has(node)) {
         throw CYCLE_DETECTED;
@@ -902,7 +902,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         return false;
@@ -949,7 +949,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         continue;
       }
@@ -972,7 +972,7 @@ if (__DEV__) {
       return;
     }
     for (const key in moduleExports) {
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         continue;

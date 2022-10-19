@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {Dependency} from '../DeltaBundler/types.flow';
 
 import type {Module} from '../DeltaBundler';
 
@@ -58,7 +59,7 @@ function getAppendScripts<T: number | string>(
     )})})();`;
     output.push({
       path: '$$importBundleNames',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [

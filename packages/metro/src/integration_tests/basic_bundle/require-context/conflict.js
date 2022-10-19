@@ -15,7 +15,7 @@ import {copyContextToObject} from './utils';
 declare var require: RequireWithContext;
 
 const normalModule = require('./subdir-conflict');
-const contextModule = require.context('./subdir-conflict');
+const contextModule = require.context<$FlowFixMe>('./subdir-conflict');
 
 function main() {
   return {

@@ -286,7 +286,7 @@ exports.concat = function* concat<T>(
 // Creates an idempotent function that returns numeric IDs for objects based
 // on their `path` property.
 exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
-  const seen = new Map();
+  const seen = new Map<string, number>();
   let next = 0;
   return ({path}) => {
     let id = seen.get(path);
