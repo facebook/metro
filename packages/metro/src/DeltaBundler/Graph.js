@@ -162,10 +162,10 @@ export class Graph<T = MixedOutput> {
     options: Options<T>,
   ): Promise<Result<T>> {
     const delta = {
-      added: new Set(),
-      modified: new Set(),
-      deleted: new Set(),
-      earlyInverseDependencies: new Map(),
+      added: new Set<string>(),
+      modified: new Set<string>(),
+      deleted: new Set<string>(),
+      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
     };
 
     const internalOptions = getInternalOptions(options);
@@ -185,12 +185,12 @@ export class Graph<T = MixedOutput> {
 
     this._collectCycles(delta);
 
-    const added = new Map();
+    const added = new Map<string, Module<T>>();
     for (const path of delta.added) {
       added.set(path, nullthrows(this.dependencies.get(path)));
     }
 
-    const modified = new Map();
+    const modified = new Map<string, Module<T>>();
     for (const path of delta.modified) {
       // Only report a module as modified if we're not already reporting it as added.
       if (!delta.added.has(path)) {
@@ -207,10 +207,10 @@ export class Graph<T = MixedOutput> {
 
   async initialTraverseDependencies(options: Options<T>): Promise<Result<T>> {
     const delta = {
-      added: new Set(),
-      modified: new Set(),
-      deleted: new Set(),
-      earlyInverseDependencies: new Map(),
+      added: new Set<string>(),
+      modified: new Set<string>(),
+      deleted: new Set<string>(),
+      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
     };
 
     const internalOptions = getInternalOptions(options);
@@ -460,7 +460,10 @@ export class Graph<T = MixedOutput> {
     dependencies: $ReadOnlyArray<TransformResultDependency>,
     options: InternalOptions<T>,
   ): Map<string, Dependency> {
-    const maybeResolvedDeps = new Map();
+    const maybeResolvedDeps = new Map<
+      string,
+      void | {absolutePath: string, data: TransformResultDependency},
+    >();
     for (const dep of dependencies) {
       let resolvedDep;
 
@@ -516,7 +519,7 @@ export class Graph<T = MixedOutput> {
       maybeResolvedDeps.set(key, resolvedDep);
     }
 
-    const resolvedDeps = new Map();
+    const resolvedDeps = new Map<string, Dependency>();
     // Return just the dependencies we successfully resolved.
     // FIXME: This has a bad bug affecting all dependencies *after* an unresolved
     // optional dependency. We'll need to propagate the nulls all the way to the
@@ -535,7 +538,7 @@ export class Graph<T = MixedOutput> {
    * guarantee the same order between runs. This method mutates the passed graph.
    */
   reorderGraph(options: {shallow: boolean, ...}): void {
-    const orderedDependencies = new Map();
+    const orderedDependencies = new Map<string, Module<T>>();
 
     this.entryPoints.forEach((entryPoint: string) => {
       const mainModule = this.dependencies.get(entryPoint);

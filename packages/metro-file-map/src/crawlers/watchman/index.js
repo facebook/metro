@@ -100,7 +100,7 @@ module.exports = async function watchmanCrawl({
     roots: $ReadOnlyArray<Path>,
   ): Promise<WatchmanRoots> {
     perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
-    const watchmanRoots = new Map();
+    const watchmanRoots = new Map<string, Array<string>>();
     await Promise.all(
       roots.map(async (root, index) => {
         perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
@@ -205,8 +205,8 @@ module.exports = async function watchmanCrawl({
   }
 
   let files = data.files;
-  let removedFiles = new Map();
-  const changedFiles = new Map();
+  let removedFiles = new Map<Path, FileMetaData>();
+  const changedFiles = new Map<Path, FileMetaData>();
   let results: Map<string, WatchmanQueryResponse>;
   let isFresh = false;
   let queryError: ?Error;
