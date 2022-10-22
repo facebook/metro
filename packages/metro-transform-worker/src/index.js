@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {PluginEntry} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -306,7 +307,7 @@ async function transformJS(
 
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).
-  const plugins = [];
+  const plugins: Array<PluginEntry> = [];
   const babelPluginOpts = {
     ...options,
     inlineableCalls: [importDefault, importAll],
