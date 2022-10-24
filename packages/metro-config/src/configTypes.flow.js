@@ -80,18 +80,32 @@ type PerfAnnotations = $Shape<{
   bool_array: {[key: string]: Array<boolean>},
 }>;
 
+type PerfLoggerPointOptions = $ReadOnly<{
+  timestamp?: number,
+}>;
+
 export interface PerfLogger {
-  point(name: string): void;
+  point(name: string, opts?: PerfLoggerPointOptions): void;
   annotate(annotations: PerfAnnotations): void;
   subSpan(label: string): PerfLogger;
 }
 
 export interface RootPerfLogger extends PerfLogger {
-  start(): void;
-  end(status: 'SUCCESS' | 'FAIL' | 'CANCEL'): void;
+  start(opts?: PerfLoggerPointOptions): void;
+  end(
+    status: 'SUCCESS' | 'FAIL' | 'CANCEL',
+    opts?: PerfLoggerPointOptions,
+  ): void;
 }
 
-export type PerfLoggerFactory = () => RootPerfLogger;
+export type PerfLoggerFactoryOptions = $ReadOnly<{
+  key?: number,
+}>;
+
+export type PerfLoggerFactory = (
+  type?: 'BUNDLING_REQUEST',
+  opts?: PerfLoggerFactoryOptions,
+) => RootPerfLogger;
 
 type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
