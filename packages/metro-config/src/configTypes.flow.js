@@ -86,7 +86,12 @@ export interface PerfLogger {
   subSpan(label: string): PerfLogger;
 }
 
-export type PerfLoggerFactory = () => PerfLogger;
+export interface RootPerfLogger extends PerfLogger {
+  start(): void;
+  end(status: 'SUCCESS' | 'FAIL' | 'CANCEL'): void;
+}
+
+export type PerfLoggerFactory = () => RootPerfLogger;
 
 type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
