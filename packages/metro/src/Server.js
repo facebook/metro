@@ -89,7 +89,7 @@ export type BundleMetadata = {
 };
 
 type ProcessStartContext = {
-  +buildID: string,
+  +buildNumber: number,
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
   +graphOptions: GraphOptions,
@@ -129,7 +129,7 @@ class Server {
   _createModuleId: (path: string) => number;
   _isEnded: boolean;
   _logger: typeof Logger;
-  _nextBundleBuildID: number;
+  _nextBundleBuildNumber: number;
   _platforms: Set<string>;
   _reporter: Reporter;
   _serverOptions: ServerOptions | void;
@@ -159,7 +159,7 @@ class Server {
       hasReducedPerformance: options && options.hasReducedPerformance,
       watch: options ? options.watch : undefined,
     });
-    this._nextBundleBuildID = 1;
+    this._nextBundleBuildNumber = 1;
   }
 
   end() {
@@ -603,7 +603,7 @@ class Server {
       }
 
       const mres = MultipartResponse.wrapIfSupported(req, res);
-      const buildID = this.getNewBuildID();
+      const buildNumber = this.getNewBuildNumber();
 
       let onProgress = null;
       let lastProgress = -1;
@@ -644,7 +644,7 @@ class Server {
           }
 
           this._reporter.update({
-            buildID,
+            buildID: getBuildID(buildNumber),
             type: 'bundle_transform_progressed',
             transformedFileCount,
             totalFileCount,
@@ -653,7 +653,7 @@ class Server {
       }
 
       this._reporter.update({
-        buildID,
+        buildID: getBuildID(buildNumber),
         bundleDetails: {
           bundleType: bundleOptions.bundleType,
           dev: transformOptions.dev,
@@ -667,7 +667,7 @@ class Server {
       });
 
       const startContext = {
-        buildID,
+        buildNumber,
         bundleOptions,
         entryFile: resolvedEntryFilePath,
         graphId,
@@ -696,7 +696,7 @@ class Server {
         mres.end(JSON.stringify(formattedError));
 
         this._reporter.update({
-          buildID,
+          buildID: getBuildID(buildNumber),
           type: 'bundle_build_failed',
           bundleOptions,
         });
@@ -708,7 +708,7 @@ class Server {
           error_type: formattedError.type,
           log_entry_label: 'bundling_error',
           bundle_id: graphId,
-          build_id: buildID,
+          build_id: getBuildID(buildNumber),
           stack: formattedError.message,
         });
 
@@ -724,7 +724,7 @@ class Server {
       finish(endContext);
 
       this._reporter.update({
-        buildID,
+        buildID: getBuildID(buildNumber),
         type: 'bundle_build_done',
       });
 
@@ -751,7 +751,7 @@ class Server {
         bundle_url: context.req.url,
         entry_point: context.entryFile,
         bundler: 'delta',
-        build_id: context.buildID,
+        build_id: getBuildID(context.buildNumber),
         bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
       };
@@ -882,7 +882,7 @@ class Server {
         bundle_url: context.req.url,
         entry_point: context.entryFile,
         bundler: 'delta',
-        build_id: context.buildID,
+        build_id: getBuildID(context.buildNumber),
         bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
       };
@@ -1287,8 +1287,8 @@ class Server {
     return resolutionFn(`${rootDir}/.`, filePath);
   }
 
-  getNewBuildID(): string {
-    return (this._nextBundleBuildID++).toString(36);
+  getNewBuildNumber(): number {
+    return this._nextBundleBuildNumber++;
   }
 
   getPlatforms(): $ReadOnlyArray<string> {
@@ -1363,6 +1363,10 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
     }
     yield [x, y.value];
   }
+}
+
+function getBuildID(buildNumber: number): string {
+  return buildNumber.toString(36);
 }
 
 module.exports = Server;
