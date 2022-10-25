@@ -33,7 +33,7 @@ import type {
 } from './shared/types.flow';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
@@ -78,6 +78,14 @@ const path = require('path');
 const querystring = require('querystring');
 const url = require('url');
 
+const noopLogger: RootPerfLogger = {
+  start: () => {},
+  point: () => {},
+  annotate: () => {},
+  subSpan: () => noopLogger,
+  end: () => {},
+};
+
 export type SegmentLoadData = {[number]: [Array<number>, ?number], ...};
 export type BundleMetadata = {
   hash: string,
@@ -96,6 +104,7 @@ type ProcessStartContext = {
   +mres: MultipartResponse | ServerResponse,
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
+  +bundlePerfLogger: RootPerfLogger,
   ...SplitBundleOptions,
 };
 
@@ -496,12 +505,22 @@ class Server {
       protocol: 'http',
     });
     const pathname = urlObj.pathname || '';
+    const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
       if (options.runtimeBytecodeVersion) {
-        await this._processBytecodeBundleRequest(req, res, options);
+        await this._processBytecodeBundleRequest(req, res, options, {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        });
       } else {
-        await this._processBundleRequest(req, res, options);
+        await this._processBundleRequest(req, res, options, {
+          buildNumber,
+          bundlePerfLogger:
+            this._config.unstable_perfLogger?.('BUNDLING_REQUEST', {
+              key: buildNumber,
+            }) ?? noopLogger,
+        });
       }
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
@@ -514,12 +533,20 @@ class Server {
         req,
         res,
         this._parseOptions(formattedUrl),
+        {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        },
       );
     } else if (pathname.endsWith('.assets')) {
       await this._processAssetsRequest(
         req,
         res,
         this._parseOptions(formattedUrl),
+        {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        },
       );
     } else if (pathname.startsWith('/assets/') || pathname === '/assets') {
       await this._processSingleAssetRequest(req, res);
@@ -548,13 +575,22 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> {
     return async function requestProcessor(
       this: Server,
       req: IncomingMessage,
       res: ServerResponse,
       bundleOptions: BundleOptions,
+      buildContext: $ReadOnly<{
+        buildNumber: number,
+        bundlePerfLogger: RootPerfLogger,
+      }>,
     ): Promise<void> {
+      const {buildNumber} = buildContext;
       const {
         entryFile,
         graphOptions,
@@ -603,7 +639,6 @@ class Server {
       }
 
       const mres = MultipartResponse.wrapIfSupported(req, res);
-      const buildNumber = this.getNewBuildNumber();
 
       let onProgress = null;
       let lastProgress = -1;
@@ -678,6 +713,7 @@ class Server {
         resolverOptions,
         serializerOptions,
         transformOptions,
+        bundlePerfLogger: buildContext.bundlePerfLogger,
       };
       const logEntry = log(
         createActionStartEntry(createStartEntry(startContext)),
@@ -714,6 +750,8 @@ class Server {
 
         debug('Bundling error', error);
 
+        buildContext.bundlePerfLogger.end('FAIL');
+
         return;
       }
 
@@ -744,6 +782,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -776,9 +818,17 @@ class Server {
       resolverOptions,
       serializerOptions,
       transformOptions,
+      bundlePerfLogger,
     }) => {
+      bundlePerfLogger.start();
+      bundlePerfLogger.annotate({
+        string: {
+          bundle_url: entryFile,
+        },
+      });
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
 
+      bundlePerfLogger.point('resolvingAndTransformingDependencies_start');
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
         : this._bundler.initializeGraph(
@@ -790,7 +840,8 @@ class Server {
               shallow: graphOptions.shallow,
             },
           ));
-
+      bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
+      bundlePerfLogger.point('serializingBundle_start');
       const serializer =
         this._config.serializer.customSerializer ||
         ((...args) => bundleToString(baseJSBundle(...args)).code);
@@ -826,8 +877,11 @@ class Server {
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         },
       );
+      bundlePerfLogger.point('serializingBundle_end');
 
       const bundleCode = typeof bundle === 'string' ? bundle : bundle.code;
+
+      bundlePerfLogger.end('SUCCESS');
 
       return {
         numModifiedFiles: delta.reset
@@ -875,6 +929,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -1007,6 +1065,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -1063,6 +1125,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
