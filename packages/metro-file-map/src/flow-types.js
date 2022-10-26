@@ -14,9 +14,9 @@
 import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
-import type {PerfLogger} from 'metro-config';
+import type {PerfLoggerFactory, PerfLogger} from 'metro-config';
 
-export type {PerfLogger};
+export type {PerfLoggerFactory, PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.

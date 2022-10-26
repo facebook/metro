@@ -26,6 +26,7 @@ import type {
   ModuleMapItem,
   ModuleMetaData,
   Path,
+  PerfLoggerFactory,
   PerfLogger,
   SerializableModuleMap,
   WorkerMetadata,
@@ -85,7 +86,7 @@ export type InputOptions = $ReadOnly<{
   dependencyExtractor?: ?string,
   hasteImplModulePath?: ?string,
 
-  perfLogger?: ?PerfLogger,
+  perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
   maxWorkers: number,
   throwOnModuleCollision?: ?boolean,
@@ -108,7 +109,7 @@ type HealthCheckOptions = $ReadOnly<{
 type InternalOptions = {
   ...BuildParameters,
   healthCheck: HealthCheckOptions,
-  perfLogger: ?PerfLogger,
+  perfLoggerFactory: ?PerfLoggerFactory,
   resetCache: ?boolean,
   maxWorkers: number,
   throwOnModuleCollision: boolean,
@@ -240,6 +241,7 @@ export default class HasteMap extends EventEmitter {
   _cacheManager: CacheManager;
   _crawlerAbortController: typeof AbortController;
   _healthCheckInterval: ?IntervalID;
+  _startupPerfLogger: ?PerfLogger;
 
   static create(options: InputOptions): HasteMap {
     return new HasteMap(options);
@@ -247,10 +249,13 @@ export default class HasteMap extends EventEmitter {
 
   // $FlowFixMe[missing-local-annot]
   constructor(options: InputOptions) {
-    if (options.perfLogger) {
-      options.perfLogger?.point('constructor_start');
-    }
     super();
+
+    if (options.perfLoggerFactory) {
+      this._startupPerfLogger =
+        options.perfLoggerFactory?.().subSpan('hasteMap') ?? null;
+      this._startupPerfLogger?.point('constructor_start');
+    }
 
     // Add VCS_DIRECTORIES to provided ignorePattern
     let ignorePattern;
@@ -298,7 +303,7 @@ export default class HasteMap extends EventEmitter {
       ...buildParameters,
       healthCheck: options.healthCheck,
       maxWorkers: options.maxWorkers,
-      perfLogger: options.perfLogger,
+      perfLoggerFactory: options.perfLoggerFactory,
       resetCache: options.resetCache,
       throwOnModuleCollision: !!options.throwOnModuleCollision,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
@@ -323,7 +328,7 @@ export default class HasteMap extends EventEmitter {
 
     this._buildPromise = null;
     this._worker = null;
-    this._options.perfLogger?.point('constructor_end');
+    this._startupPerfLogger?.point('constructor_end');
     this._crawlerAbortController = new AbortController();
   }
 
@@ -354,7 +359,7 @@ export default class HasteMap extends EventEmitter {
   }
 
   build(): Promise<InternalDataObject> {
-    this._options.perfLogger?.point('build_start');
+    this._startupPerfLogger?.point('build_start');
     if (!this._buildPromise) {
       this._buildPromise = (async () => {
         const data = await this._buildFileMap();
@@ -397,7 +402,7 @@ export default class HasteMap extends EventEmitter {
       })();
     }
     return this._buildPromise.then(result => {
-      this._options.perfLogger?.point('build_end');
+      this._startupPerfLogger?.point('build_end');
       return result;
     });
   }
@@ -408,7 +413,7 @@ export default class HasteMap extends EventEmitter {
   async read(): Promise<InternalData> {
     let data: ?InternalData;
 
-    this._options.perfLogger?.point('read_start');
+    this._startupPerfLogger?.point('read_start');
     try {
       data = await this._cacheManager.read();
     } catch (e) {
@@ -416,12 +421,12 @@ export default class HasteMap extends EventEmitter {
         'Error while reading cache, falling back to a full crawl:\n',
         e,
       );
-      this._options.perfLogger?.annotate({
+      this._startupPerfLogger?.annotate({
         string: {cacheReadError: e.toString()},
       });
     }
     data = data ?? this._createEmptyMap();
-    this._options.perfLogger?.point('read_end');
+    this._startupPerfLogger?.point('read_end');
 
     return data;
   }
@@ -445,7 +450,7 @@ export default class HasteMap extends EventEmitter {
     hasteMap: InternalData,
   }> {
     let hasteMap: InternalData;
-    this._options.perfLogger?.point('buildFileMap_start');
+    this._startupPerfLogger?.point('buildFileMap_start');
     try {
       hasteMap =
         this._options.resetCache === true
@@ -461,7 +466,6 @@ export default class HasteMap extends EventEmitter {
       extensions,
       forceNodeFilesystemAPI,
       ignorePattern,
-      perfLogger,
       roots,
       rootDir,
       watch,
@@ -479,7 +483,7 @@ export default class HasteMap extends EventEmitter {
       ignore: path => this._ignore(path),
       ignorePattern,
       initialData: hasteMap,
-      perfLogger,
+      perfLogger: this._startupPerfLogger,
       roots,
       rootDir,
       useWatchman: await this._shouldUseWatchman(),
@@ -488,7 +492,7 @@ export default class HasteMap extends EventEmitter {
     });
 
     return this._watcher.crawl().then(result => {
-      this._options.perfLogger?.point('buildFileMap_end');
+      this._startupPerfLogger?.point('buildFileMap_end');
       return result;
     });
   }
@@ -724,7 +728,7 @@ export default class HasteMap extends EventEmitter {
     changedFiles?: FileData,
     hasteMap: InternalData,
   }): Promise<InternalData> {
-    this._options.perfLogger?.point('buildHasteMap_start');
+    this._startupPerfLogger?.point('buildHasteMap_start');
     const {removedFiles, changedFiles, hasteMap} = data;
 
     // If any files were removed or we did not track what files changed, process
@@ -770,7 +774,7 @@ export default class HasteMap extends EventEmitter {
         this._cleanup();
         hasteMap.map = map;
         hasteMap.mocks = mocks;
-        this._options.perfLogger?.point('buildHasteMap_end');
+        this._startupPerfLogger?.point('buildHasteMap_end');
         return hasteMap;
       },
       error => {
@@ -795,10 +799,10 @@ export default class HasteMap extends EventEmitter {
    * 4. serialize the new `HasteMap` in a cache file.
    */
   async _persist(hasteMap: InternalData, changed: FileData, removed: FileData) {
-    this._options.perfLogger?.point('persist_start');
+    this._startupPerfLogger?.point('persist_start');
     const snapshot = deepCloneInternalData(hasteMap);
     await this._cacheManager.write(snapshot, {changed, removed});
-    this._options.perfLogger?.point('persist_end');
+    this._startupPerfLogger?.point('persist_end');
   }
 
   /**
@@ -824,9 +828,9 @@ export default class HasteMap extends EventEmitter {
    * Watch mode
    */
   async _watch(hasteMap: InternalData): Promise<void> {
-    this._options.perfLogger?.point('watch_start');
+    this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
-      this._options.perfLogger?.point('watch_end');
+      this._startupPerfLogger?.point('watch_end');
       return;
     }
 
@@ -1026,7 +1030,7 @@ export default class HasteMap extends EventEmitter {
         this._options.healthCheck.interval,
       );
     }
-    this._options.perfLogger?.point('watch_end');
+    this._startupPerfLogger?.point('watch_end');
   }
 
   /**
@@ -1129,7 +1133,7 @@ export default class HasteMap extends EventEmitter {
         .catch(e => {
           // TODO: Advise people to either install Watchman or set
           // `useWatchman: false` here?
-          this._options.perfLogger?.annotate({
+          this._startupPerfLogger?.annotate({
             string: {
               watchmanFailedCapabilityCheck: e?.message ?? '[missing]',
             },
