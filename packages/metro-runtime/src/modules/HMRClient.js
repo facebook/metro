@@ -55,9 +55,9 @@ class HMRClient extends EventEmitter {
     this._ws.onerror = error => {
       this.emit('connection-error', error);
     };
-    this._ws.onclose = () => {
+    this._ws.onclose = closeEvent => {
       this._state = 'closed';
-      this.emit('close');
+      this.emit('close', closeEvent);
     };
     this._ws.onmessage = message => {
       const data: HmrMessage = JSON.parse(String(message.data));
