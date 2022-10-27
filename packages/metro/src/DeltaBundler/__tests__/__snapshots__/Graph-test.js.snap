@@ -112,7 +112,6 @@ TestGraph {
   "entryPoints": Set {
     "/bundle",
   },
-  "importBundleNames": Set {},
   "transformOptions": Object {
     "dev": false,
     "hot": false,
@@ -160,7 +159,6 @@ TestGraph {
   "entryPoints": Set {
     "/bundle",
   },
-  "importBundleNames": Set {},
   "transformOptions": Object {
     "dev": false,
     "hot": false,

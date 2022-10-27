@@ -26,7 +26,7 @@
  * 2. We keep the "root buffer" (possibleCycleRoots) free of duplicates by
  *    making it a Set, instead of storing a "buffered" flag on each node.
  * 3. On top of tracking edges between nodes, we also count references between
- *    nodes and entries in the importBundleNames set.
+ *    nodes and entries in the importBundleNodes set.
  */
 
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
@@ -123,19 +123,25 @@ export class Graph<T = MixedOutput> {
   +entryPoints: $ReadOnlySet<string>;
   +transformOptions: TransformInputOptions;
   +dependencies: Dependencies<T> = new Map();
-  +importBundleNames: Set<string> = new Set();
+  +#importBundleNodes: Map<
+    string,
+    $ReadOnly<{
+      inverseDependencies: CountingSet<string>,
+    }>,
+  > = new Map();
+
+  // $FlowIgnore[unsafe-getters-setters]
+  get importBundleNames(): $ReadOnlySet<string> {
+    return new Set(this.#importBundleNodes.keys());
+  }
 
   /// GC state for nodes in the graph (this.dependencies)
-  #gc: {
+  +#gc: {
     +color: Map<string, NodeColor>,
     +possibleCycleRoots: Set<string>,
-
-    // Reference counts for entries in importBundleNames
-    +importBundleRefs: Map<string, number>,
   } = {
     color: new Map(),
     possibleCycleRoots: new Set(),
-    importBundleRefs: new Map(),
   };
 
   /** Resolved context parameters from `require.context`. */
@@ -219,14 +225,10 @@ export class Graph<T = MixedOutput> {
       this.dependencies.size === 0,
       'initialTraverseDependencies called on nonempty graph',
     );
-    invariant(
-      this.importBundleNames.size === 0,
-      'initialTraverseDependencies called on nonempty graph',
-    );
 
     this.#gc.color.clear();
     this.#gc.possibleCycleRoots.clear();
-    this.#gc.importBundleRefs.clear();
+    this.#importBundleNodes.clear();
 
     for (const path of this.entryPoints) {
       // Each entry point implicitly has a refcount of 1, so mark them all black.
@@ -361,8 +363,8 @@ export class Graph<T = MixedOutput> {
     ) {
       // Don't add a node for the module if we are traversing async dependencies
       // lazily (and this is an async dependency). Instead, record it in
-      // importBundleNames.
-      this._incrementImportBundleReference(dependency);
+      // importBundleNodes.
+      this._incrementImportBundleReference(dependency, parentModule);
     } else {
       if (!module) {
         // Add a new node to the graph.
@@ -419,7 +421,7 @@ export class Graph<T = MixedOutput> {
       options.experimentalImportBundleSupport &&
       dependency.data.data.asyncType != null
     ) {
-      this._decrementImportBundleReference(dependency);
+      this._decrementImportBundleReference(dependency, parentModule);
     }
 
     const module = this.dependencies.get(absolutePath);
@@ -453,6 +455,16 @@ export class Graph<T = MixedOutput> {
         modifiedPaths.add(absolutePath);
       }
     }
+  }
+
+  /**
+   * Gets the list of modules affected by the deletion of a given file. The
+   * caller is expected to mark these modules as modified in the next call to
+   * traverseDependencies. Note that the list may contain duplicates.
+   */
+  *getModifiedModulesForDeletedPath(filePath: string): Iterable<string> {
+    yield* this.dependencies.get(filePath)?.inverseDependencies ?? [];
+    yield* this.#importBundleNodes.get(filePath)?.inverseDependencies ?? [];
   }
 
   _resolveDependencies(
@@ -588,32 +600,36 @@ export class Graph<T = MixedOutput> {
 
   /** Garbage collection functions */
 
-  // Add an entry to importBundleNames (or increase the reference count of an existing one)
-  _incrementImportBundleReference(dependency: Dependency) {
+  // Add an entry to importBundleNodes (or record an inverse dependency of an existing one)
+  _incrementImportBundleReference(
+    dependency: Dependency,
+    parentModule: Module<T>,
+  ) {
     const {absolutePath} = dependency;
-
-    this.#gc.importBundleRefs.set(
-      absolutePath,
-      (this.#gc.importBundleRefs.get(absolutePath) ?? 0) + 1,
-    );
-    this.importBundleNames.add(absolutePath);
+    const importBundleNode = this.#importBundleNodes.get(absolutePath) ?? {
+      inverseDependencies: new CountingSet(),
+    };
+    importBundleNode.inverseDependencies.add(parentModule.path);
+    this.#importBundleNodes.set(absolutePath, importBundleNode);
   }
 
-  // Decrease the reference count of an entry in importBundleNames (and delete it if necessary)
-  _decrementImportBundleReference(dependency: Dependency) {
+  // Decrease the reference count of an entry in importBundleNodes (and delete it if necessary)
+  _decrementImportBundleReference(
+    dependency: Dependency,
+    parentModule: Module<T>,
+  ) {
     const {absolutePath} = dependency;
 
-    const prevRefCount = nullthrows(
-      this.#gc.importBundleRefs.get(absolutePath),
+    const importBundleNode = nullthrows(
+      this.#importBundleNodes.get(absolutePath),
     );
     invariant(
-      prevRefCount > 0,
-      'experimentalImportBundleSupport: import bundle refcount not valid',
+      importBundleNode.inverseDependencies.has(parentModule.path),
+      'experimentalImportBundleSupport: import bundle inverse references',
     );
-    this.#gc.importBundleRefs.set(absolutePath, prevRefCount - 1);
-    if (prevRefCount === 1) {
-      this.#gc.importBundleRefs.delete(absolutePath);
-      this.importBundleNames.delete(absolutePath);
+    importBundleNode.inverseDependencies.delete(parentModule.path);
+    if (importBundleNode.inverseDependencies.size === 0) {
+      this.#importBundleNodes.delete(absolutePath);
     }
   }
 

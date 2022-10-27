@@ -246,16 +246,14 @@ class DeltaCalculator<T> extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach((filePath: string) => {
-      const module = this._graph.dependencies.get(filePath);
-
-      if (module) {
-        module.inverseDependencies.forEach((path: string) => {
-          // Only mark the inverse dependency as modified if it's not already
-          // marked as deleted (in that case we can just ignore it).
-          if (!deletedFiles.has(path)) {
-            modifiedFiles.add(path);
-          }
-        });
+      for (const path of this._graph.getModifiedModulesForDeletedPath(
+        filePath,
+      )) {
+        // Only mark the inverse dependency as modified if it's not already
+        // marked as deleted (in that case we can just ignore it).
+        if (!deletedFiles.has(path)) {
+          modifiedFiles.add(path);
+        }
       }
     });
 

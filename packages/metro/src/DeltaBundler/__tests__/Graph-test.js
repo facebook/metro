@@ -69,13 +69,16 @@ const Actions = {
     }
   },
 
-  moveFile(from: string, to: string) {
+  moveFile(from: string, to: string, graph: Graph<>) {
     Actions.createFile(to);
-    Actions.deleteFile(from);
+    Actions.deleteFile(from, graph);
   },
 
-  deleteFile(path: string) {
+  deleteFile(path: string, graph: Graph<>) {
     mockedDependencies.delete(path);
+    for (const modifiedPath of graph.getModifiedModulesForDeletedPath(path)) {
+      Actions.modifyFile(modifiedPath);
+    }
   },
 
   createFile(path: string) {
@@ -327,7 +330,7 @@ beforeEach(async () => {
       const {path} = deps.filter(dep => dep.name === to)[0];
 
       if (!mockedDependencies.has(path)) {
-        throw new Error(`Dependency not found: ${path}->${to}`);
+        throw new Error(`Dependency not found: ${from} -> ${path}`);
       }
       return path;
     },
@@ -442,7 +445,7 @@ it('should return added/removed dependencies', async () => {
 it('should retry to traverse the dependencies as it was after getting an error', async () => {
   await graph.initialTraverseDependencies(options);
 
-  Actions.deleteFile(moduleBar);
+  Actions.deleteFile(moduleBar, graph);
 
   await expect(
     graph.traverseDependencies(['/foo'], options),
@@ -587,7 +590,7 @@ describe('edge cases', () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/baz');
-    Actions.moveFile('/baz', '/qux');
+    Actions.moveFile('/baz', '/qux', graph);
     Actions.addDependency('/foo', '/qux');
 
     expect(
@@ -606,7 +609,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle', '/foo-renamed');
     Actions.removeDependency('/bundle', '/foo');
 
-    Actions.moveFile('/foo', '/foo-renamed');
+    Actions.moveFile('/foo', '/foo-renamed', graph);
     Actions.addDependency('/foo-renamed', '/bar');
     Actions.addDependency('/foo-renamed', '/baz');
 
@@ -1975,6 +1978,70 @@ describe('edge cases', () => {
       });
       expect(graph.importBundleNames).toEqual(new Set());
     });
+
+    it('deleting the target of an async dependency retraverses its parent', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', {
+        data: {
+          asyncType: 'async',
+        },
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await graph.initialTraverseDependencies(localOptions);
+      files.clear();
+
+      Actions.deleteFile('/foo', graph);
+
+      /*
+      ┌─────────┐  async   ┌┄┄╲┄╱┄┐     ┌──────┐
+      │ /bundle │ ·······▶ ┆ /foo ┆ ──▶ │ /bar │
+      └─────────┘          └┄┄╱┄╲┄┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await expect(
+        graph.traverseDependencies([...files], localOptions),
+      ).rejects.toThrowError('Dependency not found: /bundle -> /foo');
+
+      // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+      Actions.createFile('/foo');
+
+      /*
+      ┌─────────┐  async   ┏━━━━━━┓     ┌──────┐
+      │ /bundle │ ·······▶ ┃ /foo ┃ ──▶ │ /bar │
+      └─────────┘          ┗━━━━━━┛     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      expect(
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        modified: new Set(['/bundle']),
+        deleted: new Set([]),
+      });
+      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
+    });
   });
 
   it('should try to transform every file only once', async () => {
@@ -2362,7 +2429,7 @@ describe('require.context', () => {
     ]).toEqual([ctxPath]);
 
     // Delete the matched file
-    Actions.deleteFile('/ctx/matched-file');
+    Actions.deleteFile('/ctx/matched-file', graph);
 
     // Propagate the deletion to the context module (normally DeltaCalculator's responsibility)
     Actions.removeInferredDependency(ctxPath, '/ctx/matched-file');
@@ -2876,12 +2943,12 @@ describe('optional dependencies', () => {
     Actions.addDependency('/bundle-o', '/regular-a');
     Actions.addDependency('/bundle-o', '/optional-b');
 
-    Actions.deleteFile('/optional-b');
-
     localGraph = new TestGraph({
       entryPoints: new Set(['/bundle-o']),
       transformOptions: options.transformOptions,
     });
+
+    Actions.deleteFile('/optional-b', localGraph);
   });
 
   it('missing optional dependency will be skipped', async () => {
