@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
 
@@ -28,7 +29,7 @@ beforeEach(() => {
 
   myModule = {
     path: '/root/foo.js',
-    dependencies: new Map([
+    dependencies: new Map<string, Dependency>([
       [
         'bar',
         {
