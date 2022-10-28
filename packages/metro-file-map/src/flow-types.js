@@ -14,7 +14,7 @@
 import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
-import type {PerfLoggerFactory, PerfLogger} from 'metro-config';
+import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 
 export type {PerfLoggerFactory, PerfLogger};
 
@@ -54,6 +54,7 @@ export type CacheManagerFactory = (
 ) => CacheManager;
 
 export type ChangeEvent = {
+  logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
   hasteFS: HasteFS,
   moduleMap: ModuleMap,

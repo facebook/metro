@@ -13,6 +13,7 @@
 
 import {Graph} from './Graph';
 import type {DeltaResult, Options} from './types.flow';
+import type {RootPerfLogger} from 'metro-config';
 
 const {EventEmitter} = require('events');
 
@@ -162,8 +163,10 @@ class DeltaCalculator<T> extends EventEmitter {
 
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
-  _handleMultipleFileChanges = ({eventsQueue}) => {
-    eventsQueue.forEach(this._handleFileChange);
+  _handleMultipleFileChanges = changeEvent => {
+    changeEvent.eventsQueue.forEach(eventInfo => {
+      this._handleFileChange(eventInfo, changeEvent.logger);
+    });
   };
 
   /**
@@ -171,14 +174,17 @@ class DeltaCalculator<T> extends EventEmitter {
    * the listener only stores the modified file, which will then be used later
    * when the delta needs to be calculated.
    */
-  _handleFileChange = ({
-    type,
-    filePath,
-  }: {
-    type: string,
-    filePath: string,
-    ...
-  }): mixed => {
+  _handleFileChange = (
+    {
+      type,
+      filePath,
+    }: {
+      type: string,
+      filePath: string,
+      ...
+    },
+    logger: ?RootPerfLogger,
+  ): mixed => {
     let state: void | 'deleted' | 'modified' | 'added';
     if (this._deletedFiles.has(filePath)) {
       state = 'deleted';
@@ -222,7 +228,9 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // Notify users that there is a change in some of the bundle files. This
     // way the client can choose to refetch the bundle.
-    this.emit('change');
+    this.emit('change', {
+      logger,
+    });
   };
 
   async _getChangedDependencies(

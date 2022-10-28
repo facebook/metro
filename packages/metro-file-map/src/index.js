@@ -56,6 +56,8 @@ import {Worker} from 'jest-worker';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - this is a polyfill
 import AbortController from 'abort-controller';
+import {performance} from 'perf_hooks';
+import nullthrows from 'nullthrows';
 
 export type {
   BuildParameters,
@@ -233,6 +235,7 @@ export default class HasteMap extends EventEmitter {
   _buildPromise: ?Promise<InternalDataObject>;
   _cachePath: Path;
   _canUseWatchmanPromise: Promise<boolean>;
+  _changeID: number;
   _changeInterval: ?IntervalID;
   _console: Console;
   _options: InternalOptions;
@@ -330,6 +333,7 @@ export default class HasteMap extends EventEmitter {
     this._worker = null;
     this._startupPerfLogger?.point('constructor_end');
     this._crawlerAbortController = new AbortController();
+    this._changeID = 0;
   }
 
   static getCacheFilePath(
@@ -846,11 +850,23 @@ export default class HasteMap extends EventEmitter {
     let eventsQueue: EventsQueue = [];
     // We only need to copy the entire haste map once on every "frame".
     let mustCopy = true;
+    let eventStartTimestamp = null;
 
     const emitChange = () => {
       if (eventsQueue.length) {
+        const hmrPerfLogger = this._options.perfLoggerFactory?.('HMR', {
+          key: this._getNextChangeID(),
+        });
+        if (hmrPerfLogger != null) {
+          hmrPerfLogger.start({timestamp: nullthrows(eventStartTimestamp)});
+          hmrPerfLogger.annotate({
+            int: {eventsQueueLength: eventsQueue.length},
+          });
+          hmrPerfLogger.point('fileChange_start');
+        }
         mustCopy = true;
         const changeEvent: ChangeEvent = {
+          logger: hmrPerfLogger,
           eventsQueue,
           hasteFS: new HasteFS({files: hasteMap.files, rootDir}),
           moduleMap: new HasteModuleMap({
@@ -862,6 +878,7 @@ export default class HasteMap extends EventEmitter {
         };
         this.emit('change', changeEvent);
         eventsQueue = [];
+        eventStartTimestamp = null;
       }
     };
 
@@ -891,6 +908,10 @@ export default class HasteMap extends EventEmitter {
         fileMetadata[H.MTIME] === stat.mtime.getTime()
       ) {
         return;
+      }
+
+      if (eventStartTimestamp == null) {
+        eventStartTimestamp = performance.timeOrigin + performance.now();
       }
 
       changeQueue = changeQueue
@@ -1152,6 +1173,13 @@ export default class HasteMap extends EventEmitter {
       map: new Map(),
       mocks: new Map(),
     };
+  }
+
+  _getNextChangeID(): number {
+    if (this._changeID >= Number.MAX_SAFE_INTEGER) {
+      this._changeID = 0;
+    }
+    return ++this._changeID;
   }
 
   static H: HType = H;

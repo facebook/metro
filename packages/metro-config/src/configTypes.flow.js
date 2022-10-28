@@ -103,7 +103,7 @@ export type PerfLoggerFactoryOptions = $ReadOnly<{
 }>;
 
 export type PerfLoggerFactory = (
-  type?: 'BUNDLING_REQUEST',
+  type?: 'BUNDLING_REQUEST' | 'HMR',
   opts?: PerfLoggerFactoryOptions,
 ) => RootPerfLogger;
 
