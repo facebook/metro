@@ -1,3 +1,5 @@
+version: 2.1
+
 commands:
   yarn_install:
     description: "A wrapper to yarn install with caching"
@@ -12,6 +14,7 @@ commands:
             # Fallback in case checksum fails
             - dependencies-{{ .Branch }}-
       - run:
+          name: Installing dependencies
           command: NPM_TOKEN= yarn --no-progress
           working_directory: << parameters.working_directory >>
       - save_cache:
@@ -32,7 +35,6 @@ commands:
           command: NPM_TOKEN= yarn run << parameters.command >>
           working_directory: << parameters.working_directory >>
 
-version: 2.1
 jobs:
   run-js-checks:
     docker:
@@ -45,7 +47,6 @@ jobs:
       - yarn_run:
           command: test-smoke
 
-
   test-node-14:
     docker:
       - image: cimg/node:14.17
@@ -53,7 +54,9 @@ jobs:
       - checkout
       - yarn_install
       - yarn_run:
-          command: jest -w 4
+          command: jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit
+      - store_test_results:
+          path: ./reports/
 
   publish-to-npm:
     docker:
@@ -67,7 +70,6 @@ jobs:
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
-  version: 2
   build-and-deploy:
     jobs:
       - run-js-checks
