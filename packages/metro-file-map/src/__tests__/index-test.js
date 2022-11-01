@@ -121,7 +121,6 @@ jest.mock('graceful-fs', () => ({
   }),
 }));
 
-const mockCacheFilePath = '/cache-file';
 const object = data => Object.assign(Object.create(null), data);
 const createMap = obj => new Map(Object.keys(obj).map(key => [key, obj[key]]));
 
@@ -210,7 +209,6 @@ describe('HasteMap', () => {
     H = HasteMap.H;
 
     cacheContent = null;
-    HasteMap.getCacheFilePath = jest.fn(() => mockCacheFilePath);
 
     defaultConfig = {
       extensions: ['js', 'json'],

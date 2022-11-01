@@ -43,7 +43,6 @@ import deepCloneInternalData from './lib/deepCloneInternalData';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
-import rootRelativeCacheKeys from './lib/rootRelativeCacheKeys';
 import HasteModuleMap from './ModuleMap';
 import {Watcher} from './Watcher';
 import {getSha1, worker} from './worker';
@@ -233,7 +232,6 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  */
 export default class HasteMap extends EventEmitter {
   _buildPromise: ?Promise<InternalDataObject>;
-  _cachePath: Path;
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
   _changeInterval: ?IntervalID;
@@ -336,30 +334,8 @@ export default class HasteMap extends EventEmitter {
     this._changeID = 0;
   }
 
-  static getCacheFilePath(
-    cacheDirectory: string,
-    cacheFilePrefix: string,
-    buildParameters: BuildParameters,
-  ): string {
-    const {rootDirHash, relativeConfigHash} =
-      rootRelativeCacheKeys(buildParameters);
-    return path.join(
-      cacheDirectory,
-      `${cacheFilePrefix}-${rootDirHash}-${relativeConfigHash}`,
-    );
-  }
-
   static getModuleMapFromJSON(json: SerializableModuleMap): HasteModuleMap {
     return HasteModuleMap.fromJSON(json);
-  }
-
-  getCacheFilePath(): string {
-    if (!(this._cacheManager instanceof DiskCacheManager)) {
-      throw new Error(
-        'metro-file-map: getCacheFilePath is only supported when using DiskCacheManager',
-      );
-    }
-    return this._cacheManager.getCacheFilePath();
   }
 
   build(): Promise<InternalDataObject> {
