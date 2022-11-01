@@ -25,7 +25,14 @@ function normalizePseudoglobals(
   ast: BabelNode,
   options?: Options,
 ): $ReadOnlyArray<string> {
-  const reservedNames = new Set(options?.reservedNames ?? []);
+  const reservedNames = new Set<
+    | void
+    | string
+    | BabelNodeIdentifier
+    | BabelNodeJSXIdentifier
+    | BabelNodeJSXMemberExpression
+    | BabelNodeJSXNamespacedName,
+  >(options?.reservedNames ?? []);
   const renamedParamNames = [];
   traverse(ast, {
     Program(path: NodePath<Program>): void {

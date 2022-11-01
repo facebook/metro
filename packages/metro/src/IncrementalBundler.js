@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {DeltaResult, Graph, Module} from './DeltaBundler';
+import type {DeltaResult, Graph, MixedOutput, Module} from './DeltaBundler';
 import type {
   Options as DeltaBundlerOptions,
   ReadOnlyDependencies,
@@ -261,8 +261,8 @@ class IncrementalBundler {
       const revision = await revisionPromise;
       const delta = {
         added: revision.graph.dependencies,
-        modified: new Map(),
-        deleted: new Set(),
+        modified: new Map<string, Module<MixedOutput>>(),
+        deleted: new Set<string>(),
         reset: true,
       };
       return {
