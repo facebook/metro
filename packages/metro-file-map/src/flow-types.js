@@ -73,7 +73,25 @@ export type CrawlerOptions = {
   perfLogger?: ?PerfLogger,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
+  onStatus: (status: WatcherStatus) => void,
 };
+
+export type WatcherStatus =
+  | {
+      type: 'watchman_slow_command',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_slow_command_complete',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_warning',
+      warning: mixed,
+      command: 'watch-project' | 'query',
+    };
 
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;

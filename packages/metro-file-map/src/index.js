@@ -32,7 +32,6 @@ import type {
   WorkerMetadata,
 } from './flow-types';
 import type {Stats} from 'graceful-fs';
-import type {HealthCheckResult} from './Watcher';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
@@ -63,7 +62,6 @@ export type {
   FileData,
   HasteFS,
   HasteMap,
-  HealthCheckResult,
   InternalData,
   ModuleMapData,
   ModuleMapItem,
@@ -128,11 +126,13 @@ export {DiskCacheManager} from './cache/DiskCacheManager';
 export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
+export type {HealthCheckResult} from './Watcher';
 export type {
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
   HasteMap as HasteMapObject,
+  WatcherStatus,
 } from './flow-types';
 
 // This should be bumped whenever a code change to `metro-file-map` itself
@@ -470,8 +470,11 @@ export default class HasteMap extends EventEmitter {
       watch,
       watchmanDeferStates,
     });
+    const watcher = this._watcher;
 
-    return this._watcher.crawl().then(result => {
+    watcher.on('status', status => this.emit('status', status));
+
+    return watcher.crawl().then(result => {
       this._startupPerfLogger?.point('buildFileMap_end');
       return result;
     });

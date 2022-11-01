@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {HealthCheckResult} from 'metro-file-map';
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {Terminal} from 'metro-core';
 
 const chalk = require('chalk');
@@ -140,6 +140,10 @@ export type ReportableEvent =
   | {
       type: 'watcher_health_check_result',
       result: HealthCheckResult,
+    }
+  | {
+      type: 'watcher_status',
+      status: WatcherStatus,
     };
 
 /**

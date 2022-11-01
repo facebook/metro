@@ -28,6 +28,7 @@ import NodeWatcher from './watchers/NodeWatcher';
 import * as path from 'path';
 import * as fs from 'fs';
 import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
+import EventEmitter from 'events';
 import {performance} from 'perf_hooks';
 import nullthrows from 'nullthrows';
 
@@ -66,7 +67,7 @@ export type HealthCheckResult =
   | {type: 'success', timeout: number, timeElapsed: number, watcher: ?string}
   | {type: 'timeout', timeout: number, watcher: ?string, pauseReason: ?string};
 
-export class Watcher {
+export class Watcher extends EventEmitter {
   _options: WatcherOptions;
   _backends: $ReadOnlyArray<WatcherBackend> = [];
   _instanceId: number;
@@ -76,6 +77,7 @@ export class Watcher {
   _activeWatcher: ?string;
 
   constructor(options: WatcherOptions) {
+    super();
     this._options = options;
     this._instanceId = nextInstanceId++;
   }
@@ -103,6 +105,9 @@ export class Watcher {
       extensions: options.extensions,
       forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,
       ignore,
+      onStatus: status => {
+        this.emit('status', status);
+      },
       perfLogger: options.perfLogger,
       rootDir: options.rootDir,
       roots: options.roots,

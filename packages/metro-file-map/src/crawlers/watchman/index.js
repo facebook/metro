@@ -24,6 +24,7 @@ import * as fastPath from '../../lib/fast_path';
 import normalizePathSep from '../../lib/normalizePathSep';
 import invariant from 'invariant';
 import * as path from 'path';
+import {performance} from 'perf_hooks';
 
 const watchman = require('fb-watchman');
 
@@ -51,6 +52,7 @@ module.exports = async function watchmanCrawl({
   rootDir,
   roots,
   perfLogger,
+  onStatus,
 }: CrawlerOptions): Promise<{
   changedFiles?: FileData,
   removedFiles: FileData,
@@ -68,13 +70,20 @@ module.exports = async function watchmanCrawl({
     clientError = makeWatchmanError(error);
   });
 
-  let didLogWatchmanWaitMessage = false;
-
-  // $FlowFixMe[unclear-type] - Fix to use fb-watchman types
-  const cmd = async <T>(command: string, ...args: Array<any>): Promise<T> => {
+  const cmd = async <T>(
+    command: 'watch-project' | 'query',
+    // $FlowFixMe[unclear-type] - Fix to use fb-watchman types
+    ...args: Array<any>
+  ): Promise<T> => {
+    let didLogWatchmanWaitMessage = false;
+    const startTime = performance.now();
     const logWatchmanWaitMessage = () => {
       didLogWatchmanWaitMessage = true;
-      console.warn(`Waiting for Watchman (${command})...`);
+      onStatus({
+        type: 'watchman_slow_command',
+        timeElapsed: performance.now() - startTime,
+        command,
+      });
     };
     let intervalOrTimeoutId: TimeoutID | IntervalID = setTimeout(() => {
       logWatchmanWaitMessage();
@@ -84,15 +93,30 @@ module.exports = async function watchmanCrawl({
       );
     }, WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS);
     try {
-      return await new Promise((resolve, reject) =>
+      const response = await new Promise((resolve, reject) =>
         // $FlowFixMe[incompatible-call] - dynamic call of command
         client.command([command, ...args], (error, result) =>
           error ? reject(makeWatchmanError(error)) : resolve(result),
         ),
       );
+      if ('warning' in response) {
+        onStatus({
+          type: 'watchman_warning',
+          warning: response.warning,
+          command,
+        });
+      }
+      return response;
     } finally {
       // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable
       clearInterval(intervalOrTimeoutId);
+      if (didLogWatchmanWaitMessage) {
+        onStatus({
+          type: 'watchman_slow_command_complete',
+          timeElapsed: performance.now() - startTime,
+          command,
+        });
+      }
     }
   };
 
@@ -177,10 +201,6 @@ module.exports = async function watchmanCrawl({
             query,
           );
           perfLogger?.point(`watchmanCrawl/query_${index}_end`);
-
-          if ('warning' in response) {
-            console.warn('watchman warning: ', response.warning);
-          }
 
           // When a source-control query is used, we ignore the "is fresh"
           // response from Watchman because it will be true despite the query
@@ -336,9 +356,6 @@ module.exports = async function watchmanCrawl({
 
   perfLogger?.point('watchmanCrawl/processResults_end');
   perfLogger?.point('watchmanCrawl_end');
-  if (didLogWatchmanWaitMessage) {
-    console.warn('Watchman query finished.');
-  }
   return {
     changedFiles: isFresh ? undefined : changedFiles,
     hasteMap: data,

@@ -11,7 +11,11 @@
 
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type MetroFileMap, {HasteFS, HealthCheckResult} from 'metro-file-map';
+import type MetroFileMap, {
+  HasteFS,
+  HealthCheckResult,
+  WatcherStatus,
+} from 'metro-file-map';
 import type Module from './Module';
 
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
@@ -105,6 +109,7 @@ class DependencyGraph extends EventEmitter {
     haste.setMaxListeners(1000);
 
     this._haste = haste;
+    this._haste.on('status', status => this._onWatcherStatus(status));
 
     this._readyPromise = haste.build().then(({hasteFS, moduleMap}) => {
       log(createActionEndEntry(initializingMetroLogEntry));
@@ -126,6 +131,10 @@ class DependencyGraph extends EventEmitter {
 
   _onWatcherHealthCheck(result: HealthCheckResult) {
     this._config.reporter.update({type: 'watcher_health_check_result', result});
+  }
+
+  _onWatcherStatus(status: WatcherStatus) {
+    this._config.reporter.update({type: 'watcher_status', status});
   }
 
   // Waits for the dependency graph to become ready after initialisation.
