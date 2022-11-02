@@ -15,7 +15,7 @@ commands:
             - dependencies-{{ .Branch }}-
       - run:
           name: Installing dependencies
-          command: NPM_TOKEN= yarn --no-progress
+          command: NPM_TOKEN= yarn --frozen-lockfile --non-interactive
           working_directory: << parameters.working_directory >>
       - save_cache:
           paths:
