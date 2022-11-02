@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,7 +16,6 @@ import type {BundleOptions} from 'metro/src/shared/types.flow';
 const VERSION = require('../package.json').version;
 const {EventEmitter} = require('events');
 const os = require('os');
-const path = require('path');
 
 export type ActionLogEntryData = {
   action_name: string,
@@ -58,11 +58,6 @@ function on(event: string, handler: (logEntry: LogEntry) => void): void {
 function createEntry(data: LogEntry | string): LogEntry {
   const logEntry: LogEntry =
     typeof data === 'string' ? {log_entry_label: data} : data;
-
-  const entryPoint = logEntry.entry_point;
-  if (entryPoint) {
-    logEntry.entry_point = path.relative(process.cwd(), entryPoint);
-  }
 
   return {
     ...logEntry,

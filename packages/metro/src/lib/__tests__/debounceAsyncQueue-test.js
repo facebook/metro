@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_foundation
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,7 +16,7 @@ const debounceAsyncQueue = require('../debounceAsyncQueue');
 describe('debounceAsyncQueue', () => {
   it('debounces calls', async () => {
     const fn = jest.fn();
-    const debounced = debounceAsyncQueue(fn, 50);
+    const debounced = debounceAsyncQueue<void>(fn, 50);
     debounced();
     debounced();
     debounced();

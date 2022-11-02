@@ -186,7 +186,7 @@ resolveRequest: (context, moduleName, platform) => {
     // Resolve file path logic...
     // NOTE: Throw an error if there is no resolution.
     return {
-      filePath: "path/to/file",
+      filePath: 'path/to/file',
       type: 'sourceFile',
     };
   }
@@ -289,9 +289,9 @@ Use the hermes-parser package to use call Hermes parser via WASM instead of the 
 
 #### `minifierPath`
 
-Type: `string`
+Type: `string` (default: `'metro-minify-terser'`)
 
-Path to the minifier that minifies the code after transformation.
+Path, or package name resolvable from `metro-transform-worker`, to the minifier that minifies the code after transformation.
 
 #### `minifierConfig`
 
@@ -418,6 +418,44 @@ Therefore, the two behaviour differences from `resolver.sourceExts` when importi
 
 Defaults to `['cjs', 'mjs']`.
 
+#### `healthCheck.enabled`
+
+Type: `boolean`
+
+Whether to periodically check the health of the filesystem watcher by writing a temporary file to the project and waiting for it to be observed.
+
+The default value is `false`.
+
+#### `healthCheck.filePrefix`
+
+Type: `string`
+
+If watcher health checks are enabled, this property controls the name of the temporary file that will be written into the project filesystem.
+
+The default value is `'.metro-health-check'`.
+
+:::note
+
+There's no need to commit health check files to source control. If you choose to enable health checks in your project, make sure you add `.metro-health-check*` to your `.gitignore` file to avoid generating unnecessary changes.
+
+:::
+
+#### `healthCheck.interval`
+
+Type: `number`
+
+If watcher health checks are enabled, this property controls how often they occur (in milliseconds).
+
+The default value is 30000.
+
+#### `healthCheck.timeout`
+
+Type: `number`
+
+If watcher health checks are enabled, this property controls the time (in milliseconds) Metro will wait for a file change to be observed before considering the check to have failed.
+
+The default value is 5000.
+
 #### `watchman.deferStates`
 
 Type: `Array<string>`
@@ -445,7 +483,7 @@ This allows overriding and removing default config parameters such as `platforms
 
 ```js
 // metro.config.js
-const { mergeConfig } = require("metro-config");
+const { mergeConfig } = require('metro-config');
 
 const configA = {
   /* general options */

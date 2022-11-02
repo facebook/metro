@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -603,7 +604,6 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowIssue[unsupported-syntax]
-  // $FlowFixMe[missing-local-annot]
   [Symbol.iterator](): this {
     return this;
   }

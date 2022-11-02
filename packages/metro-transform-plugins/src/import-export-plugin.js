@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -238,7 +239,6 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   break;
                 default:
                   {
-                    // $FlowFixMe Flow error uncovered by typing Babel more strictly
                     const name = d.id.name;
                     // $FlowFixMe[incompatible-call]
                     state.exportNamed.push({local: name, remote: name, loc});
@@ -248,7 +248,6 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
             });
           } else {
             const id = declaration.id || path.scope.generateUidIdentifier();
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
             const name = id.name;
 
             // $FlowFixMe Flow error uncovered by typing Babel more strictly
@@ -263,13 +262,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
         const specifiers = path.node.specifiers;
         if (specifiers) {
           specifiers.forEach(s => {
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
             const local = s.local;
             const remote = s.exported;
 
             if (remote.type === 'StringLiteral') {
               // https://babeljs.io/docs/en/babel-plugin-syntax-module-string-names
-              throw path.buildCodeFrameError(
+              throw path.buildCodeFrameError<$FlowFixMeEmpty>(
                 'Module string names are not supported',
               );
             }
@@ -401,7 +399,6 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           }
 
           specifiers.forEach(s => {
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
             const imported = s.imported;
             const local = s.local;
 

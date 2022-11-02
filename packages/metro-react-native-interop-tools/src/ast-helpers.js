@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {
@@ -31,6 +31,11 @@ import type {
 } from '@babel/types';
 
 import type {
+  AnyType,
+  NumberTypeAnnotation,
+  StringTypeAnnotation,
+  VoidTypeAnnotation,
+  BooleanTypeAnnotation,
   InterfaceExtends,
   AnyTypeAnnotation,
   ArrayTypeAnnotation,
@@ -45,6 +50,8 @@ import type {
   IntersectionTypeAnnotation,
   StringLiteralTypeAnnotation,
   NumberLiteralTypeAnnotation,
+  BooleanLiteralTypeAnnotation,
+  NullLiteralTypeAnnotation,
 } from './type-annotation.js';
 
 export type BoundarySchema = {
@@ -74,14 +81,43 @@ export function getNodeLoc(
 export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
   switch (typeNode.type) {
     case 'BooleanTypeAnnotation':
-    case 'NumberTypeAnnotation':
-    case 'StringTypeAnnotation':
-    case 'VoidTypeAnnotation':
-    case 'AnyTypeAnnotation':
-      return {
+      return ({
         type: typeNode.type,
         loc: getNodeLoc(typeNode.loc),
-      };
+      }: BooleanTypeAnnotation);
+
+    case 'NumberTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: NumberTypeAnnotation);
+
+    case 'StringTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: StringTypeAnnotation);
+
+    case 'VoidTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: VoidTypeAnnotation);
+
+    case 'AnyTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: AnyType);
+
+    case 'NullLiteralTypeAnnotation':
+      return ({
+        type: typeNode.type,
+        loc: getNodeLoc(typeNode.loc),
+      }: NullLiteralTypeAnnotation);
+
+    case 'BooleanLiteralTypeAnnotation':
+      return getBooleanLiteralTypeAnnotation(typeNode);
 
     case 'NumberLiteralTypeAnnotation':
       return getNumberLiteralTypeAnnotation(typeNode);
@@ -114,7 +150,7 @@ export function getTypeAnnotation(typeNode: BabelNodeFlow): AnyTypeAnnotation {
       return getIntersectionTypeAnnotation(typeNode);
 
     default:
-      return {type: 'UnknownTypeAnnotation', loc: null};
+      throw new Error(typeNode.type + ' not supported');
   }
 }
 
@@ -133,7 +169,9 @@ export function getFunctionTypeParameter(
   param: BabelNodeFunctionTypeParam,
 ): FunctionTypeParam {
   return {
+    loc: getNodeLoc(param.loc),
     name: param.name?.name,
+    optional: param.optional,
     typeAnnotation: getTypeAnnotation(param.typeAnnotation),
   };
 }
@@ -167,7 +205,7 @@ export function getObjectTypeSpreadProperty(
     name: '',
     optional: false,
     typeAnnotation: {
-      type: 'UnknownTypeAnnotation',
+      type: 'AnyTypeAnnotation',
       loc: null,
     },
   };
@@ -285,6 +323,16 @@ export function getNumberLiteralTypeAnnotation(
   };
 }
 
+export function getBooleanLiteralTypeAnnotation(
+  typeNode: BabelNodeBooleanLiteralTypeAnnotation,
+): BooleanLiteralTypeAnnotation {
+  return {
+    type: typeNode.type,
+    loc: getNodeLoc(typeNode.loc),
+    value: typeNode.value,
+  };
+}
+
 export function getInterfaceExtends(
   interfaceNode: BabelNodeInterfaceExtends,
 ): InterfaceExtends {
@@ -335,6 +383,7 @@ export function getBoundarySchemaFromAST(
     null,
   );
   if (interfaceNode != null) {
+    // $FlowFixMe[prop-missing]
     schema.typegenSchema[interfaceNode.id.name] = {
       typeAnnotation: {
         type: 'InterfaceDeclarationTypeAnnotation',

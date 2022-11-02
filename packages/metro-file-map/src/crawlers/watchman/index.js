@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {
@@ -14,54 +15,20 @@ import type {
   FileMetaData,
   InternalData,
   Path,
-} from '../flow-types';
+} from '../../flow-types';
+import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
-import H from '../constants';
-import * as fastPath from '../lib/fast_path';
-import normalizePathSep from '../lib/normalizePathSep';
+import {planQuery} from './planQuery';
+import H from '../../constants';
+import * as fastPath from '../../lib/fast_path';
+import normalizePathSep from '../../lib/normalizePathSep';
+import invariant from 'invariant';
 import * as path from 'path';
+import {performance} from 'perf_hooks';
 
 const watchman = require('fb-watchman');
 
-// $FlowFixMe[unclear-type] - Improve fb-watchman types to cover our uses
-type WatchmanQuery = any;
-
 type WatchmanRoots = Map<string, Array<string>>;
-
-type WatchmanListCapabilitiesResponse = {
-  capabilities: Array<string>,
-};
-
-type WatchmanCapabilityCheckResponse = {
-  // { 'suffix-set': true }
-  capabilities: $ReadOnly<{[string]: boolean}>,
-  // '2021.06.07.00'
-  version: string,
-};
-
-type WatchmanWatchProjectResponse = {
-  watch: string,
-  relative_path: string,
-};
-
-type WatchmanQueryResponse = {
-  warning?: string,
-  is_fresh_instance: boolean,
-  version: string,
-  clock:
-    | string
-    | {
-        scm: {'mergebase-with': string, mergebase: string},
-        clock: string,
-      },
-  files: Array<{
-    name: string,
-    exists: boolean,
-    mtime_ms: number | {toNumber: () => number},
-    size: number,
-    'content.sha1hex'?: string,
-  }>,
-};
 
 const WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS = 10000;
 const WATCHMAN_WARNING_INTERVAL_MILLISECONDS = 20000;
@@ -75,73 +42,48 @@ function makeWatchmanError(error: Error): Error {
   return error;
 }
 
-/**
- * Wrap watchman capabilityCheck method as a promise.
- *
- * @param client watchman client
- * @param caps capabilities to verify
- * @returns a promise resolving to a list of verified capabilities
- */
-async function capabilityCheck(
-  client: watchman.Client,
-  caps: $ReadOnly<{optional?: $ReadOnlyArray<string>}>,
-): Promise<WatchmanCapabilityCheckResponse> {
-  return new Promise((resolve, reject) => {
-    client.capabilityCheck(
-      // @ts-expect-error: incorrectly typed
-      caps,
-      (error, response) => {
-        if (error != null || response == null) {
-          reject(error ?? new Error('capabilityCheck: Response missing'));
-        } else {
-          resolve(response);
-        }
-      },
-    );
-  });
-}
-
-module.exports = async function watchmanCrawl(
-  options: CrawlerOptions,
-): Promise<{
+module.exports = async function watchmanCrawl({
+  abortSignal,
+  computeSha1,
+  data,
+  enableSymlinks,
+  extensions,
+  ignore,
+  rootDir,
+  roots,
+  perfLogger,
+  onStatus,
+}: CrawlerOptions): Promise<{
   changedFiles?: FileData,
   removedFiles: FileData,
   hasteMap: InternalData,
 }> {
-  const fields = ['name', 'exists', 'mtime_ms', 'size'];
-  const {data, extensions, ignore, rootDir, roots, perfLogger} = options;
+  perfLogger?.point('watchmanCrawl_start');
+
   const clocks = data.clocks;
 
-  perfLogger?.point('watchmanCrawl_start');
   const client = new watchman.Client();
-  options.abortSignal?.addEventListener('abort', () => client.end());
-
-  perfLogger?.point('watchmanCrawl/negotiateCapabilities_start');
-  // https://facebook.github.io/watchman/docs/capabilities.html
-  // Check adds about ~28ms
-  const capabilities = await capabilityCheck(client, {
-    // If a required capability is missing then an error will be thrown,
-    // we don't need this assertion, so using optional instead.
-    optional: ['suffix-set'],
-  });
-
-  const suffixExpression = capabilities?.capabilities['suffix-set']
-    ? // If available, use the optimized `suffix-set` operation:
-      // https://facebook.github.io/watchman/docs/expr/suffix.html#suffix-set
-      ['suffix', extensions]
-    : ['anyof', ...extensions.map(extension => ['suffix', extension])];
+  abortSignal?.addEventListener('abort', () => client.end());
 
   let clientError;
-  // $FlowFixMe[prop-missing] - Client is not typed as an EventEmitter
-  client.on('error', error => (clientError = makeWatchmanError(error)));
+  client.on('error', error => {
+    clientError = makeWatchmanError(error);
+  });
 
-  let didLogWatchmanWaitMessage = false;
-
-  // $FlowFixMe[unclear-type] - Fix to use fb-watchman types
-  const cmd = async <T>(command: string, ...args: Array<any>): Promise<T> => {
+  const cmd = async <T>(
+    command: 'watch-project' | 'query',
+    // $FlowFixMe[unclear-type] - Fix to use fb-watchman types
+    ...args: Array<any>
+  ): Promise<T> => {
+    let didLogWatchmanWaitMessage = false;
+    const startTime = performance.now();
     const logWatchmanWaitMessage = () => {
       didLogWatchmanWaitMessage = true;
-      console.warn(`Waiting for Watchman (${command})...`);
+      onStatus({
+        type: 'watchman_slow_command',
+        timeElapsed: performance.now() - startTime,
+        command,
+      });
     };
     let intervalOrTimeoutId: TimeoutID | IntervalID = setTimeout(() => {
       logWatchmanWaitMessage();
@@ -151,39 +93,42 @@ module.exports = async function watchmanCrawl(
       );
     }, WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS);
     try {
-      return await new Promise((resolve, reject) =>
+      const response = await new Promise((resolve, reject) =>
         // $FlowFixMe[incompatible-call] - dynamic call of command
         client.command([command, ...args], (error, result) =>
           error ? reject(makeWatchmanError(error)) : resolve(result),
         ),
       );
+      if ('warning' in response) {
+        onStatus({
+          type: 'watchman_warning',
+          warning: response.warning,
+          command,
+        });
+      }
+      return response;
     } finally {
       // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable
       clearInterval(intervalOrTimeoutId);
+      if (didLogWatchmanWaitMessage) {
+        onStatus({
+          type: 'watchman_slow_command_complete',
+          timeElapsed: performance.now() - startTime,
+          command,
+        });
+      }
     }
   };
-
-  if (options.computeSha1) {
-    const {capabilities} = await cmd<WatchmanListCapabilitiesResponse>(
-      'list-capabilities',
-    );
-
-    if (capabilities.indexOf('field-content.sha1hex') !== -1) {
-      fields.push('content.sha1hex');
-    }
-  }
-
-  perfLogger?.point('watchmanCrawl/negotiateCapabilities_end');
 
   async function getWatchmanRoots(
     roots: $ReadOnlyArray<Path>,
   ): Promise<WatchmanRoots> {
     perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
-    const watchmanRoots = new Map();
+    const watchmanRoots = new Map<string, Array<string>>();
     await Promise.all(
       roots.map(async (root, index) => {
         perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
-        const response = await cmd<WatchmanWatchProjectResponse>(
+        const response = await cmd<WatchmanWatchResponse>(
           'watch-project',
           root,
         );
@@ -235,61 +180,13 @@ module.exports = async function watchmanCrawl(
             },
           });
 
-          const query: WatchmanQuery = {
-            fields,
-            expression: [
-              'allof',
-              // Match regular files only. Different Watchman generators treat
-              // symlinks differently, so this ensures consistent results.
-              ['type', 'f'],
-            ],
-          };
-
-          /**
-           * Watchman "query planner".
-           *
-           * Watchman file queries consist of 1 or more generators that feed
-           * files through the expression evaluator.
-           *
-           * Strategy:
-           * 1. Select the narrowest possible generator so that the expression
-           *    evaluator has fewer candidates to process.
-           * 2. Evaluate expressions from narrowest to broadest.
-           * 3. Don't use an expression to recheck a condition that the
-           *    generator already guarantees.
-           * 4. Compose expressions to avoid combinatorial explosions in the
-           *    number of terms.
-           *
-           * The ordering of generators/filters, from narrow to broad, is:
-           * - since          = O(changes)
-           * - glob / dirname = O(files in a subtree of the repo)
-           * - suffix         = O(files in the repo)
-           *
-           * We assume that file extensions are ~uniformly distributed in the
-           * repo but Haste map projects are focused on a handful of
-           * directories. Therefore `glob` < `suffix`.
-           */
-          let queryGenerator: ?string;
-          if (since != null) {
-            // Use the `since` generator and filter by both path and extension.
-            query.since = since;
-            queryGenerator = 'since';
-            query.expression.push(
-              ['anyof', ...directoryFilters.map(dir => ['dirname', dir])],
-              suffixExpression,
-            );
-          } else if (directoryFilters.length > 0) {
-            // Use the `glob` generator and filter only by extension.
-            query.glob = directoryFilters.map(directory => `${directory}/**`);
-            query.glob_includedotfiles = true;
-            queryGenerator = 'glob';
-
-            query.expression.push(suffixExpression);
-          } else {
-            // Use the `suffix` generator with no path/extension filtering.
-            query.suffix = extensions;
-            queryGenerator = 'suffix';
-          }
+          const {query, queryGenerator} = planQuery({
+            since,
+            extensions,
+            directoryFilters,
+            includeSha1: computeSha1,
+            includeSymlinks: enableSymlinks,
+          });
 
           perfLogger?.annotate({
             string: {
@@ -304,10 +201,6 @@ module.exports = async function watchmanCrawl(
             query,
           );
           perfLogger?.point(`watchmanCrawl/query_${index}_end`);
-
-          if ('warning' in response) {
-            console.warn('watchman warning: ', response.warning);
-          }
 
           // When a source-control query is used, we ignore the "is fresh"
           // response from Watchman because it will be true despite the query
@@ -332,8 +225,8 @@ module.exports = async function watchmanCrawl(
   }
 
   let files = data.files;
-  let removedFiles = new Map();
-  const changedFiles = new Map();
+  let removedFiles = new Map<Path, FileMetaData>();
+  const changedFiles = new Map<Path, FileMetaData>();
   let results: Map<string, WatchmanQueryResponse>;
   let isFresh = false;
   let queryError: ?Error;
@@ -392,6 +285,10 @@ module.exports = async function watchmanCrawl(
     );
 
     for (const fileData of response.files) {
+      if (fileData.symlink_target != null) {
+        // TODO: Process symlinks
+        continue;
+      }
       const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
       const existingFileData = data.files.get(relativeFilePath);
@@ -414,11 +311,13 @@ module.exports = async function watchmanCrawl(
           }
         }
       } else if (!ignore(filePath)) {
+        const {mtime_ms, size} = fileData;
+        invariant(
+          mtime_ms != null && size != null,
+          'missing file data in watchman response',
+        );
         const mtime =
-          typeof fileData.mtime_ms === 'number'
-            ? fileData.mtime_ms
-            : fileData.mtime_ms.toNumber();
-        const size = fileData.size;
+          typeof mtime_ms === 'number' ? mtime_ms : mtime_ms.toNumber();
 
         let sha1hex = fileData['content.sha1hex'];
         if (typeof sha1hex !== 'string' || sha1hex.length !== 40) {
@@ -457,9 +356,6 @@ module.exports = async function watchmanCrawl(
 
   perfLogger?.point('watchmanCrawl/processResults_end');
   perfLogger?.point('watchmanCrawl_end');
-  if (didLogWatchmanWaitMessage) {
-    console.warn('Watchman query finished.');
-  }
   return {
     changedFiles: isFresh ? undefined : changedFiles,
     hasteMap: data,

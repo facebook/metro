@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
@@ -90,7 +91,7 @@ const createModuleMap = ({
     (platforms ?? defaults.platforms).concat([NATIVE_PLATFORM]),
   );
 
-  const map = new Map();
+  const map = new Map<string, ModuleMapItem>();
 
   files.forEach((filePath: string) => {
     if (isNodeModules(filePath)) {

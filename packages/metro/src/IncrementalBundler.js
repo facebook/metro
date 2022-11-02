@@ -6,14 +6,15 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {DeltaResult, Graph, Module} from './DeltaBundler';
+import type {DeltaResult, Graph, MixedOutput, Module} from './DeltaBundler';
 import type {
-  Dependencies,
   Options as DeltaBundlerOptions,
+  ReadOnlyDependencies,
   TransformInputOptions,
 } from './DeltaBundler/types.flow';
 import type {GraphId} from './lib/getGraphId';
@@ -126,7 +127,7 @@ class IncrementalBundler {
       transformOptions,
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       shallow: otherOptions.shallow,
@@ -150,7 +151,7 @@ class IncrementalBundler {
       onProgress: null,
       shallow: false,
     },
-  ): Promise<Dependencies<>> {
+  ): Promise<ReadOnlyDependencies<>> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
 
     const dependencies = await this._deltaBundler.getDependencies(
@@ -172,7 +173,7 @@ class IncrementalBundler {
         transformOptions,
         onProgress: otherOptions.onProgress,
         experimentalImportBundleSupport:
-          this._config.transformer.experimentalImportBundleSupport,
+          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         shallow: otherOptions.shallow,
@@ -233,7 +234,7 @@ class IncrementalBundler {
       resolverOptions,
       shallow: otherOptions.shallow,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });
@@ -260,8 +261,8 @@ class IncrementalBundler {
       const revision = await revisionPromise;
       const delta = {
         added: revision.graph.dependencies,
-        modified: new Map(),
-        deleted: new Set(),
+        modified: new Map<string, Module<MixedOutput>>(),
+        deleted: new Set<string>(),
         reset: true,
       };
       return {

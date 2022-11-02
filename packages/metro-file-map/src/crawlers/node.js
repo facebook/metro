@@ -6,8 +6,10 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
+import type {Path, FileMetaData} from '../flow-types';
 import type {
   CrawlerOptions,
   FileData,
@@ -223,7 +225,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
 
   return new Promise(resolve => {
     const callback = (list: Result) => {
-      const files = new Map();
+      const files = new Map<Path, FileMetaData>();
       const removedFiles = new Map(data.files);
       list.forEach(fileData => {
         const [filePath, mtime, size] = fileData;

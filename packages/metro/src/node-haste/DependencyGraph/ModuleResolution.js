@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -79,6 +80,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?TModule;
 
+  // $FlowFixMe[missing-local-annot]
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
     const {projectRoot, moduleCache} = this._options;
@@ -174,6 +176,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       const result = Resolver.resolve(
         {
           ...this._options,
+          customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           redirectModulePath: (modulePath: string) =>
             this._redirectRequire(fromModule, modulePath),

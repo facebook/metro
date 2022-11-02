@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -69,7 +70,7 @@ class InspectorProxy {
       request.url === PAGES_LIST_JSON_URL_2
     ) {
       // Build list of pages from all devices.
-      let result = [];
+      let result: Array<PageDescription> = [];
       Array.from(this._devices.entries()).forEach(([deviceId, device]) => {
         result = result.concat(
           device

@@ -6,10 +6,12 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {PluginEntry} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -40,7 +42,6 @@ const babylon = require('@babel/parser');
 const types = require('@babel/types');
 const {stableHash} = require('metro-cache');
 const getCacheKey = require('metro-cache-key');
-const HermesCompiler = require('metro-hermes-compiler');
 const {
   fromRawMappings,
   toBabelSegments,
@@ -86,7 +87,6 @@ export type JsTransformerConfig = $ReadOnly<{
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean | string,
-  experimentalImportBundleSupport: boolean,
   globalPrefix: string,
   hermesParser: boolean,
   minifierConfig: MinifierConfig,
@@ -260,6 +260,7 @@ const compileToBytecode = (
       ',$$METRO_D[0],$$METRO_D[1],$$METRO_D[2]' +
       code.slice(index);
   }
+  const HermesCompiler = require('metro-hermes-compiler');
   return HermesCompiler.compile(code, options);
 };
 
@@ -306,7 +307,7 @@ async function transformJS(
 
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).
-  const plugins = [];
+  const plugins: Array<PluginEntry> = [];
   const babelPluginOpts = {
     ...options,
     inlineableCalls: [importDefault, importAll],
@@ -567,7 +568,7 @@ async function transformJSON(
     config.unstable_disableModuleWrapping === true
       ? JsFileWrapping.jsonToCommonJS(file.code)
       : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
-  let map = [];
+  let map: Array<MetroSourceMapSegmentTuple> = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
   const minify =

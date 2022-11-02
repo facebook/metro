@@ -4,34 +4,36 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
-'use strict';
+import type {Module, Options, Dependency} from '../types.flow';
+import type {Result} from '../Graph';
+import CountingSet from '../../lib/CountingSet';
+import {Graph} from '../Graph';
 
 jest.mock('../../Bundler');
-const initialTraverseDependencies = jest.fn();
-const traverseDependencies = jest.fn();
-const reorderGraph = jest.fn();
-
-jest.doMock('../graphOperations', () => ({
-  ...jest.requireActual('../graphOperations'),
-  initialTraverseDependencies,
-  traverseDependencies,
-  reorderGraph,
-}));
 
 const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
 
+const traverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'traverseDependencies',
+);
+const initialTraverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'initialTraverseDependencies',
+);
+
 describe('DeltaCalculator', () => {
-  let entryModule;
-  let fooModule;
-  let barModule;
-  let bazModule;
-  let quxModule;
+  let entryModule: Module<$FlowFixMe>;
+  let fooModule: Module<$FlowFixMe>;
+  let barModule: Module<$FlowFixMe>;
+  let bazModule: Module<$FlowFixMe>;
+  let quxModule: Module<$FlowFixMe>;
 
   let deltaCalculator;
   let fileWatcher;
@@ -61,58 +63,93 @@ describe('DeltaCalculator', () => {
 
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
-
-    initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
+    initialTraverseDependencies.mockImplementationOnce(async function <T>(
+      this: Graph<T>,
+      options: Options<T>,
+    ): Promise<Result<T>> {
       entryModule = {
         dependencies: new Map([
-          ['foo', '/foo'],
-          ['bar', '/bar'],
-          ['baz', '/baz'],
+          [
+            'foo',
+            {
+              absolutePath: '/foo',
+              data: {
+                name: 'foo',
+                data: {key: 'foo', asyncType: null, locs: []},
+              },
+            },
+          ],
+          [
+            'bar',
+            {
+              absolutePath: '/bar',
+              data: {
+                name: 'bar',
+                data: {key: 'bar', asyncType: null, locs: []},
+              },
+            },
+          ],
+          [
+            'baz',
+            {
+              absolutePath: '/baz',
+              data: {
+                name: 'baz',
+                data: {key: 'baz', asyncType: null, locs: []},
+              },
+            },
+          ],
         ]),
-        inverseDependencies: [],
-        output: {
-          name: 'bundle',
-        },
+        inverseDependencies: new CountingSet(),
+        output: [],
         path: '/bundle',
+        getSource: () => Buffer.of(),
       };
       fooModule = {
-        dependencies: new Map([['qux', '/qux']]),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'foo',
-        },
+        dependencies: new Map([
+          [
+            'qux',
+            {
+              absolutePath: '/qux',
+              data: {
+                name: 'qux',
+                data: {key: 'qux', asyncType: null, locs: []},
+              },
+            },
+          ],
+        ]),
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/foo',
+        getSource: () => Buffer.of(),
       };
       barModule = {
-        dependencies: new Map(),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'bar',
-        },
+        dependencies: new Map<string, Dependency>(),
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/bar',
+        getSource: () => Buffer.of(),
       };
       bazModule = {
-        dependencies: new Map(),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'baz',
-        },
+        dependencies: new Map<string, Dependency>(),
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/baz',
+        getSource: () => Buffer.of(),
       };
       quxModule = {
-        dependencies: new Map(),
-        inverseDependencies: ['/foo'],
-        output: {
-          name: 'qux',
-        },
+        dependencies: new Map<string, Dependency>(),
+        inverseDependencies: new CountingSet(['/foo']),
+        output: [],
         path: '/qux',
+        getSource: () => Buffer.of(),
       };
 
-      graph.dependencies.set('/bundle', entryModule);
-      graph.dependencies.set('/foo', fooModule);
-      graph.dependencies.set('/bar', barModule);
-      graph.dependencies.set('/baz', bazModule);
-      graph.dependencies.set('/qux', quxModule);
+      this.dependencies.set('/bundle', entryModule);
+      this.dependencies.set('/foo', fooModule);
+      this.dependencies.set('/bar', barModule);
+      this.dependencies.set('/baz', bazModule);
+      this.dependencies.set('/qux', quxModule);
 
       return {
         added: new Map([
@@ -308,15 +345,20 @@ describe('DeltaCalculator', () => {
       eventsQueue: [{type: 'change', filePath: '/foo'}],
     });
 
-    const quxModule = {
-      dependencies: new Map(),
-      inverseDependencies: [],
-      output: {name: 'qux'},
+    const quxModule: Module<$FlowFixMe> = {
+      dependencies: new Map<string, Dependency>(),
+      inverseDependencies: new CountingSet(),
+      output: [],
       path: '/qux',
+      getSource: () => Buffer.of(),
     };
 
-    traverseDependencies.mockImplementation(async (path, graph, options) => {
-      graph.dependencies.set('/qux', quxModule);
+    traverseDependencies.mockImplementation(async function <T>(
+      this: Graph<T>,
+      paths: $ReadOnlyArray<string>,
+      options: Options<T>,
+    ): Promise<Result<T>> {
+      this.dependencies.set('/qux', quxModule);
 
       return {
         added: new Map(),
@@ -343,19 +385,19 @@ describe('DeltaCalculator', () => {
     });
   });
 
-  it('should emit an event when there is a relevant file change', async done => {
-    await deltaCalculator.getDelta({reset: false, shallow: false});
-
-    deltaCalculator.on('change', () => done());
-
-    fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
-    });
+  it('should emit an event when there is a relevant file change', done => {
+    deltaCalculator
+      .getDelta({reset: false, shallow: false})
+      .then(() => {
+        deltaCalculator.on('change', () => done());
+        fileWatcher.emit('change', {
+          eventsQueue: [{type: 'change', filePath: '/foo'}],
+        });
+      })
+      .catch(done);
   });
 
   it('should emit an event when a file is added', async () => {
-    jest.useFakeTimers();
-
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -371,8 +413,6 @@ describe('DeltaCalculator', () => {
   });
 
   it('should not emit an event when there is a file deleted', async () => {
-    jest.useFakeTimers();
-
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 

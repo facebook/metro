@@ -14,7 +14,7 @@ import type {RequireWithContext} from './utils';
 declare var require: RequireWithContext;
 
 function main() {
-  return awaitProperties(
+  return awaitProperties<$FlowFixMe>(
     copyContextToObject(
       require.context('./subdir', undefined, undefined, 'lazy'),
     ),

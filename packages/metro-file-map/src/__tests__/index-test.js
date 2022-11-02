@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+react_native
  * @format
+ * @oncall react_native
  */
 
 import crypto from 'crypto';
@@ -17,9 +17,9 @@ function mockHashContents(contents) {
   return crypto.createHash('sha1').update(contents).digest('hex');
 }
 
-jest.mock('child_process', () => ({
-  // If this does not throw, we'll use the (mocked) watchman crawler
-  execSync() {},
+jest.mock('../lib/checkWatchmanCapabilities', () => ({
+  __esModule: true,
+  default: async () => {},
 }));
 
 jest.mock('jest-worker', () => ({
@@ -121,7 +121,6 @@ jest.mock('graceful-fs', () => ({
   }),
 }));
 
-const mockCacheFilePath = '/cache-file';
 const object = data => Object.assign(Object.create(null), data);
 const createMap = obj => new Map(Object.keys(obj).map(key => [key, obj[key]]));
 
@@ -210,11 +209,16 @@ describe('HasteMap', () => {
     H = HasteMap.H;
 
     cacheContent = null;
-    HasteMap.getCacheFilePath = jest.fn(() => mockCacheFilePath);
 
     defaultConfig = {
       extensions: ['js', 'json'],
       hasteImplModulePath: require.resolve('./haste_impl.js'),
+      healthCheck: {
+        enabled: false,
+        interval: 10000,
+        timeout: 1000,
+        filePrefix: '.metro-file-map-health-check',
+      },
       maxWorkers: 1,
       name: 'haste-map-test',
       platforms: ['ios', 'android'],

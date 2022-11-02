@@ -1,5 +1,5 @@
-// flow-typed signature: 1f51ede354b708d1bf2ac3d98fd21d0b
-// flow-typed version: fe275d55fd/yargs_v15.x.x/flow_>=v0.118.x
+// flow-typed signature: cab38813101e0a162deaae556391abc8
+// flow-typed version: f7c859e705/yargs_v17.x.x/flow_>=v0.104.x
 
 declare module "yargs" {
   declare type Argv = {
@@ -27,6 +27,7 @@ declare module "yargs" {
     description: string,
     global: boolean,
     group: string,
+    hidden: boolean,
     implies: string | { [key: string]: string, ... },
     nargs: number,
     normalize: boolean,
@@ -39,27 +40,27 @@ declare module "yargs" {
     ...
   }>;
 
-  declare type CommonModuleObject = {
+  declare type CommonModuleObject = {|
     command?: string | Array<string>,
     aliases?: Array<string> | string,
     builder?: { [key: string]: Options, ... } | ((yargsInstance: Yargs) => mixed),
     handler?: ((argv: Argv) => void) | ((argv: Argv) => Promise<void>)
-  };
+  |};
 
-  declare type ModuleObjectDesc = {
+  declare type ModuleObjectDesc = {|
     ...CommonModuleObject,
     desc?: string | false
-  };
+  |};
 
-  declare type ModuleObjectDescribe = {
+  declare type ModuleObjectDescribe = {|
     ...CommonModuleObject,
     describe?: string | false
-  };
+  |};
 
-  declare type ModuleObjectDescription = {
+  declare type ModuleObjectDescription = {|
     ...CommonModuleObject,
     description?: string | false
-  };
+  |};
 
   declare type ModuleObject =
     | ModuleObjectDesc
@@ -77,10 +78,10 @@ declare module "yargs" {
 
     alias(key: string, alias: string): this;
     alias(alias: { [key: string]: string | Array<string>, ... }): this;
-    argv: Argv;
+    argv: Argv | Promise<Argv>;
     array(key: string | Array<string>): this;
     boolean(parameter: string | Array<string>): this;
-    check(fn: (argv: Argv, options: Array<string>) => ?boolean): this;
+    check(fn: (argv: Argv, options: Array<string>) => mixed): this;
     choices(key: string, allowed: Array<string>): this;
     choices(allowed: { [key: string]: Array<string>, ... }): this;
     coerce(key: string, fn: (value: any) => mixed): this;
@@ -90,17 +91,32 @@ declare module "yargs" {
     command(
       cmd: string | Array<string>,
       desc: string | false,
-      builder?: { [key: string]: Options, ... } | ((yargsInstance: Yargs) => mixed),
+      builder?:
+        | { [key: string]: Options, ... }
+        | ((yargsInstance: Yargs) => mixed),
       handler?: Function
     ): this;
-
     command(
       cmd: string | Array<string>,
       desc: string | false,
       module: ModuleObject
     ): this;
-
     command(module: ModuleObject): this;
+
+    commands(
+      cmd: string | Array<string>,
+      desc: string | false,
+      builder?:
+        | { [key: string]: Options, ... }
+        | ((yargsInstance: Yargs) => mixed),
+      handler?: Function
+    ): this;
+    commands(
+      cmd: string | Array<string>,
+      desc: string | false,
+      module: ModuleObject
+    ): this;
+    commands(module: ModuleObject): this;
 
     commandDir(
       directory: string,
@@ -178,7 +194,10 @@ declare module "yargs" {
 
     fail(fn: (failureMessage: string, err: Error, yargs: Yargs) => mixed): this;
 
-    getCompletion(args: Array<string>, fn: () => void): this;
+    getCompletion(
+      args: Array<string>,
+      fn: (err: Error | null, completions: Array<string> | void) => void
+    ): Promise<Array<string> | void>;
 
     global(globals: string | Array<string>, isGlobal?: boolean): this;
 
@@ -227,8 +246,6 @@ declare module "yargs" {
 
     number(key: string | Array<string>): this;
 
-    onFinishCommand(handler: () => mixed): this;
-
     option(key: string, options?: Options): this;
     option(optionMap: { [key: string]: Options, ... }): this;
 
@@ -239,8 +256,28 @@ declare module "yargs" {
       args?: string | Array<string>,
       context?: { [key: string]: any, ... },
       parseCallback?: (err: Error, argv: Argv, output?: string) => void
-    ): Argv;
+    ): Argv | Promise<Argv>;
     parse(
+      args?: string | Array<string>,
+      parseCallback?: (err: Error, argv: Argv, output?: string) => void
+    ): Argv | Promise<Argv>;
+
+    parseAsync(
+      args?: string | Array<string>,
+      context?: { [key: string]: any, ... },
+      parseCallback?: (err: Error, argv: Argv, output?: string) => void
+    ): Promise<Argv>;
+    parseAsync(
+      args?: string | Array<string>,
+      parseCallback?: (err: Error, argv: Argv, output?: string) => void
+    ): Promise<Argv>;
+
+    parseSync(
+      args?: string | Array<string>,
+      context?: { [key: string]: any, ... },
+      parseCallback?: (err: Error, argv: Argv, output?: string) => void
+    ): Argv;
+    parseSync(
       args?: string | Array<string>,
       parseCallback?: (err: Error, argv: Argv, output?: string) => void
     ): Argv;
@@ -259,8 +296,6 @@ declare module "yargs" {
 
     requiresArg(key: string | Array<string>): this;
 
-    reset(): this;
-
     scriptName(name: string): this;
 
     showCompletionScript(): this;
@@ -270,11 +305,16 @@ declare module "yargs" {
 
     showHelpOnFail(enable: boolean, message?: string): this;
 
-    strict(): this;
-
     skipValidation(key: string): this;
 
-    strict(global?: boolean): this;
+    showVersion(consoleLevel?: "error" | "warn" | "log"): this;
+    showVersion(printCallback: (usageData: string) => void): this;
+
+    strict(enabled?: boolean): this;
+
+    strictCommands(enabled?: boolean): this;
+
+    strictOptions(enabled?: boolean): this;
 
     string(key: string | Array<string>): this;
 

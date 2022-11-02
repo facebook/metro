@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
 import type {File, Dependency} from '../../types.flow';
 
 import type {IndexMapSection} from 'metro-source-map';
@@ -204,7 +205,7 @@ describe('RAM groups / common sections', () => {
   function moduleLineOffsets(
     /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
      * Flow's LTI update could not be added via codemod */
-    [offsets = [], line = 0],
+    [offsets = ([]: Array<number>), line = 0],
     module: {dependencies: Array<Dependency>, file: File},
   ) {
     return [[...offsets, line], line + countLines(module)];
@@ -220,7 +221,6 @@ function createRamBundle(
     filename: 'arbitrary/filename.js',
     globalPrefix: '',
     idsForPath,
-    // $FlowFixMe[incompatible-call]
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
@@ -258,7 +258,7 @@ function makeModuleMap(name: string, path: string) {
   return {
     version: 3,
     mappings: '',
-    names: [],
+    names: ([]: Array<string>),
     sources: [path],
     x_facebook_sources: [[null]],
   };
@@ -272,7 +272,7 @@ function makeModulePath(name: string) {
   return `/${name}.js`;
 }
 
-function makeDependency(name: string) {
+function makeDependency(name: string): Dependency {
   const path = makeModulePath(name);
   return {
     id: name,
@@ -350,7 +350,7 @@ function lineByLineMap(file: string) {
   return {
     file,
     mappings: '',
-    names: [],
+    names: ([]: Array<string>),
     sources: [file],
     version: 3,
   };

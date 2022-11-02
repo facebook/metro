@@ -13,4 +13,4 @@ Uh oh, something went wrong? Use this guide to resolve issues with Metro.
 
 ### Still unresolved?
 
-See the [Help](/metro/help) pages.
+See the [Help](/help) pages.

@@ -12,9 +12,9 @@ import type {RequireWithContext} from './utils';
 
 declare var require: RequireWithContext;
 
-const ab = require.context('./subdir', false, /\/(a|b)\.js$/);
-const abc = require.context('./subdir', false);
-const abcd = require.context('./subdir', true);
+const ab = require.context<$FlowFixMe>('./subdir', false, /\/(a|b)\.js$/);
+const abc = require.context<$FlowFixMe>('./subdir', false);
+const abcd = require.context<$FlowFixMe>('./subdir', true);
 
 function main() {
   return {

@@ -11,7 +11,7 @@
 'use strict';
 
 import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   HmrClientMessage,
   HmrErrorMessage,
@@ -31,7 +31,6 @@ const transformHelpers = require('./lib/transformHelpers');
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
 const nullthrows = require('nullthrows');
 const url = require('url');
 
@@ -50,6 +49,10 @@ type ClientGroup = {
   revisionId: RevisionId,
   +unlisten: () => void,
 };
+
+function getBytecodeVersion() {
+  return require('metro-hermes-compiler').VERSION;
+}
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -103,7 +106,7 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
-      BYTECODE_VERSION,
+      getBytecodeVersion(),
     );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
@@ -126,7 +129,7 @@ class HmrServer<TClient: Client> {
       resolverOptions,
       shallow: graphOptions.shallow,
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });
@@ -174,16 +177,22 @@ class HmrServer<TClient: Client> {
 
       this._clientGroups.set(id, clientGroup);
 
-      const unlisten = this._bundler.getDeltaBundler().listen(
-        graph,
-        debounceAsyncQueue(
-          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-          this._handleFileChange.bind(this, clientGroup, {
-            isInitialUpdate: false,
-          }),
-          50,
-        ),
-      );
+      let latestEventArgs = [];
+
+      const debounceCallHandleFileChange = debounceAsyncQueue(async () => {
+        await this._handleFileChange(
+          nullthrows(clientGroup),
+          {isInitialUpdate: false},
+          ...latestEventArgs,
+        );
+      }, 50);
+
+      const unlisten = this._bundler
+        .getDeltaBundler()
+        .listen(graph, async (...args) => {
+          latestEventArgs = args;
+          await debounceCallHandleFileChange();
+        });
     }
 
     await this._handleFileChange(clientGroup, {isInitialUpdate: true});
@@ -256,7 +265,16 @@ class HmrServer<TClient: Client> {
   async _handleFileChange(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
+    changeEvent: ?{
+      logger: ?RootPerfLogger,
+    },
   ): Promise<void> {
+    const logger = !options.isInitialUpdate ? changeEvent?.logger : null;
+    if (logger) {
+      logger.point('fileChange_end');
+      logger.point('hmrPrepareAndSendMessage_start');
+    }
+
     const optedIntoHMR = [...group.clients].some(
       (client: Client) => client.optedIntoHMR,
     );
@@ -280,7 +298,8 @@ class HmrServer<TClient: Client> {
       type: 'update-start',
       body: options,
     });
-    const message = await this._prepareMessage(group, options);
+
+    const message = await this._prepareMessage(group, options, changeEvent);
     send(sendFns, message);
     send(sendFns, {type: 'update-done'});
 
@@ -291,12 +310,21 @@ class HmrServer<TClient: Client> {
           ? message.body.added.length + message.body.modified.length
           : undefined,
     });
+
+    if (logger) {
+      logger.point('hmrPrepareAndSendMessage_end');
+      logger.end('SUCCESS');
+    }
   }
 
   async _prepareMessage(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
+    changeEvent: ?{
+      logger: ?RootPerfLogger,
+    },
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
+    const logger = !options.isInitialUpdate ? changeEvent?.logger : null;
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);
       if (!revPromise) {
@@ -308,10 +336,14 @@ class HmrServer<TClient: Client> {
         };
       }
 
+      logger?.point('updateGraph_start');
+
       const {revision, delta} = await this._bundler.updateGraph(
         await revPromise,
         false,
       );
+
+      logger?.point('updateGraph_end');
 
       this._clientGroups.delete(group.revisionId);
       group.revisionId = revision.id;
@@ -323,12 +355,16 @@ class HmrServer<TClient: Client> {
       }
       this._clientGroups.set(group.revisionId, group);
 
+      logger?.point('serialize_start');
+
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         createModuleId: this._createModuleId,
         projectRoot:
           this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
       });
+
+      logger?.point('serialize_end');
 
       return {
         type: 'update',

@@ -6,14 +6,15 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {
-  Graph,
   MixedOutput,
   Module,
+  ReadOnlyGraph,
   SerializerOptions,
 } from '../types.flow';
 import type {Bundle} from 'metro-runtime/src/modules/types.flow';
@@ -24,7 +25,7 @@ const processModules = require('./helpers/processModules');
 function baseJSBundle(
   entryPoint: string,
   preModules: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: SerializerOptions,
 ): Bundle {
   for (const module of graph.dependencies.values()) {

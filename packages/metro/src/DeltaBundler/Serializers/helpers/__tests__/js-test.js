@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
 
@@ -21,7 +22,7 @@ let myModule;
 beforeEach(() => {
   myModule = {
     path: '/root/foo.js',
-    dependencies: new Map([
+    dependencies: new Map<string, Dependency>([
       [
         'bar',
         {
@@ -75,7 +76,6 @@ describe('wrapModule()', () => {
   });
 
   it('should not wrap a script', () => {
-    // $FlowFixMe[cannot-write]
     myModule.output[0].type = 'js/script';
 
     expect(
@@ -84,7 +84,6 @@ describe('wrapModule()', () => {
         dev: true,
         projectRoot: '/root',
       }),
-      // $FlowFixMe[incompatible-use]
     ).toEqual(myModule.output[0].data.code);
   });
 

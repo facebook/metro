@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -109,15 +110,6 @@ export type SetBreakpointByUrlRequest = {
   },
 };
 
-export type SetBreakpointByUrlResponse = {
-  breakpointId: string,
-  locations: {
-    scriptId: string,
-    lineNumber: number,
-    columnNumber?: number,
-  }[],
-};
-
 export type GetScriptSourceRequest = {
   id: number,
   method: 'Debugger.getScriptSource',
@@ -137,8 +129,3 @@ export type GetScriptSourceResponse = {
 export type DebuggerRequest =
   | SetBreakpointByUrlRequest
   | GetScriptSourceRequest;
-
-export type DebuggerResponse = {
-  id: number,
-  result: SetBreakpointByUrlResponse | GetScriptSourceResponse,
-};

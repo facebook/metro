@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_symbolication
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -665,8 +665,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: [],
-            sources: [],
+            names: ([]: Array<string>),
+            sources: ([]: Array<string>),
             mappings: 'A',
           },
         },
@@ -697,7 +697,7 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: [],
+            names: ([]: Array<string>),
             sources: ['foo.js'],
             mappings: 'AAAA',
           },
@@ -806,8 +806,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 2},
           map: {
             version: 3,
-            names: [],
-            sources: [],
+            names: ([]: Array<string>),
+            sources: ([]: Array<string>),
             mappings: '',
           },
         },

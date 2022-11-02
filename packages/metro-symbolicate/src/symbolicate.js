@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 // Symbolicates a JavaScript stack trace using a source map.
@@ -64,7 +65,7 @@ async function main(
 ): Promise<number> {
   const argv = argvInput.slice();
   function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {
-    let values = null;
+    let values: null | Array<Array<string>> = null;
     for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
       argv.splice(idx, 1);
       values = values || [];

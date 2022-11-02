@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -83,7 +84,7 @@ async function calcTransformerOptions(
       transformOptions: options,
       onProgress: null,
       experimentalImportBundleSupport:
-        config.transformer.experimentalImportBundleSupport,
+        config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
       shallow: false,

@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import * as t from '@babel/types';
@@ -80,12 +80,6 @@ test('getTypeAnnotation, testing VoidTypeAnnotation', () => {
   );
 });
 
-test('getTypeAnnotation, testing UnknownTypeAnnotation', () => {
-  expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true)).type).toBe(
-    'UnknownTypeAnnotation',
-  );
-});
-
 test('getTypeAnnotation, testing NullableTypeAnnotation', () => {
   expect(
     getTypeAnnotation(t.nullableTypeAnnotation(t.anyTypeAnnotation())),
@@ -124,14 +118,18 @@ test('getFunctionTypeAnnotation, function has a function as parameter', () => {
     loc: null,
     params: [
       {
+        loc: null,
         name: 'screenShoudBeKeptOn',
+        optional: undefined,
         typeAnnotation: {
           type: 'AnyTypeAnnotation',
           loc: null,
         },
       },
       {
+        loc: null,
         name: 'callback',
+        optional: undefined,
         typeAnnotation: {
           type: 'FunctionTypeAnnotation',
           loc: null,
@@ -156,7 +154,9 @@ test('getFunctionTypeParameter, testig basic type parameter', () => {
     t.anyTypeAnnotation(),
   );
   expect(getFunctionTypeParameter(param)).toEqual({
+    loc: null,
     name: 'testParam',
+    optional: undefined,
     typeAnnotation: {
       type: 'AnyTypeAnnotation',
       loc: null,
@@ -220,7 +220,7 @@ test('getObjectTypeSpreadProperty returns unknown type', () => {
     optional: false,
     typeAnnotation: {
       loc: null,
-      type: 'UnknownTypeAnnotation',
+      type: 'AnyTypeAnnotation',
     },
   });
 });
@@ -301,6 +301,22 @@ test('getArrayTypeAnnotation, testing an array of AnyTypeAnnotation', () => {
       type: 'AnyTypeAnnotation',
       loc: null,
     },
+  });
+});
+
+test('getTypeAnnotation, testing BooleanLiteralTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.booleanLiteralTypeAnnotation(true))).toEqual({
+    type: 'BooleanLiteralTypeAnnotation',
+    loc: null,
+    value: true,
+  });
+});
+
+//TODO:T130441624 add test.each instead of creating each test individualy
+test('getTypeAnnotation, testing NullLiteralTypeAnnotation', () => {
+  expect(getTypeAnnotation(t.nullLiteralTypeAnnotation())).toEqual({
+    type: 'NullLiteralTypeAnnotation',
+    loc: null,
   });
 });
 

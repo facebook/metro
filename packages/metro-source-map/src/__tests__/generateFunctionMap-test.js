@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -1284,7 +1284,7 @@ function parent2() {
     const sourceMap = {
       version: 3,
       sources: ['input.js'],
-      names: [],
+      names: ([]: Array<string>),
       mappings: '',
       x_facebook_sources: [[encoded]],
     };

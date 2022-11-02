@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -54,7 +54,7 @@ type MockFSDirContents = $ReadOnly<{
     return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
-  function mockDir(dirPath: string, desc: MockFSDirContents) {
+  function mockDir(dirPath: string, desc: MockFSDirContents): void {
     for (const entName in desc) {
       const ent = desc[entName];
 
@@ -2333,6 +2333,70 @@ type MockFSDirContents = $ReadOnly<{
           }),
         ).toBe(p('/target-always.js'));
 
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+      });
+
+      it('forks the cache by customResolverOptions', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            customResolverOptions: {
+              foo: 'bar',
+              key: 'value',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: reverse order from what we passed above
+              key: 'value',
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: only a subset of the options passed above
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              something: 'else',
+            },
+          }),
+        ).toBe(p('/target1.js'));
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });

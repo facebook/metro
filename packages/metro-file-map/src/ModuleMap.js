@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {
@@ -22,7 +23,7 @@ import H from './constants';
 import * as fastPath from './lib/fast_path';
 
 const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
-const EMPTY_MAP = new Map();
+const EMPTY_MAP = new Map<'g' | 'native' | string, ?DuplicatesSet>();
 
 export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
   static DuplicateHasteCandidatesError: Class<DuplicateHasteCandidatesError>;
@@ -190,7 +191,7 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     }
     // Force flow refinement
     const previousSet = relativePathSet;
-    const duplicates = new Map();
+    const duplicates = new Map<string, number>();
 
     for (const [relativePath, type] of previousSet) {
       const duplicatePath = fastPath.resolve(this._raw.rootDir, relativePath);

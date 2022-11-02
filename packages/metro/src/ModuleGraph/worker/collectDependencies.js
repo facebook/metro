@@ -161,7 +161,7 @@ function collectDependencies<TSplitCondition = void>(
   ast: BabelNodeFile,
   options: Options<TSplitCondition>,
 ): CollectedDependencies<TSplitCondition> {
-  const visited = new WeakSet();
+  const visited = new WeakSet<BabelNodeCallExpression>();
 
   const state: State<TSplitCondition> = {
     asyncRequireModulePathStringLiteral: null,

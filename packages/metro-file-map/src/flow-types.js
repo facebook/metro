@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,9 +14,9 @@
 import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
-import type {PerfLogger} from 'metro-config';
+import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 
-export type {PerfLogger};
+export type {PerfLoggerFactory, PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
@@ -53,6 +54,7 @@ export type CacheManagerFactory = (
 ) => CacheManager;
 
 export type ChangeEvent = {
+  logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
   hasteFS: HasteFS,
   moduleMap: ModuleMap,
@@ -71,7 +73,25 @@ export type CrawlerOptions = {
   perfLogger?: ?PerfLogger,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
+  onStatus: (status: WatcherStatus) => void,
 };
+
+export type WatcherStatus =
+  | {
+      type: 'watchman_slow_command',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_slow_command_complete',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_warning',
+      warning: mixed,
+      command: 'watch-project' | 'query',
+    };
 
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
@@ -174,7 +194,9 @@ export type SerializableModuleMap = {
   rootDir: Path,
 };
 
-export type WatchmanClockSpec = string | {scm: {'mergebase-with': string}};
+export type WatchmanClockSpec =
+  | string
+  | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = $ReadOnly<{

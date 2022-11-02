@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -120,6 +121,7 @@ export type ResolutionContext = $ReadOnly<{
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
+  customResolverOptions: CustomResolverOptions,
   ...
 }>;
 

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,6 +17,7 @@ import type {
   ReportableEvent,
 } from './reporting';
 import type {Terminal} from 'metro-core';
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
 const logToConsole = require('./logToConsole');
 const reporting = require('./reporting');
@@ -29,6 +31,7 @@ type BundleProgress = {
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
+  isPrefetch?: boolean,
   ...
 };
 
@@ -78,6 +81,7 @@ class TerminalReporter {
     }): void,
     cancel(): void,
   };
+  _prevHealthCheckResult: ?HealthCheckResult;
 
   +terminal: Terminal;
 
@@ -101,11 +105,16 @@ class TerminalReporter {
       transformedFileCount,
       totalFileCount,
       ratio,
+      isPrefetch,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
     if (runtimeBytecodeVersion) {
       bundleType = 'bytecodebundle';
+    }
+
+    if (isPrefetch) {
+      bundleType = 'PREBUNDLE';
     }
 
     const localPath = path.relative('.', entryFile);
@@ -182,28 +191,21 @@ class TerminalReporter {
 
   _logInitializing(port: number, hasReducedPerformance: boolean): void {
     const logo = [
-      '                                                      ',
-      '                        #######                       ',
-      '                   ################                   ',
-      '                #########     #########               ',
-      '            #########             ##########          ',
-      '        #########        ######        #########      ',
-      '       ##########################################     ',
-      '      #####      #####################       #####    ',
-      '      #####          ##############          #####    ',
-      '      #####    ###       ######       ###    #####    ',
-      '      #####    #######            #######    #####    ',
-      '      #####    ###########    ###########    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####      ######################     ######    ',
-      '       ######        #############        #######     ',
-      '         #########        ####       #########        ',
-      '              #########          #########            ',
-      '                  ######### #########                 ',
-      '                       #########                      ',
-      '                                                      ',
-      '                                                      ',
+      '',
+      '                        ▒▒▓▓▓▓▒▒',
+      '                     ▒▓▓▓▒▒░░▒▒▓▓▓▒',
+      '                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒',
+      '                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓',
+      '                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓',
+      '                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓',
+      '                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓',
+      '                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒',
+      '                     ▒▓▓▓▒░░░░▒▓▓▓▒',
+      '                        ▒▒▓▓▓▓▒▒',
+      '',
+      '',
     ];
 
     const color = hasReducedPerformance ? chalk.red : chalk.blue;
@@ -275,9 +277,12 @@ class TerminalReporter {
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
+        const version = 'v' + require('../../package.json').version;
         this.terminal.log(
-          color.bold('                    Welcome to Metro!\n') +
-            chalk.dim('              Fast - Scalable - Integrated\n\n'),
+          color.bold(
+            ' '.repeat(19 - version.length / 2),
+            'Welcome to Metro ' + chalk.white(version) + '\n',
+          ) + chalk.dim('              Fast - Scalable - Integrated\n\n'),
         );
 
         if (event.hasReducedPerformance) {
@@ -289,6 +294,12 @@ class TerminalReporter {
           );
         }
 
+        break;
+      case 'watcher_health_check_result':
+        this._logWatcherHealthCheckResult(event.result);
+        break;
+      case 'watcher_status':
+        this._logWatcherStatus(event.status);
         break;
     }
   }
@@ -325,6 +336,7 @@ class TerminalReporter {
     }
 
     if (error.filename && !message.includes(error.filename)) {
+      // $FlowFixMe[incompatible-type]
       message += ` [${error.filename}]`;
     }
 
@@ -389,6 +401,7 @@ class TerminalReporter {
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
+          isPrefetch: event.isPrefetch,
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;
@@ -420,6 +433,81 @@ class TerminalReporter {
         'to get HMR working again: %s',
       e,
     );
+  }
+
+  _logWatcherHealthCheckResult(result: HealthCheckResult) {
+    // Don't be spammy; only report changes in status.
+    if (
+      !this._prevHealthCheckResult ||
+      result.type !== this._prevHealthCheckResult.type ||
+      (result.type === 'timeout' &&
+        this._prevHealthCheckResult.type === 'timeout' &&
+        (result.pauseReason ?? null) !==
+          (this._prevHealthCheckResult.pauseReason ?? null))
+    ) {
+      const watcherName = "'" + (result.watcher ?? 'unknown') + "'";
+      switch (result.type) {
+        case 'success':
+          // Only report success after a prior failure.
+          if (this._prevHealthCheckResult) {
+            this.terminal.log(
+              chalk.green(`Watcher ${watcherName} is now healthy.`),
+            );
+          }
+          break;
+        case 'error':
+          reporting.logWarning(
+            this.terminal,
+            'Failed to perform watcher health check. Check whether the project root is writable.',
+          );
+          break;
+        case 'timeout':
+          const why =
+            result.pauseReason != null
+              ? ` This may be because: ${result.pauseReason}`
+              : '';
+          reporting.logWarning(
+            this.terminal,
+            `Watcher ${watcherName} failed to detect a file change within ${result.timeout}ms.` +
+              why,
+          );
+          break;
+      }
+    }
+    this._prevHealthCheckResult = result;
+  }
+
+  _logWatcherStatus(status: WatcherStatus) {
+    switch (status.type) {
+      case 'watchman_warning':
+        const warning =
+          typeof status.warning === 'string'
+            ? status.warning
+            : `unknown warning (type: ${typeof status.warning})`;
+        reporting.logWarning(
+          this.terminal,
+          `Watchman \`${status.command}\` returned a warning: ${warning}`,
+        );
+        break;
+      case 'watchman_slow_command':
+        this.terminal.log(
+          chalk.dim(
+            `Waiting for Watchman \`${status.command}\` (${Math.round(
+              status.timeElapsed / 1000,
+            )}s)...`,
+          ),
+        );
+        break;
+      case 'watchman_slow_command_complete':
+        this.terminal.log(
+          chalk.green(
+            `Watchman \`${status.command}\` finished after ${(
+              status.timeElapsed / 1000
+            ).toFixed(1)}s.`,
+          ),
+        );
+        break;
+    }
   }
 
   /**

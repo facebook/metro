@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -21,6 +22,7 @@ class Module {
   _moduleCache: ModuleCache;
   _sourceCode: ?string;
 
+  // $FlowFixMe[missing-local-annot]
   constructor(file: string, moduleCache: ModuleCache) {
     if (!isAbsolutePath(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);

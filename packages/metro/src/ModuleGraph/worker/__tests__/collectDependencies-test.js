@@ -4,14 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-import type {Dependency} from '../collectDependencies';
 
+import type {Dependency} from '../collectDependencies';
 import type {
   DependencyTransformer,
   ImportQualifier,
@@ -34,7 +34,7 @@ const nullthrows = require('nullthrows');
 const {any, objectContaining} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
-const opts = {
+const opts: Options<mixed> = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
   inlineableCalls: [],
@@ -1022,7 +1022,7 @@ describe('Evaluating static arguments', () => {
 
   it('throws at runtime when requiring non-strings with special option', () => {
     const ast = astFromCode('require(1)');
-    const opts = {
+    const opts: Options<mixed> = {
       asyncRequireModulePath: 'asyncRequire',
       dynamicRequires: 'throwAtRuntime',
       inlineableCalls: [],

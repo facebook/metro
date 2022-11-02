@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -19,7 +20,6 @@ function getInspectorSession() {
   if (currentInspectorSession) {
     return currentInspectorSession;
   }
-  // $FlowIssue: Missing library definition for 'inspector'.
   const inspector = require('inspector');
   currentInspectorSession = new inspector.Session();
   currentInspectorSession.connect();

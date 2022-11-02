@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -21,7 +21,7 @@ jest
     inlinePlugin: () => ({}),
     constantFoldingPlugin: () => ({}),
   }))
-  .mock('metro-minify-uglify');
+  .mock('metro-minify-terser');
 
 import type {JsTransformerConfig} from '../index';
 import typeof TransformerType from '../index';
@@ -53,7 +53,6 @@ const baseConfig: JsTransformerConfig = {
   dynamicDepsInPackages: 'reject',
   enableBabelRCLookup: false,
   enableBabelRuntime: true,
-  experimentalImportBundleSupport: false,
   globalPrefix: '',
   hermesParser: false,
   minifierConfig: {},

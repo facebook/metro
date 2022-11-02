@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow strict-local
- * @emails oncall+metro_bundler
+ * @format
+ * @oncall react_native
  */
 
 import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
@@ -42,8 +42,8 @@ describe('HmrServer', () => {
   const updateGraphMock = jest.fn();
 
   const hiModule = {
-    dependencies: new Map(),
-    inverseDependencies: new Set(),
+    dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
+    inverseDependencies: new Set<$FlowFixMe>(),
     path: '/root/hi',
     getSource: () => "alert('hi');",
     output: [
@@ -58,7 +58,7 @@ describe('HmrServer', () => {
     ],
   };
 
-  const changeHandlerPromises = new Set();
+  const changeHandlerPromises = new Set<$FlowFixMe>();
   async function waitForAllChangeHandlers() {
     const promisesArray = [...changeHandlerPromises];
     changeHandlerPromises.clear();
@@ -67,7 +67,7 @@ describe('HmrServer', () => {
 
   async function emitChangeEvent() {
     // TODO: Can we achieve this with less mocking / special-casing?
-    jest.useFakeTimers();
+    jest.useFakeTimers('legacy');
     changeEventSource.emit('change');
     jest.runAllTimers();
     jest.useRealTimers();
@@ -76,7 +76,7 @@ describe('HmrServer', () => {
 
   beforeEach(() => {
     mockedGraph = {
-      dependencies: new Map(),
+      dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
       entryPoint: '/root/EntryPoint.js',
     };
     changeHandlerPromises.clear();
@@ -120,11 +120,11 @@ describe('HmrServer', () => {
       serializer: {experimentalSerializerHook: () => {}},
       reporter: {update: jest.fn()},
       transformer: {
-        experimentalImportBundleSupport: false,
         unstable_allowRequireContext: false,
       },
       resolver: {platforms: []},
       server: {
+        experimentalImportBundleSupport: false,
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
             /__REMOVE_THIS_WHEN_REWRITING__/g,

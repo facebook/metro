@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -193,7 +194,7 @@ function createRamBundleGroups<T: ModuleTransportLike>(
 
   if (ramGroups.length > 1) {
     // build a map of all grouped module IDs to an array of group root IDs
-    const all = new ArrayMap();
+    const all = new ArrayMap<number, number>();
     for (const [parent, children] of result) {
       for (const module of children) {
         all.get(module).push(parent);

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,7 +19,6 @@ const generate = require('../worker/generate');
 const mergeSourceMaps = require('../worker/mergeSourceMaps');
 const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
 const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
 // flowlint-next-line untyped-import:off
 const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
@@ -179,7 +179,7 @@ function inlineModuleIds(
   const sourceAst =
     isTypeScriptSource(path) || isTSXSource(path) || !hermesParser
       ? parseSync(code, babelConfig)
-      : HermesParser.parse(code, {
+      : require('hermes-parser').parse(code, {
           babel: true,
           // $FlowFixMe[prop-missing]
           sourceType: babelConfig.sourceType,
@@ -286,7 +286,7 @@ exports.concat = function* concat<T>(
 // Creates an idempotent function that returns numeric IDs for objects based
 // on their `path` property.
 exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
-  const seen = new Map();
+  const seen = new Map<string, number>();
   let next = 0;
   return ({path}) => {
     let id = seen.get(path);
@@ -320,8 +320,8 @@ exports.partition = (
   modules: Iterable<Module>,
   preloadedModules: $ReadOnlySet<string>,
 ): Array<Array<Module>> => {
-  const startup = [];
-  const deferred = [];
+  const startup: Array<Module> = [];
+  const deferred: Array<Module> = [];
   for (const module of modules) {
     (preloadedModules.has(module.file.path) ? startup : deferred).push(module);
   }
