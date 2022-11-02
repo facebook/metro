@@ -6,9 +6,18 @@ version: 2.1
 orbs:
   win: circleci/windows@2.4.0
 
-secure_unset_publish_token: &secure_unset_publish_token
-  environment:
-    NPM_TOKEN: ''
+references:
+  # For stability, Node.js versions we run against in CI are defined explicitly
+  # (the "lts" alias may bring in a future version before we support it)
+  node_supported_lts_versions: &node_supported_lts_versions
+    - &node_min_supported_version "14.17"
+    - "16.18"
+    - "18.12"
+  node_lts_image: &node_lts_image cimg/node:14.17
+
+  secure_unset_publish_token: &secure_unset_publish_token
+    environment:
+      NPM_TOKEN: ""
 
 commands:
   yarn_install:
@@ -44,7 +53,7 @@ jobs:
   run-js-checks:
     <<: *secure_unset_publish_token
     docker:
-      - image: cimg/node:14.17
+      - image: *node_lts_image
     steps:
       - checkout
       - yarn_install
@@ -80,7 +89,7 @@ jobs:
 
   publish-to-npm:
     docker:
-      - image: cimg/node:lts
+      - image: *node_lts_image
     steps:
       - checkout
       - yarn_install
@@ -95,11 +104,11 @@ workflows:
       - test-linux:
           matrix:
             parameters:
-              node-version: ["14.17"]
+              node-version: *node_supported_lts_versions
       - test-windows:
           matrix:
             parameters:
-              node-version: ["14.17"]
+              node-version: [*node_min_supported_version]
           filters:
             branches:
               only: /windows\/.*/
