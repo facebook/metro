@@ -81,7 +81,7 @@ const Actions = {
     }
   },
 
-  createFile(path: string) {
+  createFile(path: string): string {
     mockedDependencies.add(path);
     mockedDependencyTree.set(path, []);
 
@@ -113,7 +113,7 @@ const Actions = {
       name?: string,
       data?: DependencyDataInput,
     } = {},
-  ) {
+  ): void {
     if (!mockedDependencies.has(path)) {
       Actions.createFile(path);
     }

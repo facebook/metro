@@ -54,7 +54,7 @@ type MockFSDirContents = $ReadOnly<{
     return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
-  function mockDir(dirPath: string, desc: MockFSDirContents) {
+  function mockDir(dirPath: string, desc: MockFSDirContents): void {
     for (const entName in desc) {
       const ent = desc[entName];
 

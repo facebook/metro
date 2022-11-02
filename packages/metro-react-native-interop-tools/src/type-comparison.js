@@ -10,6 +10,22 @@
  */
 
 import type {
+  VoidTypeAnnotation,
+  UnionTypeAnnotation,
+  TupleTypeAnnotation,
+  StringTypeAnnotation,
+  StringLiteralTypeAnnotation,
+  NumberTypeAnnotation,
+  NumberLiteralTypeAnnotation,
+  NullLiteralTypeAnnotation,
+  IntersectionTypeAnnotation,
+  GenericTypeAnnotation,
+  BooleanTypeAnnotation,
+  BooleanLiteralTypeAnnotation,
+  ArrayTypeAnnotation,
+  AnyType,
+} from './type-annotation';
+import type {
   AnyTypeAnnotation,
   NullableTypeAnnotation,
   LiteralTypeAnnotation,
@@ -28,7 +44,25 @@ type ComparisonResult = $ReadOnly<{
   oldTypeLoc: ?SourceLocation,
 }>;
 
-function removeNullable(annotation: NullableTypeAnnotation) {
+function removeNullable(
+  annotation: NullableTypeAnnotation,
+):
+  | AnyType
+  | BooleanTypeAnnotation
+  | NumberTypeAnnotation
+  | StringTypeAnnotation
+  | VoidTypeAnnotation
+  | TupleTypeAnnotation
+  | GenericTypeAnnotation
+  | UnionTypeAnnotation
+  | IntersectionTypeAnnotation
+  | ArrayTypeAnnotation
+  | StringLiteralTypeAnnotation
+  | NumberLiteralTypeAnnotation
+  | BooleanLiteralTypeAnnotation
+  | NullLiteralTypeAnnotation
+  | FunctionTypeAnnotation
+  | ObjectTypeAnnotation {
   if (annotation.typeAnnotation.type === 'NullableTypeAnnotation') {
     return removeNullable(annotation.typeAnnotation);
   }

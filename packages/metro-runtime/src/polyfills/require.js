@@ -213,7 +213,9 @@ function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
   return modules.every(module => !isIgnored(module));
 }
 
-function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
+function metroImportDefault(
+  moduleId: ModuleID | VerboseModuleNameForDev,
+): any | Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -229,8 +231,8 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
     return modules[moduleIdReallyIsNumber].importedDefault;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  const importedDefault =
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  const importedDefault: any | Exports =
     exports && exports.__esModule ? exports.default : exports;
 
   // $FlowFixMe The metroRequire call above will throw if modules[id] is null
@@ -238,7 +240,9 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
 }
 metroRequire.importDefault = metroImportDefault;
 
-function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
+function metroImportAll(
+  moduleId: ModuleID | VerboseModuleNameForDev | number,
+): any | Exports | {[string]: any} {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -254,8 +258,8 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
     return modules[moduleIdReallyIsNumber].importedAll;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  let importedAll;
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  let importedAll: Exports | {[string]: any};
 
   if (exports && exports.__esModule) {
     importedAll = exports;
@@ -264,7 +268,7 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
 
     // Refrain from using Object.assign, it has to work in ES3 environments.
     if (exports) {
-      for (const key in exports) {
+      for (const key: string in exports) {
         if (hasOwnProperty.call(exports, key)) {
           importedAll[key] = exports[key];
         }
@@ -532,7 +536,7 @@ if (__DEV__) {
     return hot;
   };
 
-  let reactRefreshTimeout = null;
+  let reactRefreshTimeout: null | TimeoutID = null;
 
   const metroHotUpdateModule = function (
     id: ModuleID,
@@ -756,7 +760,7 @@ if (__DEV__) {
     const result = [];
     const visited = new Set<mixed>();
     const stack = new Set<mixed>();
-    function traverseDependentNodes(node: T) {
+    function traverseDependentNodes(node: T): void {
       if (stack.has(node)) {
         throw CYCLE_DETECTED;
       }
