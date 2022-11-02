@@ -796,6 +796,7 @@ class Server {
         build_id: getBuildID(context.buildNumber),
         bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
+        user_agent: context.req.headers['user-agent'] ?? 'unknown',
       };
     },
     createEndEntry(
