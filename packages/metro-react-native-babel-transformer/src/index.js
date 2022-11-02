@@ -223,9 +223,6 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
           });
 
     const functionMap = generateFunctionMap(sourceAst, {filename});
-    /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.111 was deployed. To see the error, delete this
-     * comment and run Flow. */
     const result = transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
