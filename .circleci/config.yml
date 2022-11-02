@@ -4,6 +4,7 @@
 version: 2.1
 
 orbs:
+  codecov: codecov/codecov@3.2.4
   win: circleci/windows@2.4.0
 
 references:
@@ -13,7 +14,7 @@ references:
     - &node_min_supported_version "14.17"
     - "16.18"
     - "18.12"
-  node_lts_image: &node_lts_image cimg/node:14.17
+  node_lts_image: &node_lts_image cimg/node:18.12
 
   secure_unset_publish_token: &secure_unset_publish_token
     environment:
@@ -57,8 +58,20 @@ jobs:
     steps:
       - checkout
       - yarn_install
-      - run: yarn test-ci
+      - run: yarn typecheck
+      - run: yarn lint
       - run: yarn test-smoke
+
+  test-with-coverage:
+    <<: *secure_unset_publish_token
+    docker:
+      - image: *node_lts_image
+    steps:
+      - checkout
+      - yarn_install
+      - run: yarn test-coverage
+      - codecov/upload:
+          file: ./coverage/coverage-final.json
 
   test-linux:
     <<: *secure_unset_publish_token
@@ -101,6 +114,7 @@ workflows:
   build-and-deploy:
     jobs:
       - run-js-checks
+      - test-with-coverage
       - test-linux:
           matrix:
             parameters:
