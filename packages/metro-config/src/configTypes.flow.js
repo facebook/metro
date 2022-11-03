@@ -155,19 +155,9 @@ type TransformerConfigT = {
 };
 
 type MetalConfigT = {
-  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-  cacheVersion: string,
-  fileMapCacheDirectory?: string,
-  hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
+  // ...
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
-  maxWorkers: number,
-  unstable_perfLogger?: ?PerfLoggerFactory,
-  projectRoot: string,
-  stickyWorkers: boolean,
-  transformerPath: string,
-  reporter: Reporter,
-  resetCache: boolean,
-  watchFolders: $ReadOnlyArray<string>,
+  // ...
 };
 
 type ServerConfigT = {
