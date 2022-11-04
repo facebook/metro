@@ -10,12 +10,7 @@
  */
 
 import type {Path, FileMetaData} from '../flow-types';
-import type {
-  CrawlerOptions,
-  FileData,
-  IgnoreMatcher,
-  InternalData,
-} from '../flow-types';
+import type {CrawlerOptions, FileData, IgnoreMatcher} from '../flow-types';
 
 import H from '../constants';
 import * as fastPath from '../lib/fast_path';
@@ -208,10 +203,11 @@ function findNative(
 
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   removedFiles: FileData,
-  hasteMap: InternalData,
+  changedFiles: FileData,
+  isFresh: boolean,
 }> {
   const {
-    data,
+    previousState,
     extensions,
     forceNodeFilesystemAPI,
     ignore,
@@ -225,26 +221,24 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
 
   return new Promise(resolve => {
     const callback = (list: Result) => {
-      const files = new Map<Path, FileMetaData>();
-      const removedFiles = new Map(data.files);
-      list.forEach(fileData => {
+      const changedFiles = new Map<Path, FileMetaData>();
+      const removedFiles = new Map(previousState.files);
+      for (const fileData of list) {
         const [filePath, mtime, size] = fileData;
         const relativeFilePath = fastPath.relative(rootDir, filePath);
-        const existingFile = data.files.get(relativeFilePath);
-        if (existingFile && existingFile[H.MTIME] === mtime) {
-          files.set(relativeFilePath, existingFile);
-        } else {
-          // See ../constants.js; SHA-1 will always be null and fulfilled later.
-          files.set(relativeFilePath, ['', mtime, size, 0, '', null]);
-        }
+        const existingFile = previousState.files.get(relativeFilePath);
         removedFiles.delete(relativeFilePath);
-      });
-      data.files = files;
+        if (existingFile == null || existingFile[H.MTIME] !== mtime) {
+          // See ../constants.js; SHA-1 will always be null and fulfilled later.
+          changedFiles.set(relativeFilePath, ['', mtime, size, 0, '', null]);
+        }
+      }
 
       perfLogger?.point('nodeCrawl_end');
       resolve({
-        hasteMap: data,
+        changedFiles,
         removedFiles,
+        isFresh: true,
       });
     };
 

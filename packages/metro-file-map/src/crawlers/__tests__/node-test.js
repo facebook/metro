@@ -168,8 +168,8 @@ describe('node crawler', () => {
       '/project/vegetables/melon.json',
     ].join('\n');
 
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {
         files: new Map(),
       },
       extensions: ['js', 'json'],
@@ -192,9 +192,9 @@ describe('node crawler', () => {
       ')',
     ]);
 
-    expect(hasteMap.files).not.toBe(null);
+    expect(changedFiles).not.toBe(null);
 
-    expect(hasteMap.files).toEqual(
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/strawberry.js': ['', 32, 42, 0, '', null],
         'fruits/tomato.js': ['', 33, 42, 0, '', null],
@@ -215,23 +215,20 @@ describe('node crawler', () => {
       'fruits/tomato.js': tomato,
     });
 
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {files},
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {files},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
       roots: ['/project/fruits'],
     });
 
-    expect(hasteMap.files).toEqual(
+    // Tomato is not included because it is unchanged
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/strawberry.js': ['', 32, 42, 0, '', null],
-        'fruits/tomato.js': tomato,
       }),
     );
-
-    // Make sure it is the *same* unchanged object.
-    expect(hasteMap.files.get(normalize('fruits/tomato.js'))).toBe(tomato);
 
     expect(removedFiles).toEqual(new Map());
   });
@@ -247,15 +244,15 @@ describe('node crawler', () => {
       'fruits/tomato.js': ['', 32, 42, 0, '', null],
     });
 
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {files},
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {files},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
       roots: ['/project/fruits'],
     });
 
-    expect(hasteMap.files).toEqual(
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/strawberry.js': ['', 32, 42, 0, '', null],
         'fruits/tomato.js': ['', 33, 42, 0, '', null],
@@ -275,8 +272,8 @@ describe('node crawler', () => {
 
     nodeCrawl = require('../node');
 
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {
         files: new Map(),
       },
       extensions: ['js'],
@@ -290,7 +287,7 @@ describe('node crawler', () => {
       ['.', '-type', 'f', '(', '-iname', '*.ts', '-o', '-iname', '*.js', ')'],
       {cwd: expect.any(String)},
     );
-    expect(hasteMap.files).toEqual(
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
         'fruits/tomato.js': ['', 32, 42, 0, '', null],
@@ -306,8 +303,8 @@ describe('node crawler', () => {
     });
     nodeCrawl = require('../node');
 
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {
         files: new Map(),
       },
       extensions: ['js'],
@@ -316,7 +313,7 @@ describe('node crawler', () => {
       roots: ['/project/fruits'],
     });
 
-    expect(hasteMap.files).toEqual(
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
         'fruits/tomato.js': ['', 32, 42, 0, '', null],
@@ -330,8 +327,8 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const files = new Map();
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {files},
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {files},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -340,7 +337,7 @@ describe('node crawler', () => {
     });
 
     expect(childProcess.spawn).toHaveBeenCalledTimes(0);
-    expect(hasteMap.files).toEqual(
+    expect(changedFiles).toEqual(
       createMap({
         'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
         'fruits/tomato.js': ['', 32, 42, 0, '', null],
@@ -353,8 +350,8 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const files = new Map();
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {files},
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {files},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -362,7 +359,7 @@ describe('node crawler', () => {
       roots: [],
     });
 
-    expect(hasteMap.files).toEqual(new Map());
+    expect(changedFiles).toEqual(new Map());
     expect(removedFiles).toEqual(new Map());
   });
 
@@ -370,8 +367,8 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const files = new Map();
-    const {hasteMap, removedFiles} = await nodeCrawl({
-      data: {files},
+    const {changedFiles, removedFiles} = await nodeCrawl({
+      previousState: {files},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -379,7 +376,7 @@ describe('node crawler', () => {
       roots: ['/error'],
     });
 
-    expect(hasteMap.files).toEqual(new Map());
+    expect(changedFiles).toEqual(new Map());
     expect(removedFiles).toEqual(new Map());
   });
 
@@ -389,8 +386,8 @@ describe('node crawler', () => {
       const fs = require('graceful-fs');
 
       const files = new Map();
-      const {hasteMap, removedFiles} = await nodeCrawl({
-        data: {files},
+      const {changedFiles, removedFiles} = await nodeCrawl({
+        previousState: {files},
         extensions: ['js'],
         forceNodeFilesystemAPI: true,
         ignore: pearMatcher,
@@ -398,7 +395,7 @@ describe('node crawler', () => {
         roots: ['/project/fruits'],
       });
 
-      expect(hasteMap.files).toEqual(
+      expect(changedFiles).toEqual(
         createMap({
           'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
           'fruits/tomato.js': ['', 32, 42, 0, '', null],
@@ -422,8 +419,8 @@ describe('node crawler', () => {
       const fs = require('graceful-fs');
 
       const files = new Map();
-      const {hasteMap, removedFiles} = await nodeCrawl({
-        data: {files},
+      const {changedFiles, removedFiles} = await nodeCrawl({
+        previousState: {files},
         extensions: ['js'],
         forceNodeFilesystemAPI: true,
         ignore: pearMatcher,
@@ -431,7 +428,7 @@ describe('node crawler', () => {
         roots: ['/project/fruits'],
       });
 
-      expect(hasteMap.files).toEqual(
+      expect(changedFiles).toEqual(
         createMap({
           'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
           'fruits/tomato.js': ['', 32, 42, 0, '', null],

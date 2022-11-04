@@ -15,6 +15,7 @@ import type {
   InternalData,
   Path,
   PerfLogger,
+  WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
 import type {Stats} from 'fs';
@@ -97,10 +98,10 @@ export class Watcher extends EventEmitter {
       options.ignore(filePath) ||
       path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
+    let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
       computeSha1: options.computeSha1,
-      data: options.initialData,
       enableSymlinks: options.enableSymlinks,
       extensions: options.extensions,
       forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,
@@ -109,12 +110,17 @@ export class Watcher extends EventEmitter {
         this.emit('status', status);
       },
       perfLogger: options.perfLogger,
+      previousState: {
+        files: options.initialData.files,
+        clocks: options.initialData.clocks,
+      },
       rootDir: options.rootDir,
       roots: options.roots,
     };
 
     const retry = (error: Error) => {
       if (crawl === watchmanCrawl) {
+        crawler = 'node';
         options.console.warn(
           'metro-file-map: Watchman crawl failed. Retrying once with node ' +
             'crawler.\n' +
@@ -136,15 +142,48 @@ export class Watcher extends EventEmitter {
       throw error;
     };
 
-    const logEnd = <T>(result: T): T => {
+    const processResult = (delta: {
+      changedFiles: FileData,
+      removedFiles: FileData,
+      clocks?: WatchmanClocks,
+      isFresh: boolean,
+    }) => {
+      debug(
+        'Crawler "%s" returned %d added/modified, %d removed, %d clock(s).',
+        crawler,
+        delta.changedFiles.size,
+        delta.removedFiles.size,
+        delta.clocks?.size ?? 0,
+      );
+
+      // The crawlers return a delta relative to `previousState` and do not
+      // mutate state. The caller of `crawl()` expects us to mutate state as
+      // well, so we do that here, and return `changedFiles: undefined` on a
+      // "fresh" Watchman result for consistency with the previous
+      // implementation.
+      // TODO: Refactor the caller to remove the need for this.
+      const data = options.initialData;
+      data.clocks = delta.clocks ?? new Map();
+
+      for (const [relativePath] of delta.removedFiles) {
+        data.files.delete(relativePath);
+      }
+      for (const [relativePath, fileMetadata] of delta.changedFiles) {
+        data.files.set(relativePath, fileMetadata);
+      }
       this._options.perfLogger?.point('crawl_end');
-      return result;
+      return {
+        hasteMap: data,
+        changedFiles: delta.isFresh ? undefined : delta.changedFiles,
+        removedFiles: delta.removedFiles,
+      };
     };
 
+    debug('Beginning crawl with "%s".', crawler);
     try {
-      return crawl(crawlerOptions).catch(retry).then(logEnd);
+      return crawl(crawlerOptions).catch(retry).then(processResult);
     } catch (error) {
-      return retry(error).then(logEnd);
+      return retry(error).then(processResult);
     }
   }
 

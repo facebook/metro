@@ -39,11 +39,12 @@ jest.mock('../crawlers/watchman', () =>
   jest.fn(options => {
     const path = require('path');
 
-    const {data, ignore, rootDir, roots, computeSha1} = options;
+    const {previousState, ignore, rootDir, roots, computeSha1} = options;
     const list = mockChangedFiles || mockFs;
     const removedFiles = new Map();
+    const changedFiles = new Map();
 
-    data.clocks = mockClocks;
+    previousState.clocks = mockClocks;
 
     for (const file in list) {
       if (
@@ -53,21 +54,20 @@ jest.mock('../crawlers/watchman', () =>
         const relativeFilePath = path.relative(rootDir, file);
         if (list[file]) {
           const hash = computeSha1 ? mockHashContents(list[file]) : null;
-
-          data.files.set(relativeFilePath, ['', 32, 42, 0, [], hash]);
+          changedFiles.set(relativeFilePath, ['', 32, 42, 0, [], hash]);
         } else {
-          const fileData = data.files.get(relativeFilePath);
+          const fileData = previousState.files.get(relativeFilePath);
           if (fileData) {
             removedFiles.set(relativeFilePath, fileData);
-            data.files.delete(relativeFilePath);
           }
         }
       }
     }
 
     return Promise.resolve({
-      hasteMap: data,
       removedFiles,
+      changedFiles,
+      clocks: mockClocks,
     });
   }),
 );
@@ -503,10 +503,8 @@ describe('HasteMap', () => {
       const node = require('../crawlers/node');
 
       node.mockImplementation(options => {
-        const {data} = options;
-
         // The node crawler returns "null" for the SHA-1.
-        data.files = createMap({
+        const changedFiles = createMap({
           [path.join('fruits', 'Banana.js')]: [
             'Banana',
             32,
@@ -543,7 +541,7 @@ describe('HasteMap', () => {
         });
 
         return Promise.resolve({
-          hasteMap: data,
+          changedFiles,
           removedFiles: new Map(),
         });
       });
@@ -1118,27 +1116,21 @@ describe('HasteMap', () => {
     const watchman = require('../crawlers/watchman');
     const mockImpl = watchman.getMockImplementation();
     // Wrap the watchman mock and add an invalid file to the file list.
-    watchman.mockImplementation(options =>
-      mockImpl(options).then(() => {
-        const {data} = options;
-        data.files.set(path.join('fruits', 'invalid', 'file.js'), [
-          '',
-          34,
-          44,
-          0,
-          [],
-        ]);
-        return {hasteMap: data, removedFiles: new Map()};
-      }),
-    );
+    const invalidFilePath = path.join('fruits', 'invalid', 'file.js');
+    watchman.mockImplementation(async options => {
+      const {changedFiles} = await mockImpl(options);
+      changedFiles.set(invalidFilePath, ['', 34, 44, 0, []]);
+      return {
+        changedFiles,
+        removedFiles: new Map(),
+      };
+    });
 
     await new HasteMap(defaultConfig).build();
     expect(cacheContent.files.size).toBe(5);
 
     // Ensure this file is not part of the file list.
-    expect(
-      cacheContent.files.get(path.join('fruits', 'invalid', 'file.js')),
-    ).toBe(undefined);
+    expect(cacheContent.files.get(invalidFilePath)).toBe(undefined);
   });
 
   it('distributes work across workers', async () => {
@@ -1220,12 +1212,10 @@ describe('HasteMap', () => {
       throw new Error('watchman error');
     });
     node.mockImplementation(options => {
-      const {data} = options;
-      data.files = createMap({
-        [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
-      });
       return Promise.resolve({
-        hasteMap: data,
+        changedFiles: createMap({
+          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
+        }),
         removedFiles: new Map(),
       });
     });
@@ -1258,12 +1248,10 @@ describe('HasteMap', () => {
       Promise.reject(new Error('watchman error')),
     );
     node.mockImplementation(options => {
-      const {data} = options;
-      data.files = createMap({
-        [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
-      });
       return Promise.resolve({
-        hasteMap: data,
+        changedFiles: createMap({
+          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
+        }),
         removedFiles: new Map(),
       });
     });
