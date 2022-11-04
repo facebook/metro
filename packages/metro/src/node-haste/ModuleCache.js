@@ -89,7 +89,7 @@ class ModuleCache {
     return this.getPackage(packagePath);
   }
 
-  processFileChange(type: string, filePath: string) {
+  invalidate(filePath: string) {
     if (this._moduleCache[filePath]) {
       this._moduleCache[filePath].invalidate();
       delete this._moduleCache[filePath];

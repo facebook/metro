@@ -174,9 +174,7 @@ class DependencyGraph extends EventEmitter {
     this._snapshotFS = snapshotFS;
     this._resolutionCache = new Map();
     this._moduleMap = moduleMap;
-    eventsQueue.forEach(({type, filePath}) =>
-      this._moduleCache.processFileChange(type, filePath),
-    );
+    eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
     this._createModuleResolver();
     this.emit('change');
   }
