@@ -357,23 +357,26 @@ export default class HasteMap extends EventEmitter {
           hasteMap = data.hasteMap;
         }
 
+        const snapshot = deepCloneInternalData(hasteMap);
+
         await this._persist(
-          hasteMap,
+          snapshot,
           data.changedFiles ?? new Map(),
           data.removedFiles ?? new Map(),
         );
 
         const rootDir = this._options.rootDir;
         const hasteFS = new HasteFS({
-          files: hasteMap.files,
+          files: snapshot.files,
           rootDir,
         });
         const moduleMap = new HasteModuleMap({
-          duplicates: hasteMap.duplicates,
-          map: hasteMap.map,
-          mocks: hasteMap.mocks,
+          duplicates: snapshot.duplicates,
+          map: snapshot.map,
+          mocks: snapshot.mocks,
           rootDir,
         });
+
         await this._watch(hasteMap);
         return {
           hasteFS,
@@ -781,9 +784,8 @@ export default class HasteMap extends EventEmitter {
   /**
    * 4. serialize the new `HasteMap` in a cache file.
    */
-  async _persist(hasteMap: InternalData, changed: FileData, removed: FileData) {
+  async _persist(snapshot: InternalData, changed: FileData, removed: FileData) {
     this._startupPerfLogger?.point('persist_start');
-    const snapshot = deepCloneInternalData(hasteMap);
     await this._cacheManager.write(snapshot, {changed, removed});
     this._startupPerfLogger?.point('persist_end');
   }
@@ -807,10 +809,29 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
+  _getSnapshot(data: InternalData): {
+    hasteFS: HasteFS,
+    moduleMap: HasteModuleMap,
+  } {
+    const rootDir = this._options.rootDir;
+    return {
+      hasteFS: new HasteFS({
+        files: new Map(data.files),
+        rootDir,
+      }),
+      moduleMap: new HasteModuleMap({
+        duplicates: new Map(data.duplicates),
+        map: new Map(data.map),
+        mocks: new Map(data.mocks),
+        rootDir,
+      }),
+    };
+  }
+
   /**
    * Watch mode
    */
-  async _watch(hasteMap: InternalData): Promise<void> {
+  async _watch(data: InternalData): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
       this._startupPerfLogger?.point('watch_end');
@@ -827,8 +848,6 @@ export default class HasteMap extends EventEmitter {
 
     let changeQueue: Promise<null | void> = Promise.resolve();
     let eventsQueue: EventsQueue = [];
-    // We only need to copy the entire haste map once on every "frame".
-    let mustCopy = true;
     let eventStartTimestamp = null;
 
     const emitChange = () => {
@@ -847,17 +866,10 @@ export default class HasteMap extends EventEmitter {
           });
           hmrPerfLogger.point('fileChange_start');
         }
-        mustCopy = true;
         const changeEvent: ChangeEvent = {
           logger: hmrPerfLogger,
           eventsQueue,
-          hasteFS: new HasteFS({files: hasteMap.files, rootDir}),
-          moduleMap: new HasteModuleMap({
-            duplicates: hasteMap.duplicates,
-            map: hasteMap.map,
-            mocks: hasteMap.mocks,
-            rootDir,
-          }),
+          ...this._getSnapshot(data),
         };
         this.emit('change', changeEvent);
         eventsQueue = [];
@@ -881,7 +893,7 @@ export default class HasteMap extends EventEmitter {
       }
 
       const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
-      const fileMetadata = hasteMap.files.get(relativeFilePath);
+      const fileMetadata = data.files.get(relativeFilePath);
 
       // The file has been accessed, not modified
       if (
@@ -914,24 +926,12 @@ export default class HasteMap extends EventEmitter {
             return null;
           }
 
-          if (mustCopy) {
-            mustCopy = false;
-            // $FlowFixMe[reassign-const] - Refactor this
-            hasteMap = {
-              clocks: new Map(hasteMap.clocks),
-              duplicates: new Map(hasteMap.duplicates),
-              files: new Map(hasteMap.files),
-              map: new Map(hasteMap.map),
-              mocks: new Map(hasteMap.mocks),
-            };
-          }
-
           const add = () => {
             eventsQueue.push({filePath: absoluteFilePath, stat, type});
             return null;
           };
 
-          const fileMetadata = hasteMap.files.get(relativeFilePath);
+          const fileMetadata = data.files.get(relativeFilePath);
 
           // If it's not an addition, delete the file and all its metadata
           if (fileMetadata != null) {
@@ -939,18 +939,18 @@ export default class HasteMap extends EventEmitter {
             const platform =
               getPlatformExtension(absoluteFilePath, this._options.platforms) ||
               H.GENERIC_PLATFORM;
-            hasteMap.files.delete(relativeFilePath);
+            data.files.delete(relativeFilePath);
 
-            let moduleMap = hasteMap.map.get(moduleName);
+            let moduleMap = data.map.get(moduleName);
             if (moduleMap != null) {
               // We are forced to copy the object because metro-file-map exposes
               // the map as an immutable entity.
               moduleMap = Object.assign(Object.create(null), moduleMap);
               delete moduleMap[platform];
               if (Object.keys(moduleMap).length === 0) {
-                hasteMap.map.delete(moduleName);
+                data.map.delete(moduleName);
               } else {
-                hasteMap.map.set(moduleName, moduleMap);
+                data.map.set(moduleName, moduleMap);
               }
             }
 
@@ -959,10 +959,10 @@ export default class HasteMap extends EventEmitter {
               this._options.mocksPattern.test(absoluteFilePath)
             ) {
               const mockName = getMockName(absoluteFilePath);
-              hasteMap.mocks.delete(mockName);
+              data.mocks.delete(mockName);
             }
 
-            this._recoverDuplicates(hasteMap, relativeFilePath, moduleName);
+            this._recoverDuplicates(data, relativeFilePath, moduleName);
           }
 
           // If the file was added or changed,
@@ -980,11 +980,11 @@ export default class HasteMap extends EventEmitter {
               '',
               null,
             ];
-            hasteMap.files.set(relativeFilePath, fileMetadata);
+            data.files.set(relativeFilePath, fileMetadata);
             const promise = this._processFile(
-              hasteMap,
-              hasteMap.map,
-              hasteMap.mocks,
+              data,
+              data.map,
+              data.mocks,
               absoluteFilePath,
               {forceInBand: true},
             );
