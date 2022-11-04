@@ -223,6 +223,10 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
+  getAllFiles(): Array<string> {
+    return nullthrows(this._snapshotFS).getAllFiles();
+  }
+
   getSha1(filename: string): string {
     // TODO If it looks like we're trying to get the sha1 from a file located
     // within a Zip archive, then we instead compute the sha1 for what looks
