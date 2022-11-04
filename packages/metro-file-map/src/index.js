@@ -838,6 +838,10 @@ export default class HasteMap extends EventEmitter {
         });
         if (hmrPerfLogger != null) {
           hmrPerfLogger.start({timestamp: nullthrows(eventStartTimestamp)});
+          hmrPerfLogger.point('waitingForChangeInterval_start', {
+            timestamp: nullthrows(eventStartTimestamp),
+          });
+          hmrPerfLogger.point('waitingForChangeInterval_end');
           hmrPerfLogger.annotate({
             int: {eventsQueueLength: eventsQueue.length},
           });
