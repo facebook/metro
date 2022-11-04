@@ -8,14 +8,20 @@
  * @flow strict-local
  */
 
-import type {FileData, FileMetaData, Glob, Path} from './flow-types';
+import type {
+  FileData,
+  FileMetaData,
+  FileSystem,
+  Glob,
+  Path,
+} from './flow-types';
 
 import H from './constants';
 import * as fastPath from './lib/fast_path';
 import * as path from 'path';
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
-export default class HasteFS {
+export default class HasteFS implements FileSystem {
   +_rootDir: Path;
   +_files: FileData;
 

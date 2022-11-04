@@ -11,7 +11,6 @@
 
 'use strict';
 
-import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
@@ -41,6 +40,11 @@ export type BuildParameters = $ReadOnly<{
   cacheBreaker: string,
 }>;
 
+export type BuildResult = {
+  snapshotFS: FileSystem,
+  moduleMap: ModuleMap,
+};
+
 export interface CacheManager {
   read(): Promise<?InternalData>;
   write(
@@ -56,7 +60,7 @@ export type CacheManagerFactory = (
 export type ChangeEvent = {
   logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
-  hasteFS: HasteFS,
+  snapshotFS: FileSystem,
   moduleMap: ModuleMap,
 };
 
@@ -105,11 +109,6 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type HasteMap = {
-  hasteFS: HasteFS,
-  moduleMap: ModuleMap,
-};
-
 export type HType = {
   ID: 0,
   MTIME: 1,
@@ -148,6 +147,31 @@ export type FileMetaData = [
   /* dependencies */ string,
   /* sha1 */ ?string,
 ];
+
+export interface FileSystem {
+  exists(file: Path): boolean;
+  getAllFiles(): Array<Path>;
+  getDependencies(file: Path): ?Array<string>;
+  getModuleName(file: Path): ?string;
+  getSha1(file: Path): ?string;
+
+  matchFiles(pattern: RegExp | string): Array<Path>;
+
+  /**
+   * Given a search context, return a list of file paths matching the query.
+   * The query matches against normalized paths which start with `./`,
+   * for example: `a/b.js` -> `./a/b.js`
+   */
+  matchFilesWithContext(
+    root: Path,
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
+      recursive: boolean,
+      /* Filter relative paths against a pattern. */
+      filter: RegExp,
+    }>,
+  ): Array<Path>;
+}
 
 export type Glob = string;
 

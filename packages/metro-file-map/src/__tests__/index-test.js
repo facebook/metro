@@ -243,9 +243,9 @@ describe('HasteMap', () => {
   });
 
   it('matches files against a pattern', async () => {
-    const {hasteFS} = await new HasteMap(defaultConfig).build();
+    const {snapshotFS} = await new HasteMap(defaultConfig).build();
     expect(
-      hasteFS.matchFiles(
+      snapshotFS.matchFiles(
         process.platform === 'win32' ? /project\\fruits/ : /project\/fruits/,
       ),
     ).toEqual([
@@ -255,7 +255,7 @@ describe('HasteMap', () => {
       path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
     ]);
 
-    expect(hasteFS.matchFiles(/__mocks__/)).toEqual([
+    expect(snapshotFS.matchFiles(/__mocks__/)).toEqual([
       path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
     ]);
   });
@@ -265,16 +265,16 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
     `;
-    const {hasteFS} = await new HasteMap(config).build();
-    expect(hasteFS.matchFiles(/Kiwi/)).toEqual([]);
+    const {snapshotFS} = await new HasteMap(config).build();
+    expect(snapshotFS.matchFiles(/Kiwi/)).toEqual([]);
   });
 
   it('ignores vcs directories without ignore pattern', async () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {hasteFS} = await new HasteMap(defaultConfig).build();
-    expect(hasteFS.matchFiles('.git')).toEqual([]);
+    const {snapshotFS} = await new HasteMap(defaultConfig).build();
+    expect(snapshotFS.matchFiles('.git')).toEqual([]);
   });
 
   it('ignores vcs directories with ignore pattern regex', async () => {
@@ -286,9 +286,9 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {hasteFS} = await new HasteMap(config).build();
-    expect(hasteFS.matchFiles(/Kiwi/)).toEqual([]);
-    expect(hasteFS.matchFiles('.git')).toEqual([]);
+    const {snapshotFS} = await new HasteMap(config).build();
+    expect(snapshotFS.matchFiles(/Kiwi/)).toEqual([]);
+    expect(snapshotFS.matchFiles('.git')).toEqual([]);
   });
 
   it('warn on ignore pattern except for regex', async () => {
@@ -1331,18 +1331,18 @@ describe('HasteMap', () => {
     hm_it('provides a new set of hasteHS and moduleMap', async hm => {
       const initialResult = await hm.build();
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
-      expect(initialResult.hasteFS.getModuleName(filePath)).toBeDefined();
+      expect(initialResult.snapshotFS.getModuleName(filePath)).toBeDefined();
       expect(initialResult.moduleMap.getModule('Banana')).toBe(filePath);
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
-      const {eventsQueue, hasteFS, moduleMap} = await waitForItToChange(hm);
+      const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
       const deletedBanana = {filePath, stat: undefined, type: 'delete'};
       expect(eventsQueue).toEqual([deletedBanana]);
       // Verify we didn't change the original map.
-      expect(initialResult.hasteFS.getModuleName(filePath)).toBeDefined();
+      expect(initialResult.snapshotFS.getModuleName(filePath)).toBeDefined();
       expect(initialResult.moduleMap.getModule('Banana')).toBe(filePath);
-      expect(hasteFS.getModuleName(filePath)).toBeNull();
+      expect(snapshotFS.getModuleName(filePath)).toBeNull();
       expect(moduleMap.getModule('Banana')).toBeNull();
     });
 
@@ -1380,7 +1380,7 @@ describe('HasteMap', () => {
         path.join('/', 'project', 'fruits'),
         MOCK_STAT_FILE,
       );
-      const {eventsQueue, hasteFS, moduleMap} = await waitForItToChange(hm);
+      const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(hm);
       expect(eventsQueue).toEqual([
         {
           filePath: path.join('/', 'project', 'fruits', 'Tomato.js'),
@@ -1394,7 +1394,9 @@ describe('HasteMap', () => {
         },
       ]);
       expect(
-        hasteFS.getModuleName(path.join('/', 'project', 'fruits', 'Tomato.js')),
+        snapshotFS.getModuleName(
+          path.join('/', 'project', 'fruits', 'Tomato.js'),
+        ),
       ).not.toBeNull();
       expect(moduleMap.getModule('Tomato')).toBeDefined();
       expect(moduleMap.getModule('Pear')).toBe(
@@ -1433,7 +1435,7 @@ describe('HasteMap', () => {
           path.join('/', 'project', 'fruits', 'node_modules', ''),
           MOCK_STAT_FILE,
         );
-        const {eventsQueue, hasteFS} = await waitForItToChange(hm);
+        const {eventsQueue, snapshotFS} = await waitForItToChange(hm);
         const filePath = path.join(
           '/',
           'project',
@@ -1445,7 +1447,7 @@ describe('HasteMap', () => {
         expect(eventsQueue).toEqual([
           {filePath, stat: MOCK_STAT_FILE, type: 'add'},
         ]);
-        expect(hasteFS.getModuleName(filePath)).toBeDefined();
+        expect(snapshotFS.getModuleName(filePath)).toBeDefined();
       },
     );
 
@@ -1470,7 +1472,9 @@ describe('HasteMap', () => {
           path.join('/', 'project', 'fruits'),
           MOCK_STAT_FILE,
         );
-        const {eventsQueue, hasteFS, moduleMap} = await waitForItToChange(hm);
+        const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(
+          hm,
+        );
         expect(eventsQueue).toHaveLength(2);
         expect(eventsQueue).toEqual([
           {
@@ -1485,12 +1489,12 @@ describe('HasteMap', () => {
           },
         ]);
         expect(
-          hasteFS.getModuleName(
+          snapshotFS.getModuleName(
             path.join('/', 'project', 'fruits', 'Orange.ios.js'),
           ),
         ).toBeTruthy();
         expect(
-          hasteFS.getModuleName(
+          snapshotFS.getModuleName(
             path.join('/', 'project', 'fruits', 'Orange.android.js'),
           ),
         ).toBeTruthy();
@@ -1538,9 +1542,9 @@ describe('HasteMap', () => {
           path.join('/', 'project', 'fruits', 'another'),
           MOCK_STAT_FILE,
         );
-        const {hasteFS, moduleMap} = await waitForItToChange(hm);
+        const {snapshotFS, moduleMap} = await waitForItToChange(hm);
         expect(
-          hasteFS.exists(
+          snapshotFS.exists(
             path.join('/', 'project', 'fruits', 'another', 'Pear.js'),
           ),
         ).toBe(true);

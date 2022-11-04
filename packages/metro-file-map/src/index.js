@@ -11,6 +11,7 @@
 
 import type {
   BuildParameters,
+  BuildResult,
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
@@ -19,7 +20,7 @@ import type {
   EventsQueue,
   FileData,
   FileMetaData,
-  HasteMap as InternalDataObject,
+  FileSystem,
   HType,
   InternalData,
   MockData,
@@ -62,7 +63,7 @@ import nullthrows from 'nullthrows';
 export type {
   BuildParameters,
   FileData,
-  HasteFS,
+  FileSystem,
   HasteMap,
   InternalData,
   ModuleMapData,
@@ -133,7 +134,6 @@ export type {
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
-  HasteMap as HasteMapObject,
   WatcherStatus,
 } from './flow-types';
 
@@ -233,7 +233,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *
  */
 export default class HasteMap extends EventEmitter {
-  _buildPromise: ?Promise<InternalDataObject>;
+  _buildPromise: ?Promise<BuildResult>;
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
   _changeInterval: ?IntervalID;
@@ -340,7 +340,7 @@ export default class HasteMap extends EventEmitter {
     return HasteModuleMap.fromJSON(json);
   }
 
-  build(): Promise<InternalDataObject> {
+  build(): Promise<BuildResult> {
     this._startupPerfLogger?.point('build_start');
     if (!this._buildPromise) {
       this._buildPromise = (async () => {
@@ -380,7 +380,7 @@ export default class HasteMap extends EventEmitter {
         );
 
         const rootDir = this._options.rootDir;
-        const hasteFS = new HasteFS({
+        const snapshotFS = new HasteFS({
           files: snapshot.files,
           rootDir,
         });
@@ -393,7 +393,7 @@ export default class HasteMap extends EventEmitter {
 
         await this._watch(data);
         return {
-          hasteFS,
+          snapshotFS,
           moduleMap,
         };
       })();
@@ -808,12 +808,12 @@ export default class HasteMap extends EventEmitter {
   }
 
   _getSnapshot(data: InternalData): {
-    hasteFS: HasteFS,
+    snapshotFS: FileSystem,
     moduleMap: HasteModuleMap,
   } {
     const rootDir = this._options.rootDir;
     return {
-      hasteFS: new HasteFS({
+      snapshotFS: new HasteFS({
         files: new Map(data.files),
         rootDir,
       }),
