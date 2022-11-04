@@ -57,7 +57,6 @@ module.exports = async function watchmanCrawl({
   changedFiles: FileData,
   removedFiles: FileData,
   clocks: WatchmanClocks,
-  isFresh: boolean,
 }> {
   perfLogger?.point('watchmanCrawl_start');
 
@@ -357,6 +356,5 @@ module.exports = async function watchmanCrawl({
     changedFiles,
     removedFiles,
     clocks: newClocks,
-    isFresh,
   };
 };

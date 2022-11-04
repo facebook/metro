@@ -12,7 +12,6 @@ import type {
   Console,
   CrawlerOptions,
   FileData,
-  InternalData,
   Path,
   PerfLogger,
   WatchmanClocks,
@@ -37,6 +36,12 @@ const debug = require('debug')('Metro:Watcher');
 
 const MAX_WAIT_TIME = 240000;
 
+type CrawlResult = {
+  changedFiles: FileData,
+  clocks?: WatchmanClocks,
+  removedFiles: FileData,
+};
+
 type WatcherOptions = {
   abortSignal: AbortSignal,
   computeSha1: boolean,
@@ -47,7 +52,7 @@ type WatcherOptions = {
   healthCheckFilePrefix: string,
   ignore: string => boolean,
   ignorePattern: RegExp,
-  initialData: InternalData,
+  previousState: CrawlerOptions['previousState'],
   perfLogger: ?PerfLogger,
   roots: $ReadOnlyArray<string>,
   rootDir: string,
@@ -83,14 +88,7 @@ export class Watcher extends EventEmitter {
     this._instanceId = nextInstanceId++;
   }
 
-  async crawl(): Promise<?(
-    | Promise<{
-        changedFiles?: FileData,
-        hasteMap: InternalData,
-        removedFiles: FileData,
-      }>
-    | {changedFiles?: FileData, hasteMap: InternalData, removedFiles: FileData}
-  )> {
+  async crawl(): Promise<CrawlResult> {
     this._options.perfLogger?.point('crawl_start');
 
     const options = this._options;
@@ -110,10 +108,7 @@ export class Watcher extends EventEmitter {
         this.emit('status', status);
       },
       perfLogger: options.perfLogger,
-      previousState: {
-        files: options.initialData.files,
-        clocks: options.initialData.clocks,
-      },
+      previousState: options.previousState,
       rootDir: options.rootDir,
       roots: options.roots,
     };
@@ -142,12 +137,7 @@ export class Watcher extends EventEmitter {
       throw error;
     };
 
-    const processResult = (delta: {
-      changedFiles: FileData,
-      removedFiles: FileData,
-      clocks?: WatchmanClocks,
-      isFresh: boolean,
-    }) => {
+    const logEnd = (delta: CrawlResult): CrawlResult => {
       debug(
         'Crawler "%s" returned %d added/modified, %d removed, %d clock(s).',
         crawler,
@@ -155,35 +145,15 @@ export class Watcher extends EventEmitter {
         delta.removedFiles.size,
         delta.clocks?.size ?? 0,
       );
-
-      // The crawlers return a delta relative to `previousState` and do not
-      // mutate state. The caller of `crawl()` expects us to mutate state as
-      // well, so we do that here, and return `changedFiles: undefined` on a
-      // "fresh" Watchman result for consistency with the previous
-      // implementation.
-      // TODO: Refactor the caller to remove the need for this.
-      const data = options.initialData;
-      data.clocks = delta.clocks ?? new Map();
-
-      for (const [relativePath] of delta.removedFiles) {
-        data.files.delete(relativePath);
-      }
-      for (const [relativePath, fileMetadata] of delta.changedFiles) {
-        data.files.set(relativePath, fileMetadata);
-      }
       this._options.perfLogger?.point('crawl_end');
-      return {
-        hasteMap: data,
-        changedFiles: delta.isFresh ? undefined : delta.changedFiles,
-        removedFiles: delta.removedFiles,
-      };
+      return delta;
     };
 
     debug('Beginning crawl with "%s".', crawler);
     try {
-      return crawl(crawlerOptions).catch(retry).then(processResult);
+      return crawl(crawlerOptions).catch(retry).then(logEnd);
     } catch (error) {
-      return retry(error).then(processResult);
+      return retry(error).then(logEnd);
     }
   }
 

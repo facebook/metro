@@ -204,7 +204,6 @@ function findNative(
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   removedFiles: FileData,
   changedFiles: FileData,
-  isFresh: boolean,
 }> {
   const {
     previousState,
@@ -238,7 +237,6 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       resolve({
         changedFiles,
         removedFiles,
-        isFresh: true,
       });
     };
 
