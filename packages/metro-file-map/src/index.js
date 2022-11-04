@@ -30,7 +30,6 @@ import type {
   Path,
   PerfLoggerFactory,
   PerfLogger,
-  SerializableModuleMap,
   WorkerMetadata,
   WatchmanClocks,
 } from './flow-types';
@@ -126,7 +125,6 @@ export const DuplicateHasteCandidatesError =
   HasteModuleMap.DuplicateHasteCandidatesError;
 export {default as ModuleMap} from './ModuleMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
-export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
 export type {HealthCheckResult} from './Watcher';
@@ -336,10 +334,6 @@ export default class HasteMap extends EventEmitter {
     this._changeID = 0;
   }
 
-  static getModuleMapFromJSON(json: SerializableModuleMap): HasteModuleMap {
-    return HasteModuleMap.fromJSON(json);
-  }
-
   build(): Promise<BuildResult> {
     this._startupPerfLogger?.point('build_start');
     if (!this._buildPromise) {
@@ -426,16 +420,6 @@ export default class HasteMap extends EventEmitter {
     this._startupPerfLogger?.point('read_end');
 
     return data;
-  }
-
-  async readModuleMap(): Promise<HasteModuleMap> {
-    const data = await this.read();
-    return new HasteModuleMap({
-      duplicates: data.duplicates,
-      map: data.map,
-      mocks: data.mocks,
-      rootDir: this._options.rootDir,
-    });
   }
 
   /**

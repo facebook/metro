@@ -175,7 +175,7 @@ export interface FileSystem {
 
 export type Glob = string;
 
-export interface IModuleMap<S = SerializableModuleMap> {
+export interface IModuleMap {
   getModule(
     name: string,
     platform?: ?string,
@@ -192,8 +192,6 @@ export interface IModuleMap<S = SerializableModuleMap> {
   getMockModule(name: string): ?Path;
 
   getRawModuleMap(): RawModuleMap;
-
-  toJSON(): S;
 }
 
 export type MockData = Map<string, Path>;
@@ -212,13 +210,6 @@ export type RawModuleMap = {
   duplicates: DuplicatesIndex,
   map: ModuleMapData,
   mocks: MockData,
-};
-
-export type SerializableModuleMap = {
-  duplicates: $ReadOnlyArray<[string, [string, [string, [string, number]]]]>,
-  map: $ReadOnlyArray<[string, ModuleMapItem]>,
-  mocks: $ReadOnlyArray<[string, Path]>,
-  rootDir: Path,
 };
 
 export type WatchmanClockSpec =
