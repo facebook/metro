@@ -11,14 +11,16 @@
 
 import type {
   BuildParameters,
+  BuildResult,
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
+  CrawlerOptions,
   Console,
   EventsQueue,
   FileData,
   FileMetaData,
-  HasteMap as InternalDataObject,
+  FileSystem,
   HType,
   InternalData,
   MockData,
@@ -28,8 +30,8 @@ import type {
   Path,
   PerfLoggerFactory,
   PerfLogger,
-  SerializableModuleMap,
   WorkerMetadata,
+  WatchmanClocks,
 } from './flow-types';
 import type {Stats} from 'graceful-fs';
 
@@ -60,7 +62,7 @@ import nullthrows from 'nullthrows';
 export type {
   BuildParameters,
   FileData,
-  HasteFS,
+  FileSystem,
   HasteMap,
   InternalData,
   ModuleMapData,
@@ -123,7 +125,6 @@ export const DuplicateHasteCandidatesError =
   HasteModuleMap.DuplicateHasteCandidatesError;
 export {default as ModuleMap} from './ModuleMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
-export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
 export type {HealthCheckResult} from './Watcher';
@@ -131,7 +132,6 @@ export type {
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
-  HasteMap as HasteMapObject,
   WatcherStatus,
 } from './flow-types';
 
@@ -231,7 +231,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *
  */
 export default class HasteMap extends EventEmitter {
-  _buildPromise: ?Promise<InternalDataObject>;
+  _buildPromise: ?Promise<BuildResult>;
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
   _changeInterval: ?IntervalID;
@@ -334,49 +334,60 @@ export default class HasteMap extends EventEmitter {
     this._changeID = 0;
   }
 
-  static getModuleMapFromJSON(json: SerializableModuleMap): HasteModuleMap {
-    return HasteModuleMap.fromJSON(json);
-  }
-
-  build(): Promise<InternalDataObject> {
+  build(): Promise<BuildResult> {
     this._startupPerfLogger?.point('build_start');
     if (!this._buildPromise) {
       this._buildPromise = (async () => {
-        const data = await this._buildFileMap();
-
-        // Persist when we don't know if files changed (changedFiles undefined)
-        // or when we know a file was changed or deleted.
-        let hasteMap: InternalData;
-        if (
-          data.changedFiles == null ||
-          data.changedFiles.size > 0 ||
-          data.removedFiles.size > 0
-        ) {
-          hasteMap = await this._buildHasteMap(data);
-        } else {
-          hasteMap = data.hasteMap;
+        let initialData: InternalData;
+        try {
+          initialData =
+            this._options.resetCache === true
+              ? this._createEmptyMap()
+              : await this.read();
+        } catch {
+          initialData = this._createEmptyMap();
         }
 
+        const fileDelta = await this._buildFileDelta({
+          files: initialData.files,
+          clocks: initialData.clocks,
+        });
+
+        let data: InternalData;
+        if (
+          fileDelta.changedFiles.size > 0 ||
+          fileDelta.removedFiles.size > 0
+        ) {
+          data = await this._applyFileDelta(initialData, fileDelta);
+        } else if (fileDelta.clocks) {
+          data = {...initialData, clocks: fileDelta.clocks};
+        } else {
+          data = initialData;
+        }
+
+        const snapshot = deepCloneInternalData(data);
+
         await this._persist(
-          hasteMap,
-          data.changedFiles ?? new Map(),
-          data.removedFiles ?? new Map(),
+          snapshot,
+          fileDelta.changedFiles,
+          fileDelta.removedFiles,
         );
 
         const rootDir = this._options.rootDir;
-        const hasteFS = new HasteFS({
-          files: hasteMap.files,
+        const snapshotFS = new HasteFS({
+          files: snapshot.files,
           rootDir,
         });
         const moduleMap = new HasteModuleMap({
-          duplicates: hasteMap.duplicates,
-          map: hasteMap.map,
-          mocks: hasteMap.mocks,
+          duplicates: snapshot.duplicates,
+          map: snapshot.map,
+          mocks: snapshot.mocks,
           rootDir,
         });
-        await this._watch(hasteMap);
+
+        await this._watch(data);
         return {
-          hasteFS,
+          snapshotFS,
           moduleMap,
         };
       })();
@@ -411,34 +422,17 @@ export default class HasteMap extends EventEmitter {
     return data;
   }
 
-  async readModuleMap(): Promise<HasteModuleMap> {
-    const data = await this.read();
-    return new HasteModuleMap({
-      duplicates: data.duplicates,
-      map: data.map,
-      mocks: data.mocks,
-      rootDir: this._options.rootDir,
-    });
-  }
-
   /**
    * 2. crawl the file system.
    */
-  async _buildFileMap(): Promise<{
+  async _buildFileDelta(
+    previousState: CrawlerOptions['previousState'],
+  ): Promise<{
     removedFiles: FileData,
-    changedFiles?: FileData,
-    hasteMap: InternalData,
+    changedFiles: FileData,
+    clocks?: WatchmanClocks,
   }> {
-    let hasteMap: InternalData;
-    this._startupPerfLogger?.point('buildFileMap_start');
-    try {
-      hasteMap =
-        this._options.resetCache === true
-          ? this._createEmptyMap()
-          : await this.read();
-    } catch {
-      hasteMap = this._createEmptyMap();
-    }
+    this._startupPerfLogger?.point('buildFileDelta_start');
 
     const {
       computeSha1,
@@ -462,8 +456,8 @@ export default class HasteMap extends EventEmitter {
       healthCheckFilePrefix: this._options.healthCheck.filePrefix,
       ignore: path => this._ignore(path),
       ignorePattern,
-      initialData: hasteMap,
       perfLogger: this._startupPerfLogger,
+      previousState,
       roots,
       rootDir,
       useWatchman: await this._shouldUseWatchman(),
@@ -475,7 +469,7 @@ export default class HasteMap extends EventEmitter {
     watcher.on('status', status => this.emit('status', status));
 
     return watcher.crawl().then(result => {
-      this._startupPerfLogger?.point('buildFileMap_end');
+      this._startupPerfLogger?.point('buildFileDelta_end');
       return result;
     });
   }
@@ -706,35 +700,28 @@ export default class HasteMap extends EventEmitter {
       .then(workerReply, workerError);
   }
 
-  _buildHasteMap(data: {
-    removedFiles: FileData,
-    changedFiles?: FileData,
-    hasteMap: InternalData,
-  }): Promise<InternalData> {
-    this._startupPerfLogger?.point('buildHasteMap_start');
-    const {removedFiles, changedFiles, hasteMap} = data;
+  _applyFileDelta(
+    data: InternalData,
+    delta: {
+      changedFiles: FileData,
+      removedFiles: FileData,
+      clocks?: WatchmanClocks,
+    },
+  ): Promise<InternalData> {
+    this._startupPerfLogger?.point('applyFileDelta_start');
+    const {changedFiles, removedFiles, clocks} = delta;
+    data.clocks = clocks ?? new Map();
 
-    // If any files were removed or we did not track what files changed, process
-    // every file looking for changes. Otherwise, process only changed files.
-    let map: ModuleMapData;
-    let mocks: MockData;
-    let filesToProcess: FileData;
-    if (changedFiles == null || removedFiles.size) {
-      map = new Map();
-      mocks = new Map();
-      filesToProcess = hasteMap.files;
-    } else {
-      map = hasteMap.map;
-      mocks = hasteMap.mocks;
-      filesToProcess = changedFiles;
+    for (const [relativeFilePath] of removedFiles) {
+      this._removeIfExists(data, relativeFilePath);
     }
 
-    for (const [relativeFilePath, fileMetadata] of removedFiles) {
-      this._recoverDuplicates(hasteMap, relativeFilePath, fileMetadata[H.ID]);
+    for (const [relativeFilePath, fileMetadata] of changedFiles) {
+      data.files.set(relativeFilePath, fileMetadata);
     }
 
     const promises = [];
-    for (const relativeFilePath of filesToProcess.keys()) {
+    for (const relativeFilePath of changedFiles.keys()) {
       if (
         this._options.skipPackageJson &&
         relativeFilePath.endsWith(PACKAGE_JSON)
@@ -746,7 +733,7 @@ export default class HasteMap extends EventEmitter {
         this._options.rootDir,
         relativeFilePath,
       );
-      const promise = this._processFile(hasteMap, map, mocks, filePath);
+      const promise = this._processFile(data, data.map, data.mocks, filePath);
       if (promise) {
         promises.push(promise);
       }
@@ -755,10 +742,8 @@ export default class HasteMap extends EventEmitter {
     return Promise.all(promises).then(
       () => {
         this._cleanup();
-        hasteMap.map = map;
-        hasteMap.mocks = mocks;
-        this._startupPerfLogger?.point('buildHasteMap_end');
-        return hasteMap;
+        this._startupPerfLogger?.point('applyFileDelta_end');
+        return data;
       },
       error => {
         this._cleanup();
@@ -781,9 +766,8 @@ export default class HasteMap extends EventEmitter {
   /**
    * 4. serialize the new `HasteMap` in a cache file.
    */
-  async _persist(hasteMap: InternalData, changed: FileData, removed: FileData) {
+  async _persist(snapshot: InternalData, changed: FileData, removed: FileData) {
     this._startupPerfLogger?.point('persist_start');
-    const snapshot = deepCloneInternalData(hasteMap);
     await this._cacheManager.write(snapshot, {changed, removed});
     this._startupPerfLogger?.point('persist_end');
   }
@@ -807,10 +791,70 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
+  _getSnapshot(data: InternalData): {
+    snapshotFS: FileSystem,
+    moduleMap: HasteModuleMap,
+  } {
+    const rootDir = this._options.rootDir;
+    return {
+      snapshotFS: new HasteFS({
+        files: new Map(data.files),
+        rootDir,
+      }),
+      moduleMap: new HasteModuleMap({
+        duplicates: new Map(data.duplicates),
+        map: new Map(data.map),
+        mocks: new Map(data.mocks),
+        rootDir,
+      }),
+    };
+  }
+
+  _removeIfExists(data: InternalData, relativeFilePath: Path) {
+    const fileMetadata = data.files.get(relativeFilePath);
+    if (!fileMetadata) {
+      return;
+    }
+    const moduleName = fileMetadata[H.ID];
+    const platform =
+      getPlatformExtension(relativeFilePath, this._options.platforms) ||
+      H.GENERIC_PLATFORM;
+    data.files.delete(relativeFilePath);
+
+    let moduleMap = data.map.get(moduleName);
+    if (moduleMap != null) {
+      // We are forced to copy the object because metro-file-map exposes
+      // the map as an immutable entity.
+      moduleMap = Object.assign(Object.create(null), moduleMap);
+      delete moduleMap[platform];
+      if (Object.keys(moduleMap).length === 0) {
+        data.map.delete(moduleName);
+      } else {
+        data.map.set(moduleName, moduleMap);
+      }
+    }
+
+    if (this._options.mocksPattern) {
+      const absoluteFilePath = path.join(
+        this._options.rootDir,
+        normalizePathSep(relativeFilePath),
+      );
+      if (
+        this._options.mocksPattern &&
+        this._options.mocksPattern.test(absoluteFilePath)
+      ) {
+        const mockName = getMockName(absoluteFilePath);
+        data.mocks.delete(mockName);
+      }
+    }
+
+    this._recoverDuplicates(data, relativeFilePath, moduleName);
+  }
+
   /**
    * Watch mode
    */
-  async _watch(hasteMap: InternalData): Promise<void> {
+  async _watch(data: InternalData): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
       this._startupPerfLogger?.point('watch_end');
@@ -827,8 +871,6 @@ export default class HasteMap extends EventEmitter {
 
     let changeQueue: Promise<null | void> = Promise.resolve();
     let eventsQueue: EventsQueue = [];
-    // We only need to copy the entire haste map once on every "frame".
-    let mustCopy = true;
     let eventStartTimestamp = null;
 
     const emitChange = () => {
@@ -838,22 +880,19 @@ export default class HasteMap extends EventEmitter {
         });
         if (hmrPerfLogger != null) {
           hmrPerfLogger.start({timestamp: nullthrows(eventStartTimestamp)});
+          hmrPerfLogger.point('waitingForChangeInterval_start', {
+            timestamp: nullthrows(eventStartTimestamp),
+          });
+          hmrPerfLogger.point('waitingForChangeInterval_end');
           hmrPerfLogger.annotate({
             int: {eventsQueueLength: eventsQueue.length},
           });
           hmrPerfLogger.point('fileChange_start');
         }
-        mustCopy = true;
         const changeEvent: ChangeEvent = {
           logger: hmrPerfLogger,
           eventsQueue,
-          hasteFS: new HasteFS({files: hasteMap.files, rootDir}),
-          moduleMap: new HasteModuleMap({
-            duplicates: hasteMap.duplicates,
-            map: hasteMap.map,
-            mocks: hasteMap.mocks,
-            rootDir,
-          }),
+          ...this._getSnapshot(data),
         };
         this.emit('change', changeEvent);
         eventsQueue = [];
@@ -877,7 +916,7 @@ export default class HasteMap extends EventEmitter {
       }
 
       const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
-      const fileMetadata = hasteMap.files.get(relativeFilePath);
+      const fileMetadata = data.files.get(relativeFilePath);
 
       // The file has been accessed, not modified
       if (
@@ -910,55 +949,16 @@ export default class HasteMap extends EventEmitter {
             return null;
           }
 
-          if (mustCopy) {
-            mustCopy = false;
-            // $FlowFixMe[reassign-const] - Refactor this
-            hasteMap = {
-              clocks: new Map(hasteMap.clocks),
-              duplicates: new Map(hasteMap.duplicates),
-              files: new Map(hasteMap.files),
-              map: new Map(hasteMap.map),
-              mocks: new Map(hasteMap.mocks),
-            };
-          }
-
           const add = () => {
             eventsQueue.push({filePath: absoluteFilePath, stat, type});
             return null;
           };
 
-          const fileMetadata = hasteMap.files.get(relativeFilePath);
+          const fileMetadata = data.files.get(relativeFilePath);
 
           // If it's not an addition, delete the file and all its metadata
           if (fileMetadata != null) {
-            const moduleName = fileMetadata[H.ID];
-            const platform =
-              getPlatformExtension(absoluteFilePath, this._options.platforms) ||
-              H.GENERIC_PLATFORM;
-            hasteMap.files.delete(relativeFilePath);
-
-            let moduleMap = hasteMap.map.get(moduleName);
-            if (moduleMap != null) {
-              // We are forced to copy the object because metro-file-map exposes
-              // the map as an immutable entity.
-              moduleMap = Object.assign(Object.create(null), moduleMap);
-              delete moduleMap[platform];
-              if (Object.keys(moduleMap).length === 0) {
-                hasteMap.map.delete(moduleName);
-              } else {
-                hasteMap.map.set(moduleName, moduleMap);
-              }
-            }
-
-            if (
-              this._options.mocksPattern &&
-              this._options.mocksPattern.test(absoluteFilePath)
-            ) {
-              const mockName = getMockName(absoluteFilePath);
-              hasteMap.mocks.delete(mockName);
-            }
-
-            this._recoverDuplicates(hasteMap, relativeFilePath, moduleName);
+            this._removeIfExists(data, relativeFilePath);
           }
 
           // If the file was added or changed,
@@ -976,11 +976,11 @@ export default class HasteMap extends EventEmitter {
               '',
               null,
             ];
-            hasteMap.files.set(relativeFilePath, fileMetadata);
+            data.files.set(relativeFilePath, fileMetadata);
             const promise = this._processFile(
-              hasteMap,
-              hasteMap.map,
-              hasteMap.mocks,
+              data,
+              data.map,
+              data.mocks,
               absoluteFilePath,
               {forceInBand: true},
             );
@@ -1009,7 +1009,7 @@ export default class HasteMap extends EventEmitter {
 
     invariant(
       this._watcher != null,
-      'Expected _watcher to have been initialised by _buildFileMap',
+      'Expected _watcher to have been initialised by build()',
     );
     await this._watcher.watch(onChange);
 
