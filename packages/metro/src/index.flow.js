@@ -65,6 +65,7 @@ export type RunServerOptions = {
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
   waitForBundler?: boolean,
+  watch?: boolean,
   websocketEndpoints?: {
     [path: string]: typeof ws.Server,
   },
@@ -225,6 +226,7 @@ exports.runServer = async (
     secureKey, // deprecated
     waitForBundler = false,
     websocketEndpoints = {},
+    watch,
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   await earlyPortCheck(host, config.server.port);
@@ -246,6 +248,7 @@ exports.runServer = async (
   const {middleware, end, metroServer} = await createConnectMiddleware(config, {
     hasReducedPerformance,
     waitForBundler,
+    watch,
   });
 
   serverApp.use(middleware);
