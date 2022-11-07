@@ -12,7 +12,7 @@
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {
-  HasteFS,
+  FileSystem,
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
@@ -56,7 +56,7 @@ class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
   _config: ConfigT;
   _haste: MetroFileMap;
-  _hasteFS: HasteFS;
+  _snapshotFS: FileSystem;
   _moduleCache: ModuleCache;
   _moduleMap: MetroFileMapModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
@@ -111,11 +111,11 @@ class DependencyGraph extends EventEmitter {
     this._haste = haste;
     this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._readyPromise = haste.build().then(({hasteFS, moduleMap}) => {
+    this._readyPromise = haste.build().then(({snapshotFS, moduleMap}) => {
       log(createActionEndEntry(initializingMetroLogEntry));
       config.reporter.update({type: 'dep_graph_loaded'});
 
-      this._hasteFS = hasteFS;
+      this._snapshotFS = snapshotFS;
       this._moduleMap = moduleMap;
 
       // $FlowFixMe[method-unbinding] added when improving typing for this parameters
@@ -160,7 +160,7 @@ class DependencyGraph extends EventEmitter {
     let dir = parsedPath.dir;
     do {
       const candidate = path.join(dir, 'package.json');
-      if (this._hasteFS.exists(candidate)) {
+      if (this._snapshotFS.exists(candidate)) {
         return candidate;
       }
       dir = path.dirname(dir);
@@ -170,13 +170,11 @@ class DependencyGraph extends EventEmitter {
 
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
-  _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
-    this._hasteFS = hasteFS;
+  _onHasteChange({eventsQueue, snapshotFS, moduleMap}) {
+    this._snapshotFS = snapshotFS;
     this._resolutionCache = new Map();
     this._moduleMap = moduleMap;
-    eventsQueue.forEach(({type, filePath}) =>
-      this._moduleCache.processFileChange(type, filePath),
-    );
+    eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
     this._createModuleResolver();
     this.emit('change');
   }
@@ -208,7 +206,7 @@ class DependencyGraph extends EventEmitter {
           ...this._config.resolver.assetResolutions.map(
             resolution => basePath + '@' + resolution + 'x' + extension,
           ),
-        ].filter(candidate => this._hasteFS.exists(candidate));
+        ].filter(candidate => this._snapshotFS.exists(candidate));
         return assets.length ? assets : null;
       },
       resolveRequest: this._config.resolver.resolveRequest,
@@ -221,6 +219,10 @@ class DependencyGraph extends EventEmitter {
       // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       getClosestPackage: this._getClosestPackage.bind(this),
     });
+  }
+
+  getAllFiles(): Array<string> {
+    return nullthrows(this._snapshotFS).getAllFiles();
   }
 
   getSha1(filename: string): string {
@@ -240,7 +242,7 @@ class DependencyGraph extends EventEmitter {
     // been talking about for stuff like CSS or WASM).
 
     const resolvedPath = fs.realpathSync(containerName);
-    const sha1 = this._hasteFS.getSha1(resolvedPath);
+    const sha1 = this._snapshotFS.getSha1(resolvedPath);
 
     if (!sha1) {
       throw new ReferenceError(
@@ -272,7 +274,7 @@ class DependencyGraph extends EventEmitter {
       filter: RegExp,
     }>,
   ): string[] {
-    return this._hasteFS.matchFilesWithContext(from, context);
+    return this._snapshotFS.matchFilesWithContext(from, context);
   }
 
   resolveDependency(
@@ -345,11 +347,11 @@ class DependencyGraph extends EventEmitter {
   }
 
   _doesFileExist = (filePath: string): boolean => {
-    return this._hasteFS.exists(filePath);
+    return this._snapshotFS.exists(filePath);
   };
 
   getHasteName(filePath: string): string {
-    const hasteName = this._hasteFS.getModuleName(filePath);
+    const hasteName = this._snapshotFS.getModuleName(filePath);
 
     if (hasteName) {
       return hasteName;
@@ -359,7 +361,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   getDependencies(filePath: string): Array<string> {
-    return nullthrows(this._hasteFS.getDependencies(filePath));
+    return nullthrows(this._snapshotFS.getDependencies(filePath));
   }
 }
 

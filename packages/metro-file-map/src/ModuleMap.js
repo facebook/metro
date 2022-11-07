@@ -16,7 +16,6 @@ import type {
   ModuleMetaData,
   Path,
   RawModuleMap,
-  SerializableModuleMap,
 } from './flow-types';
 
 import H from './constants';
@@ -25,39 +24,9 @@ import * as fastPath from './lib/fast_path';
 const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
 const EMPTY_MAP = new Map<'g' | 'native' | string, ?DuplicatesSet>();
 
-export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
+export default class ModuleMap implements IModuleMap {
   static DuplicateHasteCandidatesError: Class<DuplicateHasteCandidatesError>;
   +_raw: RawModuleMap;
-  _json: ?SerializableModuleMap;
-
-  // $FlowFixMe[unclear-type] - Refactor away this function
-  static _mapToArrayRecursive(map: Map<string, any>): Array<[string, any]> {
-    let arr = Array.from(map);
-    if (arr[0] && arr[0][1] instanceof Map) {
-      arr = arr.map(
-        // $FlowFixMe[unclear-type] - Refactor away this function
-        el => ([el[0], this._mapToArrayRecursive(el[1])]: [string, any]),
-      );
-    }
-    return arr;
-  }
-
-  static _mapFromArrayRecursive(
-    // $FlowFixMe[unclear-type] - Refactor away this function
-    arr: $ReadOnlyArray<[string, any]>,
-    // $FlowFixMe[unclear-type] - Refactor away this function
-  ): Map<string, any> {
-    if (arr[0] && Array.isArray(arr[1])) {
-      // $FlowFixMe[reassign-const] - Refactor away this function
-      arr = (arr.map(el => [
-        el[0],
-        // $FlowFixMe[unclear-type] - Refactor away this function
-        this._mapFromArrayRecursive((el[1]: Array<[string, any]>)),
-        // $FlowFixMe[unclear-type] - Refactor away this function
-      ]): Array<[string, any]>);
-    }
-    return new Map(arr);
-  }
 
   constructor(raw: RawModuleMap) {
     this._raw = raw;
@@ -97,6 +66,8 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
       : null;
   }
 
+  // FIXME: This is only used by Meta-internal validation and should be
+  // removed or replaced with a less leaky API.
   getRawModuleMap(): RawModuleMap {
     return {
       duplicates: this._raw.duplicates,
@@ -104,31 +75,6 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
       mocks: this._raw.mocks,
       rootDir: this._raw.rootDir,
     };
-  }
-
-  toJSON(): SerializableModuleMap {
-    if (!this._json) {
-      this._json = {
-        duplicates: (ModuleMap._mapToArrayRecursive(
-          this._raw.duplicates,
-        ): SerializableModuleMap['duplicates']),
-        map: Array.from(this._raw.map),
-        mocks: Array.from(this._raw.mocks),
-        rootDir: this._raw.rootDir,
-      };
-    }
-    return this._json;
-  }
-
-  static fromJSON(serializableModuleMap: SerializableModuleMap): ModuleMap {
-    return new ModuleMap({
-      duplicates: (ModuleMap._mapFromArrayRecursive(
-        serializableModuleMap.duplicates,
-      ): RawModuleMap['duplicates']),
-      map: new Map(serializableModuleMap.map),
-      mocks: new Map(serializableModuleMap.mocks),
-      rootDir: serializableModuleMap.rootDir,
-    });
   }
 
   /**
