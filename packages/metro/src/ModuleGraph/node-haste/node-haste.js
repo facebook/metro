@@ -38,6 +38,7 @@ type ResolveOptions = $ReadOnly<{
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
   disableHierarchicalLookup: boolean,
+  preferNativePlatform: boolean,
   emptyModulePath: string,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
@@ -150,6 +151,7 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
     additionalExts,
     platform,
     platforms,
+    preferNativePlatform,
   } = options;
   const files = Object.keys(transformedFiles);
   function getTransformedFile(path: string): TransformedCodeFile {
@@ -191,7 +193,8 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
       rootDir: '',
     }),
     nodeModulesPaths: options.nodeModulesPaths,
-    preferNativePlatform: true,
+    preferNativePlatform:
+      typeof preferNativePlatform === 'boolean' ? preferNativePlatform : true,
     projectRoot: '',
     resolveAsset: (
       dirPath: string,

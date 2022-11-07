@@ -113,6 +113,7 @@ type ResolverConfigT = {
   blacklistRE?: RegExp | Array<RegExp>,
   blockList: RegExp | Array<RegExp>,
   disableHierarchicalLookup: boolean,
+  preferNativePlatform: boolean,
   dependencyExtractor: ?string,
   emptyModulePath: string,
   extraNodeModules: {[name: string]: string, ...},
