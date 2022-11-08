@@ -192,10 +192,13 @@ class DependencyGraph extends EventEmitter {
       doesFileExist: this._doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
+      getHasteModulePath: (name, platform) =>
+        this._moduleMap.getModule(name, platform, true),
+      getHastePackagePath: (name, platform) =>
+        this._moduleMap.getPackage(name, platform, true),
       isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
-      moduleMap: this._moduleMap,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
