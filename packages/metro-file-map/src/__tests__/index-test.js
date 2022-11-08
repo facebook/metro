@@ -1552,8 +1552,9 @@ describe('HasteMap', () => {
           moduleMap.getModule('Pear');
           throw new Error('should be unreachable');
         } catch (error) {
-          const {DuplicateHasteCandidatesError} =
-            require('../ModuleMap').default;
+          const {
+            DuplicateHasteCandidatesError,
+          } = require('../lib/DuplicateHasteCandidatesError');
           expect(error).toBeInstanceOf(DuplicateHasteCandidatesError);
           expect(error.hasteName).toBe('Pear');
           expect(error.platform).toBe('g');

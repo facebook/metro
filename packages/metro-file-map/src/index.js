@@ -121,10 +121,9 @@ type InternalOptions = {
 
 type WorkerInterface = {worker: typeof worker, getSha1: typeof getSha1};
 
-export const DuplicateHasteCandidatesError =
-  HasteModuleMap.DuplicateHasteCandidatesError;
 export {default as ModuleMap} from './ModuleMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
+export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
 export type {HealthCheckResult} from './Watcher';

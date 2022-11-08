@@ -18,7 +18,10 @@ import type MetroFileMap, {
 } from 'metro-file-map';
 import type Module from './Module';
 
-import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
+import {
+  DuplicateHasteCandidatesError,
+  ModuleMap as MetroFileMapModuleMap,
+} from 'metro-file-map';
 
 const canonicalize = require('metro-core/src/canonicalize');
 const createHasteMap = require('./DependencyGraph/createHasteMap');
@@ -35,8 +38,6 @@ const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
-
-const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
 const NULL_PLATFORM = Symbol();
 
