@@ -177,7 +177,7 @@ class HmrServer<TClient: Client> {
 
       this._clientGroups.set(id, clientGroup);
 
-      let latestEventArgs = [];
+      let latestEventArgs: Array<any> = [];
 
       const debounceCallHandleFileChange = debounceAsyncQueue(async () => {
         await this._handleFileChange(

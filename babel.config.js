@@ -26,7 +26,7 @@ const plugins = [
   '@babel/plugin-syntax-class-properties',
 ];
 
-const presets = [];
+const presets /*: Array<string> */ = [];
 
 function getConfig(api /*: any */) /*: BabelCoreOptions */ {
   api.cache.never();
