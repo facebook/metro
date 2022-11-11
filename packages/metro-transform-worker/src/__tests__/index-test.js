@@ -480,9 +480,9 @@ it('allows replacing the collectDependencies implementation', async () => {
     'metro-transform-worker/__virtual__/collectModifiedDependencies',
     () =>
       jest.fn((ast, opts) => {
-        const metroCoreCollectDependencies = jest.requireActual(
-          'metro/src/ModuleGraph/worker/collectDependencies',
-        );
+        const metroCoreCollectDependencies = jest.requireActual<
+          (empty, empty) => {dependencies: {map: mixed => mixed}},
+        >('metro/src/ModuleGraph/worker/collectDependencies');
         const collectedDeps = metroCoreCollectDependencies(ast, opts);
         return {
           ...collectedDeps,

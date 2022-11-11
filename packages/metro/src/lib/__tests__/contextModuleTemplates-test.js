@@ -52,7 +52,7 @@ describe('getContextModuleTemplate', () => {
 
   test('creates posix paths on windows for sync template', () => {
     jest.resetModules();
-    jest.mock('path', () => jest.requireActual('path').win32);
+    jest.mock('path', () => jest.requireActual<{win32: mixed}>('path').win32);
     const {
       getContextModuleTemplate: getWindowsTemplate,
     } = require('../contextModuleTemplates');

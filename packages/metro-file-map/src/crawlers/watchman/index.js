@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import type {WatchmanClockSpec} from '../../flow-types';
 import type {
   CrawlerOptions,
   FileData,
@@ -18,10 +19,10 @@ import type {
 } from '../../flow-types';
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
-import {planQuery} from './planQuery';
 import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import normalizePathSep from '../../lib/normalizePathSep';
+import {planQuery} from './planQuery';
 import invariant from 'invariant';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
@@ -60,7 +61,7 @@ module.exports = async function watchmanCrawl({
 }> {
   perfLogger?.point('watchmanCrawl_start');
 
-  const newClocks = new Map();
+  const newClocks = new Map<Path, WatchmanClockSpec>();
 
   const client = new watchman.Client();
   abortSignal?.addEventListener('abort', () => client.end());

@@ -13,7 +13,7 @@ import HasteFS from '../HasteFS';
 
 jest.mock('../lib/fast_path', () => ({
   resolve: (a, b) => b,
-  relative: jest.requireActual('path').relative,
+  relative: jest.requireActual<{relative: mixed}>('path').relative,
 }));
 
 describe('matchFilesWithContext', () => {
