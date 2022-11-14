@@ -14,4 +14,5 @@
 var a = 2n;
 // $FlowIssue[bigint-unsupported]
 var b = 3n;
+// $FlowFixMe[unsafe-addition]
 module.exports = a ** b;
