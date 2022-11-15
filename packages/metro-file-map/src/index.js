@@ -364,30 +364,28 @@ export default class HasteMap extends EventEmitter {
           data = initialData;
         }
 
-        const snapshot = deepCloneInternalData(data);
-
-        await this._persist(
-          snapshot,
+        await this._takeSnapshotAndPersist(
+          data,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
 
         const rootDir = this._options.rootDir;
-        const snapshotFS = new HasteFS({
-          files: snapshot.files,
+        const fileSystem = new HasteFS({
+          files: data.files,
           rootDir,
         });
-        const moduleMap = new HasteModuleMap({
-          duplicates: snapshot.duplicates,
-          map: snapshot.map,
-          mocks: snapshot.mocks,
+        const hasteModuleMap = new HasteModuleMap({
+          duplicates: data.duplicates,
+          map: data.map,
+          mocks: data.mocks,
           rootDir,
         });
 
         await this._watch(data);
         return {
-          snapshotFS,
-          moduleMap,
+          fileSystem,
+          hasteModuleMap,
         };
       })();
     }
@@ -763,10 +761,20 @@ export default class HasteMap extends EventEmitter {
   }
 
   /**
-   * 4. serialize the new `HasteMap` in a cache file.
+   * 4. Serialize a snapshot of our raw data via the configured cache manager
    */
-  async _persist(snapshot: InternalData, changed: FileData, removed: FileData) {
+  async _takeSnapshotAndPersist(
+    data: InternalData,
+    changed: FileData,
+    removed: FileData,
+  ) {
     this._startupPerfLogger?.point('persist_start');
+    // We must take a snapshot here synchronously, because `data` is only
+    // internally consistent immediately after crawling - we do not update
+    // `data.clocks` on changes.
+    //
+    // TODO: Make this more explicit
+    const snapshot = deepCloneInternalData(data);
     await this._cacheManager.write(snapshot, {changed, removed});
     this._startupPerfLogger?.point('persist_end');
   }

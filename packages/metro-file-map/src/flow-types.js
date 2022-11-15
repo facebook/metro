@@ -41,8 +41,8 @@ export type BuildParameters = $ReadOnly<{
 }>;
 
 export type BuildResult = {
-  snapshotFS: FileSystem,
-  moduleMap: ModuleMap,
+  fileSystem: FileSystem,
+  hasteModuleMap: ModuleMap,
 };
 
 export interface CacheManager {

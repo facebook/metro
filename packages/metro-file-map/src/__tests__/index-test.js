@@ -243,9 +243,9 @@ describe('HasteMap', () => {
   });
 
   it('matches files against a pattern', async () => {
-    const {snapshotFS} = await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
     expect(
-      snapshotFS.matchFiles(
+      fileSystem.matchFiles(
         process.platform === 'win32' ? /project\\fruits/ : /project\/fruits/,
       ),
     ).toEqual([
@@ -255,7 +255,7 @@ describe('HasteMap', () => {
       path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
     ]);
 
-    expect(snapshotFS.matchFiles(/__mocks__/)).toEqual([
+    expect(fileSystem.matchFiles(/__mocks__/)).toEqual([
       path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
     ]);
   });
@@ -265,16 +265,16 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
     `;
-    const {snapshotFS} = await new HasteMap(config).build();
-    expect(snapshotFS.matchFiles(/Kiwi/)).toEqual([]);
+    const {fileSystem} = await new HasteMap(config).build();
+    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
   });
 
   it('ignores vcs directories without ignore pattern', async () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {snapshotFS} = await new HasteMap(defaultConfig).build();
-    expect(snapshotFS.matchFiles('.git')).toEqual([]);
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
+    expect(fileSystem.matchFiles('.git')).toEqual([]);
   });
 
   it('ignores vcs directories with ignore pattern regex', async () => {
@@ -286,9 +286,9 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {snapshotFS} = await new HasteMap(config).build();
-    expect(snapshotFS.matchFiles(/Kiwi/)).toEqual([]);
-    expect(snapshotFS.matchFiles('.git')).toEqual([]);
+    const {fileSystem} = await new HasteMap(config).build();
+    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
+    expect(fileSystem.matchFiles('.git')).toEqual([]);
   });
 
   it('warn on ignore pattern except for regex', async () => {
@@ -1328,20 +1328,20 @@ describe('HasteMap', () => {
       });
     }
 
-    hm_it('provides a new set of hasteHS and moduleMap', async hm => {
+    hm_it('build returns a "live" fileSystem and hasteModuleMap', async hm => {
       const initialResult = await hm.build();
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
-      expect(initialResult.snapshotFS.getModuleName(filePath)).toBeDefined();
-      expect(initialResult.moduleMap.getModule('Banana')).toBe(filePath);
+      expect(initialResult.fileSystem.getModuleName(filePath)).toBeDefined();
+      expect(initialResult.hasteModuleMap.getModule('Banana')).toBe(filePath);
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
       const deletedBanana = {filePath, stat: undefined, type: 'delete'};
       expect(eventsQueue).toEqual([deletedBanana]);
-      // Verify we didn't change the original map.
-      expect(initialResult.snapshotFS.getModuleName(filePath)).toBeDefined();
-      expect(initialResult.moduleMap.getModule('Banana')).toBe(filePath);
+      // Verify that the initial result has been updated
+      expect(initialResult.fileSystem.getModuleName(filePath)).toBeNull();
+      expect(initialResult.hasteModuleMap.getModule('Banana')).toBeNull();
       expect(snapshotFS.getModuleName(filePath)).toBeNull();
       expect(moduleMap.getModule('Banana')).toBeNull();
     });
@@ -1454,7 +1454,7 @@ describe('HasteMap', () => {
     hm_it(
       'correctly tracks changes to both platform-specific versions of a single module name',
       async hm => {
-        const {moduleMap: initMM} = await hm.build();
+        const {hasteModuleMap: initMM} = await hm.build();
         expect(initMM.getModule('Orange', 'ios')).toBeTruthy();
         expect(initMM.getModule('Orange', 'android')).toBeTruthy();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
