@@ -16,6 +16,7 @@ import type {
   ModuleMetaData,
   Path,
   RawModuleMap,
+  ReadOnlyRawModuleMap,
 } from './flow-types';
 
 import H from './constants';
@@ -26,10 +27,11 @@ const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
 const EMPTY_MAP = new Map<'g' | 'native' | string, ?DuplicatesSet>();
 
 export default class ModuleMap implements IModuleMap {
-  +_raw: RawModuleMap;
+  +#raw: RawModuleMap;
 
   constructor(raw: RawModuleMap) {
-    this._raw = raw;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#raw = raw;
   }
 
   getModule(
@@ -45,7 +47,7 @@ export default class ModuleMap implements IModuleMap {
     );
     if (module && module[H.TYPE] === (type ?? H.MODULE)) {
       const modulePath = module[H.PATH];
-      return modulePath && fastPath.resolve(this._raw.rootDir, modulePath);
+      return modulePath && fastPath.resolve(this.#raw.rootDir, modulePath);
     }
     return null;
   }
@@ -60,20 +62,20 @@ export default class ModuleMap implements IModuleMap {
 
   getMockModule(name: string): ?Path {
     const mockPath =
-      this._raw.mocks.get(name) || this._raw.mocks.get(name + '/index');
+      this.#raw.mocks.get(name) || this.#raw.mocks.get(name + '/index');
     return mockPath != null
-      ? fastPath.resolve(this._raw.rootDir, mockPath)
+      ? fastPath.resolve(this.#raw.rootDir, mockPath)
       : null;
   }
 
   // FIXME: This is only used by Meta-internal validation and should be
   // removed or replaced with a less leaky API.
-  getRawModuleMap(): RawModuleMap {
+  getRawModuleMap(): ReadOnlyRawModuleMap {
     return {
-      duplicates: this._raw.duplicates,
-      map: this._raw.map,
-      mocks: this._raw.mocks,
-      rootDir: this._raw.rootDir,
+      duplicates: this.#raw.duplicates,
+      map: this.#raw.map,
+      mocks: this.#raw.mocks,
+      rootDir: this.#raw.rootDir,
     };
   }
 
@@ -90,8 +92,8 @@ export default class ModuleMap implements IModuleMap {
     platform: ?string,
     supportsNativePlatform: boolean,
   ): ModuleMetaData | null {
-    const map = this._raw.map.get(name) || EMPTY_OBJ;
-    const dupMap = this._raw.duplicates.get(name) || EMPTY_MAP;
+    const map = this.#raw.map.get(name) || EMPTY_OBJ;
+    const dupMap = this.#raw.duplicates.get(name) || EMPTY_MAP;
     if (platform != null) {
       this._assertNoDuplicates(
         name,
@@ -135,12 +137,10 @@ export default class ModuleMap implements IModuleMap {
     if (relativePathSet == null) {
       return;
     }
-    // Force flow refinement
-    const previousSet = relativePathSet;
     const duplicates = new Map<string, number>();
 
-    for (const [relativePath, type] of previousSet) {
-      const duplicatePath = fastPath.resolve(this._raw.rootDir, relativePath);
+    for (const [relativePath, type] of relativePathSet) {
+      const duplicatePath = fastPath.resolve(this.#raw.rootDir, relativePath);
       duplicates.set(duplicatePath, type);
     }
 

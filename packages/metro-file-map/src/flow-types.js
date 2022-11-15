@@ -191,7 +191,7 @@ export interface IModuleMap {
 
   getMockModule(name: string): ?Path;
 
-  getRawModuleMap(): RawModuleMap;
+  getRawModuleMap(): ReadOnlyRawModuleMap;
 }
 
 export type MockData = Map<string, Path>;
@@ -211,6 +211,16 @@ export type RawModuleMap = {
   map: ModuleMapData,
   mocks: MockData,
 };
+
+export type ReadOnlyRawModuleMap = $ReadOnly<{
+  rootDir: Path,
+  duplicates: $ReadOnlyMap<
+    string,
+    $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
+  >,
+  map: $ReadOnlyMap<string, ModuleMapItem>,
+  mocks: $ReadOnlyMap<string, Path>,
+}>;
 
 export type WatchmanClockSpec =
   | string

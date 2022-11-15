@@ -22,12 +22,14 @@ import * as path from 'path';
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
 export default class HasteFS implements FileSystem {
-  +_rootDir: Path;
-  +_files: FileData;
+  +#rootDir: Path;
+  +#files: FileData;
 
   constructor({rootDir, files}: {rootDir: Path, files: FileData}) {
-    this._rootDir = rootDir;
-    this._files = files;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#rootDir = rootDir;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#files = files;
   }
 
   getModuleName(file: Path): ?string {
@@ -66,12 +68,12 @@ export default class HasteFS implements FileSystem {
   }
 
   getFileIterator(): Iterable<Path> {
-    return this._files.keys();
+    return this.#files.keys();
   }
 
   *getAbsoluteFileIterator(): Iterable<Path> {
     for (const file of this.getFileIterator()) {
-      yield fastPath.resolve(this._rootDir, file);
+      yield fastPath.resolve(this.#rootDir, file);
     }
   }
 
@@ -147,7 +149,7 @@ export default class HasteFS implements FileSystem {
   }
 
   _getFileData(file: Path): void | FileMetaData {
-    const relativePath = fastPath.relative(this._rootDir, file);
-    return this._files.get(relativePath);
+    const relativePath = fastPath.relative(this.#rootDir, file);
+    return this.#files.get(relativePath);
   }
 }
