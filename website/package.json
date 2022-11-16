@@ -20,7 +20,7 @@
     "sass": "^1.46.0"
   },
   "devDependencies": {
-    "prettier": "^2.4.1"
+    "prettier": "2.7.1"
   },
   "resolutions": {
     "node-fetch": "^2.0.0"

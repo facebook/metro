@@ -35,7 +35,7 @@
     "lerna": "2.4.0",
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
-    "prettier": "^2.4.1",
+    "prettier": "2.7.1",
     "progress": "^2.0.0",
     "promise": "^8.3.0",
     "temp": "^0.8.3"
