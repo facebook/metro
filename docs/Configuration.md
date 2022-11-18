@@ -111,11 +111,11 @@ Type: `string`
 
 The path to the `metro-file-map` cache directory, defaults to `os.tmpdir()`.
 
-#### Deprecated: `hasteMapCacheDirectory`
+#### `hasteMapCacheDirectory` <div class="label deprecated">Deprecated</div>
 
 Type: `string`
 
-Alias of `fileMapCacheDirectory`
+Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
 ---
 ### Resolver Options
@@ -277,9 +277,55 @@ runtime in the app's node modules confugration.
 
 #### `getTransformOptions`
 
-Type: `GetTransformOptions`
+Type: Function (see details below)
 
-Get the transform options.
+A function called by Metro to calculate additional options for the transformer and serializer based on the specific bundle being built.
+
+Metro expects `getTransformOptions` to have the following signature:
+
+```flow
+function getTransformOptions(
+  entryPoints: $ReadOnlyArray<string>,
+  options: {
+    dev: boolean,
+    hot: boolean,
+    platform: ?string,
+  },
+  getDependenciesOf: (path: string) => Promise<Array<string>>,
+): Promise<ExtraTransformOptions> {
+  // ...
+}
+```
+
+`getTransformOptions` receives these parameters:
+
+* **`entryPoints`**: Absolute paths to the bundle's entry points (typically just one).
+* **`options`**:
+  * **`dev`**: Whether the bundle is being built in development mode.
+  * **`hot`**: <div class="label deprecated">Deprecated</div> Always true.
+  * **`platform`**: The target platform (e.g. `ios`, `android`).
+* **`getDependenciesOf`**: A function which, given an absolute path to a module, returns a promise that resolves to the absolute paths of the module's transitive dependencies.
+
+`getTransformOptions` should return a promise that resolves to an object with the following properties:
+
+```flow
+type ExtraTransformOptions = {
+  preloadedModules?: {[path: string]: true} | false,
+  ramGroups?: Array<string>,
+  transform?: {
+    inlineRequires?: {blockList: {[string]: true}} | boolean,
+    nonInlinedRequires?: $ReadOnlyArray<string>,
+  },
+};
+```
+
+* **`preloadedModules`**: A plain object whose keys represent a set of absolute paths. When serializing an [indexed RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires#enable-the-ram-format), the modules in this set will be marked for eager evaluation at runtime.
+* **`ramGroups`**: An array of absolute paths. When serializing an [indexed RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires#enable-the-ram-format), each of the listed modules will be serialized along with its transitive dependencies. At runtime, the modules will all be parsed together as soon as any one of them is evaluated.
+* **`transform`**: Advanced options for the transformer.
+  * **`inlineRequires`**:
+    * If `inlineRequires` is a boolean, it controls whether [inline requires](https://reactnative.dev/docs/ram-bundles-inline-requires#inline-requires) are enabled in this bundle.
+    * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
+  * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
 
 #### `hermesParser`
 
@@ -324,7 +370,7 @@ Where to fetch the assets from.
 
 #### `getRunModuleStatement`
 
-Type: `(number` &#x7c; `string) => string`
+Type: `(number | string) => string`
 
 Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.
 
