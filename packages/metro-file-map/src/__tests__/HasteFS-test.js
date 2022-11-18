@@ -9,6 +9,8 @@
  * @oncall react_native
  */
 
+import type {FileMetaData, Path} from '../flow-types';
+
 import HasteFS from '../HasteFS';
 
 jest.mock('../lib/fast_path', () => ({
@@ -20,17 +22,10 @@ describe('matchFilesWithContext', () => {
   test('matches files against context', () => {
     const hfs = new HasteFS({
       rootDir: '/',
-      files: new Map([
-        [
-          '/foo/another.js',
-          // $FlowFixMe: mocking files
-          {},
-        ],
-        [
-          '/bar.js',
-          // $FlowFixMe: mocking files
-          {},
-        ],
+      // $FlowFixMe[incompatible-call]: mocking files
+      files: new Map<Path, FileMetaData>([
+        ['/foo/another.js', {}],
+        ['/bar.js', {}],
       ]),
     });
 

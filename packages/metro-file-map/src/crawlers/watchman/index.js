@@ -94,11 +94,14 @@ module.exports = async function watchmanCrawl({
       );
     }, WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS);
     try {
-      const response = await new Promise((resolve, reject) =>
-        // $FlowFixMe[incompatible-call] - dynamic call of command
-        client.command([command, ...args], (error, result) =>
-          error ? reject(makeWatchmanError(error)) : resolve(result),
-        ),
+      const response = await new Promise<WatchmanQueryResponse>(
+        (resolve, reject) =>
+          // $FlowFixMe[incompatible-call] - dynamic call of command
+          client.command(
+            [command, ...args],
+            (error: ?Error, result: WatchmanQueryResponse) =>
+              error ? reject(makeWatchmanError(error)) : resolve(result),
+          ),
       );
       if ('warning' in response) {
         onStatus({
@@ -107,6 +110,7 @@ module.exports = async function watchmanCrawl({
           command,
         });
       }
+      // $FlowFixMe[incompatible-return]
       return response;
     } finally {
       // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable

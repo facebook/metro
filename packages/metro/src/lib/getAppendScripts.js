@@ -116,7 +116,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceMappingURL=${sourceMappingURL}`;
     output.push({
       path: 'source-map',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [
@@ -136,7 +136,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceURL=${options.sourceUrl}`;
     output.push({
       path: 'source-url',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [

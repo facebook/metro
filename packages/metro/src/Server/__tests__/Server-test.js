@@ -11,6 +11,7 @@
 
 import type {Graph} from '../../DeltaBundler/Graph';
 import type {Module, Options} from '../../DeltaBundler/types.flow';
+import type {Dependency} from '../../ModuleGraph/types.flow';
 
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
@@ -184,7 +185,8 @@ describe('processRequest', () => {
             // $FlowFixMe[prop-missing]
             {
               path: '/root/mybundle.js',
-              dependencies: new Map([
+              // $FlowFixMe[prop-missing]
+              dependencies: new Map<string, Dependency>([
                 [
                   'foo',
                   // $FlowFixMe[prop-missing]
@@ -397,7 +399,7 @@ describe('processRequest', () => {
 
   it('returns 404 on request of *.bundle when resource does not exist', async () => {
     // $FlowFixMe[cannot-write]
-    fs.realpath = jest.fn((file, cb) =>
+    fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 
@@ -542,7 +544,7 @@ describe('processRequest', () => {
 
   it('DELETE succeeds with a nonexistent path', async () => {
     // $FlowFixMe[cannot-write]
-    fs.realpath = jest.fn((file, cb) =>
+    fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 

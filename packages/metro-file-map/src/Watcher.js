@@ -113,7 +113,7 @@ export class Watcher extends EventEmitter {
       roots: options.roots,
     };
 
-    const retry = (error: Error) => {
+    const retry = (error: Error): Promise<CrawlResult> => {
       if (crawl === watchmanCrawl) {
         crawler = 'node';
         options.console.warn(
@@ -125,7 +125,7 @@ export class Watcher extends EventEmitter {
             '  ' +
             error.toString(),
         );
-        return nodeCrawl(crawlerOptions).catch(e => {
+        return nodeCrawl(crawlerOptions).catch<CrawlResult>(e => {
           throw new Error(
             'Crawler retry failed:\n' +
               `  Original error: ${error.message}\n` +
@@ -151,7 +151,7 @@ export class Watcher extends EventEmitter {
 
     debug('Beginning crawl with "%s".', crawler);
     try {
-      return crawl(crawlerOptions).catch(retry).then(logEnd);
+      return crawl(crawlerOptions).catch<CrawlResult>(retry).then(logEnd);
     } catch (error) {
       return retry(error).then(logEnd);
     }

@@ -845,7 +845,9 @@ class Server {
       bundlePerfLogger.point('serializingBundle_start');
       const serializer =
         this._config.serializer.customSerializer ||
-        ((...args) => bundleToString(baseJSBundle(...args)).code);
+        ((entryPoint, preModules, graph, options) =>
+          bundleToString(baseJSBundle(entryPoint, preModules, graph, options))
+            .code);
 
       const bundle = await serializer(
         entryFile,

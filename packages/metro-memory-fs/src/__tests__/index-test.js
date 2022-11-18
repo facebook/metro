@@ -757,7 +757,7 @@ describe('posix support', () => {
   });
 
   it('throws when trying to read inexistent file (async)', done => {
-    fs.readFile('/foo.txt', error => {
+    fs.readFile('/foo.txt', (error: any) => {
       if (error.code !== 'ENOENT') {
         // $FlowFixMe - Upgrading the Jest definition revealed errors
         done(error);

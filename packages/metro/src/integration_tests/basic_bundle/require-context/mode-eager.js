@@ -15,7 +15,7 @@ declare var require: RequireWithContext;
 
 function main() {
   return awaitProperties<$FlowFixMe>(
-    copyContextToObject(
+    copyContextToObject<$FlowFixMe>(
       require.context('./subdir', undefined, undefined, 'eager'),
     ),
   );

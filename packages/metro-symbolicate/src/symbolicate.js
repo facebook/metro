@@ -230,7 +230,7 @@ async function main(
 }
 
 function readAll(stream: stream$Readable | tty$ReadStream) {
-  return new Promise(resolve => {
+  return new Promise<string>(resolve => {
     let data = '';
     if (stream.isTTY === true) {
       resolve(data);
