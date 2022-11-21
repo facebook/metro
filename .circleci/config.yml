@@ -4,7 +4,6 @@
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@3.2.4
   win: circleci/windows@2.4.0
 
 references:
@@ -70,8 +69,12 @@ jobs:
       - checkout
       - yarn_install
       - run: yarn test-coverage
-      - codecov/upload:
-          file: ./coverage/coverage-final.json
+      - run:
+          name: Download Codecov Uploader
+          command: ./.circleci/scripts/install_codecov.sh
+      - run:
+          name: Upload coverage results
+          command: ./codecov -t ${CODECOV_TOKEN} -f ./coverage/coverage-final.json
 
   test-linux:
     <<: *secure_unset_publish_token
