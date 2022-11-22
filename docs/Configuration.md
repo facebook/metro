@@ -199,7 +199,7 @@ resolveRequest: (context, moduleName, platform) => {
 
 Type: `boolean`
 
-If set to `false`, it'll prevent Metro from using watchman (even if it's installed)
+If set to `false`, it'll prevent Metro from using Watchman (even if it's installed)
 
 These options are only useful with React Native projects.
 
@@ -207,13 +207,13 @@ These options are only useful with React Native projects.
 
 Type: `RegExp` or `Array<RegExp>`
 
-A RegEx defining which paths to ignore, however if a blocklisted file is required it will be brought into the dependency graph.
+A regular expression defining which paths to ignore, however if a blocklisted file is required it will be brought into the dependency graph.
 
 #### `hasteImplModulePath`
 
 Type: `string`
 
-The path to the haste resolver.
+The path to the Haste resolver.
 
 #### `platforms`
 
@@ -272,8 +272,8 @@ Type: `boolean | string` (default: `true`)
 
 Whether the transformer should use the `@babel/transform/runtime` plugin.
 
-If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated babel runtime based on the
-runtime in the app's node modules confugration.
+If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated Babel runtime based on the
+runtime in the app's node modules configuration.
 
 #### `getTransformOptions`
 
@@ -457,7 +457,7 @@ Type: `Array<string>`
 
 The extensions which Metro should watch in addition to `sourceExts`, but which will not be automatically tried by the resolver.
 
-Therefore, the two behaviour differences from `resolver.sourceExts` when importing a module are:
+Therefore, the two behavior differences from `resolver.sourceExts` when importing a module are:
 
 - Modules can only be required when fully specified (e.g. `import moduleA from 'moduleA.mjs'`).
 - No platform-specific resolution is performed.
