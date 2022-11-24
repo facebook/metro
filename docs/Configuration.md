@@ -52,15 +52,36 @@ module.exports = {
 
 #### `cacheStores`
 
-Type: `Array<CacheStore<TransformResult<>>>`
+Type: `CacheStores` (see details below)
 
-List where we store our [caches](./Caching.md).
+A list of storage adapters for Metro's [transformer cache](./Caching.md). This can be any combination of [built-in cache stores](./Caching.md#built-in-cache-stores) and [custom cache stores](./Caching.md#custom-cache-stores). Defaults to using a temporary directory on disk as the only cache store.
+
+When Metro needs to transform a module, it first computes a machine-independent cache key for that file, and uses it to try to read from each of the stores in order. Once Metro has obtained the output of the transformer (whether already cached or not), it writes the transform result to *all* of the stores that returned `null` (a cache miss) for that key.
+
+```flow
+type CacheStores =
+  | Array<CacheStore<Buffer | JsonSerializable>>
+  | ((MetroCache) => Array<
+      CacheStore<Buffer | JsonSerializable>
+    >);
+
+// The exports of 'metro-cache'
+type MetroCache = {
+  FileStore,
+  AutoCleanFileStore,
+  HttpStore,
+  HttpGetStore,
+  ...
+};
+
+type JsonSerializable = /* Any JSON-serializable value */;
+```
 
 #### `cacheVersion`
 
 Type: `string`
 
-Can be used to generate a key that will invalidate the whole metro cache.
+An arbitrary string appended to all cache keys in the project before they are hashed. There is generally no need to set this explicitly, as Metro will automatically derive the correct cache keys from your project config and the contents of source files.
 
 #### `projectRoot`
 
