@@ -87,20 +87,29 @@ An arbitrary string appended to all cache keys in the project before they are ha
 
 Type: `string`
 
-The root folder of your project.
+The root folder of your project. If your project depends on any files outside this root, their containing directories must be listed in [`watchFolders`](#watchfolders).
+
+:::note
+If your Metro project is developed in a monorepo and includes files from multiple logical packages, you'll generally want to set `projectRoot` to the root of your repository, or at least high enough in the hierarchy that all relevant files are reachable without separately configuring `watchFolders`.
+:::
 
 #### `watchFolders`
 
 Type: `Array<string>`
 
-Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.
-(By default the file watching is disabled in CI environments. Also it can be manually disabled by setting the env variable `CI=true`)
+A list of directories outside of [`projectRoot`](#projectroot) that can contain source files for the project.
+
+:::note
+Despite the naming of this option, it isn't related solely to file watching. Even in an offline build (for example, in CI), all files must be visible to Metro through the combination of `watchFolders` and `projectRoot`.
+:::
 
 #### `transformerPath`
 
 Type: `string`
 
-The absolute path of a module (or a package name resolvable from the `metro` package) exporting a `transform` function.
+The absolute path of a module (or a package name resolvable from the `metro` package) that implements a transformer.
+
+See the implementation of Metro's default transformer ([`metro-transform-worker`](https://github.com/facebook/metro/blob/main/packages/metro-transform-worker/src/index.js)) for more information about the transformer interface.
 
 #### `reporter`
 
@@ -265,7 +274,7 @@ What module to use for handling async requires.
 
 Type: `string`
 
-Use a custom babel transformer (only relevant when using the default transformerPath). For example:
+Use a custom Babel transformer (only relevant when using the default [`transformerPath`](#transformerpath)). For example:
 
 ```javascript
 // in your babelTransformer file
