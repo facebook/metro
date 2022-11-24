@@ -113,15 +113,17 @@ See the implementation of Metro's default transformer ([`metro-transform-worker`
 
 #### `reporter`
 
-Type: `{update: () => void}`
+Type: `{update: (event: ReportableEvent) => void}`
 
-Used to report the status of the bundler during the bundling process.
+Used to report the status of the bundler during the bundling process. The default implementation prints most events to the terminal.
+
+See also the [definition of `ReportableEvent`](https://github.com/facebook/metro/blob/main/packages/metro/src/lib/reporting.js) in Metro's source code.
 
 #### `resetCache`
 
 Type: `boolean`
 
-Whether we should reset the cache when starting the build.
+If `true`, Metro will reset the transformer cache (see [`cacheStores`](#cachestores)) and the file map cache (see [`fileMapCacheDirectory`](#filemapcachedirectory)) on startup.
 
 #### `stickyWorkers`
 
