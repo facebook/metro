@@ -52,52 +52,84 @@ module.exports = {
 
 #### `cacheStores`
 
-Type: `Array<CacheStore<TransformResult<>>>`
+Type: `CacheStores` (see details below)
 
-List where we store our [caches](./Caching.md).
+A list of storage adapters for Metro's [transformer cache](./Caching.md). This can be any combination of [built-in cache stores](./Caching.md#built-in-cache-stores) and [custom cache stores](./Caching.md#custom-cache-stores). Defaults to using a temporary directory on disk as the only cache store.
+
+When Metro needs to transform a module, it first computes a machine-independent cache key for that file, and uses it to try to read from each of the stores in order. Once Metro has obtained the output of the transformer (whether already cached or not), it writes the transform result to *all* of the stores that returned `null` (a cache miss) for that key.
+
+```flow
+type CacheStores =
+  | Array<CacheStore<Buffer | JsonSerializable>>
+  | ((MetroCache) => Array<
+      CacheStore<Buffer | JsonSerializable>
+    >);
+
+// The exports of 'metro-cache'
+type MetroCache = {
+  FileStore,
+  AutoCleanFileStore,
+  HttpStore,
+  HttpGetStore,
+  ...
+};
+
+type JsonSerializable = /* Any JSON-serializable value */;
+```
 
 #### `cacheVersion`
 
 Type: `string`
 
-Can be used to generate a key that will invalidate the whole metro cache.
+An arbitrary string appended to all cache keys in the project before they are hashed. There is generally no need to set this explicitly, as Metro will automatically derive the correct cache keys from your project config and the contents of source files.
 
 #### `projectRoot`
 
 Type: `string`
 
-The root folder of your project.
+The root folder of your project. If your project depends on any files outside this root, their containing directories must be listed in [`watchFolders`](#watchfolders).
+
+:::note
+If your Metro project is developed in a monorepo and includes files from multiple logical packages, you'll generally want to set `projectRoot` to the root of your repository, or at least high enough in the hierarchy that all relevant files are reachable without separately configuring `watchFolders`.
+:::
 
 #### `watchFolders`
 
 Type: `Array<string>`
 
-Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.
-(By default the file watching is disabled in CI environments. Also it can be manually disabled by setting the env variable `CI=true`)
+A list of directories outside of [`projectRoot`](#projectroot) that can contain source files for the project.
+
+:::note
+Despite the naming of this option, it isn't related solely to file watching. Even in an offline build (for example, in CI), all files must be visible to Metro through the combination of `watchFolders` and `projectRoot`.
+:::
 
 #### `transformerPath`
 
 Type: `string`
 
-The absolute path of a module (or a package name resolvable from the `metro` package) exporting a `transform` function.
+The absolute path of a module (or a package name resolvable from the `metro` package) that implements a transformer.
+
+See the implementation of Metro's default transformer ([`metro-transform-worker`](https://github.com/facebook/metro/blob/main/packages/metro-transform-worker/src/index.js)) for more information about the transformer interface.
 
 #### `reporter`
 
-Type: `{update: () => void}`
+Type: `{update: (event: ReportableEvent) => void}`
 
-Used to report the status of the bundler during the bundling process.
+Used to report the status of the bundler during the bundling process. The default implementation prints most events to the terminal.
+
+See also the [definition of `ReportableEvent`](https://github.com/facebook/metro/blob/main/packages/metro/src/lib/reporting.js) in Metro's source code.
 
 #### `resetCache`
 
 Type: `boolean`
 
-Whether we should reset the cache when starting the build.
+If `true`, Metro will reset the transformer cache (see [`cacheStores`](#cachestores)) and the file map cache (see [`fileMapCacheDirectory`](#filemapcachedirectory)) on startup.
 
 #### `stickyWorkers`
 
 Type: `boolean`
 
-Control whether the created workers should stick based on filename or not.
+If `true`, Metro will use a stable mapping from files to transformer workers, so the same file is always transformed by the same worker. This can improve initial build performance if the transformer is expensive to initialize, but can slow down concurrent builds with different configurations (e.g. multiple React Native apps connected to one Metro server). Defaults to `true`.
 
 #### `maxWorkers`
 
@@ -244,7 +276,7 @@ What module to use for handling async requires.
 
 Type: `string`
 
-Use a custom babel transformer (only relevant when using the default transformerPath). For example:
+Use a custom Babel transformer (only relevant when using the default [`transformerPath`](#transformerpath)). For example:
 
 ```javascript
 // in your babelTransformer file
