@@ -135,7 +135,13 @@ If `true`, Metro will use a stable mapping from files to transformer workers, so
 
 Type: `number`
 
-The number of workers we should parallelize the transformer on.
+The number of workers to use for parallel processing in Metro. Defaults to approximately half of the number of cores available on the machine, as reported by [`os.cpus()`](https://nodejs.org/api/os.html#oscpus).
+
+:::note
+1. Values exceeding the number of available cores have no effect.
+2. If `maxWorkers` is set to 1 or lower, worker code will run in the main Metro process instead of concurrently.
+3. Metro has two separate worker pools - one for transformation and one for building the file map. Each pool has its worker count set to `maxWorkers` independently.
+:::
 
 #### `fileMapCacheDirectory`
 
