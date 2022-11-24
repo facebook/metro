@@ -129,7 +129,7 @@ If `true`, Metro will reset the transformer cache (see [`cacheStores`](#cachesto
 
 Type: `boolean`
 
-Control whether the created workers should stick based on filename or not.
+If `true`, Metro will use a stable mapping from files to transformer workers, so the same file is always transformed by the same worker. This can improve initial build performance if the transformer is expensive to initialize, but can slow down concurrent builds with different configurations (e.g. multiple React Native apps connected to one Metro server). Defaults to `true`.
 
 #### `maxWorkers`
 
