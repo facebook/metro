@@ -162,7 +162,7 @@ Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
 Type: `Array<string>`
 
-An array of asset extensions to include in the bundle. For example, if you would give `['ttf']` you would be able to include `.ttf` files in the bundle.
+The list of asset file extensions to include in the bundle. For example, including `'ttf'` allows Metro bundles to reference `.ttf` files. This is used primarily to enable React Native's [image asset support](https://reactnative.dev/docs/images). The default list includes many common image, video and audio file extensions. See [Metro's source code](https://github.com/facebook/metro/blob/main/packages/metro-config/src/defaults/defaults.js#L16) for the full list.
 
 #### `sourceExts`
 
