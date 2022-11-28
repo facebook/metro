@@ -178,11 +178,13 @@ Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
 Type: `Array<string>`
 
-Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
+The list of fields in `package.json` that Metro will treat as describing a package's entry points. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
+
+Metro's default resolver processes each of these fields according to the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), including the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 :::note
 
-When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
+When Metro is started via the React Native CLI, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
 
 :::
 
