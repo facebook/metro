@@ -239,27 +239,39 @@ For more information on customizing the resolver, see [Module Resolution](https:
 
 Type: `boolean`
 
-If set to `false`, it'll prevent Metro from using Watchman (even if it's installed)
-
-These options are only useful with React Native projects.
+If set to `false`, prevents Metro from using Watchman (even if it's installed).
 
 #### `blockList`
 
 Type: `RegExp` or `Array<RegExp>`
 
-A regular expression defining which paths to ignore, however if a blocklisted file is required it will be brought into the dependency graph.
+A regular expression (or list of regular expressions) defining which paths to exclude from Metro's file map. Files whose absolute paths match these patterns are effectively hidden from Metro and cannot be resolved or imported in the current project.
 
 #### `hasteImplModulePath`
 
-Type: `string`
+Type: `?string`
 
-The path to the Haste resolver.
+The path to the Haste implementation for the current project. Haste is an opt-in mechanism for importing modules by their globally-unique name anywhere in the project, e.g. `import Foo from 'Foo'`.
+
+Metro expects this module to have the following signature:
+
+```flow
+module.exports = {
+  getHasteName(filePath: string): ?string {
+    // ...
+  },
+};
+```
+
+`getHasteName` should return a short, globally unique name for the module whose path is `filePath`, or `null` if the module should not be accessible via Haste.
 
 #### `platforms`
 
 Type: `Array<string>`
 
-Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
+Additional platforms to resolve. Defaults to `['ios', 'android', 'windows', 'web']`.
+
+For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
 
 #### `requireCycleIgnorePatterns`
 
