@@ -312,40 +312,14 @@ module.exports = async function asyncRequire(moduleID: mixed): Promise<mixed> {
 ```
 :::
 
-#### `babelTransformerPath`
-
-Type: `string`
-
-Use a custom Babel transformer (only relevant when using the default [`transformerPath`](#transformerpath)). For example:
-
-```javascript
-// in your babelTransformer file
-module.exports = ({ filename, options, plugins, src }) => {
-  // transform file...
-  return { ast: AST };
-}
-```
-
 #### `dynamicDepsInPackages`
 
-Type: `string` (`throwAtRuntime` or `reject`)
+Type: `'throwAtRuntime' | 'reject'`
 
-What should happen when a dynamic dependency is found.
+Controls how Metro handles dependencies that cannot be statically analyzed at build time. For example, `require('./' + someFunction() + '.js')` cannot be resolved without knowing what `someFunction()` will return.
 
-#### `enableBabelRCLookup`
-
-Type: `boolean` (default: `true`)
-
-Whether we should use the `.babelrc` config file.
-
-#### `enableBabelRuntime`
-
-Type: `boolean | string` (default: `true`)
-
-Whether the transformer should use the `@babel/transform/runtime` plugin.
-
-If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated Babel runtime based on the
-runtime in the app's node modules configuration.
+* **`'throwAtRuntime'`** (the default): Metro does not stop bundling, but the `require` call will throw at runtime.
+* **`'reject'`**: Metro will stop bundling and report an error to the user.
 
 #### `getTransformOptions`
 
@@ -399,12 +373,6 @@ type ExtraTransformOptions = {
     * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
   * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
 
-#### `hermesParser`
-
-Type: `boolean` (default: `false`)
-
-Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
-
 #### `minifierPath`
 
 Type: `string` (default: `'metro-minify-terser'`)
@@ -436,6 +404,52 @@ List of modules to call to modify Asset data
 Type: `string`
 
 Where to fetch the assets from.
+
+### Babel-specific transformer options
+
+#### `babelTransformerPath`
+
+Type: `string`
+
+The name of a module that compiles code with Babel, returning an AST and optional metadata. Defaults to `metro-babel-transformer`.
+
+Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`metro-react-native-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.
+:::
+
+#### `enableBabelRCLookup`
+
+Type: `boolean`
+
+Whether to enable searching for Babel configuration files. This is passed to Babel as the [`babelrc`](https://babeljs.io/docs/en/options#babelrc) config option. Defaults to `true`.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it. Custom [Babel transformers](#babeltransformerpath) should respect this option.
+:::
+
+#### `enableBabelRuntime`
+
+Type: `boolean | string`
+
+Whether the transformer should use the `@babel/transform/runtime` plugin. Defaults to `true`.
+
+If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated Babel runtime calls based on the version installed in your project.
+
+:::note
+This option only works under the default settings for React Native. It may have no effect in a project that uses custom [`transformerPath`](#transformerpath), a custom [`babelTransformerPath`](#babeltransformerpath) or a custom [Babel config file](https://babeljs.io/docs/en/config-files).
+:::
+
+#### `hermesParser`
+
+Type: `boolean`
+
+Whether to use the [`hermes-parser`](https://www.npmjs.com/package/hermes-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath) and the [Babel transformers](#babeltransformerpath) built into Metro. Custom transformers and custom [Babel transformers](#babeltransformerpath) may ignore it.
+:::
 
 ---
 ### Serializer Options
