@@ -170,7 +170,7 @@ Type: `Array<string>`
 
 The list of source file extensions to include in the bundle. For example, including `'ts'` allows Metro to include `.ts` files in the bundle.
 
-The order of these extensions defines the order to match files on disk. For more info, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+The order of these extensions defines the order to match files on disk. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
@@ -202,28 +202,26 @@ What module to use as the canonical "empty" module when one is needed. Defaults 
 
 #### `extraNodeModules`
 
-Type: `{[name:string]:string}`
+Type: `{[string]: string}`
 
-Which other `node_modules` to include besides the ones relative to the project directory. This is keyed by dependency name.
+A mapping of package names to directories that is consulted after the standard lookup through `node_modules` as well as any [`nodeModulesPaths`](#nodemodulespaths). For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 #### `nodeModulesPaths`
 
 Type: `Array<string>`
 
-This option can be used to add additional `node_modules` folders for Metro to locate third-party dependencies when resolving modules. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files.
-
-This option works similarly to how [$NODE_PATH](https://nodejs.org/api/modules.html#modules_loading_from_the_global_folders) works for Node.js based tooling, except that `nodeModulesPaths` takes precedence over hierarchical `node_modules` lookup.
+A list of paths to check for modules after looking through all `node_modules` directories. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 #### `resolveRequest`
 
-Type: `?CustomResolver`
+Type: [`?CustomResolver`](./Resolution.md#resolverequest-customresolver)
 
-An optional function used to resolve requests. Particularly useful for cases where aliases or custom protocols are used. For example:
+An optional function used to override the default resolution algorithm. This is particularly useful for cases where aliases or custom protocols are used. For example:
 
 ```javascript
 resolveRequest: (context, moduleName, platform) => {
   if (moduleName.startsWith('my-custom-resolver:')) {
-    // Resolve file path logic...
+    // Logic to resolve the module name to a file path...
     // NOTE: Throw an error if there is no resolution.
     return {
       filePath: 'path/to/file',
@@ -234,6 +232,8 @@ resolveRequest: (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 }
 ```
+
+For more information on customizing the resolver, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 #### `useWatchman`
 
