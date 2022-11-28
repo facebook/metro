@@ -202,9 +202,26 @@ Any custom options passed to the resolver. By default, Metro populates this base
 
 A alternative resolver function to which the current request may be delegated. Defaults to [`resolver.resolveRequest`](./Configuration.md#resolvereqeuest).
 
+Metro expects `resolveRequest` to have the following signature:
+
+```flow
+function resolveRequest(
+  context: ResolutionContext,
+  moduleName: string,
+  platform: string | null,
+): Resolution {
+  // ...
+}
+
+type Resolution =
+  | {type: 'empty'}
+  | {type: 'sourceFile', filePath: string}
+  | {type: 'assetFiles', filePaths: $ReadOnlyArray<string>};
+```
+
 When calling the default resolver with a non-null `resolveRequest` function, it represents a custom resolver and will always be called, fully replacing the default resolution logic.
 
-Inside a custom resolver, `resolveRequest` is set to the default resolver function, for easy chaining and customisation.
+Inside a custom resolver, `resolveRequest` is set to the default resolver function, for easy chaining and customization.
 
 ## Caching
 

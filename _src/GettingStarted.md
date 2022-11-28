@@ -199,7 +199,7 @@ Source maps are built for each bundle by using the same URL as the bundle (thus,
 
 ## JavaScript transformer
 
-The JavaScript transformer (`babelTransformerPath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
+The JavaScript transformer ([`babelTransformerPath`](./Configuration.md#babeltransformerpath)) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
 
 ### Method `transform(module)`
 

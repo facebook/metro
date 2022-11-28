@@ -162,7 +162,7 @@ Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
 Type: `Array<string>`
 
-An array of asset extensions to include in the bundle. For example, if you would give `['ttf']` you would be able to include `.ttf` files in the bundle.
+The list of asset file extensions to include in the bundle. For example, including `'ttf'` allows Metro bundles to reference `.ttf` files. This is used primarily to enable React Native's [image asset support](https://reactnative.dev/docs/images). The default list includes many common image, video and audio file extensions. See [Metro's source code](https://github.com/facebook/metro/blob/main/packages/metro-config/src/defaults/defaults.js#L16) for the full list.
 
 #### `sourceExts`
 
@@ -170,7 +170,7 @@ Type: `Array<string>`
 
 The list of source file extensions to include in the bundle. For example, including `'ts'` allows Metro to include `.ts` files in the bundle.
 
-The order of these extensions defines the order to match files on disk. For more info, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+The order of these extensions defines the order to match files on disk. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
@@ -178,11 +178,13 @@ Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
 Type: `Array<string>`
 
-Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
+The list of fields in `package.json` that Metro will treat as describing a package's entry points. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
+
+Metro's default resolver processes each of these fields according to the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), including the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 :::note
 
-When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
+When Metro is started via the React Native CLI, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
 
 :::
 
@@ -200,28 +202,26 @@ What module to use as the canonical "empty" module when one is needed. Defaults 
 
 #### `extraNodeModules`
 
-Type: `{[name:string]:string}`
+Type: `{[string]: string}`
 
-Which other `node_modules` to include besides the ones relative to the project directory. This is keyed by dependency name.
+A mapping of package names to directories that is consulted after the standard lookup through `node_modules` as well as any [`nodeModulesPaths`](#nodemodulespaths). For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 #### `nodeModulesPaths`
 
 Type: `Array<string>`
 
-This option can be used to add additional `node_modules` folders for Metro to locate third-party dependencies when resolving modules. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files.
-
-This option works similarly to how [$NODE_PATH](https://nodejs.org/api/modules.html#modules_loading_from_the_global_folders) works for Node.js based tooling, except that `nodeModulesPaths` takes precedence over hierarchical `node_modules` lookup.
+A list of paths to check for modules after looking through all `node_modules` directories. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
 
 #### `resolveRequest`
 
-Type: `?CustomResolver`
+Type: [`?CustomResolver`](./Resolution.md#resolverequest-customresolver)
 
-An optional function used to resolve requests. Particularly useful for cases where aliases or custom protocols are used. For example:
+An optional function used to override the default resolution algorithm. This is particularly useful for cases where aliases or custom protocols are used. For example:
 
 ```javascript
 resolveRequest: (context, moduleName, platform) => {
   if (moduleName.startsWith('my-custom-resolver:')) {
-    // Resolve file path logic...
+    // Logic to resolve the module name to a file path...
     // NOTE: Throw an error if there is no resolution.
     return {
       filePath: 'path/to/file',
@@ -233,31 +233,45 @@ resolveRequest: (context, moduleName, platform) => {
 }
 ```
 
+For more information on customizing the resolver, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+
 #### `useWatchman`
 
 Type: `boolean`
 
-If set to `false`, it'll prevent Metro from using Watchman (even if it's installed)
-
-These options are only useful with React Native projects.
+If set to `false`, prevents Metro from using Watchman (even if it's installed).
 
 #### `blockList`
 
 Type: `RegExp` or `Array<RegExp>`
 
-A regular expression defining which paths to ignore, however if a blocklisted file is required it will be brought into the dependency graph.
+A regular expression (or list of regular expressions) defining which paths to exclude from Metro's file map. Files whose absolute paths match these patterns are effectively hidden from Metro and cannot be resolved or imported in the current project.
 
 #### `hasteImplModulePath`
 
-Type: `string`
+Type: `?string`
 
-The path to the Haste resolver.
+The path to the Haste implementation for the current project. Haste is an opt-in mechanism for importing modules by their globally-unique name anywhere in the project, e.g. `import Foo from 'Foo'`.
+
+Metro expects this module to have the following signature:
+
+```flow
+module.exports = {
+  getHasteName(filePath: string): ?string {
+    // ...
+  },
+};
+```
+
+`getHasteName` should return a short, globally unique name for the module whose path is `filePath`, or `null` if the module should not be accessible via Haste.
 
 #### `platforms`
 
 Type: `Array<string>`
 
-Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
+Additional platforms to resolve. Defaults to `['ios', 'android', 'windows', 'web']`.
+
+For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
 
 #### `requireCycleIgnorePatterns`
 
@@ -276,42 +290,36 @@ Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
 
 Type: `string`
 
-What module to use for handling async requires.
+The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to [`metro-runtime/src/modules/asyncRequire`](https://github.com/facebook/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js).
 
-#### `babelTransformerPath`
+:::note
+The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) relative to the module containing the original `import()` call. In particular, assuming the default value of `asyncRequireModulePath` is in use, the project must have a compatible version of `metro-runtime` installed in `node_modules`.
+:::
 
-Type: `string`
+:::info
+Although Metro doesn't perform bundle splitting out of the box, a custom `asyncRequire` implementation can be used as part of a bundle splitting solution:
 
-Use a custom Babel transformer (only relevant when using the default [`transformerPath`](#transformerpath)). For example:
+```flow
+// Get a reference to the dynamic `require` function provided by Metro.
+const dynamicRequire = (require: {importAll: mixed => mixed});
 
-```javascript
-// in your babelTransformer file
-module.exports = ({ filename, options, plugins, src }) => {
-  // transform file...
-  return { ast: AST };
-}
+module.exports = async function asyncRequire(moduleID: mixed): Promise<mixed> {
+  // 1. Do any work necessary (not detailed here) to fetch and evaluate the
+  //    module's code, as transformed by Metro.
+  // 2. Require the module from Metro's module registry using `dynamicRequire`.
+  return dynamicRequire.importAll(moduleID);
+};
 ```
+:::
 
 #### `dynamicDepsInPackages`
 
-Type: `string` (`throwAtRuntime` or `reject`)
+Type: `'throwAtRuntime' | 'reject'`
 
-What should happen when a dynamic dependency is found.
+Controls how Metro handles dependencies that cannot be statically analyzed at build time. For example, `require('./' + someFunction() + '.js')` cannot be resolved without knowing what `someFunction()` will return.
 
-#### `enableBabelRCLookup`
-
-Type: `boolean` (default: `true`)
-
-Whether we should use the `.babelrc` config file.
-
-#### `enableBabelRuntime`
-
-Type: `boolean | string` (default: `true`)
-
-Whether the transformer should use the `@babel/transform/runtime` plugin.
-
-If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated Babel runtime based on the
-runtime in the app's node modules configuration.
+* **`'throwAtRuntime'`** (the default): Metro does not stop bundling, but the `require` call will throw at runtime.
+* **`'reject'`**: Metro will stop bundling and report an error to the user.
 
 #### `getTransformOptions`
 
@@ -365,12 +373,6 @@ type ExtraTransformOptions = {
     * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
   * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
 
-#### `hermesParser`
-
-Type: `boolean` (default: `false`)
-
-Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
-
 #### `minifierPath`
 
 Type: `string` (default: `'metro-minify-terser'`)
@@ -402,6 +404,52 @@ List of modules to call to modify Asset data
 Type: `string`
 
 Where to fetch the assets from.
+
+### Babel-specific transformer options
+
+#### `babelTransformerPath`
+
+Type: `string`
+
+The name of a module that compiles code with Babel, returning an AST and optional metadata. Defaults to `metro-babel-transformer`.
+
+Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`metro-react-native-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.
+:::
+
+#### `enableBabelRCLookup`
+
+Type: `boolean`
+
+Whether to enable searching for Babel configuration files. This is passed to Babel as the [`babelrc`](https://babeljs.io/docs/en/options#babelrc) config option. Defaults to `true`.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it. Custom [Babel transformers](#babeltransformerpath) should respect this option.
+:::
+
+#### `enableBabelRuntime`
+
+Type: `boolean | string`
+
+Whether the transformer should use the `@babel/transform/runtime` plugin. Defaults to `true`.
+
+If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated Babel runtime calls based on the version installed in your project.
+
+:::note
+This option only works under the default settings for React Native. It may have no effect in a project that uses custom [`transformerPath`](#transformerpath), a custom [`babelTransformerPath`](#babeltransformerpath) or a custom [Babel config file](https://babeljs.io/docs/en/config-files).
+:::
+
+#### `hermesParser`
+
+Type: `boolean`
+
+Whether to use the [`hermes-parser`](https://www.npmjs.com/package/hermes-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath) and the [Babel transformers](#babeltransformerpath) built into Metro. Custom transformers and custom [Babel transformers](#babeltransformerpath) may ignore it.
+:::
 
 ---
 ### Serializer Options
