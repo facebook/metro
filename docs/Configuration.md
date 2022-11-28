@@ -290,7 +290,27 @@ Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
 
 Type: `string`
 
-What module to use for handling async requires.
+The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to [`metro-runtime/src/modules/asyncRequire`](https://github.com/facebook/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js).
+
+:::note
+The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) relative to the module containing the original `import()` call. In particular, assuming the default value of `asyncRequireModulePath` is in use, the project must have a compatible version of `metro-runtime` installed in `node_modules`.
+:::
+
+:::info
+Although Metro doesn't perform bundle splitting out of the box, a custom `asyncRequire` implementation can be used as part of a bundle splitting solution:
+
+```flow
+// Get a reference to the dynamic `require` function provided by Metro.
+const dynamicRequire = (require: {importAll: mixed => mixed});
+
+module.exports = async function asyncRequire(moduleID: mixed): Promise<mixed> {
+  // 1. Do any work necessary (not detailed here) to fetch and evaluate the
+  //    module's code, as transformed by Metro.
+  // 2. Require the module from Metro's module registry using `dynamicRequire`.
+  return dynamicRequire.importAll(moduleID);
+};
+```
+:::
 
 #### `babelTransformerPath`
 
