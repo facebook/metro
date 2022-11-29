@@ -27,7 +27,6 @@ import assert from 'assert';
 import {createHash} from 'crypto';
 import EventEmitter from 'events';
 import watchman from 'fb-watchman';
-import * as fs from 'graceful-fs';
 import invariant from 'invariant';
 import path from 'path';
 
@@ -134,7 +133,7 @@ export default class WatchmanWatcher extends EventEmitter {
       handleWarning(resp);
 
       const options: WatchmanQuery = {
-        fields: ['name', 'exists', 'new'],
+        fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
         since: resp.clock,
         defer: self.watchmanDeferStates,
         relative_root: watchProjectInfo.relativePath,
@@ -243,6 +242,9 @@ export default class WatchmanWatcher extends EventEmitter {
       name: relativePath,
       new: isNew = false,
       exists = false,
+      type,
+      mtime_ms,
+      size,
     } = changeDescriptor;
 
     debug(
@@ -250,12 +252,6 @@ export default class WatchmanWatcher extends EventEmitter {
       relativePath,
       isNew,
       exists,
-    );
-
-    const absPath = path.join(
-      watchProjectInfo.root,
-      watchProjectInfo.relativePath,
-      relativePath,
     );
 
     if (
@@ -268,36 +264,29 @@ export default class WatchmanWatcher extends EventEmitter {
     if (!exists) {
       self._emitEvent(DELETE_EVENT, relativePath, self.root);
     } else {
-      fs.lstat(absPath, (error, stat) => {
-        // Files can be deleted between the event and the lstat call
-        // the most reliable thing to do here is to ignore the event.
-        if (error && error.code === 'ENOENT') {
-          return;
-        }
+      const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
+      invariant(
+        type != null && mtime_ms != null && size != null,
+        'Watchman file change event for "%s" missing some requested metadata. ' +
+          'Got type: %s, mtime_ms: %s, size: %s',
+        relativePath,
+        type,
+        mtime_ms,
+        size,
+      );
 
-        if (handleError(self, error)) {
-          return;
-        }
-
-        const type = common.typeFromStat(stat);
-
-        // An atypical filesystem object (eg a socket or device) we're not
-        // expected to report.
-        if (type == null) {
-          return;
-        }
-
-        const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
-
+      if (
+        type === 'f' ||
+        type === 'l' ||
         // Change event on dirs are mostly useless.
-        if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
-          self._emitEvent(eventType, relativePath, self.root, {
-            modifiedTime: stat.mtime.getTime(),
-            size: stat.size,
-            type,
-          });
-        }
-      });
+        (type === 'd' && eventType !== CHANGE_EVENT)
+      ) {
+        self._emitEvent(eventType, relativePath, self.root, {
+          modifiedTime: Number(mtime_ms),
+          size,
+          type,
+        });
+      }
     }
   }
 

@@ -30,13 +30,6 @@ declare module 'fb-watchman' {
     ...
   }>;
 
-  declare type WatchmanFileChange = $ReadOnly<{
-    name: string,
-    exists: boolean,
-    new: boolean,
-    ...
-  }>;
-
   declare type WatchmanSubscriptionEvent = {
     subscription: string,
     is_fresh_instance: boolean,
@@ -72,6 +65,11 @@ declare module 'fb-watchman' {
     size?: number,
     'content.sha1hex'?: string,
     symlink_target?: string,
+  }>;
+
+  declare type WatchmanFileChange = $ReadOnly<{
+    ...WatchmanFile,
+    new: boolean,
   }>;
 
   declare type WatchmanQueryResponse = $ReadOnly<{
