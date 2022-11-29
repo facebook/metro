@@ -184,7 +184,7 @@ test('getObjectTypeAnnotation, testing an object with a AnyTypeAnnotation proper
       {
         loc: null,
         name: 'setKeepScreenOn',
-        optional: undefined,
+        optional: null,
         typeAnnotation: {
           type: 'AnyTypeAnnotation',
           loc: null,
@@ -203,7 +203,7 @@ test('getObjectTypeProperty, testing AnyTypeAnnotation property', () => {
   expect(getObjectTypeProperty(property)).toEqual({
     loc: null,
     name: 'testProp',
-    optional: undefined,
+    optional: null,
     typeAnnotation: {
       type: 'AnyTypeAnnotation',
       loc: null,
