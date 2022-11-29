@@ -159,13 +159,9 @@ it('transforms a module with dependencies', async () => {
       '  "use strict";',
       '',
       '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
-      '',
       '  var _c = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], "./c"));',
-      '',
       '  _$$_REQUIRE(_dependencyMap[2], "./a");',
-      '',
       '  arbitrary(code);',
-      '',
       '  var b = _$$_REQUIRE(_dependencyMap[3], "b");',
       '});',
     ].join('\n'),
@@ -198,7 +194,7 @@ it('transforms an es module with asyncToGenerator', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toMatchSnapshot();
-  expect(result.output[0].data.map).toHaveLength(6);
+  expect(result.output[0].data.map).toHaveLength(13);
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {

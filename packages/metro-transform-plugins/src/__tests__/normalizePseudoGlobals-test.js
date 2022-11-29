@@ -62,15 +62,12 @@ it('minimizes arguments given', () => {
   expect(result.code).toMatchInlineSnapshot(`
     "__d(function (g, _r, m, e, d) {
       _r(27).foo();
-
       (function () {
         {
           const r = 1; // _$$_REQUIRE will be renamed to \\"_r\\".
-
           return r++;
         }
       })();
-
       (function () {
         var global = 'potato';
         return global + 'tomato';
