@@ -2254,6 +2254,71 @@ describe('edge cases', () => {
       deleted: new Set(['/foo', '/bar', '/baz']),
     });
   });
+
+  it('deleting a cycle root, then reintroducing the same module, does not corrupt its dependencies', async () => {
+    Actions.createFile('/quux');
+    Actions.removeDependency('/foo', '/baz');
+    Actions.addDependency('/bar', '/foo');
+    Actions.addDependency('/bundle', '/baz');
+    Actions.addDependency('/foo', '/quux');
+    files.clear();
+
+    /*
+    ┌─────────┐     ┌──────┐     ┌───────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /baz │     │       │ ──▶ │ /bar │
+    └─────────┘     └──────┘     │ /foo  │     └──────┘
+      │                          │       │       │
+      └────────────────────────▶ │       │ ◀─────┘
+                                 └───────┘
+                                   │
+                                   │
+                                   ▼
+                                 ┌───────┐
+                                 │ /quux │
+                                 └───────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    // This is a regression test for a bug: Originally `/quux` would get deleted
+    // incorrectly as a result of `/foo` temporarily being unreachable (and not
+    // itself marked for traversal, which would have "rediscovered" `/quux`).
+
+    // The following exact order of operations reproduced the bug:
+    Actions.removeDependency('/bar', '/foo'); // (1)
+    // ^ Deletes an inbound edge while there's at least another one remaining,
+    //   which marks `/foo` as a possible cycle root.
+
+    Actions.removeDependency('/bundle', '/foo'); // (2)
+    // ^ Leaves `/foo` with no inbound edges. With the bug, this would delete
+    //   `/foo`'s dependencies immediately but defer freeing `/foo` itself until
+    //   the cycle collection pass.
+
+    Actions.addDependency('/baz', '/foo'); // (3)
+    // ^ `/foo` has an inbound edge again! If we'd freed `/quux` in (2), it
+    //   would now be missing.
+
+    /*
+    ┌─────────┐     ┌──────┐ (3) ┌───────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /baz │ ━━▶ │       │ ──▶ │ /bar │
+    └─────────┘     └──────┘     │ /foo  │     └──────┘
+      ┆          /               │       │   \   ┆
+      └┈┈┈┈┈┈┈┈┈/┈┈┈┈┈┈┈┈┈┈┈┈┈┈▷ │       │ ◁┈┈\┈┈┘ (1)
+               /  (2)            └───────┘     \
+                                   │
+                                   │
+                                   ▼
+                                 ┌───────┐
+                                 │ /quux │
+                                 └───────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/bundle', '/bar', '/baz']),
+      deleted: new Set([]),
+    });
+  });
 });
 
 describe('require.context', () => {
