@@ -1337,7 +1337,11 @@ describe('HasteMap', () => {
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
-      const deletedBanana = {filePath, stat: undefined, type: 'delete'};
+      const deletedBanana = {
+        filePath,
+        metadata: undefined,
+        type: 'delete',
+      };
       expect(eventsQueue).toEqual([deletedBanana]);
       // Verify that the initial result has been updated
       expect(initialResult.fileSystem.getModuleName(filePath)).toBeNull();
@@ -1346,15 +1350,15 @@ describe('HasteMap', () => {
       expect(moduleMap.getModule('Banana')).toBeNull();
     });
 
-    const MOCK_STAT_FILE = {
-      isDirectory: () => false,
-      mtime: {getTime: () => 45},
+    const MOCK_CHANGE_FILE = {
+      type: 'f',
+      modifiedTime: 45,
       size: 55,
     };
 
-    const MOCK_STAT_FOLDER = {
-      isDirectory: () => true,
-      mtime: {getTime: () => 45},
+    const MOCK_CHANGE_FOLDER = {
+      type: 'd',
+      modifiedTime: 45,
       size: 55,
     };
 
@@ -1371,25 +1375,25 @@ describe('HasteMap', () => {
         'add',
         'Tomato.js',
         path.join('/', 'project', 'fruits'),
-        MOCK_STAT_FILE,
+        MOCK_CHANGE_FILE,
       );
       e.emit(
         'all',
         'change',
         'Pear.js',
         path.join('/', 'project', 'fruits'),
-        MOCK_STAT_FILE,
+        MOCK_CHANGE_FILE,
       );
       const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(hm);
       expect(eventsQueue).toEqual([
         {
           filePath: path.join('/', 'project', 'fruits', 'Tomato.js'),
-          stat: MOCK_STAT_FILE,
+          metadata: MOCK_CHANGE_FILE,
           type: 'add',
         },
         {
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
-          stat: MOCK_STAT_FILE,
+          metadata: MOCK_CHANGE_FILE,
           type: 'change',
         },
       ]);
@@ -1411,14 +1415,14 @@ describe('HasteMap', () => {
         'change',
         'tomato.js',
         path.join('/', 'project', 'fruits'),
-        MOCK_STAT_FILE,
+        MOCK_CHANGE_FILE,
       );
       e.emit(
         'all',
         'change',
         'tomato.js',
         path.join('/', 'project', 'fruits'),
-        MOCK_STAT_FILE,
+        MOCK_CHANGE_FILE,
       );
       const {eventsQueue} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
@@ -1433,7 +1437,7 @@ describe('HasteMap', () => {
           'add',
           'apple.js',
           path.join('/', 'project', 'fruits', 'node_modules', ''),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         const {eventsQueue, snapshotFS} = await waitForItToChange(hm);
         const filePath = path.join(
@@ -1445,7 +1449,7 @@ describe('HasteMap', () => {
         );
         expect(eventsQueue).toHaveLength(1);
         expect(eventsQueue).toEqual([
-          {filePath, stat: MOCK_STAT_FILE, type: 'add'},
+          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
         ]);
         expect(snapshotFS.getModuleName(filePath)).toBeDefined();
       },
@@ -1463,14 +1467,14 @@ describe('HasteMap', () => {
           'change',
           'Orange.ios.js',
           path.join('/', 'project', 'fruits'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         e.emit(
           'all',
           'change',
           'Orange.android.js',
           path.join('/', 'project', 'fruits'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         const {eventsQueue, snapshotFS, moduleMap} = await waitForItToChange(
           hm,
@@ -1479,12 +1483,12 @@ describe('HasteMap', () => {
         expect(eventsQueue).toEqual([
           {
             filePath: path.join('/', 'project', 'fruits', 'Orange.ios.js'),
-            stat: MOCK_STAT_FILE,
+            metadata: MOCK_CHANGE_FILE,
             type: 'change',
           },
           {
             filePath: path.join('/', 'project', 'fruits', 'Orange.android.js'),
-            stat: MOCK_STAT_FILE,
+            metadata: MOCK_CHANGE_FILE,
             type: 'change',
           },
         ]);
@@ -1533,14 +1537,14 @@ describe('HasteMap', () => {
           'change',
           'Pear.js',
           path.join('/', 'project', 'fruits'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         e.emit(
           'all',
           'add',
           'Pear.js',
           path.join('/', 'project', 'fruits', 'another'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         const {snapshotFS, moduleMap} = await waitForItToChange(hm);
         expect(
@@ -1584,14 +1588,14 @@ describe('HasteMap', () => {
             'delete',
             'Pear.js',
             path.join('/', 'project', 'fruits'),
-            MOCK_STAT_FILE,
+            MOCK_CHANGE_FILE,
           );
           e.emit(
             'all',
             'add',
             'Pear2.js',
             path.join('/', 'project', 'fruits'),
-            MOCK_STAT_FILE,
+            MOCK_CHANGE_FILE,
           );
           const {moduleMap} = await waitForItToChange(hm);
           expect(moduleMap.getModule('Pear')).toBe(
@@ -1616,14 +1620,14 @@ describe('HasteMap', () => {
           'add',
           'Pear2.js',
           path.join('/', 'project', 'fruits', 'another'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         e.emit(
           'all',
           'delete',
           'Pear.js',
           path.join('/', 'project', 'fruits', 'another'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         const {moduleMap} = await waitForItToChange(hm);
         expect(moduleMap.getModule('Pear')).toBe(
@@ -1641,14 +1645,14 @@ describe('HasteMap', () => {
           'change',
           'tomato.js',
           path.join('/', 'project', 'fruits'),
-          MOCK_STAT_FOLDER,
+          MOCK_CHANGE_FOLDER,
         );
         e.emit(
           'all',
           'change',
           'tomato.js',
           path.join('/', 'project', 'fruits', 'tomato.js', 'index.js'),
-          MOCK_STAT_FILE,
+          MOCK_CHANGE_FILE,
         );
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toHaveLength(1);

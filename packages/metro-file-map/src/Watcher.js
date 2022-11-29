@@ -9,6 +9,7 @@
  */
 
 import type {
+  ChangeEventMetadata,
   Console,
   CrawlerOptions,
   FileData,
@@ -17,7 +18,6 @@ import type {
   WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
-import type {Stats} from 'fs';
 
 import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
@@ -162,7 +162,7 @@ export class Watcher extends EventEmitter {
       type: string,
       filePath: string,
       root: string,
-      stat?: Stats,
+      metadata: ?ChangeEventMetadata,
     ) => void,
   ) {
     const {extensions, ignorePattern, useWatchman} = this._options;
@@ -210,7 +210,12 @@ export class Watcher extends EventEmitter {
           clearTimeout(rejectTimeout);
           watcher.on(
             'all',
-            (type: string, filePath: string, root: string, stat?: Stats) => {
+            (
+              type: string,
+              filePath: string,
+              root: string,
+              metadata: ?ChangeEventMetadata,
+            ) => {
               const basename = path.basename(filePath);
               if (basename.startsWith(this._options.healthCheckFilePrefix)) {
                 if (type === ADD_EVENT || type === CHANGE_EVENT) {
@@ -223,7 +228,7 @@ export class Watcher extends EventEmitter {
                 }
                 return;
               }
-              onChange(type, filePath, root, stat);
+              onChange(type, filePath, root, metadata);
             },
           );
           resolve(watcher);

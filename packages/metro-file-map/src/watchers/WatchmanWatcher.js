@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 import type {WatcherOptions} from './common';
+import type {ChangeEventMetadata} from '../flow-types';
 import type {
   Client,
   WatchmanClockResponse,
@@ -19,7 +20,6 @@ import type {
   WatchmanSubscribeResponse,
   WatchmanWatchResponse,
 } from 'fb-watchman';
-import type {Stats} from 'fs';
 
 import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
@@ -279,11 +279,23 @@ export default class WatchmanWatcher extends EventEmitter {
           return;
         }
 
+        const type = common.typeFromStat(stat);
+
+        // An atypical filesystem object (eg a socket or device) we're not
+        // expected to report.
+        if (type == null) {
+          return;
+        }
+
         const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
 
         // Change event on dirs are mostly useless.
         if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
-          self._emitEvent(eventType, relativePath, self.root, stat);
+          self._emitEvent(eventType, relativePath, self.root, {
+            modifiedTime: stat.mtime.getTime(),
+            size: stat.size,
+            type,
+          });
         }
       });
     }
@@ -292,9 +304,14 @@ export default class WatchmanWatcher extends EventEmitter {
   /**
    * Dispatches the event.
    */
-  _emitEvent(eventType: string, filepath: string, root: string, stat?: Stats) {
-    this.emit(eventType, filepath, root, stat);
-    this.emit(ALL_EVENT, eventType, filepath, root, stat);
+  _emitEvent(
+    eventType: string,
+    filepath: string,
+    root: string,
+    changeMetadata?: ChangeEventMetadata,
+  ) {
+    this.emit(eventType, filepath, root, changeMetadata);
+    this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
   }
 
   /**

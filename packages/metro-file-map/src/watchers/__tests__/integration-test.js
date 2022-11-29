@@ -10,7 +10,7 @@
  */
 
 import type {WatcherOptions} from '../common';
-import type {Stats} from 'fs';
+import type {ChangeEventMetadata} from '../../flow-types';
 
 import NodeWatcher from '../NodeWatcher';
 import FSEventsWatcher from '../FSEventsWatcher';
@@ -61,9 +61,11 @@ describe.each(Object.keys(WATCHERS))(
     let cookieCount = 1;
     let watcherInstance;
     let watchRoot;
-    let nextEvent: (
-      afterFn: () => Promise<void>,
-    ) => Promise<{eventType: string, path: string, stat?: Stats}>;
+    let nextEvent: (afterFn: () => Promise<void>) => Promise<{
+      eventType: string,
+      path: string,
+      metadata?: ChangeEventMetadata,
+    }>;
     let untilEvent: (
       afterFn: () => Promise<void>,
       expectedPath: string,
@@ -113,7 +115,7 @@ describe.each(Object.keys(WATCHERS))(
               eventType: string,
               path: string,
               root: string,
-              stat: Stats,
+              metadata?: ChangeEventMetadata,
             ) => {
               if (path === '') {
                 // FIXME: FSEventsWatcher sometimes reports 'change' events to
@@ -124,7 +126,8 @@ describe.each(Object.keys(WATCHERS))(
               if (root !== watchRoot) {
                 reject(new Error(`Expected root ${watchRoot}, got ${root}`));
               }
-              resolve({eventType, path, stat});
+
+              resolve({eventType, path, metadata});
             };
             watcherInstance.on('all', listener);
           }),
@@ -205,19 +208,26 @@ describe.each(Object.keys(WATCHERS))(
       ).toStrictEqual({
         path: relativePath,
         eventType: 'add',
-        stat: expect.any(Object),
+        metadata: {
+          type: 'f',
+          modifiedTime: expect.any(Number),
+
+          // T138670812 Reported inconsistently by NodeWatcher as 0 or 11
+          // due to write/stat race. Should either fix, document, or remove.
+          size: expect.any(Number),
+        },
       });
       expect(
         await nextEvent(() => writeFile(testFile, 'brave new world')),
       ).toStrictEqual({
         path: relativePath,
         eventType: 'change',
-        stat: expect.any(Object),
+        metadata: expect.any(Object),
       });
       expect(await nextEvent(() => unlink(testFile))).toStrictEqual({
         path: relativePath,
         eventType: 'delete',
-        stat: undefined,
+        metadata: undefined,
       });
     });
 
@@ -232,12 +242,16 @@ describe.each(Object.keys(WATCHERS))(
       expect(await nextEvent(() => symlink(target, newLink))).toStrictEqual({
         path: relativePath,
         eventType: 'add',
-        stat: expect.any(Object),
+        metadata: {
+          type: 'l',
+          modifiedTime: expect.any(Number),
+          size: expect.any(Number),
+        },
       });
       expect(await nextEvent(() => unlink(newLink))).toStrictEqual({
         path: relativePath,
         eventType: 'delete',
-        stat: undefined,
+        metadata: undefined,
       });
     });
 

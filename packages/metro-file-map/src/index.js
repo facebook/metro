@@ -15,6 +15,7 @@ import type {
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
+  ChangeEventMetadata,
   CrawlerOptions,
   Console,
   EventsQueue,
@@ -33,7 +34,6 @@ import type {
   WorkerMetadata,
   WatchmanClocks,
 } from './flow-types';
-import type {Stats} from 'graceful-fs';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
@@ -911,11 +911,11 @@ export default class HasteMap extends EventEmitter {
       type: string,
       filePath: Path,
       root: Path,
-      stat?: Stats,
+      metadata: ?ChangeEventMetadata,
     ) => {
       const absoluteFilePath = path.join(root, normalizePathSep(filePath));
       if (
-        (stat && stat.isDirectory()) ||
+        (metadata && metadata.type === 'd') ||
         this._ignore(absoluteFilePath) ||
         !extensions.some(extension => absoluteFilePath.endsWith(extension))
       ) {
@@ -929,8 +929,8 @@ export default class HasteMap extends EventEmitter {
       if (
         type === 'change' &&
         fileMetadata &&
-        stat &&
-        fileMetadata[H.MTIME] === stat.mtime.getTime()
+        metadata &&
+        fileMetadata[H.MTIME] === metadata.modifiedTime
       ) {
         return;
       }
@@ -947,17 +947,21 @@ export default class HasteMap extends EventEmitter {
               event =>
                 event.type === type &&
                 event.filePath === absoluteFilePath &&
-                ((!event.stat && !stat) ||
-                  (!!event.stat &&
-                    !!stat &&
-                    event.stat.mtime.getTime() === stat.mtime.getTime())),
+                ((!event.metadata && !metadata) ||
+                  (event.metadata &&
+                    metadata &&
+                    event.metadata.modifiedTime === metadata.modifiedTime)),
             )
           ) {
             return null;
           }
 
           const add = () => {
-            eventsQueue.push({filePath: absoluteFilePath, stat, type});
+            eventsQueue.push({
+              filePath: absoluteFilePath,
+              metadata,
+              type,
+            });
             return null;
           };
 
@@ -972,13 +976,13 @@ export default class HasteMap extends EventEmitter {
           // parse it and update the haste map.
           if (type === 'add' || type === 'change') {
             invariant(
-              stat,
-              'since the file exists or changed, it should have stats',
+              metadata,
+              'since the file exists or changed, it should have metadata',
             );
             const fileMetadata: FileMetaData = [
               '',
-              stat.mtime.getTime(),
-              stat.size,
+              metadata.modifiedTime,
+              metadata.size,
               0,
               '',
               null,

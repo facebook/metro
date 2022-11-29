@@ -12,7 +12,6 @@
 'use strict';
 
 import type ModuleMap from './ModuleMap';
-import type {Stats} from 'graceful-fs';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 
 export type {PerfLoggerFactory, PerfLogger};
@@ -64,6 +63,12 @@ export type ChangeEvent = {
   moduleMap: ModuleMap,
 };
 
+export type ChangeEventMetadata = {
+  modifiedTime: number, // Epoch ms
+  size: number, // Bytes
+  type: 'f' | 'd' | 'l', // Regular file / Directory / Symlink
+};
+
 export type Console = typeof global.console;
 
 export type CrawlerOptions = {
@@ -105,7 +110,7 @@ export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
 export type EventsQueue = Array<{
   filePath: Path,
-  stat?: ?Stats,
+  metadata?: ?ChangeEventMetadata,
   type: string,
 }>;
 
