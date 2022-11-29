@@ -1,8 +1,10 @@
 # Metro
 
-[![CircleCI Build Status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
-[![npm version](https://badge.fury.io/js/metro.svg)](http://badge.fury.io/js/metro)
-[![codecov](https://codecov.io/gh/facebook/metro/branch/master/graph/badge.svg)](https://codecov.io/gh/facebook/metro)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebook/metro/blob/HEAD/LICENSE)
+[![npm package version](https://img.shields.io/npm/v/metro?color=brightgreen)](https://www.npmjs.com/package/metro)
+[![Build status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
+[![Code coverage](https://codecov.io/gh/facebook/metro/branch/main/graph/badge.svg?token=oMHdoKhFZB)](https://codecov.io/gh/facebook/metro)
+[![Follow @MetroBundler on Twitter](https://img.shields.io/twitter/follow/MetroBundler?style=social)](https://twitter.com/intent/follow?screen_name=MetroBundler)
 
 🚇 The JavaScript bundler for React Native.
 
