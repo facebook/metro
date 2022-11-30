@@ -26,12 +26,12 @@ const {sourceMapObject} = require('./sourceMapObject');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
-type Options = {
+type Options = $ReadOnly<{
   ...SerializerOptions,
-  +excludeSource: boolean,
-  +getTransformOptions: ?GetTransformOptions,
-  +platform: ?string,
-};
+  excludeSource: boolean,
+  getTransformOptions: ?GetTransformOptions,
+  platform: ?string,
+}>;
 
 export type RamBundleInfo = {
   getDependencies: string => Set<string>,
@@ -50,9 +50,7 @@ async function getRamBundleInfo(
     ...pre,
     ...graph.dependencies.values(),
   ];
-  modules = modules.concat(
-    getAppendScripts(entryPoint, modules, graph.importBundleNames, options),
-  );
+  modules = modules.concat(getAppendScripts(entryPoint, modules, options));
 
   modules.forEach((module: Module<>) => options.createModuleId(module.path));
 

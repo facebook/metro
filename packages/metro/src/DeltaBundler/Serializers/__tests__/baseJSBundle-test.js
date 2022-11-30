@@ -297,9 +297,11 @@ it('adds lazy imports at the end of a bundle', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
+
         entryPoints: ['foo'],
         importBundleNames: new Set(['/path/to/async/module.js']),
       },
+
       {
         asyncRequireModulePath: '/asyncRequire.js',
         processModuleFilter: () => true,
@@ -325,8 +327,7 @@ it('adds lazy imports at the end of a bundle', () => {
           "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
         ],
       ],
-      "post": "(function(){var $$=require(\\"asyncRequire.js\\");$$.addImportBundleNames({\\"module.js\\":\\"../path/to/async/module\\"})})();
-    require(\\"foo\\");
+      "post": "require(\\"foo\\");
     //# sourceMappingURL=http://localhost/bundle.map",
       "pre": "__d(function() {/* code for polyfill */});",
     }
@@ -343,9 +344,11 @@ it('lazy imports are relative to serverRoot if it differs from projectRoot', () 
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
+
         entryPoints: ['foo'],
         importBundleNames: new Set(['/path/to/async/module.js']),
       },
+
       {
         asyncRequireModulePath: '/asyncRequire.js',
         processModuleFilter: () => true,
@@ -371,8 +374,7 @@ it('lazy imports are relative to serverRoot if it differs from projectRoot', () 
           "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
         ],
       ],
-      "post": "(function(){var $$=require(\\"asyncRequire.js\\");$$.addImportBundleNames({\\"module.js\\":\\"path/to/async/module\\"})})();
-    require(\\"foo\\");
+      "post": "require(\\"foo\\");
     //# sourceMappingURL=http://localhost/bundle.map",
       "pre": "__d(function() {/* code for polyfill */});",
     }

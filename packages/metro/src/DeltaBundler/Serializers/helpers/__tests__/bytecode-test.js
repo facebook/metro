@@ -9,14 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
 
-const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
-const {wrapModule} = require('../bytecode');
-const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
+import createModuleIdFactory from '../../../../lib/createModuleIdFactory';
+import {wrapModule} from '../bytecode';
+import {compile, validateBytecodeModule} from 'metro-hermes-compiler';
 
 let myModule, bytecode;
 
@@ -70,7 +69,9 @@ it('produces a bytecode header buffer for each module', () => {
   const buffers = wrapModule(myModule, {
     createModuleId: createModuleIdFactory(),
     dev: true,
+    includeAsyncPaths: false,
     projectRoot: '/root',
+    serverRoot: '/root',
   });
   expect(buffers.length).toBe(2);
   expect(() => validateBytecodeModule(buffers[0], 0)).not.toThrow();
@@ -83,7 +84,9 @@ it('does not produce a bytecode header buffer for a script', () => {
   const buffers = wrapModule(myModule, {
     createModuleId: createModuleIdFactory(),
     dev: true,
+    includeAsyncPaths: false,
     projectRoot: '/root',
+    serverRoot: '/root',
   });
   expect(buffers.length).toBe(1);
   expect(buffers[0]).toBe(bytecode);

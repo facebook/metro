@@ -358,10 +358,12 @@ class HmrServer<TClient: Client> {
       logger?.point('serialize_start');
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        createModuleId: this._createModuleId,
-        projectRoot:
-          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
+        createModuleId: this._createModuleId,
+        includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+        projectRoot: this._config.projectRoot,
+        serverRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
       });
 
       logger?.point('serialize_end');
