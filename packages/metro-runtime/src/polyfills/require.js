@@ -398,7 +398,7 @@ function loadModuleImplementation(
   }
 
   if (module.hasError) {
-    throw moduleThrewError(moduleId, module.error);
+    throw module.error;
   }
 
   if (__DEV__) {
@@ -496,16 +496,6 @@ function unknownModuleError(id: ModuleID): Error {
       'You may also want to run `yarn` or `npm install`.';
   }
   return Error(message);
-}
-
-function moduleThrewError(id: ModuleID, error: any): Error {
-  const displayName = (__DEV__ && modules[id] && modules[id].verboseName) || id;
-  return Error(
-    'Requiring module "' +
-      displayName +
-      '", which threw an exception: ' +
-      error,
-  );
 }
 
 if (__DEV__) {
