@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -99,7 +100,7 @@ function forEachMapping(
   context: ?Context,
   pushMapping: RangeMapping => void,
 ) {
-  const nameStack = [];
+  const nameStack: Array<{loc: BabelNodeSourceLocation, name: string}> = [];
   let tailPos = {line: 1, column: 0};
   let tailName = null;
 

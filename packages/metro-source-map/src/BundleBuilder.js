@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,8 +15,8 @@ import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
   version: 3,
-  sources: [],
-  names: [],
+  sources: ([]: Array<string>),
+  names: ([]: Array<string>),
   mappings: 'A',
 };
 

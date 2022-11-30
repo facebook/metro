@@ -161,7 +161,7 @@ function collectDependencies<TSplitCondition = void>(
   ast: BabelNodeFile,
   options: Options<TSplitCondition>,
 ): CollectedDependencies<TSplitCondition> {
-  const visited = new WeakSet();
+  const visited = new WeakSet<BabelNodeCallExpression>();
 
   const state: State<TSplitCondition> = {
     asyncRequireModulePathStringLiteral: null,
@@ -282,7 +282,9 @@ function collectDependencies<TSplitCondition = void>(
 
   const collectedDependencies = state.dependencyRegistry.getDependencies();
   // Compute the list of dependencies.
-  const dependencies = new Array(collectedDependencies.length);
+  const dependencies = new Array<Dependency<TSplitCondition>>(
+    collectedDependencies.length,
+  );
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
     dependencies[index] = {
@@ -648,7 +650,12 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
     state: State<mixed>,
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
-    path.node.arguments = [moduleIDExpression];
+    path.node.arguments = ([moduleIDExpression]: Array<
+      | BabelNodeExpression
+      | BabelNodeSpreadElement
+      | BabelNodeJSXNamespacedName
+      | BabelNodeArgumentPlaceholder,
+    >);
     // Always add the debug name argument last
     if (state.keepRequireNames) {
       path.node.arguments.push(types.stringLiteral(dependency.name));

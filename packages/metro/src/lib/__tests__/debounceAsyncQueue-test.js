@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall js_foundation
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,7 +16,7 @@ const debounceAsyncQueue = require('../debounceAsyncQueue');
 describe('debounceAsyncQueue', () => {
   it('debounces calls', async () => {
     const fn = jest.fn();
-    const debounced = debounceAsyncQueue(fn, 50);
+    const debounced = debounceAsyncQueue<void>(fn, 50);
     debounced();
     debounced();
     debounced();

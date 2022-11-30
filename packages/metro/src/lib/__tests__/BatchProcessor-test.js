@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall js_foundation
+ * @oncall react_native
  */
 
 'use strict';
@@ -68,7 +68,7 @@ describe('BatchProcessor', () => {
     const bp = new BatchProcessor(
       options,
       (items: Array<string>) =>
-        new Promise((_, reject) => {
+        new Promise<Array<string>>((_, reject) => {
           setTimeout(reject.bind(null, error), 0);
         }),
     );

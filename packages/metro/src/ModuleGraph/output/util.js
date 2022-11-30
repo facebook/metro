@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -42,7 +43,7 @@ function addModuleIdsToModuleWrapper(
   // in the bundle.
   const fileId = idForPath(file);
 
-  const paramsToAdd = [fileId];
+  const paramsToAdd: Array<mixed> = [fileId];
 
   if (dependencies.length) {
     paramsToAdd.push(dependencies.map(idForPath));
@@ -285,7 +286,7 @@ exports.concat = function* concat<T>(
 // Creates an idempotent function that returns numeric IDs for objects based
 // on their `path` property.
 exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
-  const seen = new Map();
+  const seen = new Map<string, number>();
   let next = 0;
   return ({path}) => {
     let id = seen.get(path);
@@ -319,8 +320,8 @@ exports.partition = (
   modules: Iterable<Module>,
   preloadedModules: $ReadOnlySet<string>,
 ): Array<Array<Module>> => {
-  const startup = [];
-  const deferred = [];
+  const startup: Array<Module> = [];
+  const deferred: Array<Module> = [];
   for (const module of modules) {
     (preloadedModules.has(module.file.path) ? startup : deferred).push(module);
   }

@@ -6,20 +6,28 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
 
-const initialTraverseDependencies = jest.fn();
-const traverseDependencies = jest.fn();
-const markModifiedContextModules = jest.fn();
-jest.doMock('../graphOperations', () => ({
-  ...jest.requireActual('../graphOperations'),
-  initialTraverseDependencies,
-  traverseDependencies,
-  markModifiedContextModules,
-}));
+import type {Options} from '../types.flow';
+import type {Result} from '../Graph';
+import CountingSet from '../../lib/CountingSet';
+import {Graph} from '../Graph';
+
+const traverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'traverseDependencies',
+);
+const initialTraverseDependencies = jest.spyOn(
+  Graph.prototype,
+  'initialTraverseDependencies',
+);
+const markModifiedContextModules = jest.spyOn(
+  Graph.prototype,
+  'markModifiedContextModules',
+);
 
 const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
@@ -54,13 +62,15 @@ describe('DeltaCalculator + require.context', () => {
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
 
-    markModifiedContextModules.mockImplementation(
-      (graph, filePath, modifiedContexts) => {
-        if (filePath.startsWith('/ctx/')) {
-          modifiedContexts.add('/ctx?ctx=xxx');
-        }
-      },
-    );
+    markModifiedContextModules.mockImplementation(function <T>(
+      this: Graph<T>,
+      filePath,
+      modifiedContexts,
+    ) {
+      if (filePath.startsWith('/ctx/')) {
+        modifiedContexts.add('/ctx?ctx=xxx');
+      }
+    });
 
     /*
       ┌─────────┐  require.context('./ctx', ...)   ┌──────────────┐     ┌──────────┐
@@ -68,34 +78,56 @@ describe('DeltaCalculator + require.context', () => {
       └─────────┘                                  └──────────────┘     └──────────┘
      */
 
-    initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
-      graph.dependencies.set('/bundle', {
-        dependencies: new Map([['ctx', '/ctx?ctx=xxx']]),
-        inverseDependencies: [],
-        output: {
-          name: 'bundle',
-        },
+    initialTraverseDependencies.mockImplementationOnce(async function <T>(
+      this: Graph<T>,
+      options: Options<T>,
+    ): Promise<Result<T>> {
+      this.dependencies.set('/bundle', {
+        dependencies: new Map([
+          [
+            'ctx',
+            {
+              absolutePath: '/ctx?ctx=xxx',
+              data: {
+                name: 'ctx',
+                data: {key: 'ctx?ctx=xxx', asyncType: null, locs: []},
+              },
+            },
+          ],
+        ]),
+        inverseDependencies: new CountingSet([]),
+        output: [],
         path: '/bundle',
+        getSource: () => Buffer.of(),
       });
-      graph.dependencies.set('/ctx?ctx=xxx', {
-        dependencies: new Map([['foo', '/ctx/foo']]),
-        inverseDependencies: ['/bundle'],
-        output: {
-          name: 'ctx',
-        },
+      this.dependencies.set('/ctx?ctx=xxx', {
+        dependencies: new Map([
+          [
+            'foo',
+            {
+              absolutePath: '/ctx/foo',
+              data: {
+                name: 'foo',
+                data: {key: 'foo', asyncType: null, locs: []},
+              },
+            },
+          ],
+        ]),
+        inverseDependencies: new CountingSet(['/bundle']),
+        output: [],
         path: '/ctx?ctx=xxx',
+        getSource: () => Buffer.of(),
       });
-      graph.dependencies.set('/ctx/foo', {
+      this.dependencies.set('/ctx/foo', {
         dependencies: new Map(),
-        inverseDependencies: ['/ctx?ctx=xxx'],
-        output: {
-          name: 'foo',
-        },
+        inverseDependencies: new CountingSet(['/ctx?ctx=xxx']),
+        output: [],
         path: '/ctx/foo',
+        getSource: () => Buffer.of(),
       });
 
       return {
-        added: new Map(graph.dependencies),
+        added: new Map(this.dependencies),
         modified: new Map(),
         deleted: new Set(),
       };
@@ -140,7 +172,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx?ctx=xxx'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
 
@@ -166,7 +197,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx?ctx=xxx'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
 
@@ -189,7 +219,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx/foo'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
 
@@ -233,7 +262,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx?ctx=xxx'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
 
@@ -281,7 +309,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx/foo'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
   });
@@ -306,7 +333,6 @@ describe('DeltaCalculator + require.context', () => {
 
     expect(traverseDependencies).toBeCalledWith(
       ['/ctx?ctx=xxx'],
-      deltaCalculator.getGraph(),
       expect.anything(),
     );
 

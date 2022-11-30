@@ -6,9 +6,11 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+import type {Dependency} from '../DeltaBundler/types.flow';
 
 import type {Module} from '../DeltaBundler';
 
@@ -37,7 +39,7 @@ type Options<T: number | string> = {
 function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
-  importBundleNames: Set<string>,
+  importBundleNames: $ReadOnlySet<string>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
   const output = [];
@@ -46,6 +48,7 @@ function getAppendScripts<T: number | string>(
     const importBundleNamesObject = Object.create(null);
     importBundleNames.forEach(absolutePath => {
       const bundlePath = path.relative(options.serverRoot, absolutePath);
+      // $FlowFixMe[prop-missing]
       importBundleNamesObject[options.createModuleId(absolutePath)] =
         bundlePath.slice(0, -path.extname(bundlePath).length);
     });
@@ -56,7 +59,7 @@ function getAppendScripts<T: number | string>(
     )})})();`;
     output.push({
       path: '$$importBundleNames',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [
@@ -113,7 +116,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceMappingURL=${sourceMappingURL}`;
     output.push({
       path: 'source-map',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [
@@ -133,7 +136,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceURL=${options.sourceUrl}`;
     output.push({
       path: 'source-url',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [

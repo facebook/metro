@@ -6,6 +6,7 @@
  *
  * @flow
  * @noformat
+ * @oncall react_native
  */
 
 // Note: cannot use prettier here because this file is ran as-is

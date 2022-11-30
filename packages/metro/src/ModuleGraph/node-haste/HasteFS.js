@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -71,7 +72,7 @@ module.exports = class HasteFS {
 };
 
 function buildDirectorySet(files: Array<string>): Set<string> {
-  const directories = new Set();
+  const directories = new Set<string>();
   files.forEach((path: string) => {
     const parsedPath = parse(path);
     const root = parsedPath.root;
@@ -87,7 +88,7 @@ function buildDirectorySet(files: Array<string>): Set<string> {
 function buildDirectoryEntries(
   files: Array<pathParseResult>,
 ): Map<string, Array<string>> {
-  const directoryEntries = new Map();
+  const directoryEntries = new Map<string, Array<string>>();
   files.forEach(({base, dir}) => {
     const entries = directoryEntries.get(dir);
     if (entries) {

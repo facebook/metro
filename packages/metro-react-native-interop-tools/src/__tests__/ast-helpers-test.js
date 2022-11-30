@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 import * as t from '@babel/types';
@@ -184,7 +184,7 @@ test('getObjectTypeAnnotation, testing an object with a AnyTypeAnnotation proper
       {
         loc: null,
         name: 'setKeepScreenOn',
-        optional: undefined,
+        optional: null,
         typeAnnotation: {
           type: 'AnyTypeAnnotation',
           loc: null,
@@ -203,7 +203,7 @@ test('getObjectTypeProperty, testing AnyTypeAnnotation property', () => {
   expect(getObjectTypeProperty(property)).toEqual({
     loc: null,
     name: 'testProp',
-    optional: undefined,
+    optional: null,
     typeAnnotation: {
       type: 'AnyTypeAnnotation',
       loc: null,

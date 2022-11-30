@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @oncall js_foundation
+ * @oncall react_native
  */
 
 'use strict';

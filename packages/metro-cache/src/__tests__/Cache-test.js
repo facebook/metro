@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
@@ -38,7 +38,9 @@ describe('Cache', () => {
       });
     });
 
-    log = [];
+    log = ([]: Array<
+      $FlowFixMe | {a: void | string, l: string, p: void | string},
+    >);
   });
 
   afterEach(() => {

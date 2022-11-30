@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {
@@ -15,51 +16,22 @@ import type {
   ModuleMetaData,
   Path,
   RawModuleMap,
-  SerializableModuleMap,
+  ReadOnlyRawModuleMap,
 } from './flow-types';
 
 import H from './constants';
+import {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
 import * as fastPath from './lib/fast_path';
 
 const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
-const EMPTY_MAP = new Map();
+const EMPTY_MAP = new Map<'g' | 'native' | string, ?DuplicatesSet>();
 
-export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
-  static DuplicateHasteCandidatesError: Class<DuplicateHasteCandidatesError>;
-  +_raw: RawModuleMap;
-  _json: ?SerializableModuleMap;
-
-  // $FlowFixMe[unclear-type] - Refactor away this function
-  static _mapToArrayRecursive(map: Map<string, any>): Array<[string, any]> {
-    let arr = Array.from(map);
-    if (arr[0] && arr[0][1] instanceof Map) {
-      arr = arr.map(
-        // $FlowFixMe[unclear-type] - Refactor away this function
-        el => ([el[0], this._mapToArrayRecursive(el[1])]: [string, any]),
-      );
-    }
-    return arr;
-  }
-
-  static _mapFromArrayRecursive(
-    // $FlowFixMe[unclear-type] - Refactor away this function
-    arr: $ReadOnlyArray<[string, any]>,
-    // $FlowFixMe[unclear-type] - Refactor away this function
-  ): Map<string, any> {
-    if (arr[0] && Array.isArray(arr[1])) {
-      // $FlowFixMe[reassign-const] - Refactor away this function
-      arr = (arr.map(el => [
-        el[0],
-        // $FlowFixMe[unclear-type] - Refactor away this function
-        this._mapFromArrayRecursive((el[1]: Array<[string, any]>)),
-        // $FlowFixMe[unclear-type] - Refactor away this function
-      ]): Array<[string, any]>);
-    }
-    return new Map(arr);
-  }
+export default class ModuleMap implements IModuleMap {
+  +#raw: RawModuleMap;
 
   constructor(raw: RawModuleMap) {
-    this._raw = raw;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#raw = raw;
   }
 
   getModule(
@@ -75,7 +47,7 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     );
     if (module && module[H.TYPE] === (type ?? H.MODULE)) {
       const modulePath = module[H.PATH];
-      return modulePath && fastPath.resolve(this._raw.rootDir, modulePath);
+      return modulePath && fastPath.resolve(this.#raw.rootDir, modulePath);
     }
     return null;
   }
@@ -90,44 +62,21 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
 
   getMockModule(name: string): ?Path {
     const mockPath =
-      this._raw.mocks.get(name) || this._raw.mocks.get(name + '/index');
+      this.#raw.mocks.get(name) || this.#raw.mocks.get(name + '/index');
     return mockPath != null
-      ? fastPath.resolve(this._raw.rootDir, mockPath)
+      ? fastPath.resolve(this.#raw.rootDir, mockPath)
       : null;
   }
 
-  getRawModuleMap(): RawModuleMap {
+  // FIXME: This is only used by Meta-internal validation and should be
+  // removed or replaced with a less leaky API.
+  getRawModuleMap(): ReadOnlyRawModuleMap {
     return {
-      duplicates: this._raw.duplicates,
-      map: this._raw.map,
-      mocks: this._raw.mocks,
-      rootDir: this._raw.rootDir,
+      duplicates: this.#raw.duplicates,
+      map: this.#raw.map,
+      mocks: this.#raw.mocks,
+      rootDir: this.#raw.rootDir,
     };
-  }
-
-  toJSON(): SerializableModuleMap {
-    if (!this._json) {
-      this._json = {
-        duplicates: (ModuleMap._mapToArrayRecursive(
-          this._raw.duplicates,
-        ): SerializableModuleMap['duplicates']),
-        map: Array.from(this._raw.map),
-        mocks: Array.from(this._raw.mocks),
-        rootDir: this._raw.rootDir,
-      };
-    }
-    return this._json;
-  }
-
-  static fromJSON(serializableModuleMap: SerializableModuleMap): ModuleMap {
-    return new ModuleMap({
-      duplicates: (ModuleMap._mapFromArrayRecursive(
-        serializableModuleMap.duplicates,
-      ): RawModuleMap['duplicates']),
-      map: new Map(serializableModuleMap.map),
-      mocks: new Map(serializableModuleMap.mocks),
-      rootDir: serializableModuleMap.rootDir,
-    });
   }
 
   /**
@@ -143,8 +92,8 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     platform: ?string,
     supportsNativePlatform: boolean,
   ): ModuleMetaData | null {
-    const map = this._raw.map.get(name) || EMPTY_OBJ;
-    const dupMap = this._raw.duplicates.get(name) || EMPTY_MAP;
+    const map = this.#raw.map.get(name) || EMPTY_OBJ;
+    const dupMap = this.#raw.duplicates.get(name) || EMPTY_MAP;
     if (platform != null) {
       this._assertNoDuplicates(
         name,
@@ -188,12 +137,10 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     if (relativePathSet == null) {
       return;
     }
-    // Force flow refinement
-    const previousSet = relativePathSet;
-    const duplicates = new Map();
+    const duplicates = new Map<string, number>();
 
-    for (const [relativePath, type] of previousSet) {
-      const duplicatePath = fastPath.resolve(this._raw.rootDir, relativePath);
+    for (const [relativePath, type] of relativePathSet) {
+      const duplicatePath = fastPath.resolve(this.#raw.rootDir, relativePath);
       duplicates.set(duplicatePath, type);
     }
 
@@ -214,56 +161,3 @@ export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
     });
   }
 }
-
-class DuplicateHasteCandidatesError extends Error {
-  hasteName: string;
-  platform: string | null;
-  supportsNativePlatform: boolean;
-  duplicatesSet: DuplicatesSet;
-
-  constructor(
-    name: string,
-    platform: string,
-    supportsNativePlatform: boolean,
-    duplicatesSet: DuplicatesSet,
-  ) {
-    const platformMessage = getPlatformMessage(platform);
-    super(
-      `The name \`${name}\` was looked up in the Haste module map. It ` +
-        'cannot be resolved, because there exists several different ' +
-        'files, or packages, that provide a module for ' +
-        `that particular name and platform. ${platformMessage} You must ` +
-        'delete or exclude files until there remains only one of these:\n\n' +
-        Array.from(duplicatesSet)
-          .map(
-            ([dupFilePath, dupFileType]) =>
-              `  * \`${dupFilePath}\` (${getTypeMessage(dupFileType)})\n`,
-          )
-          .sort()
-          .join(''),
-    );
-    this.hasteName = name;
-    this.platform = platform;
-    this.supportsNativePlatform = supportsNativePlatform;
-    this.duplicatesSet = duplicatesSet;
-  }
-}
-
-function getPlatformMessage(platform: string) {
-  if (platform === H.GENERIC_PLATFORM) {
-    return 'The platform is generic (no extension).';
-  }
-  return `The platform extension is \`${platform}\`.`;
-}
-
-function getTypeMessage(type: number) {
-  switch (type) {
-    case H.MODULE:
-      return 'module';
-    case H.PACKAGE:
-      return 'package';
-  }
-  return 'unknown';
-}
-
-ModuleMap.DuplicateHasteCandidatesError = DuplicateHasteCandidatesError;

@@ -6,9 +6,11 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import * as path from 'path';
+import * as os from 'os';
 import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
 
 function createFileMap(
@@ -25,14 +27,19 @@ function createFileMap(
     .forEach(file => {
       let filePath = path.relative(modulePath, file);
 
+      if (os.platform() === 'win32') {
+        filePath = filePath.replace(/\\/g, '/');
+      }
+
       // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)
       // but Webpack allows this, keeping it here provides better parity between bundlers.
 
       // Ensure relative file paths start with `./` so they match the
       // patterns (filters) used to include them.
       if (!filePath.startsWith('.')) {
-        filePath = `.${path.sep}` + filePath;
+        filePath = `./${filePath}`;
       }
+
       const key = JSON.stringify(filePath);
       // NOTE(EvanBacon): Webpack uses `require.resolve` in order to load modules on demand,
       // Metro doesn't have this functionality so it will use getters instead. Modules need to
@@ -78,11 +85,11 @@ const map = ${createFileMap(
     files,
     moduleId => `${importSyntax}(${JSON.stringify(moduleId)})`,
   )};
-  
+
 function metroContext(request) {
   ${getContextTemplate}
 }
-  
+
 // Return the keys that can be resolved.
 metroContext.keys = function metroContextKeys() {
   return Object.keys(map);

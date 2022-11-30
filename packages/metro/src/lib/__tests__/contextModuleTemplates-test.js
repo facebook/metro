@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import {getContextModuleTemplate} from '../contextModuleTemplates';
@@ -46,6 +47,19 @@ describe('getContextModuleTemplate', () => {
       ['/path/to/project/src/foo.js', '/path/to/project/src/another/bar.js'],
     );
 
+    expect(template).toMatchSnapshot();
+  });
+
+  test('creates posix paths on windows for sync template', () => {
+    jest.resetModules();
+    jest.mock('path', () => jest.requireActual<{win32: mixed}>('path').win32);
+    const {
+      getContextModuleTemplate: getWindowsTemplate,
+    } = require('../contextModuleTemplates');
+    const template = getWindowsTemplate('sync', 'c:/path/to/project/src', [
+      'C:\\path\\to\\project\\src\\foo.js',
+    ]);
+    expect(template).toMatch(/foo\.js/);
     expect(template).toMatchSnapshot();
   });
 });

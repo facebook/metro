@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -252,7 +253,7 @@ class ChromeHeapSnapshotRecordAccessor {
         ]),
       );
       if (Array.isArray(recordTypes)) {
-        this._fieldToType = new Map(
+        this._fieldToType = new Map<string, ChromeHeapSnapshotFieldType>(
           Object.entries(recordTypes).map(([offsetStr, type]) => [
             recordFields[Number(offsetStr)],
             // $FlowIssue[incompatible-call] Object.entries is incompletely typed

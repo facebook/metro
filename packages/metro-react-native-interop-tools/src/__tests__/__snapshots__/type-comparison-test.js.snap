@@ -341,3 +341,131 @@ exports[`comparing basic types 33`] = `
       Error: cannot change boolean to string because native code will break when js calls it.
   		"
 `;
+
+exports[`comparing basic types 34`] = `
+"
+    left-type:
+      (test: string) => ?true
+    right-type:
+      () => void
+    output:
+      Error: cannot change nullable boolean literal to void because is incompatible with what the native code returns.
+  		Error: cannot remove required parameter string because native code will break when js calls it.
+  		"
+`;
+
+exports[`comparing basic types 35`] = `
+"
+    left-type:
+      {name: string, age: ?number }
+    right-type:
+      {name: string, age: number }
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 36`] = `
+"
+    left-type:
+      {name: string, age: number }
+    right-type:
+      {name: string, age?: number }
+    output:
+      Error: cannot change required number to optional number because native code will break when js calls it.
+  		"
+`;
+
+exports[`comparing basic types 37`] = `
+"
+    left-type:
+      {name: string, age: number }
+    right-type:
+      {name: string}
+    output:
+      Error: cannot remove number from object properties because native code will break when js calls it.
+  		"
+`;
+
+exports[`comparing basic types 38`] = `
+"
+    left-type:
+      {name: string, age?: number }
+    right-type:
+      {name: string}
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 39`] = `
+"
+    left-type:
+      {name: string}
+    right-type:
+      {name: string, ...}
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 40`] = `
+"
+    left-type:
+      {name: string}
+    right-type:
+      {name: string, age: number}
+    output:
+      Error: cannot add number to object properties because native code will break when js calls it.
+  		"
+`;
+
+exports[`comparing basic types 41`] = `
+"
+    left-type:
+      {name: string}
+    right-type:
+      {name: string, age?: number}
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 42`] = `
+"
+    left-type:
+      () => {name: string, age?: number }
+    right-type:
+      () => {name: string}
+    output:
+      no errors"
+`;
+
+exports[`comparing basic types 43`] = `
+"
+    left-type:
+      () => {name: string, age: number }
+    right-type:
+      () => {name: string}
+    output:
+      Error: cannot remove number from object properties because it is incompatible with what the native code returns.
+  		"
+`;
+
+exports[`comparing basic types 44`] = `
+"
+    left-type:
+      () => {name: string}
+    right-type:
+      () => {name: string, age: number}
+    output:
+      Error: cannot add number to object properties because it is incompatible with what the native code returns.
+  		"
+`;
+
+exports[`comparing basic types 45`] = `
+"
+    left-type:
+      () => {name: string}
+    right-type:
+      () => {name: string, age: ?number}
+    output:
+      Error: cannot add nullable number to object properties because it is incompatible with what the native code returns.
+  		"
+`;

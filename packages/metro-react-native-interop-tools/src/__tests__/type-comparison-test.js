@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 import {parse} from 'hermes-parser';
@@ -66,6 +66,18 @@ test.each([
   ['() => void', '(test?: string) => void'],
   ['() => void', '(test?: string, test2: number) => void'],
   ['(test?: boolean) => true', '(test?: string) => true'],
+  ['(test: string) => ?true', '() => void'],
+  ['{name: string, age: ?number }', '{name: string, age: number }'],
+  ['{name: string, age: number }', '{name: string, age?: number }'],
+  ['{name: string, age: number }', '{name: string}'],
+  ['{name: string, age?: number }', '{name: string}'],
+  ['{name: string}', '{name: string, ...}'],
+  ['{name: string}', '{name: string, age: number}'],
+  ['{name: string}', '{name: string, age?: number}'],
+  ['() => {name: string, age?: number }', '() => {name: string}'],
+  ['() => {name: string, age: number }', '() => {name: string}'],
+  ['() => {name: string}', '() => {name: string, age: number}'],
+  ['() => {name: string}', '() => {name: string, age: ?number}'],
 ])('comparing basic types', (left, right) => {
   const result = compareTypeAnnotation(
     getTypeFromCode(left),

@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
@@ -42,8 +42,8 @@ describe('HmrServer', () => {
   const updateGraphMock = jest.fn();
 
   const hiModule = {
-    dependencies: new Map(),
-    inverseDependencies: new Set(),
+    dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
+    inverseDependencies: new Set<$FlowFixMe>(),
     path: '/root/hi',
     getSource: () => "alert('hi');",
     output: [
@@ -58,7 +58,7 @@ describe('HmrServer', () => {
     ],
   };
 
-  const changeHandlerPromises = new Set();
+  const changeHandlerPromises = new Set<$FlowFixMe>();
   async function waitForAllChangeHandlers() {
     const promisesArray = [...changeHandlerPromises];
     changeHandlerPromises.clear();
@@ -76,7 +76,7 @@ describe('HmrServer', () => {
 
   beforeEach(() => {
     mockedGraph = {
-      dependencies: new Map(),
+      dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
       entryPoint: '/root/EntryPoint.js',
     };
     changeHandlerPromises.clear();
@@ -120,11 +120,11 @@ describe('HmrServer', () => {
       serializer: {experimentalSerializerHook: () => {}},
       reporter: {update: jest.fn()},
       transformer: {
-        experimentalImportBundleSupport: false,
         unstable_allowRequireContext: false,
       },
       resolver: {platforms: []},
       server: {
+        experimentalImportBundleSupport: false,
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
             /__REMOVE_THIS_WHEN_REWRITING__/g,

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -83,7 +84,7 @@ async function calcTransformerOptions(
       transformOptions: options,
       onProgress: null,
       experimentalImportBundleSupport:
-        config.transformer.experimentalImportBundleSupport,
+        config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
       shallow: false,
@@ -100,12 +101,12 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    inlineRequires: transform.inlineRequires || false,
-    experimentalImportSupport: transform.experimentalImportSupport || false,
+    inlineRequires: transform?.inlineRequires || false,
+    experimentalImportSupport: transform?.experimentalImportSupport || false,
     unstable_disableES6Transforms:
-      transform.unstable_disableES6Transforms || false,
+      transform?.unstable_disableES6Transforms || false,
     nonInlinedRequires:
-      transform.nonInlinedRequires || baseIgnoredInlineRequires,
+      transform?.nonInlinedRequires || baseIgnoredInlineRequires,
     type: 'module',
   };
 }

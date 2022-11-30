@@ -6,7 +6,7 @@
  *
  * @flow strict
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,7 +18,7 @@ const vm = require('vm');
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
     const globalPrefix = '__metro';
-    const requireCycleIgnorePatterns = [];
+    const requireCycleIgnorePatterns: Array<RegExp> = [];
 
     it('sets up `process.env.NODE_ENV` and `__DEV__`', () => {
       const sandbox: $FlowFixMe = {};

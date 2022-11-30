@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -314,6 +315,8 @@ export type ResolvedLibrary = {
   +files: $ReadOnlyArray<$DeepReadOnly<ResolvedCodeFile>>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
+
+  +isUnsupportedPlatform?: boolean,
 };
 
 type DeepReadOnlyFn = (<T>(Array<T>) => $ReadOnlyArray<$DeepReadOnly<T>>) &

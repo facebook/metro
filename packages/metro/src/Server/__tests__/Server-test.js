@@ -6,8 +6,12 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
+
+import type {Graph} from '../../DeltaBundler/Graph';
+import type {Module, Options} from '../../DeltaBundler/types.flow';
+import type {Dependency} from '../../ModuleGraph/types.flow';
 
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
@@ -39,7 +43,7 @@ const NativeDate = global.Date;
 describe('processRequest', () => {
   let Bundler;
   let Server;
-  let dependencies;
+  let dependencies: Map<string, Module<>>;
   let fs;
   let getPrependedScripts;
   let DeltaBundler;
@@ -142,7 +146,7 @@ describe('processRequest', () => {
       rawBody?: string,
     }>,
   ) =>
-    new Promise((resolve, reject) => {
+    new Promise<$FlowFixMe>((resolve, reject) => {
       const {rawBody, method, ...reqOptions} = options ?? {};
       const actualMethod = method ?? (rawBody != null ? 'POST' : 'GET');
       const req = new MockRequest({
@@ -158,7 +162,7 @@ describe('processRequest', () => {
         // We implicitly depend on a body parser within `connect` that sets this
         req.rawBody = rawBody;
       }
-      const res = new MockResponse(() => {
+      const res: $FlowFixMe = new MockResponse(() => {
         resolve(res);
       });
       res.on('error', reject);
@@ -166,19 +170,29 @@ describe('processRequest', () => {
     });
 
   beforeEach(() => {
-    const currentGraphs = new Set();
+    const currentGraphs = new Set<Graph<>>();
     buildGraph.mockImplementation(
-      async (entryPoints, options, resolverOptions, otherOptions) => {
-        dependencies = new Map([
+      async (
+        entryPoints: $ReadOnlyArray<string>,
+        options: Options<>,
+        resolverOptions: mixed,
+        otherOptions: mixed,
+      ) => {
+        // $FlowFixMe[prop-missing]
+        dependencies = new Map<string, Module<>>([
           [
             '/root/mybundle.js',
+            // $FlowFixMe[prop-missing]
             {
               path: '/root/mybundle.js',
-              dependencies: new Map([
+              // $FlowFixMe[prop-missing]
+              dependencies: new Map<string, Dependency>([
                 [
                   'foo',
+                  // $FlowFixMe[prop-missing]
                   {
                     absolutePath: '/root/foo.js',
+                    // $FlowFixMe[prop-missing]
                     data: {isAsync: false, name: 'foo'},
                   },
                 ],
@@ -206,6 +220,7 @@ describe('processRequest', () => {
           ],
         ]);
         if (!options.shallow) {
+          // $FlowFixMe[prop-missing]
           dependencies.set('/root/foo.js', {
             path: '/root/foo.js',
             dependencies: new Map(),
@@ -232,7 +247,8 @@ describe('processRequest', () => {
           });
         }
 
-        const graph = {
+        // $FlowFixMe[incompatible-type]
+        const graph: Graph<> = {
           entryPoints: ['/root/mybundle.js'],
           dependencies,
           importBundleNames: new Set(),
@@ -243,24 +259,26 @@ describe('processRequest', () => {
         return graph;
       },
     );
-    getDelta.mockImplementation(async (graph, {reset}) => {
-      if (!currentGraphs.has(graph)) {
-        throw new Error('Graph not found');
-      }
+    getDelta.mockImplementation(
+      async (graph: Graph<>, {reset}: {reset: boolean, ...}) => {
+        if (!currentGraphs.has(graph)) {
+          throw new Error('Graph not found');
+        }
 
-      return {
-        added: reset ? dependencies : new Map(),
-        modified: new Map(),
-        deleted: new Set(),
-        reset,
-      };
-    });
+        return {
+          added: reset ? dependencies : new Map<string, Module<>>(),
+          modified: new Map<string, Module<>>(),
+          deleted: new Set<string>(),
+          reset,
+        };
+      },
+    );
 
     getPrependedScripts.mockReturnValue(
       Promise.resolve([
         {
           path: 'require-js',
-          dependencies: new Map(),
+          dependencies: new Map<string, Module<>>(),
           getSource: () => Buffer.from('code-require'),
           output: [
             {
@@ -300,7 +318,7 @@ describe('processRequest', () => {
     );
 
     // $FlowFixMe[cannot-write]
-    fs.realpath = jest.fn((file, cb) => cb(null, '/root/foo.js'));
+    fs.realpath = jest.fn((file, cb) => cb?.(null, '/root/foo.js'));
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
@@ -381,7 +399,7 @@ describe('processRequest', () => {
 
   it('returns 404 on request of *.bundle when resource does not exist', async () => {
     // $FlowFixMe[cannot-write]
-    fs.realpath = jest.fn((file, cb) =>
+    fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 
@@ -420,11 +438,11 @@ describe('processRequest', () => {
 
     getDelta.mockReturnValue(
       Promise.resolve({
-        added: new Map(),
-        modified: new Map([
+        added: new Map<string, Module<>>(),
+        modified: new Map<number, string>([
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
         ]),
-        deleted: new Set(),
+        deleted: new Set<string>(),
         reset: false,
       }),
     );
@@ -526,7 +544,7 @@ describe('processRequest', () => {
 
   it('DELETE succeeds with a nonexistent path', async () => {
     // $FlowFixMe[cannot-write]
-    fs.realpath = jest.fn((file, cb) =>
+    fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 

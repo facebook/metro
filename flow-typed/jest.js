@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // Copied from https://raw.githubusercontent.com/flow-typed/flow-typed/master/definitions/npm/jest_v26.x.x/flow_v0.134.x-/jest_v26.x.x.js

@@ -6,7 +6,7 @@
  *
  * @flow
  * @format
- * @oncall jsfoundation
+ * @oncall react_native
  */
 
 'use strict';

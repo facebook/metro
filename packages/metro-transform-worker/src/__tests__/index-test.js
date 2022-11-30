@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
@@ -21,7 +21,7 @@ jest
     inlinePlugin: () => ({}),
     constantFoldingPlugin: () => ({}),
   }))
-  .mock('metro-minify-uglify');
+  .mock('metro-minify-terser');
 
 import type {JsTransformerConfig} from '../index';
 import typeof TransformerType from '../index';
@@ -53,7 +53,6 @@ const baseConfig: JsTransformerConfig = {
   dynamicDepsInPackages: 'reject',
   enableBabelRCLookup: false,
   enableBabelRuntime: true,
-  experimentalImportBundleSupport: false,
   globalPrefix: '',
   hermesParser: false,
   minifierConfig: {},
@@ -160,13 +159,9 @@ it('transforms a module with dependencies', async () => {
       '  "use strict";',
       '',
       '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
-      '',
       '  var _c = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], "./c"));',
-      '',
       '  _$$_REQUIRE(_dependencyMap[2], "./a");',
-      '',
       '  arbitrary(code);',
-      '',
       '  var b = _$$_REQUIRE(_dependencyMap[3], "b");',
       '});',
     ].join('\n'),
@@ -199,7 +194,7 @@ it('transforms an es module with asyncToGenerator', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toMatchSnapshot();
-  expect(result.output[0].data.map).toHaveLength(6);
+  expect(result.output[0].data.map).toHaveLength(13);
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {
@@ -481,9 +476,9 @@ it('allows replacing the collectDependencies implementation', async () => {
     'metro-transform-worker/__virtual__/collectModifiedDependencies',
     () =>
       jest.fn((ast, opts) => {
-        const metroCoreCollectDependencies = jest.requireActual(
-          'metro/src/ModuleGraph/worker/collectDependencies',
-        );
+        const metroCoreCollectDependencies = jest.requireActual<
+          (empty, empty) => {dependencies: {map: mixed => mixed}},
+        >('metro/src/ModuleGraph/worker/collectDependencies');
         const collectedDeps = metroCoreCollectDependencies(ast, opts);
         return {
           ...collectedDeps,

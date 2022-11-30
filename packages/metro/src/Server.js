@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,11 +16,12 @@ import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {
-  Graph,
+  MixedOutput,
   Module,
+  ReadOnlyGraph,
   TransformInputOptions,
+  TransformResult,
 } from './DeltaBundler/types.flow';
-import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
@@ -31,7 +33,7 @@ import type {
 } from './shared/types.flow';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
@@ -76,6 +78,14 @@ const path = require('path');
 const querystring = require('querystring');
 const url = require('url');
 
+const noopLogger: RootPerfLogger = {
+  start: () => {},
+  point: () => {},
+  annotate: () => {},
+  subSpan: () => noopLogger,
+  end: () => {},
+};
+
 export type SegmentLoadData = {[number]: [Array<number>, ?number], ...};
 export type BundleMetadata = {
   hash: string,
@@ -87,13 +97,14 @@ export type BundleMetadata = {
 };
 
 type ProcessStartContext = {
-  +buildID: string,
+  +buildNumber: number,
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
   +graphOptions: GraphOptions,
   +mres: MultipartResponse | ServerResponse,
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
+  +bundlePerfLogger: RootPerfLogger,
   ...SplitBundleOptions,
 };
 
@@ -127,7 +138,7 @@ class Server {
   _createModuleId: (path: string) => number;
   _isEnded: boolean;
   _logger: typeof Logger;
-  _nextBundleBuildID: number;
+  _nextBundleBuildNumber: number;
   _platforms: Set<string>;
   _reporter: Reporter;
   _serverOptions: ServerOptions | void;
@@ -157,7 +168,7 @@ class Server {
       hasReducedPerformance: options && options.hasReducedPerformance,
       watch: options ? options.watch : undefined,
     });
-    this._nextBundleBuildID = 1;
+    this._nextBundleBuildNumber = 1;
   }
 
   end() {
@@ -494,12 +505,22 @@ class Server {
       protocol: 'http',
     });
     const pathname = urlObj.pathname || '';
+    const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
       if (options.runtimeBytecodeVersion) {
-        await this._processBytecodeBundleRequest(req, res, options);
+        await this._processBytecodeBundleRequest(req, res, options, {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        });
       } else {
-        await this._processBundleRequest(req, res, options);
+        await this._processBundleRequest(req, res, options, {
+          buildNumber,
+          bundlePerfLogger:
+            this._config.unstable_perfLogger?.('BUNDLING_REQUEST', {
+              key: buildNumber,
+            }) ?? noopLogger,
+        });
       }
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
@@ -512,12 +533,20 @@ class Server {
         req,
         res,
         this._parseOptions(formattedUrl),
+        {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        },
       );
     } else if (pathname.endsWith('.assets')) {
       await this._processAssetsRequest(
         req,
         res,
         this._parseOptions(formattedUrl),
+        {
+          buildNumber,
+          bundlePerfLogger: noopLogger,
+        },
       );
     } else if (pathname.startsWith('/assets/') || pathname === '/assets') {
       await this._processSingleAssetRequest(req, res);
@@ -546,13 +575,22 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> {
     return async function requestProcessor(
       this: Server,
       req: IncomingMessage,
       res: ServerResponse,
       bundleOptions: BundleOptions,
+      buildContext: $ReadOnly<{
+        buildNumber: number,
+        bundlePerfLogger: RootPerfLogger,
+      }>,
     ): Promise<void> {
+      const {buildNumber} = buildContext;
       const {
         entryFile,
         graphOptions,
@@ -572,7 +610,7 @@ class Server {
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         experimentalImportBundleSupport:
-          this._config.transformer.experimentalImportBundleSupport,
+          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         resolverOptions,
@@ -601,7 +639,6 @@ class Server {
       }
 
       const mres = MultipartResponse.wrapIfSupported(req, res);
-      const buildID = this.getNewBuildID();
 
       let onProgress = null;
       let lastProgress = -1;
@@ -642,7 +679,7 @@ class Server {
           }
 
           this._reporter.update({
-            buildID,
+            buildID: getBuildID(buildNumber),
             type: 'bundle_transform_progressed',
             transformedFileCount,
             totalFileCount,
@@ -651,7 +688,7 @@ class Server {
       }
 
       this._reporter.update({
-        buildID,
+        buildID: getBuildID(buildNumber),
         bundleDetails: {
           bundleType: bundleOptions.bundleType,
           dev: transformOptions.dev,
@@ -660,11 +697,12 @@ class Server {
           platform: transformOptions.platform,
           runtimeBytecodeVersion: transformOptions.runtimeBytecodeVersion,
         },
+        isPrefetch: req.method === 'HEAD',
         type: 'bundle_build_started',
       });
 
       const startContext = {
-        buildID,
+        buildNumber,
         bundleOptions,
         entryFile: resolvedEntryFilePath,
         graphId,
@@ -675,6 +713,7 @@ class Server {
         resolverOptions,
         serializerOptions,
         transformOptions,
+        bundlePerfLogger: buildContext.bundlePerfLogger,
       };
       const logEntry = log(
         createActionStartEntry(createStartEntry(startContext)),
@@ -693,7 +732,7 @@ class Server {
         mres.end(JSON.stringify(formattedError));
 
         this._reporter.update({
-          buildID,
+          buildID: getBuildID(buildNumber),
           type: 'bundle_build_failed',
           bundleOptions,
         });
@@ -705,11 +744,13 @@ class Server {
           error_type: formattedError.type,
           log_entry_label: 'bundling_error',
           bundle_id: graphId,
-          build_id: buildID,
+          build_id: getBuildID(buildNumber),
           stack: formattedError.message,
         });
 
         debug('Bundling error', error);
+
+        buildContext.bundlePerfLogger.end('FAIL');
 
         return;
       }
@@ -721,7 +762,7 @@ class Server {
       finish(endContext);
 
       this._reporter.update({
-        buildID,
+        buildID: getBuildID(buildNumber),
         type: 'bundle_build_done',
       });
 
@@ -741,6 +782,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -748,9 +793,10 @@ class Server {
         bundle_url: context.req.url,
         entry_point: context.entryFile,
         bundler: 'delta',
-        build_id: context.buildID,
+        build_id: getBuildID(context.buildNumber),
         bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
+        user_agent: context.req.headers['user-agent'] ?? 'unknown',
       };
     },
     createEndEntry(
@@ -773,9 +819,17 @@ class Server {
       resolverOptions,
       serializerOptions,
       transformOptions,
+      bundlePerfLogger,
     }) => {
+      bundlePerfLogger.start();
+      bundlePerfLogger.annotate({
+        string: {
+          bundle_url: entryFile,
+        },
+      });
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
 
+      bundlePerfLogger.point('resolvingAndTransformingDependencies_start');
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
         : this._bundler.initializeGraph(
@@ -787,10 +841,13 @@ class Server {
               shallow: graphOptions.shallow,
             },
           ));
-
+      bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
+      bundlePerfLogger.point('serializingBundle_start');
       const serializer =
         this._config.serializer.customSerializer ||
-        ((...args) => bundleToString(baseJSBundle(...args)).code);
+        ((entryPoint, preModules, graph, options) =>
+          bundleToString(baseJSBundle(entryPoint, preModules, graph, options))
+            .code);
 
       const bundle = await serializer(
         entryFile,
@@ -823,8 +880,11 @@ class Server {
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         },
       );
+      bundlePerfLogger.point('serializingBundle_end');
 
       const bundleCode = typeof bundle === 'string' ? bundle : bundle.code;
+
+      bundlePerfLogger.end('SUCCESS');
 
       return {
         numModifiedFiles: delta.reset
@@ -872,6 +932,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -879,7 +943,7 @@ class Server {
         bundle_url: context.req.url,
         entry_point: context.entryFile,
         bundler: 'delta',
-        build_id: context.buildID,
+        build_id: getBuildID(context.buildNumber),
         bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
       };
@@ -987,7 +1051,7 @@ class Server {
 
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
-  _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
+  _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
     const modules = [...graph.dependencies.values()];
     // Assign IDs to modules in a consistent order
     for (const module of modules) {
@@ -1004,6 +1068,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -1060,6 +1128,10 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
+    buildContext: $ReadOnly<{
+      buildNumber: number,
+      bundlePerfLogger: RootPerfLogger,
+    }>,
   ) => Promise<void> = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -1155,7 +1227,7 @@ class Server {
         return frame;
       });
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
-      const urls = new Set();
+      const urls = new Set<string>();
 
       stack.forEach(frame => {
         const sourceUrl = frame.file;
@@ -1228,7 +1300,7 @@ class Server {
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       experimentalImportBundleSupport:
-        this._config.transformer.experimentalImportBundleSupport,
+        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       resolverOptions,
@@ -1284,8 +1356,8 @@ class Server {
     return resolutionFn(`${rootDir}/.`, filePath);
   }
 
-  getNewBuildID(): string {
-    return (this._nextBundleBuildID++).toString(36);
+  getNewBuildNumber(): number {
+    return this._nextBundleBuildNumber++;
   }
 
   getPlatforms(): $ReadOnlyArray<string> {
@@ -1360,6 +1432,10 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
     }
     yield [x, y.value];
   }
+}
+
+function getBuildID(buildNumber: number): string {
+  return buildNumber.toString(36);
 }
 
 module.exports = Server;

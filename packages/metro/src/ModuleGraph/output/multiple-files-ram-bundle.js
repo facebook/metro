@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -54,7 +55,7 @@ function asMultipleFilesRamBundle({
     .join('\n');
 
   // Write one file per module, wrapped with __d() call if it proceeds.
-  const extraFiles = new Map();
+  const extraFiles = new Map<string, string | Buffer>();
   deferredModules.forEach(deferredModule => {
     extraFiles.set(
       path.join(JS_MODULES, deferredModule.id + '.js'),

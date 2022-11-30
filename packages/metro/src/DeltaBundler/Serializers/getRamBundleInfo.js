@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,7 +15,7 @@ import type {
   ModuleTransportLike,
   RamModuleTransport,
 } from '../../shared/types.flow';
-import type {Graph, Module, SerializerOptions} from '../types.flow';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
@@ -42,7 +43,7 @@ export type RamBundleInfo = {
 async function getRamBundleInfo(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
   let modules: $ReadOnlyArray<Module<>> = [
@@ -109,7 +110,7 @@ async function getRamBundleInfo(
       dependenciesByPath: Map<string, ModuleTransportLike>,
     ): Set<number> => {
       const deps = getTransitiveDependencies(module.sourcePath, graph);
-      const output = new Set();
+      const output = new Set<number>();
 
       for (const dependency of deps) {
         const module = dependenciesByPath.get(dependency);

@@ -8,7 +8,6 @@
 emoji=true
 
 exact_by_default=true
-exact_empty_objects=true
 
 format.bracket_spacing=false
 
@@ -42,4 +41,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.187.0
+^0.194.0

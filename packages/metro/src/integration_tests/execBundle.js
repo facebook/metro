@@ -6,17 +6,13 @@
  *
  * @flow
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
 
-const acorn = require('acorn');
 const vm = require('vm');
 
 module.exports = function execBundle(code: string, context: {...} = {}): mixed {
-  // Verify the code can run on older VMs by parsing it as ES5 (versus ES6+).
-  acorn.parse(code, {ecmaVersion: 5});
-
   return vm.runInNewContext(code, context);
 };

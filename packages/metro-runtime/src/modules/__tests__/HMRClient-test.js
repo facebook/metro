@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall js_foundation
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,7 +15,13 @@ import type {HmrUpdate} from '../types.flow';
 
 const HMRClient = require('../HMRClient');
 
-let mockSocket = null;
+let mockSocket: ?{
+  onclose: () => void,
+  onmessage: ({data: string}) => void,
+  onerror: ({data: string}) => void,
+  close: () => void,
+  mockEmit: (string, {data: string}) => void,
+} = null;
 let evaledCode = '';
 
 beforeEach(() => {
@@ -65,12 +71,14 @@ function sendUpdate(update: HmrUpdate) {
       body: {isInitialUpdate: false},
     }),
   });
+  // $FlowFixMe[incompatible-use]
   mockSocket.mockEmit('message', {
     data: JSON.stringify({
       type: 'update',
       body: update,
     }),
   });
+  // $FlowFixMe[incompatible-use]
   mockSocket.mockEmit('message', {
     data: JSON.stringify({
       type: 'update-end',

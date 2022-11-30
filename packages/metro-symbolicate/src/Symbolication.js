@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
@@ -524,6 +525,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
         // $FlowFixMe[incompatible-use]
         const map = sourceMapJson.x_facebook_segments[key];
+        // $FlowFixMe[prop-missing]
         segments[key] = this._initSegment(map);
       }
     }

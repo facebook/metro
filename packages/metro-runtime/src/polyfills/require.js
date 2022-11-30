@@ -4,9 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @polyfill
  * @flow
  * @format
+ * @oncall react_native
+ * @polyfill
  */
 
 'use strict';
@@ -212,7 +213,9 @@ function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
   return modules.every(module => !isIgnored(module));
 }
 
-function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
+function metroImportDefault(
+  moduleId: ModuleID | VerboseModuleNameForDev,
+): any | Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -228,8 +231,8 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
     return modules[moduleIdReallyIsNumber].importedDefault;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  const importedDefault =
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  const importedDefault: any | Exports =
     exports && exports.__esModule ? exports.default : exports;
 
   // $FlowFixMe The metroRequire call above will throw if modules[id] is null
@@ -237,7 +240,9 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
 }
 metroRequire.importDefault = metroImportDefault;
 
-function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
+function metroImportAll(
+  moduleId: ModuleID | VerboseModuleNameForDev | number,
+): any | Exports | {[string]: any} {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -253,8 +258,8 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
     return modules[moduleIdReallyIsNumber].importedAll;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  let importedAll;
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  let importedAll: Exports | {[string]: any};
 
   if (exports && exports.__esModule) {
     importedAll = exports;
@@ -263,7 +268,7 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
 
     // Refrain from using Object.assign, it has to work in ES3 environments.
     if (exports) {
-      for (const key in exports) {
+      for (const key: string in exports) {
         if (hasOwnProperty.call(exports, key)) {
           importedAll[key] = exports[key];
         }
@@ -393,7 +398,7 @@ function loadModuleImplementation(
   }
 
   if (module.hasError) {
-    throw moduleThrewError(moduleId, module.error);
+    throw module.error;
   }
 
   if (__DEV__) {
@@ -493,16 +498,6 @@ function unknownModuleError(id: ModuleID): Error {
   return Error(message);
 }
 
-function moduleThrewError(id: ModuleID, error: any): Error {
-  const displayName = (__DEV__ && modules[id] && modules[id].verboseName) || id;
-  return Error(
-    'Requiring module "' +
-      displayName +
-      '", which threw an exception: ' +
-      error,
-  );
-}
-
 if (__DEV__) {
   // $FlowFixMe[prop-missing]
   metroRequire.Systrace = {
@@ -531,7 +526,7 @@ if (__DEV__) {
     return hot;
   };
 
-  let reactRefreshTimeout = null;
+  let reactRefreshTimeout: null | TimeoutID = null;
 
   const metroHotUpdateModule = function (
     id: ModuleID,
@@ -557,7 +552,7 @@ if (__DEV__) {
     }
 
     const Refresh = requireRefresh();
-    const refreshBoundaryIDs = new Set();
+    const refreshBoundaryIDs = new Set<ModuleID>();
 
     // In this loop, we will traverse the dependency tree upwards from the
     // changed module. Updates "bubble" up to the closest accepted parent.
@@ -645,7 +640,7 @@ if (__DEV__) {
 
     // If we reached here, it is likely that hot reload will be successful.
     // Run the actual factories.
-    const seenModuleIDs = new Set();
+    const seenModuleIDs = new Set<ModuleID>();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
       const updatedID = updatedModuleIDs[i];
       if (seenModuleIDs.has(updatedID)) {
@@ -753,9 +748,9 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): Array<T> {
     const result = [];
-    const visited = new Set();
-    const stack = new Set();
-    function traverseDependentNodes(node: T) {
+    const visited = new Set<mixed>();
+    const stack = new Set<mixed>();
+    function traverseDependentNodes(node: T): void {
       if (stack.has(node)) {
         throw CYCLE_DETECTED;
       }
@@ -901,7 +896,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         return false;
@@ -948,7 +943,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         continue;
       }
@@ -971,7 +966,7 @@ if (__DEV__) {
       return;
     }
     for (const key in moduleExports) {
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         continue;

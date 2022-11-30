@@ -6,10 +6,11 @@
  *
  * @flow
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
+
 import type {File, Dependency} from '../../types.flow';
 
 import type {IndexMapSection} from 'metro-source-map';
@@ -187,7 +188,12 @@ describe('RAM groups / common sections', () => {
     maps
       .map((groupMap: IndexMapSection, i: number) => [groups[i], groupMap])
       .forEach(([group, groupMap], i: number) => {
-        const offsets = group.reduce(moduleLineOffsets, [])[0];
+        // $FlowFixMe[incompatible-call]
+        const offsets = group.reduce(
+          moduleLineOffsets,
+          // $FlowFixMe[invalid-tuple-arity]
+          ([]: [Array<number> | void, number | void]),
+        )[0];
         expect(groupMap).toEqual({
           map: {
             version: 3,
@@ -202,11 +208,12 @@ describe('RAM groups / common sections', () => {
   });
 
   function moduleLineOffsets(
-    /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
-     * Flow's LTI update could not be added via codemod */
-    [offsets = [], line = 0],
+    [offsets = ([]: Array<number>), line = 0]: [
+      Array<number> | void,
+      number | void,
+    ],
     module: {dependencies: Array<Dependency>, file: File},
-  ) {
+  ): [Array<number>, number] {
     return [[...offsets, line], line + countLines(module)];
   }
 });
@@ -257,7 +264,7 @@ function makeModuleMap(name: string, path: string) {
   return {
     version: 3,
     mappings: '',
-    names: [],
+    names: ([]: Array<string>),
     sources: [path],
     x_facebook_sources: [[null]],
   };
@@ -271,7 +278,7 @@ function makeModulePath(name: string) {
   return `/${name}.js`;
 }
 
-function makeDependency(name: string) {
+function makeDependency(name: string): Dependency {
   const path = makeModulePath(name);
   return {
     id: name,
@@ -349,7 +356,7 @@ function lineByLineMap(file: string) {
   return {
     file,
     mappings: '',
-    names: [],
+    names: ([]: Array<string>),
     sources: [file],
     version: 3,
   };

@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -60,6 +61,6 @@ exports.moduleSystem = (require.resolve(
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
+exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-terser';
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;

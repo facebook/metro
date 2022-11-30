@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
- * @nolint
  * @format
+ * @nolint
+ * @oncall react_native
  */
 
 /* eslint-disable */

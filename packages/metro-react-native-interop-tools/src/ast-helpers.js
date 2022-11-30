@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 import type {
@@ -383,6 +383,7 @@ export function getBoundarySchemaFromAST(
     null,
   );
   if (interfaceNode != null) {
+    // $FlowFixMe[prop-missing]
     schema.typegenSchema[interfaceNode.id.name] = {
       typeAnnotation: {
         type: 'InterfaceDeclarationTypeAnnotation',

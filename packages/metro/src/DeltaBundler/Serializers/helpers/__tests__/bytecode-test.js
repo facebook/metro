@@ -6,10 +6,11 @@
  *
  * @flow strict-local
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
+import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
 
@@ -28,7 +29,7 @@ beforeEach(() => {
 
   myModule = {
     path: '/root/foo.js',
-    dependencies: new Map([
+    dependencies: new Map<string, Dependency>([
       [
         'bar',
         {

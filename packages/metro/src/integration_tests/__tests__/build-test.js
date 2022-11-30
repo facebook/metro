@@ -6,7 +6,7 @@
  *
  * @flow
  * @format
- * @oncall metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
@@ -48,4 +48,18 @@ it('build a simple bundle with polyfills', async () => {
     entry: 'TestPolyfill.js',
   });
   expect(execBundle(result.code)).toBe('POLYFILL_IS_INJECTED');
+});
+
+it('builds a bundle with BigInt and exponentiation syntax', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+
+  const result = await Metro.runBuild(config, {
+    entry: 'TestBigInt.js',
+  });
+
+  // $FlowIssue[cannot-resolve-name] Flow is missing BigInt support
+  const BI = BigInt;
+  expect(execBundle(result.code)).toBe(BI(8));
 });

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -66,7 +67,7 @@ function combineSourceMapsAddingOffsets(
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
 ): IndexMap {
-  const x_facebook_offsets = [];
+  const x_facebook_offsets: Array<number> = [];
   const sections = combineMaps(
     modules,
     x_facebook_offsets,

@@ -17,7 +17,6 @@ exports[`Util generates a remote asset for a given descriptor 1`] = `
   pickScale,
   getUrlCacheBreaker
 } = require(\\"react-native-module/asset-utils\\");
-
 module.exports = {
   \\"width\\": 240,
   \\"height\\": 24,

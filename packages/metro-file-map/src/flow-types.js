@@ -6,16 +6,15 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
-import type {Stats} from 'graceful-fs';
-import type {PerfLogger} from 'metro-config';
+import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 
-export type {PerfLogger};
+export type {PerfLoggerFactory, PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
@@ -40,6 +39,11 @@ export type BuildParameters = $ReadOnly<{
   cacheBreaker: string,
 }>;
 
+export type BuildResult = {
+  fileSystem: FileSystem,
+  hasteModuleMap: ModuleMap,
+};
+
 export interface CacheManager {
   read(): Promise<?InternalData>;
   write(
@@ -53,9 +57,16 @@ export type CacheManagerFactory = (
 ) => CacheManager;
 
 export type ChangeEvent = {
+  logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
-  hasteFS: HasteFS,
+  snapshotFS: FileSystem,
   moduleMap: ModuleMap,
+};
+
+export type ChangeEventMetadata = {
+  modifiedTime: number, // Epoch ms
+  size: number, // Bytes
+  type: 'f' | 'd' | 'l', // Regular file / Directory / Symlink
 };
 
 export type Console = typeof global.console;
@@ -64,28 +75,44 @@ export type CrawlerOptions = {
   abortSignal: ?AbortSignal,
   computeSha1: boolean,
   enableSymlinks: boolean,
-  data: InternalData,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
   perfLogger?: ?PerfLogger,
+  previousState: $ReadOnly<{
+    clocks: $ReadOnlyMap<Path, WatchmanClockSpec>,
+    files: $ReadOnlyMap<Path, FileMetaData>,
+  }>,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
+  onStatus: (status: WatcherStatus) => void,
 };
+
+export type WatcherStatus =
+  | {
+      type: 'watchman_slow_command',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_slow_command_complete',
+      timeElapsed: number,
+      command: 'watch-project' | 'query',
+    }
+  | {
+      type: 'watchman_warning',
+      warning: mixed,
+      command: 'watch-project' | 'query',
+    };
 
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
 export type EventsQueue = Array<{
   filePath: Path,
-  stat?: ?Stats,
+  metadata?: ?ChangeEventMetadata,
   type: string,
 }>;
-
-export type HasteMap = {
-  hasteFS: HasteFS,
-  moduleMap: ModuleMap,
-};
 
 export type HType = {
   ID: 0,
@@ -126,9 +153,34 @@ export type FileMetaData = [
   /* sha1 */ ?string,
 ];
 
+export interface FileSystem {
+  exists(file: Path): boolean;
+  getAllFiles(): Array<Path>;
+  getDependencies(file: Path): ?Array<string>;
+  getModuleName(file: Path): ?string;
+  getSha1(file: Path): ?string;
+
+  matchFiles(pattern: RegExp | string): Array<Path>;
+
+  /**
+   * Given a search context, return a list of file paths matching the query.
+   * The query matches against normalized paths which start with `./`,
+   * for example: `a/b.js` -> `./a/b.js`
+   */
+  matchFilesWithContext(
+    root: Path,
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
+      recursive: boolean,
+      /* Filter relative paths against a pattern. */
+      filter: RegExp,
+    }>,
+  ): Array<Path>;
+}
+
 export type Glob = string;
 
-export interface IModuleMap<S = SerializableModuleMap> {
+export interface IModuleMap {
   getModule(
     name: string,
     platform?: ?string,
@@ -144,9 +196,7 @@ export interface IModuleMap<S = SerializableModuleMap> {
 
   getMockModule(name: string): ?Path;
 
-  getRawModuleMap(): RawModuleMap;
-
-  toJSON(): S;
+  getRawModuleMap(): ReadOnlyRawModuleMap;
 }
 
 export type MockData = Map<string, Path>;
@@ -167,14 +217,19 @@ export type RawModuleMap = {
   mocks: MockData,
 };
 
-export type SerializableModuleMap = {
-  duplicates: $ReadOnlyArray<[string, [string, [string, [string, number]]]]>,
-  map: $ReadOnlyArray<[string, ModuleMapItem]>,
-  mocks: $ReadOnlyArray<[string, Path]>,
+export type ReadOnlyRawModuleMap = $ReadOnly<{
   rootDir: Path,
-};
+  duplicates: $ReadOnlyMap<
+    string,
+    $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
+  >,
+  map: $ReadOnlyMap<string, ModuleMapItem>,
+  mocks: $ReadOnlyMap<string, Path>,
+}>;
 
-export type WatchmanClockSpec = string | {scm: {'mergebase-with': string}};
+export type WatchmanClockSpec =
+  | string
+  | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = $ReadOnly<{

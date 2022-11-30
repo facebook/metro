@@ -1,25 +1,60 @@
 /**
- * vendored from https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/common.js
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict-local
  * @format
+ * @oncall react_native
+ */
+
+/**
+ * Originally vendored from
+ * https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/common.js
  */
 
 'use strict';
 
+import type {ChangeEventMetadata} from '../flow-types';
+import type {Stats} from 'fs';
+
+// $FlowFixMe[untyped-import] - Write libdefs for `anymatch`
 const anymatch = require('anymatch');
+// $FlowFixMe[untyped-import] - Write libdefs for `micromatch`
 const micromatch = require('micromatch');
 const platform = require('os').platform();
 const path = require('path');
+// $FlowFixMe[untyped-import] - Write libdefs for `walker`
 const walker = require('walker');
 
 /**
  * Constants
  */
+export const DEFAULT_DELAY = 100;
+export const CHANGE_EVENT = 'change';
+export const DELETE_EVENT = 'delete';
+export const ADD_EVENT = 'add';
+export const ALL_EVENT = 'all';
 
-exports.DEFAULT_DELAY = 100;
-exports.CHANGE_EVENT = 'change';
-exports.DELETE_EVENT = 'delete';
-exports.ADD_EVENT = 'add';
-exports.ALL_EVENT = 'all';
+export type WatcherOptions = $ReadOnly<{
+  glob: $ReadOnlyArray<string>,
+  dot: boolean,
+  ignored: boolean | RegExp,
+  watchmanDeferStates: $ReadOnlyArray<string>,
+  watchman?: mixed,
+  watchmanPath?: string,
+}>;
+
+interface Watcher {
+  doIgnore: string => boolean;
+  dot: boolean;
+  globs: $ReadOnlyArray<string>;
+  hasIgnore: boolean;
+  ignored?: ?(boolean | RegExp);
+  watchmanDeferStates: $ReadOnlyArray<string>;
+  watchmanPath?: ?string;
+}
 
 /**
  * Assigns options to the watcher.
@@ -29,12 +64,13 @@ exports.ALL_EVENT = 'all';
  * @return {boolean}
  * @public
  */
-
-exports.assignOptions = function (watcher, opts) {
-  opts = opts || {};
-  watcher.globs = opts.glob || [];
-  watcher.dot = opts.dot || false;
-  watcher.ignored = opts.ignored || false;
+export const assignOptions = function (
+  watcher: Watcher,
+  opts: WatcherOptions,
+): WatcherOptions {
+  watcher.globs = opts.glob ?? [];
+  watcher.dot = opts.dot ?? false;
+  watcher.ignored = opts.ignored ?? false;
   watcher.watchmanDeferStates = opts.watchmanDeferStates;
 
   if (!Array.isArray(watcher.globs)) {
@@ -42,9 +78,12 @@ exports.assignOptions = function (watcher, opts) {
   }
   watcher.hasIgnore =
     Boolean(opts.ignored) && !(Array.isArray(opts) && opts.length > 0);
-  watcher.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
+  watcher.doIgnore =
+    opts.ignored != null && opts.ignored !== false
+      ? anymatch(opts.ignored)
+      : () => false;
 
-  if (opts.watchman && opts.watchmanPath) {
+  if (opts.watchman == true && opts.watchmanPath != null) {
     watcher.watchmanPath = opts.watchmanPath;
   }
 
@@ -53,40 +92,31 @@ exports.assignOptions = function (watcher, opts) {
 
 /**
  * Checks a file relative path against the globs array.
- *
- * @param {array} globs
- * @param {string} relativePath
- * @return {boolean}
- * @public
  */
-
-exports.isFileIncluded = function (globs, dot, doIgnore, relativePath) {
+export function isFileIncluded(
+  globs: $ReadOnlyArray<string>,
+  dot: boolean,
+  doIgnore: string => boolean,
+  relativePath: string,
+): boolean {
   if (doIgnore(relativePath)) {
     return false;
   }
   return globs.length
     ? micromatch.some(relativePath, globs, {dot})
     : dot || micromatch.some(relativePath, '**/*');
-};
+}
 
 /**
  * Traverse a directory recursively calling `callback` on every directory.
- *
- * @param {string} dir
- * @param {function} dirCallback
- * @param {function} fileCallback
- * @param {function} endCallback
- * @param {*} ignored
- * @public
  */
-
-exports.recReaddir = function (
-  dir,
-  dirCallback,
-  fileCallback,
-  endCallback,
-  errorCallback,
-  ignored,
+export function recReaddir(
+  dir: string,
+  dirCallback: (string, Stats) => void,
+  fileCallback: (string, Stats) => void,
+  endCallback: () => void,
+  errorCallback: Error => void,
+  ignored: ?(boolean | RegExp),
 ) {
   walker(dir)
     .filterDir(currentDir => !anymatch(ignored, currentDir))
@@ -100,17 +130,29 @@ exports.recReaddir = function (
         endCallback();
       }
     });
-};
+}
 
 /**
  * Returns a callback that when called will normalize a path and call the
  * original callback
- *
- * @param {function} callback
- * @return {function}
- * @private
  */
+function normalizeProxy<T>(
+  callback: (filepath: string, stats: Stats) => T,
+): (string, Stats) => T {
+  return (filepath: string, stats: Stats) =>
+    callback(path.normalize(filepath), stats);
+}
 
-function normalizeProxy(callback) {
-  return (filepath, stats) => callback(path.normalize(filepath), stats);
+export function typeFromStat(stat: Stats): ?ChangeEventMetadata['type'] {
+  // Note: These tests are not mutually exclusive - a symlink passes isFile
+  if (stat.isSymbolicLink()) {
+    return 'l';
+  }
+  if (stat.isDirectory()) {
+    return 'd';
+  }
+  if (stat.isFile()) {
+    return 'f'; // "Regular" file
+  }
+  return null;
 }
