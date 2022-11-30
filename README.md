@@ -12,11 +12,33 @@
 - **⚖️ Scalable**: Works with thousands of modules in a single application.
 - **⚛️ Integrated**: Supports every React Native project out of the box.
 
-This project was previously part of the [react-native](https://github.com/facebook/react-native) repository. In this smaller repository it is easier for the team working on Metro to respond to both issues and pull requests. See [react-native#13976](https://github.com/facebook/react-native/issues/13976) for the initial announcement.
+## Installation
 
-## Installation & Documentation
+Metro is included with React Native — see the [React Native docs](https://reactnative.dev/docs/getting-started) to quickly get started ⏱️.
 
-See [the Metro website](https://facebook.github.io/metro/) for documentation.
+To add Metro to an existing project, see our [Getting Started guide](https://facebook.github.io/metro/docs/getting-started).
+
+## Documentation
+
+All available documentation, including on [configuring Metro](https://facebook.github.io/metro/docs/configuration), can be found on the [Metro website](https://facebook.github.io/metro/docs/getting-started).
+
+Source code for documentation is located in this repository under `docs/`.
+
+## Contributing
+
+Metro was previously part of the [react-native](https://github.com/facebook/react-native) repository. In this standalone repository it is easier for the team working on Metro to respond to issues and pull requests. See [react-native#13976](https://github.com/facebook/react-native/issues/13976) for the initial announcement.
+
+### [Code of Conduct](https://code.fb.com/codeofconduct)
+
+Meta has adopted a Code of Conduct that we expect project participants to adhere to. Please read [the full text](https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
+
+### [Contributing guide](https://github.com/facebook/metro/blob/main/CONTRIBUTING.md)
+
+Read our [contributing guide](https://github.com/facebook/metro/blob/main/CONTRIBUTING.md) to learn about our development process, how to propose bug fixes and improvements, and how to build and test your changes to Metro.
+
+### Discussions
+
+Larger discussions and proposals concerning React Native and Metro are discussed in [**@react-native-community/discussions-and-proposals**](https://github.com/react-native-community/discussions-and-proposals).
 
 ## License
 
