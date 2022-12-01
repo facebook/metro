@@ -12,7 +12,7 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "@babel/traverse": "^7.14.0",
+    "@babel/traverse": "^7.20.0",
     "@babel/types": "^7.20.0",
     "invariant": "^2.2.4",
     "metro-symbolicate": "0.73.5",
@@ -23,7 +23,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@babel/parser": "^7.14.0",
+    "@babel/parser": "^7.20.0",
     "uglify-es": "^3.1.9"
   }
 }
