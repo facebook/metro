@@ -48,7 +48,6 @@
     "lint": "eslint . --cache",
     "postinstall": "node ./scripts/build.js",
     "postpublish": "lerna run cleanup-release",
-    "preinstall": "node ./scripts/preinstall.js",
     "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna exec -- npm publish",
     "start": "node packages/metro/src/cli",
     "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
