@@ -632,15 +632,15 @@ const dynamicRequireErrorTemplate = template.statement(`
  * "require(...)" call to the asyncRequire specified.
  */
 const makeAsyncRequireTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
 const makeAsyncPrefetchTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
 const makeJSResourceTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
+  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
@@ -674,6 +674,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
         ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
+        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
       }),
     );
   },
@@ -690,6 +691,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
         ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
+        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
       }),
     );
   },
@@ -706,6 +708,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
         ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
+        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
       }),
     );
   },

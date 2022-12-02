@@ -20,12 +20,14 @@ const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 const url = require('url');
 
-type Options = {
-  +clientUrl: EntryPointURL,
-  +createModuleId: string => number,
-  +projectRoot: string,
+type Options = $ReadOnly<{
+  clientUrl: EntryPointURL,
+  createModuleId: string => number,
+  includeAsyncPaths: boolean,
+  projectRoot: string,
+  serverRoot: string,
   ...
-};
+}>;
 
 function generateModules(
   sourceModules: Iterable<Module<>>,

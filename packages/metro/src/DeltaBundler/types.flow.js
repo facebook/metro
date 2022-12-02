@@ -144,18 +144,19 @@ export type DeltaResult<T = MixedOutput> = {
   +reset: boolean,
 };
 
-export type SerializerOptions = {
-  +asyncRequireModulePath: string,
-  +createModuleId: string => number,
-  +dev: boolean,
-  +getRunModuleStatement: (number | string) => string,
-  +inlineSourceMap: ?boolean,
-  +modulesOnly: boolean,
-  +processModuleFilter: (module: Module<>) => boolean,
-  +projectRoot: string,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +serverRoot: string,
-  +sourceMapUrl: ?string,
-  +sourceUrl: ?string,
-};
+export type SerializerOptions = $ReadOnly<{
+  asyncRequireModulePath: string,
+  createModuleId: string => number,
+  dev: boolean,
+  getRunModuleStatement: (number | string) => string,
+  includeAsyncPaths: boolean,
+  inlineSourceMap: ?boolean,
+  modulesOnly: boolean,
+  processModuleFilter: (module: Module<>) => boolean,
+  projectRoot: string,
+  runBeforeMainModule: $ReadOnlyArray<string>,
+  runModule: boolean,
+  serverRoot: string,
+  sourceMapUrl: ?string,
+  sourceUrl: ?string,
+}>;
