@@ -15,10 +15,6 @@ references:
     - "18.12"
   node_lts_image: &node_lts_image cimg/node:18.12
 
-  secure_unset_publish_token: &secure_unset_publish_token
-    environment:
-      NPM_TOKEN: ""
-
 commands:
   yarn_install:
     description: "A wrapper to yarn install with caching"
@@ -51,7 +47,6 @@ commands:
 
 jobs:
   run-js-checks:
-    <<: *secure_unset_publish_token
     docker:
       - image: *node_lts_image
     steps:
@@ -62,7 +57,6 @@ jobs:
       - run: yarn test-smoke
 
   test-with-coverage:
-    <<: *secure_unset_publish_token
     docker:
       - image: *node_lts_image
     steps:
@@ -77,7 +71,6 @@ jobs:
           command: ./codecov -t ${CODECOV_TOKEN} -f ./coverage/coverage-final.json
 
   test-linux:
-    <<: *secure_unset_publish_token
     parameters:
       node-version:
         type: string
@@ -88,7 +81,6 @@ jobs:
       - install_and_run_tests
 
   test-windows:
-    <<: *secure_unset_publish_token
     parameters:
       node-version:
         type: string
