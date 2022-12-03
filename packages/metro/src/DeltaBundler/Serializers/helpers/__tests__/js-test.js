@@ -9,15 +9,18 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
 
-const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
-const {wrapModule} = require('../js');
+import {wrap as raw} from 'jest-snapshot-serializer-raw';
+import createModuleIdFactory from '../../../../lib/createModuleIdFactory';
+import {wrapModule} from '../js';
+import nullthrows from 'nullthrows';
 
 let myModule;
+
+expect.addSnapshotSerializer(require('jest-snapshot-serializer-raw'));
 
 beforeEach(() => {
   myModule = {
@@ -26,14 +29,14 @@ beforeEach(() => {
       [
         'bar',
         {
-          absolutePath: '/bar',
+          absolutePath: '/bar.js',
           data: {data: {asyncType: null, locs: [], key: 'bar'}, name: 'bar'},
         },
       ],
       [
         'baz',
         {
-          absolutePath: '/baz',
+          absolutePath: '/baz.js',
           data: {data: {asyncType: null, locs: [], key: 'baz'}, name: 'baz'},
         },
       ],
@@ -57,46 +60,106 @@ beforeEach(() => {
 describe('wrapModule()', () => {
   it('Should wrap a module in nondev mode', () => {
     expect(
-      wrapModule(myModule, {
-        createModuleId: createModuleIdFactory(),
-        dev: false,
-        projectRoot: '/root',
-      }),
-    ).toEqual('__d(function() { console.log("foo") },0,[1,2]);');
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: false,
+          projectRoot: '/root',
+          serverRoot: '/root',
+        }),
+      ),
+    ).toMatchInlineSnapshot(`__d(function() { console.log("foo") },0,[1,2]);`);
   });
 
   it('Should wrap a module in dev mode', () => {
     expect(
-      wrapModule(myModule, {
-        createModuleId: createModuleIdFactory(),
-        dev: true,
-        projectRoot: '/root',
-      }),
-    ).toEqual('__d(function() { console.log("foo") },0,[1,2],"foo.js");');
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: true,
+          includeAsyncPaths: false,
+          projectRoot: '/root',
+          serverRoot: '/root',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,[1,2],"foo.js");`,
+    );
   });
 
   it('should not wrap a script', () => {
     myModule.output[0].type = 'js/script';
 
     expect(
-      wrapModule(myModule, {
-        createModuleId: createModuleIdFactory(),
-        dev: true,
-        projectRoot: '/root',
-      }),
-    ).toEqual(myModule.output[0].data.code);
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: true,
+          includeAsyncPaths: false,
+          projectRoot: '/root',
+          serverRoot: '/root',
+        }),
+      ),
+    ).toMatchInlineSnapshot(`__d(function() { console.log("foo") });`);
   });
 
   it('should use custom createModuleId param', () => {
     // Just use a createModuleId that returns the same path.
     expect(
-      wrapModule(myModule, {
-        createModuleId: (path: string) => path,
-        dev: false,
-        projectRoot: '/root',
-      }),
-    ).toEqual(
-      '__d(function() { console.log("foo") },"/root/foo.js",["/bar","/baz"]);',
+      raw(
+        wrapModule(myModule, {
+          createModuleId: (path: string) => path,
+          dev: false,
+          includeAsyncPaths: false,
+          projectRoot: '/root',
+          serverRoot: '/root',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },"/root/foo.js",["/bar.js","/baz.js"]);`,
+    );
+  });
+
+  it('includes the paths of async dependencies when requested', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: '/root',
+          serverRoot: '/root',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"../bar"}});`,
+    );
+  });
+
+  it('async dependency paths respect serverRoot', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: '/root',
+          serverRoot: '/',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"bar"}});`,
     );
   });
 });

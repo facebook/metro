@@ -140,7 +140,10 @@ type MockFSDirContents = $ReadOnly<{
       });
 
       if (osPlatform === 'win32') {
-        jest.mock('path', () => jest.requireActual('path').win32);
+        jest.mock(
+          'path',
+          () => jest.requireActual<{win32: mixed}>('path').win32,
+        );
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),

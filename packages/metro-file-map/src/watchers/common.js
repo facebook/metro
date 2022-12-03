@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -16,6 +16,7 @@
 
 'use strict';
 
+import type {ChangeEventMetadata} from '../flow-types';
 import type {Stats} from 'fs';
 
 // $FlowFixMe[untyped-import] - Write libdefs for `anymatch`
@@ -140,4 +141,18 @@ function normalizeProxy<T>(
 ): (string, Stats) => T {
   return (filepath: string, stats: Stats) =>
     callback(path.normalize(filepath), stats);
+}
+
+export function typeFromStat(stat: Stats): ?ChangeEventMetadata['type'] {
+  // Note: These tests are not mutually exclusive - a symlink passes isFile
+  if (stat.isSymbolicLink()) {
+    return 'l';
+  }
+  if (stat.isDirectory()) {
+    return 'd';
+  }
+  if (stat.isFile()) {
+    return 'f'; // "Regular" file
+  }
+  return null;
 }

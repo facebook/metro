@@ -139,6 +139,9 @@ const siteConfig = {
       appId: 'T38HJZTD87',
       indexName: 'metro',
     },
+    prism: {
+      additionalLanguages: ['flow'],
+    },
   },
   scripts: ['https://buttons.github.io/buttons.js'],
 };

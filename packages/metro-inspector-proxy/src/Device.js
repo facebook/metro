@@ -512,7 +512,7 @@ class Device {
             if (statusCode == 200) {
               httpResponse.setEncoding('utf8');
               scriptSource = '';
-              httpResponse.on('data', body => {
+              httpResponse.on('data', (body: string) => {
                 scriptSource += body;
               });
               httpResponse.on('end', () => {

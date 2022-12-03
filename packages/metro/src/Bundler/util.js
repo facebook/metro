@@ -158,6 +158,7 @@ function filterObject(
 ): AssetDataFiltered {
   const copied = {...object};
   for (const key of blockList) {
+    // $FlowFixMe[prop-missing]
     delete copied[key];
   }
   return copied;

@@ -8,6 +8,7 @@
  * @flow strict-local
  */
 
+import type {ChangeEventMetadata} from '../flow-types';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 import type {FSEvents} from 'fsevents';
 
@@ -18,6 +19,7 @@ import * as fs from 'graceful-fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
+import {typeFromStat} from './common';
 
 // $FlowFixMe[untyped-import] - micromatch
 const micromatch = require('micromatch');
@@ -188,11 +190,21 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
+      const type = typeFromStat(stat);
+      if (!type) {
+        return;
+      }
+      const metadata: ChangeEventMetadata = {
+        type,
+        modifiedTime: stat.mtime.getTime(),
+        size: stat.size,
+      };
+
       if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, stat);
+        this._emit(CHANGE_EVENT, relativePath, metadata);
       } else {
         this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, stat);
+        this._emit(ADD_EVENT, relativePath, metadata);
       }
     });
   }
@@ -200,9 +212,13 @@ export default class FSEventsWatcher extends EventEmitter {
   /**
    * Emit events.
    */
-  _emit(type: FsEventsWatcherEvent, file: string, stat?: fs.Stats) {
-    this.emit(type, file, this.root, stat);
-    this.emit(ALL_EVENT, type, file, this.root, stat);
+  _emit(
+    type: FsEventsWatcherEvent,
+    file: string,
+    metadata?: ChangeEventMetadata,
+  ) {
+    this.emit(type, file, this.root, metadata);
+    this.emit(ALL_EVENT, type, file, this.root, metadata);
   }
 
   getPauseReason(): ?string {

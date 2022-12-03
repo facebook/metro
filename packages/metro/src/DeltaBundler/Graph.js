@@ -81,6 +81,9 @@ export type Result<T> = {
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
 type Delta = $ReadOnly<{
+  // `added` and `deleted` are mutually exclusive.
+  // Internally, a module can be in both `modified` and (either) `added` or
+  // `deleted`. We fix this up before returning the delta to the client.
   added: Set<string>,
   modified: Set<string>,
   deleted: Set<string>,
@@ -198,8 +201,8 @@ export class Graph<T = MixedOutput> {
 
     const modified = new Map<string, Module<T>>();
     for (const path of delta.modified) {
-      // Only report a module as modified if we're not already reporting it as added.
-      if (!delta.added.has(path)) {
+      // Only report a module as modified if we're not already reporting it as added or deleted.
+      if (!delta.added.has(path) && !delta.deleted.has(path)) {
         modified.set(path, nullthrows(this.dependencies.get(path)));
       }
     }
@@ -381,7 +384,6 @@ export class Graph<T = MixedOutput> {
           } else {
             // Mark the addition in the added set.
             delta.added.add(path);
-            delta.modified.delete(path);
           }
           delta.earlyInverseDependencies.set(path, new CountingSet());
 
@@ -638,18 +640,15 @@ export class Graph<T = MixedOutput> {
     this.#gc.color.set(module.path, 'black');
   }
 
-  // Delete an unreachable module from the graph immediately, unless it's queued
-  // for later deletion as a potential cycle root. Delete the module's outbound
-  // edges.
+  // Delete an unreachable module (and its outbound edges) from the graph
+  // immediately.
   // Called when the reference count of a module has reached 0.
   _releaseModule(module: Module<T>, delta: Delta, options: InternalOptions<T>) {
     for (const [key, dependency] of module.dependencies) {
       this._removeDependency(module, key, dependency, delta, options);
     }
     this.#gc.color.set(module.path, 'black');
-    if (!this.#gc.possibleCycleRoots.has(module.path)) {
-      this._freeModule(module, delta);
-    }
+    this._freeModule(module, delta);
   }
 
   // Delete an unreachable module from the graph.
@@ -660,7 +659,6 @@ export class Graph<T = MixedOutput> {
     } else {
       // Mark the deletion in the deleted set.
       delta.deleted.add(module.path);
-      delta.modified.delete(module.path);
     }
 
     // This module is not used anywhere else! We can clear it from the bundle.

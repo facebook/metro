@@ -13,7 +13,7 @@ import type {RequireWithContext} from './utils';
 
 declare var require: RequireWithContext;
 
-function main() {
+function main(): mixed {
   return copyContextToObject(
     require.context('./subdir', undefined, undefined, 'sync'),
   );

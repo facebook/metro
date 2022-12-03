@@ -473,7 +473,7 @@ async function transformJS(
     ));
   }
 
-  const output = [
+  const output: Array<JsOutput | BytecodeOutput> = [
     {
       data: {
         code,
@@ -597,7 +597,7 @@ async function transformJSON(
     jsType = 'js/module';
   }
 
-  const output = [
+  const output: Array<JsOutput | BytecodeOutput> = [
     {
       data: {code, lineCount: countLines(code), map, functionMap: null},
       type: jsType,

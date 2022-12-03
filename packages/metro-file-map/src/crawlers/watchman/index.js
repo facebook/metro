@@ -9,19 +9,20 @@
  * @oncall react_native
  */
 
+import type {WatchmanClockSpec} from '../../flow-types';
 import type {
   CrawlerOptions,
   FileData,
   FileMetaData,
-  InternalData,
   Path,
+  WatchmanClocks,
 } from '../../flow-types';
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
-import {planQuery} from './planQuery';
 import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import normalizePathSep from '../../lib/normalizePathSep';
+import {planQuery} from './planQuery';
 import invariant from 'invariant';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
@@ -45,22 +46,22 @@ function makeWatchmanError(error: Error): Error {
 module.exports = async function watchmanCrawl({
   abortSignal,
   computeSha1,
-  data,
   enableSymlinks,
   extensions,
   ignore,
+  onStatus,
+  perfLogger,
+  previousState,
   rootDir,
   roots,
-  perfLogger,
-  onStatus,
 }: CrawlerOptions): Promise<{
-  changedFiles?: FileData,
+  changedFiles: FileData,
   removedFiles: FileData,
-  hasteMap: InternalData,
+  clocks: WatchmanClocks,
 }> {
   perfLogger?.point('watchmanCrawl_start');
 
-  const clocks = data.clocks;
+  const newClocks = new Map<Path, WatchmanClockSpec>();
 
   const client = new watchman.Client();
   abortSignal?.addEventListener('abort', () => client.end());
@@ -93,11 +94,14 @@ module.exports = async function watchmanCrawl({
       );
     }, WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS);
     try {
-      const response = await new Promise((resolve, reject) =>
-        // $FlowFixMe[incompatible-call] - dynamic call of command
-        client.command([command, ...args], (error, result) =>
-          error ? reject(makeWatchmanError(error)) : resolve(result),
-        ),
+      const response = await new Promise<WatchmanQueryResponse>(
+        (resolve, reject) =>
+          // $FlowFixMe[incompatible-call] - dynamic call of command
+          client.command(
+            [command, ...args],
+            (error: ?Error, result: WatchmanQueryResponse) =>
+              error ? reject(makeWatchmanError(error)) : resolve(result),
+          ),
       );
       if ('warning' in response) {
         onStatus({
@@ -106,6 +110,7 @@ module.exports = async function watchmanCrawl({
           command,
         });
       }
+      // $FlowFixMe[incompatible-return]
       return response;
     } finally {
       // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable
@@ -172,7 +177,9 @@ module.exports = async function watchmanCrawl({
           // local clocks are not portable across systems, but scm queries are.
           // By using scm queries, we can create the haste map on a different
           // system and import it, transforming the clock into a local clock.
-          const since = clocks.get(fastPath.relative(rootDir, root));
+          const since = previousState.clocks.get(
+            fastPath.relative(rootDir, root),
+          );
 
           perfLogger?.annotate({
             bool: {
@@ -224,7 +231,6 @@ module.exports = async function watchmanCrawl({
     };
   }
 
-  let files = data.files;
   let removedFiles = new Map<Path, FileMetaData>();
   const changedFiles = new Map<Path, FileMetaData>();
   let results: Map<string, WatchmanQueryResponse>;
@@ -237,8 +243,7 @@ module.exports = async function watchmanCrawl({
     // Reset the file map if watchman was restarted and sends us a list of
     // files.
     if (watchmanFileResults.isFresh) {
-      files = new Map();
-      removedFiles = new Map(data.files);
+      removedFiles = new Map(previousState.files);
       isFresh = true;
     }
 
@@ -276,7 +281,7 @@ module.exports = async function watchmanCrawl({
   for (const [watchRoot, response] of results) {
     const fsRoot = normalizePathSep(watchRoot);
     const relativeFsRoot = fastPath.relative(rootDir, fsRoot);
-    clocks.set(
+    newClocks.set(
       relativeFsRoot,
       // Ensure we persist only the local clock.
       typeof response.clock === 'string'
@@ -291,7 +296,7 @@ module.exports = async function watchmanCrawl({
       }
       const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
-      const existingFileData = data.files.get(relativeFilePath);
+      const existingFileData = previousState.files.get(relativeFilePath);
 
       // If watchman is fresh, the removed files map starts with all files
       // and we remove them as we verify they still exist.
@@ -302,8 +307,6 @@ module.exports = async function watchmanCrawl({
       if (!fileData.exists) {
         // No need to act on files that do not exist and were not tracked.
         if (existingFileData) {
-          files.delete(relativeFilePath);
-
           // If watchman is not fresh, we will know what specific files were
           // deleted since we last ran and can track only those files.
           if (!isFresh) {
@@ -319,20 +322,24 @@ module.exports = async function watchmanCrawl({
         const mtime =
           typeof mtime_ms === 'number' ? mtime_ms : mtime_ms.toNumber();
 
+        if (existingFileData && existingFileData[H.MTIME] === mtime) {
+          continue;
+        }
+
         let sha1hex = fileData['content.sha1hex'];
         if (typeof sha1hex !== 'string' || sha1hex.length !== 40) {
           sha1hex = undefined;
         }
 
-        let nextData: FileMetaData;
+        let nextData: FileMetaData = ['', mtime, size, 0, '', sha1hex ?? null];
 
-        if (existingFileData && existingFileData[H.MTIME] === mtime) {
-          nextData = existingFileData;
-        } else if (
+        if (
           existingFileData &&
           sha1hex != null &&
           existingFileData[H.SHA1] === sha1hex
         ) {
+          // Special case - file touched but not modified, so we can reuse the
+          // metadata and just update mtime.
           nextData = [
             existingFileData[0],
             mtime,
@@ -341,24 +348,18 @@ module.exports = async function watchmanCrawl({
             existingFileData[4],
             existingFileData[5],
           ];
-        } else {
-          // See ../constants.ts
-          nextData = ['', mtime, size, 0, '', sha1hex ?? null];
         }
 
-        files.set(relativeFilePath, nextData);
         changedFiles.set(relativeFilePath, nextData);
       }
     }
   }
 
-  data.files = files;
-
   perfLogger?.point('watchmanCrawl/processResults_end');
   perfLogger?.point('watchmanCrawl_end');
   return {
-    changedFiles: isFresh ? undefined : changedFiles,
-    hasteMap: data,
+    changedFiles,
     removedFiles,
+    clocks: newClocks,
   };
 };

@@ -43,7 +43,7 @@ function addModuleIdsToModuleWrapper(
   // in the bundle.
   const fileId = idForPath(file);
 
-  const paramsToAdd = [fileId];
+  const paramsToAdd: Array<mixed> = [fileId];
 
   if (dependencies.length) {
     paramsToAdd.push(dependencies.map(idForPath));

@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-babel-preset",
-  "version": "0.73.3",
+  "version": "0.73.5",
   "description": "Babel preset for React Native applications",
   "main": "src/index.js",
   "repository": {
@@ -18,7 +18,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.14.0",
+    "@babel/core": "^7.20.0",
     "@babel/plugin-proposal-async-generator-functions": "^7.0.0",
     "@babel/plugin-proposal-class-properties": "^7.0.0",
     "@babel/plugin-proposal-export-default-from": "^7.0.0",
@@ -28,7 +28,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/plugin-syntax-export-default-from": "^7.0.0",
-    "@babel/plugin-syntax-flow": "^7.2.0",
+    "@babel/plugin-syntax-flow": "^7.18.0",
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-syntax-optional-chaining": "^7.0.0",
     "@babel/plugin-transform-arrow-functions": "^7.0.0",

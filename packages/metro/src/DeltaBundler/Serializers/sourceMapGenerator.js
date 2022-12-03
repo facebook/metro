@@ -106,7 +106,9 @@ async function sourceMapGeneratorNonBlocking(
     +processModuleFilter: (module: Module<>) => boolean,
   },
 ): ReturnType<typeof fromRawMappingsNonBlocking> {
-  const sourceMapInfos = await new Promise(resolve => {
+  const sourceMapInfos = await new Promise<
+    $ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>,
+  >(resolve => {
     getSourceMapInfosImpl(false, resolve, modules, options);
   });
   return fromRawMappingsNonBlocking(sourceMapInfos);

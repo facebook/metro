@@ -40,11 +40,11 @@ export type PostProcessBundleSourcemap = ({
 };
 
 export type ExtraTransformOptions = {
-  +preloadedModules: {[path: string]: true, ...} | false,
-  +ramGroups: Array<string>,
-  +transform: {
-    +experimentalImportSupport: boolean,
-    +inlineRequires: {+blockList: {[string]: true, ...}, ...} | boolean,
+  +preloadedModules?: {[path: string]: true, ...} | false,
+  +ramGroups?: Array<string>,
+  +transform?: {
+    +experimentalImportSupport?: boolean,
+    +inlineRequires?: {+blockList: {[string]: true, ...}, ...} | boolean,
     +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
   },

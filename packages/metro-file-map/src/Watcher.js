@@ -9,15 +9,15 @@
  */
 
 import type {
+  ChangeEventMetadata,
   Console,
   CrawlerOptions,
   FileData,
-  InternalData,
   Path,
   PerfLogger,
+  WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
-import type {Stats} from 'fs';
 
 import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
@@ -36,6 +36,12 @@ const debug = require('debug')('Metro:Watcher');
 
 const MAX_WAIT_TIME = 240000;
 
+type CrawlResult = {
+  changedFiles: FileData,
+  clocks?: WatchmanClocks,
+  removedFiles: FileData,
+};
+
 type WatcherOptions = {
   abortSignal: AbortSignal,
   computeSha1: boolean,
@@ -46,7 +52,7 @@ type WatcherOptions = {
   healthCheckFilePrefix: string,
   ignore: string => boolean,
   ignorePattern: RegExp,
-  initialData: InternalData,
+  previousState: CrawlerOptions['previousState'],
   perfLogger: ?PerfLogger,
   roots: $ReadOnlyArray<string>,
   rootDir: string,
@@ -82,14 +88,7 @@ export class Watcher extends EventEmitter {
     this._instanceId = nextInstanceId++;
   }
 
-  async crawl(): Promise<?(
-    | Promise<{
-        changedFiles?: FileData,
-        hasteMap: InternalData,
-        removedFiles: FileData,
-      }>
-    | {changedFiles?: FileData, hasteMap: InternalData, removedFiles: FileData}
-  )> {
+  async crawl(): Promise<CrawlResult> {
     this._options.perfLogger?.point('crawl_start');
 
     const options = this._options;
@@ -97,10 +96,10 @@ export class Watcher extends EventEmitter {
       options.ignore(filePath) ||
       path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
+    let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
       computeSha1: options.computeSha1,
-      data: options.initialData,
       enableSymlinks: options.enableSymlinks,
       extensions: options.extensions,
       forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,
@@ -109,12 +108,14 @@ export class Watcher extends EventEmitter {
         this.emit('status', status);
       },
       perfLogger: options.perfLogger,
+      previousState: options.previousState,
       rootDir: options.rootDir,
       roots: options.roots,
     };
 
-    const retry = (error: Error) => {
+    const retry = (error: Error): Promise<CrawlResult> => {
       if (crawl === watchmanCrawl) {
+        crawler = 'node';
         options.console.warn(
           'metro-file-map: Watchman crawl failed. Retrying once with node ' +
             'crawler.\n' +
@@ -124,7 +125,7 @@ export class Watcher extends EventEmitter {
             '  ' +
             error.toString(),
         );
-        return nodeCrawl(crawlerOptions).catch(e => {
+        return nodeCrawl(crawlerOptions).catch<CrawlResult>(e => {
           throw new Error(
             'Crawler retry failed:\n' +
               `  Original error: ${error.message}\n` +
@@ -136,13 +137,21 @@ export class Watcher extends EventEmitter {
       throw error;
     };
 
-    const logEnd = <T>(result: T): T => {
+    const logEnd = (delta: CrawlResult): CrawlResult => {
+      debug(
+        'Crawler "%s" returned %d added/modified, %d removed, %d clock(s).',
+        crawler,
+        delta.changedFiles.size,
+        delta.removedFiles.size,
+        delta.clocks?.size ?? 0,
+      );
       this._options.perfLogger?.point('crawl_end');
-      return result;
+      return delta;
     };
 
+    debug('Beginning crawl with "%s".', crawler);
     try {
-      return crawl(crawlerOptions).catch(retry).then(logEnd);
+      return crawl(crawlerOptions).catch<CrawlResult>(retry).then(logEnd);
     } catch (error) {
       return retry(error).then(logEnd);
     }
@@ -153,7 +162,7 @@ export class Watcher extends EventEmitter {
       type: string,
       filePath: string,
       root: string,
-      stat?: Stats,
+      metadata: ?ChangeEventMetadata,
     ) => void,
   ) {
     const {extensions, ignorePattern, useWatchman} = this._options;
@@ -201,7 +210,12 @@ export class Watcher extends EventEmitter {
           clearTimeout(rejectTimeout);
           watcher.on(
             'all',
-            (type: string, filePath: string, root: string, stat?: Stats) => {
+            (
+              type: string,
+              filePath: string,
+              root: string,
+              metadata: ?ChangeEventMetadata,
+            ) => {
               const basename = path.basename(filePath);
               if (basename.startsWith(this._options.healthCheckFilePrefix)) {
                 if (type === ADD_EVENT || type === CHANGE_EVENT) {
@@ -214,7 +228,7 @@ export class Watcher extends EventEmitter {
                 }
                 return;
               }
-              onChange(type, filePath, root, stat);
+              onChange(type, filePath, root, metadata);
             },
           );
           resolve(watcher);

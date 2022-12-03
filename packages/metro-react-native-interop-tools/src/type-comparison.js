@@ -139,7 +139,14 @@ export function compareTypeAnnotation(
         if (right.value === left.value) {
           return [];
         }
-        return [literalError(left, right, isInFunctionReturn)];
+        return [
+          literalError(
+            left,
+            // $FlowFixMe[incompatible-cast]
+            (right: LiteralTypeAnnotation),
+            isInFunctionReturn,
+          ),
+        ];
       }
       return [basicError(left, right, isInFunctionReturn)];
     case 'NullLiteralTypeAnnotation':

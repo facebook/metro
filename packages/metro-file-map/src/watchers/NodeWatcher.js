@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -16,6 +16,7 @@
 'use strict';
 
 import type {WatcherOptions} from './common';
+import type {ChangeEventMetadata} from '../flow-types';
 import type {FSWatcher, Stats} from 'fs';
 
 const common = require('./common');
@@ -252,6 +253,7 @@ module.exports = class NodeWatcher extends EventEmitter {
         if (event !== 'change') {
           this._watchdir(fullPath);
           if (
+            stat &&
             common.isFileIncluded(
               this.globs,
               this.dot,
@@ -259,7 +261,11 @@ module.exports = class NodeWatcher extends EventEmitter {
               relativePath,
             )
           ) {
-            this._emitEvent(ADD_EVENT, relativePath, stat);
+            this._emitEvent(ADD_EVENT, relativePath, {
+              modifiedTime: stat.mtime.getTime(),
+              size: stat.size,
+              type: 'd',
+            });
           }
         }
       } else {
@@ -271,11 +277,22 @@ module.exports = class NodeWatcher extends EventEmitter {
           if (registered) {
             this._emitEvent(DELETE_EVENT, relativePath);
           }
-        } else if (registered) {
-          this._emitEvent(CHANGE_EVENT, relativePath, stat);
         } else {
-          if (this._register(fullPath)) {
-            this._emitEvent(ADD_EVENT, relativePath, stat);
+          const type = common.typeFromStat(stat);
+          if (type == null) {
+            return;
+          }
+          const metadata = {
+            modifiedTime: stat.mtime.getTime(),
+            size: stat.size,
+            type,
+          };
+          if (registered) {
+            this._emitEvent(CHANGE_EVENT, relativePath, metadata);
+          } else {
+            if (this._register(fullPath)) {
+              this._emitEvent(ADD_EVENT, relativePath, metadata);
+            }
           }
         }
       }
@@ -286,7 +303,7 @@ module.exports = class NodeWatcher extends EventEmitter {
    * Triggers a 'change' event after debounding it to take care of duplicate
    * events on os x.
    */
-  _emitEvent(type: string, file: string, stat?: Stats) {
+  _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
     const key = type + '-' + file;
     const addKey = ADD_EVENT + '-' + file;
     if (type === CHANGE_EVENT && this._changeTimers[addKey]) {
@@ -297,28 +314,32 @@ module.exports = class NodeWatcher extends EventEmitter {
     clearTimeout(this._changeTimers[key]);
     this._changeTimers[key] = setTimeout(() => {
       delete this._changeTimers[key];
-      if (type === ADD_EVENT && stat?.isDirectory()) {
+      if (type === ADD_EVENT && metadata?.type === 'd') {
         // Recursively emit add events and watch for sub-files/folders
         common.recReaddir(
           path.resolve(this.root, file),
           (dir, stats) => {
             this._watchdir(dir);
-            this._rawEmitEvent(ADD_EVENT, path.relative(this.root, dir), stats);
+            this._rawEmitEvent(ADD_EVENT, path.relative(this.root, dir), {
+              modifiedTime: stats.mtime.getTime(),
+              size: stats.size,
+              type: 'd',
+            });
           },
           (file, stats) => {
             this._register(file);
-            this._rawEmitEvent(
-              ADD_EVENT,
-              path.relative(this.root, file),
-              stats,
-            );
+            this._rawEmitEvent(ADD_EVENT, path.relative(this.root, file), {
+              modifiedTime: stats.mtime.getTime(),
+              size: stats.size,
+              type: 'f',
+            });
           },
           function endCallback() {},
           this._checkedEmitError,
           this.ignored,
         );
       } else {
-        this._rawEmitEvent(type, file, stat);
+        this._rawEmitEvent(type, file, metadata);
       }
     }, DEFAULT_DELAY);
   }
@@ -326,9 +347,13 @@ module.exports = class NodeWatcher extends EventEmitter {
   /**
    * Actually emit the events
    */
-  _rawEmitEvent(type: string, file: string, stat: ?Stats) {
-    this.emit(type, file, this.root, stat);
-    this.emit(ALL_EVENT, type, file, this.root, stat);
+  _rawEmitEvent(
+    eventType: string,
+    file: string,
+    metadata: ?ChangeEventMetadata,
+  ) {
+    this.emit(eventType, file, this.root, metadata);
+    this.emit(ALL_EVENT, eventType, file, this.root, metadata);
   }
 
   getPauseReason(): ?string {

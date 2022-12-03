@@ -169,27 +169,32 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
   const assetExtensions = new Set(assetExts.map(asset => '.' + asset));
   const isAssetFile = (file: string) => assetExtensions.has(path.extname(file));
 
+  const moduleMap = new ModuleMap({
+    duplicates: new Map(),
+    map: createModuleMap({
+      files,
+      moduleCache,
+      sourceExts: new Set(sourceExts),
+      additionalExts: new Set(additionalExts),
+      platforms,
+    }),
+    mocks: new Map(),
+    rootDir: '',
+  });
+
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
     disableHierarchicalLookup: options.disableHierarchicalLookup,
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     emptyModulePath: options.emptyModulePath,
     extraNodeModules,
+    getHasteModulePath: (name, platform) =>
+      moduleMap.getModule(name, platform, true),
+    getHastePackagePath: (name, platform) =>
+      moduleMap.getPackage(name, platform, true),
     isAssetFile,
     mainFields: options.mainFields,
     moduleCache,
-    moduleMap: new ModuleMap({
-      duplicates: new Map(),
-      map: createModuleMap({
-        files,
-        moduleCache,
-        sourceExts: new Set(sourceExts),
-        additionalExts: new Set(additionalExts),
-        platforms,
-      }),
-      mocks: new Map(),
-      rootDir: '',
-    }),
     nodeModulesPaths: options.nodeModulesPaths,
     preferNativePlatform: true,
     projectRoot: '',

@@ -121,7 +121,11 @@ describe('CountingSet', () => {
     const contexts = [];
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
      * Flow's LTI update could not be added via codemod */
-    const callback = jest.fn(function captureContext() {
+    const callback = jest.fn(function captureContext(
+      _value: string,
+      _key: string,
+      _set: CountingSet<string>,
+    ) {
       contexts.push(this);
     });
 
@@ -140,7 +144,11 @@ describe('CountingSet', () => {
     const contexts = [];
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
      * Flow's LTI update could not be added via codemod */
-    const callback = jest.fn(function captureContext() {
+    const callback = jest.fn(function captureContext(
+      _value: string,
+      _key: string,
+      _set: CountingSet<string>,
+    ) {
       contexts.push(this);
     });
 

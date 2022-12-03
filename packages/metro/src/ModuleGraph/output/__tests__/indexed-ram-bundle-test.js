@@ -188,7 +188,12 @@ describe('RAM groups / common sections', () => {
     maps
       .map((groupMap: IndexMapSection, i: number) => [groups[i], groupMap])
       .forEach(([group, groupMap], i: number) => {
-        const offsets = group.reduce(moduleLineOffsets, [])[0];
+        // $FlowFixMe[incompatible-call]
+        const offsets = group.reduce(
+          moduleLineOffsets,
+          // $FlowFixMe[invalid-tuple-arity]
+          ([]: [Array<number> | void, number | void]),
+        )[0];
         expect(groupMap).toEqual({
           map: {
             version: 3,
@@ -203,11 +208,12 @@ describe('RAM groups / common sections', () => {
   });
 
   function moduleLineOffsets(
-    /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
-     * Flow's LTI update could not be added via codemod */
-    [offsets = ([]: Array<number>), line = 0],
+    [offsets = ([]: Array<number>), line = 0]: [
+      Array<number> | void,
+      number | void,
+    ],
     module: {dependencies: Array<Dependency>, file: File},
-  ) {
+  ): [Array<number>, number] {
     return [[...offsets, line], line + countLines(module)];
   }
 });

@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 import type {WatcherOptions} from './common';
+import type {ChangeEventMetadata} from '../flow-types';
 import type {
   Client,
   WatchmanClockResponse,
@@ -19,7 +20,6 @@ import type {
   WatchmanSubscribeResponse,
   WatchmanWatchResponse,
 } from 'fb-watchman';
-import type {Stats} from 'fs';
 
 import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
@@ -27,7 +27,6 @@ import assert from 'assert';
 import {createHash} from 'crypto';
 import EventEmitter from 'events';
 import watchman from 'fb-watchman';
-import * as fs from 'graceful-fs';
 import invariant from 'invariant';
 import path from 'path';
 
@@ -134,7 +133,7 @@ export default class WatchmanWatcher extends EventEmitter {
       handleWarning(resp);
 
       const options: WatchmanQuery = {
-        fields: ['name', 'exists', 'new'],
+        fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
         since: resp.clock,
         defer: self.watchmanDeferStates,
         relative_root: watchProjectInfo.relativePath,
@@ -243,6 +242,9 @@ export default class WatchmanWatcher extends EventEmitter {
       name: relativePath,
       new: isNew = false,
       exists = false,
+      type,
+      mtime_ms,
+      size,
     } = changeDescriptor;
 
     debug(
@@ -250,12 +252,6 @@ export default class WatchmanWatcher extends EventEmitter {
       relativePath,
       isNew,
       exists,
-    );
-
-    const absPath = path.join(
-      watchProjectInfo.root,
-      watchProjectInfo.relativePath,
-      relativePath,
     );
 
     if (
@@ -268,33 +264,43 @@ export default class WatchmanWatcher extends EventEmitter {
     if (!exists) {
       self._emitEvent(DELETE_EVENT, relativePath, self.root);
     } else {
-      fs.lstat(absPath, (error, stat) => {
-        // Files can be deleted between the event and the lstat call
-        // the most reliable thing to do here is to ignore the event.
-        if (error && error.code === 'ENOENT') {
-          return;
-        }
+      const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
+      invariant(
+        type != null && mtime_ms != null && size != null,
+        'Watchman file change event for "%s" missing some requested metadata. ' +
+          'Got type: %s, mtime_ms: %s, size: %s',
+        relativePath,
+        type,
+        mtime_ms,
+        size,
+      );
 
-        if (handleError(self, error)) {
-          return;
-        }
-
-        const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
-
+      if (
+        type === 'f' ||
+        type === 'l' ||
         // Change event on dirs are mostly useless.
-        if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
-          self._emitEvent(eventType, relativePath, self.root, stat);
-        }
-      });
+        (type === 'd' && eventType !== CHANGE_EVENT)
+      ) {
+        self._emitEvent(eventType, relativePath, self.root, {
+          modifiedTime: Number(mtime_ms),
+          size,
+          type,
+        });
+      }
     }
   }
 
   /**
    * Dispatches the event.
    */
-  _emitEvent(eventType: string, filepath: string, root: string, stat?: Stats) {
-    this.emit(eventType, filepath, root, stat);
-    this.emit(ALL_EVENT, eventType, filepath, root, stat);
+  _emitEvent(
+    eventType: string,
+    filepath: string,
+    root: string,
+    changeMetadata?: ChangeEventMetadata,
+  ) {
+    this.emit(eventType, filepath, root, changeMetadata);
+    this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
   }
 
   /**

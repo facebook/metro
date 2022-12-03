@@ -43,7 +43,7 @@ async function stopProfilingAndWrite(workerName: ?string) {
   }
   const session = getInspectorSession();
 
-  const {profile} = await new Promise((resolve, reject) =>
+  const {profile} = await new Promise<any>((resolve, reject) =>
     session.post('Profiler.stop', (err, data) =>
       err ? reject(err) : resolve(data),
     ),
