@@ -10,7 +10,11 @@
  */
 
 import type {Graph} from '../../DeltaBundler/Graph';
-import type {Module, Options} from '../../DeltaBundler/types.flow';
+import type {
+  Module,
+  Options,
+  ReadOnlyGraph,
+} from '../../DeltaBundler/types.flow';
 import type {Dependency} from '../../ModuleGraph/types.flow';
 
 // $FlowFixMe[untyped-import]
@@ -170,7 +174,7 @@ describe('processRequest', () => {
     });
 
   beforeEach(() => {
-    const currentGraphs = new Set<Graph<>>();
+    const currentGraphs = new Set<ReadOnlyGraph<>>();
     buildGraph.mockImplementation(
       async (
         entryPoints: $ReadOnlyArray<string>,
@@ -247,11 +251,12 @@ describe('processRequest', () => {
           });
         }
 
-        // $FlowFixMe[incompatible-type]
-        const graph: Graph<> = {
-          entryPoints: ['/root/mybundle.js'],
+        // NOTE: The real buildGraph returns a mutable Graph instance, but we
+        // mock out all of the code paths that depend on this so we can use this
+        // simpler interface instead.
+        const graph: ReadOnlyGraph<> = {
+          entryPoints: new Set(['/root/mybundle.js']),
           dependencies,
-          importBundleNames: new Set(),
           transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);

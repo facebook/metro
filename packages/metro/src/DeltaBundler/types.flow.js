@@ -101,7 +101,6 @@ export interface ReadOnlyGraph<T = MixedOutput> {
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   +transformOptions: $ReadOnly<TransformInputOptions>;
   +dependencies: ReadOnlyDependencies<T>;
-  +importBundleNames: $ReadOnlySet<string>;
 }
 
 export type {Graph};
