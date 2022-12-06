@@ -11,11 +11,11 @@
 
 import type {Graph} from '../../DeltaBundler/Graph';
 import type {
+  Dependency,
   Module,
   Options,
   ReadOnlyGraph,
 } from '../../DeltaBundler/types.flow';
-import type {Dependency} from '../../ModuleGraph/types.flow';
 
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
