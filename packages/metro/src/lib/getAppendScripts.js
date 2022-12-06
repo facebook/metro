@@ -37,7 +37,7 @@ function getAppendScripts<T: number | string>(
   modules: $ReadOnlyArray<Module<>>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
-  const output = [];
+  const output: Array<Module<>> = [];
 
   if (options.runModule) {
     const paths = [...options.runBeforeMainModule, entryPoint];

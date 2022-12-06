@@ -116,7 +116,9 @@ function createInlinePlatformChecks(
       isWrappedModule,
     );
 
-  const isGlobal = (binding: void | $FlowFixMe): boolean %checks => !binding;
+  function isGlobal(binding: mixed): boolean %checks {
+    return !binding;
+  }
 
   const isRequireCall = (
     node: BabelNodeExpression,

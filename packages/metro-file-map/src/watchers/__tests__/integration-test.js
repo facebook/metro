@@ -110,7 +110,11 @@ describe.each(Object.keys(WATCHERS))(
 
       nextEvent = afterFn =>
         Promise.all([
-          new Promise((resolve, reject) => {
+          new Promise<{
+            eventType: string,
+            metadata?: ChangeEventMetadata,
+            path: string,
+          }>((resolve, reject) => {
             const listener = (
               eventType: string,
               path: string,
@@ -139,6 +143,7 @@ describe.each(Object.keys(WATCHERS))(
           rejectUnexpected: false,
         });
 
+      // $FlowFixMe[incompatible-use]
       allEvents = (afterFn, expectedEvents, {rejectUnexpected = true} = {}) =>
         Promise.all([
           new Promise(async (resolve, reject) => {
