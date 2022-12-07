@@ -394,7 +394,11 @@ class ChromeHeapSnapshotRecordAccessor {
           throw new Error('Missing value for field: ' + field);
         }
       }
-      this._buffer.splice(this._position, 0, ...new Array(this._recordSize));
+      this._buffer.splice(
+        this._position,
+        0,
+        ...new Array<number | RawBuffer>(this._recordSize),
+      );
       didResizeBuffer = true;
       for (const field of Object.keys(record)) {
         this._set(field, record[field]);
