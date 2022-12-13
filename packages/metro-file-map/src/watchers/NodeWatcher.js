@@ -25,14 +25,20 @@ const fs = require('fs');
 const platform = require('os').platform();
 const path = require('path');
 
-const DEFAULT_DELAY = common.DEFAULT_DELAY;
 const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
 
+/**
+ * This setting delays all events. It suppresses 'change' events that
+ * immediately follow an 'add', and debounces successive 'change' events to
+ * only emit the latest.
+ */
+const DEBOUNCE_MS = 100;
+
 module.exports = class NodeWatcher extends EventEmitter {
-  _changeTimers: {[key: string]: TimeoutID, __proto__: null};
+  _changeTimers: Map<string, TimeoutID> = new Map();
   _dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
     __proto__: null,
@@ -52,14 +58,15 @@ module.exports = class NodeWatcher extends EventEmitter {
     common.assignOptions(this, opts);
 
     this.watched = Object.create(null);
-    this._changeTimers = Object.create(null);
     this._dirRegistry = Object.create(null);
     this.root = path.resolve(dir);
 
     this._watchdir(this.root);
     common.recReaddir(
       this.root,
-      this._watchdir,
+      dir => {
+        this._watchdir(dir);
+      },
       filename => {
         this._register(filename);
       },
@@ -82,8 +89,16 @@ module.exports = class NodeWatcher extends EventEmitter {
    *       filename => true
    *    }
    *  }
+   *
+   *  Return false if ignored or already registered.
    */
   _register(filepath: string): boolean {
+    const dir = path.dirname(filepath);
+    const filename = path.basename(filepath);
+    if (this._dirRegistry[dir] && this._dirRegistry[dir][filename]) {
+      return false;
+    }
+
     const relativePath = path.relative(this.root, filepath);
     if (
       !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
@@ -91,12 +106,10 @@ module.exports = class NodeWatcher extends EventEmitter {
       return false;
     }
 
-    const dir = path.dirname(filepath);
     if (!this._dirRegistry[dir]) {
       this._dirRegistry[dir] = Object.create(null);
     }
 
-    const filename = path.basename(filepath);
     this._dirRegistry[dir][filename] = true;
 
     return true;
@@ -146,11 +159,10 @@ module.exports = class NodeWatcher extends EventEmitter {
   /**
    * Watch a directory.
    */
-  _watchdir: string => void = (dir: string) => {
+  _watchdir: string => boolean = (dir: string) => {
     if (this.watched[dir]) {
-      return;
+      return false;
     }
-
     const watcher = fs.watch(dir, {persistent: true}, (event, filename) =>
       this._normalizeChange(dir, event, filename),
     );
@@ -161,6 +173,7 @@ module.exports = class NodeWatcher extends EventEmitter {
     if (this.root !== dir) {
       this._register(dir);
     }
+    return true;
   };
 
   /**
@@ -249,24 +262,43 @@ module.exports = class NodeWatcher extends EventEmitter {
       if (error && error.code !== 'ENOENT') {
         this.emit('error', error);
       } else if (!error && stat.isDirectory()) {
-        // win32 emits usless change events on dirs.
-        if (event !== 'change') {
-          this._watchdir(fullPath);
-          if (
-            stat &&
-            common.isFileIncluded(
-              this.globs,
-              this.dot,
-              this.doIgnore,
-              relativePath,
-            )
-          ) {
-            this._emitEvent(ADD_EVENT, relativePath, {
-              modifiedTime: stat.mtime.getTime(),
-              size: stat.size,
-              type: 'd',
-            });
-          }
+        if (event === 'change') {
+          // win32 emits usless change events on dirs.
+          return;
+        }
+        if (
+          stat &&
+          common.isFileIncluded(
+            this.globs,
+            this.dot,
+            this.doIgnore,
+            relativePath,
+          )
+        ) {
+          common.recReaddir(
+            path.resolve(this.root, relativePath),
+            (dir, stats) => {
+              if (this._watchdir(dir)) {
+                this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'd',
+                });
+              }
+            },
+            (file, stats) => {
+              if (this._register(file)) {
+                this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'f',
+                });
+              }
+            },
+            function endCallback() {},
+            this._checkedEmitError,
+            this.ignored,
+          );
         }
       } else {
         const registered = this._registered(fullPath);
@@ -300,48 +332,31 @@ module.exports = class NodeWatcher extends EventEmitter {
   }
 
   /**
-   * Triggers a 'change' event after debounding it to take care of duplicate
-   * events on os x.
+   * Emits the given event after debouncing, to 1) suppress 'change' events
+   * immediately following an 'add', and 2) to only emit the latest 'change'
+   * event when received in quick succession for a given file.
+   *
+   * See also note above for DEBOUNCE_MS.
    */
   _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
     const key = type + '-' + file;
     const addKey = ADD_EVENT + '-' + file;
-    if (type === CHANGE_EVENT && this._changeTimers[addKey]) {
+    if (type === CHANGE_EVENT && this._changeTimers.has(addKey)) {
       // Ignore the change event that is immediately fired after an add event.
       // (This happens on Linux).
       return;
     }
-    clearTimeout(this._changeTimers[key]);
-    this._changeTimers[key] = setTimeout(() => {
-      delete this._changeTimers[key];
-      if (type === ADD_EVENT && metadata?.type === 'd') {
-        // Recursively emit add events and watch for sub-files/folders
-        common.recReaddir(
-          path.resolve(this.root, file),
-          (dir, stats) => {
-            this._watchdir(dir);
-            this._rawEmitEvent(ADD_EVENT, path.relative(this.root, dir), {
-              modifiedTime: stats.mtime.getTime(),
-              size: stats.size,
-              type: 'd',
-            });
-          },
-          (file, stats) => {
-            this._register(file);
-            this._rawEmitEvent(ADD_EVENT, path.relative(this.root, file), {
-              modifiedTime: stats.mtime.getTime(),
-              size: stats.size,
-              type: 'f',
-            });
-          },
-          function endCallback() {},
-          this._checkedEmitError,
-          this.ignored,
-        );
-      } else {
+    const existingTimer = this._changeTimers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    this._changeTimers.set(
+      key,
+      setTimeout(() => {
+        this._changeTimers.delete(key);
         this._rawEmitEvent(type, file, metadata);
-      }
-    }, DEFAULT_DELAY);
+      }, DEBOUNCE_MS),
+    );
   }
 
   /**
@@ -366,7 +381,8 @@ module.exports = class NodeWatcher extends EventEmitter {
 function isIgnorableFileError(error: Error | {code: string}) {
   return (
     error.code === 'ENOENT' ||
-    // Workaround Windows node issue #4337.
+    // Workaround Windows EPERM on watched folder deletion.
+    // https://github.com/nodejs/node-v0.x-archive/issues/4337
     (error.code === 'EPERM' && platform === 'win32')
   );
 }

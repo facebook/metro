@@ -104,7 +104,7 @@ describe.each(Object.keys(WATCHERS))(
         // Even though we write it before initialising watchers, OS-level
         // delays/debouncing(?) can mean the write is *sometimes* reported by
         // the watcher.
-        ignored: /\.watchmanconfig/,
+        ignored: /(\.watchmanconfig|ignored-)/,
         watchmanDeferStates: [],
       };
 
@@ -267,6 +267,7 @@ describe.each(Object.keys(WATCHERS))(
           async () => {
             await mkdir(join(appRoot, 'subdir', 'subdir2'), {recursive: true});
             await Promise.all([
+              writeFile(join(appRoot, 'subdir', 'ignored-file.js'), ''),
               writeFile(join(appRoot, 'subdir', 'deep.js'), ''),
               writeFile(join(appRoot, 'subdir', 'subdir2', 'deeper.js'), ''),
             ]);
@@ -277,23 +278,8 @@ describe.each(Object.keys(WATCHERS))(
             [join('app', 'subdir', 'deep.js'), 'add'],
             [join('app', 'subdir', 'subdir2', 'deeper.js'), 'add'],
           ],
-          {
-            // FIXME: NodeWatcher may report events multiple times as it
-            // establishes watches on new directories and then crawls them
-            // recursively, emitting all contents. When a directory is created
-            // then immediately populated, the new contents may be seen by both
-            // the crawl and the watch.
-            rejectUnexpected: !(watcherInstance instanceof NodeWatcher),
-          },
+          {rejectUnexpected: true},
         );
-
-        // FIXME: Because NodeWatcher recursively watches new subtrees and
-        // watch initialization is not instantaneous, we need to allow some
-        // time for NodeWatcher to watch the new directories, othwerwise
-        // deletion events may be missed.
-        if (watcherInstance instanceof NodeWatcher) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
 
         await allEvents(
           async () => {
