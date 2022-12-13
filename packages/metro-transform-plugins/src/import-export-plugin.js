@@ -522,6 +522,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           state.exportAll.forEach(
             (e: {file: string, loc: ?BabelSourceLocation, ...}) => {
               body.push(
+                // $FlowFixMe[incompatible-call]
                 ...withLocation(
                   exportAllTemplate({
                     FILE: resolvePath(

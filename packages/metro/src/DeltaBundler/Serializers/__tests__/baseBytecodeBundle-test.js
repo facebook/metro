@@ -97,7 +97,6 @@ it('should generate a bundle', () => {
         ['/root/bar', barModule],
       ]),
       entryPoints: ['foo'],
-      importBundleNames: new Set(),
     },
     {
       processModuleFilter: () => true,
@@ -139,7 +138,6 @@ it('does not add polyfills when `modulesOnly` is used', () => {
         ['/root/bar', barModule],
       ]),
       entryPoints: ['foo'],
-      importBundleNames: new Set(),
     },
     {
       processModuleFilter: () => true,

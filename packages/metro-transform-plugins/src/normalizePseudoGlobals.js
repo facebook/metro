@@ -45,8 +45,8 @@ function normalizePseudoglobals(
       }
 
       const pseudoglobals: Array<string> = params
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         .map(path => path.node.name)
+        // $FlowFixMe[incompatible-call] Flow error uncovered by typing Babel more strictly
         .filter(name => !reservedNames.has(name));
 
       const usedShortNames = new Set<string>();

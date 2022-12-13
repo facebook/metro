@@ -254,9 +254,9 @@ class ChromeHeapSnapshotRecordAccessor {
       );
       if (Array.isArray(recordTypes)) {
         this._fieldToType = new Map<string, ChromeHeapSnapshotFieldType>(
+          // $FlowIssue[incompatible-call] Object.entries is incompletely typed
           Object.entries(recordTypes).map(([offsetStr, type]) => [
             recordFields[Number(offsetStr)],
-            // $FlowIssue[incompatible-call] Object.entries is incompletely typed
             type,
           ]),
         );
@@ -394,7 +394,11 @@ class ChromeHeapSnapshotRecordAccessor {
           throw new Error('Missing value for field: ' + field);
         }
       }
-      this._buffer.splice(this._position, 0, ...new Array(this._recordSize));
+      this._buffer.splice(
+        this._position,
+        0,
+        ...new Array<number | RawBuffer>(this._recordSize),
+      );
       didResizeBuffer = true;
       for (const field of Object.keys(record)) {
         this._set(field, record[field]);

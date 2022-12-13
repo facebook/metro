@@ -41,7 +41,6 @@ const graph = {
     createModule('bar', []),
     createModule('qux', []),
   ]),
-  importBundleNames: new Set(),
 };
 
 const pre = [createModule('pre', [], 'js/script')[1]];

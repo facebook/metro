@@ -15,7 +15,7 @@
 // These annotations are copy/pasted from the built-in Flow definitions and
 // tweaked so that then() and catch() accept `null` arguments, that they
 // rightfully do. This should probably be changed in the core lib eventually.
-declare class Promise<+R> {
+declare class Promise<+R = mixed> {
   constructor(
     callback: (
       resolve: (result?: Promise<R> | R) => void,
@@ -23,15 +23,15 @@ declare class Promise<+R> {
     ) => mixed,
   ): void;
 
-  then<U>(
+  then<U = mixed>(
     onFulfill?: ?(value: R) => Promise<U> | ?U,
     onReject?: ?(error: any) => Promise<U> | ?U,
   ): Promise<U>;
 
-  catch<U>(onReject?: (error: any) => ?Promise<U> | U): Promise<U>;
+  catch<U = mixed>(onReject?: (error: any) => ?Promise<U> | U): Promise<U>;
 
-  static resolve<T>(object?: Promise<T> | T): Promise<T>;
-  static reject<T>(error?: mixed): Promise<T>;
+  static resolve<T = mixed>(object?: Promise<T> | T): Promise<T>;
+  static reject<T = mixed>(error?: mixed): Promise<T>;
 
   static all<T: Iterable<mixed>>(
     promises: T,

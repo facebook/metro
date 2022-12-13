@@ -135,7 +135,10 @@ class Transformer {
 
     // A valid result from the cache is used directly; otherwise we call into
     // the transformer to computed the corresponding result.
-    const data = result
+    const data: $ReadOnly<{
+      result: TransformResult<>,
+      sha1: string,
+    }> = result
       ? {result, sha1}
       : await this._workerFarm.transform(
           localPath,

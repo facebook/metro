@@ -25,7 +25,6 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
 
 export type PostProcessBundleSourcemap = ({
@@ -149,7 +148,8 @@ type SerializerConfigT = {
 type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
-  transformVariants: TransformVariants,
+  // TODO(moti): Remove this Meta-internal option from Metro's public config
+  transformVariants: {+[name: string]: {...}},
   workerPath: string,
   publicPath: string,
 };
