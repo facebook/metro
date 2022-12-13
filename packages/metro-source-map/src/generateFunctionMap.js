@@ -75,7 +75,7 @@ function generateFunctionMap(
   // Traversing populates/pollutes the path cache (`traverse.cache.paths`) with
   // values missing the `hub` property needed by Babel transformation, so we
   // must clear this node (and children) from the cache when we're done.
-  // See https://github.com/facebook/metro/pull/854#issuecomment-1336499395
+  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
   traverse.clearNode(ast);
 
   return encoder.getResult();
