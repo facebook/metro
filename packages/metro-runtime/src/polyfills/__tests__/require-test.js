@@ -2923,6 +2923,7 @@ describe('require', () => {
             ['A.js', 1],
             ['B.js', 2],
             ['C.js', 3],
+            ['X.js', 99],
           ]);
 
           createModule(
