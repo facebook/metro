@@ -71,13 +71,6 @@ function generateFunctionMap(
 ): FBSourceFunctionMap {
   const encoder = new MappingEncoder();
   forEachMapping(ast, context, mapping => encoder.push(mapping));
-
-  // Traversing populates/pollutes the path cache (`traverse.cache.paths`) with
-  // values missing the `hub` property needed by Babel transformation, so we
-  // must clear this node (and children) from the cache when we're done.
-  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
-  traverse.clearNode(ast);
-
   return encoder.getResult();
 }
 
@@ -177,6 +170,13 @@ function forEachMapping(
     Program: visitor,
     Class: visitor,
   });
+
+  // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
+  // values missing the `hub` property needed by Babel transformation, so we
+  // must clear this node (and children) from the cache when we're done.
+  // Preserve previously-set comments (react-refresh is reliant on these).
+  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
+  traverse.clearNode(ast, {preserveComments: true});
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
