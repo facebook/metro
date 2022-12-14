@@ -636,11 +636,14 @@ if (__DEV__) {
       }, // Should we stop?
     );
 
-    if (cycles.length) {
-      performFullRefresh('Dependency cycle', {
-        source: mod,
-      });
-      return;
+    if (cycles.size) {
+      // performFullRefresh('Dependency cycle', {
+      //   source: mod,
+      // });
+      // return;
+      // updatedModuleIDs.splice(
+      //   updatedModuleIDs.findIndex(moduleId => cycles.has(moduleId)),
+      // );
     }
 
     if (didBailOut) {
@@ -760,7 +763,7 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): {
     updatedModuleIDs: Array<T>,
-    cycles: Array<T>,
+    cycles: Set<T>,
   } {
     const result = [];
     const visited = new Set<mixed>();
@@ -791,7 +794,7 @@ if (__DEV__) {
     });
     return {
       updatedModuleIDs: result,
-      cycles: Array.from(cycles),
+      cycles,
     };
   }
 

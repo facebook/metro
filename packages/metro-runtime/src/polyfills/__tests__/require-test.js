@@ -2909,13 +2909,13 @@ describe('require', () => {
           const Refresh = createReactRefreshMock(moduleSystem);
 
           // This is the module graph:
-          //                 ┌────────┐ ┌────────┐
-          //                 │        ▼ │        ▼
-          // ┌───────┐     ┌───┐     ┌───┐     ┌───┐
-          // │ Root* │ ──▶ │ A │ ──▶ │ B │ ──▶ │ C │
-          // └───────┘     └───┘     └───┘     └───┘
-          //                           ▲         │
-          //                           └─────────┘
+          //                 ┌────────┐ ┌────────┐ ┌────────┐
+          //                 │        ▼ │        ▼ │        ▼
+          // ┌───────┐     ┌───┐     ┌───┐     ┌───┐     ┌───┐
+          // │ Root* │ ──▶ │ A │ ──▶ │ B │ ──▶ │ C │ ──▶ │ D │
+          // └───────┘     └───┘     └───┘     └───┘     └───┘
+          //                           ▲        ▲         │
+          //                           └────────+─────────┘
           // * - refresh boundary (exports a component)
 
           const ids = Object.fromEntries([
@@ -2923,7 +2923,7 @@ describe('require', () => {
             ['A.js', 1],
             ['B.js', 2],
             ['C.js', 3],
-            ['X.js', 99],
+            ['D.js', 4],
           ]);
 
           createModule(
@@ -2950,7 +2950,7 @@ describe('require', () => {
             'B.js',
             (global, require, importDefault, importAll, module, exports) => {
               const C = require(ids['C.js']);
-              module.exports = 'B1_' + C;
+              module.exports = ['B1', C].join('_');
             },
           );
           createModule(
@@ -2959,18 +2959,27 @@ describe('require', () => {
             'C.js',
             (global, require, importDefault, importAll, module, exports) => {
               require(ids['B.js']);
-              module.exports = 'C';
+              const D = require(ids['D.js']);
+              module.exports = ['C1', D].join('_');
+            },
+          );
+          createModule(
+            moduleSystem,
+            ids['D.js'],
+            'D.js',
+            (global, require, importDefault, importAll, module, exports) => {
+              module.exports = 'D1';
             },
           );
           moduleSystem.__r(ids['root.js']);
 
-          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C');
+          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C1_D1');
 
           moduleSystem.__accept(
-            ids['C.js'],
+            ids['D.js'],
             (global, require, importDefault, importAll, module, exports) => {
               require(ids['B.js']);
-              module.exports = 'C1';
+              module.exports = 'D2';
             },
             [],
             // Inverse dependency map.
@@ -2978,7 +2987,8 @@ describe('require', () => {
               [ids['root.js']]: [],
               [ids['A.js']]: [ids['root.js']],
               [ids['B.js']]: [ids['A.js'], ids['C.js']],
-              [ids['C.js']]: [ids['B.js'], ids['A.js']],
+              [ids['C.js']]: [ids['B.js'], ids['D.js']],
+              [ids['D.js']]: [ids['B.js'], ids['C.js']],
             },
             undefined,
           );
@@ -2987,7 +2997,7 @@ describe('require', () => {
 
           expect(Refresh.performReactRefresh).toHaveBeenCalled();
           expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
-          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C1');
+          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C1_D2');
         });
       });
     });
