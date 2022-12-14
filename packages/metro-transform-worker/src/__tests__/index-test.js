@@ -482,6 +482,7 @@ it('allows replacing the collectDependencies implementation', async () => {
         const collectedDeps = metroCoreCollectDependencies(ast, opts);
         return {
           ...collectedDeps,
+          // $FlowFixMe[missing-local-annot]
           dependencies: collectedDeps.dependencies.map(dep => ({
             ...dep,
             name: 'modified_' + dep.name,

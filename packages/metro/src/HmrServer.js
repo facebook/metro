@@ -189,6 +189,7 @@ class HmrServer<TClient: Client> {
 
       const unlisten = this._bundler
         .getDeltaBundler()
+        // $FlowFixMe[missing-local-annot]
         .listen(graph, async (...args) => {
           latestEventArgs = args;
           await debounceCallHandleFileChange();
