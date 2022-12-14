@@ -2986,9 +2986,9 @@ describe('require', () => {
             {
               [ids['root.js']]: [],
               [ids['A.js']]: [ids['root.js']],
-              [ids['B.js']]: [ids['A.js'], ids['C.js']],
+              [ids['B.js']]: [ids['A.js']],
               [ids['C.js']]: [ids['B.js'], ids['D.js']],
-              [ids['D.js']]: [ids['B.js'], ids['C.js']],
+              [ids['D.js']]: [ids['C.js'], ids['B.js']],
             },
             undefined,
           );

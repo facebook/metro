@@ -641,9 +641,9 @@ if (__DEV__) {
       //   source: mod,
       // });
       // return;
-      // updatedModuleIDs.splice(
-      //   updatedModuleIDs.findIndex(moduleId => cycles.has(moduleId)),
-      // );
+      updatedModuleIDs.splice(
+        updatedModuleIDs.findIndex(moduleId => cycles.has(moduleId)),
+      );
     }
 
     if (didBailOut) {
