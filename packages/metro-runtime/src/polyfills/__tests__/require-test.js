@@ -2902,6 +2902,93 @@ describe('require', () => {
           expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
         });
       });
+
+      describe('When the cycle is contained', () => {
+        it('Performs the update at the nearest unaffected ancestor', () => {
+          createModuleSystem(moduleSystem, true, '');
+          const Refresh = createReactRefreshMock(moduleSystem);
+
+          // This is the module graph:
+          //                 ┌────────┐ ┌────────┐
+          //                 │        ▼ │        ▼
+          // ┌───────┐     ┌───┐     ┌───┐     ┌───┐
+          // │ Root* │ ──▶ │ A │ ──▶ │ B │ ──▶ │ C │
+          // └───────┘     └───┘     └───┘     └───┘
+          //                           ▲         │
+          //                           └─────────┘
+          // * - refresh boundary (exports a component)
+
+          const ids = Object.fromEntries([
+            ['root.js', 0],
+            ['A.js', 1],
+            ['B.js', 2],
+            ['C.js', 3],
+          ]);
+
+          createModule(
+            moduleSystem,
+            ids['root.js'],
+            'root.js',
+            (global, require, importDefault, importAll, module, exports) => {
+              require(ids['A.js']);
+              module.exports = function Root() {};
+            },
+          );
+          createModule(
+            moduleSystem,
+            ids['A.js'],
+            'A.js',
+            (global, require, importDefault, importAll, module, exports) => {
+              const B = require(ids['B.js']);
+              module.exports = 'A = ' + B;
+            },
+          );
+          createModule(
+            moduleSystem,
+            ids['B.js'],
+            'B.js',
+            (global, require, importDefault, importAll, module, exports) => {
+              const C = require(ids['C.js']);
+              module.exports = 'B1_' + C;
+            },
+          );
+          createModule(
+            moduleSystem,
+            ids['C.js'],
+            'C.js',
+            (global, require, importDefault, importAll, module, exports) => {
+              require(ids['B.js']);
+              module.exports = 'C';
+            },
+          );
+          moduleSystem.__r(ids['root.js']);
+
+          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C');
+
+          moduleSystem.__accept(
+            ids['C.js'],
+            (global, require, importDefault, importAll, module, exports) => {
+              require(ids['B.js']);
+              module.exports = 'C1';
+            },
+            [],
+            // Inverse dependency map.
+            {
+              [ids['root.js']]: [],
+              [ids['A.js']]: [ids['root.js']],
+              [ids['B.js']]: [ids['A.js'], ids['C.js']],
+              [ids['C.js']]: [ids['B.js'], ids['A.js']],
+            },
+            undefined,
+          );
+
+          jest.runAllTimers();
+
+          expect(Refresh.performReactRefresh).toHaveBeenCalled();
+          expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+          expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C1');
+        });
+      });
     });
   });
 });
