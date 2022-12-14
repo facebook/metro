@@ -2997,6 +2997,9 @@ describe('require', () => {
 
           expect(Refresh.performReactRefresh).toHaveBeenCalled();
           expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+
+          // The expected outcome is that we trap modules B-C in the same refresh along with module D.
+          // This will make them update, thus producing the new result correctly.
           expect(moduleSystem.__r(ids['A.js'])).toBe('A = B1_C1_D2');
         });
       });

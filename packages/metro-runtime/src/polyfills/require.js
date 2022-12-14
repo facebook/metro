@@ -640,10 +640,6 @@ if (__DEV__) {
       // performFullRefresh('Dependency cycle', {
       //   source: mod,
       // });
-      // return;
-      updatedModuleIDs.splice(
-        updatedModuleIDs.findIndex(moduleId => cycles.has(moduleId)),
-      );
     }
 
     if (didBailOut) {
