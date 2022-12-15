@@ -9,13 +9,14 @@
  */
 
 import type {ChangeEventMetadata} from '../flow-types';
+import type {Stats} from 'fs';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 import type {FSEvents} from 'fsevents';
 
 // $FlowFixMe[untyped-import] - anymatch
 import anymatch from 'anymatch';
 import EventEmitter from 'events';
-import * as fs from 'graceful-fs';
+import {promises as fsPromises} from 'fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
@@ -66,17 +67,17 @@ export default class FSEventsWatcher extends EventEmitter {
   }
 
   static _normalizeProxy(
-    callback: (normalizedPath: string, stats: fs.Stats) => void,
+    callback: (normalizedPath: string, stats: Stats) => void,
     // $FlowFixMe[cannot-resolve-name]
   ): (filepath: string, stats: Stats) => void {
-    return (filepath: string, stats: fs.Stats): void =>
+    return (filepath: string, stats: Stats): void =>
       callback(path.normalize(filepath), stats);
   }
 
   static _recReaddir(
     dir: string,
-    dirCallback: (normalizedPath: string, stats: fs.Stats) => void,
-    fileCallback: (normalizedPath: string, stats: fs.Stats) => void,
+    dirCallback: (normalizedPath: string, stats: Stats) => void,
+    fileCallback: (normalizedPath: string, stats: Stats) => void,
     // $FlowFixMe[unclear-type] Add types for callback
     endCallback: Function,
     // $FlowFixMe[unclear-type] Add types for callback
@@ -123,9 +124,11 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this.root = path.resolve(dir);
 
-    this.fsEventsWatchStopper = fsevents.watch(this.root, path =>
-      this._handleEvent(path),
-    );
+    this.fsEventsWatchStopper = fsevents.watch(this.root, path => {
+      this._handleEvent(path).catch(error => {
+        this.emit('error', error);
+      });
+    });
 
     debug(`Watching ${this.root}`);
 
@@ -167,30 +170,17 @@ export default class FSEventsWatcher extends EventEmitter {
       : this.dot || micromatch([relativePath], '**/*').length > 0;
   }
 
-  _handleEvent(filepath: string) {
+  async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
     if (!this._isFileIncluded(relativePath)) {
       return;
     }
 
-    fs.lstat(filepath, (error, stat) => {
-      if (error && error.code !== 'ENOENT') {
-        this.emit('error', error);
-        return;
-      }
-
-      if (error) {
-        // Ignore files that aren't tracked and don't exist.
-        if (!this._tracked.has(filepath)) {
-          return;
-        }
-
-        this._emit(DELETE_EVENT, relativePath);
-        this._tracked.delete(filepath);
-        return;
-      }
-
+    try {
+      const stat = await fsPromises.lstat(filepath);
       const type = typeFromStat(stat);
+
+      // Ignore files of an unrecognized type
       if (!type) {
         return;
       }
@@ -206,7 +196,20 @@ export default class FSEventsWatcher extends EventEmitter {
         this._tracked.add(filepath);
         this._emit(ADD_EVENT, relativePath, metadata);
       }
-    });
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        this.emit('error', error);
+        return;
+      }
+
+      // Ignore files that aren't tracked and don't exist.
+      if (!this._tracked.has(filepath)) {
+        return;
+      }
+
+      this._emit(DELETE_EVENT, relativePath);
+      this._tracked.delete(filepath);
+    }
   }
 
   /**
