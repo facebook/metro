@@ -25,6 +25,8 @@ const fs = require('fs');
 const platform = require('os').platform();
 const path = require('path');
 
+const fsPromises = fs.promises;
+
 const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
@@ -243,29 +245,35 @@ module.exports = class NodeWatcher extends EventEmitter {
     if (!file) {
       this._detectChangedFile(dir, event, actualFile => {
         if (actualFile) {
-          this._processChange(dir, event, actualFile);
+          this._processChange(dir, event, actualFile).catch(error =>
+            this.emit('error', error),
+          );
         }
       });
     } else {
-      this._processChange(dir, event, path.normalize(file));
+      this._processChange(dir, event, path.normalize(file)).catch(error =>
+        this.emit('error', error),
+      );
     }
   }
 
   /**
    * Process changes.
    */
-  _processChange(dir: string, event: string, file: string) {
+  async _processChange(dir: string, event: string, file: string) {
     const fullPath = path.join(dir, file);
     const relativePath = path.join(path.relative(this.root, dir), file);
 
-    fs.lstat(fullPath, (error, stat) => {
-      if (error && error.code !== 'ENOENT') {
-        this.emit('error', error);
-      } else if (!error && stat.isDirectory()) {
+    const registered = this._registered(fullPath);
+
+    try {
+      const stat = await fsPromises.lstat(fullPath);
+      if (stat.isDirectory()) {
+        // win32 emits usless change events on dirs.
         if (event === 'change') {
-          // win32 emits usless change events on dirs.
           return;
         }
+
         if (
           stat &&
           common.isFileIncluded(
@@ -300,35 +308,37 @@ module.exports = class NodeWatcher extends EventEmitter {
             this.ignored,
           );
         }
+        return;
       } else {
-        const registered = this._registered(fullPath);
-        if (error && error.code === 'ENOENT') {
-          this._unregister(fullPath);
-          this._stopWatching(fullPath);
-          this._unregisterDir(fullPath);
-          if (registered) {
-            this._emitEvent(DELETE_EVENT, relativePath);
-          }
+        const type = common.typeFromStat(stat);
+        if (type == null) {
+          return;
+        }
+        const metadata = {
+          modifiedTime: stat.mtime.getTime(),
+          size: stat.size,
+          type,
+        };
+        if (registered) {
+          this._emitEvent(CHANGE_EVENT, relativePath, metadata);
         } else {
-          const type = common.typeFromStat(stat);
-          if (type == null) {
-            return;
-          }
-          const metadata = {
-            modifiedTime: stat.mtime.getTime(),
-            size: stat.size,
-            type,
-          };
-          if (registered) {
-            this._emitEvent(CHANGE_EVENT, relativePath, metadata);
-          } else {
-            if (this._register(fullPath)) {
-              this._emitEvent(ADD_EVENT, relativePath, metadata);
-            }
+          if (this._register(fullPath)) {
+            this._emitEvent(ADD_EVENT, relativePath, metadata);
           }
         }
       }
-    });
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        this.emit('error', error);
+        return;
+      }
+      this._unregister(fullPath);
+      this._stopWatching(fullPath);
+      this._unregisterDir(fullPath);
+      if (registered) {
+        this._emitEvent(DELETE_EVENT, relativePath);
+      }
+    }
   }
 
   /**
