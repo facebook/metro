@@ -9,46 +9,15 @@
  * @oncall react_native
  */
 
+import type {EventHelpers} from './helpers';
 import type {WatcherOptions} from '../common';
-import type {ChangeEventMetadata} from '../../flow-types';
 
-import NodeWatcher from '../NodeWatcher';
 import FSEventsWatcher from '../FSEventsWatcher';
-import WatchmanWatcher from '../WatchmanWatcher';
-import {execSync} from 'child_process';
+import {createTempWatchRoot, startWatching, WATCHERS} from './helpers';
 import os from 'os';
 import {promises as fsPromises} from 'fs';
-import invariant from 'invariant';
 import {join} from 'path';
-const {mkdtemp, mkdir, writeFile, rm, realpath, symlink, unlink} = fsPromises;
-
-jest.useRealTimers();
-
-// At runtime we use a more sophisticated + robust Watchman capability check,
-// but this simple heuristic is fast to check, synchronous (we can't
-// asynchronously skip tests: https://github.com/facebook/jest/issues/8604),
-// and will tend to exercise our Watchman tests whenever possible.
-const isWatchmanOnPath = () => {
-  try {
-    execSync(os.platform() === 'windows' ? 'where watchman' : 'which watchman');
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-// `null` Watchers will be marked as skipped tests.
-const WATCHERS: $ReadOnly<{
-  [key: string]:
-    | Class<NodeWatcher>
-    | Class<FSEventsWatcher>
-    | Class<WatchmanWatcher>
-    | null,
-}> = {
-  Node: NodeWatcher,
-  Watchman: isWatchmanOnPath() ? WatchmanWatcher : null,
-  FSEvents: FSEventsWatcher.isSupported() ? FSEventsWatcher : null,
-};
+const {mkdir, writeFile, rm, symlink, unlink} = fsPromises;
 
 test('FSEventsWatcher is supported if and only if darwin', () => {
   expect(FSEventsWatcher.isSupported()).toBe(os.platform() === 'darwin');
@@ -59,43 +28,32 @@ describe.each(Object.keys(WATCHERS))(
   watcherName => {
     let appRoot;
     let cookieCount = 1;
-    let watcherInstance;
     let watchRoot;
-    let nextEvent: (afterFn: () => Promise<void>) => Promise<{
-      eventType: string,
-      path: string,
-      metadata?: ChangeEventMetadata,
-    }>;
-    let untilEvent: (
-      afterFn: () => Promise<void>,
-      expectedPath: string,
-      expectedEvent: 'add' | 'delete' | 'change',
-    ) => Promise<void>;
-    let allEvents: (
-      afterFn: () => Promise<void>,
-      events: $ReadOnlyArray<[string, 'add' | 'delete' | 'change']>,
-      opts?: {rejectUnexpected: boolean},
-    ) => Promise<void>;
-
-    const Watcher = WATCHERS[watcherName];
+    let stopWatching;
+    let eventHelpers: EventHelpers;
 
     // If all tests are skipped, Jest will not run before/after hooks either.
-    const maybeTest = Watcher ? test : test.skip;
+    const maybeTest = WATCHERS[watcherName] ? test : test.skip;
 
     beforeAll(async () => {
-      const tmpDir = await mkdtemp(
-        join(os.tmpdir(), `metro-watcher-${watcherName}-test-`),
-      );
+      watchRoot = await createTempWatchRoot(watcherName);
 
-      // os.tmpdir() on macOS gives us a symlink /var/foo -> /private/var/foo,
-      // we normalise it with realpath so that watchers report predictable
-      // root-relative paths for change events.
-      watchRoot = await realpath(tmpDir);
-      await writeFile(join(watchRoot, '.watchmanconfig'), '{}');
-
-      // Perform all writes one level deeper than the watch root, so that we
-      // can reset file fixtures without re-establishing a watch.
+      // 'app' will be created and deleted before and after each test.
       appRoot = join(watchRoot, 'app');
+
+      // 'existing' will *not* be reset between tests. These are fixtures used
+      // for testing the behaviour of the watchers on files that existed before
+      // the watcher was started. Tests should touch only distinct subsets of
+      // these files to ensure that tests remain isolated.
+      await mkdir(join(watchRoot, 'existing'));
+      await Promise.all([
+        writeFile(join(watchRoot, 'existing', 'file-to-delete'), ''),
+        writeFile(join(watchRoot, 'existing', 'file-to-modify'), ''),
+      ]);
+
+      // Short delay to ensure that 'add' events for the files above are not
+      // reported by the OS to the watcher we haven't established yet.
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       const opts: WatcherOptions = {
         dot: true,
@@ -108,84 +66,21 @@ describe.each(Object.keys(WATCHERS))(
         watchmanDeferStates: [],
       };
 
-      nextEvent = afterFn =>
-        Promise.all([
-          new Promise<{
-            eventType: string,
-            metadata?: ChangeEventMetadata,
-            path: string,
-          }>((resolve, reject) => {
-            const listener = (
-              eventType: string,
-              path: string,
-              root: string,
-              metadata?: ChangeEventMetadata,
-            ) => {
-              if (path === '') {
-                // FIXME: FSEventsWatcher sometimes reports 'change' events to
-                // the watch root.
-                return;
-              }
-              watcherInstance.removeListener('all', listener);
-              if (root !== watchRoot) {
-                reject(new Error(`Expected root ${watchRoot}, got ${root}`));
-              }
-
-              resolve({eventType, path, metadata});
-            };
-            watcherInstance.on('all', listener);
-          }),
-          afterFn(),
-        ]).then(([event]) => event);
-
-      untilEvent = (afterFn, expectedPath, expectedEventType) =>
-        allEvents(afterFn, [[expectedPath, expectedEventType]], {
-          rejectUnexpected: false,
-        });
-
-      // $FlowFixMe[incompatible-use]
-      allEvents = (afterFn, expectedEvents, {rejectUnexpected = true} = {}) =>
-        Promise.all([
-          new Promise(async (resolve, reject) => {
-            const tupleToKey = (tuple: $ReadOnlyArray<string>) =>
-              tuple.join('\0');
-            const allEventKeys = new Set(
-              expectedEvents.map(tuple => tupleToKey(tuple)),
-            );
-            const listener = (eventType: string, path: string) => {
-              if (path === '') {
-                // FIXME: FSEventsWatcher sometimes reports 'change' events to
-                // the watch root.
-                return;
-              }
-              const receivedKey = tupleToKey([path, eventType]);
-              if (allEventKeys.has(receivedKey)) {
-                allEventKeys.delete(receivedKey);
-                if (allEventKeys.size === 0) {
-                  watcherInstance.removeListener('all', listener);
-                  resolve();
-                }
-              } else if (rejectUnexpected) {
-                watcherInstance.removeListener('all', listener);
-                reject(new Error(`Unexpected event: ${eventType} ${path}.`));
-              }
-            };
-            watcherInstance.on('all', listener);
-          }),
-          afterFn(),
-        ]).then(() => {});
-
-      invariant(Watcher, 'Use of maybeTest should ensure Watcher is non-null');
-      watcherInstance = new Watcher(watchRoot, opts);
-      await new Promise(resolve => {
-        watcherInstance.on('ready', resolve);
-      });
+      ({stopWatching, eventHelpers} = await startWatching(
+        watcherName,
+        watchRoot,
+        opts,
+      ));
     });
 
     beforeEach(async () => {
       // Discard events before app add - sometimes pre-init events are reported
       // after the watcher is ready.
-      await untilEvent(() => mkdir(appRoot), 'app', 'add');
+      expect(await eventHelpers.nextEvent(() => mkdir(appRoot))).toStrictEqual({
+        path: 'app',
+        eventType: 'add',
+        metadata: expect.any(Object),
+      });
     });
 
     afterEach(async () => {
@@ -193,15 +88,21 @@ describe.each(Object.keys(WATCHERS))(
       // catch double-counting, unexpected symlink traversal, etc.
       const cookieName = `cookie-${++cookieCount}`;
       expect(
-        await nextEvent(() => writeFile(join(watchRoot, cookieName), '')),
+        await eventHelpers.nextEvent(() =>
+          writeFile(join(watchRoot, cookieName), ''),
+        ),
       ).toMatchObject({path: cookieName, eventType: 'add'});
       // Cleanup and wait until the app root deletion is reported - this should
       // be the last cleanup event emitted.
-      await untilEvent(() => rm(appRoot, {recursive: true}), 'app', 'delete');
+      await eventHelpers.untilEvent(
+        () => rm(appRoot, {recursive: true}),
+        'app',
+        'delete',
+      );
     });
 
     afterAll(async () => {
-      await watcherInstance.close();
+      await stopWatching();
       await rm(watchRoot, {recursive: true});
     });
 
@@ -209,7 +110,7 @@ describe.each(Object.keys(WATCHERS))(
       const testFile = join(appRoot, 'test.js');
       const relativePath = join('app', 'test.js');
       expect(
-        await nextEvent(() => writeFile(testFile, 'hello world')),
+        await eventHelpers.nextEvent(() => writeFile(testFile, 'hello world')),
       ).toStrictEqual({
         path: relativePath,
         eventType: 'add',
@@ -223,13 +124,17 @@ describe.each(Object.keys(WATCHERS))(
         },
       });
       expect(
-        await nextEvent(() => writeFile(testFile, 'brave new world')),
+        await eventHelpers.nextEvent(() =>
+          writeFile(testFile, 'brave new world'),
+        ),
       ).toStrictEqual({
         path: relativePath,
         eventType: 'change',
         metadata: expect.any(Object),
       });
-      expect(await nextEvent(() => unlink(testFile))).toStrictEqual({
+      expect(
+        await eventHelpers.nextEvent(() => unlink(testFile)),
+      ).toStrictEqual({
         path: relativePath,
         eventType: 'delete',
         metadata: undefined,
@@ -244,7 +149,9 @@ describe.each(Object.keys(WATCHERS))(
     ])('detects new and deleted symlink to %s', async target => {
       const newLink = join(appRoot, 'newlink');
       const relativePath = join('app', 'newlink');
-      expect(await nextEvent(() => symlink(target, newLink))).toStrictEqual({
+      expect(
+        await eventHelpers.nextEvent(() => symlink(target, newLink)),
+      ).toStrictEqual({
         path: relativePath,
         eventType: 'add',
         metadata: {
@@ -253,17 +160,43 @@ describe.each(Object.keys(WATCHERS))(
           size: expect.any(Number),
         },
       });
-      expect(await nextEvent(() => unlink(newLink))).toStrictEqual({
-        path: relativePath,
+      expect(await eventHelpers.nextEvent(() => unlink(newLink))).toStrictEqual(
+        {
+          path: relativePath,
+          eventType: 'delete',
+          metadata: undefined,
+        },
+      );
+    });
+
+    maybeTest('detects deletion of a pre-existing file', async () => {
+      expect(
+        await eventHelpers.nextEvent(() =>
+          unlink(join(watchRoot, 'existing', 'file-to-delete')),
+        ),
+      ).toStrictEqual({
+        path: join('existing', 'file-to-delete'),
         eventType: 'delete',
         metadata: undefined,
+      });
+    });
+
+    maybeTest('detects change to a pre-existing file as a change', async () => {
+      expect(
+        await eventHelpers.nextEvent(() =>
+          writeFile(join(watchRoot, 'existing', 'file-to-modify'), 'changed'),
+        ),
+      ).toStrictEqual({
+        path: join('existing', 'file-to-modify'),
+        eventType: 'change',
+        metadata: expect.any(Object),
       });
     });
 
     maybeTest(
       'emits deletion for all files when a directory is deleted',
       async () => {
-        await allEvents(
+        await eventHelpers.allEvents(
           async () => {
             await mkdir(join(appRoot, 'subdir', 'subdir2'), {recursive: true});
             await Promise.all([
@@ -281,7 +214,7 @@ describe.each(Object.keys(WATCHERS))(
           {rejectUnexpected: true},
         );
 
-        await allEvents(
+        await eventHelpers.allEvents(
           async () => {
             await rm(join(appRoot, 'subdir'), {recursive: true});
           },
