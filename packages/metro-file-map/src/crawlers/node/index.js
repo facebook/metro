@@ -43,28 +43,21 @@ function find(
         callback(result);
         return;
       }
-      // node < v10.10 does not support the withFileTypes option, and
-      // entry will be a string.
-      entries.forEach((entry: string | fs.Dirent) => {
-        const file = path.join(
-          directory,
-          // $FlowFixMe[incompatible-call] - encoding is utf8
-          typeof entry === 'string' ? entry : entry.name,
-        );
+
+      entries.forEach((entry: fs.Dirent) => {
+        const file = path.join(directory, entry.name.toString());
 
         if (ignore(file)) {
           return;
         }
 
-        if (typeof entry !== 'string') {
-          if (entry.isSymbolicLink()) {
-            return;
-          }
+        if (entry.isSymbolicLink() && !enableSymlinks) {
+          return;
+        }
 
-          if (entry.isDirectory()) {
-            search(file);
-            return;
-          }
+        if (entry.isDirectory()) {
+          search(file);
+          return;
         }
 
         activeCalls++;
@@ -74,16 +67,10 @@ function find(
         stat(file, (err, stat) => {
           activeCalls--;
 
-          // This logic is unnecessary for node > v10.10, but leaving it in
-          // since we need it for backwards-compatibility still.
-          if (!err && stat && !stat.isSymbolicLink()) {
-            if (stat.isDirectory()) {
-              search(file);
-            } else {
-              const ext = path.extname(file).substr(1);
-              if (extensions.indexOf(ext) !== -1) {
-                result.push([file, stat.mtime.getTime(), stat.size]);
-              }
+          if (!err && stat) {
+            const ext = path.extname(file).substr(1);
+            if (extensions.indexOf(ext) !== -1) {
+              result.push([file, stat.mtime.getTime(), stat.size]);
             }
           }
 
