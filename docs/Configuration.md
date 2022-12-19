@@ -472,12 +472,6 @@ Type: `({platform: ?string}) => $ReadOnlyArray<string>`
 
 An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...
 
-#### `postProcessBundleSourcemap`
-
-Type: `PostProcessBundleSourcemap`
-
-An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.
-
 #### `getModulesRunBeforeMainModule`
 
 Type: `(entryFilePath: string) => Array<string>`
