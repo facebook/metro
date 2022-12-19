@@ -49,11 +49,12 @@ describe.each(Object.keys(WATCHERS))(
       await Promise.all([
         writeFile(join(watchRoot, 'existing', 'file-to-delete'), ''),
         writeFile(join(watchRoot, 'existing', 'file-to-modify'), ''),
+        symlink('target', join(watchRoot, 'existing', 'symlink-to-delete')),
       ]);
 
       // Short delay to ensure that 'add' events for the files above are not
       // reported by the OS to the watcher we haven't established yet.
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const opts: WatcherOptions = {
         dot: true,
@@ -74,8 +75,6 @@ describe.each(Object.keys(WATCHERS))(
     });
 
     beforeEach(async () => {
-      // Discard events before app add - sometimes pre-init events are reported
-      // after the watcher is ready.
       expect(await eventHelpers.nextEvent(() => mkdir(appRoot))).toStrictEqual({
         path: 'app',
         eventType: 'add',
@@ -176,6 +175,18 @@ describe.each(Object.keys(WATCHERS))(
         ),
       ).toStrictEqual({
         path: join('existing', 'file-to-delete'),
+        eventType: 'delete',
+        metadata: undefined,
+      });
+    });
+
+    maybeTest('detects deletion of a pre-existing symlink', async () => {
+      expect(
+        await eventHelpers.nextEvent(() =>
+          unlink(join(watchRoot, 'existing', 'symlink-to-delete')),
+        ),
+      ).toStrictEqual({
+        path: join('existing', 'symlink-to-delete'),
         eventType: 'delete',
         metadata: undefined,
       });
