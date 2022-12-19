@@ -78,6 +78,7 @@ export default class FSEventsWatcher extends EventEmitter {
     dir: string,
     dirCallback: (normalizedPath: string, stats: Stats) => void,
     fileCallback: (normalizedPath: string, stats: Stats) => void,
+    symlinkCallback: (normalizedPath: string, stats: Stats) => void,
     // $FlowFixMe[unclear-type] Add types for callback
     endCallback: Function,
     // $FlowFixMe[unclear-type] Add types for callback
@@ -90,6 +91,7 @@ export default class FSEventsWatcher extends EventEmitter {
       )
       .on('dir', FSEventsWatcher._normalizeProxy(dirCallback))
       .on('file', FSEventsWatcher._normalizeProxy(fileCallback))
+      .on('symlink', FSEventsWatcher._normalizeProxy(symlinkCallback))
       .on('error', errorCallback)
       .on('end', () => {
         endCallback();
@@ -133,14 +135,14 @@ export default class FSEventsWatcher extends EventEmitter {
     debug(`Watching ${this.root}`);
 
     this._tracked = new Set();
+    const trackPath = (filePath: string) => {
+      this._tracked.add(filePath);
+    };
     FSEventsWatcher._recReaddir(
       this.root,
-      (filepath: string) => {
-        this._tracked.add(filepath);
-      },
-      (filepath: string) => {
-        this._tracked.add(filepath);
-      },
+      trackPath,
+      trackPath,
+      trackPath,
       // $FlowFixMe[method-unbinding] - Refactor
       this.emit.bind(this, 'ready'),
       // $FlowFixMe[method-unbinding] - Refactor

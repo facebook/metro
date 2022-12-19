@@ -113,6 +113,7 @@ export function recReaddir(
   dir: string,
   dirCallback: (string, Stats) => void,
   fileCallback: (string, Stats) => void,
+  symlinkCallback: (string, Stats) => void,
   endCallback: () => void,
   errorCallback: Error => void,
   ignored: ?(boolean | RegExp),
@@ -121,6 +122,7 @@ export function recReaddir(
     .filterDir(currentDir => !anymatch(ignored, currentDir))
     .on('dir', normalizeProxy(dirCallback))
     .on('file', normalizeProxy(fileCallback))
+    .on('symlink', normalizeProxy(symlinkCallback))
     .on('error', errorCallback)
     .on('end', () => {
       if (platform === 'win32') {
