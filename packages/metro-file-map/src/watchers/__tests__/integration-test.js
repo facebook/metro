@@ -49,6 +49,7 @@ describe.each(Object.keys(WATCHERS))(
       await Promise.all([
         writeFile(join(watchRoot, 'existing', 'file-to-delete'), ''),
         writeFile(join(watchRoot, 'existing', 'file-to-modify'), ''),
+        symlink('target', join(watchRoot, 'existing', 'symlink-to-delete')),
       ]);
 
       // Short delay to ensure that 'add' events for the files above are not
@@ -176,6 +177,18 @@ describe.each(Object.keys(WATCHERS))(
         ),
       ).toStrictEqual({
         path: join('existing', 'file-to-delete'),
+        eventType: 'delete',
+        metadata: undefined,
+      });
+    });
+
+    maybeTest('detects deletion of a pre-existing symlink', async () => {
+      expect(
+        await eventHelpers.nextEvent(() =>
+          unlink(join(watchRoot, 'existing', 'symlink-to-delete')),
+        ),
+      ).toStrictEqual({
+        path: join('existing', 'symlink-to-delete'),
         eventType: 'delete',
         metadata: undefined,
       });

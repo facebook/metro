@@ -70,7 +70,10 @@ module.exports = class NodeWatcher extends EventEmitter {
         this._watchdir(dir);
       },
       filename => {
-        this._register(filename);
+        this._register(filename, 'f');
+      },
+      symlink => {
+        this._register(symlink, 'l');
       },
       () => {
         this.emit('ready');
@@ -94,7 +97,7 @@ module.exports = class NodeWatcher extends EventEmitter {
    *
    *  Return false if ignored or already registered.
    */
-  _register(filepath: string): boolean {
+  _register(filepath: string, type: ChangeEventMetadata['type']): boolean {
     const dir = path.dirname(filepath);
     const filename = path.basename(filepath);
     if (this._dirRegistry[dir] && this._dirRegistry[dir][filename]) {
@@ -103,6 +106,7 @@ module.exports = class NodeWatcher extends EventEmitter {
 
     const relativePath = path.relative(this.root, filepath);
     if (
+      type === 'f' &&
       !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
     ) {
       return false;
@@ -173,7 +177,7 @@ module.exports = class NodeWatcher extends EventEmitter {
     watcher.on('error', this._checkedEmitError);
 
     if (this.root !== dir) {
-      this._register(dir);
+      this._register(dir, 'd');
     }
     return true;
   };
@@ -295,12 +299,25 @@ module.exports = class NodeWatcher extends EventEmitter {
               }
             },
             (file, stats) => {
-              if (this._register(file)) {
+              if (this._register(file, 'f')) {
                 this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
                   modifiedTime: stats.mtime.getTime(),
                   size: stats.size,
                   type: 'f',
                 });
+              }
+            },
+            (symlink, stats) => {
+              if (this._register(symlink, 'l')) {
+                this._rawEmitEvent(
+                  ADD_EVENT,
+                  path.relative(this.root, symlink),
+                  {
+                    modifiedTime: stats.mtime.getTime(),
+                    size: stats.size,
+                    type: 'l',
+                  },
+                );
               }
             },
             function endCallback() {},
@@ -322,7 +339,7 @@ module.exports = class NodeWatcher extends EventEmitter {
         if (registered) {
           this._emitEvent(CHANGE_EVENT, relativePath, metadata);
         } else {
-          if (this._register(fullPath)) {
+          if (this._register(fullPath, type)) {
             this._emitEvent(ADD_EVENT, relativePath, metadata);
           }
         }
