@@ -28,15 +28,23 @@ const isWatchmanOnPath = () => {
   }
 };
 
+const mockUseNativeFind = jest.fn();
+jest.mock('../node/hasNativeFindSupport', () => () => mockUseNativeFind());
+
 type Crawler = (opts: CrawlerOptions) => Promise<{
   removedFiles: FileData,
   changedFiles: FileData,
 }>;
 
 const CRAWLERS: {[key: string]: ?Crawler} = {
-  'node-no-force': nodeCrawl,
-  'node-force': (opts: CrawlerOptions) =>
-    nodeCrawl({...opts, forceNodeFilesystemAPI: true}),
+  'node-find': opts => {
+    mockUseNativeFind.mockResolvedValue(true);
+    return nodeCrawl(opts);
+  },
+  'node-recursive': opts => {
+    mockUseNativeFind.mockResolvedValue(false);
+    return nodeCrawl(opts);
+  },
   watchman: isWatchmanOnPath() ? watchmanCrawl : null,
 };
 

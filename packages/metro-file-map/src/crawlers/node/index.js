@@ -9,53 +9,21 @@
  * @oncall react_native
  */
 
-import type {Path, FileMetaData} from '../flow-types';
-import type {CrawlerOptions, FileData, IgnoreMatcher} from '../flow-types';
+import type {Path, FileMetaData} from '../../flow-types';
+import type {CrawlerOptions, FileData, IgnoreMatcher} from '../../flow-types';
 
-import H from '../constants';
-import * as fastPath from '../lib/fast_path';
+import hasNativeFindSupport from './hasNativeFindSupport';
+import H from '../../constants';
+import * as fastPath from '../../lib/fast_path';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
 import * as path from 'path';
 
+const debug = require('debug')('Metro:NodeCrawler');
+
 type Result = Array<[/* id */ string, /* mtime */ number, /* size */ number]>;
 
 type Callback = (result: Result) => void;
-
-async function hasNativeFindSupport(
-  forceNodeFilesystemAPI: boolean,
-): Promise<boolean> {
-  if (forceNodeFilesystemAPI) {
-    return false;
-  }
-
-  try {
-    return await new Promise(resolve => {
-      // Check the find binary supports the non-POSIX -iname parameter wrapped in parens.
-      const args = [
-        '.',
-        '-type',
-        'f',
-        '(',
-        '-iname',
-        '*.ts',
-        '-o',
-        '-iname',
-        '*.js',
-        ')',
-      ];
-      const child = spawn('find', args, {cwd: __dirname});
-      child.on('error', () => {
-        resolve(false);
-      });
-      child.on('exit', code => {
-        resolve(code === 0);
-      });
-    });
-  } catch {
-    return false;
-  }
-}
 
 function find(
   roots: $ReadOnlyArray<string>,
@@ -216,7 +184,10 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     roots,
   } = options;
   perfLogger?.point('nodeCrawl_start');
-  const useNativeFind = await hasNativeFindSupport(forceNodeFilesystemAPI);
+  const useNativeFind =
+    !forceNodeFilesystemAPI && (await hasNativeFindSupport());
+
+  debug('Using system find: %s', useNativeFind);
 
   return new Promise(resolve => {
     const callback = (list: Result) => {
