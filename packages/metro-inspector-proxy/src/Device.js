@@ -47,9 +47,9 @@ type DebuggerInfo = {
 };
 
 type ReloadablePage = {
-  _lastConnectedPage: Page;
-  _originalName: string;
-  _reloadableName: string;
+  _lastConnectedPage: Page,
+  _originalName: string,
+  _reloadableName: string,
 };
 
 const RELOADABLE_PAGE_TITLE_SUFFIX = ' Experimental (Improved Chrome Reloads)';
@@ -315,7 +315,7 @@ class Device {
   // We received a new page ID.
   _handleNewReloadablePage(page: Page) {
     const reloadablePage = this._reloadablePages.get(
-      this._debuggerConnection?.pageId,
+      this._debuggerConnection?.pageId || '',
     );
 
     if (
@@ -578,9 +578,9 @@ class Device {
   _mapToDevicePageId(pageId: string): string {
     if (
       this._reloadablePages.has(pageId) &&
-      this._reloadablePages.get(pageId)._lastConnectedPage != null
+      this._reloadablePages.get(pageId)?._lastConnectedPage != null
     ) {
-      return this._reloadablePages.get(pageId)._lastConnectedPage.id;
+      return this._reloadablePages.get(pageId)?._lastConnectedPage.id || '';
     } else {
       return pageId;
     }
