@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -184,7 +185,7 @@ function handshakeResponse(message: IncomingMessage) {
     id: message.id,
     type: 'handshake',
     protocol_version: '0',
-    capabilities: [],
+    capabilities: ([]: []),
   };
 }
 
@@ -204,7 +205,7 @@ function readArgsAndExecCommand(
     }
 
     let commandName;
-    let args = [];
+    let args: Array<string> = [];
     let structuredArgs = null;
 
     // If it starts with a left brace, we assume it's JSON-encoded. This works

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -39,13 +40,11 @@ const contents = [
 
 const Button = ({children, href}) => {
   return (
-    <div className="col col--2 margin-horiz--sm">
-      <Link
-        className="button button--outline button--primary button--lg"
-        to={href}>
-        {children}
-      </Link>
-    </div>
+    <Link
+      className="button button--outline button--primary button--lg margin-horiz--sm"
+      to={href}>
+      {children}
+    </Link>
   );
 };
 

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -89,7 +90,7 @@ function buildAssetMap(
   const assets = files.map((file: string) =>
     AssetPaths.tryParse(file, platforms),
   );
-  const map = new Map();
+  const map = new Map<string, {files: Array<string>, scales: Array<number>}>();
   assets.forEach(function (asset: ?AssetPath, i: number) {
     if (asset == null) {
       return;

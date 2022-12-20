@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -77,7 +78,6 @@ class Package {
       }
     }
 
-    /* $FlowFixMe: `getReplacements` doesn't validate the return value. */
     return path.join(this._root, main);
   }
 

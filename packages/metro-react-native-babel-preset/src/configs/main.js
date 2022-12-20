@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -111,22 +112,11 @@ const getPreset = (src, options) => {
       ],
     );
   }
-  if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-template-literals'),
-      {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
-    ]);
-  }
   if (isNull || src.indexOf('async') !== -1) {
     extraPlugins.push([
       require('@babel/plugin-proposal-async-generator-functions'),
     ]);
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
-  }
-  if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
   }
   if (
     isNull ||

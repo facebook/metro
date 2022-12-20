@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -54,9 +55,9 @@ class HMRClient extends EventEmitter {
     this._ws.onerror = error => {
       this.emit('connection-error', error);
     };
-    this._ws.onclose = () => {
+    this._ws.onclose = closeEvent => {
       this._state = 'closed';
-      this.emit('close');
+      this.emit('close', closeEvent);
     };
     this._ws.onmessage = message => {
       const data: HmrMessage = JSON.parse(String(message.data));
@@ -146,9 +147,9 @@ class HMRClient extends EventEmitter {
 }
 
 function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
-  const addedIDs = new Set();
-  const deletedIDs = new Set();
-  const moduleMap = new Map();
+  const addedIDs = new Set<number>();
+  const deletedIDs = new Set<number>();
+  const moduleMap = new Map<number, HmrModule>();
 
   // Fill in the temporary maps and sets from both updates in their order.
   applyUpdateLocally(base);
@@ -183,9 +184,9 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
   const result = {
     isInitialUpdate: next.isInitialUpdate,
     revisionId: next.revisionId,
-    added: [],
-    modified: [],
-    deleted: [],
+    added: ([]: Array<HmrModule>),
+    modified: ([]: Array<HmrModule>),
+    deleted: ([]: Array<number>),
   };
   deletedIDs.forEach(id => {
     result.deleted.push(id);

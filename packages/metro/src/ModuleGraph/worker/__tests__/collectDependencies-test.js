@@ -4,14 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-import type {Dependency} from '../collectDependencies';
 
+import type {Dependency} from '../collectDependencies';
 import type {
   DependencyTransformer,
   ImportQualifier,
@@ -34,7 +34,7 @@ const nullthrows = require('nullthrows');
 const {any, objectContaining} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
-const opts = {
+const opts: Options<mixed> = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
   inlineableCalls: [],
@@ -815,7 +815,7 @@ it('collects asynchronous dependencies', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module", _dependencyMap.paths).then(foo => {});
     `),
   );
 });
@@ -834,7 +834,7 @@ it('distinguishes sync and async dependencies on the same module', () => {
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[2], "asyncRequire")(${dependencyMapName}[1], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[2], "asyncRequire")(${dependencyMapName}[1], "some/async/module", _dependencyMap.paths).then(foo => {});
     `),
   );
 });
@@ -852,7 +852,7 @@ it('distinguishes sync and async dependencies on the same module; reverse order'
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module", _dependencyMap.paths).then(foo => {});
       const a = require(${dependencyMapName}[2], "some/async/module");
     `),
   );
@@ -869,7 +869,7 @@ it('collects __jsResource calls', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire").resource(${dependencyMapName}[0], "some/async/module");
+      require(${dependencyMapName}[1], "asyncRequire").resource(${dependencyMapName}[0], "some/async/module", _dependencyMap.paths);
     `),
   );
 });
@@ -901,7 +901,7 @@ describe('import() prefetching', () => {
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
-        require(${dependencyMapName}[1], "asyncRequire").prefetch(${dependencyMapName}[0], "some/async/module");
+        require(${dependencyMapName}[1], "asyncRequire").prefetch(${dependencyMapName}[0], "some/async/module", _dependencyMap.paths);
       `),
     );
   });
@@ -1022,7 +1022,7 @@ describe('Evaluating static arguments', () => {
 
   it('throws at runtime when requiring non-strings with special option', () => {
     const ast = astFromCode('require(1)');
-    const opts = {
+    const opts: Options<mixed> = {
       asyncRequireModulePath: 'asyncRequire',
       dynamicRequires: 'throwAtRuntime',
       inlineableCalls: [],

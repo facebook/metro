@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -99,7 +100,7 @@ function forEachMapping(
   context: ?Context,
   pushMapping: RangeMapping => void,
 ) {
-  const nameStack = [];
+  const nameStack: Array<{loc: BabelNodeSourceLocation, name: string}> = [];
   let tailPos = {line: 1, column: 0};
   let tailName = null;
 
@@ -164,11 +165,21 @@ function forEachMapping(
     },
   };
 
+  // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
+  // values missing the `hub` property needed by Babel transformation, so we
+  // save, clear, and restore the cache around our traversal.
+  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
+  const previousCache = traverse.cache.path;
+  traverse.cache.clearPath();
   traverse(ast, {
+    // Our visitor doesn't care about scope
+    noScope: true,
+
     Function: visitor,
     Program: visitor,
     Class: visitor,
   });
+  traverse.cache.path = previousCache;
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
@@ -282,10 +293,9 @@ function getNameForPath(path: NodePath<>): string {
   // Annotate members with the name of their containing object/class.
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
-      // $FlowFixMe Disvoered when typing babel-traverse
+      // $FlowFixMe Discovered when typing babel-traverse
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         const separator = propertyPath.node.static ? '.' : '#';
         name = className + separator + name;
       }

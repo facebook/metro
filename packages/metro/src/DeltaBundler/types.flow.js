@@ -6,13 +6,14 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
-import type {PrivateState} from './graphOperations';
+import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
@@ -75,6 +76,10 @@ export type Module<T = MixedOutput> = {
 };
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
+export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
+  string,
+  Module<T>,
+>;
 
 export type TransformInputOptions = $Diff<
   JsTransformOptions,
@@ -91,12 +96,14 @@ export type GraphInputOptions = $ReadOnly<{
   transformOptions: TransformInputOptions,
 }>;
 
-export type Graph<T = MixedOutput> = {
-  ...$ReadOnly<GraphInputOptions>,
-  dependencies: Dependencies<T>,
-  +importBundleNames: Set<string>,
-  +privateState: PrivateState,
-};
+export interface ReadOnlyGraph<T = MixedOutput> {
+  +entryPoints: $ReadOnlySet<string>;
+  // Unused in core but useful for custom serializers / experimentalSerializerHook
+  +transformOptions: $ReadOnly<TransformInputOptions>;
+  +dependencies: ReadOnlyDependencies<T>;
+}
+
+export type {Graph};
 
 export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
@@ -136,18 +143,19 @@ export type DeltaResult<T = MixedOutput> = {
   +reset: boolean,
 };
 
-export type SerializerOptions = {
-  +asyncRequireModulePath: string,
-  +createModuleId: string => number,
-  +dev: boolean,
-  +getRunModuleStatement: (number | string) => string,
-  +inlineSourceMap: ?boolean,
-  +modulesOnly: boolean,
-  +processModuleFilter: (module: Module<>) => boolean,
-  +projectRoot: string,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +serverRoot: string,
-  +sourceMapUrl: ?string,
-  +sourceUrl: ?string,
-};
+export type SerializerOptions = $ReadOnly<{
+  asyncRequireModulePath: string,
+  createModuleId: string => number,
+  dev: boolean,
+  getRunModuleStatement: (number | string) => string,
+  includeAsyncPaths: boolean,
+  inlineSourceMap: ?boolean,
+  modulesOnly: boolean,
+  processModuleFilter: (module: Module<>) => boolean,
+  projectRoot: string,
+  runBeforeMainModule: $ReadOnlyArray<string>,
+  runModule: boolean,
+  serverRoot: string,
+  sourceMapUrl: ?string,
+  sourceUrl: ?string,
+}>;

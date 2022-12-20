@@ -6,17 +6,18 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {
   DeltaResult,
-  Dependencies,
   Graph,
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
+  ReadOnlyGraph,
 } from './DeltaBundler/types.flow';
 import type EventEmitter from 'events';
 
@@ -28,6 +29,7 @@ export type {
   Dependencies,
   MixedOutput,
   Module,
+  ReadOnlyGraph,
   TransformFn,
   TransformResult,
   TransformResultDependency,
@@ -58,7 +60,7 @@ class DeltaBundler<T = MixedOutput> {
   async getDependencies(
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
-  ): Promise<Dependencies<T>> {
+  ): Promise<ReadOnlyGraph<T>['dependencies']> {
     const deltaCalculator = new DeltaCalculator(
       new Set(entryPoints),
       this._changeEventSource,

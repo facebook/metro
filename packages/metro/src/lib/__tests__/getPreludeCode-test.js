@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,7 +18,7 @@ const vm = require('vm');
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
     const globalPrefix = '__metro';
-    const requireCycleIgnorePatterns = [];
+    const requireCycleIgnorePatterns: Array<RegExp> = [];
 
     it('sets up `process.env.NODE_ENV` and `__DEV__`', () => {
       const sandbox: $FlowFixMe = {};

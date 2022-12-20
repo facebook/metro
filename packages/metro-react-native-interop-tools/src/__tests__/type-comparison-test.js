@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import {parse} from 'hermes-parser';
@@ -57,17 +57,43 @@ test.each([
   ['null', 'null'],
   ['?string', 'null'],
   ['?boolean', 'void'],
+  ['() => boolean', '() => ?boolean'],
+  ['() => ?boolean', '() => boolean'],
+  ['() => true', '() => boolean'],
+  ['(test: ?boolean) => true', '(test: boolean) => true'],
+  ['(test?: string) => void', '() => void'],
+  ['(test: string) => void', '() => void'],
+  ['() => void', '(test?: string) => void'],
+  ['() => void', '(test?: string, test2: number) => void'],
+  ['(test?: boolean) => true', '(test?: string) => true'],
+  ['(test: string) => ?true', '() => void'],
+  ['{name: string, age: ?number }', '{name: string, age: number }'],
+  ['{name: string, age: number }', '{name: string, age?: number }'],
+  ['{name: string, age: number }', '{name: string}'],
+  ['{name: string, age?: number }', '{name: string}'],
+  ['{name: string}', '{name: string, ...}'],
+  ['{name: string}', '{name: string, age: number}'],
+  ['{name: string}', '{name: string, age?: number}'],
+  ['() => {name: string, age?: number }', '() => {name: string}'],
+  ['() => {name: string, age: number }', '() => {name: string}'],
+  ['() => {name: string}', '() => {name: string, age: number}'],
+  ['() => {name: string}', '() => {name: string, age: ?number}'],
 ])('comparing basic types', (left, right) => {
-  let result = compareTypeAnnotation(
+  const result = compareTypeAnnotation(
     getTypeFromCode(left),
     getTypeFromCode(right),
-  ).join('\n\t\t\t');
-  result = result !== '' ? result : 'no errors';
+    false,
+  );
+  let messages: string = '';
+  result.forEach(error => {
+    messages = messages + error.message + '\n  \t\t';
+  });
+  messages = messages === '' ? 'no errors' : messages;
   expect(`
     left-type:
       ${left}
     right-type:
       ${right}
     output:
-      ${result}`).toMatchSnapshot();
+      ${messages}`).toMatchSnapshot();
 });

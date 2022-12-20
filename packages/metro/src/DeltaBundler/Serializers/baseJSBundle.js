@@ -6,14 +6,15 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {
-  Graph,
   MixedOutput,
   Module,
+  ReadOnlyGraph,
   SerializerOptions,
 } from '../types.flow';
 import type {Bundle} from 'metro-runtime/src/modules/types.flow';
@@ -24,7 +25,7 @@ const processModules = require('./helpers/processModules');
 function baseJSBundle(
   entryPoint: string,
   preModules: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: SerializerOptions,
 ): Bundle {
   for (const module of graph.dependencies.values()) {
@@ -35,7 +36,9 @@ function baseJSBundle(
     filter: options.processModuleFilter,
     createModuleId: options.createModuleId,
     dev: options.dev,
+    includeAsyncPaths: options.includeAsyncPaths,
     projectRoot: options.projectRoot,
+    serverRoot: options.serverRoot,
   };
 
   // Do not prepend polyfills or the require runtime when only modules are requested
@@ -53,23 +56,16 @@ function baseJSBundle(
   );
 
   const postCode = processModules(
-    getAppendScripts(
-      entryPoint,
-      [...preModules, ...modules],
-      graph.importBundleNames,
-      {
-        asyncRequireModulePath: options.asyncRequireModulePath,
-        createModuleId: options.createModuleId,
-        getRunModuleStatement: options.getRunModuleStatement,
-        inlineSourceMap: options.inlineSourceMap,
-        projectRoot: options.projectRoot,
-        runBeforeMainModule: options.runBeforeMainModule,
-        runModule: options.runModule,
-        serverRoot: options.serverRoot,
-        sourceMapUrl: options.sourceMapUrl,
-        sourceUrl: options.sourceUrl,
-      },
-    ),
+    getAppendScripts(entryPoint, [...preModules, ...modules], {
+      asyncRequireModulePath: options.asyncRequireModulePath,
+      createModuleId: options.createModuleId,
+      getRunModuleStatement: options.getRunModuleStatement,
+      inlineSourceMap: options.inlineSourceMap,
+      runBeforeMainModule: options.runBeforeMainModule,
+      runModule: options.runModule,
+      sourceMapUrl: options.sourceMapUrl,
+      sourceUrl: options.sourceUrl,
+    }),
     processModulesOptions,
   )
     .map(([_, code]) => code)

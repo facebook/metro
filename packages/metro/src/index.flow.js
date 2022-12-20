@@ -6,11 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {Graph} from './DeltaBundler';
+import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
@@ -64,6 +65,7 @@ export type RunServerOptions = {
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
   waitForBundler?: boolean,
+  watch?: boolean,
   websocketEndpoints?: {
     [path: string]: typeof ws.Server,
   },
@@ -224,6 +226,7 @@ exports.runServer = async (
     secureKey, // deprecated
     waitForBundler = false,
     websocketEndpoints = {},
+    watch,
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   await earlyPortCheck(host, config.server.port);
@@ -245,6 +248,7 @@ exports.runServer = async (
   const {middleware, end, metroServer} = await createConnectMiddleware(config, {
     hasReducedPerformance,
     waitForBundler,
+    watch,
   });
 
   serverApp.use(middleware);
@@ -418,7 +422,7 @@ exports.buildGraph = async function (
     platform = 'web',
     type = 'module',
   }: BuildGraphOptions,
-): Promise<Graph<>> {
+): Promise<ReadOnlyGraph<>> {
   const mergedConfig = await getConfig(config);
 
   const bundler = new IncrementalBundler(mergedConfig);
@@ -443,22 +447,19 @@ exports.buildGraph = async function (
   }
 };
 
+type AttachMetroCLIOptions = {
+  build?: BuildCommandOptions,
+  serve?: ServeCommandOptions,
+  dependencies?: any,
+  ...
+};
+
 exports.attachMetroCli = function (
   yargs: Yargs,
-  {
-    build = {},
-    serve = {},
-    dependencies = {},
-  }: {
-    build: BuildCommandOptions,
-    serve: ServeCommandOptions,
-    dependencies: any,
-    ...
-  }
-  // prettier-ignore
-  // $FlowFixMe[prop-missing]
-  = {},
+  options?: AttachMetroCLIOptions = {},
 ): Yargs {
+  const {build = {}, serve = {}, dependencies = {}} = options;
+
   yargs.strict();
 
   if (build) {

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -168,6 +169,11 @@ function mergeConfig<T: InputConfigT>(
         watchman: {
           ...totalConfig.watcher?.watchman,
           ...nextConfig.watcher?.watchman,
+        },
+        healthCheck: {
+          ...totalConfig.watcher?.healthCheck,
+          // $FlowFixMe: Spreading shapes creates an explosion of union types
+          ...nextConfig.watcher?.healthCheck,
         },
       },
     }),

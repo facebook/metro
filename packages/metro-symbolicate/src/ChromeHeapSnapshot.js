@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -246,16 +247,18 @@ class ChromeHeapSnapshotRecordAccessor {
     } else {
       this._recordSize = recordFields.length;
       this._fieldToOffset = new Map(
+        // $FlowFixMe[not-an-object]
         Object.entries(recordFields).map(([offsetStr, name]) => [
           String(name),
           Number(offsetStr),
         ]),
       );
       if (Array.isArray(recordTypes)) {
-        this._fieldToType = new Map(
+        this._fieldToType = new Map<string, ChromeHeapSnapshotFieldType>(
+          // $FlowIssue[incompatible-call] Object.entries is incompletely typed
+          // $FlowFixMe[not-an-object]
           Object.entries(recordTypes).map(([offsetStr, type]) => [
             recordFields[Number(offsetStr)],
-            // $FlowIssue[incompatible-call] Object.entries is incompletely typed
             type,
           ]),
         );
@@ -393,7 +396,11 @@ class ChromeHeapSnapshotRecordAccessor {
           throw new Error('Missing value for field: ' + field);
         }
       }
-      this._buffer.splice(this._position, 0, ...new Array(this._recordSize));
+      this._buffer.splice(
+        this._position,
+        0,
+        ...new Array<number | RawBuffer>(this._recordSize),
+      );
       didResizeBuffer = true;
       for (const field of Object.keys(record)) {
         this._set(field, record[field]);
@@ -603,7 +610,6 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowIssue[unsupported-syntax]
-  // $FlowFixMe[missing-local-annot]
   [Symbol.iterator](): this {
     return this;
   }

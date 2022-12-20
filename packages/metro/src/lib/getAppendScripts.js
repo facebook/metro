@@ -6,11 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-
 import type {Module} from '../DeltaBundler';
+import type {Dependency} from '../DeltaBundler/types.flow';
 
 import CountingSet from './CountingSet';
 
@@ -18,15 +19,12 @@ const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/g
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const countLines = require('./countLines');
 const nullthrows = require('nullthrows');
-const path = require('path');
 
 type Options<T: number | string> = {
   +asyncRequireModulePath: string,
   +createModuleId: string => T,
   +getRunModuleStatement: T => string,
   +inlineSourceMap: ?boolean,
-  +projectRoot: string,
-  +serverRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
@@ -37,40 +35,9 @@ type Options<T: number | string> = {
 function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
-  importBundleNames: Set<string>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
-  const output = [];
-
-  if (importBundleNames.size) {
-    const importBundleNamesObject = Object.create(null);
-    importBundleNames.forEach(absolutePath => {
-      const bundlePath = path.relative(options.serverRoot, absolutePath);
-      importBundleNamesObject[options.createModuleId(absolutePath)] =
-        bundlePath.slice(0, -path.extname(bundlePath).length);
-    });
-    const code = `(function(){var $$=${options.getRunModuleStatement(
-      options.createModuleId(options.asyncRequireModulePath),
-    )}$$.addImportBundleNames(${String(
-      JSON.stringify(importBundleNamesObject),
-    )})})();`;
-    output.push({
-      path: '$$importBundleNames',
-      dependencies: new Map(),
-      getSource: (): Buffer => Buffer.from(''),
-      inverseDependencies: new CountingSet(),
-      output: [
-        {
-          type: 'js/script/virtual',
-          data: {
-            code,
-            lineCount: countLines(code),
-            map: [],
-          },
-        },
-      ],
-    });
-  }
+  const output: Array<Module<>> = [];
 
   if (options.runModule) {
     const paths = [...options.runBeforeMainModule, entryPoint];
@@ -113,7 +80,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceMappingURL=${sourceMappingURL}`;
     output.push({
       path: 'source-map',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [
@@ -133,7 +100,7 @@ function getAppendScripts<T: number | string>(
     const code = `//# sourceURL=${options.sourceUrl}`;
     output.push({
       path: 'source-url',
-      dependencies: new Map(),
+      dependencies: new Map<string, Dependency>(),
       getSource: (): Buffer => Buffer.from(''),
       inverseDependencies: new CountingSet(),
       output: [

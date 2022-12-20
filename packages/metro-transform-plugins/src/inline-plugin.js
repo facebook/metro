@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -60,13 +61,16 @@ function inlinePlugin(
     options.requireName || 'require',
   );
 
-  const isGlobal = (binding: ?Binding): boolean %checks => !binding;
+  function isGlobal(binding: ?Binding): boolean %checks {
+    return !binding;
+  }
 
   const isFlowDeclared = (binding: Binding) =>
     t.isDeclareVariable(binding.path);
 
-  const isGlobalOrFlowDeclared = (binding: ?Binding): boolean %checks =>
-    isGlobal(binding) || isFlowDeclared(binding);
+  function isGlobalOrFlowDeclared(binding: ?Binding): boolean %checks {
+    return isGlobal(binding) || isFlowDeclared(binding);
+  }
 
   const isLeftHandSideOfAssignmentExpression = (
     node: Node,

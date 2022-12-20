@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -17,12 +18,14 @@ const invariant = require('invariant');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 
-export type Options = {
-  +createModuleId: string => number | string,
-  +dev: boolean,
-  +projectRoot: string,
+export type Options = $ReadOnly<{
+  createModuleId: string => number | string,
+  dev: boolean,
+  includeAsyncPaths: boolean,
+  projectRoot: string,
+  serverRoot: string,
   ...
-};
+}>;
 
 function wrapModule(module: Module<>, options: Options): string {
   const output = getJsOutput(module);
@@ -31,12 +34,44 @@ function wrapModule(module: Module<>, options: Options): string {
     return output.data.code;
   }
 
+  const params = getModuleParams(module, options);
+  return addParamsToDefineCall(output.data.code, ...params);
+}
+
+function getModuleParams(module: Module<>, options: Options): Array<mixed> {
   const moduleId = options.createModuleId(module.path);
+
+  const paths: {[moduleID: number | string]: mixed} = {};
+  let hasPaths = false;
+  const dependencyMapArray = Array.from(module.dependencies.values()).map(
+    dependency => {
+      const id = options.createModuleId(dependency.absolutePath);
+      if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
+        hasPaths = true;
+        const bundlePath = path.relative(
+          options.serverRoot,
+          dependency.absolutePath,
+        );
+        // TODO: Eventually this slicing should be asyncRequire's responsibility
+        // Strip the file extension
+        paths[id] = path.join(
+          path.dirname(bundlePath),
+          path.basename(bundlePath, path.extname(bundlePath)),
+        );
+      }
+      return id;
+    },
+  );
+
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map(dependency =>
-      options.createModuleId(dependency.absolutePath),
-    ),
+    hasPaths
+      ? {
+          // $FlowIgnore[not-an-object] Intentionally spreading an array into an object
+          ...dependencyMapArray,
+          paths,
+        }
+      : dependencyMapArray,
   ];
 
   if (options.dev) {
@@ -45,7 +80,7 @@ function wrapModule(module: Module<>, options: Options): string {
     params.push(path.relative(options.projectRoot, module.path));
   }
 
-  return addParamsToDefineCall(output.data.code, ...params);
+  return params;
 }
 
 function getJsOutput(
@@ -86,6 +121,7 @@ function isJsOutput(output: MixedOutput): boolean %checks {
 
 module.exports = {
   getJsOutput,
+  getModuleParams,
   isJsModule,
   wrapModule,
 };

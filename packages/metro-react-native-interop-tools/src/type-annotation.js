@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {SourceLocation} from '@babel/types';
@@ -37,7 +37,9 @@ export type VoidTypeAnnotation = $ReadOnly<{
 }>;
 
 export type FunctionTypeParam = $ReadOnly<{|
+  loc: ?SourceLocation,
   name: ?string,
+  optional: ?boolean,
   typeAnnotation: AnyTypeAnnotation,
 |}>;
 
@@ -56,7 +58,7 @@ export type InterfaceExtends = $ReadOnly<{
 
 export type NullableTypeAnnotation = $ReadOnly<{
   type: 'NullableTypeAnnotation',
-  loc: ?BabelNodeSourceLocation,
+  loc: ?SourceLocation,
   typeAnnotation: AnyTypeAnnotation,
 }>;
 
@@ -126,6 +128,11 @@ export type NullLiteralTypeAnnotation = $ReadOnly<{
   type: 'NullLiteralTypeAnnotation',
   loc: ?SourceLocation,
 }>;
+
+export type LiteralTypeAnnotation =
+  | StringLiteralTypeAnnotation
+  | NumberLiteralTypeAnnotation
+  | BooleanLiteralTypeAnnotation;
 
 export type AnyTypeAnnotation =
   | BooleanTypeAnnotation

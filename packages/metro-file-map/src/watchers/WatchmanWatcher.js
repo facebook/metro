@@ -4,15 +4,30 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
-import common from './common';
+import type {WatcherOptions} from './common';
+import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  Client,
+  WatchmanClockResponse,
+  WatchmanFileChange,
+  WatchmanQuery,
+  WatchmanSubscriptionEvent,
+  WatchmanSubscribeResponse,
+  WatchmanWatchResponse,
+} from 'fb-watchman';
+
+import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
 import assert from 'assert';
-import {EventEmitter} from 'events';
+import {createHash} from 'crypto';
+import EventEmitter from 'events';
 import watchman from 'fb-watchman';
-import * as fs from 'graceful-fs';
+import invariant from 'invariant';
 import path from 'path';
 
 const debug = require('debug')('Metro:WatchmanWatcher');
@@ -21,297 +36,303 @@ const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
-const SUB_NAME = 'sane-sub';
+const SUB_PREFIX = 'metro-file-map';
 
 /**
  * Watches `dir`.
- *
- * @class PollWatcher
- * @param String dir
- * @param {Object} opts
- * @public
  */
+export default class WatchmanWatcher extends EventEmitter {
+  client: Client;
+  dot: boolean;
+  doIgnore: string => boolean;
+  globs: $ReadOnlyArray<string>;
+  hasIgnore: boolean;
+  root: string;
+  subscriptionName: string;
+  watchProjectInfo: ?$ReadOnly<{
+    relativePath: string,
+    root: string,
+  }>;
+  watchmanDeferStates: $ReadOnlyArray<string>;
+  #deferringStates: Set<string> = new Set();
 
-export default function WatchmanWatcher(dir, opts) {
-  common.assignOptions(this, opts);
-  this.root = path.resolve(dir);
-  this.init();
-}
+  constructor(dir: string, opts: WatcherOptions) {
+    super();
 
-// eslint-disable-next-line no-proto
-WatchmanWatcher.prototype.__proto__ = EventEmitter.prototype;
+    common.assignOptions(this, opts);
+    this.root = path.resolve(dir);
 
-/**
- * Run the watchman `watch` command on the root and subscribe to changes.
- *
- * @private
- */
+    // Use a unique subscription name per process per watched directory
+    const watchKey = createHash('md5').update(this.root).digest('hex');
+    const readablePath = this.root
+      .replace(/[\/\\]/g, '-') // \ and / to -
+      .replace(/[^\-\w]/g, ''); // Remove non-word/hyphen
+    this.subscriptionName = `${SUB_PREFIX}-${process.pid}-${readablePath}-${watchKey}`;
 
-WatchmanWatcher.prototype.init = function () {
-  if (this.client) {
-    this.client.removeAllListeners();
+    this._init();
   }
 
-  const self = this;
-  this.client = new watchman.Client();
-  this.client.on('error', error => {
-    self.emit('error', error);
-  });
-  this.client.on('subscription', this.handleChangeEvent.bind(this));
-  this.client.on('end', () => {
-    console.warn('[sane] Warning: Lost connection to watchman, reconnecting..');
-    self.init();
-  });
-
-  this.watchProjectInfo = null;
-
-  function getWatchRoot() {
-    return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
-  }
-
-  function onCapability(error, resp) {
-    if (handleError(self, error)) {
-      // The Watchman watcher is unusable on this system, we cannot continue
-      return;
+  /**
+   * Run the watchman `watch` command on the root and subscribe to changes.
+   */
+  _init() {
+    if (this.client) {
+      this.client.removeAllListeners();
     }
 
-    handleWarning(resp);
-
-    self.capabilities = resp.capabilities;
-
-    if (self.capabilities.relative_root) {
-      self.client.command(['watch-project', getWatchRoot()], onWatchProject);
-    } else {
-      self.client.command(['watch', getWatchRoot()], onWatch);
-    }
-  }
-
-  function onWatchProject(error, resp) {
-    if (handleError(self, error)) {
-      return;
-    }
-
-    handleWarning(resp);
-
-    self.watchProjectInfo = {
-      relativePath: resp.relative_path ? resp.relative_path : '',
-      root: resp.watch,
-    };
-
-    self.client.command(['clock', getWatchRoot()], onClock);
-  }
-
-  function onWatch(error, resp) {
-    if (handleError(self, error)) {
-      return;
-    }
-
-    handleWarning(resp);
-
-    self.client.command(['clock', getWatchRoot()], onClock);
-  }
-
-  function onClock(error, resp) {
-    if (handleError(self, error)) {
-      return;
-    }
-
-    handleWarning(resp);
-
-    const options = {
-      fields: ['name', 'exists', 'new'],
-      since: resp.clock,
-      defer: self.watchmanDeferStates,
-    };
-
-    // If the server has the wildmatch capability available it supports
-    // the recursive **/*.foo style match and we can offload our globs
-    // to the watchman server.  This saves both on data size to be
-    // communicated back to us and compute for evaluating the globs
-    // in our node process.
-    if (self.capabilities.wildmatch) {
-      if (self.globs.length === 0) {
-        if (!self.dot) {
-          // Make sure we honor the dot option if even we're not using globs.
-          options.expression = [
-            'match',
-            '**',
-            'wholename',
-            {
-              includedotfiles: false,
-            },
-          ];
-        }
-      } else {
-        options.expression = ['anyof'];
-        for (const i in self.globs) {
-          options.expression.push([
-            'match',
-            self.globs[i],
-            'wholename',
-            {
-              includedotfiles: self.dot,
-            },
-          ]);
-        }
-      }
-    }
-
-    if (self.capabilities.relative_root) {
-      options.relative_root = self.watchProjectInfo.relativePath;
-    }
-
-    self.client.command(
-      ['subscribe', getWatchRoot(), SUB_NAME, options],
-      onSubscribe,
+    const self = this;
+    this.client = new watchman.Client();
+    this.client.on('error', error => {
+      self.emit('error', error);
+    });
+    this.client.on('subscription', changeEvent =>
+      this._handleChangeEvent(changeEvent),
     );
-  }
+    this.client.on('end', () => {
+      console.warn(
+        '[metro-file-map] Warning: Lost connection to Watchman, reconnecting..',
+      );
+      self._init();
+    });
 
-  function onSubscribe(error, resp) {
-    if (handleError(self, error)) {
-      return;
+    this.watchProjectInfo = null;
+
+    function getWatchRoot() {
+      return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
     }
 
-    handleWarning(resp);
-
-    self.emit('ready');
-  }
-
-  self.client.capabilityCheck(
-    {
-      optional: ['wildmatch', 'relative_root'],
-    },
-    onCapability,
-  );
-};
-
-/**
- * Handles a change event coming from the subscription.
- *
- * @param {Object} resp
- * @private
- */
-
-WatchmanWatcher.prototype.handleChangeEvent = function (resp) {
-  assert.equal(resp.subscription, SUB_NAME, 'Invalid subscription event.');
-  if (resp.is_fresh_instance) {
-    this.emit('fresh_instance');
-  }
-  if (resp.is_fresh_instance) {
-    this.emit('fresh_instance');
-  }
-  if (Array.isArray(resp.files)) {
-    resp.files.forEach(this.handleFileChange, this);
-  }
-  if ((this.watchmanDeferStates ?? []).includes(resp['state-enter'])) {
-    debug(
-      `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
-    );
-  }
-  if ((this.watchmanDeferStates ?? []).includes(resp['state-leave'])) {
-    debug(
-      `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
-    );
-  }
-};
-
-/**
- * Handles a single change event record.
- *
- * @param {Object} changeDescriptor
- * @private
- */
-
-WatchmanWatcher.prototype.handleFileChange = function (changeDescriptor) {
-  const self = this;
-  let absPath;
-  let relativePath;
-
-  if (this.capabilities.relative_root) {
-    relativePath = changeDescriptor.name;
-    absPath = path.join(
-      this.watchProjectInfo.root,
-      this.watchProjectInfo.relativePath,
-      relativePath,
-    );
-  } else {
-    absPath = path.join(this.root, changeDescriptor.name);
-    relativePath = changeDescriptor.name;
-  }
-
-  if (
-    !(self.capabilities.wildmatch && !this.hasIgnore) &&
-    !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
-  ) {
-    return;
-  }
-
-  if (!changeDescriptor.exists) {
-    self.emitEvent(DELETE_EVENT, relativePath, self.root);
-  } else {
-    fs.lstat(absPath, (error, stat) => {
-      // Files can be deleted between the event and the lstat call
-      // the most reliable thing to do here is to ignore the event.
-      if (error && error.code === 'ENOENT') {
+    function onWatchProject(error: ?Error, resp: WatchmanWatchResponse) {
+      if (handleError(self, error)) {
         return;
       }
+      debug('Received watch-project response: %s', resp.relative_path);
 
+      handleWarning(resp);
+
+      self.watchProjectInfo = {
+        relativePath: resp.relative_path ? resp.relative_path : '',
+        root: resp.watch,
+      };
+
+      self.client.command(['clock', getWatchRoot()], onClock);
+    }
+
+    function onClock(error: ?Error, resp: WatchmanClockResponse) {
       if (handleError(self, error)) {
         return;
       }
 
-      const eventType = changeDescriptor.new ? ADD_EVENT : CHANGE_EVENT;
+      debug('Received clock response: %s', resp.clock);
+      const watchProjectInfo = self.watchProjectInfo;
 
-      // Change event on dirs are mostly useless.
-      if (!(eventType === CHANGE_EVENT && stat.isDirectory())) {
-        self.emitEvent(eventType, relativePath, self.root, stat);
+      invariant(
+        watchProjectInfo != null,
+        'watch-project response should have been set before clock response',
+      );
+
+      handleWarning(resp);
+
+      const options: WatchmanQuery = {
+        fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
+        since: resp.clock,
+        defer: self.watchmanDeferStates,
+        relative_root: watchProjectInfo.relativePath,
+      };
+
+      // Make sure we honor the dot option if even we're not using globs.
+      if (self.globs.length === 0 && !self.dot) {
+        options.expression = [
+          'match',
+          '**',
+          'wholename',
+          {
+            includedotfiles: false,
+          },
+        ];
       }
-    });
+
+      self.client.command(
+        ['subscribe', getWatchRoot(), self.subscriptionName, options],
+        onSubscribe,
+      );
+    }
+
+    const onSubscribe = (error: ?Error, resp: WatchmanSubscribeResponse) => {
+      if (handleError(self, error)) {
+        return;
+      }
+      debug('Received subscribe response: %s', resp.subscribe);
+
+      handleWarning(resp);
+
+      for (const state of resp['asserted-states']) {
+        this.#deferringStates.add(state);
+      }
+
+      self.emit('ready');
+    };
+
+    self.client.command(['watch-project', getWatchRoot()], onWatchProject);
   }
-};
 
-/**
- * Dispatches the event.
- *
- * @param {string} eventType
- * @param {string} filepath
- * @param {string} root
- * @param {fs.Stat} stat
- * @private
- */
+  /**
+   * Handles a change event coming from the subscription.
+   */
+  _handleChangeEvent(resp: WatchmanSubscriptionEvent) {
+    debug(
+      'Received subscription response: %s (fresh: %s, files: %s, enter: %s, leave: %s)',
+      resp.subscription,
+      resp.is_fresh_instance,
+      resp.files?.length,
+      resp['state-enter'],
+      resp['state-leave'],
+    );
 
-WatchmanWatcher.prototype.emitEvent = function (
-  eventType,
-  filepath,
-  root,
-  stat,
-) {
-  this.emit(eventType, filepath, root, stat);
-  this.emit(ALL_EVENT, eventType, filepath, root, stat);
-};
+    assert.equal(
+      resp.subscription,
+      this.subscriptionName,
+      'Invalid subscription event.',
+    );
 
-/**
- * Closes the watcher.
- *
- */
+    if (resp.is_fresh_instance) {
+      this.emit('fresh_instance');
+    }
+    if (resp.is_fresh_instance) {
+      this.emit('fresh_instance');
+    }
+    if (Array.isArray(resp.files)) {
+      resp.files.forEach(change => this._handleFileChange(change));
+    }
+    const {'state-enter': stateEnter, 'state-leave': stateLeave} = resp;
+    if (
+      stateEnter != null &&
+      (this.watchmanDeferStates ?? []).includes(stateEnter)
+    ) {
+      this.#deferringStates.add(stateEnter);
+      debug(
+        'Watchman reports "%s" just started. Filesystem notifications are paused.',
+        stateEnter,
+      );
+    }
+    if (
+      stateLeave != null &&
+      (this.watchmanDeferStates ?? []).includes(stateLeave)
+    ) {
+      this.#deferringStates.delete(stateLeave);
+      debug(
+        'Watchman reports "%s" ended. Filesystem notifications resumed.',
+        stateLeave,
+      );
+    }
+  }
 
-WatchmanWatcher.prototype.close = function () {
-  this.client.removeAllListeners();
-  this.client.end();
-  return Promise.resolve();
-};
+  /**
+   * Handles a single change event record.
+   */
+  _handleFileChange(changeDescriptor: WatchmanFileChange) {
+    const self = this;
+    const watchProjectInfo = self.watchProjectInfo;
+
+    invariant(
+      watchProjectInfo != null,
+      'watch-project response should have been set before receiving subscription events',
+    );
+
+    const {
+      name: relativePath,
+      new: isNew = false,
+      exists = false,
+      type,
+      mtime_ms,
+      size,
+    } = changeDescriptor;
+
+    debug(
+      'Handling change to: %s (new: %s, exists: %s)',
+      relativePath,
+      isNew,
+      exists,
+    );
+
+    if (
+      this.hasIgnore &&
+      !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
+    ) {
+      return;
+    }
+
+    if (!exists) {
+      self._emitEvent(DELETE_EVENT, relativePath, self.root);
+    } else {
+      const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
+      invariant(
+        type != null && mtime_ms != null && size != null,
+        'Watchman file change event for "%s" missing some requested metadata. ' +
+          'Got type: %s, mtime_ms: %s, size: %s',
+        relativePath,
+        type,
+        mtime_ms,
+        size,
+      );
+
+      if (
+        type === 'f' ||
+        type === 'l' ||
+        // Change event on dirs are mostly useless.
+        (type === 'd' && eventType !== CHANGE_EVENT)
+      ) {
+        self._emitEvent(eventType, relativePath, self.root, {
+          modifiedTime: Number(mtime_ms),
+          size,
+          type,
+        });
+      }
+    }
+  }
+
+  /**
+   * Dispatches the event.
+   */
+  _emitEvent(
+    eventType: string,
+    filepath: string,
+    root: string,
+    changeMetadata?: ChangeEventMetadata,
+  ) {
+    this.emit(eventType, filepath, root, changeMetadata);
+    this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
+  }
+
+  /**
+   * Closes the watcher.
+   */
+  async close() {
+    this.client.removeAllListeners();
+    this.client.end();
+    this.#deferringStates.clear();
+  }
+
+  getPauseReason(): ?string {
+    if (this.#deferringStates.size) {
+      const states = [...this.#deferringStates];
+      if (states.length === 1) {
+        return `The watch is in the '${states[0]}' state.`;
+      }
+      return `The watch is in the ${states
+        .slice(0, -1)
+        .map(s => `'${s}'`)
+        .join(', ')} and '${states[states.length - 1]}' states.`;
+    }
+    return null;
+  }
+}
 
 /**
  * Handles an error and returns true if exists.
- *
- * @param {WatchmanWatcher} self
- * @param {Error} error
- * @private
  */
-
-function handleError(self, error) {
+function handleError(emitter: EventEmitter, error: ?Error) {
   if (error != null) {
-    self.emit('error', error);
+    emitter.emit('error', error);
     return true;
   } else {
     return false;
@@ -320,12 +341,8 @@ function handleError(self, error) {
 
 /**
  * Handles a warning in the watchman resp object.
- *
- * @param {object} resp
- * @private
  */
-
-function handleWarning(resp) {
+function handleWarning(resp: $ReadOnly<{warning?: mixed, ...}>) {
   if ('warning' in resp) {
     if (RecrawlWarning.isRecrawlWarningDupe(resp.warning)) {
       return true;

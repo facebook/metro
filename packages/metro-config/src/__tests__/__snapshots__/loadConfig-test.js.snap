@@ -83,11 +83,11 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -108,7 +108,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -129,7 +128,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -152,6 +151,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -244,11 +249,11 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -269,7 +274,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -290,7 +294,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -313,6 +317,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -405,11 +415,11 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -430,7 +440,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -451,7 +460,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -474,6 +483,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -566,11 +581,11 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -591,7 +606,6 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
     "hermesParser": false,
@@ -612,7 +626,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -635,6 +649,12 @@ Object {
       "cjs",
       "mjs",
     ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
     "watchman": Object {
       "deferStates": Array [
         "hg.update",

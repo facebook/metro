@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -24,7 +25,14 @@ function normalizePseudoglobals(
   ast: BabelNode,
   options?: Options,
 ): $ReadOnlyArray<string> {
-  const reservedNames = new Set(options?.reservedNames ?? []);
+  const reservedNames = new Set<
+    | void
+    | string
+    | BabelNodeIdentifier
+    | BabelNodeJSXIdentifier
+    | BabelNodeJSXMemberExpression
+    | BabelNodeJSXNamespacedName,
+  >(options?.reservedNames ?? []);
   const renamedParamNames = [];
   traverse(ast, {
     Program(path: NodePath<Program>): void {
@@ -37,8 +45,8 @@ function normalizePseudoglobals(
       }
 
       const pseudoglobals: Array<string> = params
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         .map(path => path.node.name)
+        // $FlowFixMe[incompatible-call] Flow error uncovered by typing Babel more strictly
         .filter(name => !reservedNames.has(name));
 
       const usedShortNames = new Set<string>();

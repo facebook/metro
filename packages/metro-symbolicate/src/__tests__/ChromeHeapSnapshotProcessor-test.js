@@ -4,12 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+import type {ChromeHeapSnapshot} from '../ChromeHeapSnapshot';
 
 const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
 
@@ -89,7 +91,7 @@ const SNAPSHOT_COMMON = {
 
 describe('ChromeHeapSnapshotProcessor', () => {
   describe('empty buffers', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
@@ -189,11 +191,11 @@ describe('ChromeHeapSnapshotProcessor', () => {
   });
 
   describe('accessing data', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
-        locations: [],
+        locations: ([]: Array<number>),
         nodes: [
           // -- Node #0 --
           /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
@@ -581,12 +583,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
   });
 
   describe('field type checking', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
-        edges: [],
-        locations: [],
+        edges: ([]: Array<number>),
+        locations: ([]: Array<number>),
         nodes: [
           // -- Node #0 --
           /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
@@ -868,10 +870,10 @@ describe('ChromeHeapSnapshotProcessor', () => {
     });
 
     test('data truncated while iterating', () => {
-      const data = {
+      const data: ChromeHeapSnapshot = {
         ...SNAPSHOT_COMMON,
-        edges: [],
-        locations: [],
+        edges: ([]: Array<number>),
+        locations: ([]: Array<number>),
         nodes: [
           // -- Node #0 --
           /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
@@ -884,7 +886,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
         ],
         samples: [],
         strings: [''],
-        trace_function_infos: [],
+        trace_function_infos: ([]: Array<number>),
         trace_tree: [],
       };
       const processor = new ChromeHeapSnapshotProcessor(data);

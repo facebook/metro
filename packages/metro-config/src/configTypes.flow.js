@@ -15,36 +15,23 @@ import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
-import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
   DeltaResult,
-  Graph,
   Module,
+  ReadOnlyGraph,
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
 
-export type PostProcessBundleSourcemap = ({
-  code: Buffer | string,
-  map: MixedSourceMap,
-  outFileName: string,
-  ...
-}) => {
-  code: Buffer | string,
-  map: MixedSourceMap | string,
-  ...
-};
-
-type ExtraTransformOptions = {
-  +preloadedModules: {[path: string]: true, ...} | false,
-  +ramGroups: Array<string>,
-  +transform: {
-    +experimentalImportSupport: boolean,
-    +inlineRequires: {+blockList: {[string]: true, ...}, ...} | boolean,
+export type ExtraTransformOptions = {
+  +preloadedModules?: {[path: string]: true, ...} | false,
+  +ramGroups?: Array<string>,
+  +transform?: {
+    +experimentalImportSupport?: boolean,
+    +inlineRequires?: {+blockList: {[string]: true, ...}, ...} | boolean,
     +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
   },
@@ -80,11 +67,32 @@ type PerfAnnotations = $Shape<{
   bool_array: {[key: string]: Array<boolean>},
 }>;
 
+type PerfLoggerPointOptions = $ReadOnly<{
+  timestamp?: number,
+}>;
+
 export interface PerfLogger {
-  point(name: string): void;
+  point(name: string, opts?: PerfLoggerPointOptions): void;
   annotate(annotations: PerfAnnotations): void;
   subSpan(label: string): PerfLogger;
 }
+
+export interface RootPerfLogger extends PerfLogger {
+  start(opts?: PerfLoggerPointOptions): void;
+  end(
+    status: 'SUCCESS' | 'FAIL' | 'CANCEL',
+    opts?: PerfLoggerPointOptions,
+  ): void;
+}
+
+export type PerfLoggerFactoryOptions = $ReadOnly<{
+  key?: number,
+}>;
+
+export type PerfLoggerFactory = (
+  type?: 'BUNDLING_REQUEST' | 'HMR',
+  opts?: PerfLoggerFactoryOptions,
+) => RootPerfLogger;
 
 type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
@@ -110,25 +118,27 @@ type SerializerConfigT = {
   customSerializer: ?(
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,
-    graph: Graph<>,
+    graph: ReadOnlyGraph<>,
     options: SerializerOptions,
   ) => Promise<string | {code: string, map: string}>,
-  experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
+  experimentalSerializerHook: (
+    graph: ReadOnlyGraph<>,
+    delta: DeltaResult<>,
+  ) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
-  postProcessBundleSourcemap: PostProcessBundleSourcemap,
   processModuleFilter: (modules: Module<>) => boolean,
 };
 
 type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
-  transformVariants: TransformVariants,
+  // TODO(moti): Remove this Meta-internal option from Metro's public config
+  transformVariants: {+[name: string]: {...}},
   workerPath: string,
   publicPath: string,
-  experimentalImportBundleSupport: boolean,
 };
 
 type MetalConfigT = {
@@ -138,7 +148,7 @@ type MetalConfigT = {
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
-  unstable_perfLogger?: ?PerfLogger,
+  unstable_perfLogger?: ?PerfLoggerFactory,
   projectRoot: string,
   stickyWorkers: boolean,
   transformerPath: string,
@@ -149,11 +159,12 @@ type MetalConfigT = {
 
 type ServerConfigT = {
   enhanceMiddleware: (Middleware, Server) => Middleware,
-  useGlobalHotkey: boolean,
+  experimentalImportBundleSupport: boolean,
   port: number,
-  unstable_serverRoot: ?string,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
+  unstable_serverRoot: ?string,
+  useGlobalHotkey: boolean,
   verifyConnections: boolean,
 };
 
@@ -172,6 +183,12 @@ type WatcherConfigT = {
   watchman: {
     deferStates: $ReadOnlyArray<string>,
   },
+  healthCheck: {
+    enabled: boolean,
+    interval: number,
+    timeout: number,
+    filePrefix: string,
+  },
 };
 
 export type InputConfigT = $Shape<{
@@ -185,7 +202,10 @@ export type InputConfigT = $Shape<{
     serializer: $Shape<SerializerConfigT>,
     symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
-    watcher: $Shape<WatcherConfigT>,
+    watcher: $Shape<{
+      ...WatcherConfigT,
+      healthCheck?: $Shape<WatcherConfigT['healthCheck']>,
+    }>,
   }>,
 }>;
 

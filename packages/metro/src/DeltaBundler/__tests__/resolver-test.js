@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -54,7 +54,7 @@ type MockFSDirContents = $ReadOnly<{
     return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
-  function mockDir(dirPath: string, desc: MockFSDirContents) {
+  function mockDir(dirPath: string, desc: MockFSDirContents): void {
     for (const entName in desc) {
       const ent = desc[entName];
 
@@ -140,7 +140,10 @@ type MockFSDirContents = $ReadOnly<{
       });
 
       if (osPlatform === 'win32') {
-        jest.mock('path', () => jest.requireActual('path').win32);
+        jest.mock(
+          'path',
+          () => jest.requireActual<{win32: mixed}>('path').win32,
+        );
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,15 +14,10 @@
 import type {Module} from '../../types.flow';
 import type {BytecodeOutput} from 'metro-transform-worker';
 
-const invariant = require('invariant');
-const path = require('path');
+import type {Options} from './js';
+const {getModuleParams} = require('./js');
 
-export type Options = {
-  +createModuleId: string => number | string,
-  +dev: boolean,
-  +projectRoot: string,
-  ...
-};
+const invariant = require('invariant');
 
 function wrapModule(module: Module<>, options: Options): Array<Buffer> {
   const output = getBytecodeOutput(module);
@@ -30,26 +26,10 @@ function wrapModule(module: Module<>, options: Options): Array<Buffer> {
     return [output.data.bytecode];
   }
 
-  const params = [
-    options.createModuleId(module.path),
-    '[' +
-      Array.from(module.dependencies.values())
-        .map(dependency => options.createModuleId(dependency.absolutePath))
-        .join(',') +
-      ']',
-  ];
-
-  if (options.dev) {
-    // Add the relative path of the module to make debugging easier.
-    // This is mapped to `module.verboseName` in `require.js`.
-    params.push(
-      JSON.stringify(path.relative(options.projectRoot, module.path)),
-    );
-  }
-
+  const params = getModuleParams(module, options);
   const {compile} = require('metro-hermes-compiler');
 
-  const headerCode = `globalThis.$$METRO_D=[${params.join(',')}];`;
+  const headerCode = `globalThis.$$METRO_D=[${JSON.stringify(params)}];`;
   return [
     compile(headerCode, {
       sourceURL: module.path + '-virtual.js',

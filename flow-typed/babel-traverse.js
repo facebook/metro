@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // The sections between BEGIN GENERATED and END GENERATED are generated
@@ -1844,6 +1845,8 @@ declare module '@babel/traverse' {
   declare export var visitors: Visitors;
 
   declare export type Cache = {
+    path: $ReadOnlyWeakMap<BabelNode, mixed>,
+    scope: $ReadOnlyWeakMap<BabelNode, mixed>,
     clear(): void,
     clearPath(): void,
     clearScope(): void,

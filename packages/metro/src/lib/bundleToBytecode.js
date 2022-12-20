@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -53,7 +54,7 @@ function bundleToBytecode(bundle: BytecodeBundle): {
   +bytecode: Buffer,
   +metadata: BundleMetadata,
 } {
-  const buffers = [];
+  const buffers: Array<Buffer> = [];
 
   if (bundle.pre.length) {
     buffers.push(...bundle.pre);
@@ -92,5 +93,5 @@ function bundleToBytecode(bundle: BytecodeBundle): {
   };
 }
 
+bundleToBytecode.MAGIC_NUMBER = MAGIC_NUMBER;
 module.exports = bundleToBytecode;
-module.exports.MAGIC_NUMBER = MAGIC_NUMBER;

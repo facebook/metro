@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -333,7 +334,7 @@ function resolveFile(
     }
     return failedFor({type: 'asset', name: fileName});
   }
-  const candidateExts = [];
+  const candidateExts: Array<string> = [];
   const filePathPrefix = path.join(dirPath, fileName);
   const sfContext = {...context, candidateExts, filePathPrefix};
   const sourceFileResolution = resolveSourceFile(sfContext, platform);

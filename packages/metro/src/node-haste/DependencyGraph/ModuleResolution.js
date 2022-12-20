@@ -6,11 +6,11 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {ModuleMap} from 'metro-file-map';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -54,23 +54,24 @@ export type ModuleishCache<TModule, TPackage> = interface {
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = {
-  +dirExists: DirExistsFn,
-  +disableHierarchicalLookup: boolean,
-  +doesFileExist: DoesFileExist,
-  +emptyModulePath: string,
-  +extraNodeModules: ?Object,
-  +isAssetFile: IsAssetFile,
-  +mainFields: $ReadOnlyArray<string>,
-  +moduleCache: ModuleishCache<TModule, TPackage>,
-  +moduleMap: ModuleMap,
-  +nodeModulesPaths: $ReadOnlyArray<string>,
-  +preferNativePlatform: boolean,
-  +projectRoot: string,
-  +resolveAsset: ResolveAsset,
-  +resolveRequest: ?CustomResolver,
-  +sourceExts: $ReadOnlyArray<string>,
-};
+type Options<TModule, TPackage> = $ReadOnly<{
+  dirExists: DirExistsFn,
+  disableHierarchicalLookup: boolean,
+  doesFileExist: DoesFileExist,
+  emptyModulePath: string,
+  extraNodeModules: ?Object,
+  getHasteModulePath: (name: string, platform: ?string) => ?string,
+  getHastePackagePath: (name: string, platform: ?string) => ?string,
+  isAssetFile: IsAssetFile,
+  mainFields: $ReadOnlyArray<string>,
+  moduleCache: ModuleishCache<TModule, TPackage>,
+  nodeModulesPaths: $ReadOnlyArray<string>,
+  preferNativePlatform: boolean,
+  projectRoot: string,
+  resolveAsset: ResolveAsset,
+  resolveRequest: ?CustomResolver,
+  sourceExts: $ReadOnlyArray<string>,
+}>;
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
@@ -182,9 +183,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           allowHaste,
           platform,
           resolveHasteModule: (name: string) =>
-            this._options.moduleMap.getModule(name, platform, true),
+            this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
-            this._options.moduleMap.getPackage(name, platform, true),
+            this._options.getHastePackagePath(name, platform),
           getPackageMainPath: this._getPackageMainPath,
         },
         moduleName,

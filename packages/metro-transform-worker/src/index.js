@@ -6,10 +6,12 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {PluginEntry} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -85,7 +87,6 @@ export type JsTransformerConfig = $ReadOnly<{
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean | string,
-  experimentalImportBundleSupport: boolean,
   globalPrefix: string,
   hermesParser: boolean,
   minifierConfig: MinifierConfig,
@@ -306,7 +307,7 @@ async function transformJS(
 
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).
-  const plugins = [];
+  const plugins: Array<PluginEntry> = [];
   const babelPluginOpts = {
     ...options,
     inlineableCalls: [importDefault, importAll],
@@ -472,7 +473,7 @@ async function transformJS(
     ));
   }
 
-  const output = [
+  const output: Array<JsOutput | BytecodeOutput> = [
     {
       data: {
         code,
@@ -567,7 +568,7 @@ async function transformJSON(
     config.unstable_disableModuleWrapping === true
       ? JsFileWrapping.jsonToCommonJS(file.code)
       : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
-  let map = [];
+  let map: Array<MetroSourceMapSegmentTuple> = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
   const minify =
@@ -596,7 +597,7 @@ async function transformJSON(
     jsType = 'js/module';
   }
 
-  const output = [
+  const output: Array<JsOutput | BytecodeOutput> = [
     {
       data: {code, lineCount: countLines(code), map, functionMap: null},
       type: jsType,
