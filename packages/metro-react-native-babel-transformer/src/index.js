@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // Note: This is a fork of the fb-specific transform.js
@@ -23,7 +24,6 @@ const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const crypto = require('crypto');
 const fs = require('fs');
-const HermesParser = require('hermes-parser');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
@@ -205,21 +205,25 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
       ...buildBabelConfig(filename, options, plugins),
       caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst =
       isTypeScriptSource(filename) ||
       isTSXSource(filename) ||
       !options.hermesParser
         ? parseSync(src, babelConfig)
-        : HermesParser.parse(src, {
+        : require('hermes-parser').parse(src, {
             babel: true,
             sourceType: babelConfig.sourceType,
           });
-    /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.111 was deployed. To see the error, delete this
-     * comment and run Flow. */
-    const result = transformFromAstSync(sourceAst, src, babelConfig);
+
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const result = transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {

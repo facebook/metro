@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import typeof Yargs from 'yargs';
+import type {ModuleObject} from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
 const Server = require('../Server');
@@ -67,9 +69,9 @@ async function dependencies(args: any, config: any) {
     : Promise.resolve();
 }
 
-module.exports = () => ({
+module.exports = (): ModuleObject => ({
   command: 'get-dependencies',
-  description: 'List dependencies',
+  desc: 'List dependencies',
   builder: (yargs: Yargs) => {
     yargs.option('entry-file', {
       type: 'string',

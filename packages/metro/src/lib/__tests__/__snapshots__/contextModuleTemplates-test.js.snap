@@ -1,0 +1,138 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getContextModuleTemplate creates a lazy template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
+});
+
+function metroContext(request) {
+    return map[request];
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;
+
+exports[`getContextModuleTemplate creates a lazy-once template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./another/bar.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/another/bar.js\\"); } },
+  \\"./foo.js\\": { enumerable: true, get() { return import(\\"/path/to/project/src/foo.js\\"); } },
+});
+
+function metroContext(request) {
+    return map[request];
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;
+
+exports[`getContextModuleTemplate creates a sync template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
+});
+
+function metroContext(request) {
+    return map[request];
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;
+
+exports[`getContextModuleTemplate creates an eager template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"/path/to/project/src/foo.js\\"); } },
+});
+
+function metroContext(request) {
+    // Here Promise.resolve().then() is used instead of new Promise() to prevent
+  // uncaught exception popping up in devtools
+  return Promise.resolve().then(() => map[request]);
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;
+
+exports[`getContextModuleTemplate creates an empty template 1`] = `
+"
+function metroEmptyContext(request) {
+  let e = new Error('No modules in context');
+  e.code = 'MODULE_NOT_FOUND';
+  throw e;
+}
+
+// Return the keys that can be resolved.
+metroEmptyContext.keys = () => ([]);
+
+// Return the module identifier for a user request.
+metroEmptyContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroEmptyContext;"
+`;
+
+exports[`getContextModuleTemplate creates posix paths on windows for sync template 1`] = `
+"// All of the requested modules are loaded behind enumerable getters.
+const map = Object.defineProperties({}, {
+  \\"./foo.js\\": { enumerable: true, get() { return require(\\"C:\\\\\\\\path\\\\\\\\to\\\\\\\\project\\\\\\\\src\\\\\\\\foo.js\\"); } },
+});
+
+function metroContext(request) {
+    return map[request];
+}
+
+// Return the keys that can be resolved.
+metroContext.keys = function metroContextKeys() {
+  return Object.keys(map);
+};
+
+// Return the module identifier for a user request.
+metroContext.resolve = function metroContextResolve(request) {
+  throw new Error('Unimplemented Metro module context functionality');
+}
+
+module.exports = metroContext;"
+`;

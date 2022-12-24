@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -202,7 +203,7 @@ async function fromRawMappingsNonBlocking(
 function toBabelSegments(
   sourceMap: BasicSourceMap,
 ): Array<BabelSourceMapSegment> {
-  const rawMappings = [];
+  const rawMappings: Array<BabelSourceMapSegment> = [];
 
   new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
     rawMappings.push({

@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -478,6 +478,13 @@ describe('require', () => {
       expect(fn.mock.calls.length).toBe(1);
     });
 
+    it('throws when using require.context directly', () => {
+      createModuleSystem(moduleSystem, false, '');
+      expect(() => moduleSystem.__r.context('foobar')).toThrow(
+        'The experimental Metro feature `require.context` is not enabled in your project.',
+      );
+    });
+
     it('throws an error when trying to require an unknown module', () => {
       createModuleSystem(moduleSystem, false, '');
 
@@ -498,22 +505,22 @@ describe('require', () => {
     it('throws an error when a module throws an error', () => {
       createModuleSystem(moduleSystem, false, '');
 
-      createModule(
-        moduleSystem,
-        0,
-        'foo.js',
+      const error = new Error('foo!');
+      const factory = jest.fn(
         (global, require, importDefault, importAll, module) => {
-          throw new Error('foo!');
+          throw error;
         },
       );
+      createModule(moduleSystem, 0, 'foo.js', factory);
 
       // First time it throws the original error.
-      expect(() => moduleSystem.__r(0)).toThrow('foo!');
+      expect(() => moduleSystem.__r(0)).toThrowStrictEquals(error);
 
-      // Afterwards it throws a wrapped error (the module is not reevaluated).
-      expect(() => moduleSystem.__r(0)).toThrow(
-        'Requiring module "0", which threw an exception: Error: foo!',
-      );
+      // Afterwards it throws the exact same error.
+      expect(() => moduleSystem.__r(0)).toThrowStrictEquals(error);
+
+      // The module is not reevaluated.
+      expect(factory).toHaveBeenCalledTimes(1);
     });
 
     it('can make use of the dependencyMap correctly', () => {
@@ -2811,4 +2818,42 @@ describe('require', () => {
       expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
   });
+});
+
+function toThrowStrictEquals(received, expected) {
+  let thrown = null;
+  try {
+    received();
+  } catch (e) {
+    thrown = {value: e};
+  }
+  const pass = thrown && thrown.value === expected;
+  if (pass) {
+    return {
+      message: () =>
+        `expected function not to throw ${this.utils.printExpected(
+          expected,
+        )} but it did`,
+      pass: true,
+    };
+  } else {
+    return {
+      message: () => {
+        if (thrown) {
+          return `expected function to throw ${this.utils.printExpected(
+            expected,
+          )} but received ${this.utils.printReceived(thrown.value)}`;
+        } else {
+          return `expected function to throw ${this.utils.printExpected(
+            expected,
+          )} but it did not throw`;
+        }
+      },
+      pass: false,
+    };
+  }
+}
+
+expect.extend({
+  toThrowStrictEquals,
 });

@@ -4,33 +4,31 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_foundation
  * @flow
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const MultipartResponse = require('../MultipartResponse');
+import invariant from 'invariant';
+import MultipartResponse from '../MultipartResponse';
 
 describe('MultipartResponse', () => {
   it('forwards calls to response', () => {
-    const nreq = mockNodeRequest({accept: 'text/html'});
-    const nres = mockNodeResponse();
-    const res = MultipartResponse.wrap(nreq, nres);
+    const {nreq, nres} = getMockedReqRes({accept: 'text/html'});
+    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
 
     expect(res).toBe(nres);
-
-    res.writeChunk({}, 'foo');
-    expect(nres.write).not.toBeCalled();
   });
 
   it('writes multipart response', () => {
-    const nreq = mockNodeRequest({accept: 'multipart/mixed'});
-    const nres = mockNodeResponse();
-    const res = MultipartResponse.wrap(nreq, nres);
+    const {nreq, nres} = getMockedReqRes();
+    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
 
     expect(res).not.toBe(nres);
+    expect(res).toBeInstanceOf(MultipartResponse);
+    invariant(res instanceof MultipartResponse, 'It must be MultipartResponse');
 
     res.setHeader('Result-Header-1', 1);
     res.writeChunk({foo: 'bar'}, 'first chunk');
@@ -67,9 +65,9 @@ describe('MultipartResponse', () => {
   });
 
   it('sends status code as last chunk header', () => {
-    const nreq = mockNodeRequest({accept: 'multipart/mixed'});
-    const nres = mockNodeResponse();
-    const res = MultipartResponse.wrap(nreq, nres);
+    const {nreq, nres} = getMockedReqRes();
+    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    invariant(res instanceof MultipartResponse, 'It must be MultipartResponse');
 
     res.writeChunk({foo: 'bar'}, 'first chunk');
     res.writeHead(500, {
@@ -99,9 +97,8 @@ describe('MultipartResponse', () => {
   });
 
   it('supports empty responses', () => {
-    const nreq = mockNodeRequest({accept: 'multipart/mixed'});
-    const nres = mockNodeResponse();
-    const res = MultipartResponse.wrap(nreq, nres);
+    const {nreq, nres} = getMockedReqRes();
+    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
 
     res.writeHead(304, {
       'Content-Type': 'application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
@@ -126,9 +123,9 @@ describe('MultipartResponse', () => {
   });
 
   it('passes data directly through to the response object', () => {
-    const nreq = mockNodeRequest({accept: 'multipart/mixed'});
-    const nres = mockNodeResponse();
-    const res = MultipartResponse.wrap(nreq, nres);
+    const {nreq, nres} = getMockedReqRes();
+    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    invariant(res instanceof MultipartResponse, 'It must be MultipartResponse');
     const buffer = Buffer.from([1, 2, 3, 4]);
 
     res.writeChunk(null, buffer);
@@ -137,9 +134,7 @@ describe('MultipartResponse', () => {
   });
 });
 
-function mockNodeRequest(
-  headers: $TEMPORARY$object<{...}> | $TEMPORARY$object<{accept: string}> = {},
-) {
+function mockNodeRequest(headers: {accept?: string} = {}) {
   return {headers};
 }
 
@@ -172,4 +167,13 @@ function mockNodeResponse() {
       ].join('\r\n');
     },
   };
+}
+
+function getMockedReqRes(
+  reqHeaders: {accept?: string} = {accept: 'multipart/mixed'},
+) {
+  const nreq = mockNodeRequest(reqHeaders);
+  const nres = mockNodeResponse();
+
+  return {nreq, nres};
 }

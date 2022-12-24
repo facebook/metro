@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -1179,7 +1180,7 @@ class MemoryFs {
     };
   }
 
-  _getId() {
+  _getId(): number {
     return ++this._nextId;
   }
 
@@ -1339,7 +1340,7 @@ class MemoryFs {
 
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
-  _resolveEnt(context, filePath: string, entName: any | string) {
+  _resolveEnt(context, filePath: string, entName: any | string): void {
     const {node} = context;
     if (node == null) {
       throw makeError('ENOENT', filePath, 'no such file or directory');
@@ -1597,7 +1598,7 @@ class ReadFileSteam extends stream.Readable {
     } while (this.push(bytesRead > 0 ? _buffer.slice(0, bytesRead) : null));
   }
 
-  _getLengthToRead() {
+  _getLengthToRead(): number {
     const {_positions, _buffer} = this;
     if (_positions == null) {
       return _buffer.length;

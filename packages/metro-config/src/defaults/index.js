@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,6 +17,7 @@ const {
   DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
+  additionalExts,
   defaultCreateModuleIdFactory,
   platforms,
   sourceExts,
@@ -54,7 +56,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     getRunModuleStatement: (moduleId: number | string) =>
       `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
-    postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
@@ -63,13 +64,14 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   },
 
   server: {
-    useGlobalHotkey: true,
-    port: 8080,
     enhanceMiddleware: middleware => middleware,
+    experimentalImportBundleSupport: false,
+    port: 8080,
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
-    verifyConnections: false,
     unstable_serverRoot: null,
+    useGlobalHotkey: true,
+    verifyConnections: false,
   },
 
   symbolicator: {
@@ -84,7 +86,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
-    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
@@ -129,8 +130,15 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_compactOutput: false,
   },
   watcher: {
+    additionalExts,
     watchman: {
       deferStates: ['hg.update'],
+    },
+    healthCheck: {
+      enabled: false,
+      filePrefix: '.metro-health-check',
+      interval: 30000,
+      timeout: 5000,
     },
   },
   cacheStores: [
@@ -157,5 +165,5 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
   return getDefaultValues(rootPath);
 }
 
+getDefaultConfig.getDefaultValues = getDefaultValues;
 module.exports = getDefaultConfig;
-module.exports.getDefaultValues = getDefaultValues;

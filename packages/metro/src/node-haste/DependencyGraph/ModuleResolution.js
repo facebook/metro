@@ -6,11 +6,11 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {ModuleMap} from 'metro-file-map';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -26,6 +26,7 @@ const invariant = require('invariant');
 const Resolver = require('metro-resolver');
 const path = require('path');
 const util = require('util');
+import type {ResolverInputOptions} from '../../shared/types.flow';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -53,23 +54,24 @@ export type ModuleishCache<TModule, TPackage> = interface {
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = {
-  +dirExists: DirExistsFn,
-  +disableHierarchicalLookup: boolean,
-  +doesFileExist: DoesFileExist,
-  +emptyModulePath: string,
-  +extraNodeModules: ?Object,
-  +isAssetFile: IsAssetFile,
-  +mainFields: $ReadOnlyArray<string>,
-  +moduleCache: ModuleishCache<TModule, TPackage>,
-  +moduleMap: ModuleMap,
-  +nodeModulesPaths: $ReadOnlyArray<string>,
-  +preferNativePlatform: boolean,
-  +projectRoot: string,
-  +resolveAsset: ResolveAsset,
-  +resolveRequest: ?CustomResolver,
-  +sourceExts: $ReadOnlyArray<string>,
-};
+type Options<TModule, TPackage> = $ReadOnly<{
+  dirExists: DirExistsFn,
+  disableHierarchicalLookup: boolean,
+  doesFileExist: DoesFileExist,
+  emptyModulePath: string,
+  extraNodeModules: ?Object,
+  getHasteModulePath: (name: string, platform: ?string) => ?string,
+  getHastePackagePath: (name: string, platform: ?string) => ?string,
+  isAssetFile: IsAssetFile,
+  mainFields: $ReadOnlyArray<string>,
+  moduleCache: ModuleishCache<TModule, TPackage>,
+  nodeModulesPaths: $ReadOnlyArray<string>,
+  preferNativePlatform: boolean,
+  projectRoot: string,
+  resolveAsset: ResolveAsset,
+  resolveRequest: ?CustomResolver,
+  sourceExts: $ReadOnlyArray<string>,
+}>;
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
@@ -78,6 +80,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?TModule;
 
+  // $FlowFixMe[missing-local-annot]
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
     const {projectRoot, moduleCache} = this._options;
@@ -94,7 +97,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     };
   }
 
-  _getEmptyModule() {
+  _getEmptyModule(): TModule | Moduleish {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
@@ -102,6 +105,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         this._options.emptyModulePath,
         false,
         null,
+        /* resolverOptions */ {},
       );
       this._cachedEmptyModule = emptyModule;
     }
@@ -166,20 +170,22 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     moduleName: string,
     allowHaste: boolean,
     platform: string | null,
+    resolverOptions: ResolverInputOptions,
   ): TModule {
     try {
       const result = Resolver.resolve(
         {
           ...this._options,
+          customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           redirectModulePath: (modulePath: string) =>
             this._redirectRequire(fromModule, modulePath),
           allowHaste,
           platform,
           resolveHasteModule: (name: string) =>
-            this._options.moduleMap.getModule(name, platform, true),
+            this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
-            this._options.moduleMap.getPackage(name, platform, true),
+            this._options.getHastePackagePath(name, platform),
           getPackageMainPath: this._getPackageMainPath,
         },
         moduleName,
@@ -252,6 +258,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         invariant(arbitrary != null, 'invalid asset resolution');
         return this._options.moduleCache.getModule(arbitrary);
       case 'empty':
+        // $FlowFixMe[incompatible-return]
         return this._getEmptyModule();
       default:
         (resolution.type: empty);
@@ -259,7 +266,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
   }
 
-  _removeRoot(candidates: FileCandidates) {
+  _removeRoot(candidates: FileCandidates): FileCandidates {
     if (candidates.filePathPrefix) {
       candidates.filePathPrefix = path.relative(
         this._options.projectRoot,

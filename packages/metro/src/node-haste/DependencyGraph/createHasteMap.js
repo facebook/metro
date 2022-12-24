@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
@@ -65,13 +66,20 @@ function createHasteMap(
             config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
           cacheFilePrefix: options?.cacheFilePrefix,
         })),
-    perfLogger: config.unstable_perfLogger?.subSpan('hasteMap') ?? null,
+    perfLoggerFactory: config.unstable_perfLogger,
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
-    extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
+    extensions: Array.from(
+      new Set([
+        ...config.resolver.sourceExts,
+        ...config.resolver.assetExts,
+        ...config.watcher.additionalExts,
+      ]),
+    ),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
+    healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',

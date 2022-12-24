@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -91,7 +92,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
     return {...EMPTY_POSITION};
   }
 
-  *_decodeMappings() {
+  *_decodeMappings(): Generator<Mapping, void, void> {
     let generatedLine = FIRST_LINE;
     let generatedColumn = FIRST_COLUMN;
     let originalLine = FIRST_LINE;
@@ -103,7 +104,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
 
     const {mappings: mappingsRaw, names} = this._sourceMap;
     let next;
-    const vlqCache = new Map();
+    const vlqCache = new Map<string, any>();
     for (let i = 0; i < mappingsRaw.length; i = next) {
       switch (mappingsRaw[i]) {
         case ';':

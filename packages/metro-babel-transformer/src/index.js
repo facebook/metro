@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,7 +15,6 @@ import type {BabelCoreOptions} from '@babel/core';
 import type {FBSourceFunctionMap} from 'metro-source-map';
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
 
@@ -79,15 +79,24 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       filename,
       plugins,
       sourceType: 'module',
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst = options.hermesParser
-      ? HermesParser.parse(src, {
+      ? require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
         })
       : parseSync(src, babelConfig);
-    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
+
+    // Generate the function map before we transform the AST to
+    // ensure we aren't reading from mutated AST.
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
 
     return {ast: nullthrows(ast), functionMap};
   } finally {

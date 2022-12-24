@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,6 +19,9 @@ import type {BundleOptions, SplitBundleOptions} from '../shared/types.flow';
 function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
   return {
     entryFile: options.entryFile,
+    resolverOptions: {
+      customResolverOptions: options.customResolverOptions,
+    },
     transformOptions: {
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,

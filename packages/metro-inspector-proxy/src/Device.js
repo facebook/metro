@@ -6,11 +6,11 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type {
   DebuggerRequest,
-  DebuggerResponse,
   GetScriptSourceRequest,
   GetScriptSourceResponse,
   MessageFromDevice,
@@ -20,6 +20,7 @@ import type {
 } from './types';
 
 import * as fs from 'fs';
+import * as http from 'http';
 import * as path from 'path';
 import WS from 'ws';
 
@@ -176,14 +177,13 @@ class Device {
     socket.on('message', (message: string) => {
       debug('(Debugger) -> (Proxy)    (Device): ' + message);
       const debuggerRequest = JSON.parse(message);
-      const interceptedResponse = this._interceptMessageFromDebugger(
+      const handled = this._interceptMessageFromDebugger(
         debuggerRequest,
         debuggerInfo,
+        socket,
       );
 
-      if (interceptedResponse) {
-        socket.send(JSON.stringify(interceptedResponse));
-      } else {
+      if (!handled) {
         this._sendMessageToDevice({
           event: 'wrappedEvent',
           payload: {
@@ -436,21 +436,21 @@ class Device {
     }
   }
 
-  // Allows to make changes in incoming messages from debugger.
+  // Allows to make changes in incoming messages from debugger. Returns a boolean
+  // indicating whether the message has been handled locally (i.e. does not need
+  // to be forwarded to the target).
   _interceptMessageFromDebugger(
     req: DebuggerRequest,
     debuggerInfo: DebuggerInfo,
-  ): ?DebuggerResponse {
-    let response = null;
+    socket: typeof WS,
+  ): boolean {
     if (req.method === 'Debugger.setBreakpointByUrl') {
       this._processDebuggerSetBreakpointByUrl(req, debuggerInfo);
     } else if (req.method === 'Debugger.getScriptSource') {
-      response = {
-        id: req.id,
-        result: this._processDebuggerGetScriptSource(req),
-      };
+      this._processDebuggerGetScriptSource(req, socket);
+      return true;
     }
-    return response;
+    return false;
   }
 
   _processDebuggerSetBreakpointByUrl(
@@ -487,26 +487,60 @@ class Device {
 
   _processDebuggerGetScriptSource(
     req: GetScriptSourceRequest,
-  ): GetScriptSourceResponse {
+    socket: typeof WS,
+  ) {
     let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
+
+    const sendResponse = () => {
+      const result: GetScriptSourceResponse = {scriptSource};
+      socket.send(JSON.stringify({id: req.id, result}));
+    };
 
     const pathToSource = this._scriptIdToSourcePathMapping.get(
       req.params.scriptId,
     );
     if (pathToSource) {
+      let pathIsURL = false;
       try {
-        scriptSource = fs.readFileSync(
-          path.resolve(this._projectRoot, pathToSource),
-          'utf8',
-        );
-      } catch (err) {
-        scriptSource = err.message;
+        pathIsURL = new URL(pathToSource).hostname == 'localhost';
+      } catch {}
+
+      if (pathIsURL) {
+        http
+          // $FlowFixMe[missing-local-annot]
+          .get(pathToSource, httpResponse => {
+            const {statusCode} = httpResponse;
+            if (statusCode == 200) {
+              httpResponse.setEncoding('utf8');
+              scriptSource = '';
+              httpResponse.on('data', (body: string) => {
+                scriptSource += body;
+              });
+              httpResponse.on('end', () => {
+                sendResponse();
+              });
+            } else {
+              scriptSource = `Fetching ${pathToSource} returned status ${statusCode}`;
+              sendResponse();
+              httpResponse.resume();
+            }
+          })
+          .on('error', e => {
+            scriptSource = `Fetching ${pathToSource} failed with error ${e.message}`;
+            sendResponse();
+          });
+      } else {
+        try {
+          scriptSource = fs.readFileSync(
+            path.resolve(this._projectRoot, pathToSource),
+            'utf8',
+          );
+        } catch (err) {
+          scriptSource = err.message;
+        }
+        sendResponse();
       }
     }
-
-    return {
-      scriptSource,
-    };
   }
 
   _mapToDevicePageId(pageId: string): string {

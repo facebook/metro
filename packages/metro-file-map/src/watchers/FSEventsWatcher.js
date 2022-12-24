@@ -8,21 +8,28 @@
  * @flow strict-local
  */
 
+import type {ChangeEventMetadata} from '../flow-types';
+import type {Stats} from 'fs';
+// $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
+import type {FSEvents} from 'fsevents';
+
 // $FlowFixMe[untyped-import] - anymatch
 import anymatch from 'anymatch';
 import EventEmitter from 'events';
-import * as fs from 'graceful-fs';
+import {promises as fsPromises} from 'fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
+import {typeFromStat} from './common';
 
 // $FlowFixMe[untyped-import] - micromatch
 const micromatch = require('micromatch');
 
+const debug = require('debug')('Metro:FSEventsWatcher');
+
 type Matcher = typeof anymatch.Matcher;
 
-// $FlowFixMe[unclear-type] - fsevents
-let fsevents: any = null;
+let fsevents: ?FSEvents = null;
 try {
   // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
   fsevents = require('fsevents');
@@ -60,16 +67,18 @@ export default class FSEventsWatcher extends EventEmitter {
   }
 
   static _normalizeProxy(
-    callback: (normalizedPath: string, stats: fs.Stats) => void,
-  ) {
-    return (filepath: string, stats: fs.Stats): void =>
+    callback: (normalizedPath: string, stats: Stats) => void,
+    // $FlowFixMe[cannot-resolve-name]
+  ): (filepath: string, stats: Stats) => void {
+    return (filepath: string, stats: Stats): void =>
       callback(path.normalize(filepath), stats);
   }
 
   static _recReaddir(
     dir: string,
-    dirCallback: (normalizedPath: string, stats: fs.Stats) => void,
-    fileCallback: (normalizedPath: string, stats: fs.Stats) => void,
+    dirCallback: (normalizedPath: string, stats: Stats) => void,
+    fileCallback: (normalizedPath: string, stats: Stats) => void,
+    symlinkCallback: (normalizedPath: string, stats: Stats) => void,
     // $FlowFixMe[unclear-type] Add types for callback
     endCallback: Function,
     // $FlowFixMe[unclear-type] Add types for callback
@@ -82,6 +91,7 @@ export default class FSEventsWatcher extends EventEmitter {
       )
       .on('dir', FSEventsWatcher._normalizeProxy(dirCallback))
       .on('file', FSEventsWatcher._normalizeProxy(fileCallback))
+      .on('symlink', FSEventsWatcher._normalizeProxy(symlinkCallback))
       .on('error', errorCallback)
       .on('end', () => {
         endCallback();
@@ -96,6 +106,7 @@ export default class FSEventsWatcher extends EventEmitter {
       dot: boolean,
       ...
     }>,
+    // $FlowFixMe[missing-local-annot]
   ) {
     if (!fsevents) {
       throw new Error(
@@ -114,21 +125,24 @@ export default class FSEventsWatcher extends EventEmitter {
     this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
 
     this.root = path.resolve(dir);
-    this.fsEventsWatchStopper = fsevents.watch(
-      this.root,
-      // $FlowFixMe[method-unbinding] - Refactor
-      this._handleEvent.bind(this),
-    );
+
+    this.fsEventsWatchStopper = fsevents.watch(this.root, path => {
+      this._handleEvent(path).catch(error => {
+        this.emit('error', error);
+      });
+    });
+
+    debug(`Watching ${this.root}`);
 
     this._tracked = new Set();
+    const trackPath = (filePath: string) => {
+      this._tracked.add(filePath);
+    };
     FSEventsWatcher._recReaddir(
       this.root,
-      (filepath: string) => {
-        this._tracked.add(filepath);
-      },
-      (filepath: string) => {
-        this._tracked.add(filepath);
-      },
+      trackPath,
+      trackPath,
+      trackPath,
       // $FlowFixMe[method-unbinding] - Refactor
       this.emit.bind(this, 'ready'),
       // $FlowFixMe[method-unbinding] - Refactor
@@ -149,7 +163,7 @@ export default class FSEventsWatcher extends EventEmitter {
     }
   }
 
-  _isFileIncluded(relativePath: string) {
+  _isFileIncluded(relativePath: string): boolean {
     if (this.doIgnore(relativePath)) {
       return false;
     }
@@ -158,43 +172,61 @@ export default class FSEventsWatcher extends EventEmitter {
       : this.dot || micromatch([relativePath], '**/*').length > 0;
   }
 
-  _handleEvent(filepath: string) {
+  async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
     if (!this._isFileIncluded(relativePath)) {
       return;
     }
 
-    fs.lstat(filepath, (error, stat) => {
-      if (error && error.code !== 'ENOENT') {
+    try {
+      const stat = await fsPromises.lstat(filepath);
+      const type = typeFromStat(stat);
+
+      // Ignore files of an unrecognized type
+      if (!type) {
+        return;
+      }
+      const metadata: ChangeEventMetadata = {
+        type,
+        modifiedTime: stat.mtime.getTime(),
+        size: stat.size,
+      };
+
+      if (this._tracked.has(filepath)) {
+        this._emit(CHANGE_EVENT, relativePath, metadata);
+      } else {
+        this._tracked.add(filepath);
+        this._emit(ADD_EVENT, relativePath, metadata);
+      }
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
         this.emit('error', error);
         return;
       }
 
-      if (error) {
-        // Ignore files that aren't tracked and don't exist.
-        if (!this._tracked.has(filepath)) {
-          return;
-        }
-
-        this._emit(DELETE_EVENT, relativePath);
-        this._tracked.delete(filepath);
+      // Ignore files that aren't tracked and don't exist.
+      if (!this._tracked.has(filepath)) {
         return;
       }
 
-      if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, stat);
-      } else {
-        this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, stat);
-      }
-    });
+      this._emit(DELETE_EVENT, relativePath);
+      this._tracked.delete(filepath);
+    }
   }
 
   /**
    * Emit events.
    */
-  _emit(type: FsEventsWatcherEvent, file: string, stat?: fs.Stats) {
-    this.emit(type, file, this.root, stat);
-    this.emit(ALL_EVENT, type, file, this.root, stat);
+  _emit(
+    type: FsEventsWatcherEvent,
+    file: string,
+    metadata?: ChangeEventMetadata,
+  ) {
+    this.emit(type, file, this.root, metadata);
+    this.emit(ALL_EVENT, type, file, this.root, metadata);
+  }
+
+  getPauseReason(): ?string {
+    return null;
   }
 }

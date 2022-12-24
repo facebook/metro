@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -169,6 +170,11 @@ function mergeConfig<T: InputConfigT>(
           ...totalConfig.watcher?.watchman,
           ...nextConfig.watcher?.watchman,
         },
+        healthCheck: {
+          ...totalConfig.watcher?.healthCheck,
+          // $FlowFixMe: Spreading shapes creates an explosion of union types
+          ...nextConfig.watcher?.healthCheck,
+        },
       },
     }),
     defaultConfig,
@@ -299,14 +305,6 @@ async function loadConfig(
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
 
   const overriddenConfig: {[string]: mixed} = {};
-
-  // The resolver breaks if "json" is missing from `resolver.sourceExts`
-  const sourceExts = configWithArgs.resolver.sourceExts;
-  if (!configWithArgs.resolver.sourceExts.includes('json')) {
-    overriddenConfig.resolver = {
-      sourceExts: [...sourceExts, 'json'],
-    };
-  }
 
   overriddenConfig.watchFolders = [
     configWithArgs.projectRoot,

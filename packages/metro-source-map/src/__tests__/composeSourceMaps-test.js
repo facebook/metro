@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -175,7 +175,7 @@ describe('composeSourceMaps', () => {
             version: 3,
             sources: ['1.js', '2.js'],
             sourcesContent: ['content of 1.js', 'content of 2.js'],
-            names: [],
+            names: ([]: Array<string>),
             // One column from 2.js, one column from 1.js
             mappings: 'ACAA,CDAA',
           },
@@ -186,7 +186,7 @@ describe('composeSourceMaps', () => {
     const map2 = {
       version: 3,
       sources: ['transformed.js'],
-      names: [],
+      names: ([]: Array<string>),
       // Two consecutive columns from transformed.js
       mappings: 'AAAA,CAAC',
     };

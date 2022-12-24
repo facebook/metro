@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -50,7 +51,9 @@ exports.assetExts = [
 
 exports.assetResolutions = ['1', '1.5', '2', '3', '4'];
 
-exports.sourceExts = ['js', 'json', 'ts', 'tsx'];
+exports.sourceExts = ['js', 'jsx', 'json', 'ts', 'tsx'];
+
+exports.additionalExts = ['cjs', 'mjs'];
 
 exports.moduleSystem = (require.resolve(
   'metro-runtime/src/polyfills/require.js',
@@ -58,6 +61,6 @@ exports.moduleSystem = (require.resolve(
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
+exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-terser';
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;

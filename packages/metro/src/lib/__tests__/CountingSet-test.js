@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @emails oncall+metro_bundler
+ * @oncall react_native
  */
 
 import CountingSet from '../CountingSet';
@@ -119,7 +119,13 @@ describe('CountingSet', () => {
     const set = new CountingSet(['a', 'a', 'b', 'c']);
     // TODO: Migrate to callback.mock.contexts when we upgrade to Jest 28
     const contexts = [];
-    const callback = jest.fn(function captureContext() {
+    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
+    const callback = jest.fn(function captureContext(
+      _value: string,
+      _key: string,
+      _set: CountingSet<string>,
+    ) {
       contexts.push(this);
     });
 
@@ -136,7 +142,13 @@ describe('CountingSet', () => {
     const set = new CountingSet(['a', 'a', 'b', 'c']);
     // TODO: Migrate to callback.mock.contexts when we upgrade to Jest 28
     const contexts = [];
-    const callback = jest.fn(function captureContext() {
+    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
+    const callback = jest.fn(function captureContext(
+      _value: string,
+      _key: string,
+      _set: CountingSet<string>,
+    ) {
       contexts.push(this);
     });
 

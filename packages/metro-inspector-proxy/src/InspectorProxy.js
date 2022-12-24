@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -69,7 +70,7 @@ class InspectorProxy {
       request.url === PAGES_LIST_JSON_URL_2
     ) {
       // Build list of pages from all devices.
-      let result = [];
+      let result: Array<PageDescription> = [];
       Array.from(this._devices.entries()).forEach(([deviceId, device]) => {
         result = result.concat(
           device
@@ -152,7 +153,7 @@ class InspectorProxy {
   // HTTP GET params.
   // For each new websocket connection we parse device and app names and create
   // new instance of Device class.
-  _createDeviceConnectionWSServer() {
+  _createDeviceConnectionWSServer(): any {
     const wss = new WS.Server({
       noServer: true,
       perMessageDeflate: true,
@@ -188,7 +189,7 @@ class InspectorProxy {
   // in /json response.
   // When debugger connects we try to parse device and page IDs from the query and pass
   // websocket object to corresponding Device instance.
-  _createDebuggerConnectionWSServer() {
+  _createDebuggerConnectionWSServer(): any {
     const wss = new WS.Server({
       noServer: true,
       perMessageDeflate: false,

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,20 +14,19 @@
 import type {RunServerOptions} from '../index';
 import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+import type {ModuleObject} from 'yargs';
 
 const {makeAsyncCommand, watchFile} = require('../cli-utils');
 const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
-module.exports = (): ({
-  builder: (yargs: Yargs) => void,
-  command: $TEMPORARY$string<'serve'>,
-  description: string,
-  handler: (argv: YargArguments) => void,
-}) => ({
+module.exports = (): {
+  ...ModuleObject,
+  handler: Function,
+} => ({
   command: 'serve',
-
-  description: 'Starts Metro on the given port, building bundles on the fly',
+  aliases: ['start'],
+  desc: 'Starts Metro on the given port, building bundles on the fly',
 
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {

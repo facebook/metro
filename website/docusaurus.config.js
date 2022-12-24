@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {fbContent} = require('internaldocs-fb-helpers');
+const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 const siteConfig = {
-  // TODO: Reenable broken link detection after docusaurus upgrade
-  onBrokenLinks: 'warn',
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
@@ -36,6 +35,9 @@ const siteConfig = {
         },
         staticDocsProject: 'metro',
         enableEditor: true,
+        gtag: {
+          trackingID: 'UA-44373548-17',
+        },
       },
     ],
   ],
@@ -85,6 +87,7 @@ const siteConfig = {
           title: 'Docs',
           items: [
             {label: 'Quick Start', to: 'docs/getting-started'},
+            {label: 'Configuration', to: 'docs/configuration'},
             {label: 'API Reference', to: 'docs/api'},
           ],
         },
@@ -92,23 +95,43 @@ const siteConfig = {
           title: 'Community',
           items: [
             {
+              label: 'Twitter',
+              href: 'https://twitter.com/MetroBundler',
+            },
+            {
+              label: 'GitHub',
+              href: 'https://github.com/facebook/metro',
+            },
+            {
               label: 'Stack Overflow',
               href: 'https://stackoverflow.com/questions/tagged/metrojs',
             },
-            {label: 'Twitter', href: 'https://twitter.com/MetroBundler'},
           ],
         },
         {
           title: 'More',
-          items: [{label: 'GitHub', href: 'https://github.com/facebook/metro'}],
+          items: [
+            {
+              label: 'React Native',
+              href: 'https://reactnative.dev/',
+            },
+            {
+              label: 'Privacy Policy',
+              href: 'https://opensource.fb.com/legal/privacy/',
+            },
+            {
+              label: 'Terms of Service',
+              href: 'https://opensource.fb.com/legal/terms/',
+            },
+          ],
         },
       ],
       logo: {
-        alt: 'Facebook Open Source Logo',
-        src: 'img/oss_logo.png',
-        href: 'https://opensource.facebook.com/',
+        alt: 'Meta Open Source Logo',
+        src: 'img/oss_logo.svg',
+        href: 'https://opensource.fb.com/',
       },
-      copyright: `Copyright © ${new Date().getFullYear()} Facebook Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc.`,
     },
     image: 'img/opengraph.png',
     algolia: {
@@ -116,8 +139,8 @@ const siteConfig = {
       appId: 'T38HJZTD87',
       indexName: 'metro',
     },
-    gtag: {
-      trackingID: 'UA-44373548-17',
+    prism: {
+      additionalLanguages: ['flow'],
     },
   },
   scripts: ['https://buttons.github.io/buttons.js'],

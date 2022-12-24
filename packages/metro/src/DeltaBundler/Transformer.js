@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,6 +14,7 @@
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import crypto from 'crypto';
 
 const getTransformCacheKey = require('./getTransformCacheKey');
 const WorkerFarm = require('./WorkerFarm');
@@ -66,6 +68,7 @@ class Transformer {
   async transformFile(
     filePath: string,
     transformerOptions: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
@@ -119,15 +122,29 @@ class Transformer {
       unstable_transformProfile,
     ]);
 
-    const sha1 = this._getSha1(filePath);
+    let sha1: string;
+    if (fileBuffer) {
+      // Shortcut for virtual modules which provide the contents with the filename.
+      sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+    } else {
+      sha1 = this._getSha1(filePath);
+    }
+
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
     const result = await cache.get(fullKey);
 
     // A valid result from the cache is used directly; otherwise we call into
     // the transformer to computed the corresponding result.
-    const data = result
+    const data: $ReadOnly<{
+      result: TransformResult<>,
+      sha1: string,
+    }> = result
       ? {result, sha1}
-      : await this._workerFarm.transform(localPath, transformerOptions);
+      : await this._workerFarm.transform(
+          localPath,
+          transformerOptions,
+          fileBuffer,
+        );
 
     // Only re-compute the full key if the SHA-1 changed. This is because
     // references are used by the cache implementation in a weak map to keep
@@ -141,6 +158,9 @@ class Transformer {
     return {
       ...data.result,
       getSource(): Buffer {
+        if (fileBuffer) {
+          return fileBuffer;
+        }
         return fs.readFileSync(filePath);
       },
     };

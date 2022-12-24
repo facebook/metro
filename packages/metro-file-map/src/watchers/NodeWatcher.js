@@ -1,56 +1,84 @@
 /**
- * vendored from https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/node_watcher.js
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
+
+/**
+ * Originally vendored from https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/node_watcher.js
+ */
+
 'use strict';
 
+import type {WatcherOptions} from './common';
+import type {ChangeEventMetadata} from '../flow-types';
+import type {FSWatcher, Stats} from 'fs';
+
 const common = require('./common');
-const EventEmitter = require('events').EventEmitter;
+const {EventEmitter} = require('events');
 const fs = require('fs');
 const platform = require('os').platform();
 const path = require('path');
 
-/**
- * Constants
- */
+const fsPromises = fs.promises;
 
-const DEFAULT_DELAY = common.DEFAULT_DELAY;
 const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
 
 /**
- * Export `NodeWatcher` class.
- * Watches `dir`.
- *
- * @class NodeWatcher
- * @param {String} dir
- * @param {Object} opts
- * @public
+ * This setting delays all events. It suppresses 'change' events that
+ * immediately follow an 'add', and debounces successive 'change' events to
+ * only emit the latest.
  */
+const DEBOUNCE_MS = 100;
 
 module.exports = class NodeWatcher extends EventEmitter {
-  constructor(dir, opts) {
+  _changeTimers: Map<string, TimeoutID> = new Map();
+  _dirRegistry: {
+    [directory: string]: {[file: string]: true, __proto__: null},
+    __proto__: null,
+  };
+  doIgnore: string => boolean;
+  dot: boolean;
+  globs: $ReadOnlyArray<string>;
+  hasIgnore: boolean;
+  ignored: ?(boolean | RegExp);
+  root: string;
+  watched: {[key: string]: FSWatcher, __proto__: null};
+  watchmanDeferStates: $ReadOnlyArray<string>;
+
+  constructor(dir: string, opts: WatcherOptions) {
     super();
 
     common.assignOptions(this, opts);
 
     this.watched = Object.create(null);
-    this.changeTimers = Object.create(null);
-    this.dirRegistery = Object.create(null);
+    this._dirRegistry = Object.create(null);
     this.root = path.resolve(dir);
-    this.watchdir = this.watchdir.bind(this);
-    this.register = this.register.bind(this);
-    this.checkedEmitError = this.checkedEmitError.bind(this);
 
-    this.watchdir(this.root);
+    this._watchdir(this.root);
     common.recReaddir(
       this.root,
-      this.watchdir,
-      this.register,
-      this.emit.bind(this, 'ready'),
-      this.checkedEmitError,
+      dir => {
+        this._watchdir(dir);
+      },
+      filename => {
+        this._register(filename, 'f');
+      },
+      symlink => {
+        this._register(symlink, 'l');
+      },
+      () => {
+        this.emit('ready');
+      },
+      this._checkedEmitError,
       this.ignored,
     );
   }
@@ -59,7 +87,7 @@ module.exports = class NodeWatcher extends EventEmitter {
    * Register files that matches our globs to know what to type of event to
    * emit in the future.
    *
-   * Registery looks like the following:
+   * Registry looks like the following:
    *
    *  dirRegister => Map {
    *    dirpath => Map {
@@ -67,121 +95,97 @@ module.exports = class NodeWatcher extends EventEmitter {
    *    }
    *  }
    *
-   * @param {string} filepath
-   * @return {boolean} whether or not we have registered the file.
-   * @private
+   *  Return false if ignored or already registered.
    */
+  _register(filepath: string, type: ChangeEventMetadata['type']): boolean {
+    const dir = path.dirname(filepath);
+    const filename = path.basename(filepath);
+    if (this._dirRegistry[dir] && this._dirRegistry[dir][filename]) {
+      return false;
+    }
 
-  register(filepath) {
     const relativePath = path.relative(this.root, filepath);
     if (
+      type === 'f' &&
       !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
     ) {
       return false;
     }
 
-    const dir = path.dirname(filepath);
-    if (!this.dirRegistery[dir]) {
-      this.dirRegistery[dir] = Object.create(null);
+    if (!this._dirRegistry[dir]) {
+      this._dirRegistry[dir] = Object.create(null);
     }
 
-    const filename = path.basename(filepath);
-    this.dirRegistery[dir][filename] = true;
+    this._dirRegistry[dir][filename] = true;
 
     return true;
   }
 
   /**
-   * Removes a file from the registery.
-   *
-   * @param {string} filepath
-   * @private
+   * Removes a file from the registry.
    */
-
-  unregister(filepath) {
+  _unregister(filepath: string) {
     const dir = path.dirname(filepath);
-    if (this.dirRegistery[dir]) {
+    if (this._dirRegistry[dir]) {
       const filename = path.basename(filepath);
-      delete this.dirRegistery[dir][filename];
+      delete this._dirRegistry[dir][filename];
     }
   }
 
   /**
-   * Removes a dir from the registery.
-   *
-   * @param {string} dirpath
-   * @private
+   * Removes a dir from the registry.
    */
-
-  unregisterDir(dirpath) {
-    if (this.dirRegistery[dirpath]) {
-      delete this.dirRegistery[dirpath];
+  _unregisterDir(dirpath: string): void {
+    if (this._dirRegistry[dirpath]) {
+      delete this._dirRegistry[dirpath];
     }
   }
 
   /**
-   * Checks if a file or directory exists in the registery.
-   *
-   * @param {string} fullpath
-   * @return {boolean}
-   * @private
+   * Checks if a file or directory exists in the registry.
    */
-
-  registered(fullpath) {
+  _registered(fullpath: string): boolean {
     const dir = path.dirname(fullpath);
-    return (
-      this.dirRegistery[fullpath] ||
-      (this.dirRegistery[dir] &&
-        this.dirRegistery[dir][path.basename(fullpath)])
+    return !!(
+      this._dirRegistry[fullpath] ||
+      (this._dirRegistry[dir] &&
+        this._dirRegistry[dir][path.basename(fullpath)])
     );
   }
 
   /**
    * Emit "error" event if it's not an ignorable event
-   *
-   * @param error
-   * @private
    */
-  checkedEmitError(error) {
+  _checkedEmitError: (error: Error) => void = error => {
     if (!isIgnorableFileError(error)) {
       this.emit('error', error);
     }
-  }
+  };
 
   /**
    * Watch a directory.
-   *
-   * @param {string} dir
-   * @private
    */
-
-  watchdir(dir) {
+  _watchdir: string => boolean = (dir: string) => {
     if (this.watched[dir]) {
-      return;
+      return false;
     }
-
-    const watcher = fs.watch(
-      dir,
-      {persistent: true},
-      this.normalizeChange.bind(this, dir),
+    const watcher = fs.watch(dir, {persistent: true}, (event, filename) =>
+      this._normalizeChange(dir, event, filename),
     );
     this.watched[dir] = watcher;
 
-    watcher.on('error', this.checkedEmitError);
+    watcher.on('error', this._checkedEmitError);
 
     if (this.root !== dir) {
-      this.register(dir);
+      this._register(dir, 'd');
     }
-  }
+    return true;
+  };
 
   /**
    * Stop watching a directory.
-   *
-   * @param {string} dir
-   * @private
    */
-
-  stopWatching(dir) {
+  _stopWatching(dir: string) {
     if (this.watched[dir]) {
       this.watched[dir].close();
       delete this.watched[dir];
@@ -190,37 +194,30 @@ module.exports = class NodeWatcher extends EventEmitter {
 
   /**
    * End watching.
-   *
-   * @public
    */
-
-  close() {
-    Object.keys(this.watched).forEach(this.stopWatching, this);
+  async close(): Promise<void> {
+    Object.keys(this.watched).forEach(dir => this._stopWatching(dir));
     this.removeAllListeners();
-
-    return Promise.resolve();
   }
 
   /**
    * On some platforms, as pointed out on the fs docs (most likely just win32)
    * the file argument might be missing from the fs event. Try to detect what
    * change by detecting if something was deleted or the most recent file change.
-   *
-   * @param {string} dir
-   * @param {string} event
-   * @param {string} file
-   * @public
    */
-
-  detectChangedFile(dir, event, callback) {
-    if (!this.dirRegistery[dir]) {
+  _detectChangedFile(
+    dir: string,
+    event: string,
+    callback: (file: string) => void,
+  ) {
+    if (!this._dirRegistry[dir]) {
       return;
     }
 
     let found = false;
-    let closest = {mtime: 0};
+    let closest: ?$ReadOnly<{file: string, mtime: Stats['mtime']}> = null;
     let c = 0;
-    Object.keys(this.dirRegistery[dir]).forEach(function (file, i, arr) {
+    Object.keys(this._dirRegistry[dir]).forEach((file, i, arr) => {
       fs.lstat(path.join(dir, file), (error, stat) => {
         if (found) {
           return;
@@ -234,147 +231,185 @@ module.exports = class NodeWatcher extends EventEmitter {
             this.emit('error', error);
           }
         } else {
-          if (stat.mtime > closest.mtime) {
-            stat.file = file;
-            closest = stat;
+          if (closest == null || stat.mtime > closest.mtime) {
+            closest = {file, mtime: stat.mtime};
           }
           if (arr.length === ++c) {
             callback(closest.file);
           }
         }
       });
-    }, this);
+    });
   }
 
   /**
    * Normalize fs events and pass it on to be processed.
-   *
-   * @param {string} dir
-   * @param {string} event
-   * @param {string} file
-   * @public
    */
-
-  normalizeChange(dir, event, file) {
+  _normalizeChange(dir: string, event: string, file: string) {
     if (!file) {
-      this.detectChangedFile(dir, event, actualFile => {
+      this._detectChangedFile(dir, event, actualFile => {
         if (actualFile) {
-          this.processChange(dir, event, actualFile);
+          this._processChange(dir, event, actualFile).catch(error =>
+            this.emit('error', error),
+          );
         }
       });
     } else {
-      this.processChange(dir, event, path.normalize(file));
+      this._processChange(dir, event, path.normalize(file)).catch(error =>
+        this.emit('error', error),
+      );
     }
   }
 
   /**
    * Process changes.
-   *
-   * @param {string} dir
-   * @param {string} event
-   * @param {string} file
-   * @public
    */
-
-  processChange(dir, event, file) {
+  async _processChange(dir: string, event: string, file: string) {
     const fullPath = path.join(dir, file);
     const relativePath = path.join(path.relative(this.root, dir), file);
 
-    fs.lstat(fullPath, (error, stat) => {
-      if (error && error.code !== 'ENOENT') {
-        this.emit('error', error);
-      } else if (!error && stat.isDirectory()) {
+    const registered = this._registered(fullPath);
+
+    try {
+      const stat = await fsPromises.lstat(fullPath);
+      if (stat.isDirectory()) {
         // win32 emits usless change events on dirs.
-        if (event !== 'change') {
-          this.watchdir(fullPath);
-          if (
-            common.isFileIncluded(
-              this.globs,
-              this.dot,
-              this.doIgnore,
-              relativePath,
-            )
-          ) {
-            this.emitEvent(ADD_EVENT, relativePath, stat);
-          }
+        if (event === 'change') {
+          return;
         }
+
+        if (
+          stat &&
+          common.isFileIncluded(
+            this.globs,
+            this.dot,
+            this.doIgnore,
+            relativePath,
+          )
+        ) {
+          common.recReaddir(
+            path.resolve(this.root, relativePath),
+            (dir, stats) => {
+              if (this._watchdir(dir)) {
+                this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'd',
+                });
+              }
+            },
+            (file, stats) => {
+              if (this._register(file, 'f')) {
+                this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'f',
+                });
+              }
+            },
+            (symlink, stats) => {
+              if (this._register(symlink, 'l')) {
+                this._rawEmitEvent(
+                  ADD_EVENT,
+                  path.relative(this.root, symlink),
+                  {
+                    modifiedTime: stats.mtime.getTime(),
+                    size: stats.size,
+                    type: 'l',
+                  },
+                );
+              }
+            },
+            function endCallback() {},
+            this._checkedEmitError,
+            this.ignored,
+          );
+        }
+        return;
       } else {
-        const registered = this.registered(fullPath);
-        if (error && error.code === 'ENOENT') {
-          this.unregister(fullPath);
-          this.stopWatching(fullPath);
-          this.unregisterDir(fullPath);
-          if (registered) {
-            this.emitEvent(DELETE_EVENT, relativePath);
-          }
-        } else if (registered) {
-          this.emitEvent(CHANGE_EVENT, relativePath, stat);
+        const type = common.typeFromStat(stat);
+        if (type == null) {
+          return;
+        }
+        const metadata = {
+          modifiedTime: stat.mtime.getTime(),
+          size: stat.size,
+          type,
+        };
+        if (registered) {
+          this._emitEvent(CHANGE_EVENT, relativePath, metadata);
         } else {
-          if (this.register(fullPath)) {
-            this.emitEvent(ADD_EVENT, relativePath, stat);
+          if (this._register(fullPath, type)) {
+            this._emitEvent(ADD_EVENT, relativePath, metadata);
           }
         }
       }
-    });
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        this.emit('error', error);
+        return;
+      }
+      this._unregister(fullPath);
+      this._stopWatching(fullPath);
+      this._unregisterDir(fullPath);
+      if (registered) {
+        this._emitEvent(DELETE_EVENT, relativePath);
+      }
+    }
   }
 
   /**
-   * Triggers a 'change' event after debounding it to take care of duplicate
-   * events on os x.
+   * Emits the given event after debouncing, to 1) suppress 'change' events
+   * immediately following an 'add', and 2) to only emit the latest 'change'
+   * event when received in quick succession for a given file.
    *
-   * @private
+   * See also note above for DEBOUNCE_MS.
    */
-
-  emitEvent(type, file, stat) {
+  _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
     const key = type + '-' + file;
     const addKey = ADD_EVENT + '-' + file;
-    if (type === CHANGE_EVENT && this.changeTimers[addKey]) {
+    if (type === CHANGE_EVENT && this._changeTimers.has(addKey)) {
       // Ignore the change event that is immediately fired after an add event.
       // (This happens on Linux).
       return;
     }
-    clearTimeout(this.changeTimers[key]);
-    this.changeTimers[key] = setTimeout(() => {
-      delete this.changeTimers[key];
-      if (type === ADD_EVENT && stat.isDirectory()) {
-        // Recursively emit add events and watch for sub-files/folders
-        common.recReaddir(
-          path.resolve(this.root, file),
-          function emitAddDir(dir, stats) {
-            this.watchdir(dir);
-            this.rawEmitEvent(ADD_EVENT, path.relative(this.root, dir), stats);
-          }.bind(this),
-          function emitAddFile(file, stats) {
-            this.register(file);
-            this.rawEmitEvent(ADD_EVENT, path.relative(this.root, file), stats);
-          }.bind(this),
-          function endCallback() {},
-          this.checkedEmitError,
-          this.ignored,
-        );
-      } else {
-        this.rawEmitEvent(type, file, stat);
-      }
-    }, DEFAULT_DELAY);
+    const existingTimer = this._changeTimers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    this._changeTimers.set(
+      key,
+      setTimeout(() => {
+        this._changeTimers.delete(key);
+        this._rawEmitEvent(type, file, metadata);
+      }, DEBOUNCE_MS),
+    );
   }
 
   /**
    * Actually emit the events
    */
-  rawEmitEvent(type, file, stat) {
-    this.emit(type, file, this.root, stat);
-    this.emit(ALL_EVENT, type, file, this.root, stat);
+  _rawEmitEvent(
+    eventType: string,
+    file: string,
+    metadata: ?ChangeEventMetadata,
+  ) {
+    this.emit(eventType, file, this.root, metadata);
+    this.emit(ALL_EVENT, eventType, file, this.root, metadata);
+  }
+
+  getPauseReason(): ?string {
+    return null;
   }
 };
 /**
  * Determine if a given FS error can be ignored
- *
- * @private
  */
-function isIgnorableFileError(error) {
+function isIgnorableFileError(error: Error | {code: string}) {
   return (
     error.code === 'ENOENT' ||
-    // Workaround Windows node issue #4337.
+    // Workaround Windows EPERM on watched folder deletion.
+    // https://github.com/nodejs/node-v0.x-archive/issues/4337
     (error.code === 'EPERM' && platform === 'win32')
   );
 }

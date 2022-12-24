@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,6 +15,7 @@ export type {
   AssetFileResolution,
   CustomResolutionContext,
   CustomResolver,
+  CustomResolverOptions,
   DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,

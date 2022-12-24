@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // The sections between BEGIN GENERATED and END GENERATED are generated
@@ -90,7 +91,7 @@ declare module '@babel/traverse' {
     bindings?: {[name: string]: Binding};
     references?: {[name: string]: boolean};
     // One globals definition is a static class property and the other is an instance property
-    // eslint-disable-next-line flowtype/no-dupe-keys
+    // eslint-disable-next-line ft-flow/no-dupe-keys
     globals?: {[name: string]: BabelNode};
     uids?: {[name: string]: boolean};
     data?: {[key: string]: any};
@@ -1844,6 +1845,8 @@ declare module '@babel/traverse' {
   declare export var visitors: Visitors;
 
   declare export type Cache = {
+    path: $ReadOnlyWeakMap<BabelNode, mixed>,
+    scope: $ReadOnlyWeakMap<BabelNode, mixed>,
     clear(): void,
     clearPath(): void,
     clearScope(): void,

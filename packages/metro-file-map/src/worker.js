@@ -23,7 +23,7 @@ const path = require('path');
 
 const PACKAGE_JSON = path.sep + 'package.json';
 
-let hasteImpl /*: ?{getHasteName: string => string} */ = null;
+let hasteImpl /*: ?{getHasteName: string => ?string} */ = null;
 let hasteImplModulePath /*: ?string */ = null;
 
 function sha1hex(content /*: string | Buffer */) /*: string */ {

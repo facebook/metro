@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -78,6 +79,7 @@ class WorkerFarm {
   async transform(
     filename: string,
     options: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -85,6 +87,7 @@ class WorkerFarm {
         options,
         this._config.projectRoot,
         this._transformerConfig,
+        fileBuffer,
       );
 
       Logger.log(data.transformFileStartLogEntry);
@@ -107,7 +110,7 @@ class WorkerFarm {
     workerPath: string,
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
-  ) {
+  ): any {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.

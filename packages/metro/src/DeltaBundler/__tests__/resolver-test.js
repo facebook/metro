@@ -4,13 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {mergeConfig} = require('metro-config');
+import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {InputConfigT} from 'metro-config/src/configTypes.flow';
+
+const {getDefaultConfig, mergeConfig} = require('metro-config');
 const path = require('path');
 const mockPlatform = process.platform;
 
@@ -19,6 +23,7 @@ jest
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))
   .mock('os', () => ({
+    ...jest.requireActual('os'),
     platform: () => 'test',
     tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
@@ -32,8 +37,12 @@ jest.setTimeout(10000);
 let fs;
 let resolver;
 
+type MockFSDirContents = $ReadOnly<{
+  [name: string]: string | MockFSDirContents,
+}>;
+
 ['linux', 'win32'].forEach(osPlatform => {
-  function setMockFileSystem(object) {
+  function setMockFileSystem(object: MockFSDirContents) {
     const root = p('/root');
 
     fs.mkdirSync(root);
@@ -45,7 +54,7 @@ let resolver;
     return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
-  function mockDir(dirPath, desc) {
+  function mockDir(dirPath: string, desc: MockFSDirContents): void {
     for (const entName in desc) {
       const ent = desc[entName];
 
@@ -62,7 +71,7 @@ let resolver;
     }
   }
 
-  const defaultConfig = {
+  const defaultConfig: InputConfigT = {
     resolver: {
       assetExts: ['png', 'jpg'],
       assetResolutions: ['1', '1.5', '2', '3', '4'],
@@ -74,25 +83,38 @@ let resolver;
       sourceExts: ['js', 'json'],
       useWatchman: false,
     },
+    watcher: {
+      additionalExts: ['cjs', 'mjs'],
+    },
     maxWorkers: 1,
     projectRoot: p('/root'),
     reporter: require('../../lib/reporting').nullReporter,
     transformer: {},
-    watch: true,
     watchFolders: [p('/root')],
   };
 
-  async function createResolver(config = {}, platform = '') {
+  async function createResolver(config: InputConfigT = {}, platform?: string) {
     const DependencyGraph = require('../../node-haste/DependencyGraph');
     const dependencyGraph = new DependencyGraph(
-      mergeConfig(defaultConfig, config),
+      mergeConfig(await getDefaultConfig(p('/root')), defaultConfig, config),
     );
     await dependencyGraph.ready();
 
     return {
-      resolve: (from, to, options) =>
-        dependencyGraph.resolveDependency(from, to, platform, options),
-      end: dependencyGraph.end.bind(dependencyGraph),
+      resolve: (
+        from: string,
+        to: string,
+        resolverOptions?: ResolverInputOptions = {},
+        options: void | {assumeFlatNodeModules: boolean},
+      ) =>
+        dependencyGraph.resolveDependency(
+          from,
+          to,
+          platform ?? null,
+          resolverOptions,
+          options,
+        ),
+      end: () => dependencyGraph.end(),
     };
   }
 
@@ -118,7 +140,10 @@ let resolver;
       });
 
       if (osPlatform === 'win32') {
-        jest.mock('path', () => jest.requireActual('path').win32);
+        jest.mock(
+          'path',
+          () => jest.requireActual<{win32: mixed}>('path').win32,
+        );
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),
@@ -128,10 +153,12 @@ let resolver;
         jest.mock('fs', () => new (require('metro-memory-fs'))());
       }
 
+      // $FlowFixMe[cannot-write]
       require('os').tmpdir = () => p('/tmp');
 
       fs = require('fs');
       originalError = console.error;
+      // $FlowFixMe[cannot-write]
       console.error = jest.fn((...args) => {
         // Silence expected errors that we assert on later
         if (
@@ -146,9 +173,11 @@ let resolver;
 
     afterEach(async () => {
       try {
-        resolver && (await resolver.end());
+        if (resolver) {
+          await resolver.end();
+        }
       } finally {
-        resolver = null;
+        // $FlowFixMe[cannot-write]
         console.error = originalError;
       }
     });
@@ -275,7 +304,7 @@ let resolver;
         );
       });
 
-      it('fails when trying to require a non supported extension', async () => {
+      it('fails when trying to implicitly require an extension not listed in sourceExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import root from './a.another';"),
           'a.another': '',
@@ -324,6 +353,46 @@ let resolver;
         expect(resolver.resolve(p('/root/index.js'), './folder.js')).toBe(
           p('/root/folder.js'),
         );
+      });
+
+      describe('with additional files included in the file map (watcher.additionalExts)', () => {
+        it('resolves modules outside sourceExts when required explicitly', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a.cjs';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(resolver.resolve(p('/root/index.js'), './a.cjs')).toBe(
+            p('/root/a.cjs'),
+          );
+        });
+
+        it('fails when implicitly requiring a file outside sourceExts', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), './a'),
+          ).toThrowErrorMatchingSnapshot();
+        });
       });
     });
 
@@ -479,7 +548,7 @@ let resolver;
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/lib/index.js'), 'foo', {
+          resolver.resolve(p('/root/lib/index.js'), 'foo', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/root/node_modules/foo/index.js'));
@@ -487,6 +556,7 @@ let resolver;
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
             'foo',
+            undefined,
             {assumeFlatNodeModules: true},
           ),
         ).toBe(p('/root/node_modules/foo/index.js'));
@@ -607,6 +677,30 @@ let resolver;
         );
       });
 
+      it('resolves main field correctly for a fully specified module included by watcher.additionalExts', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            foo: {
+              'package.json': JSON.stringify({
+                name: 'foo',
+                main: './main.cjs',
+              }),
+              'main.cjs': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          watcher: {
+            additionalExts: ['cjs'],
+          },
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
+          p('/root/node_modules/foo/main.cjs'),
+        );
+      });
+
       it('allows package names with dots', async () => {
         setMockFileSystem({
           'index.js': '',
@@ -652,6 +746,7 @@ let resolver;
       });
 
       it('allows to require package sub-dirs', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -678,7 +773,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: 'client.js',
+                    [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
                 },
@@ -699,7 +794,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'another.js',
-                    [browserField]: 'client.js',
+                    [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
                 },
@@ -719,7 +814,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: 'client',
+                    [(browserField: string)]: 'client',
                   }),
                   'client.js': '',
                 },
@@ -740,7 +835,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {'main.js': 'client.js'},
+                    [(browserField: string)]: {'main.js': 'client.js'},
                   }),
                   'client.js': '',
                   'main.js': '',
@@ -766,7 +861,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {'./main': './client'},
+                    [(browserField: string)]: {'./main': './client'},
                   }),
                   'client.js': '',
                   'main.js': '',
@@ -791,7 +886,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {
+                    [(browserField: string)]: {
                       './main.js': 'main-client.js',
                       'foo.js': 'foo-client.js',
                       './dir/file.js': 'dir/file-client.js',
@@ -857,7 +952,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {
+                    [(browserField: string)]: {
                       'left-pad': 'left-pad-browser',
                     },
                   }),
@@ -868,7 +963,7 @@ let resolver;
                 'left-pad-browser': {
                   'package.json': JSON.stringify({
                     name: 'left-pad-browser',
-                    [browserField]: {'./main.js': 'main-client'},
+                    [(browserField: string)]: {'./main.js': 'main-client'},
                   }),
                   'index.js': '',
                   'main-client.js': '',
@@ -899,7 +994,9 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': './left-pad-browser'},
+                    [(browserField: string)]: {
+                      'left-pad': './left-pad-browser',
+                    },
                   }),
                   'index.js': '',
                   './left-pad-browser.js': '',
@@ -925,7 +1022,10 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': false, './foo.js': false},
+                    [(browserField: string)]: {
+                      'left-pad': false,
+                      './foo.js': false,
+                    },
                   }),
                   'index.js': '',
                 },
@@ -966,7 +1066,10 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': false, './foo.js': false},
+                    [(browserField: string)]: {
+                      'left-pad': false,
+                      './foo.js': false,
+                    },
                   }),
                   'index.js': '',
                 },
@@ -1200,7 +1303,7 @@ let resolver;
           },
         });
 
-        resolver = await createResolver('ios');
+        resolver = await createResolver({}, 'ios');
 
         // TODO: Is this behaviour expected?
         expect(() => resolver.resolve(p('/root/index.js'), 'foo')).toThrow();
@@ -1481,6 +1584,7 @@ let resolver;
       });
 
       it('fatals on multiple packages with the same name', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -1560,6 +1664,7 @@ let resolver;
       });
 
       it('allows to require global package sub-dirs', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -1583,7 +1688,7 @@ let resolver;
               aPackage: {
                 'package.json': JSON.stringify({
                   name: 'aPackage',
-                  [browserField]: 'client.js',
+                  [(browserField: string)]: 'client.js',
                 }),
                 'client.js': '',
               },
@@ -1602,7 +1707,7 @@ let resolver;
                 'package.json': JSON.stringify({
                   name: 'aPackage',
                   main: 'main.js',
-                  [browserField]: {'./main': './client'},
+                  [(browserField: string)]: {'./main': './client'},
                 }),
                 'client.js': '',
                 'main.js': '',
@@ -2206,12 +2311,12 @@ let resolver;
           filePath: p('/target-always.js'),
         });
         expect(
-          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+          resolver.resolve(p('/root1/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
@@ -2221,16 +2326,80 @@ let resolver;
           filePath: p('/target-never.js'),
         });
         expect(
-          resolver.resolve(p('/root2/dir/a.js'), 'target', {
+          resolver.resolve(p('/root2/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
         expect(
-          resolver.resolve(p('/root2/dir/b.js'), 'target', {
+          resolver.resolve(p('/root2/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toBe(p('/target-always.js'));
 
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+      });
+
+      it('forks the cache by customResolverOptions', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            customResolverOptions: {
+              foo: 'bar',
+              key: 'value',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: reverse order from what we passed above
+              key: 'value',
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: only a subset of the options passed above
+              foo: 'bar',
+            },
+          }),
+        ).toBe(p('/target1.js'));
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              something: 'else',
+            },
+          }),
+        ).toBe(p('/target1.js'));
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });

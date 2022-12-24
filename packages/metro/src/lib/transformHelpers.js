@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,8 +17,12 @@ import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
+import type {RequireContext} from './contextModule';
+
+import {getContextModuleTemplate} from './contextModuleTemplates';
 
 const path = require('path');
+import type {ResolverInputOptions} from '../shared/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 
@@ -34,6 +39,7 @@ async function calcTransformerOptions(
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
   options: TransformInputOptions,
+  resolverOptions: ResolverInputOptions,
 ): Promise<TransformOptionsWithRawInlines> {
   const baseOptions = {
     customTransformOptions: options.customTransformOptions,
@@ -59,15 +65,28 @@ async function calcTransformerOptions(
 
   const getDependencies = async (path: string) => {
     const dependencies = await deltaBundler.getDependencies([path], {
-      resolve: await getResolveDependencyFn(bundler, options.platform),
-      transform: await getTransformFn([path], bundler, deltaBundler, config, {
-        ...options,
-        minify: false,
-      }),
+      resolve: await getResolveDependencyFn(
+        bundler,
+        options.platform,
+        resolverOptions,
+      ),
+      transform: await getTransformFn(
+        [path],
+        bundler,
+        deltaBundler,
+        config,
+        {
+          ...options,
+          minify: false,
+        },
+        resolverOptions,
+      ),
       transformOptions: options,
       onProgress: null,
       experimentalImportBundleSupport:
-        config.transformer.experimentalImportBundleSupport,
+        config.server.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
       shallow: false,
     });
 
@@ -82,12 +101,12 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    inlineRequires: transform.inlineRequires || false,
-    experimentalImportSupport: transform.experimentalImportSupport || false,
+    inlineRequires: transform?.inlineRequires || false,
+    experimentalImportSupport: transform?.experimentalImportSupport || false,
     unstable_disableES6Transforms:
-      transform.unstable_disableES6Transforms || false,
+      transform?.unstable_disableES6Transforms || false,
     nonInlinedRequires:
-      transform.nonInlinedRequires || baseIgnoredInlineRequires,
+      transform?.nonInlinedRequires || baseIgnoredInlineRequires,
     type: 'module',
   };
 }
@@ -109,6 +128,7 @@ async function getTransformFn(
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
   options: TransformInputOptions,
+  resolverOptions: ResolverInputOptions,
 ): Promise<TransformFn<>> {
   const {inlineRequires, ...transformOptions} = await calcTransformerOptions(
     entryFiles,
@@ -116,17 +136,50 @@ async function getTransformFn(
     deltaBundler,
     config,
     options,
+    resolverOptions,
   );
 
-  return async (path: string) => {
-    return await bundler.transformFile(path, {
-      ...transformOptions,
-      type: getType(transformOptions.type, path, config.resolver.assetExts),
-      inlineRequires: removeInlineRequiresBlockListFromOptions(
-        path,
-        inlineRequires,
-      ),
-    });
+  return async (modulePath: string, requireContext: ?RequireContext) => {
+    let templateBuffer: Buffer;
+
+    if (requireContext) {
+      const graph = await bundler.getDependencyGraph();
+
+      // TODO: Check delta changes to avoid having to look over all files each time
+      // this is a massive performance boost.
+
+      // Search against all files, this is very expensive.
+      // TODO: Maybe we could let the user specify which root to check against.
+      const files = graph.matchFilesWithContext(requireContext.from, {
+        filter: requireContext.filter,
+        recursive: requireContext.recursive,
+      });
+
+      const template = getContextModuleTemplate(
+        requireContext.mode,
+        requireContext.from,
+        files,
+      );
+
+      templateBuffer = Buffer.from(template);
+    }
+
+    return await bundler.transformFile(
+      modulePath,
+      {
+        ...transformOptions,
+        type: getType(
+          transformOptions.type,
+          modulePath,
+          config.resolver.assetExts,
+        ),
+        inlineRequires: removeInlineRequiresBlockListFromOptions(
+          modulePath,
+          inlineRequires,
+        ),
+      },
+      templateBuffer,
+    );
   };
 }
 
@@ -149,12 +202,17 @@ function getType(
 async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
+  resolverOptions: ResolverInputOptions,
 ): Promise<(from: string, to: string) => string> {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
-    // $FlowFixMe[incompatible-call]
-    dependencyGraph.resolveDependency(from, to, platform);
+    dependencyGraph.resolveDependency(
+      from,
+      to,
+      platform ?? null,
+      resolverOptions,
+    );
 }
 
 module.exports = {

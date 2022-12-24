@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,8 +15,6 @@ import type {
   BundleMetadata,
   BytecodeBundle,
 } from 'metro-runtime/src/modules/types.flow';
-
-const {getFileLength} = require('metro-hermes-compiler');
 
 // The magic number is used as a header for bytecode.
 // It represents a Metro tunnel in binary.
@@ -34,6 +33,8 @@ function getFileHeader(moduleCount: number): Buffer {
 }
 
 function addModuleHeader(buffer: Buffer): [Buffer, Buffer] {
+  const {getFileLength} = require('metro-hermes-compiler');
+
   const fileLength = getFileLength(buffer, 0);
   const header = Buffer.alloc(4);
   header.writeUInt32LE(fileLength, 0);
@@ -53,7 +54,7 @@ function bundleToBytecode(bundle: BytecodeBundle): {
   +bytecode: Buffer,
   +metadata: BundleMetadata,
 } {
-  const buffers = [];
+  const buffers: Array<Buffer> = [];
 
   if (bundle.pre.length) {
     buffers.push(...bundle.pre);
@@ -92,5 +93,5 @@ function bundleToBytecode(bundle: BytecodeBundle): {
   };
 }
 
+bundleToBytecode.MAGIC_NUMBER = MAGIC_NUMBER;
 module.exports = bundleToBytecode;
-module.exports.MAGIC_NUMBER = MAGIC_NUMBER;

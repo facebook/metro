@@ -6,15 +6,23 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type MetroFileMap, {HasteFS} from 'metro-file-map';
+import type MetroFileMap, {
+  ChangeEvent,
+  FileSystem,
+  IModuleMap,
+  HealthCheckResult,
+  WatcherStatus,
+} from 'metro-file-map';
 import type Module from './Module';
 
-import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
+import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
+const canonicalize = require('metro-core/src/canonicalize');
 const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const ModuleCache = require('./ModuleCache');
@@ -28,13 +36,14 @@ const {
 const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
+import type {ResolverInputOptions} from '../shared/types.flow';
 
-const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
+const NULL_PLATFORM = Symbol();
 
-function getOrCreate<T>(
-  map: Map<string, Map<string, T>>,
+function getOrCreateMap<T>(
+  map: Map<string | symbol, Map<string | symbol, T>>,
   field: string,
-): Map<string, T> {
+): Map<string | symbol, T> {
   let subMap = map.get(field);
   if (!subMap) {
     subMap = new Map();
@@ -47,11 +56,27 @@ class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
   _config: ConfigT;
   _haste: MetroFileMap;
-  _hasteFS: HasteFS;
+  _fileSystem: FileSystem;
   _moduleCache: ModuleCache;
-  _moduleMap: MetroFileMapModuleMap;
+  _hasteModuleMap: IModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
-  _resolutionCache: Map<string, Map<string, Map<string, string>>>;
+  _resolutionCache: Map<
+    // Custom resolver options
+    string | symbol,
+    Map<
+      // Origin folder
+      string | symbol,
+      Map<
+        // Dependency name
+        string | symbol,
+        Map<
+          // Platform
+          string | symbol,
+          string,
+        >,
+      >,
+    >,
+  >;
   _readyPromise: Promise<void>;
 
   constructor(
@@ -84,20 +109,31 @@ class DependencyGraph extends EventEmitter {
     haste.setMaxListeners(1000);
 
     this._haste = haste;
+    this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._readyPromise = haste.build().then(({hasteFS, moduleMap}) => {
+    this._readyPromise = haste.build().then(({fileSystem, hasteModuleMap}) => {
       log(createActionEndEntry(initializingMetroLogEntry));
       config.reporter.update({type: 'dep_graph_loaded'});
 
-      this._hasteFS = hasteFS;
-      this._moduleMap = moduleMap;
+      this._fileSystem = fileSystem;
+      this._hasteModuleMap = hasteModuleMap;
 
-      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-      this._haste.on('change', this._onHasteChange.bind(this));
+      this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
+      this._haste.on('healthCheck', result =>
+        this._onWatcherHealthCheck(result),
+      );
       this._resolutionCache = new Map();
       this._moduleCache = this._createModuleCache();
       this._createModuleResolver();
     });
+  }
+
+  _onWatcherHealthCheck(result: HealthCheckResult) {
+    this._config.reporter.update({type: 'watcher_health_check_result', result});
+  }
+
+  _onWatcherStatus(status: WatcherStatus) {
+    this._config.reporter.update({type: 'watcher_status', status});
   }
 
   // Waits for the dependency graph to become ready after initialisation.
@@ -123,7 +159,7 @@ class DependencyGraph extends EventEmitter {
     let dir = parsedPath.dir;
     do {
       const candidate = path.join(dir, 'package.json');
-      if (this._hasteFS.exists(candidate)) {
+      if (this._fileSystem.exists(candidate)) {
         return candidate;
       }
       dir = path.dirname(dir);
@@ -131,15 +167,9 @@ class DependencyGraph extends EventEmitter {
     return null;
   }
 
-  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
-   * LTI update could not be added via codemod */
-  _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
-    this._hasteFS = hasteFS;
+  _onHasteChange({eventsQueue}: ChangeEvent) {
     this._resolutionCache = new Map();
-    this._moduleMap = moduleMap;
-    eventsQueue.forEach(({type, filePath}) =>
-      this._moduleCache.processFileChange(type, filePath),
-    );
+    eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
     this._createModuleResolver();
     this.emit('change');
   }
@@ -157,10 +187,13 @@ class DependencyGraph extends EventEmitter {
       doesFileExist: this._doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
+      getHasteModulePath: (name, platform) =>
+        this._hasteModuleMap.getModule(name, platform, true),
+      getHastePackagePath: (name, platform) =>
+        this._hasteModuleMap.getPackage(name, platform, true),
       isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
-      moduleMap: this._moduleMap,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
@@ -171,7 +204,7 @@ class DependencyGraph extends EventEmitter {
           ...this._config.resolver.assetResolutions.map(
             resolution => basePath + '@' + resolution + 'x' + extension,
           ),
-        ].filter(candidate => this._hasteFS.exists(candidate));
+        ].filter(candidate => this._fileSystem.exists(candidate));
         return assets.length ? assets : null;
       },
       resolveRequest: this._config.resolver.resolveRequest,
@@ -179,11 +212,14 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
-  _createModuleCache() {
+  _createModuleCache(): ModuleCache {
     return new ModuleCache({
-      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-      getClosestPackage: this._getClosestPackage.bind(this),
+      getClosestPackage: filePath => this._getClosestPackage(filePath),
     });
+  }
+
+  getAllFiles(): Array<string> {
+    return nullthrows(this._fileSystem).getAllFiles();
   }
 
   getSha1(filename: string): string {
@@ -203,7 +239,7 @@ class DependencyGraph extends EventEmitter {
     // been talking about for stuff like CSS or WASM).
 
     const resolvedPath = fs.realpathSync(containerName);
-    const sha1 = this._hasteFS.getSha1(resolvedPath);
+    const sha1 = this._fileSystem.getSha1(resolvedPath);
 
     if (!sha1) {
       throw new ReferenceError(
@@ -225,10 +261,26 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
+  /** Given a search context, return a list of file paths matching the query. */
+  matchFilesWithContext(
+    from: string,
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
+      recursive: boolean,
+      /* Filter relative paths against a pattern. */
+      filter: RegExp,
+    }>,
+  ): string[] {
+    return this._fileSystem.matchFilesWithContext(from, context);
+  }
+
   resolveDependency(
     from: string,
     to: string,
-    platform: string,
+    platform: string | null,
+    resolverOptions: ResolverInputOptions,
+
+    // TODO: Fold assumeFlatNodeModules into resolverOptions and add to graphId
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
@@ -242,12 +294,26 @@ class DependencyGraph extends EventEmitter {
       to === '..' ||
       // Preserve standard assumptions under node_modules
       from.includes(path.sep + 'node_modules' + path.sep);
-    const mapByDirectory = getOrCreate(
-      this._resolutionCache,
-      isSensitiveToOriginFolder ? path.dirname(from) : '',
+
+    // Compound key for the resolver cache
+    const resolverOptionsKey =
+      JSON.stringify(
+        resolverOptions.customResolverOptions ?? {},
+        canonicalize,
+      ) ?? '';
+    const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
+    const targetKey = to;
+    const platformKey = platform ?? NULL_PLATFORM;
+
+    // Traverse the resolver cache, which is a tree of maps
+    const mapByResolverOptions = this._resolutionCache;
+    const mapByOrigin = getOrCreateMap(
+      mapByResolverOptions,
+      resolverOptionsKey,
     );
-    const mapByPlatform = getOrCreate(mapByDirectory, to);
-    let modulePath = mapByPlatform.get(platform);
+    const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
+    const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
+    let modulePath = mapByPlatform.get(platformKey);
 
     if (!modulePath) {
       try {
@@ -256,6 +322,7 @@ class DependencyGraph extends EventEmitter {
           to,
           true,
           platform,
+          resolverOptions,
         ).path;
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
@@ -272,16 +339,16 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platform, modulePath);
+    mapByPlatform.set(platformKey, modulePath);
     return modulePath;
   }
 
   _doesFileExist = (filePath: string): boolean => {
-    return this._hasteFS.exists(filePath);
+    return this._fileSystem.exists(filePath);
   };
 
   getHasteName(filePath: string): string {
-    const hasteName = this._hasteFS.getModuleName(filePath);
+    const hasteName = this._fileSystem.getModuleName(filePath);
 
     if (hasteName) {
       return hasteName;
@@ -291,7 +358,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   getDependencies(filePath: string): Array<string> {
-    return nullthrows(this._hasteFS.getDependencies(filePath));
+    return nullthrows(this._fileSystem.getDependencies(filePath));
   }
 }
 

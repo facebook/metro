@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -20,13 +21,17 @@ function processModules(
     filter = () => true,
     createModuleId,
     dev,
+    includeAsyncPaths,
     projectRoot,
-  }: {
-    +filter?: (module: Module<>) => boolean,
-    +createModuleId: string => number,
-    +dev: boolean,
-    +projectRoot: string,
-  },
+    serverRoot,
+  }: $ReadOnly<{
+    filter?: (module: Module<>) => boolean,
+    createModuleId: string => number,
+    dev: boolean,
+    includeAsyncPaths: boolean,
+    projectRoot: string,
+    serverRoot: string,
+  }>,
 ): $ReadOnlyArray<[Module<>, string]> {
   return [...modules]
     .filter(isJsModule)
@@ -36,7 +41,9 @@ function processModules(
       wrapModule(module, {
         createModuleId,
         dev,
+        includeAsyncPaths,
         projectRoot,
+        serverRoot,
       }),
     ]);
 }

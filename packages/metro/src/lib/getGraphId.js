@@ -6,11 +6,13 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {ResolverInputOptions} from '../shared/types.flow';
 
 const canonicalize = require('metro-core/src/canonicalize');
 
@@ -22,20 +24,21 @@ function getGraphId(
   {
     shallow,
     experimentalImportBundleSupport,
-  }: {
-    +shallow: boolean,
-    +experimentalImportBundleSupport: boolean,
-    ...
-  },
+    unstable_allowRequireContext,
+    resolverOptions,
+  }: $ReadOnly<{
+    shallow: boolean,
+    experimentalImportBundleSupport: boolean,
+    unstable_allowRequireContext: boolean,
+    resolverOptions: ResolverInputOptions,
+  }>,
 ): GraphId {
   return JSON.stringify(
     {
       entryFile,
       options: {
-        customTransformOptions:
-          options.customTransformOptions != null
-            ? options.customTransformOptions
-            : null,
+        customResolverOptions: resolverOptions.customResolverOptions ?? {},
+        customTransformOptions: options.customTransformOptions ?? null,
         dev: options.dev,
         experimentalImportSupport: options.experimentalImportSupport || false,
         hot: options.hot,
@@ -45,6 +48,7 @@ function getGraphId(
         runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,
         experimentalImportBundleSupport,
+        unstable_allowRequireContext,
         shallow,
         unstable_transformProfile:
           options.unstable_transformProfile || 'default',

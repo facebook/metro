@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,6 +14,7 @@
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {ResolverInputOptions} from '../shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 import CountingSet from './CountingSet';
@@ -21,7 +23,6 @@ const countLines = require('./countLines');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
 const defaults = require('metro-config/src/defaults/defaults');
-const {compile} = require('metro-hermes-compiler');
 
 async function getPrependedScripts(
   config: ConfigT,
@@ -29,6 +30,7 @@ async function getPrependedScripts(
     TransformInputOptions,
     {type: $PropertyType<TransformInputOptions, 'type'>, ...},
   >,
+  resolverOptions: ResolverInputOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
 ): Promise<$ReadOnlyArray<Module<>>> {
@@ -51,6 +53,7 @@ async function getPrependedScripts(
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,
         options.platform,
+        resolverOptions,
       ),
       transform: await transformHelpers.getTransformFn(
         [defaults.moduleSystem, ...polyfillModuleNames],
@@ -58,11 +61,14 @@ async function getPrependedScripts(
         deltaBundler,
         config,
         transformOptions,
+        resolverOptions,
       ),
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
       transformOptions,
       onProgress: null,
       experimentalImportBundleSupport:
-        config.transformer.experimentalImportBundleSupport,
+        config.server.experimentalImportBundleSupport,
       shallow: false,
     },
   );
@@ -87,6 +93,8 @@ function _getPrelude({
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
+  const {compile} = require('metro-hermes-compiler');
+
   const code = getPreludeCode({
     isDev: dev,
     globalPrefix,

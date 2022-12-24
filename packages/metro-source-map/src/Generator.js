@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -174,13 +175,11 @@ class Generator {
       sourcesMetadata = {};
     }
 
-    /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.111 was deployed. To see the error, delete this
-     * comment and run Flow. */
     return {
       version: 3,
       file,
       sources: this.sources.slice(),
+      // $FlowFixMe[exponential-spread]
       ...content,
       /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.111 was deployed. To see the error, delete

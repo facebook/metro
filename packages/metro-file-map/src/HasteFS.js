@@ -8,23 +8,28 @@
  * @flow strict-local
  */
 
-import type {FileData, Path} from './flow-types';
+import type {
+  FileData,
+  FileMetaData,
+  FileSystem,
+  Glob,
+  Path,
+} from './flow-types';
 
 import H from './constants';
 import * as fastPath from './lib/fast_path';
-// $FlowFixMe[untyped-import] - jest-util
+import * as path from 'path';
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
-// $FlowFixMe[unclear-type] - Check TS Config.Glob
-type Glob = any;
-
-export default class HasteFS {
-  +_rootDir: Path;
-  +_files: FileData;
+export default class HasteFS implements FileSystem {
+  +#rootDir: Path;
+  +#files: FileData;
 
   constructor({rootDir, files}: {rootDir: Path, files: FileData}) {
-    this._rootDir = rootDir;
-    this._files = files;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#rootDir = rootDir;
+    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
+    this.#files = files;
   }
 
   getModuleName(file: Path): ?string {
@@ -63,12 +68,12 @@ export default class HasteFS {
   }
 
   getFileIterator(): Iterable<Path> {
-    return this._files.keys();
+    return this.#files.keys();
   }
 
   *getAbsoluteFileIterator(): Iterable<Path> {
     for (const file of this.getFileIterator()) {
-      yield fastPath.resolve(this._rootDir, file);
+      yield fastPath.resolve(this.#rootDir, file);
     }
   }
 
@@ -81,6 +86,52 @@ export default class HasteFS {
         files.push(file);
       }
     }
+    return files;
+  }
+
+  /**
+   * Given a search context, return a list of file paths matching the query.
+   * The query matches against normalized paths which start with `./`,
+   * for example: `a/b.js` -> `./a/b.js`
+   */
+  matchFilesWithContext(
+    root: Path,
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
+      recursive: boolean,
+      /* Filter relative paths against a pattern. */
+      filter: RegExp,
+    }>,
+  ): Array<Path> {
+    const files = [];
+    const prefix = './';
+
+    for (const file of this.getAbsoluteFileIterator()) {
+      const filePath = fastPath.relative(root, file);
+
+      const isUnderRoot = filePath && !filePath.startsWith('..');
+      // Ignore everything outside of the provided `root`.
+      if (!isUnderRoot) {
+        continue;
+      }
+
+      // Prevent searching in child directories during a non-recursive search.
+      if (!context.recursive && filePath.includes(path.sep)) {
+        continue;
+      }
+
+      if (
+        context.filter.test(
+          // NOTE(EvanBacon): Ensure files start with `./` for matching purposes
+          // this ensures packages work across Metro and Webpack (ex: Storybook for React DOM / React Native).
+          // `a/b.js` -> `./a/b.js`
+          prefix + filePath.replace(/\\/g, '/'),
+        )
+      ) {
+        files.push(file);
+      }
+    }
+
     return files;
   }
 
@@ -97,8 +148,8 @@ export default class HasteFS {
     return files;
   }
 
-  _getFileData(file: Path) {
-    const relativePath = fastPath.relative(this._rootDir, file);
-    return this._files.get(relativePath);
+  _getFileData(file: Path): void | FileMetaData {
+    const relativePath = fastPath.relative(this.#rootDir, file);
+    return this.#files.get(relativePath);
   }
 }

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 import type {
@@ -19,7 +20,6 @@ import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
 import {readFileSync, writeFileSync} from 'graceful-fs';
 import {tmpdir} from 'os';
 import path from 'path';
-// $FlowFixMe[missing-export] - serialize and deserialize missing typedefs
 import {deserialize, serialize} from 'v8';
 
 type DiskCacheConfig = {
@@ -69,8 +69,14 @@ export class DiskCacheManager implements CacheManager {
   async read(): Promise<?InternalData> {
     try {
       return deserialize(readFileSync(this._cachePath));
-    } catch {}
-    return null;
+    } catch (e) {
+      if (e?.code === 'ENOENT') {
+        // Cache file not found - not considered an error.
+        return null;
+      }
+      // Rethrow anything else.
+      throw e;
+    }
   }
 
   async write(
