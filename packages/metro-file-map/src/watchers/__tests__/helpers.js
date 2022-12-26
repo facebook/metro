@@ -31,7 +31,9 @@ const {mkdtemp, writeFile} = fsPromises;
 // and will tend to exercise our Watchman tests whenever possible.
 const isWatchmanOnPath = () => {
   try {
-    execSync(os.platform() === 'windows' ? 'where watchman' : 'which watchman');
+    execSync(
+      os.platform() === 'win32' ? 'where.exe watchman' : 'which watchman',
+    );
     return true;
   } catch {
     return false;
