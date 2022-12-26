@@ -1186,11 +1186,16 @@ class Server {
     ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
-        if (collapse || lineNumber == null || urls.has(fileAbsolute)) {
+
+        if (
+          collapse ||
+          lineNumber == null ||
+          (file != null && urls.has(file))
+        ) {
           continue;
         }
 
+        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
         try {
           return {
             content: codeFrameColumns(
