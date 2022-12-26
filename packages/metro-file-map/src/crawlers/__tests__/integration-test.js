@@ -39,10 +39,13 @@ type Crawler = (opts: CrawlerOptions) => Promise<{
 }>;
 
 const CRAWLERS: {[key: string]: ?Crawler} = {
-  'node-find': opts => {
-    mockUseNativeFind.mockResolvedValue(true);
-    return nodeCrawl(opts);
-  },
+  'node-find':
+    os.platform() !== 'win32'
+      ? opts => {
+          mockUseNativeFind.mockResolvedValue(true);
+          return nodeCrawl(opts);
+        }
+      : null,
   'node-recursive': opts => {
     mockUseNativeFind.mockResolvedValue(false);
     return nodeCrawl(opts);
