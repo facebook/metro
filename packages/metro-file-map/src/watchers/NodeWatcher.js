@@ -53,6 +53,7 @@ module.exports = class NodeWatcher extends EventEmitter {
   root: string;
   watched: {[key: string]: FSWatcher, __proto__: null};
   watchmanDeferStates: $ReadOnlyArray<string>;
+  #isReady: false;
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
@@ -76,6 +77,7 @@ module.exports = class NodeWatcher extends EventEmitter {
         this._register(symlink, 'l');
       },
       () => {
+        this.#isReady = true;
         this.emit('ready');
       },
       this._checkedEmitError,
@@ -172,6 +174,18 @@ module.exports = class NodeWatcher extends EventEmitter {
     const watcher = fs.watch(dir, {persistent: true}, (event, filename) =>
       this._normalizeChange(dir, event, filename),
     );
+    setTimeout(async () => {
+      try {
+        const names = await fsPromises.readdir(dir, {withFileTypes: false});
+        await Promise.all(
+          names
+            .filter(name => !this._registered(path.resolve(dir, name)))
+            .map(name => this._processChange(dir, 'add', name)),
+        );
+      } catch (error) {
+        this.emit('error', error);
+      }
+    }, 100);
     this.watched[dir] = watcher;
 
     watcher.on('error', this._checkedEmitError);
@@ -366,6 +380,9 @@ module.exports = class NodeWatcher extends EventEmitter {
    * See also note above for DEBOUNCE_MS.
    */
   _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
+    if (!this.#isReady) {
+      return;
+    }
     const key = type + '-' + file;
     const addKey = ADD_EVENT + '-' + file;
     if (type === CHANGE_EVENT && this._changeTimers.has(addKey)) {
