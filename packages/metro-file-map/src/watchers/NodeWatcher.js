@@ -39,6 +39,12 @@ const ALL_EVENT = common.ALL_EVENT;
  */
 const DEBOUNCE_MS = 100;
 
+/**
+ * Re-scan a directory after calling `fs.watch` on it. This helps detect files
+ * added between the initial scan of the directory and the watch becoming live.
+ */
+const RESCAN_NEW_DIRECTORIES_MS = 100;
+
 module.exports = class NodeWatcher extends EventEmitter {
   _changeTimers: Map<string, TimeoutID> = new Map();
   _dirRegistry: {
@@ -53,7 +59,7 @@ module.exports = class NodeWatcher extends EventEmitter {
   root: string;
   watched: {[key: string]: FSWatcher, __proto__: null};
   watchmanDeferStates: $ReadOnlyArray<string>;
-  #isReady: false;
+  #isReady = false;
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
@@ -174,27 +180,37 @@ module.exports = class NodeWatcher extends EventEmitter {
     const watcher = fs.watch(dir, {persistent: true}, (event, filename) =>
       this._normalizeChange(dir, event, filename),
     );
-    setTimeout(async () => {
-      try {
-        const names = await fsPromises.readdir(dir, {withFileTypes: false});
-        await Promise.all(
-          names
-            .filter(name => !this._registered(path.resolve(dir, name)))
-            .map(name => this._processChange(dir, 'add', name)),
-        );
-      } catch (error) {
-        this.emit('error', error);
-      }
-    }, 100);
     this.watched[dir] = watcher;
-
     watcher.on('error', this._checkedEmitError);
+
+    // Re-scan the directory after a delay to detect files added between the
+    // initial scan and the watch becoming live.
+    if (RESCAN_NEW_DIRECTORIES_MS > 0) {
+      setTimeout(async () => {
+        try {
+          this._rescanDir(dir);
+        } catch (error) {
+          this.emit('error', error);
+        }
+      }, RESCAN_NEW_DIRECTORIES_MS);
+    }
 
     if (this.root !== dir) {
       this._register(dir, 'd');
     }
     return true;
   };
+
+  async _rescanDir(fullPath: string): Promise<void> {
+    // No value in `readFileTypes` here since `_processChange` runs a full
+    // lstat anyway.
+    const names = await fsPromises.readdir(fullPath);
+    await Promise.all(
+      names
+        .filter(name => !this._registered(path.resolve(fullPath, name)))
+        .map(name => this._processChange(fullPath, 'add', name)),
+    );
+  }
 
   /**
    * Stop watching a directory.
