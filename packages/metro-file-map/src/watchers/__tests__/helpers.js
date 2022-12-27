@@ -11,6 +11,7 @@
 
 import type {WatcherOptions} from '../common';
 
+import FallbackWatcher from '../FallbackWatcher';
 import NodeWatcher from '../NodeWatcher';
 import FSEventsWatcher from '../FSEventsWatcher';
 import WatchmanWatcher from '../WatchmanWatcher';
@@ -44,11 +45,13 @@ const isWatchmanOnPath = () => {
 export const WATCHERS: $ReadOnly<{
   [key: string]:
     | Class<NodeWatcher>
+    | Class<FallbackWatcher>
     | Class<FSEventsWatcher>
     | Class<WatchmanWatcher>
     | null,
 }> = {
   Node: NodeWatcher,
+  Fallback: FallbackWatcher,
   Watchman: isWatchmanOnPath() ? WatchmanWatcher : null,
   FSEvents: FSEventsWatcher.isSupported() ? FSEventsWatcher : null,
 };
@@ -136,6 +139,7 @@ export const startWatching = async (
             resolve({eventType, path, metadata});
           };
           watcherInstance.on('all', listener);
+          watcherInstance.on('error', console.error);
         }),
         afterFn(),
       ]).then(([event]) => event),
@@ -169,7 +173,15 @@ export const startWatching = async (
               }
             } else if (rejectUnexpected) {
               watcherInstance.removeListener('all', listener);
-              reject(new Error(`Unexpected event: ${eventType} ${path}.`));
+              reject(
+                new Error(
+                  `Unexpected event: ${eventType} ${path}. Still waiting for ${Array.from(
+                    allEventKeys,
+                  )
+                    .map(key => key.split('\0').join(': '))
+                    .join(', ')}`,
+                ),
+              );
             }
           };
           watcherInstance.on('all', listener);
