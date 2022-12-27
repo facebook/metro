@@ -22,7 +22,7 @@ import type {CrawlerOptions, FileData} from '../../flow-types';
 const isWatchmanOnPath = () => {
   try {
     execSync(
-      os.platform() === 'win32' ? 'where.exe watchman' : 'which watchman',
+      os.platform() === 'win32' ? 'where.exe /Q watchman' : 'which watchman',
     );
     return true;
   } catch {
