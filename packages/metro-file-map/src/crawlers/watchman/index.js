@@ -306,10 +306,6 @@ module.exports = async function watchmanCrawl({
     );
 
     for (const fileData of response.files) {
-      if (fileData.symlink_target != null) {
-        // TODO: Process symlinks
-        continue;
-      }
       const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
       const existingFileData = previousState.files.get(relativeFilePath);
@@ -347,6 +343,11 @@ module.exports = async function watchmanCrawl({
           sha1hex = undefined;
         }
 
+        let symlinkInfo: 0 | 1 | string = 0;
+        if (fileData.type === 'l') {
+          symlinkInfo = fileData['symlink_target'] ?? 1;
+        }
+
         let nextData: FileMetaData = [
           '',
           mtime,
@@ -354,13 +355,14 @@ module.exports = async function watchmanCrawl({
           0,
           '',
           sha1hex ?? null,
-          fileData.type === 'l' ? 1 : 0,
+          symlinkInfo,
         ];
 
         if (
           existingFileData &&
           sha1hex != null &&
           existingFileData[H.SHA1] === sha1hex &&
+          // File is still of the same type
           (existingFileData[H.SYMLINK] !== 0) === (fileData.type === 'l')
         ) {
           // Special case - file touched but not modified, so we can reuse the
@@ -372,7 +374,7 @@ module.exports = async function watchmanCrawl({
             existingFileData[3],
             existingFileData[4],
             existingFileData[5],
-            existingFileData[6],
+            typeof symlinkInfo === 'string' ? symlinkInfo : existingFileData[6],
           ];
         }
 

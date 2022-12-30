@@ -64,19 +64,17 @@ function find(
 
         activeCalls++;
 
-        const stat = enableSymlinks ? fs.stat : fs.lstat;
-
-        stat(file, (err, stat) => {
+        fs.lstat(file, (err, stat) => {
           activeCalls--;
 
           if (!err && stat) {
             const ext = path.extname(file).substr(1);
-            if (extensions.indexOf(ext) !== -1) {
+            if (stat.isSymbolicLink() || extensions.includes(ext)) {
               result.push([
                 file,
                 stat.mtime.getTime(),
                 stat.size,
-                entry.isSymbolicLink() ? 1 : 0,
+                stat.isSymbolicLink() ? 1 : 0,
               ]);
             }
           }
@@ -107,32 +105,19 @@ function findNative(
   enableSymlinks: boolean,
   callback: Callback,
 ): void {
-  const args = Array.from(roots);
-  if (enableSymlinks) {
-    // Temporarily(?) disable `enableSymlinks` because we can't satisfy it
-    // consistently with recursive crawl without calling *both* stat and lstat
-    // on every file. TODO: Change the definition of `enableSymlinks` to return
-    // the lstat-equivalent metadata and include links to directories.
-    throw new Error('enableSymlinks is not supported by native find');
-  } else {
-    args.push('-type', 'f');
-  }
+  // Examples:
+  // ( ( -type f ( -iname *.js ) ) )
+  // ( ( -type f ( -iname *.js -o -iname *.ts ) ) )
+  // ( ( -type f ( -iname *.js ) ) -o -type l )
+  // ( ( -type f ) -o -type l )
+  const extensionClause = extensions.length
+    ? `( ${extensions.map(ext => `-iname *.${ext}`).join(' -o ')} )`
+    : ''; // Empty inner expressions eg "( )" are not allowed
+  const expression = `( ( -type f ${extensionClause} ) ${
+    enableSymlinks ? '-o -type l ' : ''
+  })`;
 
-  if (extensions.length) {
-    args.push('(');
-  }
-  extensions.forEach((ext, index) => {
-    if (index) {
-      args.push('-o');
-    }
-    args.push('-iname');
-    args.push('*.' + ext);
-  });
-  if (extensions.length) {
-    args.push(')');
-  }
-
-  const child = spawn('find', args);
+  const child = spawn('find', roots.concat(expression.split(' ')));
   let stdout = '';
   if (child.stdout == null) {
     throw new Error(
@@ -153,10 +138,14 @@ function findNative(
       callback([]);
     } else {
       lines.forEach(path => {
-        fs.stat(path, (err, stat) => {
-          // Filter out symlinks that describe directories
-          if (!err && stat && !stat.isDirectory()) {
-            result.push([path, stat.mtime.getTime(), stat.size, 0]);
+        fs.lstat(path, (err, stat) => {
+          if (!err && stat) {
+            result.push([
+              path,
+              stat.mtime.getTime(),
+              stat.size,
+              stat.isSymbolicLink() ? 1 : 0,
+            ]);
           }
           if (--count === 0) {
             callback(result);
@@ -183,9 +172,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   } = options;
   perfLogger?.point('nodeCrawl_start');
   const useNativeFind =
-    !forceNodeFilesystemAPI &&
-    !enableSymlinks &&
-    (await hasNativeFindSupport());
+    !forceNodeFilesystemAPI && (await hasNativeFindSupport());
 
   debug('Using system find: %s', useNativeFind);
 

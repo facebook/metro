@@ -166,6 +166,8 @@ describe('node crawler', () => {
     expect(childProcess.spawn).lastCalledWith('find', [
       '/project/fruits',
       '/project/vegtables',
+      '(',
+      '(',
       '-type',
       'f',
       '(',
@@ -174,6 +176,8 @@ describe('node crawler', () => {
       '-o',
       '-iname',
       '*.json',
+      ')',
+      ')',
       ')',
     ]);
 
