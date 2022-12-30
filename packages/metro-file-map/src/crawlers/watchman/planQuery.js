@@ -21,12 +21,14 @@ export function planQuery({
   extensions,
   includeSha1,
   includeSymlinks,
+  includeSymlinkTargets,
 }: $ReadOnly<{
   since: ?WatchmanQuerySince,
   directoryFilters: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,
   includeSha1: boolean,
   includeSymlinks: boolean,
+  includeSymlinkTargets: boolean,
 }>): {
   query: WatchmanQuery,
   queryGenerator: string,
@@ -36,7 +38,10 @@ export function planQuery({
     fields.push('content.sha1hex');
   }
   if (includeSymlinks) {
-    fields.push('symlink_target');
+    fields.push('type');
+    if (includeSymlinkTargets) {
+      fields.push('symlink_target');
+    }
   }
 
   const allOfTerms: Array<WatchmanExpression> = includeSymlinks

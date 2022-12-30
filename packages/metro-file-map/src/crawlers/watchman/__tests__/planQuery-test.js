@@ -19,6 +19,7 @@ describe('planQuery with includeSymlinks: false', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: false,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('since');
     expect(query).toEqual({
@@ -40,6 +41,7 @@ describe('planQuery with includeSymlinks: false', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: false,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('since');
     expect(query).toEqual({
@@ -56,6 +58,7 @@ describe('planQuery with includeSymlinks: false', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: false,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('glob');
     expect(query).toEqual({
@@ -73,6 +76,7 @@ describe('planQuery with includeSymlinks: false', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: false,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('suffix');
     expect(query).toEqual({
@@ -89,6 +93,7 @@ describe('planQuery with includeSymlinks: false', () => {
       extensions: ['js', 'ts'],
       includeSha1: false,
       includeSymlinks: false,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('suffix');
     expect(query).toEqual({
@@ -96,6 +101,23 @@ describe('planQuery with includeSymlinks: false', () => {
       expression: ['type', 'f'],
       fields: ['name', 'exists', 'mtime_ms', 'size'],
     });
+  });
+});
+
+it('does not request type or symlink_target if includeSymlinks == false', () => {
+  const {query, queryGenerator} = planQuery({
+    since: null,
+    directoryFilters: [],
+    extensions: ['js', 'ts'],
+    includeSha1: false,
+    includeSymlinks: false,
+    includeSymlinkTargets: true, // Harmless no-op: No links, so no targets
+  });
+  expect(queryGenerator).toBe('suffix');
+  expect(query).toEqual({
+    suffix: ['js', 'ts'],
+    expression: ['type', 'f'],
+    fields: ['name', 'exists', 'mtime_ms', 'size'],
   });
 });
 
@@ -107,6 +129,7 @@ describe('planQuery with includeSymlinks: true', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: true,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('since');
     expect(query).toEqual({
@@ -120,14 +143,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ],
         ['anyof', ['dirname', '/dir1'], ['dirname', '/dir2']],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -138,6 +154,7 @@ describe('planQuery with includeSymlinks: true', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: true,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('since');
     expect(query).toEqual({
@@ -147,14 +164,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -165,6 +175,7 @@ describe('planQuery with includeSymlinks: true', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: true,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('glob');
     expect(query).toEqual({
@@ -175,14 +186,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -193,6 +197,7 @@ describe('planQuery with includeSymlinks: true', () => {
       extensions: ['js', 'ts'],
       includeSha1: true,
       includeSymlinks: true,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('all');
     expect(query).toEqual({
@@ -201,14 +206,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -219,6 +217,7 @@ describe('planQuery with includeSymlinks: true', () => {
       extensions: ['js', 'ts'],
       includeSha1: false,
       includeSymlinks: true,
+      includeSymlinkTargets: false,
     });
     expect(queryGenerator).toBe('all');
     expect(query).toEqual({
@@ -227,7 +226,27 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: ['name', 'exists', 'mtime_ms', 'size', 'symlink_target'],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'type'],
+    });
+  });
+
+  it('requests type and symlink_target when includeSymlinkTargets == true', () => {
+    const {query, queryGenerator} = planQuery({
+      since: null,
+      directoryFilters: [],
+      extensions: ['js', 'ts'],
+      includeSha1: false,
+      includeSymlinks: true,
+      includeSymlinkTargets: true,
+    });
+    expect(queryGenerator).toBe('all');
+    expect(query).toEqual({
+      expression: [
+        'anyof',
+        ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
+        ['type', 'l'],
+      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'type', 'symlink_target'],
     });
   });
 });

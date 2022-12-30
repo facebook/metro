@@ -25,6 +25,7 @@ declare module 'fb-watchman' {
 
   declare type WatchmanWatchResponse = $ReadOnly<{
     watch: string,
+    watcher: string,
     relative_path: string,
     warning?: string,
     ...
