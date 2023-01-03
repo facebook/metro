@@ -331,12 +331,21 @@ module.exports = async function watchmanCrawl({
           sha1hex = undefined;
         }
 
-        let nextData: FileMetaData = ['', mtime, size, 0, '', sha1hex ?? null];
+        let nextData: FileMetaData = [
+          '',
+          mtime,
+          size,
+          0,
+          '',
+          sha1hex ?? null,
+          fileData.type === 'l' ? 1 : 0,
+        ];
 
         if (
           existingFileData &&
           sha1hex != null &&
-          existingFileData[H.SHA1] === sha1hex
+          existingFileData[H.SHA1] === sha1hex &&
+          (existingFileData[H.SYMLINK] !== 0) === (fileData.type === 'l')
         ) {
           // Special case - file touched but not modified, so we can reuse the
           // metadata and just update mtime.
@@ -347,6 +356,7 @@ module.exports = async function watchmanCrawl({
             existingFileData[3],
             existingFileData[4],
             existingFileData[5],
+            existingFileData[6],
           ];
         }
 

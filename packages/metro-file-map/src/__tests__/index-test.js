@@ -54,7 +54,7 @@ jest.mock('../crawlers/watchman', () =>
         const relativeFilePath = path.relative(rootDir, file);
         if (list[file]) {
           const hash = computeSha1 ? mockHashContents(list[file]) : null;
-          changedFiles.set(relativeFilePath, ['', 32, 42, 0, [], hash]);
+          changedFiles.set(relativeFilePath, ['', 32, 42, 0, [], hash, 0]);
         } else {
           const fileData = previousState.files.get(relativeFilePath);
           if (fileData) {
@@ -402,6 +402,7 @@ describe('HasteMap', () => {
           1,
           'Strawberry',
           null,
+          0,
         ],
         [path.join('fruits', 'Pear.js')]: [
           'Pear',
@@ -410,6 +411,7 @@ describe('HasteMap', () => {
           1,
           'Banana\0Strawberry',
           null,
+          0,
         ],
         [path.join('fruits', 'Strawberry.js')]: [
           'Strawberry',
@@ -418,6 +420,7 @@ describe('HasteMap', () => {
           1,
           '',
           null,
+          0,
         ],
         [path.join('fruits', '__mocks__', 'Pear.js')]: [
           '',
@@ -426,8 +429,17 @@ describe('HasteMap', () => {
           1,
           'Melon',
           null,
+          0,
         ],
-        [path.join('vegetables', 'Melon.js')]: ['Melon', 32, 42, 1, '', null],
+        [path.join('vegetables', 'Melon.js')]: [
+          'Melon',
+          32,
+          42,
+          1,
+          '',
+          null,
+          0,
+        ],
       }),
     );
 
@@ -512,6 +524,7 @@ describe('HasteMap', () => {
             0,
             'Strawberry',
             null,
+            0,
           ],
           [path.join('fruits', 'Pear.js')]: [
             'Pear',
@@ -520,6 +533,7 @@ describe('HasteMap', () => {
             0,
             'Banana\0Strawberry',
             null,
+            0,
           ],
           [path.join('fruits', 'Strawberry.js')]: [
             'Strawberry',
@@ -528,6 +542,7 @@ describe('HasteMap', () => {
             0,
             '',
             null,
+            0,
           ],
           [path.join('fruits', '__mocks__', 'Pear.js')]: [
             '',
@@ -536,8 +551,17 @@ describe('HasteMap', () => {
             0,
             'Melon',
             null,
+            0,
           ],
-          [path.join('vegetables', 'Melon.js')]: ['Melon', 32, 42, 0, '', null],
+          [path.join('vegetables', 'Melon.js')]: [
+            'Melon',
+            32,
+            42,
+            0,
+            '',
+            null,
+            0,
+          ],
         });
 
         return Promise.resolve({
@@ -564,6 +588,7 @@ describe('HasteMap', () => {
             1,
             'Strawberry',
             '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
+            0,
           ],
           [path.join('fruits', 'Pear.js')]: [
             'Pear',
@@ -572,6 +597,7 @@ describe('HasteMap', () => {
             1,
             'Banana\0Strawberry',
             '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
+            0,
           ],
           [path.join('fruits', 'Strawberry.js')]: [
             'Strawberry',
@@ -580,6 +606,7 @@ describe('HasteMap', () => {
             1,
             '',
             'e8aa38e232b3795f062f1d777731d9240c0f8c25',
+            0,
           ],
           [path.join('fruits', '__mocks__', 'Pear.js')]: [
             '',
@@ -588,6 +615,7 @@ describe('HasteMap', () => {
             1,
             'Melon',
             '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
+            0,
           ],
           [path.join('vegetables', 'Melon.js')]: [
             'Melon',
@@ -596,6 +624,7 @@ describe('HasteMap', () => {
             1,
             '',
             'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
+            0,
           ],
         }),
       );
@@ -647,7 +676,7 @@ describe('HasteMap', () => {
       cacheContent.files.get(
         path.join('fruits', 'node_modules', 'fbjs', 'fbjs.js'),
       ),
-    ).toEqual(['', 32, 42, 0, [], null]);
+    ).toEqual(['', 32, 42, 0, [], null, 0]);
 
     expect(cacheContent.map.get('fbjs')).not.toBeDefined();
 
@@ -769,6 +798,7 @@ describe('HasteMap', () => {
           1,
           'Blackberry',
           null,
+          0,
         ],
         [path.join('fruits', 'Strawberry.ios.js')]: [
           'Strawberry',
@@ -777,6 +807,7 @@ describe('HasteMap', () => {
           1,
           'Raspberry',
           null,
+          0,
         ],
         [path.join('fruits', 'Strawberry.js')]: [
           'Strawberry',
@@ -785,6 +816,7 @@ describe('HasteMap', () => {
           1,
           'Banana',
           null,
+          0,
         ],
       }),
     );
@@ -879,6 +911,7 @@ describe('HasteMap', () => {
       1,
       'Kiwi',
       null,
+      0,
     ]);
 
     expect(deepNormalize(data.files)).toEqual(files);
@@ -1119,7 +1152,7 @@ describe('HasteMap', () => {
     const invalidFilePath = path.join('fruits', 'invalid', 'file.js');
     watchman.mockImplementation(async options => {
       const {changedFiles} = await mockImpl(options);
-      changedFiles.set(invalidFilePath, ['', 34, 44, 0, []]);
+      changedFiles.set(invalidFilePath, ['', 34, 44, 0, [], null, 0]);
       return {
         changedFiles,
         removedFiles: new Map(),
@@ -1214,7 +1247,7 @@ describe('HasteMap', () => {
     node.mockImplementation(options => {
       return Promise.resolve({
         changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
+          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
         removedFiles: new Map(),
       });
@@ -1233,6 +1266,7 @@ describe('HasteMap', () => {
           1,
           'Strawberry',
           null,
+          0,
         ],
       }),
     );
@@ -1250,7 +1284,7 @@ describe('HasteMap', () => {
     node.mockImplementation(options => {
       return Promise.resolve({
         changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null],
+          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
         removedFiles: new Map(),
       });
@@ -1270,6 +1304,7 @@ describe('HasteMap', () => {
           1,
           'Strawberry',
           null,
+          0,
         ],
       }),
     );

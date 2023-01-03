@@ -21,7 +21,14 @@ import * as path from 'path';
 
 const debug = require('debug')('Metro:NodeCrawler');
 
-type Result = Array<[/* id */ string, /* mtime */ number, /* size */ number]>;
+type Result = Array<
+  [
+    string, // id
+    number, // mtime
+    number, // size
+    0 | 1, // symlink
+  ],
+>;
 
 type Callback = (result: Result) => void;
 
@@ -70,7 +77,12 @@ function find(
           if (!err && stat) {
             const ext = path.extname(file).substr(1);
             if (extensions.indexOf(ext) !== -1) {
-              result.push([file, stat.mtime.getTime(), stat.size]);
+              result.push([
+                file,
+                stat.mtime.getTime(),
+                stat.size,
+                entry.isSymbolicLink() ? 1 : 0,
+              ]);
             }
           }
 
@@ -102,7 +114,11 @@ function findNative(
 ): void {
   const args = Array.from(roots);
   if (enableSymlinks) {
-    args.push('(', '-type', 'f', '-o', '-type', 'l', ')');
+    // Temporarily(?) disable `enableSymlinks` because we can't satisfy it
+    // consistently with recursive crawl without calling *both* stat and lstat
+    // on every file. TODO: Change the definition of `enableSymlinks` to return
+    // the lstat-equivalent metadata and include links to directories.
+    throw new Error('enableSymlinks is not supported by native find');
   } else {
     args.push('-type', 'f');
   }
@@ -145,7 +161,7 @@ function findNative(
         fs.stat(path, (err, stat) => {
           // Filter out symlinks that describe directories
           if (!err && stat && !stat.isDirectory()) {
-            result.push([path, stat.mtime.getTime(), stat.size]);
+            result.push([path, stat.mtime.getTime(), stat.size, 0]);
           }
           if (--count === 0) {
             callback(result);
@@ -172,7 +188,9 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   } = options;
   perfLogger?.point('nodeCrawl_start');
   const useNativeFind =
-    !forceNodeFilesystemAPI && (await hasNativeFindSupport());
+    !forceNodeFilesystemAPI &&
+    !enableSymlinks &&
+    (await hasNativeFindSupport());
 
   debug('Using system find: %s', useNativeFind);
 
@@ -181,13 +199,21 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       const changedFiles = new Map<Path, FileMetaData>();
       const removedFiles = new Map(previousState.files);
       for (const fileData of list) {
-        const [filePath, mtime, size] = fileData;
+        const [filePath, mtime, size, symlink] = fileData;
         const relativeFilePath = fastPath.relative(rootDir, filePath);
         const existingFile = previousState.files.get(relativeFilePath);
         removedFiles.delete(relativeFilePath);
         if (existingFile == null || existingFile[H.MTIME] !== mtime) {
           // See ../constants.js; SHA-1 will always be null and fulfilled later.
-          changedFiles.set(relativeFilePath, ['', mtime, size, 0, '', null]);
+          changedFiles.set(relativeFilePath, [
+            '',
+            mtime,
+            size,
+            0,
+            '',
+            null,
+            symlink,
+          ]);
         }
       }
 

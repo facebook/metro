@@ -121,6 +121,7 @@ export type HType = {
   VISITED: 3,
   DEPENDENCIES: 4,
   SHA1: 5,
+  SYMLINK: 6,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -151,6 +152,7 @@ export type FileMetaData = [
   /* visited */ 0 | 1,
   /* dependencies */ string,
   /* sha1 */ ?string,
+  /* symlink */ 0 | 1 | string, // string specifies target, if known
 ];
 
 export interface FileSystem {

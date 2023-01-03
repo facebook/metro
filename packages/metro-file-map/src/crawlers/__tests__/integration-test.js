@@ -5,15 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
 
 import nodeCrawl from '../node';
 import watchmanCrawl from '../watchman';
 import {execSync} from 'child_process';
+import invariant from 'invariant';
 import os from 'os';
 import {join} from 'path';
-import type {CrawlerOptions, FileData} from '../../flow-types';
 
 // At runtime we use a more sophisticated + robust Watchman capability check,
 // but this simple heuristic is fast to check, synchronous (we can't
@@ -33,10 +34,7 @@ const isWatchmanOnPath = () => {
 const mockUseNativeFind = jest.fn();
 jest.mock('../node/hasNativeFindSupport', () => () => mockUseNativeFind());
 
-type Crawler = (opts: CrawlerOptions) => Promise<{
-  removedFiles: FileData,
-  changedFiles: FileData,
-}>;
+type Crawler = typeof nodeCrawl | typeof watchmanCrawl;
 
 const CRAWLERS: {[key: string]: ?Crawler} = {
   'node-find': opts => {
@@ -59,9 +57,10 @@ describe.each(Object.keys(CRAWLERS))(
     const maybeTest = crawl ? test : test.skip;
 
     maybeTest('Finds the expected files', async () => {
+      invariant(crawl, 'crawl should not be null within maybeTest');
       const result = await crawl({
         previousState: {
-          files: new Map([['removed.js', ['', 123, 234, 0, '', null]]]),
+          files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
           clocks: new Map(),
         },
         enableSymlinks: false,
@@ -69,6 +68,10 @@ describe.each(Object.keys(CRAWLERS))(
         ignore: path => path.includes('ignored'),
         roots: [FIXTURES_DIR],
         rootDir: FIXTURES_DIR,
+        abortSignal: null,
+        computeSha1: false,
+        forceNodeFilesystemAPI: false,
+        onStatus: () => {},
       });
 
       // Map comparison is unordered, which is what we want
@@ -76,11 +79,11 @@ describe.each(Object.keys(CRAWLERS))(
         changedFiles: new Map([
           [
             join('directory', 'bar.js'),
-            ['', expect.any(Number), 245, 0, '', null],
+            ['', expect.any(Number), 245, 0, '', null, 0],
           ],
-          ['foo.js', ['', expect.any(Number), 245, 0, '', null]],
+          ['foo.js', ['', expect.any(Number), 245, 0, '', null, 0]],
         ]),
-        removedFiles: new Map([['removed.js', ['', 123, 234, 0, '', null]]]),
+        removedFiles: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
       });
       if (crawlerName === 'watchman') {
         expect(result.clocks).toBeInstanceOf(Map);
