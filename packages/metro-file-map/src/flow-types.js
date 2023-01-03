@@ -74,10 +74,10 @@ export type Console = typeof global.console;
 export type CrawlerOptions = {
   abortSignal: ?AbortSignal,
   computeSha1: boolean,
-  enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
+  includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
   previousState: $ReadOnly<{
     clocks: $ReadOnlyMap<Path, WatchmanClockSpec>,
