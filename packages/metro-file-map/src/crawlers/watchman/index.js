@@ -29,7 +29,10 @@ import {performance} from 'perf_hooks';
 
 const watchman = require('fb-watchman');
 
-type WatchmanRoots = Map<string, Array<string>>;
+type WatchmanRoots = Map<
+  string,
+  $ReadOnly<{directoryFilters: Array<string>, watcher: string}>,
+>;
 
 const WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS = 10000;
 const WATCHMAN_WARNING_INTERVAL_MILLISECONDS = 20000;
@@ -129,7 +132,7 @@ module.exports = async function watchmanCrawl({
     roots: $ReadOnlyArray<Path>,
   ): Promise<WatchmanRoots> {
     perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
-    const watchmanRoots = new Map<string, Array<string>>();
+    const watchmanRoots: WatchmanRoots = new Map();
     await Promise.all(
       roots.map(async (root, index) => {
         perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
@@ -141,19 +144,24 @@ module.exports = async function watchmanCrawl({
         const existing = watchmanRoots.get(response.watch);
         // A root can only be filtered if it was never seen with a
         // relative_path before.
-        const canBeFiltered = !existing || existing.length > 0;
+        const canBeFiltered = !existing || existing.directoryFilters.length > 0;
 
         if (canBeFiltered) {
           if (response.relative_path) {
-            watchmanRoots.set(
-              response.watch,
-              (existing || []).concat(response.relative_path),
-            );
+            watchmanRoots.set(response.watch, {
+              watcher: response.watcher,
+              directoryFilters: (existing?.directoryFilters || []).concat(
+                response.relative_path,
+              ),
+            });
           } else {
             // Make the filter directories an empty array to signal that this
             // root was already seen and needs to be watched for all files or
             // directories.
-            watchmanRoots.set(response.watch, []);
+            watchmanRoots.set(response.watch, {
+              watcher: response.watcher,
+              directoryFilters: [],
+            });
           }
         }
       }),
@@ -168,7 +176,7 @@ module.exports = async function watchmanCrawl({
     let isFresh = false;
     await Promise.all(
       Array.from(rootProjectDirMappings).map(
-        async ([root, directoryFilters], index) => {
+        async ([root, {directoryFilters, watcher}], index) => {
           // Jest is only going to store one type of clock; a string that
           // represents a local clock. However, the Watchman crawler supports
           // a second type of clock that can be written by automation outside of
@@ -197,6 +205,7 @@ module.exports = async function watchmanCrawl({
 
           perfLogger?.annotate({
             string: {
+              [`watchmanCrawl/query_${index}_watcher`]: watcher ?? 'unknown',
               [`watchmanCrawl/query_${index}_generator`]: queryGenerator,
             },
           });
@@ -290,7 +299,7 @@ module.exports = async function watchmanCrawl({
     );
 
     for (const fileData of response.files) {
-      if (fileData.symlink_target != null) {
+      if (fileData.type === 'l') {
         // TODO: Process symlinks
         continue;
       }

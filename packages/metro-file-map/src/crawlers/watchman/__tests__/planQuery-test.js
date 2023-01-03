@@ -99,6 +99,22 @@ describe('planQuery with includeSymlinks: false', () => {
   });
 });
 
+it('does not request type if includeSymlinks == false', () => {
+  const {query, queryGenerator} = planQuery({
+    since: null,
+    directoryFilters: [],
+    extensions: ['js', 'ts'],
+    includeSha1: false,
+    includeSymlinks: false,
+  });
+  expect(queryGenerator).toBe('suffix');
+  expect(query).toEqual({
+    suffix: ['js', 'ts'],
+    expression: ['type', 'f'],
+    fields: ['name', 'exists', 'mtime_ms', 'size'],
+  });
+});
+
 describe('planQuery with includeSymlinks: true', () => {
   it('plans a "since" query when a clock and directories are given', () => {
     const {query, queryGenerator} = planQuery({
@@ -120,14 +136,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ],
         ['anyof', ['dirname', '/dir1'], ['dirname', '/dir2']],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -147,14 +156,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -175,14 +177,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -201,14 +196,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: [
-        'name',
-        'exists',
-        'mtime_ms',
-        'size',
-        'content.sha1hex',
-        'symlink_target',
-      ],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'content.sha1hex', 'type'],
     });
   });
 
@@ -227,7 +215,7 @@ describe('planQuery with includeSymlinks: true', () => {
         ['allof', ['type', 'f'], ['suffix', ['js', 'ts']]],
         ['type', 'l'],
       ],
-      fields: ['name', 'exists', 'mtime_ms', 'size', 'symlink_target'],
+      fields: ['name', 'exists', 'mtime_ms', 'size', 'type'],
     });
   });
 });

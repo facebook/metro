@@ -35,8 +35,22 @@ export function planQuery({
   if (includeSha1) {
     fields.push('content.sha1hex');
   }
+
+  /**
+   * Note on symlink_target:
+   *
+   * Watchman supports requesting the symlink_target field, which is
+   * *potentially* more efficient if targets can be read from metadata without
+   * reading/materialising files. However, at the time of writing, Watchman has
+   * issues reporting symlink_target on some backends[1]. Additionally, though
+   * the Eden watcher is known to work, it reads links serially[2] on demand[3]
+   *  - less efficiently than we can do ourselves.
+   * [1] https://github.com/facebook/watchman/issues/1084
+   * [2] https://github.com/facebook/watchman/blob/v2023.01.02.00/watchman/watcher/eden.cpp#L476-L485
+   * [3] https://github.com/facebook/watchman/blob/v2023.01.02.00/watchman/watcher/eden.cpp#L433-L434
+   */
   if (includeSymlinks) {
-    fields.push('symlink_target');
+    fields.push('type');
   }
 
   const allOfTerms: Array<WatchmanExpression> = includeSymlinks
