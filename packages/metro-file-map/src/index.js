@@ -137,7 +137,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '2';
+const CACHE_BREAKER = '3';
 
 const CHANGE_INTERVAL = 30;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
@@ -189,6 +189,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *   visited: boolean, // whether the file has been parsed or not.
  *   dependencies: Array<string>, // all relative dependencies of this file.
  *   sha1: ?string, // SHA-1 of the file, if requested via options.
+ *   symlink: ?(1 | 0 | string), // Truthy if symlink, string is target
  * };
  *
  * // Modules can be targeted to a specific platform based on the file name.
@@ -798,25 +799,6 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  _getSnapshot(data: InternalData): {
-    snapshotFS: FileSystem,
-    moduleMap: HasteModuleMap,
-  } {
-    const rootDir = this._options.rootDir;
-    return {
-      snapshotFS: new HasteFS({
-        files: new Map(data.files),
-        rootDir,
-      }),
-      moduleMap: new HasteModuleMap({
-        duplicates: new Map(data.duplicates),
-        map: new Map(data.map),
-        mocks: new Map(data.mocks),
-        rootDir,
-      }),
-    };
-  }
-
   _removeIfExists(data: InternalData, relativeFilePath: Path) {
     const fileMetadata = data.files.get(relativeFilePath);
     if (!fileMetadata) {
@@ -899,7 +881,6 @@ export default class HasteMap extends EventEmitter {
         const changeEvent: ChangeEvent = {
           logger: hmrPerfLogger,
           eventsQueue,
-          ...this._getSnapshot(data),
         };
         this.emit('change', changeEvent);
         eventsQueue = [];
@@ -986,6 +967,7 @@ export default class HasteMap extends EventEmitter {
               0,
               '',
               null,
+              metadata.type === 'l' ? 1 : 0,
             ];
             data.files.set(relativeFilePath, fileMetadata);
             const promise = this._processFile(

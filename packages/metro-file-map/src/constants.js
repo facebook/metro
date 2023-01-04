@@ -34,6 +34,7 @@ const constants/*: HType */ = {
   VISITED: 3,
   DEPENDENCIES: 4,
   SHA1: 5,
+  SYMLINK: 6,
 
   /* module map attributes */
   PATH: 0,

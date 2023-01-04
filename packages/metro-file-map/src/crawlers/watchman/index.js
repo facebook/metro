@@ -29,7 +29,10 @@ import {performance} from 'perf_hooks';
 
 const watchman = require('fb-watchman');
 
-type WatchmanRoots = Map<string, Array<string>>;
+type WatchmanRoots = Map<
+  string,
+  $ReadOnly<{directoryFilters: Array<string>, watcher: string}>,
+>;
 
 const WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS = 10000;
 const WATCHMAN_WARNING_INTERVAL_MILLISECONDS = 20000;
@@ -46,9 +49,9 @@ function makeWatchmanError(error: Error): Error {
 module.exports = async function watchmanCrawl({
   abortSignal,
   computeSha1,
-  enableSymlinks,
   extensions,
   ignore,
+  includeSymlinks,
   onStatus,
   perfLogger,
   previousState,
@@ -129,7 +132,7 @@ module.exports = async function watchmanCrawl({
     roots: $ReadOnlyArray<Path>,
   ): Promise<WatchmanRoots> {
     perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
-    const watchmanRoots = new Map<string, Array<string>>();
+    const watchmanRoots: WatchmanRoots = new Map();
     await Promise.all(
       roots.map(async (root, index) => {
         perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
@@ -141,19 +144,24 @@ module.exports = async function watchmanCrawl({
         const existing = watchmanRoots.get(response.watch);
         // A root can only be filtered if it was never seen with a
         // relative_path before.
-        const canBeFiltered = !existing || existing.length > 0;
+        const canBeFiltered = !existing || existing.directoryFilters.length > 0;
 
         if (canBeFiltered) {
           if (response.relative_path) {
-            watchmanRoots.set(
-              response.watch,
-              (existing || []).concat(response.relative_path),
-            );
+            watchmanRoots.set(response.watch, {
+              watcher: response.watcher,
+              directoryFilters: (existing?.directoryFilters || []).concat(
+                response.relative_path,
+              ),
+            });
           } else {
             // Make the filter directories an empty array to signal that this
             // root was already seen and needs to be watched for all files or
             // directories.
-            watchmanRoots.set(response.watch, []);
+            watchmanRoots.set(response.watch, {
+              watcher: response.watcher,
+              directoryFilters: [],
+            });
           }
         }
       }),
@@ -168,7 +176,7 @@ module.exports = async function watchmanCrawl({
     let isFresh = false;
     await Promise.all(
       Array.from(rootProjectDirMappings).map(
-        async ([root, directoryFilters], index) => {
+        async ([root, {directoryFilters, watcher}], index) => {
           // Jest is only going to store one type of clock; a string that
           // represents a local clock. However, the Watchman crawler supports
           // a second type of clock that can be written by automation outside of
@@ -192,11 +200,12 @@ module.exports = async function watchmanCrawl({
             extensions,
             directoryFilters,
             includeSha1: computeSha1,
-            includeSymlinks: enableSymlinks,
+            includeSymlinks,
           });
 
           perfLogger?.annotate({
             string: {
+              [`watchmanCrawl/query_${index}_watcher`]: watcher ?? 'unknown',
               [`watchmanCrawl/query_${index}_generator`]: queryGenerator,
             },
           });
@@ -290,10 +299,6 @@ module.exports = async function watchmanCrawl({
     );
 
     for (const fileData of response.files) {
-      if (fileData.symlink_target != null) {
-        // TODO: Process symlinks
-        continue;
-      }
       const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
       const existingFileData = previousState.files.get(relativeFilePath);
@@ -331,12 +336,27 @@ module.exports = async function watchmanCrawl({
           sha1hex = undefined;
         }
 
-        let nextData: FileMetaData = ['', mtime, size, 0, '', sha1hex ?? null];
+        let symlinkInfo: 0 | 1 | string = 0;
+        if (fileData.type === 'l') {
+          symlinkInfo = fileData['symlink_target'] ?? 1;
+        }
+
+        let nextData: FileMetaData = [
+          '',
+          mtime,
+          size,
+          0,
+          '',
+          sha1hex ?? null,
+          symlinkInfo,
+        ];
 
         if (
           existingFileData &&
           sha1hex != null &&
-          existingFileData[H.SHA1] === sha1hex
+          existingFileData[H.SHA1] === sha1hex &&
+          // File is still of the same type
+          (existingFileData[H.SYMLINK] !== 0) === (fileData.type === 'l')
         ) {
           // Special case - file touched but not modified, so we can reuse the
           // metadata and just update mtime.
@@ -347,6 +367,7 @@ module.exports = async function watchmanCrawl({
             existingFileData[3],
             existingFileData[4],
             existingFileData[5],
+            typeof symlinkInfo === 'string' ? symlinkInfo : existingFileData[6],
           ];
         }
 

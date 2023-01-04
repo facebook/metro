@@ -166,6 +166,8 @@ describe('node crawler', () => {
     expect(childProcess.spawn).lastCalledWith('find', [
       '/project/fruits',
       '/project/vegtables',
+      '(',
+      '(',
       '-type',
       'f',
       '(',
@@ -175,15 +177,17 @@ describe('node crawler', () => {
       '-iname',
       '*.json',
       ')',
+      ')',
+      ')',
     ]);
 
     expect(changedFiles).not.toBe(null);
 
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/strawberry.js': ['', 32, 42, 0, '', null],
-        'fruits/tomato.js': ['', 33, 42, 0, '', null],
-        'vegetables/melon.json': ['', 34, 42, 0, '', null],
+        'fruits/strawberry.js': ['', 32, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 33, 42, 0, '', null, 0],
+        'vegetables/melon.json': ['', 34, 42, 0, '', null, 0],
       }),
     );
 
@@ -194,9 +198,9 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     // In this test sample, strawberry is changed and tomato is unchanged
-    const tomato = ['', 33, 42, 1, '', null];
+    const tomato = ['', 33, 42, 1, '', null, 0];
     const files = createMap({
-      'fruits/strawberry.js': ['', 30, 40, 1, '', null],
+      'fruits/strawberry.js': ['', 30, 40, 1, '', null, 0],
       'fruits/tomato.js': tomato,
     });
 
@@ -211,7 +215,7 @@ describe('node crawler', () => {
     // Tomato is not included because it is unchanged
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/strawberry.js': ['', 32, 42, 0, '', null],
+        'fruits/strawberry.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
 
@@ -224,9 +228,9 @@ describe('node crawler', () => {
     // In this test sample, previouslyExisted was present before and will not be
     // when crawling this directory.
     const files = createMap({
-      'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null],
-      'fruits/strawberry.js': ['', 33, 42, 0, '', null],
-      'fruits/tomato.js': ['', 32, 42, 0, '', null],
+      'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null, 0],
+      'fruits/strawberry.js': ['', 33, 42, 0, '', null, 0],
+      'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
@@ -239,13 +243,13 @@ describe('node crawler', () => {
 
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/strawberry.js': ['', 32, 42, 0, '', null],
-        'fruits/tomato.js': ['', 33, 42, 0, '', null],
+        'fruits/strawberry.js': ['', 32, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 33, 42, 0, '', null, 0],
       }),
     );
     expect(removedFiles).toEqual(
       createMap({
-        'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null],
+        'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null, 0],
       }),
     );
   });
@@ -274,8 +278,8 @@ describe('node crawler', () => {
     );
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
-        'fruits/tomato.js': ['', 32, 42, 0, '', null],
+        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
     expect(removedFiles).toEqual(new Map());
@@ -300,8 +304,8 @@ describe('node crawler', () => {
 
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
-        'fruits/tomato.js': ['', 32, 42, 0, '', null],
+        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
     expect(removedFiles).toEqual(new Map());
@@ -324,8 +328,8 @@ describe('node crawler', () => {
     expect(childProcess.spawn).toHaveBeenCalledTimes(0);
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
-        'fruits/tomato.js': ['', 32, 42, 0, '', null],
+        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
     expect(removedFiles).toEqual(new Map());
@@ -381,8 +385,8 @@ describe('node crawler', () => {
 
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null],
-        'fruits/tomato.js': ['', 32, 42, 0, '', null],
+        'fruits/directory/strawberry.js': ['', 33, 42, 0, '', null, 0],
+        'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
     expect(removedFiles).toEqual(new Map());

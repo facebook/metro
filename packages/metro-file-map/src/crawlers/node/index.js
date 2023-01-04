@@ -21,7 +21,14 @@ import * as path from 'path';
 
 const debug = require('debug')('Metro:NodeCrawler');
 
-type Result = Array<[/* id */ string, /* mtime */ number, /* size */ number]>;
+type Result = Array<
+  [
+    string, // id
+    number, // mtime
+    number, // size
+    0 | 1, // symlink
+  ],
+>;
 
 type Callback = (result: Result) => void;
 
@@ -29,7 +36,7 @@ function find(
   roots: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,
   ignore: IgnoreMatcher,
-  enableSymlinks: boolean,
+  includeSymlinks: boolean,
   callback: Callback,
 ): void {
   const result: Result = [];
@@ -51,7 +58,7 @@ function find(
           return;
         }
 
-        if (entry.isSymbolicLink() && !enableSymlinks) {
+        if (entry.isSymbolicLink() && !includeSymlinks) {
           return;
         }
 
@@ -62,15 +69,18 @@ function find(
 
         activeCalls++;
 
-        const stat = enableSymlinks ? fs.stat : fs.lstat;
-
-        stat(file, (err, stat) => {
+        fs.lstat(file, (err, stat) => {
           activeCalls--;
 
           if (!err && stat) {
             const ext = path.extname(file).substr(1);
-            if (extensions.indexOf(ext) !== -1) {
-              result.push([file, stat.mtime.getTime(), stat.size]);
+            if (stat.isSymbolicLink() || extensions.includes(ext)) {
+              result.push([
+                file,
+                stat.mtime.getTime(),
+                stat.size,
+                stat.isSymbolicLink() ? 1 : 0,
+              ]);
             }
           }
 
@@ -97,31 +107,22 @@ function findNative(
   roots: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,
   ignore: IgnoreMatcher,
-  enableSymlinks: boolean,
+  includeSymlinks: boolean,
   callback: Callback,
 ): void {
-  const args = Array.from(roots);
-  if (enableSymlinks) {
-    args.push('(', '-type', 'f', '-o', '-type', 'l', ')');
-  } else {
-    args.push('-type', 'f');
-  }
+  // Examples:
+  // ( ( -type f ( -iname *.js ) ) )
+  // ( ( -type f ( -iname *.js -o -iname *.ts ) ) )
+  // ( ( -type f ( -iname *.js ) ) -o -type l )
+  // ( ( -type f ) -o -type l )
+  const extensionClause = extensions.length
+    ? `( ${extensions.map(ext => `-iname *.${ext}`).join(' -o ')} )`
+    : ''; // Empty inner expressions eg "( )" are not allowed
+  const expression = `( ( -type f ${extensionClause} ) ${
+    includeSymlinks ? '-o -type l ' : ''
+  })`;
 
-  if (extensions.length) {
-    args.push('(');
-  }
-  extensions.forEach((ext, index) => {
-    if (index) {
-      args.push('-o');
-    }
-    args.push('-iname');
-    args.push('*.' + ext);
-  });
-  if (extensions.length) {
-    args.push(')');
-  }
-
-  const child = spawn('find', args);
+  const child = spawn('find', roots.concat(expression.split(' ')));
   let stdout = '';
   if (child.stdout == null) {
     throw new Error(
@@ -142,10 +143,14 @@ function findNative(
       callback([]);
     } else {
       lines.forEach(path => {
-        fs.stat(path, (err, stat) => {
-          // Filter out symlinks that describe directories
-          if (!err && stat && !stat.isDirectory()) {
-            result.push([path, stat.mtime.getTime(), stat.size]);
+        fs.lstat(path, (err, stat) => {
+          if (!err && stat) {
+            result.push([
+              path,
+              stat.mtime.getTime(),
+              stat.size,
+              stat.isSymbolicLink() ? 1 : 0,
+            ]);
           }
           if (--count === 0) {
             callback(result);
@@ -166,7 +171,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     forceNodeFilesystemAPI,
     ignore,
     rootDir,
-    enableSymlinks,
+    includeSymlinks,
     perfLogger,
     roots,
   } = options;
@@ -181,13 +186,21 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       const changedFiles = new Map<Path, FileMetaData>();
       const removedFiles = new Map(previousState.files);
       for (const fileData of list) {
-        const [filePath, mtime, size] = fileData;
+        const [filePath, mtime, size, symlink] = fileData;
         const relativeFilePath = fastPath.relative(rootDir, filePath);
         const existingFile = previousState.files.get(relativeFilePath);
         removedFiles.delete(relativeFilePath);
         if (existingFile == null || existingFile[H.MTIME] !== mtime) {
           // See ../constants.js; SHA-1 will always be null and fulfilled later.
-          changedFiles.set(relativeFilePath, ['', mtime, size, 0, '', null]);
+          changedFiles.set(relativeFilePath, [
+            '',
+            mtime,
+            size,
+            0,
+            '',
+            null,
+            symlink,
+          ]);
         }
       }
 
@@ -199,9 +212,9 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     };
 
     if (useNativeFind) {
-      findNative(roots, extensions, ignore, enableSymlinks, callback);
+      findNative(roots, extensions, ignore, includeSymlinks, callback);
     } else {
-      find(roots, extensions, ignore, enableSymlinks, callback);
+      find(roots, extensions, ignore, includeSymlinks, callback);
     }
   });
 };

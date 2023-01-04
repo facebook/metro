@@ -42,6 +42,13 @@ jest
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger');
 
+const mockConsoleError = jest
+  .spyOn(console, 'error')
+  .mockImplementation(() => {});
+const mockConsoleWarn = jest
+  .spyOn(console, 'warn')
+  .mockImplementation(() => {});
+
 const NativeDate = global.Date;
 
 describe('processRequest', () => {
@@ -61,6 +68,7 @@ describe('processRequest', () => {
 
   beforeEach(() => {
     jest.resetModules();
+    jest.clearAllMocks();
 
     global.Date = NativeDate;
 
@@ -106,6 +114,11 @@ describe('processRequest', () => {
     jest.spyOn(DeltaBundler.prototype, 'getDelta').mockImplementation(getDelta);
 
     Server = require('../../Server');
+  });
+
+  afterEach(() => {
+    expect(mockConsoleWarn).not.toHaveBeenCalled();
+    expect(mockConsoleError).not.toHaveBeenCalled();
   });
 
   let server;
