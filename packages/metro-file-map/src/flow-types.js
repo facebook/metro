@@ -59,8 +59,6 @@ export type CacheManagerFactory = (
 export type ChangeEvent = {
   logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
-  snapshotFS: FileSystem,
-  moduleMap: ModuleMap,
 };
 
 export type ChangeEventMetadata = {

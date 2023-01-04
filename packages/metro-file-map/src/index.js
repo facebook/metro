@@ -799,25 +799,6 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  _getSnapshot(data: InternalData): {
-    snapshotFS: FileSystem,
-    moduleMap: HasteModuleMap,
-  } {
-    const rootDir = this._options.rootDir;
-    return {
-      snapshotFS: new HasteFS({
-        files: new Map(data.files),
-        rootDir,
-      }),
-      moduleMap: new HasteModuleMap({
-        duplicates: new Map(data.duplicates),
-        map: new Map(data.map),
-        mocks: new Map(data.mocks),
-        rootDir,
-      }),
-    };
-  }
-
   _removeIfExists(data: InternalData, relativeFilePath: Path) {
     const fileMetadata = data.files.get(relativeFilePath);
     if (!fileMetadata) {
@@ -900,7 +881,6 @@ export default class HasteMap extends EventEmitter {
         const changeEvent: ChangeEvent = {
           logger: hmrPerfLogger,
           eventsQueue,
-          ...this._getSnapshot(data),
         };
         this.emit('change', changeEvent);
         eventsQueue = [];
