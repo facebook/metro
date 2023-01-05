@@ -17,6 +17,7 @@ import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
+import {platform} from 'os';
 import * as path from 'path';
 
 const debug = require('debug')('Metro:NodeCrawler');
@@ -177,7 +178,9 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   } = options;
   perfLogger?.point('nodeCrawl_start');
   const useNativeFind =
-    !forceNodeFilesystemAPI && (await hasNativeFindSupport());
+    !forceNodeFilesystemAPI &&
+    platform() !== 'win32' &&
+    (await hasNativeFindSupport());
 
   debug('Using system find: %s', useNativeFind);
 
