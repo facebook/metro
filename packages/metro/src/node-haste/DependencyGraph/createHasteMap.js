@@ -77,7 +77,7 @@ function createHasteMap(
         ...config.watcher.additionalExts,
       ]),
     ),
-    forceNodeFilesystemAPI: !config.resolver.useWatchman,
+    forceNodeFilesystemAPI: true,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
     healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
