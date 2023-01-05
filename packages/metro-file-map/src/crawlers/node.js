@@ -16,6 +16,7 @@ import H from '../constants';
 import * as fastPath from '../lib/fast_path';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
+import {platform} from 'os';
 import * as path from 'path';
 
 type Result = Array<[/* id */ string, /* mtime */ number, /* size */ number]>;
@@ -25,7 +26,7 @@ type Callback = (result: Result) => void;
 async function hasNativeFindSupport(
   forceNodeFilesystemAPI: boolean,
 ): Promise<boolean> {
-  if (forceNodeFilesystemAPI) {
+  if (forceNodeFilesystemAPI || platform() === 'win32') {
     return false;
   }
 
