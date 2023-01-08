@@ -18,6 +18,7 @@ import type {
   HmrMessage,
   HmrUpdateMessage,
 } from 'metro-runtime/src/modules/types.flow';
+import type {UrlWithParsedQuery} from 'url';
 
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
@@ -34,8 +35,7 @@ const {
 const nullthrows = require('nullthrows');
 const url = require('url');
 
-type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
-export type EntryPointURL = $ReturnType<typeof url.parse>;
+export type EntryPointURL = UrlWithParsedQuery;
 
 export type Client = {
   optedIntoHMR: boolean,
@@ -145,7 +145,7 @@ class HmrServer<TClient: Client> {
     const {graph, id} = await revPromise;
     client.revisionIds.push(id);
 
-    let clientGroup = this._clientGroups.get(id);
+    let clientGroup: ?ClientGroup = this._clientGroups.get(id);
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
@@ -189,6 +189,7 @@ class HmrServer<TClient: Client> {
 
       const unlisten = this._bundler
         .getDeltaBundler()
+        // $FlowFixMe[missing-local-annot]
         .listen(graph, async (...args) => {
           latestEventArgs = args;
           await debounceCallHandleFileChange();
@@ -358,10 +359,12 @@ class HmrServer<TClient: Client> {
       logger?.point('serialize_start');
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        createModuleId: this._createModuleId,
-        projectRoot:
-          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
+        createModuleId: this._createModuleId,
+        includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+        projectRoot: this._config.projectRoot,
+        serverRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
       });
 
       logger?.point('serialize_end');

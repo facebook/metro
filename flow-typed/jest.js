@@ -11,7 +11,10 @@
 
 // Copied from https://raw.githubusercontent.com/flow-typed/flow-typed/master/definitions/npm/jest_v26.x.x/flow_v0.134.x-/jest_v26.x.x.js
 
-type JestMockFn<TArguments: $ReadOnlyArray<*>, TReturn> = {
+type JestMockFn<
+  TArguments: $ReadOnlyArray<any> = $ReadOnlyArray<any>,
+  TReturn = any,
+> = {
   (...args: TArguments): TReturn,
   /**
    * An object for introspecting mock calls
@@ -834,7 +837,7 @@ type JestObjectType = {
    * Returns a new, unused mock function. Optionally takes a mock
    * implementation.
    */
-  fn<TArguments: $ReadOnlyArray<*>, TReturn>(
+  fn<TArguments: $ReadOnlyArray<any> = $ReadOnlyArray<any>, TReturn = any>(
     implementation?: (...args: TArguments) => TReturn,
   ): JestMockFn<TArguments, TReturn>,
   /**

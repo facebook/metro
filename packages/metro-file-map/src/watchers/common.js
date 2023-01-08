@@ -31,7 +31,6 @@ const walker = require('walker');
 /**
  * Constants
  */
-export const DEFAULT_DELAY = 100;
 export const CHANGE_EVENT = 'change';
 export const DELETE_EVENT = 'delete';
 export const ADD_EVENT = 'add';
@@ -114,6 +113,7 @@ export function recReaddir(
   dir: string,
   dirCallback: (string, Stats) => void,
   fileCallback: (string, Stats) => void,
+  symlinkCallback: (string, Stats) => void,
   endCallback: () => void,
   errorCallback: Error => void,
   ignored: ?(boolean | RegExp),
@@ -122,6 +122,7 @@ export function recReaddir(
     .filterDir(currentDir => !anymatch(ignored, currentDir))
     .on('dir', normalizeProxy(dirCallback))
     .on('file', normalizeProxy(fileCallback))
+    .on('symlink', normalizeProxy(symlinkCallback))
     .on('error', errorCallback)
     .on('end', () => {
       if (platform === 'win32') {

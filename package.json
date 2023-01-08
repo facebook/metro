@@ -1,7 +1,7 @@
 {
   "private": true,
   "devDependencies": {
-    "@babel/core": "^7.14.0",
+    "@babel/core": "^7.20.0",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
     "@babel/plugin-syntax-class-properties": "^7.0.0",
@@ -23,7 +23,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-relay": "^1.8.3",
-    "flow-bin": "^0.194.0",
+    "flow-bin": "^0.196.3",
     "glob": "^7.1.1",
     "hermes-eslint": "0.8.0",
     "invariant": "^2.2.4",
@@ -48,7 +48,6 @@
     "lint": "eslint . --cache",
     "postinstall": "node ./scripts/build.js",
     "postpublish": "lerna run cleanup-release",
-    "preinstall": "node ./scripts/preinstall.js",
     "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna exec -- npm publish",
     "start": "node packages/metro/src/cli",
     "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",

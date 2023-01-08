@@ -133,11 +133,6 @@ export class Graph<T = MixedOutput> {
     }>,
   > = new Map();
 
-  // $FlowIgnore[unsafe-getters-setters]
-  get importBundleNames(): $ReadOnlySet<string> {
-    return new Set(this.#importBundleNodes.keys());
-  }
-
   /// GC state for nodes in the graph (this.dependencies)
   +#gc: {
     +color: Map<string, NodeColor>,

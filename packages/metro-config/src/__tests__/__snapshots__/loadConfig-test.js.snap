@@ -83,7 +83,6 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
@@ -250,7 +249,6 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
@@ -417,7 +415,6 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
@@ -584,7 +581,6 @@ Object {
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {

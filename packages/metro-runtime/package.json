@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.73.5",
+  "version": "0.73.6",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "main": "src",
   "repository": {
@@ -17,6 +17,6 @@
     "react-refresh": "^0.4.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.0"
+    "@babel/core": "^7.20.0"
   }
 }

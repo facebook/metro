@@ -59,8 +59,6 @@ export type CacheManagerFactory = (
 export type ChangeEvent = {
   logger: ?RootPerfLogger,
   eventsQueue: EventsQueue,
-  snapshotFS: FileSystem,
-  moduleMap: ModuleMap,
 };
 
 export type ChangeEventMetadata = {
@@ -74,10 +72,10 @@ export type Console = typeof global.console;
 export type CrawlerOptions = {
   abortSignal: ?AbortSignal,
   computeSha1: boolean,
-  enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
+  includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
   previousState: $ReadOnly<{
     clocks: $ReadOnlyMap<Path, WatchmanClockSpec>,
@@ -121,6 +119,7 @@ export type HType = {
   VISITED: 3,
   DEPENDENCIES: 4,
   SHA1: 5,
+  SYMLINK: 6,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -151,6 +150,7 @@ export type FileMetaData = [
   /* visited */ 0 | 1,
   /* dependencies */ string,
   /* sha1 */ ?string,
+  /* symlink */ 0 | 1 | string, // string specifies target, if known
 ];
 
 export interface FileSystem {

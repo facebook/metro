@@ -1845,6 +1845,8 @@ declare module '@babel/traverse' {
   declare export var visitors: Visitors;
 
   declare export type Cache = {
+    path: $ReadOnlyWeakMap<BabelNode, mixed>,
+    scope: $ReadOnlyWeakMap<BabelNode, mixed>,
     clear(): void,
     clearPath(): void,
     clearScope(): void,

@@ -507,6 +507,7 @@ class Device {
 
       if (pathIsURL) {
         http
+          // $FlowFixMe[missing-local-annot]
           .get(pathToSource, httpResponse => {
             const {statusCode} = httpResponse;
             if (statusCode == 200) {

@@ -36,7 +36,9 @@ function baseJSBundle(
     filter: options.processModuleFilter,
     createModuleId: options.createModuleId,
     dev: options.dev,
+    includeAsyncPaths: options.includeAsyncPaths,
     projectRoot: options.projectRoot,
+    serverRoot: options.serverRoot,
   };
 
   // Do not prepend polyfills or the require runtime when only modules are requested
@@ -54,23 +56,16 @@ function baseJSBundle(
   );
 
   const postCode = processModules(
-    getAppendScripts(
-      entryPoint,
-      [...preModules, ...modules],
-      graph.importBundleNames,
-      {
-        asyncRequireModulePath: options.asyncRequireModulePath,
-        createModuleId: options.createModuleId,
-        getRunModuleStatement: options.getRunModuleStatement,
-        inlineSourceMap: options.inlineSourceMap,
-        projectRoot: options.projectRoot,
-        runBeforeMainModule: options.runBeforeMainModule,
-        runModule: options.runModule,
-        serverRoot: options.serverRoot,
-        sourceMapUrl: options.sourceMapUrl,
-        sourceUrl: options.sourceUrl,
-      },
-    ),
+    getAppendScripts(entryPoint, [...preModules, ...modules], {
+      asyncRequireModulePath: options.asyncRequireModulePath,
+      createModuleId: options.createModuleId,
+      getRunModuleStatement: options.getRunModuleStatement,
+      inlineSourceMap: options.inlineSourceMap,
+      runBeforeMainModule: options.runBeforeMainModule,
+      runModule: options.runModule,
+      sourceMapUrl: options.sourceMapUrl,
+      sourceUrl: options.sourceUrl,
+    }),
     processModulesOptions,
   )
     .map(([_, code]) => code)

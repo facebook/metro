@@ -1,6 +1,6 @@
 {
   "name": "metro-hermes-compiler",
-  "version": "0.73.5",
+  "version": "0.73.6",
   "description": "🚇 Hermes bytecode compiler for Metro.",
   "main": "src/index.js",
   "repository": {

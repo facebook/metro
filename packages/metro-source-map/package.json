@@ -1,6 +1,6 @@
 {
   "name": "metro-source-map",
-  "version": "0.73.5",
+  "version": "0.73.6",
   "description": "🚇 Source map generator for Metro.",
   "main": "src/source-map.js",
   "repository": {
@@ -12,18 +12,19 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "@babel/traverse": "^7.14.0",
+    "@babel/traverse": "^7.20.0",
     "@babel/types": "^7.20.0",
     "invariant": "^2.2.4",
-    "metro-symbolicate": "0.73.5",
+    "metro-symbolicate": "0.73.6",
     "nullthrows": "^1.1.1",
-    "ob1": "0.73.5",
+    "ob1": "0.73.6",
     "source-map": "^0.5.6",
     "vlq": "^1.0.0"
   },
   "license": "MIT",
   "devDependencies": {
-    "@babel/parser": "^7.14.0",
+    "@babel/core": "^7.20.0",
+    "@babel/parser": "^7.20.0",
     "uglify-es": "^3.1.9"
   }
 }

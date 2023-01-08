@@ -205,6 +205,12 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
       ...buildBabelConfig(filename, options, plugins),
       caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst =
       isTypeScriptSource(filename) ||
@@ -215,8 +221,9 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
             babel: true,
             sourceType: babelConfig.sourceType,
           });
-    const result = transformFromAstSync(sourceAst, src, babelConfig);
+
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const result = transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {

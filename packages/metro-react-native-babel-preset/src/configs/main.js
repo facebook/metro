@@ -112,12 +112,6 @@ const getPreset = (src, options) => {
       ],
     );
   }
-  if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-template-literals'),
-      {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
-    ]);
-  }
   if (isNull || src.indexOf('async') !== -1) {
     extraPlugins.push([
       require('@babel/plugin-proposal-async-generator-functions'),

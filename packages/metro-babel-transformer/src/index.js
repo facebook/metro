@@ -79,6 +79,12 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       filename,
       plugins,
       sourceType: 'module',
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst = options.hermesParser
       ? require('hermes-parser').parse(src, {
@@ -86,8 +92,11 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
           sourceType: babelConfig.sourceType,
         })
       : parseSync(src, babelConfig);
-    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
+
+    // Generate the function map before we transform the AST to
+    // ensure we aren't reading from mutated AST.
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
 
     return {ast: nullthrows(ast), functionMap};
   } finally {

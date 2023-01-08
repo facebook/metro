@@ -1441,30 +1441,7 @@ describe('edge cases', () => {
       expect(graph.dependencies.get('/bar')).toBeUndefined();
     });
 
-    it('initial async dependencies are collected in importBundleNames', async () => {
-      Actions.removeDependency('/bundle', '/foo');
-      Actions.addDependency('/bundle', '/foo', {
-        data: {
-          asyncType: 'async',
-        },
-      });
-
-      /*
-      ┌─────────┐  async   ┌──────┐     ┌──────┐
-      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
-      └─────────┘          └──────┘     └──────┘
-                            │
-                            │
-                            ▼
-                          ┌──────┐
-                          │ /baz │
-                          └──────┘
-      */
-      await graph.initialTraverseDependencies(localOptions);
-      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
-    });
-
-    it('adding a new async dependency updates importBundleNames', async () => {
+    it('new async dependencies are not traversed', async () => {
       Actions.removeDependency('/bundle', '/foo');
       Actions.addDependency('/bundle', '/foo', {
         data: {
@@ -1511,7 +1488,6 @@ describe('edge cases', () => {
         deleted: new Set([]),
         modified: new Set(['/bundle']),
       });
-      expect(graph.importBundleNames).toEqual(new Set(['/foo', '/quux']));
     });
 
     it('changing a sync dependency to async is a deletion', async () => {
@@ -1554,43 +1530,6 @@ describe('edge cases', () => {
         deleted: new Set(['/foo', '/bar', '/baz']),
         modified: new Set(['/bundle']),
       });
-    });
-
-    it('changing a sync dependency to async updates importBundleNames', async () => {
-      /*
-      ┌─────────┐     ┌──────┐     ┌──────┐
-      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
-      └─────────┘     └──────┘     └──────┘
-                        │
-                        │
-                        ▼
-                      ┌──────┐
-                      │ /baz │
-                      └──────┘
-      */
-      await graph.initialTraverseDependencies(localOptions);
-      files.clear();
-
-      Actions.removeDependency('/bundle', '/foo');
-      Actions.addDependency('/bundle', '/foo', {
-        data: {
-          asyncType: 'async',
-        },
-      });
-
-      /*
-      ┌─────────┐  async   ┌──────┐     ┌──────┐
-      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
-      └─────────┘          └──────┘     └──────┘
-                            │
-                            │
-                            ▼
-                          ┌──────┐
-                          │ /baz │
-                          └──────┘
-      */
-      await graph.traverseDependencies([...files], localOptions);
-      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
     });
 
     it('changing an async dependency to sync is an addition', async () => {
@@ -1638,46 +1577,6 @@ describe('edge cases', () => {
       });
     });
 
-    it('changing an async dependency to sync updates importBundleNames', async () => {
-      Actions.removeDependency('/bundle', '/foo');
-      Actions.addDependency('/bundle', '/foo', {
-        data: {
-          asyncType: 'async',
-        },
-      });
-
-      /*
-      ┌─────────┐  async   ┌──────┐     ┌──────┐
-      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
-      └─────────┘          └──────┘     └──────┘
-                            │
-                            │
-                            ▼
-                          ┌──────┐
-                          │ /baz │
-                          └──────┘
-      */
-      await graph.initialTraverseDependencies(localOptions);
-      files.clear();
-
-      Actions.removeDependency('/bundle', '/foo');
-      Actions.addDependency('/bundle', '/foo');
-
-      /*
-      ┌─────────┐     ┌──────┐     ┌──────┐
-      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
-      └─────────┘     └──────┘     └──────┘
-                        │
-                        │
-                        ▼
-                      ┌──────┐
-                      │ /baz │
-                      └──────┘
-      */
-      await graph.traverseDependencies([...files], localOptions);
-      expect(graph.importBundleNames).toEqual(new Set());
-    });
-
     it('initial graph can have async+sync edges to the same module', async () => {
       Actions.addDependency('/bar', '/foo', {
         data: {
@@ -1701,7 +1600,6 @@ describe('edge cases', () => {
       */
       await graph.initialTraverseDependencies(localOptions);
 
-      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
       expect(graph.dependencies.get('/foo')).not.toBeUndefined();
     });
 
@@ -1746,7 +1644,6 @@ describe('edge cases', () => {
         modified: new Set(['/bar']),
         deleted: new Set([]),
       });
-      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
     });
 
     it('adding a sync edge brings in a module that is already the target of an async edge', async () => {
@@ -1793,7 +1690,6 @@ describe('edge cases', () => {
         modified: new Set(['/bundle']),
         deleted: new Set([]),
       });
-      expect(graph.importBundleNames).toEqual(new Set(['/bar']));
     });
 
     it('on initial traversal, modules are not kept alive by a cycle with an async dep', async () => {
@@ -1875,7 +1771,6 @@ describe('edge cases', () => {
         deleted: new Set(['/foo', '/baz']),
         modified: new Set(['/bundle']),
       });
-      expect(graph.importBundleNames).toEqual(new Set());
     });
 
     it('on incremental traversal, modules are not kept alive by a cycle with an async dep - adding the async edge in a delta', async () => {
@@ -1926,7 +1821,6 @@ describe('edge cases', () => {
         deleted: new Set([]),
         modified: new Set([]),
       });
-      expect(graph.importBundleNames).toEqual(new Set());
     });
 
     it('on incremental traversal, modules are not kept alive by a cycle with an async dep - deletion + add async in the same delta', async () => {
@@ -1976,7 +1870,6 @@ describe('edge cases', () => {
         deleted: new Set(['/foo', '/baz']),
         modified: new Set(['/bundle']),
       });
-      expect(graph.importBundleNames).toEqual(new Set());
     });
 
     it('deleting the target of an async dependency retraverses its parent', async () => {
@@ -2040,7 +1933,6 @@ describe('edge cases', () => {
         modified: new Set(['/bundle']),
         deleted: new Set([]),
       });
-      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
     });
   });
 

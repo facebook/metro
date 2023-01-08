@@ -17,7 +17,9 @@ const {
   generateFunctionMap,
   generateFunctionMappingsArray,
 } = require('../generateFunctionMap');
+const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/src/Symbolication');
@@ -1600,6 +1602,88 @@ function parent2() {
           ],
         }
       `);
+    });
+  });
+
+  describe('@babel/traverse path cache workaround (babel#6437)', () => {
+    /* These tests exist due to the need to work around a Babel issue:
+       https://github.com/babel/babel/issues/6437
+       In short, using `@babel/traverse` outside of a transform context
+       pollutes the cache in such a way as to break subsequent transformation
+       of the same AST.
+
+       This commonly manifests as: "Cannot read properties of undefined
+       (reading 'addHelper')", and is due to a missing `hub` property normally
+       provided by `@babel/core` but not populated when using `traverse` alone.
+
+       We need to work around this by not mutating the cache on traversal.
+
+       Note though that we must also must be careful to preserve any existing
+       cache, because others (Fast Refresh, Jest) rely on cached properties set
+       on paths. */
+
+    // A minimal(?) Babel transformation that requires a `hub`, modelled on
+    // `@babel/plugin-transform-modules-commonjs` and the `wrapInterop` call in
+    // `@babel/helper-module-transforms`
+    const transformRequiringHub = (ast: BabelNodeFile) =>
+      transformFromAstSync(ast, '', {
+        plugins: [
+          () => ({
+            visitor: {
+              Program: {
+                enter: path => {
+                  expect(path.hub).toBeDefined();
+                },
+              },
+            },
+          }),
+        ],
+        babelrc: false,
+        cloneInputAst: false,
+      });
+
+    let ast;
+
+    beforeEach(() => {
+      ast = getAst('arbitrary(code)');
+      traverse.cache.clearPath();
+    });
+
+    it('requires a workaround for traverse cache pollution', () => {
+      /* If this test fails, it likely means either:
+         1. There are multiple copies of `@babel/traverse` in node_modules, and
+            the one used by `@babel/core` is not the one used by this test.
+            This masks the issue, and probably means you should deduplicate
+            yarn.lock.
+         2. https://github.com/babel/babel/issues/6437 has been fixed upstream,
+            In that case, we should be able to remove cache-related hacks
+            around `traverse` from generateFunctionMap, and these tests. */
+
+      // Perform a trivial traversal.
+      traverse(ast, {});
+
+      // Expect that the path cache is polluted with entries lacking `hub`.
+      expect(() => transformRequiringHub(ast)).toThrow();
+    });
+
+    it('successfully works around traverse cache pollution', () => {
+      generateFunctionMap(ast);
+
+      // Check that the `hub` property is present on paths when transforming.
+      transformRequiringHub(ast);
+    });
+
+    it('does not reset the path cache', () => {
+      const dummyCache: Map<mixed, mixed> = new Map();
+      // $FlowIgnore[prop-missing] - Writing to readonly map for test purposes.
+      traverse.cache.path.set(ast, dummyCache);
+
+      generateFunctionMap(ast);
+
+      // Check that we're not working around the issue by clearing the cache -
+      // that causes problems elsewhere.
+      expect(traverse.cache.path.get(ast)).toBe(dummyCache);
+      expect(dummyCache.size).toBe(0);
     });
   });
 });

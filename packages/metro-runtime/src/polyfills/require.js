@@ -17,7 +17,17 @@
 declare var __DEV__: boolean;
 declare var __METRO_GLOBAL_PREFIX__: string;
 
-type DependencyMap = Array<ModuleID>;
+// A simpler $ArrayLike<T>. Not iterable and doesn't have a `length`.
+// This is compatible with actual arrays as well as with objects that look like
+// {0: 'value', 1: '...'}
+type ArrayIndexable<T> = interface {
+  +[indexer: number]: T,
+};
+type DependencyMap = $ReadOnly<
+  ArrayIndexable<ModuleID> & {
+    paths?: {[id: ModuleID]: string},
+  },
+>;
 type Exports = any;
 type FactoryFn = (
   global: Object,

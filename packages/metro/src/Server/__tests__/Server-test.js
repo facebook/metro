@@ -10,8 +10,12 @@
  */
 
 import type {Graph} from '../../DeltaBundler/Graph';
-import type {Module, Options} from '../../DeltaBundler/types.flow';
-import type {Dependency} from '../../ModuleGraph/types.flow';
+import type {
+  Dependency,
+  Module,
+  Options,
+  ReadOnlyGraph,
+} from '../../DeltaBundler/types.flow';
 
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
@@ -38,6 +42,13 @@ jest
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger');
 
+const mockConsoleError = jest
+  .spyOn(console, 'error')
+  .mockImplementation(() => {});
+const mockConsoleWarn = jest
+  .spyOn(console, 'warn')
+  .mockImplementation(() => {});
+
 const NativeDate = global.Date;
 
 describe('processRequest', () => {
@@ -57,6 +68,7 @@ describe('processRequest', () => {
 
   beforeEach(() => {
     jest.resetModules();
+    jest.clearAllMocks();
 
     global.Date = NativeDate;
 
@@ -102,6 +114,11 @@ describe('processRequest', () => {
     jest.spyOn(DeltaBundler.prototype, 'getDelta').mockImplementation(getDelta);
 
     Server = require('../../Server');
+  });
+
+  afterEach(() => {
+    expect(mockConsoleWarn).not.toHaveBeenCalled();
+    expect(mockConsoleError).not.toHaveBeenCalled();
   });
 
   let server;
@@ -170,7 +187,7 @@ describe('processRequest', () => {
     });
 
   beforeEach(() => {
-    const currentGraphs = new Set<Graph<>>();
+    const currentGraphs = new Set<ReadOnlyGraph<>>();
     buildGraph.mockImplementation(
       async (
         entryPoints: $ReadOnlyArray<string>,
@@ -247,11 +264,12 @@ describe('processRequest', () => {
           });
         }
 
-        // $FlowFixMe[incompatible-type]
-        const graph: Graph<> = {
-          entryPoints: ['/root/mybundle.js'],
+        // NOTE: The real buildGraph returns a mutable Graph instance, but we
+        // mock out all of the code paths that depend on this so we can use this
+        // simpler interface instead.
+        const graph: ReadOnlyGraph<> = {
+          entryPoints: new Set(['/root/mybundle.js']),
           dependencies,
-          importBundleNames: new Set(),
           transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);

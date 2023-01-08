@@ -225,6 +225,7 @@ class Server {
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
+      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule:
@@ -307,6 +308,7 @@ class Server {
       excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
+      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
@@ -865,6 +867,8 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          includeAsyncPaths:
+            this._config.server.experimentalImportBundleSupport,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
@@ -996,6 +1000,8 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          includeAsyncPaths:
+            this._config.server.experimentalImportBundleSupport,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
@@ -1180,11 +1186,16 @@ class Server {
     ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
-        if (collapse || lineNumber == null || urls.has(fileAbsolute)) {
+
+        if (
+          collapse ||
+          lineNumber == null ||
+          (file != null && urls.has(file))
+        ) {
           continue;
         }
 
+        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
         try {
           return {
             content: codeFrameColumns(

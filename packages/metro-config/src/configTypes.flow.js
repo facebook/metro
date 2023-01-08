@@ -15,7 +15,6 @@ import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
-import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
@@ -25,19 +24,7 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
-
-export type PostProcessBundleSourcemap = ({
-  code: Buffer | string,
-  map: MixedSourceMap,
-  outFileName: string,
-  ...
-}) => {
-  code: Buffer | string,
-  map: MixedSourceMap | string,
-  ...
-};
 
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true, ...} | false,
@@ -142,14 +129,14 @@ type SerializerConfigT = {
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
-  postProcessBundleSourcemap: PostProcessBundleSourcemap,
   processModuleFilter: (modules: Module<>) => boolean,
 };
 
 type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
-  transformVariants: TransformVariants,
+  // TODO(moti): Remove this Meta-internal option from Metro's public config
+  transformVariants: {+[name: string]: {...}},
   workerPath: string,
   publicPath: string,
 };
