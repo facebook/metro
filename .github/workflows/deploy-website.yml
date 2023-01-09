@@ -9,8 +9,13 @@ on:
       - "website/**"
       - ".github/workflows/deploy-website.yml"
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
+    permissions:
+      contents: write # to deploy
     runs-on: ubuntu-latest
 
     if: github.repository == 'facebook/metro'
