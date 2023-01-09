@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-interop-tools",
-  "version": "0.73.6",
+  "version": "0.74.0",
   "description": "Interop tools for React Native applications",
   "main": "src/index.js",
   "repository": {
