@@ -90,6 +90,7 @@ const getPreset = (src, options) => {
     ]);
     extraPlugins.push([require('@babel/plugin-transform-function-name')]);
     extraPlugins.push([require('@babel/plugin-transform-literals')]);
+    extraPlugins.push([require('@babel/plugin-proposal-numeric-separator')]);
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
   } else {
     extraPlugins.push([
