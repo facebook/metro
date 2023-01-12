@@ -124,7 +124,7 @@ class HmrServer<TClient: Client> {
       (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
         '/.',
       entryFile,
-    );
+    ).filePath;
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       resolverOptions,
       shallow: graphOptions.shallow,

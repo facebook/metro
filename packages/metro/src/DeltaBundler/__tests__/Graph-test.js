@@ -332,7 +332,7 @@ beforeEach(async () => {
       if (!mockedDependencies.has(path)) {
         throw new Error(`Dependency not found: ${from} -> ${path}`);
       }
-      return path;
+      return {type: 'sourceFile', filePath: path};
     },
     transform: mockTransform,
     transformOptions: {

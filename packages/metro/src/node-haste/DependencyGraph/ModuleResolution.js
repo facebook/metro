@@ -27,6 +27,7 @@ const Resolver = require('metro-resolver');
 const path = require('path');
 const util = require('util');
 import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {BundlerResolution} from '../../DeltaBundler/types.flow';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -44,17 +45,16 @@ export type Moduleish = interface {
   getPackage(): ?Packageish,
 };
 
-export type ModuleishCache<TModule, TPackage> = interface {
+export type ModuleishCache<TPackage> = interface {
   getPackage(
     name: string,
     platform?: string,
     supportsNativePlatform?: boolean,
   ): TPackage,
-  getModule(path: string): TModule,
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = $ReadOnly<{
+type Options<TPackage> = $ReadOnly<{
   dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
@@ -64,7 +64,7 @@ type Options<TModule, TPackage> = $ReadOnly<{
   getHastePackagePath: (name: string, platform: ?string) => ?string,
   isAssetFile: IsAssetFile,
   mainFields: $ReadOnlyArray<string>,
-  moduleCache: ModuleishCache<TModule, TPackage>,
+  moduleCache: ModuleishCache<TPackage>,
   nodeModulesPaths: $ReadOnlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
@@ -73,15 +73,15 @@ type Options<TModule, TPackage> = $ReadOnly<{
   sourceExts: $ReadOnlyArray<string>,
 }>;
 
-class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
-  _options: Options<TModule, TPackage>;
+class ModuleResolver<TPackage: Packageish> {
+  _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModule: Moduleish;
   // An empty module, the result of resolving `emptyModulePath` from the project root.
-  _cachedEmptyModule: ?TModule;
+  _cachedEmptyModule: ?BundlerResolution;
 
   // $FlowFixMe[missing-local-annot]
-  constructor(options: Options<TModule, TPackage>) {
+  constructor(options: Options<TPackage>) {
     this._options = options;
     const {projectRoot, moduleCache} = this._options;
     this._projectRootFakeModule = {
@@ -97,7 +97,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     };
   }
 
-  _getEmptyModule(): TModule | Moduleish {
+  _getEmptyModule(): BundlerResolution {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
@@ -171,7 +171,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     allowHaste: boolean,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
-  ): TModule {
+  ): BundlerResolution {
     try {
       const result = Resolver.resolve(
         {
@@ -244,21 +244,19 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   };
 
   /**
-   * FIXME: get rid of this function and of the reliance on `TModule`
-   * altogether, return strongly typed resolutions at the top-level instead.
+   * TODO: Return Resolution instead of coercing to BundlerResolution here
    */
-  _getFileResolvedModule(resolution: Resolution): TModule {
+  _getFileResolvedModule(resolution: Resolution): BundlerResolution {
     switch (resolution.type) {
       case 'sourceFile':
-        return this._options.moduleCache.getModule(resolution.filePath);
+        return resolution;
       case 'assetFiles':
         // FIXME: we should forward ALL the paths/metadata,
         // not just an arbitrary item!
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
-        return this._options.moduleCache.getModule(arbitrary);
+        return {type: 'sourceFile', filePath: arbitrary};
       case 'empty':
-        // $FlowFixMe[incompatible-return]
         return this._getEmptyModule();
       default:
         (resolution.type: empty);

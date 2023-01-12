@@ -22,8 +22,10 @@ const getGraphId = require('../lib/getGraphId');
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest.mock('../lib/transformHelpers', () => ({
-  getResolveDependencyFn: () => (from, to) =>
-    `${require('path').resolve(from, to)}.js`,
+  getResolveDependencyFn: () => (from, to) => ({
+    type: 'sourceFile',
+    filePath: `${require('path').resolve(from, to)}.js`,
+  }),
 }));
 
 jest.mock('../IncrementalBundler');

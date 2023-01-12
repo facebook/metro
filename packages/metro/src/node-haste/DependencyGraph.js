@@ -18,7 +18,6 @@ import type MetroFileMap, {
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
-import type Module from './Module';
 
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
@@ -37,6 +36,7 @@ const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
+import type {BundlerResolution} from '../DeltaBundler/types.flow';
 
 const NULL_PLATFORM = Symbol();
 
@@ -59,7 +59,7 @@ class DependencyGraph extends EventEmitter {
   _fileSystem: FileSystem;
   _moduleCache: ModuleCache;
   _hasteModuleMap: IModuleMap;
-  _moduleResolver: ModuleResolver<Module, Package>;
+  _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
     // Custom resolver options
     string | symbol,
@@ -72,7 +72,7 @@ class DependencyGraph extends EventEmitter {
         Map<
           // Platform
           string | symbol,
-          string,
+          BundlerResolution,
         >,
       >,
     >,
@@ -284,7 +284,7 @@ class DependencyGraph extends EventEmitter {
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
-  ): string {
+  ): BundlerResolution {
     const isSensitiveToOriginFolder =
       // Resolution is always relative to the origin folder unless we assume a flat node_modules
       !assumeFlatNodeModules ||
@@ -313,17 +313,17 @@ class DependencyGraph extends EventEmitter {
     );
     const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
     const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
-    let modulePath = mapByPlatform.get(platformKey);
+    let resolution: ?BundlerResolution = mapByPlatform.get(platformKey);
 
-    if (!modulePath) {
+    if (!resolution) {
       try {
-        modulePath = this._moduleResolver.resolveDependency(
+        resolution = this._moduleResolver.resolveDependency(
           this._moduleCache.getModule(from),
           to,
           true,
           platform,
           resolverOptions,
-        ).path;
+        );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(from, error);
@@ -339,8 +339,8 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platformKey, modulePath);
-    return modulePath;
+    mapByPlatform.set(platformKey, resolution);
+    return resolution;
   }
 
   _doesFileExist = (filePath: string): boolean => {

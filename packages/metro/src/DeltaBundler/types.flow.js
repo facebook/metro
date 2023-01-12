@@ -126,8 +126,13 @@ export type AllowOptionalDependencies =
   | boolean
   | AllowOptionalDependenciesWithOptions;
 
+export type BundlerResolution = $ReadOnly<{
+  type: 'sourceFile',
+  filePath: string,
+}>;
+
 export type Options<T = MixedOutput> = {
-  +resolve: (from: string, to: string) => string,
+  +resolve: (from: string, to: string) => BundlerResolution,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,

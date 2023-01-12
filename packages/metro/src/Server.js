@@ -1364,7 +1364,7 @@ class Server {
       relativeTo === 'server'
         ? this._getServerRootDir()
         : this._config.projectRoot;
-    return resolutionFn(`${rootDir}/.`, filePath);
+    return resolutionFn(`${rootDir}/.`, filePath).filePath;
   }
 
   getNewBuildNumber(): number {

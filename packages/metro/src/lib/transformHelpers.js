@@ -13,7 +13,10 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {
+  BundlerResolution,
+  TransformInputOptions,
+} from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
@@ -203,7 +206,7 @@ async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
-): Promise<(from: string, to: string) => string> {
+): Promise<(from: string, to: string) => BundlerResolution> {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
