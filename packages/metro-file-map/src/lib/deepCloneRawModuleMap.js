@@ -8,10 +8,10 @@
  * @flow strict-local
  */
 
-import type {InternalData} from '../flow-types';
+import type {RawModuleMap, ReadOnlyRawModuleMap} from '../flow-types';
 
 const mapMap = <K, V1, V2>(
-  map: Map<K, V1>,
+  map: $ReadOnlyMap<K, V1>,
   mapFn: (v: V1) => V2,
 ): Map<K, V2> => {
   return new Map(
@@ -19,20 +19,16 @@ const mapMap = <K, V1, V2>(
   );
 };
 
-// Benchmarked at ~260ms on an MBP2019, Node 16 with an input that
-// v8-serializes to 50MB. This direct/manual approach is significantly faster
-// than v8 deserialize(serialize) (~800ms) or a `structuredClone`
-// implementation using worker_threads:
-// https://github.com/nodejs/node/issues/39713#issuecomment-896884958 (700ms)
-export default function deepCloneInternalData(
-  data: InternalData,
-): InternalData {
+// This direct/manual approach is >2x faster than v8 deserialize(serialize) or
+// a `structuredClone` implementation using worker_threads:
+// https://github.com/nodejs/node/issues/39713#issuecomment-896884958
+export default function deepCloneRawModuleMap(
+  data: ReadOnlyRawModuleMap,
+): RawModuleMap {
   return {
-    clocks: mapMap(data.clocks, val => JSON.parse(JSON.stringify(val))),
     duplicates: mapMap(data.duplicates, v =>
       mapMap(v, v2 => new Map(v2.entries())),
     ),
-    files: mapMap(data.files, v => [...v]),
     map: mapMap(data.map, v =>
       Object.assign(
         Object.create(null),
@@ -44,5 +40,6 @@ export default function deepCloneInternalData(
       ),
     ),
     mocks: new Map(data.mocks.entries()),
+    rootDir: data.rootDir,
   };
 }

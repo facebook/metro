@@ -11,9 +11,9 @@
 
 import type {
   BuildParameters,
+  CacheData,
   CacheManager,
   FileData,
-  InternalData,
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
@@ -66,7 +66,7 @@ export class DiskCacheManager implements CacheManager {
     return this._cachePath;
   }
 
-  async read(): Promise<?InternalData> {
+  async read(): Promise<?CacheData> {
     try {
       return deserialize(readFileSync(this._cachePath));
     } catch (e) {
@@ -80,7 +80,7 @@ export class DiskCacheManager implements CacheManager {
   }
 
   async write(
-    dataSnapshot: InternalData,
+    dataSnapshot: CacheData,
     {changed, removed}: $ReadOnly<{changed: FileData, removed: FileData}>,
   ): Promise<void> {
     if (changed.size > 0 || removed.size > 0) {

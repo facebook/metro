@@ -44,10 +44,18 @@ export type BuildResult = {
   hasteModuleMap: ModuleMap,
 };
 
+export type CacheData = $ReadOnly<{
+  clocks: WatchmanClocks,
+  map: RawModuleMap['map'],
+  mocks: RawModuleMap['mocks'],
+  duplicates: RawModuleMap['duplicates'],
+  files: FileData,
+}>;
+
 export interface CacheManager {
-  read(): Promise<?InternalData>;
+  read(): Promise<?CacheData>;
   write(
-    dataSnapshot: InternalData,
+    dataSnapshot: CacheData,
     delta: $ReadOnly<{changed: FileData, removed: FileData}>,
   ): Promise<void>;
 }
@@ -132,14 +140,6 @@ export type HType = {
 export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
-
-export type InternalData = {
-  clocks: WatchmanClocks,
-  duplicates: DuplicatesIndex,
-  files: FileData,
-  map: ModuleMapData,
-  mocks: MockData,
-};
 
 export type FileData = Map<Path, FileMetaData>;
 
