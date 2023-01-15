@@ -27,11 +27,13 @@ import type {
   ModuleMapData,
   ModuleMapItem,
   ModuleMetaData,
+  MutableFileSystem,
   Path,
   PerfLoggerFactory,
   PerfLogger,
   RawModuleMap,
   ReadOnlyRawModuleMap,
+  VisitMetadata,
   WorkerMetadata,
   WatchmanClocks,
 } from './flow-types';
@@ -355,7 +357,7 @@ export default class HasteMap extends EventEmitter {
           };
         } else {
           debug(
-            'Cache loaded (%s file(s), %s clock(s))',
+            'Cache loaded (%d file(s), %d clock(s))',
             initialData.files.size,
             initialData.clocks.size,
           );
@@ -380,18 +382,18 @@ export default class HasteMap extends EventEmitter {
           clocks: initialData.clocks,
         });
 
-        await this._applyFileDelta(fileData, rawModuleMap, fileDelta);
+        await this._applyFileDelta(fileSystem, rawModuleMap, fileDelta);
 
         await this._takeSnapshotAndPersist(
-          fileData,
+          fileSystem,
           fileDelta.clocks ?? new Map(),
           rawModuleMap,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
-        debug('Finished mapping %s files.', fileData.size);
+        debug('Finished mapping %d files.', fileData.size);
 
-        await this._watch(fileData, rawModuleMap);
+        await this._watch(fileSystem, rawModuleMap);
         return {
           fileSystem,
           hasteModuleMap: new HasteModuleMap(rawModuleMap),
@@ -481,7 +483,7 @@ export default class HasteMap extends EventEmitter {
    * 3. parse and extract metadata from changed files.
    */
   _processFile(
-    fileData: FileData,
+    fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
     filePath: Path,
     workerOptions?: {forceInBand: boolean},
@@ -553,36 +555,36 @@ export default class HasteMap extends EventEmitter {
     };
 
     const relativeFilePath = fastPath.relative(rootDir, filePath);
-    const fileMetadata = fileData.get(relativeFilePath);
-    if (!fileMetadata) {
+    const moduleName = fileSystem.getModuleName(relativeFilePath);
+
+    if (moduleName == null) {
       throw new Error(
         'metro-file-map: File to process was not found in the haste map.',
       );
     }
 
-    const moduleMetadata = moduleMap.map.get(fileMetadata[H.ID]);
-    const computeSha1 = this._options.computeSha1 && !fileMetadata[H.SHA1];
+    const computeSha1 =
+      this._options.computeSha1 && fileSystem.getSha1(relativeFilePath) == null;
 
     // Callback called when the response from the worker is successful.
     const workerReply = (metadata: WorkerMetadata) => {
-      // `1` for truthy values instead of `true` to save cache space.
-      fileMetadata[H.VISITED] = 1;
-
       const metadataId = metadata.id;
       const metadataModule = metadata.module;
+      const result: VisitMetadata = {};
 
       if (metadataId != null && metadataModule) {
-        fileMetadata[H.ID] = metadataId;
+        result.hasteId = metadataId;
         setModule(metadataId, metadataModule);
       }
 
-      fileMetadata[H.DEPENDENCIES] = metadata.dependencies
+      result.dependencies = metadata.dependencies
         ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
         : '';
 
       if (computeSha1) {
-        fileMetadata[H.SHA1] = metadata.sha1;
+        result.sha1 = metadata.sha1;
       }
+      fileSystem.setVisitMetadata(relativeFilePath, result);
     };
 
     // Callback called when the response from the worker is an error.
@@ -606,7 +608,7 @@ export default class HasteMap extends EventEmitter {
 
       // If a file cannot be read we remove it from the file list and
       // ignore the failure silently.
-      fileData.delete(relativeFilePath);
+      fileSystem.remove(relativeFilePath);
     };
 
     // If we retain all files in the virtual HasteFS representation, we avoid
@@ -661,35 +663,6 @@ export default class HasteMap extends EventEmitter {
       moduleMap.mocks.set(mockPath, relativeFilePath);
     }
 
-    if (fileMetadata[H.VISITED]) {
-      if (!fileMetadata[H.ID]) {
-        return null;
-      }
-
-      if (moduleMetadata != null) {
-        const platform =
-          getPlatformExtension(filePath, this._options.platforms) ||
-          H.GENERIC_PLATFORM;
-
-        const module = moduleMetadata[platform];
-
-        if (module == null) {
-          return null;
-        }
-
-        const moduleId = fileMetadata[H.ID];
-        let modulesByPlatform = moduleMap.map.get(moduleId);
-        if (!modulesByPlatform) {
-          // $FlowFixMe[unclear-type] - ModuleMapItem?
-          modulesByPlatform = (Object.create(null): any);
-          moduleMap.map.set(moduleId, modulesByPlatform);
-        }
-        modulesByPlatform[platform] = module;
-
-        return null;
-      }
-    }
-
     return this._getWorker(workerOptions)
       .worker({
         computeDependencies: this._options.computeDependencies,
@@ -703,7 +676,7 @@ export default class HasteMap extends EventEmitter {
   }
 
   _applyFileDelta(
-    fileData: FileData,
+    fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
     delta: {
       changedFiles: FileData,
@@ -716,36 +689,41 @@ export default class HasteMap extends EventEmitter {
 
     this._startupPerfLogger?.point('applyFileDelta_addRemove_start');
     for (const [relativeFilePath] of removedFiles) {
-      this._removeIfExists(fileData, moduleMap, relativeFilePath);
+      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
     }
 
-    for (const [relativeFilePath, fileMetadata] of changedFiles) {
-      fileData.set(relativeFilePath, fileMetadata);
-    }
+    fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_addRemove_end');
 
     this._startupPerfLogger?.point('applyFileDelta_preprocess_start');
     const promises = [];
-    for (const relativeFilePath of changedFiles.keys()) {
+    for (const [relativeFilePath, fileData] of changedFiles) {
+      // A crawler may preserve the H.VISITED flag to indicate that the file
+      // contents are unchaged and it doesn't need visiting again.
+      if (fileData[H.VISITED] === 1) {
+        continue;
+      }
+
       if (
         this._options.skipPackageJson &&
         relativeFilePath.endsWith(PACKAGE_JSON)
       ) {
         continue;
       }
+
       // SHA-1, if requested, should already be present thanks to the crawler.
       const filePath = fastPath.resolve(
         this._options.rootDir,
         relativeFilePath,
       );
-      const promise = this._processFile(fileData, moduleMap, filePath);
+      const promise = this._processFile(fileSystem, moduleMap, filePath);
       if (promise) {
         promises.push(promise);
       }
     }
     this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
 
-    debug('Visiting %s added/modified files.', promises.length);
+    debug('Visiting %d added/modified files.', promises.length);
 
     this._startupPerfLogger?.point('applyFileDelta_process_start');
     return Promise.all(promises).then(
@@ -776,7 +754,7 @@ export default class HasteMap extends EventEmitter {
    * 4. Serialize a snapshot of our raw data via the configured cache manager
    */
   async _takeSnapshotAndPersist(
-    fileData: FileData,
+    fileSystem: FileSystem,
     clocks: WatchmanClocks,
     moduleMap: ReadOnlyRawModuleMap,
     changed: FileData,
@@ -786,9 +764,7 @@ export default class HasteMap extends EventEmitter {
     const {map, duplicates, mocks} = deepCloneRawModuleMap(moduleMap);
     await this._cacheManager.write(
       {
-        files: new Map(
-          Array.from(fileData.entries(), ([key, val]) => [key, [...val]]),
-        ),
+        files: fileSystem.getSerializableSnapshot(),
         map,
         clocks: new Map(clocks),
         duplicates,
@@ -819,25 +795,21 @@ export default class HasteMap extends EventEmitter {
   }
 
   _removeIfExists(
-    fileData: FileData,
+    fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
     relativeFilePath: Path,
   ) {
-    const fileMetadata = fileData.get(relativeFilePath);
-    if (!fileMetadata) {
+    const moduleName = fileSystem.getModuleName(relativeFilePath);
+    fileSystem.remove(relativeFilePath);
+    if (moduleName == null) {
       return;
     }
-    fileData.delete(relativeFilePath);
-    const moduleName = fileMetadata[H.ID];
     const platform =
       getPlatformExtension(relativeFilePath, this._options.platforms) ||
       H.GENERIC_PLATFORM;
 
-    let moduleMapItem = moduleMap.map.get(moduleName);
+    const moduleMapItem = moduleMap.map.get(moduleName);
     if (moduleMapItem != null) {
-      // We are forced to copy the object because metro-file-map exposes
-      // the map as an immutable entity.
-      moduleMapItem = Object.assign(Object.create(null), moduleMapItem);
       delete moduleMapItem[platform];
       if (Object.keys(moduleMapItem).length === 0) {
         moduleMap.map.delete(moduleName);
@@ -866,7 +838,10 @@ export default class HasteMap extends EventEmitter {
   /**
    * Watch mode
    */
-  async _watch(fileData: FileData, moduleMap: RawModuleMap): Promise<void> {
+  async _watch(
+    fileSystem: MutableFileSystem,
+    moduleMap: RawModuleMap,
+  ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
       this._startupPerfLogger?.point('watch_end');
@@ -927,14 +902,14 @@ export default class HasteMap extends EventEmitter {
       }
 
       const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
-      const fileMetadata = fileData.get(relativeFilePath);
+      const modifiedTime = fileSystem.getModifiedTime(relativeFilePath);
 
       // The file has been accessed, not modified
       if (
         type === 'change' &&
-        fileMetadata &&
+        modifiedTime != null &&
         metadata &&
-        fileMetadata[H.MTIME] === metadata.modifiedTime
+        modifiedTime === metadata.modifiedTime
       ) {
         return;
       }
@@ -969,12 +944,8 @@ export default class HasteMap extends EventEmitter {
             return null;
           };
 
-          const fileMetadata = fileData.get(relativeFilePath);
-
           // If it's not an addition, delete the file and all its metadata
-          if (fileMetadata != null) {
-            this._removeIfExists(fileData, moduleMap, relativeFilePath);
-          }
+          this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
 
           // If the file was added or changed,
           // parse it and update the haste map.
@@ -992,9 +963,9 @@ export default class HasteMap extends EventEmitter {
               null,
               metadata.type === 'l' ? 1 : 0,
             ];
-            fileData.set(relativeFilePath, fileMetadata);
+            fileSystem.addOrModify(relativeFilePath, fileMetadata);
             const promise = this._processFile(
-              fileData,
+              fileSystem,
               moduleMap,
               absoluteFilePath,
               {forceInBand: true},
