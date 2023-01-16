@@ -70,8 +70,8 @@ export type ChangeEvent = {
 };
 
 export type ChangeEventMetadata = {
-  modifiedTime: number, // Epoch ms
-  size: number, // Bytes
+  modifiedTime: ?number, // Epoch ms
+  size: ?number, // Bytes
   type: 'f' | 'd' | 'l', // Regular file / Directory / Symlink
 };
 
@@ -161,6 +161,7 @@ export interface FileSystem {
   getModuleName(file: Path): ?string;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): ?string;
+  getType(file: Path): ?('f' | 'l');
 
   matchFiles(pattern: RegExp | string): Array<Path>;
 

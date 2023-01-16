@@ -1374,7 +1374,11 @@ describe('HasteMap', () => {
       expect(eventsQueue).toHaveLength(1);
       const deletedBanana = {
         filePath,
-        metadata: undefined,
+        metadata: {
+          modifiedTime: null,
+          size: null,
+          type: 'f',
+        },
         type: 'delete',
       };
       expect(eventsQueue).toEqual([deletedBanana]);

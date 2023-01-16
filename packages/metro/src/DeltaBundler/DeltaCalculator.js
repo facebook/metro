@@ -14,7 +14,9 @@
 import {Graph} from './Graph';
 import type {DeltaResult, Options} from './types.flow';
 import type {RootPerfLogger} from 'metro-config';
+import type {ChangeEventMetadata} from 'metro-file-map';
 
+const debug = require('debug')('Metro:DeltaCalculator');
 const {EventEmitter} = require('events');
 
 /**
@@ -178,13 +180,16 @@ class DeltaCalculator<T> extends EventEmitter {
     {
       type,
       filePath,
+      metadata,
     }: {
       type: string,
       filePath: string,
+      metadata: ChangeEventMetadata,
       ...
     },
     logger: ?RootPerfLogger,
   ): mixed => {
+    debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
     let state: void | 'deleted' | 'modified' | 'added';
     if (this._deletedFiles.has(filePath)) {
       state = 'deleted';

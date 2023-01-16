@@ -162,7 +162,7 @@ export class Watcher extends EventEmitter {
       type: string,
       filePath: string,
       root: string,
-      metadata: ?ChangeEventMetadata,
+      metadata: ChangeEventMetadata,
     ) => void,
   ) {
     const {extensions, ignorePattern, useWatchman} = this._options;
@@ -214,7 +214,7 @@ export class Watcher extends EventEmitter {
               type: string,
               filePath: string,
               root: string,
-              metadata: ?ChangeEventMetadata,
+              metadata: ChangeEventMetadata,
             ) => {
               const basename = path.basename(filePath);
               if (basename.startsWith(this._options.healthCheckFilePrefix)) {

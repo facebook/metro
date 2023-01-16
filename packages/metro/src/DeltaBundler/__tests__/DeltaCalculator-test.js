@@ -251,7 +251,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/foo'}],
+      eventsQueue: [{type: 'add', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockResolvedValueOnce({
@@ -280,7 +280,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(
@@ -311,7 +311,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(
@@ -342,7 +342,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     const quxModule: Module<$FlowFixMe> = {
@@ -391,7 +391,9 @@ describe('DeltaCalculator', () => {
       .then(() => {
         deltaCalculator.on('change', () => done());
         fileWatcher.emit('change', {
-          eventsQueue: [{type: 'change', filePath: '/foo'}],
+          eventsQueue: [
+            {type: 'change', filePath: '/foo', metadata: {type: 'f'}},
+          ],
         });
       })
       .catch(done);
@@ -404,7 +406,7 @@ describe('DeltaCalculator', () => {
     deltaCalculator.on('change', onChangeFile);
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/foo'}],
+      eventsQueue: [{type: 'add', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     jest.runAllTimers();
@@ -419,7 +421,7 @@ describe('DeltaCalculator', () => {
     deltaCalculator.on('delete', onChangeFile);
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     jest.runAllTimers();
@@ -431,7 +433,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(Promise.reject(new Error()));
@@ -451,12 +453,12 @@ describe('DeltaCalculator', () => {
 
     // First modify the file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     // Then delete that same file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(
@@ -485,12 +487,12 @@ describe('DeltaCalculator', () => {
 
     // Delete a file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     // Delete a dependency of the deleted file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/qux'}],
+      eventsQueue: [{type: 'delete', filePath: '/qux', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(
@@ -514,12 +516,12 @@ describe('DeltaCalculator', () => {
 
     // First delete a file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     // Then add it again
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo'}],
+      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockReturnValue(

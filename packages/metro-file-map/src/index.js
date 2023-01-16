@@ -67,6 +67,7 @@ const debug = require('debug')('Metro:FileMap');
 export type {
   BuildParameters,
   CacheData,
+  ChangeEventMetadata,
   FileData,
   FileSystem,
   HasteMap,
@@ -935,7 +936,9 @@ export default class HasteMap extends EventEmitter {
             return null;
           }
 
-          const add = () => {
+          const fileType = fileSystem.getType(relativeFilePath);
+
+          const add = (metadata: ChangeEventMetadata) => {
             eventsQueue.push({
               filePath: absoluteFilePath,
               metadata,
@@ -945,13 +948,17 @@ export default class HasteMap extends EventEmitter {
           };
 
           // If it's not an addition, delete the file and all its metadata
-          this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+          if (fileType != null) {
+            this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+          }
 
           // If the file was added or changed,
           // parse it and update the haste map.
           if (type === 'add' || type === 'change') {
             invariant(
-              metadata,
+              metadata != null &&
+                metadata.modifiedTime != null &&
+                metadata.size != null,
               'since the file exists or changed, it should have metadata',
             );
             const fileMetadata: FileMetaData = [
@@ -973,14 +980,26 @@ export default class HasteMap extends EventEmitter {
             // Cleanup
             this._cleanup();
             if (promise) {
-              return promise.then(add);
+              return promise.then(() => add(metadata));
             } else {
               // If a file in node_modules has changed,
               // emit an event regardless.
-              add();
+              add(metadata);
             }
+          } else if (type === 'delete') {
+            invariant(
+              fileType != null,
+              'delete event received for file of unknown type',
+            );
+            add({
+              modifiedTime: null,
+              size: null,
+              type: fileType,
+            });
           } else {
-            add();
+            throw new Error(
+              `metro-file-map: Unrecognized event type from watcher: ${type}`,
+            );
           }
           return null;
         })
