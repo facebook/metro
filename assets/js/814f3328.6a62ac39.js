@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkmetro_website=self.webpackChunkmetro_website||[]).push([[535],{45641:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Train Approaching","permalink":"/metro/blog/2017/11/22/train-approaching"}]}')}}]);
