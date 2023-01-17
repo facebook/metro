@@ -83,6 +83,14 @@ div[class^="announcementBarContent"] {
   }
 
   /* Label variants */
+  &.experimental {
+    background: #f9a825;
+
+    &:before {
+      border-right-color: #f9a825;
+    }
+  }
+
   &.deprecated {
     background: #888;
 
@@ -104,6 +112,14 @@ html[data-theme="dark"] .label {
 
   &:after {
     background: var(--ifm-background-color);
+  }
+
+  &.experimental {
+    background: #ffc400;
+
+    &:before {
+      border-right-color: #ffc400;
+    }
   }
 
   &.deprecated {
