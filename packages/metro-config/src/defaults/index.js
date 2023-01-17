@@ -47,6 +47,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    unstable_conditionNames: ['import', 'require'],
+    unstable_conditionsByPlatform: {
+      web: ['browser'],
+    },
+    unstable_enablePackageExports: false,
     useWatchman: true,
     requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },

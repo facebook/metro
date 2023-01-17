@@ -120,6 +120,11 @@ export type ResolutionContext = $ReadOnly<{
   disableHierarchicalLookup: boolean,
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
   resolveRequest?: ?CustomResolver,
   customResolverOptions: CustomResolverOptions,
   ...

@@ -109,6 +109,11 @@ type ResolverConfigT = {
   resolveRequest: ?CustomResolver,
   resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
   useWatchman: boolean,
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
 };

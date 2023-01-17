@@ -209,6 +209,11 @@ class DependencyGraph extends EventEmitter {
       },
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
+      unstable_conditionNames: this._config.resolver.unstable_conditionNames,
+      unstable_conditionsByPlatform:
+        this._config.resolver.unstable_conditionsByPlatform,
+      unstable_enablePackageExports:
+        this._config.resolver.unstable_enablePackageExports,
     });
   }
 

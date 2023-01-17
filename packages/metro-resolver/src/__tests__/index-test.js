@@ -120,6 +120,9 @@ const CONTEXT: ResolutionContext = (() => {
       return null;
     },
     sourceExts: ['js'],
+    unstable_conditionNames: [],
+    unstable_conditionsByPlatform: {},
+    unstable_enablePackageExports: false,
   };
 })();
 

@@ -71,6 +71,11 @@ type Options<TPackage> = $ReadOnly<{
   resolveAsset: ResolveAsset,
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -187,6 +192,8 @@ class ModuleResolver<TPackage: Packageish> {
           resolveHastePackage: (name: string) =>
             this._options.getHastePackagePath(name, platform),
           getPackageMainPath: this._getPackageMainPath,
+          unstable_enablePackageExports:
+            this._options.unstable_enablePackageExports,
         },
         moduleName,
         platform,

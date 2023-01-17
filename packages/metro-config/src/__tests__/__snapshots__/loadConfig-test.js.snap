@@ -73,6 +73,16 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "import",
+      "require",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -239,6 +249,16 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "import",
+      "require",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -405,6 +425,16 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "import",
+      "require",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -571,6 +601,16 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "import",
+      "require",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
     "useWatchman": true,
   },
   "serializer": Object {
