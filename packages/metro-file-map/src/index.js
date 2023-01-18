@@ -324,14 +324,6 @@ export default class HasteMap extends EventEmitter {
           buildParameters,
         });
 
-    if (this._options.enableSymlinks && this._options.useWatchman) {
-      throw new Error(
-        'metro-file-map: enableSymlinks config option was set, but ' +
-          'is incompatible with watchman.\n' +
-          'Set either `enableSymlinks` to false or `useWatchman` to false.',
-      );
-    }
-
     this._buildPromise = null;
     this._worker = null;
     this._startupPerfLogger?.point('constructor_end');

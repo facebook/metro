@@ -510,48 +510,12 @@ describe('HasteMap', () => {
     expect(deepNormalize(await hasteMap.read())).toEqual(cacheContent);
   });
 
-  it('throws if both symlinks and watchman is enabled', () => {
-    expect(
-      () => new HasteMap({...defaultConfig, enableSymlinks: true}),
-    ).toThrow(
-      'Set either `enableSymlinks` to false or `useWatchman` to false.',
-    );
-    expect(
-      () =>
-        new HasteMap({
-          ...defaultConfig,
-          enableSymlinks: true,
-          useWatchman: true,
-        }),
-    ).toThrow(
-      'Set either `enableSymlinks` to false or `useWatchman` to false.',
-    );
-
-    expect(
-      () =>
-        new HasteMap({
-          ...defaultConfig,
-          enableSymlinks: false,
-          useWatchman: true,
-        }),
-    ).not.toThrow();
-
-    expect(
-      () =>
-        new HasteMap({
-          ...defaultConfig,
-          enableSymlinks: true,
-          useWatchman: false,
-        }),
-    ).not.toThrow();
-  });
-
   describe('builds a haste map on a fresh cache with SHA-1s', () => {
     it.each([
-      // `enableSymlinks` is currently not permitted with `useWatchman`
       [false, false],
       [false, true],
       [true, false],
+      [true, true],
     ])(
       'uses watchman: %s, symlinks enabled: %s',
       async (useWatchman, enableSymlinks) => {
