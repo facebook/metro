@@ -10,11 +10,11 @@
 
 import H from '../constants';
 import {worker} from '../worker';
-import * as fs from 'graceful-fs';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vm from 'vm';
 
-jest.mock('graceful-fs', () => {
+jest.mock('fs', () => {
   const path = require('path');
   const mockFs = {
     [path.join('/project', 'fruits', 'Banana.js')]: `
@@ -28,6 +28,9 @@ jest.mock('graceful-fs', () => {
     [path.join('/project', 'fruits', 'Strawberry.js')]: `
         // Strawberry!
       `,
+    [path.join('/project', 'fruits', 'LinkToStrawberry.js')]: {
+      link: path.join('.', 'Strawberry.js'),
+    },
     [path.join('/project', 'fruits', 'apple.png')]: Buffer.from([
       137, 80, 78, 71, 13, 10, 26, 10,
     ]),
@@ -40,14 +43,30 @@ jest.mock('graceful-fs', () => {
   };
 
   return {
-    ...jest.createMockFromModule('graceful-fs'),
+    ...jest.createMockFromModule('fs'),
     readFileSync: jest.fn((path, options) => {
-      if (mockFs[path]) {
-        return options === 'utf8' ? mockFs[path] : Buffer.from(mockFs[path]);
+      const entry = mockFs[path];
+      if (entry) {
+        if (typeof entry.link === 'string') {
+          throw new Error('Tried to call readFile on a symlink');
+        }
+        return options === 'utf8' ? entry : Buffer.from(entry);
       }
-
       throw new Error(`Cannot read path '${path}'.`);
     }),
+    promises: {
+      readlink: jest.fn(async path => {
+        const entry = mockFs[path];
+        if (entry) {
+          if (typeof entry.link === 'string') {
+            return entry.link;
+          } else {
+            throw new Error('Tried to call readlink on a non-symlink');
+          }
+        }
+        throw new Error(`Cannot read path '${path}'.`);
+      }),
+    },
   };
 });
 
@@ -219,6 +238,26 @@ describe('worker', () => {
     // Ensure not disk access happened.
     expect(fs.readFileSync).not.toHaveBeenCalled();
     expect(fs.readFile).not.toHaveBeenCalled();
+  });
+
+  it('calls readLink and returns symlink target when readLink=true', async () => {
+    expect(
+      await worker({
+        computeDependencies: false,
+        filePath: path.join('/project', 'fruits', 'LinkToStrawberry.js'),
+        readLink: true,
+        rootDir,
+      }),
+    ).toEqual({
+      dependencies: undefined,
+      id: undefined,
+      module: undefined,
+      sha1: undefined,
+      symlinkTarget: path.join('.', 'Strawberry.js'),
+    });
+
+    expect(fs.readFileSync).not.toHaveBeenCalled();
+    expect(fs.promises.readlink).toHaveBeenCalled();
   });
 
   it('can be loaded directly without transpilation', async () => {

@@ -72,6 +72,10 @@ export default class HasteFS implements MutableFileSystem {
     if (visitResult.dependencies != null) {
       metadata[H.DEPENDENCIES] = visitResult.dependencies;
     }
+
+    if (visitResult.symlinkTarget != null) {
+      metadata[H.SYMLINK] = visitResult.symlinkTarget;
+    }
   }
 
   getSerializableSnapshot(): FileData {
@@ -91,6 +95,16 @@ export default class HasteFS implements MutableFileSystem {
   getSize(file: Path): ?number {
     const fileMetadata = this._getFileData(file);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
+  }
+
+  getSymlinkTarget(file: Path): ?string {
+    const fileMetadata = this._getFileData(file);
+    if (fileMetadata == null) {
+      return null;
+    }
+    return typeof fileMetadata[H.SYMLINK] === 'string'
+      ? fileMetadata[H.SYMLINK]
+      : null;
   }
 
   getType(file: Path): ?('f' | 'l') {
