@@ -69,7 +69,7 @@ describe('HmrServer', () => {
 
   async function emitChangeEvent() {
     // TODO: Can we achieve this with less mocking / special-casing?
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers({legacyFakeTimers: true});
     changeEventSource.emit('change');
     jest.runAllTimers();
     jest.useRealTimers();

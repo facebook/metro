@@ -9,12 +9,13 @@
  * @oncall react_native
  */
 
-// Copied from https://raw.githubusercontent.com/flow-typed/flow-typed/master/definitions/npm/jest_v26.x.x/flow_v0.134.x-/jest_v26.x.x.js
+// Modified from https://raw.githubusercontent.com/flow-typed/flow-typed/master/definitions/npm/jest_v29.x.x/flow_v0.134.x-/jest_v29.x.x.js
+// Modifications are explained inline by comments beginning with `// MODIFIED`.
 
-type JestMockFn<
-  TArguments: $ReadOnlyArray<any> = $ReadOnlyArray<any>,
-  TReturn = any,
-> = {
+// MODIFIED: Added ESLint suppression comment - no-unused-vars doesn't understand declaration files
+/* eslint-disable no-unused-vars */
+
+type JestMockFn<TArguments: $ReadOnlyArray<any>, TReturn> = {
   (...args: TArguments): TReturn,
   /**
    * An object for introspecting mock calls
@@ -26,6 +27,12 @@ type JestMockFn<
      * passed during the call.
      */
     calls: Array<TArguments>,
+    /**
+     * An array containing the call arguments of the last call that was made
+     * to this mock function. If the function was not called, it will return
+     * undefined.
+     */
+    lastCall: TArguments,
     /**
      * An array that contains all the object instances that have been
      * instantiated from this mock function.
@@ -174,6 +181,32 @@ type JestPromiseType = {
  */
 type JestTestName = string | Function;
 
+type FakeableAPI =
+  | 'Date'
+  | 'hrtime'
+  | 'nextTick'
+  | 'performance'
+  | 'queueMicrotask'
+  | 'requestAnimationFrame'
+  | 'cancelAnimationFrame'
+  | 'requestIdleCallback'
+  | 'cancelIdleCallback'
+  | 'setImmediate'
+  | 'clearImmediate'
+  | 'setInterval'
+  | 'clearInterval'
+  | 'setTimeout'
+  | 'clearTimeout';
+
+type FakeTimersConfig = {
+  advanceTimers?: boolean | number,
+  doNotFake?: Array<FakeableAPI>,
+  now?: number | Date,
+  timerLimit?: number,
+  legacyFakeTimers?: boolean,
+  ...
+};
+
 /**
  *  Plugin: jest-styled-components
  */
@@ -231,7 +264,7 @@ type EnzymeMatchersType = {
   toIncludeText(text: string): void,
   toMatchElement(
     element: React$Element<any>,
-    options?: {ignoreProps?: boolean, verbose?: boolean},
+    options?: {|ignoreProps?: boolean, verbose?: boolean|},
   ): void,
   toMatchSelector(selector: string): void,
   // 7.x
@@ -265,7 +298,7 @@ type DomTestingLibraryType = {
   toHaveStyle(css: string | {[name: string]: any, ...}): void,
   toHaveTextContent(
     text: string | RegExp,
-    options?: {normalizeWhitespace: boolean},
+    options?: {|normalizeWhitespace: boolean|},
   ): void,
   toHaveValue(value?: string | string[] | number): void,
 
@@ -570,14 +603,14 @@ type SnapshotDiffType = {
    */
   toMatchDiffSnapshot(
     valueB: any,
-    options?: {
+    options?: {|
       expand?: boolean,
       colors?: boolean,
       contextLines?: number,
       stablePatchmarks?: boolean,
       aAnnotation?: string,
       bAnnotation?: string,
-    },
+    |},
     testName?: string,
   ): void,
   ...
@@ -592,10 +625,20 @@ interface JestExpectType {
     JestExtendedMatchersType &
     SnapshotDiffType;
   /**
+   * If you have a mock function, you can use .lastCalledWith to test what
+   * arguments it was last called with.
+   */
+  lastCalledWith(...args: Array<any>): void;
+  /**
    * toBe just checks that a value is what you expect. It uses === to check
    * strict equality.
    */
   toBe(value: any): void;
+  /**
+   * Use .toBeCalledWith to ensure that a mock function was called with
+   * specific arguments.
+   */
+  toBeCalledWith(...args: Array<any>): void;
   /**
    * Using exact equality with floating point numbers is a bad idea. Rounding
    * means that intuitive things fail.
@@ -708,20 +751,12 @@ interface JestExpectType {
    * specific arguments.
    */
   toHaveBeenCalledWith(...args: Array<any>): void;
-  /**
-   * Use .toBeCalledWith to ensure that a mock function was called with
-   * specific arguments.
-   */
   toBeCalledWith(...args: Array<any>): void;
   /**
    * Use .toHaveBeenLastCalledWith to ensure that a mock function was last called
    * with specific arguments.
    */
   toHaveBeenLastCalledWith(...args: Array<any>): void;
-  /**
-   * If you have a mock function, you can use .lastCalledWith to test what
-   * arguments it was last called with.
-   */
   lastCalledWith(...args: Array<any>): void;
   /**
    * Check that an object has a .length property and it is set to a certain
@@ -837,7 +872,8 @@ type JestObjectType = {
    * Returns a new, unused mock function. Optionally takes a mock
    * implementation.
    */
-  fn<TArguments: $ReadOnlyArray<any> = $ReadOnlyArray<any>, TReturn = any>(
+  // MODIFIED: Added defaults to type arguments.
+  fn<TArguments: $ReadOnlyArray<mixed> = $ReadOnlyArray<any>, TReturn = any>(
     implementation?: (...args: TArguments) => TReturn,
   ): JestMockFn<TArguments, TReturn>,
   /**
@@ -908,13 +944,6 @@ type JestObjectType = {
    */
   advanceTimersByTime(msToRun: number): void,
   /**
-   * Executes only the macro task queue (i.e. all tasks queued by setTimeout()
-   * or setInterval() and setImmediate()).
-   *
-   * Renamed to `advanceTimersByTime`.
-   */
-  runTimersToTime(msToRun: number): void,
-  /**
    * Executes only the macro-tasks that are currently pending (i.e., only the
    * tasks that have been queued by setTimeout() or setInterval() up to this
    * point)
@@ -937,7 +966,7 @@ type JestObjectType = {
    * (setTimeout, setInterval, clearTimeout, clearInterval, nextTick,
    * setImmediate and clearImmediate).
    */
-  useFakeTimers(mode?: 'modern' | 'legacy'): JestObjectType,
+  useFakeTimers(fakeTimersConfig?: FakeTimersConfig): JestObjectType,
   /**
    * Instructs Jest to use the real versions of the standard timer functions.
    */
@@ -961,10 +990,10 @@ type JestObjectType = {
 
 type JestSpyType = {calls: JestCallsType, ...};
 
-type JestDoneFn = {
+type JestDoneFn = {|
   (error?: Error): void,
   fail: (error: Error) => void,
-};
+|};
 
 /** Runs this function after every test inside this context */
 declare function afterEach(
@@ -1037,7 +1066,7 @@ declare var it: {
    * @param {Function} Test
    * @param {number} Timeout for the test, in milliseconds.
    */
-  only: {
+  only: {|
     (
       name: JestTestName,
       fn?: (done: JestDoneFn) => ?Promise<mixed>,
@@ -1050,7 +1079,7 @@ declare var it: {
       fn?: (...args: Array<any>) => ?Promise<mixed>,
       timeout?: number,
     ) => void,
-  },
+  |},
   /**
    * Skip running this test
    *
@@ -1058,7 +1087,7 @@ declare var it: {
    * @param {Function} Test
    * @param {number} Timeout for the test, in milliseconds.
    */
-  skip: {
+  skip: {|
     (
       name: JestTestName,
       fn?: (done: JestDoneFn) => ?Promise<mixed>,
@@ -1071,7 +1100,7 @@ declare var it: {
       fn?: (...args: Array<any>) => ?Promise<mixed>,
       timeout?: number,
     ) => void,
-  },
+  |},
   /**
    * Highlight planned tests in the summary output
    *
@@ -1151,9 +1180,11 @@ type JestPrettyFormatColors = {
 };
 
 type JestPrettyFormatIndent = string => string;
+type JestPrettyFormatRefs = Array<any>;
 type JestPrettyFormatPrint = any => string;
+type JestPrettyFormatStringOrNull = string | null;
 
-type JestPrettyFormatOptions = {
+type JestPrettyFormatOptions = {|
   callToJSON: boolean,
   edgeSpacing: string,
   escapeRegex: boolean,
@@ -1164,14 +1195,14 @@ type JestPrettyFormatOptions = {
   plugins: JestPrettyFormatPlugins,
   printFunctionName: boolean,
   spacing: string,
-  theme: {
+  theme: {|
     comment: string,
     content: string,
     prop: string,
     tag: string,
     value: string,
-  },
-};
+  |},
+|};
 
 type JestPrettyFormatPlugin = {
   print: (
@@ -1208,7 +1239,8 @@ declare var expect: {
   hasAssertions(): void,
   any(value: mixed): JestAsymmetricEqualityType,
   anything(): any,
-  arrayContaining(value: Array<mixed>): Array<mixed>,
+  // MODIFIED: Array -> $ReadOnlyArray
+  arrayContaining(value: $ReadOnlyArray<mixed>): Array<mixed>,
   objectContaining(value: Object): Object,
   /** Matches any received string that contains the exact expected string. */
   stringContaining(value: string): string,
