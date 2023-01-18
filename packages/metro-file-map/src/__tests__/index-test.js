@@ -39,7 +39,14 @@ jest.mock('../crawlers/watchman', () =>
   jest.fn(options => {
     const path = require('path');
 
-    const {previousState, ignore, rootDir, roots, computeSha1} = options;
+    const {
+      previousState,
+      ignore,
+      rootDir,
+      roots,
+      computeSha1,
+      includeSymlinks,
+    } = options;
     const list = mockChangedFiles || mockFs;
     const removedFiles = new Map();
     const changedFiles = new Map();
@@ -54,7 +61,18 @@ jest.mock('../crawlers/watchman', () =>
         const relativeFilePath = path.relative(rootDir, file);
         if (list[file]) {
           const hash = computeSha1 ? mockHashContents(list[file]) : null;
-          changedFiles.set(relativeFilePath, ['', 32, 42, 0, [], hash, 0]);
+          const isSymlink = typeof list[file].link === 'string';
+          if (!isSymlink || includeSymlinks) {
+            changedFiles.set(relativeFilePath, [
+              '',
+              32,
+              42,
+              0,
+              [],
+              hash,
+              isSymlink ? 1 : 0,
+            ]);
+          }
         } else {
           const fileData = previousState.files.get(relativeFilePath);
           if (fileData) {
@@ -86,7 +104,7 @@ jest.mock('../watchers/WatchmanWatcher', () => mockWatcherConstructor);
 let mockChangedFiles;
 let mockFs;
 
-jest.mock('graceful-fs', () => ({
+jest.mock('fs', () => ({
   existsSync: jest.fn(path => {
     // A file change can be triggered by writing into the
     // mockChangedFiles object.
@@ -119,6 +137,20 @@ jest.mock('graceful-fs', () => ({
     expect(options).toBe(require('v8').serialize ? undefined : 'utf8');
     mockFs[path] = data;
   }),
+  promises: {
+    readlink: jest.fn(async path => {
+      const entry = mockFs[path];
+      if (!entry) {
+        const error = new Error(`Cannot read path '${path}'.`);
+        error.code = 'ENOENT';
+        throw error;
+      }
+      if (typeof entry.link !== 'string') {
+        throw new Error(`Not a symlink: '${path}'.`);
+      }
+      return entry.link;
+    }),
+  },
 }));
 
 const object = data => Object.assign(Object.create(null), data);
@@ -181,6 +213,9 @@ describe('HasteMap', () => {
       [path.join('/', 'project', 'video', 'video.mp4')]: Buffer.from([
         0xfa, 0xce, 0xb0, 0x0c,
       ]).toString(),
+      [path.join('/', 'project', 'fruits', 'LinkToStrawberry.js')]: {
+        link: 'Strawberry.js',
+      },
     });
     mockClocks = createMap({
       fruits: 'c:fake-clock:1',
@@ -211,6 +246,7 @@ describe('HasteMap', () => {
     cacheContent = null;
 
     defaultConfig = {
+      enableSymlinks: false,
       extensions: ['js', 'json'],
       hasteImplModulePath: require.resolve('./haste_impl.js'),
       healthCheck: {
@@ -511,126 +547,161 @@ describe('HasteMap', () => {
   });
 
   describe('builds a haste map on a fresh cache with SHA-1s', () => {
-    it.each([false, true])('uses watchman: %s', async useWatchman => {
-      const node = require('../crawlers/node');
+    it.each([
+      // `enableSymlinks` is currently not permitted with `useWatchman`
+      [false, false],
+      [false, true],
+      [true, false],
+    ])(
+      'uses watchman: %s, symlinks enabled: %s',
+      async (useWatchman, enableSymlinks) => {
+        const node = require('../crawlers/node');
 
-      node.mockImplementation(options => {
-        // The node crawler returns "null" for the SHA-1.
-        const changedFiles = createMap({
-          [path.join('fruits', 'Banana.js')]: [
-            'Banana',
-            32,
-            42,
-            0,
-            'Strawberry',
-            null,
-            0,
-          ],
-          [path.join('fruits', 'Pear.js')]: [
-            'Pear',
-            32,
-            42,
-            0,
-            'Banana\0Strawberry',
-            null,
-            0,
-          ],
-          [path.join('fruits', 'Strawberry.js')]: [
-            'Strawberry',
-            32,
-            42,
-            0,
-            '',
-            null,
-            0,
-          ],
-          [path.join('fruits', '__mocks__', 'Pear.js')]: [
-            '',
-            32,
-            42,
-            0,
-            'Melon',
-            null,
-            0,
-          ],
-          [path.join('vegetables', 'Melon.js')]: [
-            'Melon',
-            32,
-            42,
-            0,
-            '',
-            null,
-            0,
-          ],
+        node.mockImplementation(options => {
+          // The node crawler returns "null" for the SHA-1.
+          const changedFiles = createMap({
+            [path.join('fruits', 'Banana.js')]: [
+              'Banana',
+              32,
+              42,
+              0,
+              'Strawberry',
+              null,
+              0,
+            ],
+            [path.join('fruits', 'Pear.js')]: [
+              'Pear',
+              32,
+              42,
+              0,
+              'Banana\0Strawberry',
+              null,
+              0,
+            ],
+            [path.join('fruits', 'Strawberry.js')]: [
+              'Strawberry',
+              32,
+              42,
+              0,
+              '',
+              null,
+              0,
+            ],
+            [path.join('fruits', '__mocks__', 'Pear.js')]: [
+              '',
+              32,
+              42,
+              0,
+              'Melon',
+              null,
+              0,
+            ],
+            [path.join('vegetables', 'Melon.js')]: [
+              'Melon',
+              32,
+              42,
+              0,
+              '',
+              null,
+              0,
+            ],
+            ...(enableSymlinks
+              ? {
+                  [path.join('fruits', 'LinkToStrawberry.js')]: [
+                    '',
+                    32,
+                    42,
+                    0,
+                    '',
+                    null,
+                    1,
+                  ],
+                }
+              : null),
+          });
+
+          return Promise.resolve({
+            changedFiles,
+            removedFiles: new Map(),
+          });
         });
 
-        return Promise.resolve({
-          changedFiles,
-          removedFiles: new Map(),
+        const hasteMap = new HasteMap({
+          ...defaultConfig,
+          computeSha1: true,
+          maxWorkers: 1,
+          enableSymlinks,
+          useWatchman,
         });
-      });
 
-      const hasteMap = new HasteMap({
-        ...defaultConfig,
-        computeSha1: true,
-        maxWorkers: 1,
-        useWatchman,
-      });
+        await hasteMap.build();
 
-      await hasteMap.build();
+        expect(cacheContent.files).toEqual(
+          createMap({
+            [path.join('fruits', 'Banana.js')]: [
+              'Banana',
+              32,
+              42,
+              1,
+              'Strawberry',
+              '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
+              0,
+            ],
+            [path.join('fruits', 'Pear.js')]: [
+              'Pear',
+              32,
+              42,
+              1,
+              'Banana\0Strawberry',
+              '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
+              0,
+            ],
+            [path.join('fruits', 'Strawberry.js')]: [
+              'Strawberry',
+              32,
+              42,
+              1,
+              '',
+              'e8aa38e232b3795f062f1d777731d9240c0f8c25',
+              0,
+            ],
+            [path.join('fruits', '__mocks__', 'Pear.js')]: [
+              '',
+              32,
+              42,
+              1,
+              'Melon',
+              '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
+              0,
+            ],
+            [path.join('vegetables', 'Melon.js')]: [
+              'Melon',
+              32,
+              42,
+              1,
+              '',
+              'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
+              0,
+            ],
+            ...(enableSymlinks
+              ? {
+                  [path.join('fruits', 'LinkToStrawberry.js')]: [
+                    '',
+                    32,
+                    42,
+                    1,
+                    '',
+                    null,
+                    'Strawberry.js',
+                  ],
+                }
+              : null),
+          }),
+        );
 
-      expect(cacheContent.files).toEqual(
-        createMap({
-          [path.join('fruits', 'Banana.js')]: [
-            'Banana',
-            32,
-            42,
-            1,
-            'Strawberry',
-            '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
-            0,
-          ],
-          [path.join('fruits', 'Pear.js')]: [
-            'Pear',
-            32,
-            42,
-            1,
-            'Banana\0Strawberry',
-            '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
-            0,
-          ],
-          [path.join('fruits', 'Strawberry.js')]: [
-            'Strawberry',
-            32,
-            42,
-            1,
-            '',
-            'e8aa38e232b3795f062f1d777731d9240c0f8c25',
-            0,
-          ],
-          [path.join('fruits', '__mocks__', 'Pear.js')]: [
-            '',
-            32,
-            42,
-            1,
-            'Melon',
-            '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
-            0,
-          ],
-          [path.join('vegetables', 'Melon.js')]: [
-            'Melon',
-            32,
-            42,
-            1,
-            '',
-            'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
-            0,
-          ],
-        }),
-      );
-
-      expect(deepNormalize(await hasteMap.read())).toEqual(cacheContent);
-    });
+        expect(deepNormalize(await hasteMap.read())).toEqual(cacheContent);
+      },
+    );
   });
 
   it('does not crawl native files even if requested to do so', async () => {
@@ -843,8 +914,8 @@ describe('HasteMap', () => {
     // and it should write a new cache
     expect(mockCacheManager.write).toHaveBeenCalledTimes(1);
 
-    // The first run should access the file system five times for the files in
-    // the system.
+    // The first run should access the file system five times for the regular
+    // files in the system.
     expect(fs.readFileSync.mock.calls.length).toBe(5);
 
     fs.readFileSync.mockClear();
@@ -1188,6 +1259,7 @@ describe('HasteMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1199,6 +1271,7 @@ describe('HasteMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1210,6 +1283,7 @@ describe('HasteMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1221,6 +1295,7 @@ describe('HasteMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1232,6 +1307,7 @@ describe('HasteMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],

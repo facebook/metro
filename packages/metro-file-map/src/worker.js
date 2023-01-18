@@ -19,6 +19,7 @@ const dependencyExtractor = require('./lib/dependencyExtractor');
 const excludedExtensions = require('./workerExclusionList');
 const {createHash} = require('crypto');
 const fs = require('graceful-fs');
+const {promises: fsPromises} = require('fs');
 const path = require('path');
 
 const PACKAGE_JSON = path.sep + 'package.json';
@@ -53,11 +54,13 @@ async function worker(
   let id /*: WorkerMetadata['id'] */;
   let module /*: WorkerMetadata['module'] */;
   let sha1 /*: WorkerMetadata['sha1'] */;
+  let symlinkTarget /*: WorkerMetadata['symlinkTarget'] */;
 
   const {
     computeDependencies,
     computeSha1,
     enableHastePackages,
+    readLink,
     rootDir,
     filePath,
   } = data;
@@ -115,7 +118,11 @@ async function worker(
     sha1 = sha1hex(getContent());
   }
 
-  return {dependencies, id, module, sha1};
+  if (readLink) {
+    symlinkTarget = await fsPromises.readlink(filePath);
+  }
+
+  return {dependencies, id, module, sha1, symlinkTarget};
 }
 
 module.exports = {

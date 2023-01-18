@@ -142,7 +142,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '3';
+const CACHE_BREAKER = '4';
 
 const CHANGE_INTERVAL = 30;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
@@ -556,16 +556,23 @@ export default class HasteMap extends EventEmitter {
     };
 
     const relativeFilePath = fastPath.relative(rootDir, filePath);
-    const moduleName = fileSystem.getModuleName(relativeFilePath);
+    const fileType = fileSystem.getType(relativeFilePath);
 
-    if (moduleName == null) {
+    if (fileType == null) {
       throw new Error(
         'metro-file-map: File to process was not found in the haste map.',
       );
     }
 
     const computeSha1 =
-      this._options.computeSha1 && fileSystem.getSha1(relativeFilePath) == null;
+      this._options.computeSha1 &&
+      fileType === 'f' &&
+      fileSystem.getSha1(relativeFilePath) == null;
+
+    const readLink =
+      this._options.enableSymlinks &&
+      fileType === 'l' &&
+      fileSystem.getSymlinkTarget(relativeFilePath) == null;
 
     // Callback called when the response from the worker is successful.
     const workerReply = (metadata: WorkerMetadata) => {
@@ -585,6 +592,11 @@ export default class HasteMap extends EventEmitter {
       if (computeSha1) {
         result.sha1 = metadata.sha1;
       }
+
+      if (metadata.symlinkTarget != null) {
+        result.symlinkTarget = metadata.symlinkTarget;
+      }
+
       fileSystem.setVisitMetadata(relativeFilePath, result);
     };
 
@@ -615,7 +627,7 @@ export default class HasteMap extends EventEmitter {
     // If we retain all files in the virtual HasteFS representation, we avoid
     // reading them if they aren't important (node_modules).
     if (this._options.retainAllFiles && filePath.includes(NODE_MODULES)) {
-      if (computeSha1) {
+      if (computeSha1 || readLink) {
         return this._getWorker(workerOptions)
           .worker({
             computeDependencies: false,
@@ -624,11 +636,33 @@ export default class HasteMap extends EventEmitter {
             enableHastePackages: false,
             filePath,
             hasteImplModulePath: null,
+            readLink,
             rootDir,
           })
           .then(workerReply, workerError);
       }
+      return null;
+    }
 
+    // Symlink Haste modules, Haste packages or mocks are not supported - read
+    // the target if requested and return early.
+    if (fileType === 'l') {
+      if (readLink) {
+        // If we only need to read a link, it's more efficient to do it in-band
+        // (with async file IO) than to have the overhead of worker IO.
+        return this._getWorker({forceInBand: true})
+          .worker({
+            computeDependencies: false,
+            computeSha1: false,
+            dependencyExtractor: null,
+            enableHastePackages: false,
+            filePath,
+            hasteImplModulePath: null,
+            readLink,
+            rootDir,
+          })
+          .then(workerReply, workerError);
+      }
       return null;
     }
 
@@ -673,6 +707,7 @@ export default class HasteMap extends EventEmitter {
         enableHastePackages: true,
         filePath,
         hasteImplModulePath: this._options.hasteImplModulePath,
+        readLink: false,
         rootDir,
       })
       .then(workerReply, workerError);

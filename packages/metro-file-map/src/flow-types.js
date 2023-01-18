@@ -161,6 +161,7 @@ export interface FileSystem {
   getModuleName(file: Path): ?string;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): ?string;
+  getSymlinkTarget(file: Path): ?string;
   getType(file: Path): ?('f' | 'l');
 
   matchFiles(pattern: RegExp | string): Array<Path>;
@@ -241,6 +242,7 @@ export type VisitMetadata = {
   hasteId?: string,
   sha1?: ?string,
   dependencies?: string,
+  symlinkTarget?: string,
 };
 
 export type WatchmanClockSpec =
@@ -253,6 +255,7 @@ export type WorkerMessage = $ReadOnly<{
   computeSha1: boolean,
   dependencyExtractor?: ?string,
   enableHastePackages: boolean,
+  readLink: boolean,
   rootDir: string,
   filePath: string,
   hasteImplModulePath?: ?string,
@@ -263,4 +266,5 @@ export type WorkerMetadata = $ReadOnly<{
   id?: ?string,
   module?: ?ModuleMetaData,
   sha1?: ?string,
+  symlinkTarget?: ?string,
 }>;
