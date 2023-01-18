@@ -49,7 +49,7 @@ import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
 import HasteModuleMap from './ModuleMap';
 import {Watcher} from './Watcher';
-import {getSha1, worker} from './worker';
+import {worker} from './worker';
 import EventEmitter from 'events';
 import invariant from 'invariant';
 // $FlowFixMe[untyped-import] - jest-regex-util
@@ -125,7 +125,7 @@ type InternalOptions = {
   watchmanDeferStates: $ReadOnlyArray<string>,
 };
 
-type WorkerInterface = {worker: typeof worker, getSha1: typeof getSha1};
+type WorkerInterface = {worker: typeof worker};
 
 export {default as ModuleMap} from './ModuleMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
@@ -617,12 +617,13 @@ export default class HasteMap extends EventEmitter {
     if (this._options.retainAllFiles && filePath.includes(NODE_MODULES)) {
       if (computeSha1) {
         return this._getWorker(workerOptions)
-          .getSha1({
-            computeDependencies: this._options.computeDependencies,
+          .worker({
+            computeDependencies: false,
             computeSha1,
-            dependencyExtractor: this._options.dependencyExtractor,
+            dependencyExtractor: null,
+            enableHastePackages: false,
             filePath,
-            hasteImplModulePath: this._options.hasteImplModulePath,
+            hasteImplModulePath: null,
             rootDir,
           })
           .then(workerReply, workerError);
@@ -669,6 +670,7 @@ export default class HasteMap extends EventEmitter {
         computeDependencies: this._options.computeDependencies,
         computeSha1,
         dependencyExtractor: this._options.dependencyExtractor,
+        enableHastePackages: true,
         filePath,
         hasteImplModulePath: this._options.hasteImplModulePath,
         rootDir,
@@ -782,10 +784,10 @@ export default class HasteMap extends EventEmitter {
   _getWorker(options?: {forceInBand: boolean}): WorkerInterface {
     if (!this._worker) {
       if ((options && options.forceInBand) || this._options.maxWorkers <= 1) {
-        this._worker = {getSha1, worker};
+        this._worker = {worker};
       } else {
         this._worker = new Worker(require.resolve('./worker'), {
-          exposedMethods: ['getSha1', 'worker'],
+          exposedMethods: ['worker'],
           maxRetries: 3,
           numWorkers: this._options.maxWorkers,
         });

@@ -9,9 +9,10 @@
  */
 
 import H from '../constants';
-import {getSha1, worker} from '../worker';
+import {worker} from '../worker';
 import * as fs from 'graceful-fs';
 import * as path from 'path';
+import * as vm from 'vm';
 
 jest.mock('graceful-fs', () => {
   const path = require('path');
@@ -110,6 +111,7 @@ describe('worker', () => {
       await worker({
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
+        hasteImplModulePath: require.resolve('./haste_impl.js'),
         rootDir,
       }),
     ).toEqual({
@@ -119,10 +121,11 @@ describe('worker', () => {
     });
   });
 
-  it('parses package.json files as haste packages', async () => {
+  it('parses package.json files as haste packages when enableHastePackages=true', async () => {
     expect(
       await worker({
         computeDependencies: true,
+        enableHastePackages: true,
         filePath: path.join('/project', 'package.json'),
         rootDir,
       }),
@@ -130,6 +133,21 @@ describe('worker', () => {
       dependencies: undefined,
       id: 'haste-package',
       module: ['package.json', H.PACKAGE],
+    });
+  });
+
+  it('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
+    expect(
+      await worker({
+        computeDependencies: true,
+        enableHastePackages: false,
+        filePath: path.join('/project', 'package.json'),
+        rootDir,
+      }),
+    ).toEqual({
+      dependencies: undefined,
+      id: undefined,
+      module: undefined,
     });
   });
 
@@ -147,7 +165,7 @@ describe('worker', () => {
 
   it('simply computes SHA-1s when requested (works well with binary data)', async () => {
     expect(
-      await getSha1({
+      await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'apple.png'),
         rootDir,
@@ -155,15 +173,15 @@ describe('worker', () => {
     ).toEqual({sha1: '4caece539b039b16e16206ea2478f8c5ffb2ca05'});
 
     expect(
-      await getSha1({
+      await worker({
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
         rootDir,
       }),
-    ).toEqual({sha1: null});
+    ).toEqual({sha1: undefined});
 
     expect(
-      await getSha1({
+      await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
         rootDir,
@@ -171,7 +189,7 @@ describe('worker', () => {
     ).toEqual({sha1: '7772b628e422e8cf59c526be4bb9f44c0898e3d1'});
 
     expect(
-      await getSha1({
+      await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         rootDir,
@@ -179,7 +197,7 @@ describe('worker', () => {
     ).toEqual({sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552'});
 
     await expect(
-      getSha1({computeSha1: true, filePath: '/i/dont/exist.js', rootDir}),
+      worker({computeSha1: true, filePath: '/i/dont/exist.js', rootDir}),
     ).rejects.toThrow();
   });
 
@@ -201,5 +219,12 @@ describe('worker', () => {
     // Ensure not disk access happened.
     expect(fs.readFileSync).not.toHaveBeenCalled();
     expect(fs.readFile).not.toHaveBeenCalled();
+  });
+
+  it('can be loaded directly without transpilation', async () => {
+    const code = await jest
+      .requireActual('fs')
+      .promises.readFile(require.resolve('../worker.js'), 'utf8');
+    expect(() => new vm.Script(code)).not.toThrow();
   });
 });

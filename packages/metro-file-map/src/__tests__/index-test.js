@@ -649,9 +649,8 @@ describe('HasteMap', () => {
 
     expect(data.map.get('IRequireAVideo')).toBeDefined();
     expect(data.files.get(path.join('video', 'video.mp4'))).toBeDefined();
-    expect(fs.readFileSync).not.toBeCalledWith(
+    expect(fs.readFileSync.mock.calls.map(call => call[0])).not.toContain(
       path.join('video', 'video.mp4'),
-      'utf8',
     );
   });
 
@@ -898,7 +897,6 @@ describe('HasteMap', () => {
     expect(fs.readFileSync).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync).toBeCalledWith(
       path.join('/', 'project', 'fruits', 'Banana.js'),
-      'utf8',
     );
 
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
@@ -1187,6 +1185,7 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
           rootDir: path.join('/', 'project'),
@@ -1197,6 +1196,7 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
           rootDir: path.join('/', 'project'),
@@ -1207,6 +1207,7 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
           rootDir: path.join('/', 'project'),
@@ -1217,6 +1218,7 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
           rootDir: path.join('/', 'project'),
@@ -1227,6 +1229,7 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
           rootDir: path.join('/', 'project'),
