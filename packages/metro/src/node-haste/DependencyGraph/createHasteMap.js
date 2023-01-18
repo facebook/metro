@@ -70,6 +70,7 @@ function createHasteMap(
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
+    enableSymlinks: config.resolver.unstable_enableSymlinks,
     extensions: Array.from(
       new Set([
         ...config.resolver.sourceExts,
