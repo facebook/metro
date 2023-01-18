@@ -75,6 +75,7 @@ describe('DeltaCalculator', () => {
               absolutePath: '/foo',
               data: {
                 name: 'foo',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'foo', asyncType: null, locs: []},
               },
             },
@@ -85,6 +86,7 @@ describe('DeltaCalculator', () => {
               absolutePath: '/bar',
               data: {
                 name: 'bar',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'bar', asyncType: null, locs: []},
               },
             },
@@ -95,6 +97,7 @@ describe('DeltaCalculator', () => {
               absolutePath: '/baz',
               data: {
                 name: 'baz',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'baz', asyncType: null, locs: []},
               },
             },
@@ -113,6 +116,7 @@ describe('DeltaCalculator', () => {
               absolutePath: '/qux',
               data: {
                 name: 'qux',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'qux', asyncType: null, locs: []},
               },
             },

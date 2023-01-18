@@ -74,18 +74,21 @@ function formatBundlingError(error: CustomError): FormattedError {
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
+      // $FlowFixMe[missing-empty-array-annot]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof GraphNotFoundError) {
     return {
       type: 'GraphNotFoundError',
+      // $FlowFixMe[missing-empty-array-annot]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof RevisionNotFoundError) {
     return {
       type: 'RevisionNotFoundError',
+      // $FlowFixMe[missing-empty-array-annot]
       errors: [],
       message: error.message,
     };

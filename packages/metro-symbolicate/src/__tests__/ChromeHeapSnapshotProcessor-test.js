@@ -98,6 +98,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
         edges: [],
         locations: [],
         nodes: [],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [],
         trace_function_infos: [],
@@ -211,6 +212,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* type (element) */ 1, /* name_or_index */ 1,
           /* to_node (Node #1) */ 7,
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [
           'Node #0',
@@ -594,6 +596,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
           /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: ['Node #0'],
         trace_function_infos: [
@@ -792,6 +795,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [],
         trace_function_infos: [],
@@ -823,6 +827,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* type */ -1, /* name */ 0, /* id */ 43, /* self_size */ 4320,
           /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [''],
         trace_function_infos: [],
@@ -858,6 +863,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* trace_node_id */
           /* detachedness */
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [''],
         trace_function_infos: [],
@@ -884,6 +890,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
           /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
+        // $FlowFixMe[missing-empty-array-annot]
         samples: [],
         strings: [''],
         trace_function_infos: ([]: Array<number>),

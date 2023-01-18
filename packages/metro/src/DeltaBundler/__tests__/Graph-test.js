@@ -280,6 +280,7 @@ class TestGraph extends Graph<> {
   }
 }
 
+// $FlowFixMe[missing-local-annot]
 function getMatchingContextModules<T>(graph: Graph<T>, filePath: string) {
   const contextPaths = new Set<string>();
   graph.markModifiedContextModules(filePath, contextPaths);
@@ -301,6 +302,7 @@ beforeEach(async () => {
           name: dep.name,
           data: {
             asyncType: null,
+            // $FlowFixMe[missing-empty-array-annot]
             locs: [],
             key: dep.data.key,
             ...dep.data,
@@ -313,6 +315,7 @@ beforeEach(async () => {
             data: {
               code: '// code' + (context ? ' (context)' : ''),
               lineCount: 1,
+              // $FlowFixMe[missing-empty-array-annot]
               map: [],
             },
             type: 'js/module',

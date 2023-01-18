@@ -113,6 +113,7 @@ function _getPrelude({
         data: {
           code,
           lineCount: countLines(code),
+          // $FlowFixMe[missing-empty-array-annot]
           map: [],
         },
       },

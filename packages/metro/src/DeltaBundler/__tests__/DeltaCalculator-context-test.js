@@ -90,6 +90,7 @@ describe('DeltaCalculator + require.context', () => {
               absolutePath: '/ctx?ctx=xxx',
               data: {
                 name: 'ctx',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'ctx?ctx=xxx', asyncType: null, locs: []},
               },
             },
@@ -108,6 +109,7 @@ describe('DeltaCalculator + require.context', () => {
               absolutePath: '/ctx/foo',
               data: {
                 name: 'foo',
+                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'foo', asyncType: null, locs: []},
               },
             },
