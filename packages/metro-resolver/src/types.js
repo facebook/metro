@@ -63,14 +63,13 @@ export type ResolveAsset = (
 ) => ?$ReadOnlyArray<string>;
 
 export type FileContext = $ReadOnly<{
-  +doesFileExist: DoesFileExist,
-  +isAssetFile: IsAssetFile,
-  +nodeModulesPaths: $ReadOnlyArray<string>,
-  +preferNativePlatform: boolean,
-  +redirectModulePath: (modulePath: string) => string | false,
-  +resolveAsset: ResolveAsset,
-  +sourceExts: $ReadOnlyArray<string>,
-  ...
+  doesFileExist: DoesFileExist,
+  isAssetFile: IsAssetFile,
+  nodeModulesPaths: $ReadOnlyArray<string>,
+  preferNativePlatform: boolean,
+  redirectModulePath: (modulePath: string) => string | false,
+  resolveAsset: ResolveAsset,
+  sourceExts: $ReadOnlyArray<string>,
 }>;
 
 export type FileOrDirContext = $ReadOnly<{
@@ -84,8 +83,7 @@ export type FileOrDirContext = $ReadOnly<{
    * located in `node-haste/Package.js`, and fully duplicated in
    * `ModuleGraph/node-haste/Package.js` (!)
    */
-  +getPackageMainPath: (packageJsonPath: string) => string,
-  ...
+  getPackageMainPath: (packageJsonPath: string) => string,
 }>;
 
 export type HasteContext = $ReadOnly<{
@@ -94,14 +92,13 @@ export type HasteContext = $ReadOnly<{
    * Given a name, this should return the full path to the file that provides
    * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
    */
-  +resolveHasteModule: (name: string) => ?string,
+  resolveHasteModule: (name: string) => ?string,
   /**
    * Given a name, this should return the full path to the package manifest that
    * provides a Haste package of that name. Ex. for `Foo` it may return
    * `/smth/Foo/package.json`.
    */
-  +resolveHastePackage: (name: string) => ?string,
-  ...
+  resolveHastePackage: (name: string) => ?string,
 }>;
 
 export type ModulePathContext = $ReadOnly<{
@@ -110,8 +107,7 @@ export type ModulePathContext = $ReadOnly<{
    * Full path of the module that is requiring or importing the module to be
    * resolved.
    */
-  +originModulePath: string,
-  ...
+  originModulePath: string,
 }>;
 
 export type ResolutionContext = $ReadOnly<{
@@ -127,13 +123,11 @@ export type ResolutionContext = $ReadOnly<{
   unstable_enablePackageExports: boolean,
   resolveRequest?: ?CustomResolver,
   customResolverOptions: CustomResolverOptions,
-  ...
 }>;
 
 export type CustomResolutionContext = $ReadOnly<{
   ...ResolutionContext,
   resolveRequest: CustomResolver,
-  ...
 }>;
 
 export type CustomResolver = (

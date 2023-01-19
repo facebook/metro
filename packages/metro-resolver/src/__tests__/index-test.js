@@ -724,10 +724,10 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('receives customTransformOptions', () => {
+  it('receives customResolverOptions', () => {
     expect(
       Resolver.resolve(
-        {...context, customTransformOptions: {key: 'value'}},
+        {...context, customResolverOptions: {key: 'value'}},
         '/root/project/foo.js',
         'android',
       ),
@@ -741,7 +741,7 @@ describe('resolveRequest', () => {
       {
         ...context,
         resolveRequest: Resolver.resolve,
-        customTransformOptions: {key: 'value'},
+        customResolverOptions: {key: 'value'},
       },
       '/root/project/foo.js',
       'android',

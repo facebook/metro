@@ -143,7 +143,7 @@ function resolve(
  * `/smth/lib/foobar/index.ios.js`.
  */
 function resolveModulePath(
-  context: ModulePathContext,
+  context: $ReadOnly<{...ModulePathContext, ...}>,
   toModuleName: string,
   platform: string | null,
 ): Resolution {
@@ -167,7 +167,7 @@ function resolveModulePath(
  * a Haste package, it could be `/smth/Foo/index.js`.
  */
 function resolveHasteName(
-  context: HasteContext,
+  context: $ReadOnly<{...HasteContext, ...}>,
   moduleName: string,
   platform: string | null,
 ): Result<Resolution, void> {
@@ -227,7 +227,7 @@ class MissingFileInHastePackageError extends Error {
  * even a package directory.
  */
 function resolveFileOrDir(
-  context: FileOrDirContext,
+  context: $ReadOnly<{...FileOrDirContext, ...}>,
   potentialModulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
@@ -255,7 +255,7 @@ function resolveFileOrDir(
  * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
  */
 function resolveDir(
-  context: FileOrDirContext,
+  context: $ReadOnly<{...FileOrDirContext, ...}>,
   potentialDirPath: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
@@ -275,7 +275,7 @@ function resolveDir(
  * resolution process altogether.
  */
 function resolvePackage(
-  context: FileOrDirContext,
+  context: $ReadOnly<{...FileOrDirContext, ...}>,
   packageJsonPath: string,
   platform: string | null,
 ): Resolution {
@@ -308,7 +308,7 @@ function resolvePackage(
  * `/js/boop/index.js` (see `_loadAsDir` for that).
  */
 function resolveFile(
-  context: FileContext,
+  context: $ReadOnly<{...FileContext, ...}>,
   dirPath: string,
   fileName: string,
   platform: string | null,

@@ -177,23 +177,46 @@ class ModuleResolver<TPackage: Packageish> {
     platform: string | null,
     resolverOptions: ResolverInputOptions,
   ): BundlerResolution {
+    const {
+      disableHierarchicalLookup,
+      doesFileExist,
+      extraNodeModules,
+      isAssetFile,
+      nodeModulesPaths,
+      preferNativePlatform,
+      resolveAsset,
+      resolveRequest,
+      sourceExts,
+      unstable_conditionNames,
+      unstable_conditionsByPlatform,
+      unstable_enablePackageExports,
+    } = this._options;
+
     try {
       const result = Resolver.resolve(
         {
-          ...this._options,
+          allowHaste,
+          disableHierarchicalLookup,
+          doesFileExist,
+          extraNodeModules,
+          isAssetFile,
+          nodeModulesPaths,
+          preferNativePlatform,
+          resolveAsset,
+          resolveRequest,
+          sourceExts,
+          unstable_conditionNames,
+          unstable_conditionsByPlatform,
+          unstable_enablePackageExports,
           customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           redirectModulePath: (modulePath: string) =>
             this._redirectRequire(fromModule, modulePath),
-          allowHaste,
-          platform,
           resolveHasteModule: (name: string) =>
             this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
             this._options.getHastePackagePath(name, platform),
           getPackageMainPath: this._getPackageMainPath,
-          unstable_enablePackageExports:
-            this._options.unstable_enablePackageExports,
         },
         moduleName,
         platform,
