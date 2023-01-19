@@ -44,6 +44,12 @@ export type FileCandidates =
       +candidateExts: $ReadOnlyArray<string>,
     };
 
+export type PackageJson = $ReadOnly<{
+  name?: string,
+  main?: string,
+  ...
+}>;
+
 /**
  * Check existence of a single file.
  */
@@ -74,16 +80,17 @@ export type FileContext = $ReadOnly<{
 
 export type FileOrDirContext = $ReadOnly<{
   ...FileContext,
+
   /**
-   * This should return the path of the "main" module of the specified
-   * `package.json` file, after post-processing: for example, applying the
-   * 'browser' field if necessary.
-   *
-   * FIXME: move the post-processing here. Right now it is
-   * located in `node-haste/Package.js`, and fully duplicated in
-   * `ModuleGraph/node-haste/Package.js` (!)
+   * The ordered list of fields to read in `package.json` to resolve a main
+   * entry point based on the "browser" field spec.
    */
-  getPackageMainPath: (packageJsonPath: string) => string,
+  mainFields: $ReadOnlyArray<string>,
+
+  /**
+   * Get the parsed contents of the specified `package.json` file.
+   */
+  getPackage: (packageJsonPath: string) => PackageJson,
 }>;
 
 export type HasteContext = $ReadOnly<{

@@ -19,6 +19,8 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
+import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {PackageJson} from 'metro-resolver/src/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
@@ -26,18 +28,17 @@ const invariant = require('invariant');
 const Resolver = require('metro-resolver');
 const path = require('path');
 const util = require('util');
-import type {ResolverInputOptions} from '../../shared/types.flow';
 import type {BundlerResolution} from '../../DeltaBundler/types.flow';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
 export type Packageish = interface {
   path: string,
+  read(): PackageJson,
   redirectRequire(
     toModuleName: string,
     mainFields: $ReadOnlyArray<string>,
   ): string | false,
-  getMain(mainFields: $ReadOnlyArray<string>): string,
 };
 
 export type Moduleish = interface {
@@ -182,6 +183,7 @@ class ModuleResolver<TPackage: Packageish> {
       doesFileExist,
       extraNodeModules,
       isAssetFile,
+      mainFields,
       nodeModulesPaths,
       preferNativePlatform,
       resolveAsset,
@@ -200,6 +202,7 @@ class ModuleResolver<TPackage: Packageish> {
           doesFileExist,
           extraNodeModules,
           isAssetFile,
+          mainFields,
           nodeModulesPaths,
           preferNativePlatform,
           resolveAsset,
@@ -216,7 +219,7 @@ class ModuleResolver<TPackage: Packageish> {
             this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
             this._options.getHastePackagePath(name, platform),
-          getPackageMainPath: this._getPackageMainPath,
+          getPackage: this._getPackage,
         },
         moduleName,
         platform,
@@ -268,9 +271,8 @@ class ModuleResolver<TPackage: Packageish> {
     }
   }
 
-  _getPackageMainPath = (packageJsonPath: string): string => {
-    const package_ = this._options.moduleCache.getPackage(packageJsonPath);
-    return package_.getMain(this._options.mainFields);
+  _getPackage = (packageJsonPath: string): PackageJson => {
+    return this._options.moduleCache.getPackage(packageJsonPath).read();
   };
 
   /**

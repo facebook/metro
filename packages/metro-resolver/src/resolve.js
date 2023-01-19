@@ -28,6 +28,7 @@ const FailedToResolveNameError = require('./FailedToResolveNameError');
 const FailedToResolvePathError = require('./FailedToResolvePathError');
 const formatFileCandidates = require('./formatFileCandidates');
 const InvalidPackageError = require('./InvalidPackageError');
+const {getPackageEntryPoint} = require('./PackageResolve');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
@@ -279,7 +280,14 @@ function resolvePackage(
   packageJsonPath: string,
   platform: string | null,
 ): Resolution {
-  const mainPrefixPath = context.getPackageMainPath(packageJsonPath);
+  const packagePath = path.dirname(path.resolve(packageJsonPath));
+  const mainPrefixPath = path.join(
+    packagePath,
+    getPackageEntryPoint(
+      context.getPackage(packageJsonPath),
+      context.mainFields,
+    ),
+  );
   const dirPath = path.dirname(mainPrefixPath);
   const prefixName = path.basename(mainPrefixPath);
   const fileResult = resolveFile(context, dirPath, prefixName, platform);

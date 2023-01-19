@@ -160,11 +160,13 @@ See also [Static Image Resources](https://reactnative.dev/docs/images#static-ima
 
 The list of file extensions to try, in order, when resolving a module path that does not exist on disk. Defaults to [`resolver.sourceExts`](./Configuration.md#sourceexts).
 
-#### `getPackageMainPath: string => string`
+#### `mainFields: $ReadOnlyArray<string>`
 
-Given the path to a `package.json` file, returns the contents of the `main` field, or the appropriate alternative field describing the entry point (e.g. `browser`).
+The ordered list of fields in `package.json` that should be read to resolve a package's main entry point (and any subpath file replacements) per the ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec). Defaults to [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
 
-The default implementation of this function respects [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
+#### `getPackage: string => PackageJson`
+
+Given the path to a `package.json` file, returns the parsed file contents.
 
 #### `resolveHasteModule: string => ?string`
 

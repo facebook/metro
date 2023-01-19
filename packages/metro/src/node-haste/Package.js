@@ -11,74 +11,23 @@
 
 'use strict';
 
+import type {PackageJson} from 'metro-resolver/src/types';
+
+import {getSubpathReplacements} from 'metro-resolver/src/PackageResolve';
+
 const fs = require('fs');
 const path = require('path');
-
-type PackageContent = {
-  name: string,
-  'react-native': mixed,
-  browser: mixed,
-  main: ?string,
-  ...
-};
 
 class Package {
   path: string;
 
   _root: string;
-  _content: ?PackageContent;
+  _content: ?PackageJson;
 
   constructor({file}: {file: string, ...}) {
     this.path = path.resolve(file);
     this._root = path.dirname(this.path);
     this._content = null;
-  }
-
-  /**
-   * The `browser` field and replacement behavior is specified in
-   * https://github.com/defunctzombie/package-browser-field-spec.
-   */
-  getMain(mainFields: $ReadOnlyArray<string>): string {
-    const json = this.read();
-
-    let main;
-
-    for (const name of mainFields) {
-      if (typeof json[name] === 'string') {
-        main = json[name];
-        break;
-      }
-    }
-
-    // flowlint-next-line sketchy-null-string:off
-    if (!main) {
-      main = 'index';
-    }
-
-    const replacements = getReplacements(json, mainFields);
-    if (replacements) {
-      const variants = [main];
-      if (main.slice(0, 2) === './') {
-        variants.push(main.slice(2));
-      } else {
-        variants.push('./' + main);
-      }
-
-      for (const variant of variants) {
-        const winner =
-          replacements[variant] ||
-          replacements[variant + '.js'] ||
-          replacements[variant + '.json'] ||
-          replacements[variant.replace(/(\.js|\.json)$/, '')];
-
-        if (winner) {
-          main = winner;
-          break;
-        }
-      }
-    }
-
-    return path.join(this._root, main);
   }
 
   invalidate() {
@@ -89,8 +38,7 @@ class Package {
     name: string,
     mainFields: $ReadOnlyArray<string>,
   ): string | false {
-    const json = this.read();
-    const replacements = getReplacements(json, mainFields);
+    const replacements = getSubpathReplacements(this.read(), mainFields);
 
     if (!replacements) {
       return name;
@@ -131,35 +79,12 @@ class Package {
     return name;
   }
 
-  read(): PackageContent {
+  read(): PackageJson {
     if (this._content == null) {
       this._content = JSON.parse(fs.readFileSync(this.path, 'utf8'));
     }
     return this._content;
   }
-}
-
-function getReplacements(
-  pkg: PackageContent,
-  mainFields: $ReadOnlyArray<string>,
-): ?{[string]: string | false, ...} {
-  const replacements = mainFields
-    .map((name: string) => {
-      // If the field is a string, that doesn't mean we want to redirect the
-      //  `main` file itself to anything else. See the spec.
-      if (!pkg[name] || typeof pkg[name] === 'string') {
-        return null;
-      }
-
-      return pkg[name];
-    })
-    .filter(Boolean);
-
-  if (!replacements.length) {
-    return null;
-  }
-
-  return Object.assign({}, ...replacements.reverse());
 }
 
 module.exports = Package;
