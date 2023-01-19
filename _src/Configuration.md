@@ -271,7 +271,7 @@ Type: `Array<string>`
 
 Additional platforms to resolve. Defaults to `['ios', 'android', 'windows', 'web']`.
 
-For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
+For more information, see [Module Resolution](./Resolution.md) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
 
 #### `requireCycleIgnorePatterns`
 
