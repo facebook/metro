@@ -28,6 +28,7 @@ type DependencyMap = $ReadOnly<
     paths?: {[id: ModuleID]: string},
   },
 >;
+type InverseDependencyMap = {[key: ModuleID]: Array<ModuleID>, ...};
 type Exports = any;
 type FactoryFn = (
   global: Object,
@@ -71,12 +72,20 @@ type ModuleList = {
   __proto__: null,
   ...
 };
-type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
+export type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
+export type DefineFn = (
+  factory: FactoryFn,
+  moduleId: number,
+  dependencyMap?: DependencyMap,
+  verboseName?: string,
+  inverseDependencies?: InverseDependencyMap,
+) => void;
+
 type VerboseModuleNameForDev = string;
 type ModuleDefiner = (moduleId: ModuleID) => void;
 
-global.__r = metroRequire;
-global[`${__METRO_GLOBAL_PREFIX__}__d`] = define;
+global.__r = (metroRequire: RequireFn);
+global[`${__METRO_GLOBAL_PREFIX__}__d`] = (define: DefineFn);
 global.__c = clear;
 global.__registerSegment = registerSegment;
 
@@ -542,7 +551,7 @@ if (__DEV__) {
     id: ModuleID,
     factory: FactoryFn,
     dependencyMap: DependencyMap,
-    inverseDependencies: {[key: ModuleID]: Array<ModuleID>, ...},
+    inverseDependencies: InverseDependencyMap,
   ) {
     const mod = modules[id];
     if (!mod) {
