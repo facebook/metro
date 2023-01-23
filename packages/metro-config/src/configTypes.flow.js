@@ -154,7 +154,7 @@ type MetalConfigT = {
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
-  unstable_perfLogger?: ?PerfLoggerFactory,
+  unstable_perfLoggerFactory?: ?PerfLoggerFactory,
   projectRoot: string,
   stickyWorkers: boolean,
   transformerPath: string,

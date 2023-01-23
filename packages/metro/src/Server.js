@@ -519,7 +519,7 @@ class Server {
         await this._processBundleRequest(req, res, options, {
           buildNumber,
           bundlePerfLogger:
-            this._config.unstable_perfLogger?.('BUNDLING_REQUEST', {
+            this._config.unstable_perfLoggerFactory?.('BUNDLING_REQUEST', {
               key: buildNumber,
             }) ?? noopLogger,
         });
