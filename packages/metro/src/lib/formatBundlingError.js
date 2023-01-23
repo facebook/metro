@@ -75,6 +75,7 @@ function formatBundlingError(error: CustomError): FormattedError {
     return {
       type: 'ResourceNotFoundError',
       // $FlowFixMe[missing-empty-array-annot]
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };
@@ -82,6 +83,7 @@ function formatBundlingError(error: CustomError): FormattedError {
     return {
       type: 'GraphNotFoundError',
       // $FlowFixMe[missing-empty-array-annot]
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };
@@ -89,6 +91,7 @@ function formatBundlingError(error: CustomError): FormattedError {
     return {
       type: 'RevisionNotFoundError',
       // $FlowFixMe[missing-empty-array-annot]
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };
