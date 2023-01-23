@@ -259,7 +259,7 @@ export default class HasteMap extends EventEmitter {
 
     if (options.perfLoggerFactory) {
       this._startupPerfLogger =
-        options.perfLoggerFactory?.().subSpan('hasteMap') ?? null;
+        options.perfLoggerFactory?.('START_UP').subSpan('hasteMap') ?? null;
       this._startupPerfLogger?.point('constructor_start');
     }
 
