@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import type {IJestWorker} from 'jest-worker';
 import type {
   BuildParameters,
   BuildResult,
@@ -54,7 +55,6 @@ import EventEmitter from 'events';
 import invariant from 'invariant';
 // $FlowFixMe[untyped-import] - jest-regex-util
 import {escapePathForRegex} from 'jest-regex-util';
-// $FlowFixMe[untyped-import] - jest-worker
 import {Worker} from 'jest-worker';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - this is a polyfill
@@ -125,7 +125,8 @@ type InternalOptions = {
   watchmanDeferStates: $ReadOnlyArray<string>,
 };
 
-type WorkerInterface = {worker: typeof worker};
+type WorkerObj = {worker: typeof worker};
+type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 export {default as ModuleMap} from './ModuleMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
@@ -813,7 +814,7 @@ export default class HasteMap extends EventEmitter {
       if ((options && options.forceInBand) || this._options.maxWorkers <= 1) {
         this._worker = {worker};
       } else {
-        this._worker = new Worker(require.resolve('./worker'), {
+        this._worker = new Worker<WorkerObj>(require.resolve('./worker'), {
           exposedMethods: ['worker'],
           maxRetries: 3,
           numWorkers: this._options.maxWorkers,
