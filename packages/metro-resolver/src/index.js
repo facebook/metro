@@ -28,10 +28,10 @@ export type {
 } from './types';
 
 const Resolver = {
-  FailedToResolveNameError: require('./FailedToResolveNameError'),
-  FailedToResolvePathError: require('./FailedToResolvePathError'),
+  FailedToResolveNameError: require('./errors/FailedToResolveNameError'),
+  FailedToResolvePathError: require('./errors/FailedToResolvePathError'),
   formatFileCandidates: require('./formatFileCandidates'),
-  InvalidPackageError: require('./InvalidPackageError'),
+  InvalidPackageError: require('./errors/InvalidPackageError'),
   resolve: require('./resolve'),
 };
 

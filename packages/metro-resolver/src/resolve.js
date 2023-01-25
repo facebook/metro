@@ -24,10 +24,10 @@ import type {
   Result,
 } from './types';
 
-const FailedToResolveNameError = require('./FailedToResolveNameError');
-const FailedToResolvePathError = require('./FailedToResolvePathError');
+const FailedToResolveNameError = require('./errors/FailedToResolveNameError');
+const FailedToResolvePathError = require('./errors/FailedToResolvePathError');
 const formatFileCandidates = require('./formatFileCandidates');
-const InvalidPackageError = require('./InvalidPackageError');
+const InvalidPackageError = require('./errors/InvalidPackageError');
 const {getPackageEntryPoint} = require('./PackageResolve');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');

@@ -13,7 +13,7 @@
 
 import type {ResolutionContext} from '../index';
 
-const FailedToResolvePathError = require('../FailedToResolvePathError');
+const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
 const Resolver = require('../index');
 const path = require('path');
 import {createResolutionContext} from './utils';
