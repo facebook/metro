@@ -284,7 +284,7 @@ function resolvePackage(
   const mainPrefixPath = path.join(
     packagePath,
     getPackageEntryPoint(
-      context.getPackage(packageJsonPath),
+      context.getPackage(packageJsonPath) ?? {},
       context.mainFields,
     ),
   );

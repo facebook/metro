@@ -271,8 +271,15 @@ class ModuleResolver<TPackage: Packageish> {
     }
   }
 
-  _getPackage = (packageJsonPath: string): PackageJson => {
-    return this._options.moduleCache.getPackage(packageJsonPath).read();
+  _getPackage = (packageJsonPath: string): ?PackageJson => {
+    try {
+      return this._options.moduleCache.getPackage(packageJsonPath).read();
+    } catch (e) {
+      // Do nothing. The standard module cache does not trigger any error, but
+      // the ModuleGraph one does, if the module does not exist.
+    }
+
+    return null;
   };
 
   /**

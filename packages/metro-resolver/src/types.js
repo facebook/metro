@@ -90,7 +90,7 @@ export type FileOrDirContext = $ReadOnly<{
   /**
    * Get the parsed contents of the specified `package.json` file.
    */
-  getPackage: (packageJsonPath: string) => PackageJson,
+  getPackage: (packageJsonPath: string) => ?PackageJson,
 }>;
 
 export type HasteContext = $ReadOnly<{
