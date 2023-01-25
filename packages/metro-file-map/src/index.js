@@ -969,6 +969,11 @@ export default class HasteMap extends EventEmitter {
           const fileType = fileSystem.getType(relativeFilePath);
 
           const add = (metadata: ChangeEventMetadata) => {
+            // Don't emit events relating to symlinks if enableSymlinks: false
+            if (!this._options.enableSymlinks && type === 'l') {
+              return null;
+            }
+
             eventsQueue.push({
               filePath: absoluteFilePath,
               metadata,

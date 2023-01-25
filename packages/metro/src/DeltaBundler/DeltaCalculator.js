@@ -33,6 +33,7 @@ class DeltaCalculator<T> extends EventEmitter {
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
   _addedFiles: Set<string> = new Set();
+  _hasSymlinkChanges = false;
 
   _graph: Graph<T>;
 
@@ -87,6 +88,7 @@ class DeltaCalculator<T> extends EventEmitter {
     shallow: boolean,
     ...
   }): Promise<DeltaResult<T>> {
+    debug('Calculating delta (reset: %s, shallow: %s)', reset, shallow);
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -102,6 +104,21 @@ class DeltaCalculator<T> extends EventEmitter {
     this._deletedFiles = new Set();
     const addedFiles = this._addedFiles;
     this._addedFiles = new Set();
+    const hasSymlinkChanges = this._hasSymlinkChanges;
+    this._hasSymlinkChanges = false;
+
+    // Revisit all files if changes include symlinks - resolutions may be
+    // invalidated but we don't yet know which. This should be optimized in the
+    // future.
+    if (hasSymlinkChanges) {
+      const markModified = (file: string) => {
+        if (!addedFiles.has(file) && !deletedFiles.has(file)) {
+          modifiedFiles.add(file);
+        }
+      };
+      this._graph.dependencies.forEach((_, key) => markModified(key));
+      this._graph.entryPoints.forEach(markModified);
+    }
 
     // Concurrent requests should reuse the same bundling process. To do so,
     // this method stores the promise as an instance variable, and then it's
@@ -190,6 +207,11 @@ class DeltaCalculator<T> extends EventEmitter {
     logger: ?RootPerfLogger,
   ): mixed => {
     debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
+    if (metadata.type === 'l') {
+      this._hasSymlinkChanges = true;
+      this.emit('change', {logger});
+      return;
+    }
     let state: void | 'deleted' | 'modified' | 'added';
     if (this._deletedFiles.has(filePath)) {
       state = 'deleted';

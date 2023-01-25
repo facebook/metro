@@ -542,6 +542,54 @@ describe('DeltaCalculator', () => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);
   });
 
+  it.each(['add', 'delete'])(
+    "should re-traverse everything after a symlink '%s'",
+    async eventType => {
+      await deltaCalculator.getDelta({reset: false, shallow: false});
+
+      const changeEmitted = new Promise(resolve =>
+        deltaCalculator.once('change', resolve),
+      );
+
+      fileWatcher.emit('change', {
+        eventsQueue: [
+          {type: eventType, filePath: '/link', metadata: {type: 'l'}},
+        ],
+      });
+
+      // Any symlink change should trigger a 'change' event
+      await changeEmitted;
+
+      const traverseResult: Result<{}> = {
+        added: new Map(),
+        modified: new Map(),
+        deleted: new Set(),
+      };
+      traverseDependencies.mockResolvedValueOnce(traverseResult);
+
+      const result = await deltaCalculator.getDelta({
+        reset: false,
+        shallow: false,
+      });
+
+      // Revisit the whole graph since any resolution could have become invalid.
+      expect(traverseDependencies).toHaveBeenCalledWith(
+        ['/bundle', '/foo', '/bar', '/baz', '/qux'],
+        expect.objectContaining({shallow: false}),
+      );
+
+      expect(result).toEqual({...traverseResult, reset: false});
+
+      // Does not attempt to traverse again on a subsequent delta request.
+      traverseDependencies.mockClear();
+      await deltaCalculator.getDelta({
+        reset: false,
+        shallow: false,
+      });
+      expect(traverseDependencies).not.toHaveBeenCalled();
+    },
+  );
+
   it('should not mutate an existing graph when calling end()', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
     const graph = deltaCalculator.getGraph();
