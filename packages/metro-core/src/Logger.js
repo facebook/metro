@@ -45,7 +45,6 @@ export type LogEntry = {
   bundle_options?: BundleOptions,
   bundle_hash?: string,
   build_id?: string,
-  cache_size?: number | void,
   ...
 };
 

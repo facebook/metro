@@ -60,16 +60,10 @@ class Cache<T> {
       } finally {
         Logger.log(Logger.createActionEndEntry(logStart));
 
-        let size;
-        if (value != null && store.size) {
-          size = store.size(key);
-        }
-
         Logger.log(
           Logger.createEntry({
             action_name: 'Cache ' + (value == null ? 'miss' : 'hit'),
             log_entry_label: name,
-            cache_size: size,
           }),
         );
 

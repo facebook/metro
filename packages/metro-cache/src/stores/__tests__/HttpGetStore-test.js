@@ -21,14 +21,12 @@ describe('HttpGetStore', () => {
   function responseHttpError(code) {
     return Object.assign(new PassThrough(), {
       statusCode: code,
-      getHeader: () => {},
     });
   }
 
   function responseHttpOk(data) {
     const res = Object.assign(new PassThrough(), {
       statusCode: 200,
-      getHeader: () => {},
     });
 
     process.nextTick(() => {

@@ -68,15 +68,4 @@ describe('FileStore', () => {
     await fileStore.set(cache, data);
     expect(await fileStore.get(cache)).toEqual(data);
   });
-
-  it('captures the file size once it has been read', async () => {
-    const fileStore = new FileStore({root: '/root'});
-    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
-    const data = Buffer.from([0xca, 0xc4, 0xe5]);
-    await fileStore.set(cache, data);
-    expect(await fileStore.get(cache)).toEqual(data);
-
-    const NULL_BYTE_BUFFER_SIZE = 1;
-    expect(fileStore.size(cache)).toEqual(data.length + NULL_BYTE_BUFFER_SIZE);
-  });
 });
