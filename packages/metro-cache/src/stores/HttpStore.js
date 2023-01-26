@@ -50,6 +50,12 @@ class HttpStore<T> {
   _getAgent: HttpAgent | HttpsAgent;
   _setAgent: HttpAgent | HttpsAgent;
 
+  _size: Map<Buffer, number>;
+  // Flow doesn't allow interfaces to define optional methods. Since it's defined as an optional property
+  // it has to be attached to the instance and not the prototype.  So you end up with this mess. The benefit
+  // is that we don't make a breaking change to our public CacheStore interface.
+  +size: (key: Buffer) => number | void;
+
   // $FlowFixMe[missing-local-annot]
   constructor(options: Options) {
     const uri = url.parse(options.endpoint);
@@ -91,6 +97,9 @@ class HttpStore<T> {
 
     this._getAgent = new module.Agent(agentConfig);
     this._setAgent = new module.Agent(agentConfig);
+
+    this._size = new Map();
+    this.size = (key: Buffer) => this._size.get(key);
   }
 
   get(key: Buffer): Promise<?T> {
@@ -122,6 +131,8 @@ class HttpStore<T> {
 
           return;
         }
+
+        this._size.set(key, res.getHeader('Content-Length'));
 
         const gunzipped = res.pipe(zlib.createGunzip());
 

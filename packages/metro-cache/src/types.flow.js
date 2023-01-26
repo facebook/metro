@@ -15,4 +15,5 @@ export interface CacheStore<T> {
   get(key: Buffer): ?T | Promise<?T>;
   set(key: Buffer, value: T): void | Promise<void>;
   clear(): void | Promise<void>;
+  +size?: (key: Buffer) => number | void;
 }

@@ -11,6 +11,13 @@
 
 'use strict';
 
+type ShortLog = {
+  a: void | string,
+  l: string,
+  p: void | string,
+  s?: void | number,
+};
+
 describe('Cache', () => {
   let Cache;
   let Logger;
@@ -23,6 +30,7 @@ describe('Cache', () => {
     return Object.assign(new TempClass(), {
       get: jest.fn().mockImplementation(() => null),
       set: jest.fn(),
+      size: jest.fn(),
     });
   }
 
@@ -31,16 +39,18 @@ describe('Cache', () => {
     Cache = require('../Cache');
 
     Logger.on('log', item => {
-      log.push({
+      const msg: ShortLog = {
         a: item.action_name,
         l: item.log_entry_label,
         p: item.action_phase,
-      });
+      };
+      if (item.cache_size != null) {
+        msg.s = item.cache_size;
+      }
+      log.push(msg);
     });
 
-    log = ([]: Array<
-      $FlowFixMe | {a: void | string, l: string, p: void | string},
-    >);
+    log = ([]: Array<$FlowFixMe | ShortLog>);
   });
 
   afterEach(() => {
@@ -165,6 +175,7 @@ describe('Cache', () => {
 
     store1.get.mockImplementation(() => null);
     store2.get.mockImplementation(() => 'le potato');
+    store2.size.mockImplementation(() => 42);
 
     await cache.get(Buffer.from('foo'));
 
@@ -174,7 +185,7 @@ describe('Cache', () => {
       {a: 'Cache miss', l: 'Local::666f6f', p: undefined},
       {a: 'Cache get', l: 'Cache get', p: 'start'},
       {a: 'Cache get', l: 'Cache get', p: 'end'},
-      {a: 'Cache hit', l: 'Network::666f6f', p: undefined},
+      {a: 'Cache hit', l: 'Network::666f6f', p: undefined, s: 42},
     ]);
   });
 

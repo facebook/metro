@@ -23,15 +23,33 @@ export type Options = {
 
 class FileStore<T> {
   _root: string;
+  _size: Map<Buffer, number>;
+
+  // Flow doesn't allow interfaces to define optional methods. Since it's defined as an optional property
+  // it has to be attached to the instance and not the prototype.  So you end up with this mess. The benefit
+  // is that we don't make a breaking change to our public CacheStore interface.
+  +size: (key: Buffer) => number | void;
 
   constructor(options: Options) {
     this._root = options.root;
+    this._size = new Map();
     this._createDirs();
+
+    this.size = (key: Buffer) => this._size.get(key);
+  }
+
+  async _updateSize(key: Buffer, path: string): Promise<void> {
+    const stat = await fs.promises.lstat(path);
+    this._size.set(key, stat.size);
   }
 
   async get(key: Buffer): Promise<?T> {
     try {
-      const data = await fs.promises.readFile(this._getFilePath(key));
+      const path = this._getFilePath(key);
+      const [data] = await Promise.all([
+        fs.promises.readFile(this._getFilePath(key)),
+        this._updateSize(key, path),
+      ]);
 
       if (data[0] === NULL_BYTE) {
         return (data.slice(1): any);

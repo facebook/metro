@@ -17,9 +17,10 @@ describe('HttpStore', () => {
   let HttpStore;
   let httpPassThrough;
 
-  function responseHttpOk(data) {
+  function responseHttpOk(data, headers = {}) {
     const res = Object.assign(new PassThrough(), {
       statusCode: 200,
+      getHeader: (key: string) => headers[key],
     });
 
     process.nextTick(() => {
@@ -33,12 +34,14 @@ describe('HttpStore', () => {
   function responseHttpError(code) {
     return Object.assign(new PassThrough(), {
       statusCode: code,
+      getHeader: () => {},
     });
   }
 
   function responseError(err) {
     const res = Object.assign(new PassThrough(), {
       statusCode: 200,
+      getHeader: () => {},
     });
 
     process.nextTick(() => {
@@ -259,5 +262,23 @@ describe('HttpStore', () => {
     callbackGet(responseHttpOk(storedValue));
 
     expect(await promiseGet).toEqual(bufferValue);
+  });
+
+  it('uses the Content-Length after getting a cached value for #size', async () => {
+    const contentLength = 42;
+    const key = Buffer.from('key-set');
+    const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
+
+    store.get(key);
+    const callbackGet = require('http').request.mock.calls[0][1];
+
+    callbackGet(
+      responseHttpOk('{}', {
+        'Content-Length': contentLength,
+      }),
+    );
+    jest.runAllTimers();
+
+    expect(store.size(key)).toEqual(contentLength);
   });
 });
