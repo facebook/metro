@@ -155,6 +155,38 @@ Type: `string`
 
 Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
+#### `unstable_perfLoggerFactory`
+
+Type: `PerfLoggerFactory`
+
+A logger factory function that can be used to get insights about metro performance including startup time, bundling time and HMR time. See also the type definition of [PerfLoggerFactory](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js). Metro expects `unstable_perfLoggerFactory` to have the correct signature. For example:
+
+```javascript
+
+const unstable_perfLoggerFactory = (type, factoryOpts) => {
+  const getLogger = subSpanLabel => {
+    const logger = {
+      start(opts) {},
+      end(status, opts) {},
+      subSpan(label) {
+        return getLogger(`${subSpanLabel ?? ''}/${label}`);
+      },
+      point(name, opts) {},
+      annotate(annotations) {},
+    };
+    return logger;
+  };
+
+  return getLogger();
+};
+
+```
+
+`unstable_perfLoggerFactory` receives these parameters:
+- `type` Type of logging. (e.g. BUNDLING_REQUEST, HMR). See type definition of [PerfLoggerFactory](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js) parameters for full list of logging types.
+- `factoryOpts` Object with a key to track concurrent events like bundling or HMR. For others it is empty.
+- `opts` Object contains timestamp. Some events report back to logger callback synchronously and others are asynchronously. For synchronous events timestamp can be calculated from callback itself (e.g. `performance.timeOrigin + performance.now()`) but for asynchronous events a timestamp is be passed to function corresponds to the time originally it was triggered.
+
 ---
 ### Resolver Options
 
