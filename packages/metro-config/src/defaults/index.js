@@ -21,6 +21,7 @@ const {
   defaultCreateModuleIdFactory,
   platforms,
   sourceExts,
+  noopPerfLoggerFactory,
 } = require('./defaults');
 const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
@@ -162,6 +163,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  unstable_perfLoggerFactory: noopPerfLoggerFactory,
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

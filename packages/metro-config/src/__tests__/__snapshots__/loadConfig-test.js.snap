@@ -154,6 +154,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -331,6 +332,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -508,6 +510,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -685,6 +688,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
