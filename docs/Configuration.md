@@ -155,6 +155,49 @@ Type: `string`
 
 Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
+#### `unstable_perfLoggerFactory`
+
+Type: `PerfLoggerFactory`
+
+A logger factory function that can be used to get insights about Metro performance timings and metadata for events including startup, bundling and HMR. Metro expects `unstable_perfLoggerFactory` to have the following signature:
+
+```flow
+function unstable_perfLoggerFactory(
+  type: string,
+  opts: $ReadOnly<{
+    key?: string
+  }>,
+): RootPerfLogger {
+  // ...
+};
+```
+
+* **`type`** Type of event being logged, e.g. `'STARTUP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js) for a full list of event types.
+* **`opts`**
+  * **`key`**: An opaque identifier to distinguish between instances of an event type (e.g. multiple, possibly concurrent, HMR requests).
+
+`unstable_perfLoggerFactory` should return an object implementing the [RootPerfLogger](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js) interface. For example, a factory function returning a no-op RootPerfLogger could be implemented as follows:
+
+
+```javascript
+const unstable_perfLoggerFactory = (type, factoryOpts) => {
+  const getLogger = subSpanLabel => {
+    const logger = {
+      start(opts) {},
+      end(status, opts) {},
+      subSpan(label) {
+        return getLogger(`${subSpanLabel ?? ''}/${label}`);
+      },
+      point(name, opts) {},
+      annotate(annotations) {},
+    };
+    return logger;
+  };
+
+  return getLogger();
+};
+```
+
 ---
 ### Resolver Options
 

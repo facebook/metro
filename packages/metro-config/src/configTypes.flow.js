@@ -68,6 +68,7 @@ type PerfAnnotations = $Shape<{
 }>;
 
 type PerfLoggerPointOptions = $ReadOnly<{
+  // The time this event point occurred, if it differs from the time the point was logged.
   timestamp?: number,
 }>;
 
