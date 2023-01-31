@@ -33,6 +33,7 @@ export function createResolutionContext(
     extraNodeModules: null,
     getPackage: (packageJsonPath: string) =>
       JSON.parse(fileMap[packageJsonPath]),
+    getPackageForModule: () => null,
     isAssetFile: () => false,
     mainFields: ['browser', 'main'],
     nodeModulesPaths: [],

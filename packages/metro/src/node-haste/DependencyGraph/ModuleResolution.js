@@ -20,7 +20,7 @@ import type {
   ResolveAsset,
 } from 'metro-resolver';
 import type {ResolverInputOptions} from '../../shared/types.flow';
-import type {PackageJson} from 'metro-resolver/src/types';
+import type {PackageInfo, PackageJson} from 'metro-resolver/src/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
@@ -220,6 +220,7 @@ class ModuleResolver<TPackage: Packageish> {
           resolveHastePackage: (name: string) =>
             this._options.getHastePackagePath(name, platform),
           getPackage: this._getPackage,
+          getPackageForModule: this._getPackageForModule,
         },
         moduleName,
         platform,
@@ -280,6 +281,24 @@ class ModuleResolver<TPackage: Packageish> {
     }
 
     return null;
+  };
+
+  _getPackageForModule = (modulePath: string): ?PackageInfo => {
+    let pkg;
+
+    try {
+      pkg = this._options.moduleCache.getPackageOf(modulePath);
+    } catch (e) {
+      // Do nothing. The standard module cache does not trigger any error, but
+      // the ModuleGraph one does, if the module does not exist.
+    }
+
+    return pkg != null
+      ? {
+          rootPath: path.dirname(pkg.path),
+          packageJson: pkg.read(),
+        }
+      : null;
   };
 
   /**

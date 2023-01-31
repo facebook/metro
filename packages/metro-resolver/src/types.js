@@ -50,6 +50,11 @@ export type PackageJson = $ReadOnly<{
   ...
 }>;
 
+export type PackageInfo = $ReadOnly<{
+  packageJson: PackageJson,
+  rootPath: string,
+}>;
+
 /**
  * Check existence of a single file.
  */
@@ -91,6 +96,12 @@ export type FileOrDirContext = $ReadOnly<{
    * Get the parsed contents of the specified `package.json` file.
    */
   getPackage: (packageJsonPath: string) => ?PackageJson,
+
+  /**
+   * Get the package information and parsed `package.json` file for for a given
+   * module path, if it is contained within an npm package.
+   */
+  getPackageForModule: (modulePath: string) => ?PackageInfo,
 }>;
 
 export type HasteContext = $ReadOnly<{
