@@ -168,6 +168,10 @@ The ordered list of fields in `package.json` that should be read to resolve a pa
 
 Given the path to a `package.json` file, returns the parsed file contents.
 
+#### `getPackageForModule: (modulePath: string) => ?PackageInfo`
+
+Given a module path that may exist under an npm package, locates and returns the package root path and parsed `package.json` contents.
+
 #### `resolveHasteModule: string => ?string`
 
 Resolves a Haste module name to an absolute path. Returns `null` if no such module exists.
