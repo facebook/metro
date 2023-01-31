@@ -13,8 +13,6 @@
 
 import type {PackageJson} from 'metro-resolver/src/types';
 
-import {getSubpathReplacements} from 'metro-resolver/src/PackageResolve';
-
 const fs = require('fs');
 const path = require('path');
 
@@ -32,51 +30,6 @@ class Package {
 
   invalidate() {
     this._content = null;
-  }
-
-  redirectRequire(
-    name: string,
-    mainFields: $ReadOnlyArray<string>,
-  ): string | false {
-    const replacements = getSubpathReplacements(this.read(), mainFields);
-
-    if (!replacements) {
-      return name;
-    }
-
-    if (!name.startsWith('.') && !path.isAbsolute(name)) {
-      const replacement = replacements[name];
-      // support exclude with "someDependency": false
-      return replacement === false ? false : replacement || name;
-    }
-
-    let relPath =
-      './' + path.relative(this._root, path.resolve(this._root, name));
-
-    if (path.sep !== '/') {
-      relPath = relPath.replace(new RegExp('\\' + path.sep, 'g'), '/');
-    }
-
-    let redirect = replacements[relPath];
-
-    // false is a valid value
-    if (redirect == null) {
-      redirect = replacements[relPath + '.js'];
-      if (redirect == null) {
-        redirect = replacements[relPath + '.json'];
-      }
-    }
-
-    // support exclude with "./someFile": false
-    if (redirect === false) {
-      return false;
-    }
-
-    if (redirect) {
-      return path.join(this._root, redirect);
-    }
-
-    return name;
   }
 
   read(): PackageJson {

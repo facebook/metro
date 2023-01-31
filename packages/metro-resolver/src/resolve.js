@@ -26,8 +26,8 @@ import type {
 
 const FailedToResolveNameError = require('./errors/FailedToResolveNameError');
 const FailedToResolvePathError = require('./errors/FailedToResolvePathError');
-const formatFileCandidates = require('./formatFileCandidates');
 const InvalidPackageError = require('./errors/InvalidPackageError');
+const formatFileCandidates = require('./errors/formatFileCandidates');
 const {getPackageEntryPoint} = require('./PackageResolve');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');

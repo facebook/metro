@@ -26,6 +26,7 @@ const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
 const invariant = require('invariant');
 const Resolver = require('metro-resolver');
+const createDefaultContext = require('metro-resolver/src/createDefaultContext');
 const path = require('path');
 const util = require('util');
 import type {BundlerResolution} from '../../DeltaBundler/types.flow';
@@ -35,10 +36,6 @@ export type DirExistsFn = (filePath: string) => boolean;
 export type Packageish = interface {
   path: string,
   read(): PackageJson,
-  redirectRequire(
-    toModuleName: string,
-    mainFields: $ReadOnlyArray<string>,
-  ): string | false,
 };
 
 export type Moduleish = interface {
@@ -118,59 +115,6 @@ class ModuleResolver<TPackage: Packageish> {
     return emptyModule;
   }
 
-  _redirectRequire(fromModule: Moduleish, modulePath: string): string | false {
-    const moduleCache = this._options.moduleCache;
-    try {
-      if (modulePath.startsWith('.')) {
-        const fromPackage = fromModule.getPackage();
-
-        if (fromPackage) {
-          // We need to convert the module path from module-relative to
-          // package-relative, so that we can easily match it against the
-          // "browser" map (where all paths are relative to the package root)
-          const fromPackagePath =
-            './' +
-            path.relative(
-              path.dirname(fromPackage.path),
-              path.resolve(path.dirname(fromModule.path), modulePath),
-            );
-
-          let redirectedPath = fromPackage.redirectRequire(
-            fromPackagePath,
-            this._options.mainFields,
-          );
-
-          // Since the redirected path is still relative to the package root,
-          // we have to transform it back to be module-relative (as it
-          // originally was)
-          if (redirectedPath !== false) {
-            redirectedPath =
-              './' +
-              path.relative(
-                path.dirname(fromModule.path),
-                path.resolve(path.dirname(fromPackage.path), redirectedPath),
-              );
-          }
-
-          return redirectedPath;
-        }
-      } else {
-        const pck = path.isAbsolute(modulePath)
-          ? moduleCache.getPackageOf(modulePath)
-          : fromModule.getPackage();
-
-        if (pck) {
-          return pck.redirectRequire(modulePath, this._options.mainFields);
-        }
-      }
-    } catch (err) {
-      // Do nothing. The standard module cache does not trigger any error, but
-      // the ModuleGraph one does, if the module does not exist.
-    }
-
-    return modulePath;
-  }
-
   resolveDependency(
     fromModule: Moduleish,
     moduleName: string,
@@ -196,7 +140,7 @@ class ModuleResolver<TPackage: Packageish> {
 
     try {
       const result = Resolver.resolve(
-        {
+        createDefaultContext({
           allowHaste,
           disableHierarchicalLookup,
           doesFileExist,
@@ -213,15 +157,14 @@ class ModuleResolver<TPackage: Packageish> {
           unstable_enablePackageExports,
           customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
-          redirectModulePath: (modulePath: string) =>
-            this._redirectRequire(fromModule, modulePath),
           resolveHasteModule: (name: string) =>
             this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
             this._options.getHastePackagePath(name, platform),
           getPackage: this._getPackage,
-          getPackageForModule: this._getPackageForModule,
-        },
+          getPackageForModule: (modulePath: string) =>
+            this._getPackageForModule(fromModule, modulePath),
+        }),
         moduleName,
         platform,
       );
@@ -283,7 +226,10 @@ class ModuleResolver<TPackage: Packageish> {
     return null;
   };
 
-  _getPackageForModule = (modulePath: string): ?PackageInfo => {
+  _getPackageForModule = (
+    fromModule: Moduleish,
+    modulePath: string,
+  ): ?PackageInfo => {
     let pkg;
 
     try {

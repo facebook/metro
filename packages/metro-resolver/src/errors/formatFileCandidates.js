@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {FileCandidates} from './types';
+import type {FileCandidates} from '../types';
 
 function formatFileCandidates(candidates: FileCandidates): string {
   if (candidates.type === 'asset') {

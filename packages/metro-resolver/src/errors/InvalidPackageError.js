@@ -13,7 +13,7 @@
 
 import type {FileCandidates} from '../types';
 
-const formatFileCandidates = require('../formatFileCandidates');
+const formatFileCandidates = require('./formatFileCandidates');
 
 class InvalidPackageError extends Error {
   /**

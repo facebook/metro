@@ -30,7 +30,7 @@ export type {
 const Resolver = {
   FailedToResolveNameError: require('./errors/FailedToResolveNameError'),
   FailedToResolvePathError: require('./errors/FailedToResolvePathError'),
-  formatFileCandidates: require('./formatFileCandidates'),
+  formatFileCandidates: require('./errors/formatFileCandidates'),
   InvalidPackageError: require('./errors/InvalidPackageError'),
   resolve: require('./resolve'),
 };
