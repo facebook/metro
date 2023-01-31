@@ -34,7 +34,6 @@ import type {
   PerfLogger,
   RawModuleMap,
   ReadOnlyRawModuleMap,
-  VisitMetadata,
   WorkerMetadata,
   WatchmanClocks,
 } from './flow-types';
@@ -477,9 +476,9 @@ export default class HasteMap extends EventEmitter {
    * 3. parse and extract metadata from changed files.
    */
   _processFile(
-    fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
     filePath: Path,
+    fileMetadata: FileMetaData,
     workerOptions?: {forceInBand: boolean},
   ): ?Promise<void> {
     const rootDir = this._options.rootDir;
@@ -549,48 +548,39 @@ export default class HasteMap extends EventEmitter {
     };
 
     const relativeFilePath = fastPath.relative(rootDir, filePath);
-    const fileType = fileSystem.getType(relativeFilePath);
-
-    if (fileType == null) {
-      throw new Error(
-        'metro-file-map: File to process was not found in the haste map.',
-      );
-    }
+    const isSymlink = fileMetadata[H.SYMLINK] !== 0;
 
     const computeSha1 =
-      this._options.computeSha1 &&
-      fileType === 'f' &&
-      fileSystem.getSha1(relativeFilePath) == null;
+      this._options.computeSha1 && !isSymlink && fileMetadata[H.SHA1] == null;
 
     const readLink =
       this._options.enableSymlinks &&
-      fileType === 'l' &&
-      fileSystem.getSymlinkTarget(relativeFilePath) == null;
+      isSymlink &&
+      typeof fileMetadata[H.SYMLINK] !== 'string';
 
     // Callback called when the response from the worker is successful.
     const workerReply = (metadata: WorkerMetadata) => {
+      fileMetadata[H.VISITED] = 1;
+
       const metadataId = metadata.id;
       const metadataModule = metadata.module;
-      const result: VisitMetadata = {};
 
       if (metadataId != null && metadataModule) {
-        result.hasteId = metadataId;
+        fileMetadata[H.ID] = metadataId;
         setModule(metadataId, metadataModule);
       }
 
-      result.dependencies = metadata.dependencies
+      fileMetadata[H.DEPENDENCIES] = metadata.dependencies
         ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
         : '';
 
       if (computeSha1) {
-        result.sha1 = metadata.sha1;
+        fileMetadata[H.SHA1] = metadata.sha1;
       }
 
       if (metadata.symlinkTarget != null) {
-        result.symlinkTarget = metadata.symlinkTarget;
+        fileMetadata[H.SYMLINK] = metadata.symlinkTarget;
       }
-
-      fileSystem.setVisitMetadata(relativeFilePath, result);
     };
 
     // Callback called when the response from the worker is an error.
@@ -606,15 +596,7 @@ export default class HasteMap extends EventEmitter {
         // $FlowFixMe[incompatible-use] - error is mixed
         error.stack = ''; // Remove stack for stack-less errors.
       }
-
-      // $FlowFixMe[incompatible-use] - error is mixed
-      if (!['ENOENT', 'EACCES'].includes(error.code)) {
-        throw error;
-      }
-
-      // If a file cannot be read we remove it from the file list and
-      // ignore the failure silently.
-      fileSystem.remove(relativeFilePath);
+      throw error;
     };
 
     // If we retain all files in the virtual HasteFS representation, we avoid
@@ -639,7 +621,7 @@ export default class HasteMap extends EventEmitter {
 
     // Symlink Haste modules, Haste packages or mocks are not supported - read
     // the target if requested and return early.
-    if (fileType === 'l') {
+    if (isSymlink) {
       if (readLink) {
         // If we only need to read a link, it's more efficient to do it in-band
         // (with async file IO) than to have the overhead of worker IO.
@@ -706,7 +688,7 @@ export default class HasteMap extends EventEmitter {
       .then(workerReply, workerError);
   }
 
-  _applyFileDelta(
+  async _applyFileDelta(
     fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
     delta: {
@@ -717,17 +699,9 @@ export default class HasteMap extends EventEmitter {
   ): Promise<void> {
     this._startupPerfLogger?.point('applyFileDelta_start');
     const {changedFiles, removedFiles} = delta;
-
-    this._startupPerfLogger?.point('applyFileDelta_addRemove_start');
-    for (const [relativeFilePath] of removedFiles) {
-      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
-    }
-
-    fileSystem.bulkAddOrModify(changedFiles);
-    this._startupPerfLogger?.point('applyFileDelta_addRemove_end');
-
     this._startupPerfLogger?.point('applyFileDelta_preprocess_start');
     const promises = [];
+    const missingFiles: Set<string> = new Set();
     for (const [relativeFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
       // contents are unchaged and it doesn't need visiting again.
@@ -747,9 +721,17 @@ export default class HasteMap extends EventEmitter {
         this._options.rootDir,
         relativeFilePath,
       );
-      const promise = this._processFile(fileSystem, moduleMap, filePath);
-      if (promise) {
-        promises.push(promise);
+      const maybePromise = this._processFile(moduleMap, filePath, fileData);
+      if (maybePromise) {
+        promises.push(
+          maybePromise.catch(e => {
+            if (['ENOENT', 'EACCESS'].includes(e.code)) {
+              missingFiles.add(relativeFilePath);
+            } else {
+              throw e;
+            }
+          }),
+        );
       }
     }
     this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
@@ -757,17 +739,32 @@ export default class HasteMap extends EventEmitter {
     debug('Visiting %d added/modified files.', promises.length);
 
     this._startupPerfLogger?.point('applyFileDelta_process_start');
-    return Promise.all(promises).then(
-      () => {
-        this._cleanup();
-        this._startupPerfLogger?.point('applyFileDelta_process_end');
-        this._startupPerfLogger?.point('applyFileDelta_end');
-      },
-      error => {
-        this._cleanup();
-        throw error;
-      },
-    );
+    try {
+      await Promise.all(promises);
+    } finally {
+      this._cleanup();
+    }
+    this._startupPerfLogger?.point('applyFileDelta_process_end');
+    this._startupPerfLogger?.point('applyFileDelta_addRemove_start');
+    for (const relativeFilePath of missingFiles) {
+      // It's possible that a file could be deleted between being seen by the
+      // crawler and our attempt to process it. For our purposes, this is
+      // equivalent to the file being deleted before the crawl, being absent
+      // from `changedFiles`, and (if we loaded from cache, and the file
+      // existed previously) possibly being reported in `removedFiles`.
+      //
+      // Treat the file accordingly - don't add it to `FileSystem`, and remove
+      // it if it already exists. We're not emitting events at this point in
+      // startup, so there's nothing more to do.
+      changedFiles.delete(relativeFilePath);
+      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+    }
+    for (const [relativeFilePath] of removedFiles) {
+      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+    }
+    fileSystem.bulkAddOrModify(changedFiles);
+    this._startupPerfLogger?.point('applyFileDelta_addRemove_end');
+    this._startupPerfLogger?.point('applyFileDelta_end');
   }
 
   _cleanup() {
@@ -950,7 +947,7 @@ export default class HasteMap extends EventEmitter {
       }
 
       changeQueue = changeQueue
-        .then(() => {
+        .then(async () => {
           // If we get duplicate events for the same file, ignore them.
           if (
             eventsQueue.find(
@@ -968,7 +965,7 @@ export default class HasteMap extends EventEmitter {
 
           const fileType = fileSystem.getType(relativeFilePath);
 
-          const add = (metadata: ChangeEventMetadata) => {
+          const enqueueEvent = (metadata: ChangeEventMetadata) => {
             // Don't emit events relating to symlinks if enableSymlinks: false
             if (!this._options.enableSymlinks && type === 'l') {
               return null;
@@ -1005,28 +1002,33 @@ export default class HasteMap extends EventEmitter {
               null,
               metadata.type === 'l' ? 1 : 0,
             ];
-            fileSystem.addOrModify(relativeFilePath, fileMetadata);
-            const promise = this._processFile(
-              fileSystem,
-              moduleMap,
-              absoluteFilePath,
-              {forceInBand: true},
-            );
-            // Cleanup
-            this._cleanup();
-            if (promise) {
-              return promise.then(() => add(metadata));
-            } else {
-              // If a file in node_modules has changed,
-              // emit an event regardless.
-              add(metadata);
+
+            try {
+              await this._processFile(
+                moduleMap,
+                absoluteFilePath,
+                fileMetadata,
+                {forceInBand: true}, // No need to clean up workers
+              );
+              fileSystem.addOrModify(relativeFilePath, fileMetadata);
+              enqueueEvent(metadata);
+            } catch (e) {
+              if (!['ENOENT', 'EACCESS'].includes(e.code)) {
+                throw e;
+              }
+              // Swallow ENOENT/ACCESS errors silently. Safe because either:
+              // - We never knew about the file, so neither did any consumers.
+              // Or,
+              // - The watcher will soon (or has already) report a "delete"
+              //   event for it, and we'll clean up in the usual way at that
+              //   point.
             }
           } else if (type === 'delete') {
             invariant(
               fileType != null,
               'delete event received for file of unknown type',
             );
-            add({
+            enqueueEvent({
               modifiedTime: null,
               size: null,
               type: fileType,
