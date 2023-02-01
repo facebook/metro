@@ -1,6 +1,6 @@
 {
   "name": "metro-cache-key",
-  "version": "0.74.1",
+  "version": "0.75.0",
   "description": "🚇 Cache key utility.",
   "main": "src/index.js",
   "repository": {
@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "metro-memory-fs": "0.74.1"
+    "metro-memory-fs": "0.75.0"
   },
   "engines": {
     "node": ">=14.17.0"
