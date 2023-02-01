@@ -13,9 +13,6 @@
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
-  "engines": {
-    "node": ">=8.3"
-  },
   "keywords": [
     "metro"
   ],
