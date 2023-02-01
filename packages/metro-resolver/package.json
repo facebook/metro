@@ -14,5 +14,8 @@
   "dependencies": {
     "absolute-path": "^0.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.17.0"
+  }
 }

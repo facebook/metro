@@ -20,5 +20,8 @@
     "@babel/core": "^7.20.0",
     "react": "^18.2.0",
     "react-test-renderer": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }

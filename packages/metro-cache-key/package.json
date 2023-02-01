@@ -14,5 +14,8 @@
   "license": "MIT",
   "devDependencies": {
     "metro-memory-fs": "0.74.1"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }

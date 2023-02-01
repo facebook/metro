@@ -78,5 +78,8 @@
     "mock-res": "^0.6.0",
     "stack-trace": "^0.0.10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.17.0"
+  }
 }

@@ -17,5 +17,8 @@
     "hermes-parser": "0.8.0",
     "nullthrows": "^1.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.17.0"
+  }
 }

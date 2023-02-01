@@ -15,5 +15,8 @@
     "metro"
   ],
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.17.0"
+  }
 }

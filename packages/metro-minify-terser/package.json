@@ -14,5 +14,8 @@
   "license": "MIT",
   "dependencies": {
     "terser": "^5.15.0"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }

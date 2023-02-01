@@ -26,5 +26,8 @@
     "@babel/core": "^7.20.0",
     "@babel/parser": "^7.20.0",
     "uglify-es": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }

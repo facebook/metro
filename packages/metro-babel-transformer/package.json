@@ -21,5 +21,8 @@
     "hermes-parser": "0.8.0",
     "metro-source-map": "0.74.1",
     "nullthrows": "^1.1.1"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }

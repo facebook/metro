@@ -15,5 +15,8 @@
     "lodash.throttle": "^4.1.1",
     "metro-resolver": "0.74.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.17.0"
+  }
 }

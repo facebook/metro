@@ -23,5 +23,8 @@
   "devDependencies": {
     "pretty-format": "^26.5.2",
     "strip-ansi": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   }
 }
