@@ -129,6 +129,7 @@ class InspectorProxy {
       type: 'node',
       webSocketDebuggerUrl,
       vm: page.vm,
+      deviceName: device.getName(),
     };
   }
 
