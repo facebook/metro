@@ -668,6 +668,39 @@ describe('HasteMap', () => {
     );
   });
 
+  it('handles a Haste module moving between builds', async () => {
+    mockFs = object({
+      [path.join('/', 'project', 'vegetables', 'Melon.js')]: `
+        // Melon is a fruit!
+      `,
+    });
+
+    const originalData = await new HasteMap(defaultConfig).build();
+
+    // Haste Melon present in its original location.
+    expect(originalData.hasteModuleMap.getModule('Melon')).toEqual(
+      path.join('/', 'project', 'vegetables', 'Melon.js'),
+    );
+
+    // Haste Melon moved from vegetables to fruits since the cache was built.
+    mockFs = object({
+      [path.join('/', 'project', 'vegetables', 'Melon.js')]: null, // Mock deletion
+      [path.join('/', 'project', 'fruits', 'Melon.js')]: `
+        // Melon is a fruit!
+      `,
+    });
+
+    const newData = await new HasteMap(defaultConfig).build();
+
+    expect(console.warn).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+
+    // Haste Melon is in its new location and not duplicated.
+    expect(newData.hasteModuleMap.getModule('Melon')).toEqual(
+      path.join('/', 'project', 'fruits', 'Melon.js'),
+    );
+  });
+
   it('does not crawl native files even if requested to do so', async () => {
     mockFs[path.join('/', 'project', 'video', 'IRequireAVideo.js')] = `
       module.exports = require("./video.mp4");
@@ -1436,6 +1469,12 @@ describe('HasteMap', () => {
       size: 55,
     };
 
+    const MOCK_DELETE_FILE = {
+      type: 'f',
+      modifiedTime: null,
+      size: null,
+    };
+
     const MOCK_CHANGE_FOLDER = {
       type: 'd',
       modifiedTime: 45,
@@ -1602,6 +1641,54 @@ describe('HasteMap', () => {
         },
       },
     );
+
+    hm_it('correctly handles moving a Haste module', async hm => {
+      const oldPath = path.join('/', 'project', 'vegetables', 'Melon.js');
+      const newPath = path.join('/', 'project', 'fruits', 'Melon.js');
+
+      const {hasteModuleMap} = await hm.build();
+      expect(hasteModuleMap.getModule('Melon')).toEqual(oldPath);
+
+      // Move vegetables/Melon.js -> fruits/Melon.js
+      mockFs[newPath] = mockFs[oldPath];
+      mockFs[oldPath] = null;
+
+      mockEmitters[path.join('/', 'project', 'vegetables')].emit(
+        'all',
+        'delete',
+        'Melon.js',
+        path.join('/', 'project', 'vegetables'),
+        null,
+      );
+      mockEmitters[path.join('/', 'project', 'fruits')].emit(
+        'all',
+        'add',
+        'Melon.js',
+        path.join('/', 'project', 'fruits'),
+        MOCK_CHANGE_FILE,
+      );
+
+      const {eventsQueue} = await waitForItToChange(hm);
+
+      // No duplicate warnings or errors should be printed.
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
+
+      expect(eventsQueue).toHaveLength(2);
+      expect(eventsQueue).toEqual([
+        {
+          filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
+          metadata: MOCK_DELETE_FILE,
+          type: 'delete',
+        },
+        {
+          filePath: path.join('/', 'project', 'fruits', 'Melon.js'),
+          metadata: MOCK_CHANGE_FILE,
+          type: 'add',
+        },
+      ]);
+      expect(hasteModuleMap.getModule('Melon')).toEqual(newPath);
+    });
 
     describe('recovery from duplicate module IDs', () => {
       async function setupDuplicates(hm) {
