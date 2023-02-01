@@ -14,6 +14,7 @@ import type {
   Glob,
   MutableFileSystem,
   Path,
+  VisitMetadata,
 } from './flow-types';
 
 import H from './constants';
@@ -50,6 +51,33 @@ export default class HasteFS implements MutableFileSystem {
     this.#files.set(this._normalizePath(filePath), metadata);
   }
 
+  setVisitMetadata(
+    filePath: Path,
+    visitResult: $ReadOnly<VisitMetadata>,
+  ): void {
+    const metadata = this._getFileData(filePath);
+    if (!metadata) {
+      throw new Error('Visited file not found in file map: ' + filePath);
+    }
+    metadata[H.VISITED] = 1;
+
+    if (visitResult.hasteId != null) {
+      metadata[H.ID] = visitResult.hasteId;
+    }
+
+    if ('sha1' in visitResult) {
+      metadata[H.SHA1] = visitResult.sha1;
+    }
+
+    if (visitResult.dependencies != null) {
+      metadata[H.DEPENDENCIES] = visitResult.dependencies;
+    }
+
+    if (visitResult.symlinkTarget != null) {
+      metadata[H.SYMLINK] = visitResult.symlinkTarget;
+    }
+  }
+
   getSerializableSnapshot(): FileData {
     return new Map(
       Array.from(this.#files.entries(), ([k, v]: [Path, FileMetaData]) => [
@@ -67,6 +95,16 @@ export default class HasteFS implements MutableFileSystem {
   getSize(file: Path): ?number {
     const fileMetadata = this._getFileData(file);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
+  }
+
+  getSymlinkTarget(file: Path): ?string {
+    const fileMetadata = this._getFileData(file);
+    if (fileMetadata == null) {
+      return null;
+    }
+    return typeof fileMetadata[H.SYMLINK] === 'string'
+      ? fileMetadata[H.SYMLINK]
+      : null;
   }
 
   getType(file: Path): ?('f' | 'l') {

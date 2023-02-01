@@ -1491,20 +1491,17 @@ describe('HasteMap', () => {
 
     hm_it('does not emit duplicate change events', async hm => {
       const e = mockEmitters[path.join('/', 'project', 'fruits')];
-      mockFs[path.join('/', 'project', 'fruits', 'Tomato.js')] = `
-        // Tomato!
-      `;
       e.emit(
         'all',
         'change',
-        'Tomato.js',
+        'tomato.js',
         path.join('/', 'project', 'fruits'),
         MOCK_CHANGE_FILE,
       );
       e.emit(
         'all',
         'change',
-        'Tomato.js',
+        'tomato.js',
         path.join('/', 'project', 'fruits'),
         MOCK_CHANGE_FILE,
       );
@@ -1724,11 +1721,8 @@ describe('HasteMap', () => {
         );
       });
 
-      hm_it('ignore directory events (even with file-ish names)', async hm => {
+      hm_it('ignore directories', async hm => {
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        mockFs[path.join('/', 'project', 'fruits', 'tomato.js', 'index.js')] = `
-        // Tomato!
-      `;
         e.emit(
           'all',
           'change',
@@ -1739,8 +1733,8 @@ describe('HasteMap', () => {
         e.emit(
           'all',
           'change',
-          path.join('tomato.js', 'index.js'),
-          path.join('/', 'project', 'fruits'),
+          'tomato.js',
+          path.join('/', 'project', 'fruits', 'tomato.js', 'index.js'),
           MOCK_CHANGE_FILE,
         );
         const {eventsQueue} = await waitForItToChange(hm);
