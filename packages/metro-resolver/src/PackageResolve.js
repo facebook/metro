@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {PackageInfo, PackageJson, ResolutionContext} from './types';
+import type {PackageJson, ResolutionContext} from './types';
 
 import path from 'path';
 import toPosixPath from './utils/toPosixPath';
@@ -33,25 +33,23 @@ export function getPackageEntryPoint(
     }
   }
 
-  const replacements = getSubpathReplacements(pkg, mainFields);
-  if (replacements) {
-    const variants = [
-      main,
-      main.slice(0, 2) === './' ? main.slice(2) : './' + main,
-    ];
+  // NOTE: Additional variants are used when checking for subpath replacements
+  // against the main entry point. This inconsistent with those matched by
+  // `redirectModulePath`, but we are preserving this long-standing behaviour.
+  const variants = [
+    main,
+    main.slice(0, 2) === './' ? main.slice(2) : './' + main,
+  ].flatMap(variant => [
+    variant,
+    variant + '.js',
+    variant + '.json',
+    variant.replace(/(\.js|\.json)$/, ''),
+  ]);
 
-    for (const variant of variants) {
-      const match =
-        replacements[variant] ||
-        replacements[variant + '.js'] ||
-        replacements[variant + '.json'] ||
-        replacements[variant.replace(/(\.js|\.json)$/, '')];
+  const replacement = matchSubpathFromMainFields(variants, pkg, mainFields);
 
-      if (match) {
-        main = match;
-        break;
-      }
-    }
+  if (typeof replacement === 'string') {
+    return replacement;
   }
 
   return main;
@@ -84,7 +82,7 @@ export function redirectModulePath(
 
       let redirectedPath = matchSubpathFromMainFields(
         toPosixPath(packageRelativeModulePath),
-        fromPackage,
+        fromPackage.packageJson,
         mainFields,
       );
 
@@ -93,12 +91,7 @@ export function redirectModulePath(
         // we have to transform it back to be module-relative (as it
         // originally was)
         if (redirectedPath !== false) {
-          redirectedPath =
-            './' +
-            path.relative(
-              path.dirname(originModulePath),
-              path.resolve(fromPackage.rootPath, redirectedPath),
-            );
+          redirectedPath = path.resolve(fromPackage.rootPath, redirectedPath);
         }
 
         return redirectedPath;
@@ -110,13 +103,28 @@ export function redirectModulePath(
       : getPackageForModule(originModulePath);
 
     if (pck) {
-      const redirectedPath = matchSubpathFromMainFields(
-        modulePath,
-        pck,
+      const packageRelativeModulePath = path.isAbsolute(modulePath)
+        ? './' +
+          path.relative(
+            pck.rootPath,
+            path.resolve(path.dirname(originModulePath), modulePath),
+          )
+        : modulePath;
+
+      let redirectedPath = matchSubpathFromMainFields(
+        toPosixPath(packageRelativeModulePath),
+        pck.packageJson,
         mainFields,
       );
 
       if (redirectedPath != null) {
+        // BRITTLE ASSUMPTION: If an absolute path is inputted, the path or
+        // specifier mapped to should always be interpreted as a relative path
+        // (even if it points to a package name)
+        if (path.isAbsolute(modulePath) && typeof redirectedPath === 'string') {
+          redirectedPath = path.resolve(pck.rootPath, redirectedPath);
+        }
+
         return redirectedPath;
       }
     }
@@ -125,66 +133,54 @@ export function redirectModulePath(
   return modulePath;
 }
 
-function matchSubpathFromMainFields(
-  name: string,
-  {packageJson, rootPath}: PackageInfo,
-  mainFields: $ReadOnlyArray<string>,
-): string | false | null {
-  const replacements = getSubpathReplacements(packageJson, mainFields);
-
-  if (!replacements || typeof replacements !== 'object') {
-    return name;
-  }
-
-  if (!path.isAbsolute(name)) {
-    const replacement = replacements[name];
-    // support exclude with "someDependency": false
-    return replacement === false ? false : replacement || name;
-  }
-
-  let relPath = './' + path.relative(rootPath, name);
-  if (path.sep !== '/') {
-    relPath = relPath.replace(new RegExp('\\' + path.sep, 'g'), '/');
-  }
-
-  let redirect = replacements[relPath];
-
-  // false is a valid value
-  if (redirect == null) {
-    redirect = replacements[relPath + '.js'];
-    if (redirect == null) {
-      redirect = replacements[relPath + '.json'];
-    }
-  }
-
-  // support exclude with "./someFile": false
-  if (redirect === false) {
-    return false;
-  }
-
-  if (redirect) {
-    return path.join(rootPath, redirect);
-  }
-
-  return name;
-}
-
 /**
- * Get the subpath replacements defined by any object values for `mainFields` in
- * the passed `package.json`
+ * Get the mapped replacement for the given subpath defined by matching
+ * `mainFields` entries in the passed `package.json`
  * (https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced).
+ *
+ * Returns either:
+ * - A `string` with the matched replacement subpath.
+ * - `false`, indicating the module should be ignored.
+ * - `null` when there is no entry for the subpath.
  */
-function getSubpathReplacements(
+function matchSubpathFromMainFields(
+  /**
+   * The subpath, or set of subpath variants, to match. Can be either a
+   * package-relative subpath (beginning with '.') or a bare import specifier
+   * which may replace a module in another package.
+   */
+  subpath: string | $ReadOnlyArray<string>,
   pkg: PackageJson,
   mainFields: $ReadOnlyArray<string>,
-): {[subpath: string]: string | false} | null {
-  const replacements = mainFields
+): string | false | null {
+  const fieldValues = mainFields
     .map(name => pkg[name])
     .filter(value => value != null && typeof value !== 'string');
 
-  if (!replacements.length) {
+  if (!fieldValues.length) {
     return null;
   }
 
-  return Object.assign({}, ...replacements.reverse());
+  const replacements = Object.assign({}, ...fieldValues.reverse());
+  const variants = Array.isArray(subpath)
+    ? subpath
+    : expandSubpathVariants(subpath);
+
+  for (const variant of variants) {
+    const replacement = replacements[variant];
+
+    if (replacement != null) {
+      return replacement;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the expanded variants for a given subpath to try against mappings in
+ * `package.json`. This is unique to "main" and the "browser" spec.
+ */
+function expandSubpathVariants(subpath: string): Array<string> {
+  return [subpath, subpath + '.js', subpath + '.json'];
 }
