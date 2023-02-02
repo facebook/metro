@@ -23,6 +23,7 @@ function isTSXSource(fileName) {
 
 const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
+  [require('babel-plugin-transform-flow-enums')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
