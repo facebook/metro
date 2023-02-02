@@ -55,6 +55,7 @@
     "@babel/plugin-transform-typescript": "^7.5.0",
     "@babel/plugin-transform-unicode-regex": "^7.0.0",
     "@babel/template": "^7.0.0",
+    "babel-plugin-transform-flow-enums": "^0.0.2",
     "react-refresh": "^0.4.0"
   },
   "peerDependencies": {
