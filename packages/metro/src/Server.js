@@ -832,6 +832,11 @@ class Server {
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       bundlePerfLogger.point('resolvingAndTransformingDependencies_start');
+      bundlePerfLogger.annotate({
+        bool: {
+          initial_build: revPromise == null,
+        },
+      });
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
         : this._bundler.initializeGraph(
