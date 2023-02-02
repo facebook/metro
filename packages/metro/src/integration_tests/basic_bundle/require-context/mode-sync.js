@@ -15,6 +15,7 @@ declare var require: RequireWithContext;
 
 function main(): mixed {
   return copyContextToObject(
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     require.context('./subdir', undefined, undefined, 'sync'),
   );
 }
