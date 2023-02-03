@@ -55,6 +55,18 @@ export function getPackageEntryPoint(
   return main;
 }
 
+/**
+ * Get the resolved file path for the given import specifier based on any
+ * `package.json` rules. Returns `false` if the module should be
+ * [ignored](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module),
+ * and returns the original path if no `package.json` mapping is matched. Does
+ * not test file existence.
+ *
+ * Implements legacy (non-exports) package resolution behaviour based on the
+ * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec).
+ *
+ * This is the default implementation of `context.redirectModulePath`.
+ */
 export function redirectModulePath(
   context: $ReadOnly<{
     getPackageForModule: ResolutionContext['getPackageForModule'],
@@ -62,72 +74,67 @@ export function redirectModulePath(
     originModulePath: ResolutionContext['originModulePath'],
     ...
   }>,
+
+  /**
+   * The module path being imported. This may be:
+   *
+   * - A relative specifier (beginning with '.'), which may be redirected by a
+   *   `package.json` file local to `context.originModulePath`.
+   *     - Note: A path begining with '/' is treated as an absolute specifier
+   *       (non-standard).
+   * - A bare specifier (e.g. 'some-pkg', 'some-pkg/foo'), which may be
+   *   redirected by `package.json` rules in the containing package.
+   * - An absolute specifier, which may be redirected by `package.json` rules
+   *   in the containing package (non-standard, "browser" spec only).
+   *
+   * See https://nodejs.org/docs/latest-v19.x/api/esm.html#import-specifiers
+   */
   modulePath: string,
 ): string | false {
   const {getPackageForModule, mainFields, originModulePath} = context;
 
-  if (modulePath.startsWith('.')) {
-    const fromPackage = getPackageForModule(originModulePath);
+  const containingPackage = getPackageForModule(
+    path.isAbsolute(modulePath) ? modulePath : originModulePath,
+  );
 
-    if (fromPackage) {
-      // We need to convert the module path from module-relative to
-      // package-relative, so that we can easily match it against the
-      // "browser" map (where all paths are relative to the package root)
-      const packageRelativeModulePath =
-        './' +
-        path.relative(
-          fromPackage.rootPath,
-          path.resolve(path.dirname(originModulePath), modulePath),
-        );
+  if (containingPackage == null) {
+    // No package.json rules apply
+    return modulePath;
+  }
 
-      let redirectedPath = matchSubpathFromMainFields(
-        toPosixPath(packageRelativeModulePath),
-        fromPackage.packageJson,
-        mainFields,
-      );
+  let redirectedPath;
 
-      if (redirectedPath != null) {
-        // Since the redirected path is still relative to the package root,
-        // we have to transform it back to be module-relative (as it
-        // originally was)
-        if (redirectedPath !== false) {
-          redirectedPath = path.resolve(fromPackage.rootPath, redirectedPath);
-        }
+  if (modulePath.startsWith('.') || path.isAbsolute(modulePath)) {
+    const packageRelativeModulePath = path.relative(
+      containingPackage.rootPath,
+      path.resolve(path.dirname(originModulePath), modulePath),
+    );
+    redirectedPath = matchSubpathFromMainFields(
+      // Use prefixed POSIX path for lookup in package.json
+      './' + toPosixPath(packageRelativeModulePath),
+      containingPackage.packageJson,
+      mainFields,
+    );
 
-        return redirectedPath;
-      }
+    if (typeof redirectedPath === 'string') {
+      // BRITTLE ASSUMPTION: This is always treated as a package-relative path
+      // and is converted back, even if the redirected path is a specifier
+      // referring to another package.
+      redirectedPath = path.resolve(containingPackage.rootPath, redirectedPath);
     }
   } else {
-    const pck = path.isAbsolute(modulePath)
-      ? getPackageForModule(modulePath)
-      : getPackageForModule(originModulePath);
+    // Otherwise, `modulePath` may be an unprefixed relative path or a bare
+    // specifier (can also be an absolute specifier prefixed with a URL scheme).
+    // This is used only by the "browser" spec.
+    redirectedPath = matchSubpathFromMainFields(
+      modulePath,
+      containingPackage.packageJson,
+      mainFields,
+    );
+  }
 
-    if (pck) {
-      const packageRelativeModulePath = path.isAbsolute(modulePath)
-        ? './' +
-          path.relative(
-            pck.rootPath,
-            path.resolve(path.dirname(originModulePath), modulePath),
-          )
-        : modulePath;
-
-      let redirectedPath = matchSubpathFromMainFields(
-        toPosixPath(packageRelativeModulePath),
-        pck.packageJson,
-        mainFields,
-      );
-
-      if (redirectedPath != null) {
-        // BRITTLE ASSUMPTION: If an absolute path is inputted, the path or
-        // specifier mapped to should always be interpreted as a relative path
-        // (even if it points to a package name)
-        if (path.isAbsolute(modulePath) && typeof redirectedPath === 'string') {
-          redirectedPath = path.resolve(pck.rootPath, redirectedPath);
-        }
-
-        return redirectedPath;
-      }
-    }
+  if (redirectedPath != null) {
+    return redirectedPath;
   }
 
   return modulePath;
