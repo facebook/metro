@@ -11,6 +11,7 @@
 import type {
   FileData,
   FileMetaData,
+  FileStats,
   Glob,
   MutableFileSystem,
   Path,
@@ -18,6 +19,7 @@ import type {
 
 import H from './constants';
 import * as fastPath from './lib/fast_path';
+import invariant from 'invariant';
 import * as path from 'path';
 import {globsToMatcher, replacePathSepForGlob} from 'jest-util';
 
@@ -69,14 +71,6 @@ export default class HasteFS implements MutableFileSystem {
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
   }
 
-  getType(file: Path): ?('f' | 'l') {
-    const fileMetadata = this._getFileData(file);
-    if (fileMetadata == null) {
-      return null;
-    }
-    return fileMetadata[H.SYMLINK] === 0 ? 'f' : 'l';
-  }
-
   getDependencies(file: Path): ?Array<string> {
     const fileMetadata = this._getFileData(file);
 
@@ -92,11 +86,6 @@ export default class HasteFS implements MutableFileSystem {
   getSha1(file: Path): ?string {
     const fileMetadata = this._getFileData(file);
     return (fileMetadata && fileMetadata[H.SHA1]) ?? null;
-  }
-
-  getModifiedTime(file: Path): ?number {
-    const fileMetadata = this._getFileData(file);
-    return (fileMetadata && fileMetadata[H.MTIME]) ?? null;
   }
 
   exists(file: Path): boolean {
@@ -115,6 +104,23 @@ export default class HasteFS implements MutableFileSystem {
     for (const file of this.getFileIterator()) {
       yield fastPath.resolve(this.#rootDir, file);
     }
+  }
+
+  linkStats(file: Path): ?FileStats {
+    const fileMetadata = this._getFileData(file);
+    if (fileMetadata == null) {
+      return null;
+    }
+    const fileType = fileMetadata[H.SYMLINK] === 0 ? 'f' : 'l';
+    const modifiedTime = fileMetadata[H.MTIME];
+    invariant(
+      typeof modifiedTime === 'number',
+      'File in HasteFS missing modified time',
+    );
+    return {
+      fileType,
+      modifiedTime,
+    };
   }
 
   matchFiles(pattern: RegExp | string): Array<Path> {

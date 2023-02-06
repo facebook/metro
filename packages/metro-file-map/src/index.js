@@ -936,14 +936,14 @@ export default class HasteMap extends EventEmitter {
       }
 
       const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
-      const modifiedTime = fileSystem.getModifiedTime(relativeFilePath);
+      const linkStats = fileSystem.linkStats(relativeFilePath);
 
       // The file has been accessed, not modified
       if (
         type === 'change' &&
-        modifiedTime != null &&
+        linkStats != null &&
         metadata &&
-        modifiedTime === metadata.modifiedTime
+        linkStats.modifiedTime === metadata.modifiedTime
       ) {
         return;
       }
@@ -969,7 +969,7 @@ export default class HasteMap extends EventEmitter {
             return null;
           }
 
-          const fileType = fileSystem.getType(relativeFilePath);
+          const linkStats = fileSystem.linkStats(relativeFilePath);
 
           const enqueueEvent = (metadata: ChangeEventMetadata) => {
             // Don't emit events relating to symlinks if enableSymlinks: false
@@ -986,7 +986,7 @@ export default class HasteMap extends EventEmitter {
           };
 
           // If it's not an addition, delete the file and all its metadata
-          if (fileType != null) {
+          if (linkStats != null) {
             this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
           }
 
@@ -1031,13 +1031,13 @@ export default class HasteMap extends EventEmitter {
             }
           } else if (type === 'delete') {
             invariant(
-              fileType != null,
+              linkStats?.fileType != null,
               'delete event received for file of unknown type',
             );
             enqueueEvent({
               modifiedTime: null,
               size: null,
-              type: fileType,
+              type: linkStats.fileType,
             });
           } else {
             throw new Error(

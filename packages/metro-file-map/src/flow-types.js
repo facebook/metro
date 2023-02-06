@@ -153,15 +153,24 @@ export type FileMetaData = [
   /* symlink */ 0 | 1 | string, // string specifies target, if known
 ];
 
+export type FileStats = $ReadOnly<{
+  fileType: 'f' | 'l',
+  modifiedTime: number,
+}>;
+
 export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
   getDependencies(file: Path): ?Array<string>;
-  getModifiedTime(file: Path): ?number;
   getModuleName(file: Path): ?string;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): ?string;
-  getType(file: Path): ?('f' | 'l');
+
+  /**
+   * Analogous to posix lstat. If the file at `file` is a symlink, return
+   * information about the symlink without following it.
+   */
+  linkStats(file: Path): ?FileStats;
 
   matchFiles(pattern: RegExp | string): Array<Path>;
 
