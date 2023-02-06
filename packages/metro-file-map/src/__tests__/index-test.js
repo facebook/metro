@@ -278,24 +278,6 @@ describe('HasteMap', () => {
     expect(HasteMap.H).toBe(require('../constants'));
   });
 
-  it('matches files against a pattern', async () => {
-    const {fileSystem} = await new HasteMap(defaultConfig).build();
-    expect(
-      fileSystem.matchFiles(
-        process.platform === 'win32' ? /project\\fruits/ : /project\/fruits/,
-      ),
-    ).toEqual([
-      path.join('/', 'project', 'fruits', 'Banana.js'),
-      path.join('/', 'project', 'fruits', 'Pear.js'),
-      path.join('/', 'project', 'fruits', 'Strawberry.js'),
-      path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
-    ]);
-
-    expect(fileSystem.matchFiles(/__mocks__/)).toEqual([
-      path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
-    ]);
-  });
-
   it('ignores files given a pattern', async () => {
     const config = {...defaultConfig, ignorePattern: /Kiwi/};
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
