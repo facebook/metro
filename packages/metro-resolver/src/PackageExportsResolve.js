@@ -13,12 +13,6 @@ import type {ExportMap, PackageInfo, ResolutionContext} from './types';
 
 import invariant from 'invariant';
 
-export type PackageExportsResolutionContext = $ReadOnly<{
-  unstable_conditionNames: ResolutionContext['unstable_conditionNames'],
-  unstable_conditionsByPlatform: ResolutionContext['unstable_conditionsByPlatform'],
-  ...
-}>;
-
 /**
  * Resolve the main entry point subpath for a package.
  *
@@ -26,7 +20,7 @@ export type PackageExportsResolutionContext = $ReadOnly<{
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  */
 export function getPackageEntryPointFromExports(
-  context: PackageExportsResolutionContext,
+  context: ResolutionContext,
   packageInfo: PackageInfo,
   platform: string | null,
 ): ?string {
@@ -45,7 +39,7 @@ export function matchSubpathFromExports(
    * an exact subpath key or subpath pattern key in "exports".
    */
   subpath: string,
-  context: PackageExportsResolutionContext,
+  context: ResolutionContext,
   {packageJson}: PackageInfo,
   platform: string | null,
 ): ?string {

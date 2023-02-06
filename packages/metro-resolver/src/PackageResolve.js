@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {PackageExportsResolutionContext} from './PackageExportsResolve';
 import type {PackageInfo, PackageJson, ResolutionContext} from './types';
 
 import path from 'path';
@@ -29,13 +28,7 @@ import toPosixPath from './utils/toPosixPath';
  * ](https://github.com/defunctzombie/package-browser-field-spec).
  */
 export function getPackageEntryPoint(
-  context: $ReadOnly<{
-    ...PackageExportsResolutionContext,
-    doesFileExist: ResolutionContext['doesFileExist'],
-    mainFields: ResolutionContext['mainFields'],
-    unstable_enablePackageExports: ResolutionContext['unstable_enablePackageExports'],
-    ...
-  }>,
+  context: ResolutionContext,
   packageInfo: PackageInfo,
   platform: string | null,
 ): string {

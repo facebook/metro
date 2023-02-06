@@ -12,13 +12,8 @@
 'use strict';
 
 import type {
-  DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,
-  FileContext,
-  FileOrDirContext,
-  HasteContext,
-  ModulePathContext,
   Resolution,
   ResolutionContext,
   Result,
@@ -144,7 +139,7 @@ function resolve(
  * `/smth/lib/foobar/index.ios.js`.
  */
 function resolveModulePath(
-  context: $ReadOnly<{...ModulePathContext, ...}>,
+  context: ResolutionContext,
   toModuleName: string,
   platform: string | null,
 ): Resolution {
@@ -168,7 +163,7 @@ function resolveModulePath(
  * a Haste package, it could be `/smth/Foo/index.js`.
  */
 function resolveHasteName(
-  context: $ReadOnly<{...HasteContext, ...}>,
+  context: ResolutionContext,
   moduleName: string,
   platform: string | null,
 ): Result<Resolution, void> {
@@ -228,7 +223,7 @@ class MissingFileInHastePackageError extends Error {
  * even a package directory.
  */
 function resolveFileOrDir(
-  context: $ReadOnly<{...FileOrDirContext, ...}>,
+  context: ResolutionContext,
   potentialModulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
@@ -256,7 +251,7 @@ function resolveFileOrDir(
  * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
  */
 function resolveDir(
-  context: $ReadOnly<{...FileOrDirContext, ...}>,
+  context: ResolutionContext,
   potentialDirPath: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
@@ -276,7 +271,7 @@ function resolveDir(
  * resolution process altogether.
  */
 function resolvePackage(
-  context: $ReadOnly<{...FileOrDirContext, ...}>,
+  context: ResolutionContext,
   packageJsonPath: string,
   platform: string | null,
 ): Resolution {
@@ -316,7 +311,7 @@ function resolvePackage(
  * `/js/boop/index.js` (see `_loadAsDir` for that).
  */
 function resolveFile(
-  context: $ReadOnly<{...FileContext, ...}>,
+  context: ResolutionContext,
   dirPath: string,
   fileName: string,
   platform: string | null,
@@ -355,10 +350,11 @@ function resolveFile(
   return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
 
-type SourceFileContext = SourceFileForAllExtsContext & {
-  +sourceExts: $ReadOnlyArray<string>,
-  ...
-};
+type SourceFileContext = $ReadOnly<{
+  ...ResolutionContext,
+  candidateExts: Array<string>,
+  filePathPrefix: string,
+}>;
 
 // Either a full path, or a restricted subset of Resolution.
 type SourceFileResolution = ?string | $ReadOnly<{type: 'empty'}>;
@@ -392,11 +388,6 @@ function resolveSourceFile(
   return null;
 }
 
-type SourceFileForAllExtsContext = SourceFileForExtContext & {
-  +preferNativePlatform: boolean,
-  ...
-};
-
 /**
  * For a particular extension, ex. `js`, we want to try a few possibilities,
  * such as `foo.ios.js`, `foo.native.js`, and of course `foo.js`. Return the
@@ -404,7 +395,7 @@ type SourceFileForAllExtsContext = SourceFileForExtContext & {
  * `{type: 'empty'}` if redirected to an empty module.
  */
 function resolveSourceFileForAllExts(
-  context: SourceFileForAllExtsContext,
+  context: SourceFileContext,
   sourceExt: string,
   platform: ?string,
 ): SourceFileResolution {
@@ -425,20 +416,12 @@ function resolveSourceFileForAllExts(
   return filePath;
 }
 
-type SourceFileForExtContext = {
-  +candidateExts: Array<string>,
-  +doesFileExist: DoesFileExist,
-  +filePathPrefix: string,
-  +redirectModulePath: (modulePath: string) => string | false,
-  ...
-};
-
 /**
  * We try to resolve a single possible extension. If it doesn't exist, then
  * we make sure to add the extension to a list of candidates for reporting.
  */
 function resolveSourceFileForExt(
-  context: SourceFileForExtContext,
+  context: SourceFileContext,
   extension: string,
 ): SourceFileResolution {
   const filePath = `${context.filePathPrefix}${extension}`;

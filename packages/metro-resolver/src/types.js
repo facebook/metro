@@ -78,24 +78,12 @@ export type ResolveAsset = (
   extension: string,
 ) => ?$ReadOnlyArray<string>;
 
-export type FileContext = $ReadOnly<{
+export type ResolutionContext = $ReadOnly<{
+  allowHaste: boolean,
+  customResolverOptions: CustomResolverOptions,
+  disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
-  isAssetFile: IsAssetFile,
-  nodeModulesPaths: $ReadOnlyArray<string>,
-  preferNativePlatform: boolean,
-  redirectModulePath: (modulePath: string) => string | false,
-  resolveAsset: ResolveAsset,
-  sourceExts: $ReadOnlyArray<string>,
-}>;
-
-export type FileOrDirContext = $ReadOnly<{
-  ...FileContext,
-
-  /**
-   * The ordered list of fields to read in `package.json` to resolve a main
-   * entry point based on the "browser" field spec.
-   */
-  mainFields: $ReadOnlyArray<string>,
+  extraNodeModules: ?{[string]: string, ...},
 
   /**
    * Get the parsed contents of the specified `package.json` file.
@@ -108,45 +96,45 @@ export type FileOrDirContext = $ReadOnly<{
    */
   getPackageForModule: (modulePath: string) => ?PackageInfo,
 
-  unstable_conditionNames: $ReadOnlyArray<string>,
-  unstable_conditionsByPlatform: $ReadOnly<{
-    [platform: string]: $ReadOnlyArray<string>,
-  }>,
-  unstable_enablePackageExports: boolean,
-}>;
+  isAssetFile: IsAssetFile,
 
-export type HasteContext = $ReadOnly<{
-  ...FileOrDirContext,
+  /**
+   * The ordered list of fields to read in `package.json` to resolve a main
+   * entry point based on the "browser" field spec.
+   */
+  mainFields: $ReadOnlyArray<string>,
+
+  /**
+   * Full path of the module that is requiring or importing the module to be
+   * resolved.
+   */
+  originModulePath: string,
+
+  nodeModulesPaths: $ReadOnlyArray<string>,
+  preferNativePlatform: boolean,
+  resolveAsset: ResolveAsset,
+  redirectModulePath: (modulePath: string) => string | false,
+
   /**
    * Given a name, this should return the full path to the file that provides
    * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
    */
   resolveHasteModule: (name: string) => ?string,
+
   /**
    * Given a name, this should return the full path to the package manifest that
    * provides a Haste package of that name. Ex. for `Foo` it may return
    * `/smth/Foo/package.json`.
    */
   resolveHastePackage: (name: string) => ?string,
-}>;
 
-export type ModulePathContext = $ReadOnly<{
-  ...FileOrDirContext,
-  /**
-   * Full path of the module that is requiring or importing the module to be
-   * resolved.
-   */
-  originModulePath: string,
-}>;
-
-export type ResolutionContext = $ReadOnly<{
-  ...HasteContext,
-  allowHaste: boolean,
-  disableHierarchicalLookup: boolean,
-  extraNodeModules: ?{[string]: string, ...},
-  originModulePath: string,
   resolveRequest?: ?CustomResolver,
-  customResolverOptions: CustomResolverOptions,
+  sourceExts: $ReadOnlyArray<string>,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
 }>;
 
 export type CustomResolutionContext = $ReadOnly<{
