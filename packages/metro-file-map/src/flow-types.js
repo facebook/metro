@@ -161,7 +161,6 @@ export interface FileSystem {
   getModuleName(file: Path): ?string;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): ?string;
-  getSymlinkTarget(file: Path): ?string;
   getType(file: Path): ?('f' | 'l');
 
   matchFiles(pattern: RegExp | string): Array<Path>;
@@ -216,7 +215,6 @@ export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): void;
   addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
-  setVisitMetadata(filePath: Path, metadata: $ReadOnly<VisitMetadata>): void;
 }
 
 export type Path = string;
@@ -237,13 +235,6 @@ export type ReadOnlyRawModuleMap = $ReadOnly<{
   map: $ReadOnlyMap<string, ModuleMapItem>,
   mocks: $ReadOnlyMap<string, Path>,
 }>;
-
-export type VisitMetadata = {
-  hasteId?: string,
-  sha1?: ?string,
-  dependencies?: string,
-  symlinkTarget?: string,
-};
 
 export type WatchmanClockSpec =
   | string
