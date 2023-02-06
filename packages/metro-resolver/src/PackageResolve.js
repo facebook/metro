@@ -9,21 +9,56 @@
  * @oncall react_native
  */
 
-import type {PackageJson, ResolutionContext} from './types';
+import type {PackageExportsResolutionContext} from './PackageExportsResolve';
+import type {PackageInfo, PackageJson, ResolutionContext} from './types';
 
 import path from 'path';
+import {getPackageEntryPointFromExports} from './PackageExportsResolve';
 import toPosixPath from './utils/toPosixPath';
 
 /**
- * Resolve the main entry point for a package.
+ * Resolve the main entry point subpath for a package.
  *
- * Implements legacy (non-exports) package resolution behaviour based on the
- * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec).
+ * When `context.unstable_enablePackageExports` is `true`, attempts to resolve
+ * using the "exports" field if present, based on the [Package Entry Points spec
+ * ](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
+ *
+ * If resolution via "exports" does not return a match, or
+ * `context.unstable_enablePackageExports` is `false`, will fall back to legacy
+ * (non-exports) package resolution behaviour based on the ["browser" field spec
+ * ](https://github.com/defunctzombie/package-browser-field-spec).
  */
 export function getPackageEntryPoint(
-  pkg: PackageJson,
-  mainFields: $ReadOnlyArray<string>,
+  context: $ReadOnly<{
+    ...PackageExportsResolutionContext,
+    doesFileExist: ResolutionContext['doesFileExist'],
+    mainFields: ResolutionContext['mainFields'],
+    unstable_enablePackageExports: ResolutionContext['unstable_enablePackageExports'],
+    ...
+  }>,
+  packageInfo: PackageInfo,
+  platform: string | null,
 ): string {
+  const {doesFileExist, mainFields, unstable_enablePackageExports} = context;
+  const pkg = packageInfo.packageJson;
+
+  if (unstable_enablePackageExports) {
+    const packageExportsEntryPoint = getPackageEntryPointFromExports(
+      context,
+      packageInfo,
+      platform,
+    );
+
+    // TODO(T142200031): Log an invalid package warning if entry point missing
+    // TODO(T142200031): Log a package encapsulation warning on fall-through
+    if (
+      packageExportsEntryPoint != null &&
+      doesFileExist(path.join(packageInfo.rootPath, packageExportsEntryPoint))
+    ) {
+      return packageExportsEntryPoint;
+    }
+  }
+
   let main = 'index';
 
   for (const name of mainFields) {

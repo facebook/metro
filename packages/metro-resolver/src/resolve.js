@@ -280,13 +280,13 @@ function resolvePackage(
   packageJsonPath: string,
   platform: string | null,
 ): Resolution {
-  const packagePath = path.dirname(path.resolve(packageJsonPath));
+  const packageInfo = {
+    rootPath: path.dirname(path.resolve(packageJsonPath)),
+    packageJson: context.getPackage(packageJsonPath) ?? {},
+  };
   const mainPrefixPath = path.join(
-    packagePath,
-    getPackageEntryPoint(
-      context.getPackage(packageJsonPath) ?? {},
-      context.mainFields,
-    ),
+    packageInfo.rootPath,
+    getPackageEntryPoint(context, packageInfo, platform),
   );
   const dirPath = path.dirname(mainPrefixPath);
   const prefixName = path.basename(mainPrefixPath);

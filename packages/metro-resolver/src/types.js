@@ -44,9 +44,14 @@ export type FileCandidates =
       +candidateExts: $ReadOnlyArray<string>,
     };
 
+export type ExportMap = $ReadOnly<{
+  [subpathOrCondition: string]: ExportMap | string | null,
+}>;
+
 export type PackageJson = $ReadOnly<{
   name?: string,
   main?: string,
+  exports?: string | ExportMap,
   ...
 }>;
 
@@ -102,6 +107,12 @@ export type FileOrDirContext = $ReadOnly<{
    * module path, if it is contained within an npm package.
    */
   getPackageForModule: (modulePath: string) => ?PackageInfo,
+
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
 }>;
 
 export type HasteContext = $ReadOnly<{
@@ -134,11 +145,6 @@ export type ResolutionContext = $ReadOnly<{
   disableHierarchicalLookup: boolean,
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
-  unstable_conditionNames: $ReadOnlyArray<string>,
-  unstable_conditionsByPlatform: $ReadOnly<{
-    [platform: string]: $ReadOnlyArray<string>,
-  }>,
-  unstable_enablePackageExports: boolean,
   resolveRequest?: ?CustomResolver,
   customResolverOptions: CustomResolverOptions,
 }>;

@@ -12,7 +12,8 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "absolute-path": "^0.0.0"
+    "absolute-path": "^0.0.0",
+    "invariant": "^2.2.4"
   },
   "license": "MIT",
   "engines": {
