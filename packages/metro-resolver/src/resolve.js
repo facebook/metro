@@ -24,6 +24,7 @@ const FailedToResolvePathError = require('./errors/FailedToResolvePathError');
 const InvalidPackageError = require('./errors/InvalidPackageError');
 const formatFileCandidates = require('./errors/formatFileCandidates');
 const {getPackageEntryPoint} = require('./PackageResolve');
+const {getPackageEntryPointFromExports} = require('./PackageExportsResolve');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
@@ -233,7 +234,11 @@ function resolveFileOrDir(
   if (fileResult.type === 'resolved') {
     return fileResult;
   }
-  const dirResult = resolveDir(context, potentialModulePath, platform);
+  const dirResult = resolvePackageEntryPoint(
+    context,
+    potentialModulePath,
+    platform,
+  );
   if (dirResult.type === 'resolved') {
     return dirResult;
   }
@@ -241,64 +246,88 @@ function resolveFileOrDir(
 }
 
 /**
- * Try to resolve a potential path as if it was a directory-based module.
- * Either this is a directory that contains a package, or that the directory
- * contains an index file. If it fails to resolve these options, it returns
- * `null` and fills the array of `candidates` that were tried.
+ * Attempt to resolve a module path as an npm package entry point, or resolve as
+ * a file if no `package.json` file is present.
  *
- * For example we could try to resolve `/foo/bar`, that would eventually
- * resolve to `/foo/bar/lib/index.ios.js` if we're on platform iOS and that
- * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
+ * When `context.unstable_enablePackageExports` is `true`, attempts to resolve
+ * using the "exports" field if present, based on the [Package Entry Points spec
+ * ](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
+ *
+ * If resolution via "exports" does not return a match, or
+ * `context.unstable_enablePackageExports` is `false`, will fall back to legacy
+ * (non-exports) package resolution behaviour based on the ["browser" field spec
+ * ](https://github.com/defunctzombie/package-browser-field-spec). This method
+ * of resolution will additionally:
+ * - Expand source and platform-specific extensions, e.g. `./lib/index` ->
+ *     `./lib/index.ios.js`.
+ * - Fall back to a child `index.js` file, e.g. `./lib` -> `./lib/index.js`.
  */
-function resolveDir(
+function resolvePackageEntryPoint(
   context: ResolutionContext,
-  potentialDirPath: string,
+  modulePath: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  const packageJsonPath = path.join(potentialDirPath, 'package.json');
-  if (context.doesFileExist(packageJsonPath)) {
-    const resolution = resolvePackage(context, packageJsonPath, platform);
-    return {resolution, type: 'resolved'};
-  }
-  return resolveFile(context, potentialDirPath, 'index', platform);
-}
+  const {doesFileExist, unstable_enablePackageExports} = context;
+  const packageJsonPath = path.join(modulePath, 'package.json');
 
-/**
- * Resolve the main module of a package that we know exist. The resolution
- * itself cannot fail because we already resolved the path to the package.
- * If the `main` of the package is invalid, this is not a resolution failure,
- * this means the package is invalid, and should purposefully stop the
- * resolution process altogether.
- */
-function resolvePackage(
-  context: ResolutionContext,
-  packageJsonPath: string,
-  platform: string | null,
-): Resolution {
+  if (!context.doesFileExist(packageJsonPath)) {
+    return resolveFile(context, modulePath, 'index', platform);
+  }
+
   const packageInfo = {
-    rootPath: path.dirname(path.resolve(packageJsonPath)),
+    rootPath: path.dirname(packageJsonPath),
     packageJson: context.getPackage(packageJsonPath) ?? {},
   };
-  const mainPrefixPath = path.join(
+
+  if (unstable_enablePackageExports) {
+    const packageExportsEntryPoint = getPackageEntryPointFromExports(
+      context,
+      packageInfo,
+      platform,
+    );
+
+    if (packageExportsEntryPoint != null) {
+      const mainModulePath = path.join(
+        packageInfo.rootPath,
+        packageExportsEntryPoint,
+      );
+
+      if (doesFileExist(mainModulePath)) {
+        return resolvedAs({type: 'sourceFile', filePath: mainModulePath});
+      }
+      // TODO(T142200031): Log an invalid package warning if entry point missing
+    }
+  }
+
+  const mainModulePath = path.join(
     packageInfo.rootPath,
     getPackageEntryPoint(context, packageInfo, platform),
   );
-  const dirPath = path.dirname(mainPrefixPath);
-  const prefixName = path.basename(mainPrefixPath);
-  const fileResult = resolveFile(context, dirPath, prefixName, platform);
+
+  const fileResult = resolveFile(
+    context,
+    path.dirname(mainModulePath),
+    path.basename(mainModulePath),
+    platform,
+  );
+
   if (fileResult.type === 'resolved') {
-    return fileResult.resolution;
+    return fileResult;
   }
-  const indexResult = resolveFile(context, mainPrefixPath, 'index', platform);
-  if (indexResult.type === 'resolved') {
-    return indexResult.resolution;
+
+  // Fallback: Attempt to resolve any file at <subpath>/index.js
+  const indexResult = resolveFile(context, mainModulePath, 'index', platform);
+
+  if (indexResult.type !== 'resolved') {
+    throw new InvalidPackageError({
+      packageJsonPath,
+      mainModulePath,
+      fileCandidates: fileResult.candidates,
+      indexCandidates: indexResult.candidates,
+    });
   }
-  throw new InvalidPackageError({
-    packageJsonPath,
-    mainPrefixPath,
-    indexCandidates: indexResult.candidates,
-    fileCandidates: fileResult.candidates,
-  });
+
+  return indexResult;
 }
 
 /**

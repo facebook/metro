@@ -127,7 +127,7 @@ it('throws on invalid package name', () => {
       filePathPrefix: '/root/node_modules/invalid/main/index',
       type: 'sourceFile',
     });
-    expect(error.mainPrefixPath).toBe('/root/node_modules/invalid/main');
+    expect(error.mainModulePath).toBe('/root/node_modules/invalid/main');
     expect(error.packageJsonPath).toBe(
       '/root/node_modules/invalid/package.json',
     );

@@ -19,7 +19,7 @@ describe('with package exports resolution disabled', () => {
         '/root/src/main.js': '',
         '/root/node_modules/test-pkg/package.json': JSON.stringify({
           main: 'index.js',
-          exports: 'index-exports.js',
+          exports: './index-exports.js',
         }),
         '/root/node_modules/test-pkg/index.js': '',
         '/root/node_modules/test-pkg/index-exports.js': '',
@@ -43,6 +43,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/package.json': '',
         '/root/node_modules/test-pkg/index.js': '',
         '/root/node_modules/test-pkg/index-main.js': '',
+        '/root/node_modules/test-pkg/index-exports.js.js': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -54,7 +55,7 @@ describe('with package exports resolution enabled', () => {
         getPackage: () => ({
           main: 'index-main.js',
           exports: {
-            '.': 'index.js',
+            '.': './index.js',
           },
         }),
       };
@@ -70,13 +71,44 @@ describe('with package exports resolution enabled', () => {
         ...baseContext,
         getPackage: () => ({
           main: 'index-main.js',
-          exports: 'index.js',
+          exports: './index.js',
         }),
       };
 
       expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index.js',
+      });
+    });
+
+    test('should fall back to "main" field resolution when file does not exist', () => {
+      const context = {
+        ...baseContext,
+        getPackage: () => ({
+          main: 'index-main.js',
+          exports: './foo.js',
+        }),
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/index-main.js',
+      });
+      // TODO(T142200031): Assert that an invalid package warning is logged
+    });
+
+    test('should not try extension variants on subpath returned from "exports"', () => {
+      const context = {
+        ...baseContext,
+        getPackage: () => ({
+          main: 'index-main.js',
+          exports: './index-exports.js',
+        }),
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/index-main.js',
       });
     });
   });

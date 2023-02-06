@@ -29,9 +29,9 @@ class InvalidPackageError extends Error {
    */
   indexCandidates: FileCandidates;
   /**
-   * The module path prefix we where trying to resolve. For example './beep'.
+   * The full path to the main module that was attempted.
    */
-  mainPrefixPath: string;
+  mainModulePath: string;
   /**
    * Full path the package we were trying to resolve.
    * Ex. `/js/foo/package.json`.
@@ -41,13 +41,13 @@ class InvalidPackageError extends Error {
   constructor(opts: {
     +fileCandidates: FileCandidates,
     +indexCandidates: FileCandidates,
-    +mainPrefixPath: string,
+    +mainModulePath: string,
     +packageJsonPath: string,
   }) {
     super(
       `The package \`${opts.packageJsonPath}\` is invalid because it ` +
         'specifies a `main` module field that could not be resolved (' +
-        `\`${opts.mainPrefixPath}\`. None of these files exist:\n\n` +
+        `\`${opts.mainModulePath}\`. None of these files exist:\n\n` +
         `  * ${formatFileCandidates(opts.fileCandidates)}\n` +
         `  * ${formatFileCandidates(opts.indexCandidates)}`,
     );
