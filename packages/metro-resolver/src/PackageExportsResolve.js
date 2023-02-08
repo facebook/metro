@@ -83,43 +83,54 @@ function reduceExportsField(
   exportsField: ExportMap | string,
   conditionNames: $ReadOnlySet<string>,
 ): FlattenedExportMap {
+  let result: {[subpath: string]: string | null} = {};
+
   if (typeof exportsField === 'string') {
-    return {'.': exportsField};
+    result = {'.': exportsField};
+  } else {
+    const firstLevelKeys = Object.keys(exportsField);
+    const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
+      subpathOrCondition.startsWith('.'),
+    );
+
+    invariant(
+      subpathKeys.length === 0 || subpathKeys.length === firstLevelKeys.length,
+      '"exports" object cannot have keys mapping both subpaths and conditions ' +
+        'at the same level',
+    );
+
+    let exportMap = exportsField;
+
+    // Normalise conditions shorthand at root
+    if (subpathKeys.length === 0) {
+      exportMap = {'.': exportsField};
+    }
+
+    for (const subpath in exportMap) {
+      const subpathValue = reduceConditionalExport(
+        exportMap[subpath],
+        conditionNames,
+      );
+
+      // If a subpath has no resolution for the passed `conditionNames`, do not
+      // include it in the result. (This includes only explicit `null` values,
+      // which may conditionally hide higher-specificity subpath patterns.)
+      if (subpathValue !== 'no-match') {
+        result[subpath] = subpathValue;
+      }
+    }
   }
 
-  const firstLevelKeys = Object.keys(exportsField);
-  const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
-    subpathOrCondition.startsWith('.'),
+  const invalidValues = Object.values(result).filter(
+    value => value != null && !value.startsWith('./'),
   );
 
   invariant(
-    subpathKeys.length === 0 || subpathKeys.length === firstLevelKeys.length,
-    '"exports" object cannot have keys mapping both subpaths and conditions ' +
-      'at the same level',
+    invalidValues.length === 0,
+    'One or more mappings for subpaths in "exports" is invalid. All values ' +
+      'must begin with "./": ' +
+      JSON.stringify(invalidValues),
   );
-
-  let exportMap = exportsField;
-
-  // Normalise conditions shorthand at root
-  if (subpathKeys.length === 0) {
-    exportMap = {'.': exportsField};
-  }
-
-  const result: {[subpath: string]: string | null} = {};
-
-  for (const subpath in exportMap) {
-    const subpathValue = reduceConditionalExport(
-      exportMap[subpath],
-      conditionNames,
-    );
-
-    // If a subpath has no resolution for the passed `conditionNames`, do not
-    // include it in the result. (This includes only explicit `null` values,
-    // which may conditionally hide higher-specificity subpath patterns.)
-    if (subpathValue !== 'no-match') {
-      result[subpath] = subpathValue;
-    }
-  }
 
   return result;
 }

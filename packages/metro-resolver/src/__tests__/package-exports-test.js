@@ -44,6 +44,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/index.js': '',
         '/root/node_modules/test-pkg/index-main.js': '',
         '/root/node_modules/test-pkg/index-exports.js.js': '',
+        '/root/node_modules/test-pkg/index-exports.android.js': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -94,10 +95,28 @@ describe('with package exports resolution enabled', () => {
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-main.js',
       });
-      // TODO(T142200031): Assert that an invalid package warning is logged
+      // TODO(T142200031): Assert that an invalid package warning is logged with
+      // file missing message
     });
 
-    test('should not try extension variants on subpath returned from "exports"', () => {
+    test('should fall back to "main" field resolution when "exports" is an invalid subpath', () => {
+      const context = {
+        ...baseContext,
+        getPackage: () => ({
+          main: 'index-main.js',
+          exports: 'index.js',
+        }),
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/index-main.js',
+      });
+      // TODO(T142200031): Assert that an invalid package warning is logged with
+      // invalid subpath value message
+    });
+
+    describe('should resolve "exports" target directly', () => {
       const context = {
         ...baseContext,
         getPackage: () => ({
@@ -106,9 +125,18 @@ describe('with package exports resolution enabled', () => {
         }),
       };
 
-      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/index-main.js',
+      test('without expanding `sourceExts`', () => {
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index-main.js',
+        });
+      });
+
+      test('without expanding platform-specific extensions', () => {
+        expect(Resolver.resolve(context, 'test-pkg', 'android')).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index-main.js',
+        });
       });
     });
   });
