@@ -9,8 +9,8 @@
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "2.1.0",
-    "@docusaurus/preset-classic": "2.1.0",
+    "@docusaurus/core": "2.3.1",
+    "@docusaurus/preset-classic": "2.3.1",
     "classnames": "2.2.6",
     "docusaurus-plugin-internaldocs-fb": "1.7.0",
     "docusaurus-plugin-sass": "^0.2.1",
@@ -23,6 +23,11 @@
     "prettier": "2.7.1"
   },
   "resolutions": {
-    "node-fetch": "^2.0.0"
+    "@sideway/formula": "^3.0.1",
+    "got": "^11.8.5",
+    "http-cache-semantics": "^4.1.1",
+    "node-fetch": "^2.0.0",
+    "terser": "^5.14.2",
+    "trim": "^0.0.3"
   }
 }
