@@ -47,8 +47,8 @@ describe.each(Object.keys(WATCHERS))(
       // these files to ensure that tests remain isolated.
       await mkdir(join(watchRoot, 'existing'));
       await Promise.all([
-        writeFile(join(watchRoot, 'existing', 'file-to-delete'), ''),
-        writeFile(join(watchRoot, 'existing', 'file-to-modify'), ''),
+        writeFile(join(watchRoot, 'existing', 'file-to-delete.js'), ''),
+        writeFile(join(watchRoot, 'existing', 'file-to-modify.js'), ''),
         symlink('target', join(watchRoot, 'existing', 'symlink-to-delete')),
       ]);
 
@@ -58,7 +58,7 @@ describe.each(Object.keys(WATCHERS))(
 
       const opts: WatcherOptions = {
         dot: true,
-        glob: [],
+        glob: ['**/package.json', '**/*.js', '**/cookie-*'],
         // We need to ignore `.watchmanconfig` to keep these tests stable.
         // Even though we write it before initialising watchers, OS-level
         // delays/debouncing(?) can mean the write is *sometimes* reported by
@@ -171,10 +171,10 @@ describe.each(Object.keys(WATCHERS))(
     maybeTest('detects deletion of a pre-existing file', async () => {
       expect(
         await eventHelpers.nextEvent(() =>
-          unlink(join(watchRoot, 'existing', 'file-to-delete')),
+          unlink(join(watchRoot, 'existing', 'file-to-delete.js')),
         ),
       ).toStrictEqual({
-        path: join('existing', 'file-to-delete'),
+        path: join('existing', 'file-to-delete.js'),
         eventType: 'delete',
         metadata: undefined,
       });
@@ -195,10 +195,13 @@ describe.each(Object.keys(WATCHERS))(
     maybeTest('detects change to a pre-existing file as a change', async () => {
       expect(
         await eventHelpers.nextEvent(() =>
-          writeFile(join(watchRoot, 'existing', 'file-to-modify'), 'changed'),
+          writeFile(
+            join(watchRoot, 'existing', 'file-to-modify.js'),
+            'changed',
+          ),
         ),
       ).toStrictEqual({
-        path: join('existing', 'file-to-modify'),
+        path: join('existing', 'file-to-modify.js'),
         eventType: 'change',
         metadata: expect.any(Object),
       });
