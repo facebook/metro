@@ -57,7 +57,6 @@ export default class FSEventsWatcher extends EventEmitter {
   +ignored: ?Matcher;
   +glob: $ReadOnlyArray<string>;
   +dot: boolean;
-  +hasIgnore: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
   _tracked: Set<string>;
@@ -119,9 +118,6 @@ export default class FSEventsWatcher extends EventEmitter {
     this.dot = opts.dot || false;
     this.ignored = opts.ignored;
     this.glob = Array.isArray(opts.glob) ? opts.glob : [opts.glob];
-
-    this.hasIgnore =
-      Boolean(opts.ignored) && !(Array.isArray(opts) && opts.length > 0);
     this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
 
     this.root = path.resolve(dir);

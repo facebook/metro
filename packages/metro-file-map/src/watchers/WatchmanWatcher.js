@@ -46,7 +46,6 @@ export default class WatchmanWatcher extends EventEmitter {
   dot: boolean;
   doIgnore: string => boolean;
   globs: $ReadOnlyArray<string>;
-  hasIgnore: boolean;
   root: string;
   subscriptionName: string;
   watchProjectInfo: ?$ReadOnly<{
@@ -255,7 +254,6 @@ export default class WatchmanWatcher extends EventEmitter {
     );
 
     if (
-      this.hasIgnore &&
       !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
     ) {
       return;
