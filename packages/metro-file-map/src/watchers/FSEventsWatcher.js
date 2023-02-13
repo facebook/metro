@@ -20,10 +20,7 @@ import {promises as fsPromises} from 'fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
-import {typeFromStat} from './common';
-
-// $FlowFixMe[untyped-import] - micromatch
-const micromatch = require('micromatch');
+import {isIncluded, typeFromStat} from './common';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
 
@@ -159,20 +156,8 @@ export default class FSEventsWatcher extends EventEmitter {
     }
   }
 
-  _isFileIncluded(relativePath: string): boolean {
-    if (this.doIgnore(relativePath)) {
-      return false;
-    }
-    return this.glob.length
-      ? micromatch([relativePath], this.glob, {dot: this.dot}).length > 0
-      : this.dot || micromatch([relativePath], '**/*').length > 0;
-  }
-
   async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
-    if (!this._isFileIncluded(relativePath)) {
-      return;
-    }
 
     try {
       const stat = await fsPromises.lstat(filepath);
@@ -182,6 +167,11 @@ export default class FSEventsWatcher extends EventEmitter {
       if (!type) {
         return;
       }
+
+      if (!isIncluded(type, this.glob, this.dot, this.doIgnore, relativePath)) {
+        return;
+      }
+
       const metadata: ChangeEventMetadata = {
         type,
         modifiedTime: stat.mtime.getTime(),

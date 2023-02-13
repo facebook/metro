@@ -89,7 +89,8 @@ export const assignOptions = function (
 /**
  * Checks a file relative path against the globs array.
  */
-export function isFileIncluded(
+export function isIncluded(
+  type: ?('f' | 'l' | 'd'),
   globs: $ReadOnlyArray<string>,
   dot: boolean,
   doIgnore: string => boolean,
@@ -98,9 +99,12 @@ export function isFileIncluded(
   if (doIgnore(relativePath)) {
     return false;
   }
-  return globs.length
-    ? micromatch.some(relativePath, globs, {dot})
-    : dot || micromatch.some(relativePath, '**/*');
+  // For non-regular files or if there are no glob matchers, just respect the
+  // `dot` option to filter dotfiles if dot === false.
+  if (globs.length === 0 || type !== 'f') {
+    return dot || micromatch.some(relativePath, '**/*');
+  }
+  return micromatch.some(relativePath, globs, {dot});
 }
 
 /**

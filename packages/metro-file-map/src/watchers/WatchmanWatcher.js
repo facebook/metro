@@ -247,14 +247,26 @@ export default class WatchmanWatcher extends EventEmitter {
     } = changeDescriptor;
 
     debug(
-      'Handling change to: %s (new: %s, exists: %s)',
+      'Handling change to: %s (new: %s, exists: %s, type: %s)',
       relativePath,
       isNew,
       exists,
+      type,
     );
 
+    // Ignore files of an unrecognized type
+    if (type != null && !(type === 'f' || type === 'd' || type === 'l')) {
+      return;
+    }
+
     if (
-      !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
+      !common.isIncluded(
+        type,
+        this.globs,
+        this.dot,
+        this.doIgnore,
+        relativePath,
+      )
     ) {
       return;
     }
@@ -274,10 +286,8 @@ export default class WatchmanWatcher extends EventEmitter {
       );
 
       if (
-        type === 'f' ||
-        type === 'l' ||
         // Change event on dirs are mostly useless.
-        (type === 'd' && eventType !== CHANGE_EVENT)
+        !(type === 'd' && eventType === CHANGE_EVENT)
       ) {
         self._emitEvent(eventType, relativePath, self.root, {
           modifiedTime: Number(mtime_ms),
