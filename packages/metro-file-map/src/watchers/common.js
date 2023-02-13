@@ -49,7 +49,6 @@ interface Watcher {
   doIgnore: string => boolean;
   dot: boolean;
   globs: $ReadOnlyArray<string>;
-  hasIgnore: boolean;
   ignored?: ?(boolean | RegExp);
   watchmanDeferStates: $ReadOnlyArray<string>;
   watchmanPath?: ?string;
@@ -75,8 +74,6 @@ export const assignOptions = function (
   if (!Array.isArray(watcher.globs)) {
     watcher.globs = [watcher.globs];
   }
-  watcher.hasIgnore =
-    Boolean(opts.ignored) && !(Array.isArray(opts) && opts.length > 0);
   watcher.doIgnore =
     opts.ignored != null && opts.ignored !== false
       ? anymatch(opts.ignored)
