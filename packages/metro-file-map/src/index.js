@@ -887,7 +887,9 @@ export default class HasteMap extends EventEmitter {
     this._options.throwOnModuleCollision = false;
     this._options.retainAllFiles = true;
 
-    const extensions = this._options.extensions;
+    const hasWatchedExtension = (filePath: string) =>
+      this._options.extensions.some(ext => filePath.endsWith(ext));
+
     const rootDir = this._options.rootDir;
 
     let changeQueue: Promise<null | void> = Promise.resolve();
@@ -926,12 +928,21 @@ export default class HasteMap extends EventEmitter {
       root: Path,
       metadata: ?ChangeEventMetadata,
     ) => {
-      const absoluteFilePath = path.join(root, normalizePathSep(filePath));
       if (
-        (metadata && metadata.type === 'd') ||
-        this._ignore(absoluteFilePath) ||
-        !extensions.some(extension => absoluteFilePath.endsWith(extension))
+        metadata &&
+        // Ignore all directory events
+        (metadata.type === 'd' ||
+          // Ignore regular files with unwatched extensions
+          (metadata.type === 'f' && !hasWatchedExtension(filePath)))
       ) {
+        return;
+      }
+
+      const absoluteFilePath = path.join(root, normalizePathSep(filePath));
+
+      // Ignore files (including symlinks) whose path matches ignorePattern
+      // (we don't ignore node_modules in watch mode)
+      if (this._options.ignorePattern.test(absoluteFilePath)) {
         return;
       }
 
@@ -1030,10 +1041,11 @@ export default class HasteMap extends EventEmitter {
               //   point.
             }
           } else if (type === 'delete') {
-            invariant(
-              linkStats?.fileType != null,
-              'delete event received for file of unknown type',
-            );
+            if (linkStats == null) {
+              // Don't emit deletion events for files we weren't retaining.
+              // This is expected for deletion of an ignored file.
+              return null;
+            }
             enqueueEvent({
               modifiedTime: null,
               size: null,
@@ -1157,12 +1169,7 @@ export default class HasteMap extends EventEmitter {
    * Helpers
    */
   _ignore(filePath: Path): boolean {
-    const ignorePattern = this._options.ignorePattern;
-    const ignoreMatched =
-      ignorePattern instanceof RegExp
-        ? ignorePattern.test(filePath)
-        : ignorePattern && ignorePattern(filePath);
-
+    const ignoreMatched = this._options.ignorePattern.test(filePath);
     return (
       ignoreMatched ||
       (!this._options.retainAllFiles && filePath.includes(NODE_MODULES))

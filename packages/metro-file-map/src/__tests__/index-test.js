@@ -309,7 +309,7 @@ describe('HasteMap', () => {
     expect(fileSystem.matchFiles('.git')).toEqual([]);
   });
 
-  it('warn on ignore pattern except for regex', async () => {
+  it('throw on ignore pattern except for regex', async () => {
     const config = {ignorePattern: 'Kiwi', ...defaultConfig};
     mockFs['/project/fruits/Kiwi.js'] = `
       // Kiwi!
@@ -1410,8 +1410,12 @@ describe('HasteMap', () => {
         if (options.mockFs) {
           mockFs = options.mockFs;
         }
-        const watchConfig = {...defaultConfig, watch: true};
-        const hm = new HasteMap(watchConfig);
+        const config = {
+          ...defaultConfig,
+          watch: true,
+          ...options.config,
+        };
+        const hm = new HasteMap(config);
         await hm.build();
         try {
           await fn(hm);
@@ -1455,6 +1459,12 @@ describe('HasteMap', () => {
       type: 'f',
       modifiedTime: null,
       size: null,
+    };
+
+    const MOCK_CHANGE_LINK = {
+      type: 'l',
+      modifiedTime: 46,
+      size: 5,
     };
 
     const MOCK_CHANGE_FOLDER = {
@@ -1559,6 +1569,102 @@ describe('HasteMap', () => {
         ]);
         expect(fileSystem.getModuleName(filePath)).toBeDefined();
       },
+    );
+
+    hm_it(
+      'does not emit changes for regular files with unwatched extensions',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
+
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        e.emit(
+          'all',
+          'add',
+          path.join('Banana.js'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_FILE,
+        );
+        e.emit(
+          'all',
+          'add',
+          path.join('Banana.unwatched'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_FILE,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
+        ]);
+        expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      },
+    );
+
+    hm_it('does not emit delete events for unknown files', async hm => {
+      const {fileSystem} = await hm.build();
+      mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
+
+      const e = mockEmitters[path.join('/', 'project', 'fruits')];
+      e.emit(
+        'all',
+        'delete',
+        path.join('Banana.js'),
+        path.join('/', 'project', 'fruits', ''),
+        null,
+      );
+      e.emit(
+        'all',
+        'delete',
+        path.join('Unknown.ext'),
+        path.join('/', 'project', 'fruits', ''),
+        null,
+      );
+      const {eventsQueue} = await waitForItToChange(hm);
+      const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
+      expect(eventsQueue).toHaveLength(1);
+      expect(eventsQueue).toEqual([
+        {filePath, metadata: MOCK_DELETE_FILE, type: 'delete'},
+      ]);
+      expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
+    });
+
+    hm_it(
+      'does emit changes for symlinks with unlisted extensions',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        mockFs[path.join('/', 'project', 'fruits', 'LinkToStrawberry.ext')] = {
+          link: 'Strawberry.js',
+        };
+        e.emit(
+          'all',
+          'add',
+          path.join('LinkToStrawberry.ext'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        const filePath = path.join(
+          '/',
+          'project',
+          'fruits',
+          'LinkToStrawberry.ext',
+        );
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath, metadata: MOCK_CHANGE_LINK, type: 'add'},
+        ]);
+        const linkStats = fileSystem.linkStats(filePath);
+        expect(linkStats).toEqual({
+          fileType: 'l',
+          modifiedTime: 46,
+        });
+      },
+      {config: {enableSymlinks: true}},
     );
 
     hm_it(
