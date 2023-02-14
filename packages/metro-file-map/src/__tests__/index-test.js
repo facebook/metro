@@ -1663,6 +1663,8 @@ describe('HasteMap', () => {
           fileType: 'l',
           modifiedTime: 46,
         });
+        // getModuleName traverses the symlink, verifying the link is read.
+        expect(fileSystem.getModuleName(filePath)).toEqual('Strawberry');
       },
       {config: {enableSymlinks: true}},
     );
