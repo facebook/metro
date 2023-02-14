@@ -47,6 +47,7 @@ import deepCloneRawModuleMap from './lib/deepCloneRawModuleMap';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
+import TreeFS from './lib/TreeFS';
 import HasteModuleMap from './ModuleMap';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
@@ -358,10 +359,13 @@ export default class HasteMap extends EventEmitter {
 
         const rootDir = this._options.rootDir;
         const fileData = initialData.files;
-        const fileSystem = new HasteFS({
+        this._startupPerfLogger?.point('constructFileSystem_start');
+        const FileSystem = this._options.enableSymlinks ? TreeFS : HasteFS;
+        const fileSystem = new FileSystem({
           files: fileData,
           rootDir,
         });
+        this._startupPerfLogger?.point('constructFileSystem_end');
         const {map, mocks, duplicates} = initialData;
         const rawModuleMap: RawModuleMap = {
           duplicates,
