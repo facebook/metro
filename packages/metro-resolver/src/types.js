@@ -22,9 +22,11 @@ export type SourceFileResolution = $ReadOnly<{
   filePath: string,
 }>;
 export type AssetFileResolution = $ReadOnlyArray<string>;
-export type FileResolution =
-  | SourceFileResolution
-  | {+type: 'assetFiles', +filePaths: AssetFileResolution};
+export type AssetResolution = $ReadOnly<{
+  type: 'assetFiles',
+  filePaths: AssetFileResolution,
+}>;
+export type FileResolution = AssetResolution | SourceFileResolution;
 
 export type FileAndDirCandidates = {
   +dir: FileCandidates,

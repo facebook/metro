@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import path from 'path';
 import Resolver from '../index';
 import {createPackageAccessors, createResolutionContext} from './utils';
 
@@ -586,6 +587,65 @@ describe('with package exports resolution enabled', () => {
           filePath: '/root/node_modules/test-pkg/index-browser.js',
         });
       });
+    });
+  });
+
+  describe('asset resolutions', () => {
+    const assetResolutions = ['1', '1.5', '2', '3', '4'];
+    const isAssetFile = (filePath: string) => filePath.endsWith('.png');
+
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          main: './index.js',
+          exports: {
+            './icons/metro.png': './assets/icons/metro.png',
+          },
+        }),
+        '/root/node_modules/test-pkg/assets/icons/metro.png': '',
+        '/root/node_modules/test-pkg/assets/icons/metro@2x.png': '',
+        '/root/node_modules/test-pkg/assets/icons/metro@3x.png': '',
+      }),
+      isAssetFile,
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: true,
+    };
+
+    test('should resolve assets using "exports" field and calling `resolveAsset`', () => {
+      const resolveAsset = jest.fn(
+        (dirPath: string, basename: string, extension: string) => {
+          const basePath = dirPath + path.sep + basename;
+          const assets = [
+            basePath + extension,
+            ...assetResolutions.map(
+              resolution => basePath + '@' + resolution + 'x' + extension,
+            ),
+          ].filter(candidate => baseContext.doesFileExist(candidate));
+
+          return assets.length ? assets : null;
+        },
+      );
+      const context = {
+        ...baseContext,
+        resolveAsset,
+      };
+
+      expect(
+        Resolver.resolve(context, 'test-pkg/icons/metro.png', null),
+      ).toEqual({
+        type: 'assetFiles',
+        filePaths: [
+          '/root/node_modules/test-pkg/assets/icons/metro.png',
+          '/root/node_modules/test-pkg/assets/icons/metro@2x.png',
+          '/root/node_modules/test-pkg/assets/icons/metro@3x.png',
+        ],
+      });
+      expect(resolveAsset).toHaveBeenLastCalledWith(
+        '/root/node_modules/test-pkg/assets/icons',
+        'metro',
+        '.png',
+      );
     });
   });
 });

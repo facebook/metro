@@ -28,6 +28,7 @@ import InvalidPackageError from './errors/InvalidPackageError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import {getPackageEntryPoint} from './PackageResolve';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
+import resolveAsset from './resolveAsset';
 import invariant from 'invariant';
 
 function resolve(
@@ -355,27 +356,19 @@ function resolveFile(
   fileName: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  const {isAssetFile, resolveAsset} = context;
-  if (isAssetFile(fileName)) {
-    const extension = path.extname(fileName);
-    const basename = path.basename(fileName, extension);
-    if (!/@\d+(?:\.\d+)?x$/.test(basename)) {
-      try {
-        const assets = resolveAsset(dirPath, basename, extension);
-        if (assets != null) {
-          return mapResult(resolvedAs(assets), filePaths => ({
-            type: 'assetFiles',
-            filePaths,
-          }));
-        }
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          return failedFor({type: 'asset', name: fileName});
-        }
-      }
+  if (context.isAssetFile(fileName)) {
+    const assetResolutions = resolveAsset(
+      context,
+      path.join(dirPath, fileName),
+    );
+
+    if (assetResolutions == null) {
+      return failedFor({type: 'asset', name: fileName});
     }
-    return failedFor({type: 'asset', name: fileName});
+
+    return resolvedAs(assetResolutions);
   }
+
   const candidateExts: Array<string> = [];
   const filePathPrefix = path.join(dirPath, fileName);
   const sfContext = {...context, candidateExts, filePathPrefix};
@@ -511,16 +504,6 @@ function failedFor<TResolution, TCandidates>(
   candidates: TCandidates,
 ): Result<TResolution, TCandidates> {
   return {type: 'failed', candidates};
-}
-
-function mapResult<TResolution, TNewResolution, TCandidates>(
-  result: Result<TResolution, TCandidates>,
-  mapper: TResolution => TNewResolution,
-): Result<TNewResolution, TCandidates> {
-  if (result.type === 'failed') {
-    return result;
-  }
-  return {type: 'resolved', resolution: mapper(result.resolution)};
 }
 
 module.exports = resolve;

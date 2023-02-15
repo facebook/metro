@@ -9,10 +9,11 @@
  * @oncall react_native
  */
 
-import type {ExportMap, ResolutionContext, SourceFileResolution} from './types';
+import type {ExportMap, FileResolution, ResolutionContext} from './types';
 
 import path from 'path';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
+import resolveAsset from './resolveAsset';
 import toPosixPath from './utils/toPosixPath';
 
 /**
@@ -40,7 +41,7 @@ export function resolvePackageTargetFromExports(
   modulePath: string,
   exportsField: ExportMap | string,
   platform: string | null,
-): SourceFileResolution | null {
+): FileResolution | null {
   const raiseConfigError = (reason: string) => {
     throw new InvalidPackageConfigurationError({
       reason,
@@ -63,6 +64,10 @@ export function resolvePackageTargetFromExports(
 
   if (match != null) {
     const filePath = path.join(packagePath, match);
+
+    if (context.isAssetFile(filePath)) {
+      return resolveAsset(context, filePath);
+    }
 
     if (context.doesFileExist(filePath)) {
       return {type: 'sourceFile', filePath};
