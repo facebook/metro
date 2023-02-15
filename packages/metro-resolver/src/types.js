@@ -17,9 +17,13 @@ export type Result<+TResolution, +TCandidates> =
 
 export type Resolution = FileResolution | {+type: 'empty'};
 
+export type SourceFileResolution = $ReadOnly<{
+  type: 'sourceFile',
+  filePath: string,
+}>;
 export type AssetFileResolution = $ReadOnlyArray<string>;
 export type FileResolution =
-  | {+type: 'sourceFile', +filePath: string}
+  | SourceFileResolution
   | {+type: 'assetFiles', +filePaths: AssetFileResolution};
 
 export type FileAndDirCandidates = {

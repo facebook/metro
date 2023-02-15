@@ -9,22 +9,57 @@
  * @oncall react_native
  */
 
-import type {ExportMap, PackageInfo, ResolutionContext} from './types';
+import type {ExportMap, ResolutionContext, SourceFileResolution} from './types';
 
+import path from 'path';
 import invariant from 'invariant';
+import toPosixPath from './utils/toPosixPath';
 
 /**
- * Resolve the main entry point subpath for a package.
+ * Resolve a package subpath based on the entry points defined in the package's
+ * "exports" field. If there is no match for the given subpath (which may be
+ * augmented by resolution of conditional exports for the passed `context`),
+ * returns `null`.
  *
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  */
-export function getPackageEntryPointFromExports(
+export function resolvePackageTargetFromExports(
   context: ResolutionContext,
-  packageInfo: PackageInfo,
+  /**
+   * The path to the containing npm package directory.
+   */
+  packageRoot: string,
+  /**
+   * The unresolved absolute path to the target module. This will be converted
+   * to a package-relative subpath for comparison.
+   */
+  modulePath: string,
+  exportsField: ExportMap | string,
   platform: string | null,
-): ?string {
-  return matchSubpathFromExports('.', context, packageInfo, platform);
+): SourceFileResolution | null {
+  const packageSubpath = path.relative(packageRoot, modulePath);
+  const subpath =
+    // Convert to prefixed POSIX path for "exports" lookup
+    packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
+  const match = matchSubpathFromExports(
+    context,
+    subpath,
+    exportsField,
+    platform,
+  );
+
+  if (match != null) {
+    const filePath = path.join(packageRoot, match);
+
+    if (context.doesFileExist(filePath)) {
+      return {type: 'sourceFile', filePath};
+    }
+    // TODO(T143882479): Throw InvalidPackageConfigurationError (entry point
+    // missing) and log as warning in calling context.
+  }
+
+  return null;
 }
 
 /**
@@ -33,22 +68,16 @@ export function getPackageEntryPointFromExports(
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  */
-export function matchSubpathFromExports(
+function matchSubpathFromExports(
+  context: ResolutionContext,
   /**
    * The package-relative subpath (beginning with '.') to match against either
    * an exact subpath key or subpath pattern key in "exports".
    */
   subpath: string,
-  context: ResolutionContext,
-  {packageJson}: PackageInfo,
+  exportsField: ExportMap | string,
   platform: string | null,
 ): ?string {
-  const {exports: exportsField} = packageJson;
-
-  if (exportsField == null) {
-    return null;
-  }
-
   const conditionNames = new Set([
     'default',
     ...context.unstable_conditionNames,
@@ -57,15 +86,7 @@ export function matchSubpathFromExports(
       : []),
   ]);
 
-  let exportMap: FlattenedExportMap;
-
-  try {
-    exportMap = reduceExportsField(exportsField, conditionNames);
-  } catch (e) {
-    // TODO(T143882479): Log a warning if the "exports" field cannot be parsed
-    // NOTE: Under strict mode, this should throw an InvalidPackageConfigurationError
-    return null;
-  }
+  const exportMap = reduceExportsField(exportsField, conditionNames);
 
   return exportMap[subpath];
 }
@@ -93,6 +114,8 @@ function reduceExportsField(
       subpathOrCondition.startsWith('.'),
     );
 
+    // TODO(T143882479): Throw InvalidPackageConfigurationError and log as
+    // warning in calling context.
     invariant(
       subpathKeys.length === 0 || subpathKeys.length === firstLevelKeys.length,
       '"exports" object cannot have keys mapping both subpaths and conditions ' +
@@ -125,6 +148,8 @@ function reduceExportsField(
     value => value != null && !value.startsWith('./'),
   );
 
+  // TODO(T143882479): Throw InvalidPackageConfigurationError and log as
+  // warning in calling context.
   invariant(
     invalidValues.length === 0,
     'One or more mappings for subpaths in "exports" is invalid. All values ' +

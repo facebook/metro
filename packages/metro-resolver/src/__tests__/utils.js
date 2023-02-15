@@ -10,6 +10,9 @@
  */
 
 import type {ResolutionContext} from '../index';
+import type {PackageJson} from '../types';
+
+import path from 'path';
 
 /**
  * Data structure approximating a file tree. Should be populated with complete
@@ -31,9 +34,6 @@ export function createResolutionContext(
     disableHierarchicalLookup: false,
     doesFileExist: (filePath: string) => filePath in fileMap,
     extraNodeModules: null,
-    getPackage: (packageJsonPath: string) =>
-      JSON.parse(fileMap[packageJsonPath]),
-    getPackageForModule: () => null,
     isAssetFile: () => false,
     mainFields: ['browser', 'main'],
     nodeModulesPaths: [],
@@ -46,5 +46,57 @@ export function createResolutionContext(
     unstable_conditionNames: [],
     unstable_conditionsByPlatform: {},
     unstable_enablePackageExports: false,
+    ...createPackageAccessors(fileMap),
+  };
+}
+
+/**
+ * Create `getPackage` and `getPackageForModule` accessor properties on
+ * `ResolutionContext` based on the input mock file/package.json map.
+ */
+export function createPackageAccessors(
+  fileOrPackageJsonMap: MockFileMap | {[path: string]: PackageJson},
+): $ReadOnly<{
+  getPackage: ResolutionContext['getPackage'],
+  getPackageForModule: ResolutionContext['getPackageForModule'],
+}> {
+  const getPackage = (packageJsonPath: string) => {
+    const contents = fileOrPackageJsonMap[packageJsonPath];
+
+    if (typeof contents === 'string') {
+      return JSON.parse(contents);
+    }
+
+    if (contents != null) {
+      return contents;
+    }
+
+    return null;
+  };
+  const getPackageForModule = (modulePath: string) => {
+    const parsedPath = path.parse(modulePath);
+    const root = parsedPath.root;
+    let dir = path.join(parsedPath.dir, parsedPath.name);
+
+    do {
+      const candidate = path.join(dir, 'package.json');
+      const packageJson = getPackage(candidate);
+
+      if (packageJson != null) {
+        return {
+          rootPath: dir,
+          packageJson,
+        };
+      }
+
+      dir = path.dirname(dir);
+    } while (dir !== '.' && dir !== root);
+
+    return null;
+  };
+
+  return {
+    getPackage,
+    getPackageForModule,
   };
 }

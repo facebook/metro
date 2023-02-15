@@ -10,10 +10,10 @@
  */
 
 import Resolver from '../index';
-import {createResolutionContext} from './utils';
+import {createPackageAccessors, createResolutionContext} from './utils';
 
 describe('with package exports resolution disabled', () => {
-  test('should ignore "exports" field', () => {
+  test('should ignore "exports" field for main entry point', () => {
     const context = {
       ...createResolutionContext({
         '/root/src/main.js': '',
@@ -33,6 +33,35 @@ describe('with package exports resolution disabled', () => {
       filePath: '/root/node_modules/test-pkg/index.js',
     });
   });
+
+  test('should ignore "exports" field for subpaths', () => {
+    const context = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          main: 'index.js',
+          exports: {
+            './foo.js': './lib/foo.js',
+          },
+        }),
+        '/root/node_modules/test-pkg/index.js': '',
+        '/root/node_modules/test-pkg/foo.js': '',
+        '/root/node_modules/test-pkg/foo.ios.js': '',
+        '/root/node_modules/test-pkg/lib/foo.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: false,
+    };
+
+    expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/foo.js',
+    });
+    expect(Resolver.resolve(context, 'test-pkg/foo', 'ios')).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/foo.ios.js',
+    });
+  });
 });
 
 describe('with package exports resolution enabled', () => {
@@ -44,7 +73,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/index.js': '',
         '/root/node_modules/test-pkg/index-main.js': '',
         '/root/node_modules/test-pkg/index-exports.js.js': '',
-        '/root/node_modules/test-pkg/index-exports.android.js': '',
+        '/root/node_modules/test-pkg/index-exports.ios.js': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -53,10 +82,12 @@ describe('with package exports resolution enabled', () => {
     test('should resolve package using "exports" field', () => {
       const context = {
         ...baseContext,
-        getPackage: () => ({
-          main: 'index-main.js',
-          exports: {
-            '.': './index.js',
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index-main.js',
+            exports: {
+              '.': './index.js',
+            },
           },
         }),
       };
@@ -70,9 +101,11 @@ describe('with package exports resolution enabled', () => {
     test('should resolve package using "exports" field (shorthand)', () => {
       const context = {
         ...baseContext,
-        getPackage: () => ({
-          main: 'index-main.js',
-          exports: './index.js',
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index-main.js',
+            exports: './index.js',
+          },
         }),
       };
 
@@ -85,9 +118,11 @@ describe('with package exports resolution enabled', () => {
     test('should fall back to "main" field resolution when file does not exist', () => {
       const context = {
         ...baseContext,
-        getPackage: () => ({
-          main: 'index-main.js',
-          exports: './foo.js',
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index-main.js',
+            exports: './foo.js',
+          },
         }),
       };
 
@@ -102,9 +137,11 @@ describe('with package exports resolution enabled', () => {
     test('should fall back to "main" field resolution when "exports" is an invalid subpath', () => {
       const context = {
         ...baseContext,
-        getPackage: () => ({
-          main: 'index-main.js',
-          exports: 'index.js',
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index-main.js',
+            exports: 'index.js',
+          },
         }),
       };
 
@@ -119,9 +156,11 @@ describe('with package exports resolution enabled', () => {
     describe('should resolve "exports" target directly', () => {
       const context = {
         ...baseContext,
-        getPackage: () => ({
-          main: 'index-main.js',
-          exports: './index-exports.js',
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index-main.js',
+            exports: './index-exports.js',
+          },
         }),
       };
 
@@ -133,10 +172,101 @@ describe('with package exports resolution enabled', () => {
       });
 
       test('without expanding platform-specific extensions', () => {
-        expect(Resolver.resolve(context, 'test-pkg', 'android')).toEqual({
+        expect(Resolver.resolve(context, 'test-pkg', 'ios')).toEqual({
           type: 'sourceFile',
           filePath: '/root/node_modules/test-pkg/index-main.js',
         });
+      });
+    });
+  });
+
+  describe('subpath exports', () => {
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          name: 'test-pkg',
+          main: 'index.js',
+          exports: {
+            '.': './index.js',
+            './foo.js': './lib/foo.js',
+          },
+        }),
+        '/root/node_modules/test-pkg/index.js': '',
+        '/root/node_modules/test-pkg/foo.js': '',
+        '/root/node_modules/test-pkg/foo.ios.js': '',
+        '/root/node_modules/test-pkg/lib/foo.js': '',
+        '/root/node_modules/test-pkg/lib/foo.js.js': '',
+        '/root/node_modules/test-pkg/lib/foo.ios.js': '',
+        '/root/node_modules/test-pkg/private/bar.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: true,
+    };
+
+    test('should resolve subpath in "exports" using exact import specifier', () => {
+      expect(Resolver.resolve(baseContext, 'test-pkg/foo.js', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo.js',
+      });
+    });
+
+    test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+      expect(Resolver.resolve(baseContext, 'test-pkg/foo', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/foo.js',
+      });
+      // TODO(T142200031): Assert inaccessible import warning is logged
+    });
+
+    describe('should resolve "exports" target directly', () => {
+      test('without expanding `sourceExts`', () => {
+        expect(Resolver.resolve(baseContext, 'test-pkg/foo.js', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
+      });
+
+      test('without expanding platform-specific extensions', () => {
+        expect(Resolver.resolve(baseContext, 'test-pkg/foo.js', 'ios')).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: '/root/node_modules/test-pkg/lib/foo.js',
+          },
+        );
+      });
+    });
+
+    describe('package encapsulation', () => {
+      test('should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+        expect(
+          Resolver.resolve(baseContext, 'test-pkg/private/bar', null),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/private/bar.js',
+        });
+        // TODO(T142200031): Assert inaccessible import warning is logged
+      });
+
+      test('should not log warning when no "exports" field is present', () => {
+        expect(
+          Resolver.resolve(
+            {
+              ...baseContext,
+              ...createPackageAccessors({
+                '/root/node_modules/test-pkg/package.json': {
+                  main: 'index-main.js',
+                },
+              }),
+            },
+            'test-pkg/private/bar',
+            null,
+          ),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/private/bar.js',
+        });
+        // TODO(T142200031): Assert inaccessible import warning is NOT logged
       });
     });
   });
@@ -157,16 +287,18 @@ describe('with package exports resolution enabled', () => {
       test('should resolve main entry point using conditional exports', () => {
         const context = {
           ...baseContext,
-          unstable_conditionNames: ['browser', 'import', 'require'],
-          getPackage: () => ({
-            main: 'index-main.js',
-            exports: {
-              '.': {
-                browser: './index-browser.js',
-                default: './index.js',
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index-main.js',
+              exports: {
+                '.': {
+                  browser: './index-browser.js',
+                  default: './index.js',
+                },
               },
             },
           }),
+          unstable_conditionNames: ['browser', 'import', 'require'],
         };
 
         expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
@@ -178,14 +310,16 @@ describe('with package exports resolution enabled', () => {
       test('should resolve main entry point when root keys are a condition mapping (shorthand)', () => {
         const context = {
           ...baseContext,
-          unstable_conditionNames: ['browser', 'import', 'require'],
-          getPackage: () => ({
-            main: 'index-main.js',
-            exports: {
-              browser: './index-browser.js',
-              default: './index.js',
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index-main.js',
+              exports: {
+                browser: './index-browser.js',
+                default: './index.js',
+              },
             },
           }),
+          unstable_conditionNames: ['browser', 'import', 'require'],
         };
 
         expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({

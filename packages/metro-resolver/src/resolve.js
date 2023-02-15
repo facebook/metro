@@ -19,14 +19,15 @@ import type {
   Result,
 } from './types';
 
-const FailedToResolveNameError = require('./errors/FailedToResolveNameError');
-const FailedToResolvePathError = require('./errors/FailedToResolvePathError');
-const InvalidPackageError = require('./errors/InvalidPackageError');
-const formatFileCandidates = require('./errors/formatFileCandidates');
-const {getPackageEntryPoint} = require('./PackageResolve');
-const {getPackageEntryPointFromExports} = require('./PackageExportsResolve');
-const isAbsolutePath = require('absolute-path');
-const path = require('path');
+import isAbsolutePath from 'absolute-path';
+import path from 'path';
+import FailedToResolveNameError from './errors/FailedToResolveNameError';
+import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import InvalidPackageError from './errors/InvalidPackageError';
+import formatFileCandidates from './errors/formatFileCandidates';
+import {getPackageEntryPoint} from './PackageResolve';
+import {resolvePackageTargetFromExports} from './PackageExportsResolve';
+import invariant from 'invariant';
 
 function resolve(
   context: ResolutionContext,
@@ -123,7 +124,7 @@ function resolve(
   for (let i = 0; i < allDirPaths.length; ++i) {
     const candidate = context.redirectModulePath(allDirPaths[i]);
     // $FlowFixMe[incompatible-call]
-    const result = resolveFileOrDir(context, candidate, platform);
+    const result = resolvePackage(context, candidate, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
@@ -151,7 +152,7 @@ function resolveModulePath(
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
-  const result = resolveFileOrDir(context, redirectedPath, platform);
+  const result = resolvePackage(context, redirectedPath, platform);
   if (result.type === 'resolved') {
     return result.resolution;
   }
@@ -184,7 +185,7 @@ function resolveHasteName(
   const packageDirPath = path.dirname(packageJsonPath);
   const pathInModule = moduleName.substring(packageName.length + 1);
   const potentialModulePath = path.join(packageDirPath, pathInModule);
-  const result = resolveFileOrDir(context, potentialModulePath, platform);
+  const result = resolvePackage(context, potentialModulePath, platform);
   if (result.type === 'resolved') {
     return result;
   }
@@ -223,22 +224,53 @@ class MissingFileInHastePackageError extends Error {
  * to `/foo/bar.js` (preferred), but it might also be `/foo/bar/index.js`, or
  * even a package directory.
  */
-function resolveFileOrDir(
+function resolvePackage(
   context: ResolutionContext,
-  potentialModulePath: string,
+  /**
+   * The absolute path to a file or directory that may be contained within an
+   * npm package, e.g. from being joined with `context.extraNodeModules`.
+   */
+  modulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
-  const dirPath = path.dirname(potentialModulePath);
-  const fileNameHint = path.basename(potentialModulePath);
-  const fileResult = resolveFile(context, dirPath, fileNameHint, platform);
+  // TODO(T142200031): Evaluate the below when `unstable_enablePackageExports`
+  // is `false`, and always log package encapsulation warning if "exports" is
+  // defined but the module path is not included.
+  if (context.unstable_enablePackageExports) {
+    invariant(
+      path.isAbsolute(modulePath),
+      'resolvePackage expects an absolute module path',
+    );
+
+    const pkg = context.getPackageForModule(modulePath);
+    const exportsField = pkg?.packageJson.exports;
+
+    if (pkg != null && exportsField != null) {
+      try {
+        const packageExportsResult = resolvePackageTargetFromExports(
+          context,
+          pkg.rootPath,
+          modulePath,
+          exportsField,
+          platform,
+        );
+
+        if (packageExportsResult != null) {
+          return resolvedAs(packageExportsResult);
+        }
+      } catch (e) {
+        // TODO(T143882479): Log invalid package configuration warning
+      }
+    }
+  }
+
+  const dirPath = path.dirname(modulePath);
+  const fileName = path.basename(modulePath);
+  const fileResult = resolveFile(context, dirPath, fileName, platform);
   if (fileResult.type === 'resolved') {
     return fileResult;
   }
-  const dirResult = resolvePackageEntryPoint(
-    context,
-    potentialModulePath,
-    platform,
-  );
+  const dirResult = resolvePackageEntryPoint(context, modulePath, platform);
   if (dirResult.type === 'resolved') {
     return dirResult;
   }
@@ -249,55 +281,28 @@ function resolveFileOrDir(
  * Attempt to resolve a module path as an npm package entry point, or resolve as
  * a file if no `package.json` file is present.
  *
- * When `context.unstable_enablePackageExports` is `true`, attempts to resolve
- * using the "exports" field if present, based on the [Package Entry Points spec
- * ](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
- *
- * If resolution via "exports" does not return a match, or
- * `context.unstable_enablePackageExports` is `false`, will fall back to legacy
- * (non-exports) package resolution behaviour based on the ["browser" field spec
- * ](https://github.com/defunctzombie/package-browser-field-spec). This method
- * of resolution will additionally:
- * - Expand source and platform-specific extensions, e.g. `./lib/index` ->
- *     `./lib/index.ios.js`.
- * - Fall back to a child `index.js` file, e.g. `./lib` -> `./lib/index.js`.
+ * Implements legacy (non-exports) package resolution behaviour based on the
+ * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec):
+ * - Looks for a "main" entry point based on `context.mainFields`.
+ * - Considers any "main" subpaths after expending source and platform-specific
+ *     extensions, e.g. `./lib/index` -> `./lib/index.ios.js`.
+ * - Falls back to a child `index.js` file, e.g. `./lib` -> `./lib/index.js`.
  */
 function resolvePackageEntryPoint(
   context: ResolutionContext,
-  modulePath: string,
+  packagePath: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  const {doesFileExist, unstable_enablePackageExports} = context;
-  const packageJsonPath = path.join(modulePath, 'package.json');
+  const packageJsonPath = path.join(packagePath, 'package.json');
 
   if (!context.doesFileExist(packageJsonPath)) {
-    return resolveFile(context, modulePath, 'index', platform);
+    return resolveFile(context, packagePath, 'index', platform);
   }
 
   const packageInfo = {
     rootPath: path.dirname(packageJsonPath),
     packageJson: context.getPackage(packageJsonPath) ?? {},
   };
-
-  if (unstable_enablePackageExports) {
-    const packageExportsEntryPoint = getPackageEntryPointFromExports(
-      context,
-      packageInfo,
-      platform,
-    );
-
-    if (packageExportsEntryPoint != null) {
-      const mainModulePath = path.join(
-        packageInfo.rootPath,
-        packageExportsEntryPoint,
-      );
-
-      if (doesFileExist(mainModulePath)) {
-        return resolvedAs({type: 'sourceFile', filePath: mainModulePath});
-      }
-      // TODO(T142200031): Log an invalid package warning if entry point missing
-    }
-  }
 
   const mainModulePath = path.join(
     packageInfo.rootPath,
