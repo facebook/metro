@@ -70,6 +70,7 @@ export type PackageInfo = $ReadOnly<{
  * Check existence of a single file.
  */
 export type DoesFileExist = (filePath: string) => boolean;
+export type GetRealPath = (path: string) => ?string;
 export type IsAssetFile = (fileName: string) => boolean;
 
 /**
@@ -141,6 +142,7 @@ export type ResolutionContext = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
+  unstable_getRealPath?: ?GetRealPath,
   unstable_logWarning: (message: string) => void,
 }>;
 

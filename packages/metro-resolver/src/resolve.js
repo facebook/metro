@@ -463,7 +463,12 @@ function resolveSourceFileForExt(
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
-  if (context.doesFileExist(redirectedPath)) {
+  if (context.unstable_getRealPath) {
+    const maybeRealPath = context.unstable_getRealPath(redirectedPath);
+    if (maybeRealPath != null) {
+      return maybeRealPath;
+    }
+  } else if (context.doesFileExist(redirectedPath)) {
     return redirectedPath;
   }
   context.candidateExts.push(extension);

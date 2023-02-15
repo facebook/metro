@@ -18,7 +18,9 @@ import path from 'path';
  * Data structure approximating a file tree. Should be populated with complete
  * paths mapping to file contents.
  */
-type MockFileMap = {[path: string]: string};
+type MockFileMap = $ReadOnly<{
+  [path: string]: ?(string | $ReadOnly<{realPath: ?string}>),
+}>;
 
 /**
  * Create a new partial `ResolutionContext` object given a mock file structure.
@@ -27,12 +29,12 @@ type MockFileMap = {[path: string]: string};
  */
 export function createResolutionContext(
   fileMap: MockFileMap,
+  {enableSymlinks}: $ReadOnly<{enableSymlinks?: boolean}> = {},
 ): $Diff<ResolutionContext, {originModulePath: string}> {
   return {
     allowHaste: true,
     customResolverOptions: {},
     disableHierarchicalLookup: false,
-    doesFileExist: (filePath: string) => filePath in fileMap,
     extraNodeModules: null,
     isAssetFile: () => false,
     mainFields: ['browser', 'main'],
@@ -50,6 +52,24 @@ export function createResolutionContext(
     unstable_enablePackageExports: false,
     unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
+    ...(enableSymlinks === true
+      ? {
+          doesFileExist: (filePath: string) =>
+            // Should return false unless realpath(filePath) exists. We mock shallow
+            // dereferencing.
+            fileMap[filePath] != null &&
+            (typeof fileMap[filePath] === 'string' ||
+              typeof fileMap[filePath].realPath === 'string'),
+          unstable_getRealPath: filePath =>
+            typeof fileMap[filePath] === 'string'
+              ? filePath
+              : fileMap[filePath]?.realPath,
+        }
+      : {
+          doesFileExist: (filePath: string) =>
+            typeof fileMap[filePath] === 'string',
+          unstable_getRealPath: null,
+        }),
   };
 }
 

@@ -171,6 +171,19 @@ export default class TreeFS implements MutableFileSystem {
     return files;
   }
 
+  getRealPath(filePath: Path): ?string {
+    const normalPath = this._normalizePath(filePath);
+    const metadata = this.#files.get(normalPath);
+    if (metadata && metadata[H.SYMLINK] === 0) {
+      return fastPath.resolve(this.#rootDir, normalPath);
+    }
+    const result = this._lookupByNormalPath(normalPath, {follow: true});
+    if (!result || result.node instanceof Map) {
+      return null;
+    }
+    return fastPath.resolve(this.#rootDir, result.normalPath);
+  }
+
   addOrModify(filePath: Path, metadata: FileMetaData): void {
     const normalPath = this._normalizePath(filePath);
     this.bulkAddOrModify(new Map([[normalPath, metadata]]));

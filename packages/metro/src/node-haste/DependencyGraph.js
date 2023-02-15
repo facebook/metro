@@ -200,12 +200,23 @@ class DependencyGraph extends EventEmitter {
       reporter: this._config.reporter,
       resolveAsset: (dirPath: string, assetName: string, extension: string) => {
         const basePath = dirPath + path.sep + assetName;
-        const assets = [
+        let assets = [
           basePath + extension,
           ...this._config.resolver.assetResolutions.map(
             resolution => basePath + '@' + resolution + 'x' + extension,
           ),
-        ].filter(candidate => this._fileSystem.exists(candidate));
+        ];
+
+        if (this._config.resolver.unstable_enableSymlinks) {
+          assets = assets
+            .map(candidate => this._fileSystem.getRealPath(candidate))
+            .filter(Boolean);
+        } else {
+          assets = assets.filter(candidate =>
+            this._fileSystem.exists(candidate),
+          );
+        }
+
         return assets.length ? assets : null;
       },
       resolveRequest: this._config.resolver.resolveRequest,
@@ -215,6 +226,9 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
+      unstable_getRealPath: this._config.resolver.unstable_enableSymlinks
+        ? path => this._fileSystem.getRealPath(path)
+        : null,
     });
   }
 
@@ -237,14 +251,19 @@ class DependencyGraph extends EventEmitter {
     const containerName =
       splitIndex !== -1 ? filename.slice(0, splitIndex + 4) : filename;
 
-    // TODO Calling realpath allows us to get a hash for a given path even when
+    // Prior to unstable_enableSymlinks:
+    // Calling realpath allows us to get a hash for a given path even when
     // it's a symlink to a file, which prevents Metro from crashing in such a
     // case. However, it doesn't allow Metro to track changes to the target file
     // of the symlink. We should fix this by implementing a symlink map into
     // Metro (or maybe by implementing those "extra transformation sources" we've
     // been talking about for stuff like CSS or WASM).
+    //
+    // This is unnecessary with a symlink-aware fileSystem implementation.
+    const resolvedPath = this._config.resolver.unstable_enableSymlinks
+      ? containerName
+      : fs.realpathSync(containerName);
 
-    const resolvedPath = fs.realpathSync(containerName);
     const sha1 = this._fileSystem.getSha1(resolvedPath);
 
     if (!sha1) {
