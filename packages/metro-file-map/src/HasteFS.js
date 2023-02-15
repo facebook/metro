@@ -203,4 +203,8 @@ export default class HasteFS implements MutableFileSystem {
     }
     return this.#files.get(this._normalizePath(filePath));
   }
+
+  getRealPath(filePath: Path): Path {
+    throw new Error('HasteFS.getRealPath() is not implemented.');
+  }
 }

@@ -163,6 +163,7 @@ export interface FileSystem {
   getAllFiles(): Array<Path>;
   getDependencies(file: Path): ?Array<string>;
   getModuleName(file: Path): ?string;
+  getRealPath(file: Path): ?string;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): ?string;
 

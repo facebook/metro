@@ -15,6 +15,9 @@
     "absolute-path": "^0.0.0",
     "invariant": "^2.2.4"
   },
+  "devDependencies": {
+    "invariant": "^2.2.4"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=14.17.0"

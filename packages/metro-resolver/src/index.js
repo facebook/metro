@@ -20,6 +20,7 @@ export type {
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
+  GetRealPath,
   IsAssetFile,
   ResolutionContext,
   Resolution,

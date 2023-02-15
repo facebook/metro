@@ -86,6 +86,28 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
+  describe('getRealPath', () => {
+    test.each([
+      [p('/project/foo/link-to-another.js'), p('/project/foo/another.js')],
+      [p('/project/foo/link-to-bar.js'), p('/project/bar.js')],
+      [p('link-to-foo/link-to-another.js'), p('/project/foo/another.js')],
+      [p('/project/root/outside/external.js'), p('/outside/external.js')],
+      [p('/outside/../project/bar.js'), p('/project/bar.js')],
+    ])('%s -> %s', (givenPath, expectedRealPath) =>
+      expect(tfs.getRealPath(givenPath)).toEqual(expectedRealPath),
+    );
+
+    test.each([
+      [p('/project/foo')],
+      [p('/project/bar.js/bad-parent')],
+      [p('/project/root/outside')],
+      [p('/project/link-to-nowhere')],
+      [p('/project/not/exists')],
+    ])('returns null for directories or broken paths: %s', givenPath =>
+      expect(tfs.getRealPath(givenPath)).toEqual(null),
+    );
+  });
+
   describe('matchFilesWithContext', () => {
     test('non-recursive, skipping deep paths', () => {
       expect(

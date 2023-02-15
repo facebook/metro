@@ -26,6 +26,7 @@ describe('with package exports resolution disabled', () => {
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: false,
+      unstable_getRealPath: null,
     };
 
     expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({

@@ -15,6 +15,7 @@ import type {
   CustomResolver,
   DoesFileExist,
   FileCandidates,
+  GetRealPath,
   IsAssetFile,
   Resolution,
   ResolveAsset,
@@ -74,6 +75,7 @@ type Options<TPackage> = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
+  unstable_getRealPath: ?GetRealPath,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -136,6 +138,7 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionNames,
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
+      unstable_getRealPath,
     } = this._options;
 
     try {
@@ -155,6 +158,7 @@ class ModuleResolver<TPackage: Packageish> {
           unstable_conditionNames,
           unstable_conditionsByPlatform,
           unstable_enablePackageExports,
+          unstable_getRealPath,
           customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           resolveHasteModule: (name: string) =>
