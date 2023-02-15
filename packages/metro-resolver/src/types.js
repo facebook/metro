@@ -139,6 +139,7 @@ export type ResolutionContext = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
+  unstable_logWarning: (message: string) => void,
 }>;
 
 export type CustomResolutionContext = $ReadOnly<{

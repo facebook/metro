@@ -30,6 +30,7 @@ const createDefaultContext = require('metro-resolver/src/createDefaultContext');
 const path = require('path');
 const util = require('util');
 import type {BundlerResolution} from '../../DeltaBundler/types.flow';
+import type {Reporter} from '../../lib/reporting';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -66,6 +67,7 @@ type Options<TPackage> = $ReadOnly<{
   nodeModulesPaths: $ReadOnlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
+  reporter: Reporter,
   resolveAsset: ResolveAsset,
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
@@ -155,6 +157,7 @@ class ModuleResolver<TPackage: Packageish> {
           unstable_conditionNames,
           unstable_conditionsByPlatform,
           unstable_enablePackageExports,
+          unstable_logWarning: this._logWarning,
           customResolverOptions: resolverOptions.customResolverOptions ?? {},
           originModulePath: fromModule.path,
           resolveHasteModule: (name: string) =>
@@ -267,6 +270,13 @@ class ModuleResolver<TPackage: Packageish> {
         throw new Error('invalid type');
     }
   }
+
+  _logWarning = (message: string): void => {
+    this._options.reporter.update({
+      type: 'resolver_warning',
+      message,
+    });
+  };
 
   _removeRoot(candidates: FileCandidates): FileCandidates {
     if (candidates.filePathPrefix) {

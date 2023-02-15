@@ -48,6 +48,7 @@ export function createResolutionContext(
       web: ['browser'],
     },
     unstable_enablePackageExports: false,
+    unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
   };
 }

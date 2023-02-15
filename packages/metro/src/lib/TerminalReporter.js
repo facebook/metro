@@ -260,6 +260,9 @@ class TerminalReporter {
       case 'global_cache_disabled':
         this._logCacheDisabled(event.reason);
         break;
+      case 'resolver_warning':
+        this._logWarning(event.message);
+        break;
       case 'transform_cache_reset':
         reporting.logWarning(this.terminal, 'the transform cache was reset.');
         break;
@@ -433,6 +436,10 @@ class TerminalReporter {
         'to get HMR working again: %s',
       e,
     );
+  }
+
+  _logWarning(message: string): void {
+    reporting.logWarning(this.terminal, message);
   }
 
   _logWatcherHealthCheckResult(result: HealthCheckResult) {

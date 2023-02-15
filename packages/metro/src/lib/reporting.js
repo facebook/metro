@@ -128,6 +128,10 @@ export type ReportableEvent =
       ...
     }
   | {
+      type: 'resolver_warning',
+      message: string,
+    }
+  | {
       type: 'transformer_load_started',
     }
   | {
