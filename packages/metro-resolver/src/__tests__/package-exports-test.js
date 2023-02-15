@@ -123,6 +123,7 @@ describe('with package exports resolution enabled', () => {
     });
 
     test('[nonstrict] should fall back to "main" field resolution when file does not exist', () => {
+      const logWarning = jest.fn();
       const context = {
         ...baseContext,
         ...createPackageAccessors({
@@ -131,17 +132,22 @@ describe('with package exports resolution enabled', () => {
             exports: './foo.js',
           },
         }),
+        unstable_logWarning: logWarning,
       };
 
       expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-main.js',
       });
-      // TODO(T142200031): Assert that an invalid package warning is logged with
-      // file missing message
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+        "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+        Reason: The resolution for \\"/root/node_modules/test-pkg\\" defined in \\"exports\\" is /root/node_modules/test-pkg/foo.js, however this file does not exist."
+      `);
     });
 
     test('[nonstrict] should fall back to "main" field resolution when "exports" is an invalid subpath', () => {
+      const logWarning = jest.fn();
       const context = {
         ...baseContext,
         ...createPackageAccessors({
@@ -150,14 +156,18 @@ describe('with package exports resolution enabled', () => {
             exports: 'index.js',
           },
         }),
+        unstable_logWarning: logWarning,
       };
 
       expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-main.js',
       });
-      // TODO(T142200031): Assert that an invalid package warning is logged with
-      // invalid subpath value message
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+        "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+        Reason: One or more mappings for subpaths defined in \\"exports\\" are invalid. All values must begin with \\"./\\"."
+      `);
     });
 
     describe('should resolve "exports" target directly', () => {

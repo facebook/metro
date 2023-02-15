@@ -23,6 +23,7 @@ import isAbsolutePath from 'absolute-path';
 import path from 'path';
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import {getPackageEntryPoint} from './PackageResolve';
@@ -259,7 +260,11 @@ function resolvePackage(
           return resolvedAs(packageExportsResult);
         }
       } catch (e) {
-        // TODO(T143882479): Log invalid package configuration warning
+        if (e instanceof InvalidPackageConfigurationError) {
+          context.unstable_logWarning(e.message);
+        } else {
+          throw e;
+        }
       }
     }
   }

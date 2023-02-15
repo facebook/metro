@@ -12,7 +12,7 @@
 import type {ExportMap, ResolutionContext, SourceFileResolution} from './types';
 
 import path from 'path';
-import invariant from 'invariant';
+import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import toPosixPath from './utils/toPosixPath';
 
 /**
@@ -23,13 +23,16 @@ import toPosixPath from './utils/toPosixPath';
  *
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
+ *
+ * @throws {InvalidPackageConfigurationError} Raised if configuration specified
+ *   by `exportsField` is invalid.
  */
 export function resolvePackageTargetFromExports(
   context: ResolutionContext,
   /**
    * The path to the containing npm package directory.
    */
-  packageRoot: string,
+  packagePath: string,
   /**
    * The unresolved absolute path to the target module. This will be converted
    * to a package-relative subpath for comparison.
@@ -38,7 +41,15 @@ export function resolvePackageTargetFromExports(
   exportsField: ExportMap | string,
   platform: string | null,
 ): SourceFileResolution | null {
-  const packageSubpath = path.relative(packageRoot, modulePath);
+  const raiseConfigError = (reason: string) => {
+    throw new InvalidPackageConfigurationError({
+      reason,
+      modulePath,
+      packagePath,
+    });
+  };
+
+  const packageSubpath = path.relative(packagePath, modulePath);
   const subpath =
     // Convert to prefixed POSIX path for "exports" lookup
     packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
@@ -47,16 +58,20 @@ export function resolvePackageTargetFromExports(
     subpath,
     exportsField,
     platform,
+    raiseConfigError,
   );
 
   if (match != null) {
-    const filePath = path.join(packageRoot, match);
+    const filePath = path.join(packagePath, match);
 
     if (context.doesFileExist(filePath)) {
       return {type: 'sourceFile', filePath};
     }
-    // TODO(T143882479): Throw InvalidPackageConfigurationError (entry point
-    // missing) and log as warning in calling context.
+
+    raiseConfigError(
+      `The resolution for "${modulePath}" defined in "exports" is ${filePath}, ` +
+        'however this file does not exist.',
+    );
   }
 
   return null;
@@ -77,6 +92,7 @@ function matchSubpathFromExports(
   subpath: string,
   exportsField: ExportMap | string,
   platform: string | null,
+  raiseConfigError: (reason: string) => void,
 ): ?string {
   const conditionNames = new Set([
     'default',
@@ -86,7 +102,11 @@ function matchSubpathFromExports(
       : []),
   ]);
 
-  const exportMap = reduceExportsField(exportsField, conditionNames);
+  const exportMap = reduceExportsField(
+    exportsField,
+    conditionNames,
+    raiseConfigError,
+  );
 
   let match = exportMap[subpath];
 
@@ -123,13 +143,11 @@ type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
 /**
  * Reduce an "exports"-like field to a flat subpath mapping after resolving
  * shorthand syntax and conditional exports.
- *
- * @throws Will throw invariant violation if structure or configuration
- *   specified by `exportsField` is invalid.
  */
 function reduceExportsField(
   exportsField: ExportMap | string,
   conditionNames: $ReadOnlySet<string>,
+  raiseConfigError: (reason: string) => void,
 ): FlattenedExportMap {
   let result: {[subpath: string]: string | null} = {};
 
@@ -141,13 +159,15 @@ function reduceExportsField(
       subpathOrCondition.startsWith('.'),
     );
 
-    // TODO(T143882479): Throw InvalidPackageConfigurationError and log as
-    // warning in calling context.
-    invariant(
-      subpathKeys.length === 0 || subpathKeys.length === firstLevelKeys.length,
-      '"exports" object cannot have keys mapping both subpaths and conditions ' +
-        'at the same level',
-    );
+    if (
+      subpathKeys.length !== 0 &&
+      subpathKeys.length !== firstLevelKeys.length
+    ) {
+      raiseConfigError(
+        'The "exports" field cannot have keys which are both subpaths and ' +
+          'condition names at the same level',
+      );
+    }
 
     let exportMap = exportsField;
 
@@ -175,14 +195,12 @@ function reduceExportsField(
     value => value != null && !value.startsWith('./'),
   );
 
-  // TODO(T143882479): Throw InvalidPackageConfigurationError and log as
-  // warning in calling context.
-  invariant(
-    invalidValues.length === 0,
-    'One or more mappings for subpaths in "exports" is invalid. All values ' +
-      'must begin with "./": ' +
-      JSON.stringify(invalidValues),
-  );
+  if (invalidValues.length) {
+    raiseConfigError(
+      'One or more mappings for subpaths defined in "exports" are invalid. ' +
+        'All values must begin with "./".',
+    );
+  }
 
   return result;
 }
