@@ -12,6 +12,13 @@
 import Resolver from '../index';
 import {createPackageAccessors, createResolutionContext} from './utils';
 
+// Tests validating Package Exports resolution behaviour. See RFC0534:
+// https://github.com/react-native-community/discussions-and-proposals/blob/master/proposals/0534-metro-package-exports-support.md
+//
+// '[nonstrict]' tests describe behaviour that is out-of-spec, but which Metro
+// supports at feature launch for backwards compatibility. A future strict mode
+// for exports will disable these features.
+
 describe('with package exports resolution disabled', () => {
   test('should ignore "exports" field for main entry point', () => {
     const context = {
@@ -115,7 +122,7 @@ describe('with package exports resolution enabled', () => {
       });
     });
 
-    test('should fall back to "main" field resolution when file does not exist', () => {
+    test('[nonstrict] should fall back to "main" field resolution when file does not exist', () => {
       const context = {
         ...baseContext,
         ...createPackageAccessors({
@@ -134,7 +141,7 @@ describe('with package exports resolution enabled', () => {
       // file missing message
     });
 
-    test('should fall back to "main" field resolution when "exports" is an invalid subpath', () => {
+    test('[nonstrict] should fall back to "main" field resolution when "exports" is an invalid subpath', () => {
       const context = {
         ...baseContext,
         ...createPackageAccessors({
@@ -238,7 +245,7 @@ describe('with package exports resolution enabled', () => {
     });
 
     describe('package encapsulation', () => {
-      test('should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+      test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
         expect(
           Resolver.resolve(baseContext, 'test-pkg/private/bar', null),
         ).toEqual({
@@ -266,6 +273,91 @@ describe('with package exports resolution enabled', () => {
         );
         // TODO(T142200031): Assert inaccessible import warning is NOT logged
       });
+    });
+  });
+
+  describe('subpath patterns', () => {
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          name: 'test-pkg',
+          main: 'index.js',
+          exports: {
+            './features/*.js': './src/features/*.js',
+            './features/bar/*.js': {
+              'react-native': null,
+            },
+            './assets/*': './assets/*',
+          },
+        }),
+        '/root/node_modules/test-pkg/src/features/foo.js': '',
+        '/root/node_modules/test-pkg/src/features/foo.js.js': '',
+        '/root/node_modules/test-pkg/src/features/bar/Bar.js': '',
+        '/root/node_modules/test-pkg/src/features/baz.native.js': '',
+        '/root/node_modules/test-pkg/assets/Logo.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: true,
+    };
+
+    test('should resolve subpath patterns in "exports" matching import specifier', () => {
+      for (const [importSpecifier, filePath] of [
+        [
+          'test-pkg/features/foo.js',
+          '/root/node_modules/test-pkg/src/features/foo.js',
+        ],
+        // Valid: Subpath patterns allow the match to be any substring between
+        // the pattern base and pattern trailer
+        [
+          'test-pkg/features/foo.js.js',
+          '/root/node_modules/test-pkg/src/features/foo.js.js',
+        ],
+        [
+          'test-pkg/features/bar/Bar.js',
+          '/root/node_modules/test-pkg/src/features/bar/Bar.js',
+        ],
+      ]) {
+        expect(Resolver.resolve(baseContext, importSpecifier, null)).toEqual({
+          type: 'sourceFile',
+          filePath,
+        });
+      }
+
+      expect(() =>
+        Resolver.resolve(baseContext, 'test-pkg/features/foo', null),
+      ).toThrowError();
+      expect(() =>
+        Resolver.resolve(baseContext, 'test-pkg/features/baz.js', null),
+      ).toThrowError();
+    });
+
+    test('should use most specific pattern base', () => {
+      const context = {
+        ...baseContext,
+        unstable_conditionNames: ['react-native'],
+      };
+
+      // TODO(T145206395): Improve this error trace
+      expect(() =>
+        Resolver.resolve(context, 'test-pkg/features/bar/Bar.js', null),
+      ).toThrowErrorMatchingInlineSnapshot(`
+        "Module does not exist in the Haste module map or in these directories:
+          /root/src/node_modules
+          /root/node_modules
+          /node_modules
+        "
+      `);
+    });
+
+    test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+      expect(
+        Resolver.resolve(baseContext, 'test-pkg/assets/Logo.js', null),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/assets/Logo.js',
+      });
+      // TODO(T142200031): Assert inaccessible import warning is logged
     });
   });
 

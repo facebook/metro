@@ -88,7 +88,34 @@ function matchSubpathFromExports(
 
   const exportMap = reduceExportsField(exportsField, conditionNames);
 
-  return exportMap[subpath];
+  let match = exportMap[subpath];
+
+  // Attempt to match after expanding any subpath pattern keys
+  if (match == null) {
+    // Gather keys which are subpath patterns in descending order of specificity
+    const expansionKeys = Object.keys(exportMap)
+      .filter(key => key.includes('*'))
+      .sort(key => key.split('*')[0].length)
+      .reverse();
+
+    for (const key of expansionKeys) {
+      const value = exportMap[key];
+
+      // Skip invalid values (must include a single '*' or be `null`)
+      if (typeof value === 'string' && value.split('*').length !== 2) {
+        break;
+      }
+
+      const patternMatch = matchSubpathPattern(key, subpath);
+
+      if (patternMatch != null) {
+        match = value == null ? null : value.replace('*', patternMatch);
+        break;
+      }
+    }
+  }
+
+  return match;
 }
 
 type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
@@ -189,4 +216,26 @@ function reduceConditionalExport(
   }
 
   return reducedValue;
+}
+
+/**
+ * If a subpath pattern expands to the passed subpath, return the subpath match
+ * (value to substitute for '*'). Otherwise, return `null`.
+ *
+ * See https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns.
+ */
+function matchSubpathPattern(
+  subpathPattern: string,
+  subpath: string,
+): string | null {
+  const [patternBase, patternTrailer] = subpathPattern.split('*');
+
+  if (subpath.startsWith(patternBase) && subpath.endsWith(patternTrailer)) {
+    return subpath.substring(
+      patternBase.length,
+      subpath.length - patternTrailer.length,
+    );
+  }
+
+  return null;
 }
