@@ -249,29 +249,186 @@ describe('with package exports resolution enabled', () => {
       });
 
       test('should not log warning when no "exports" field is present', () => {
-        expect(
-          Resolver.resolve(
-            {
-              ...baseContext,
-              ...createPackageAccessors({
-                '/root/node_modules/test-pkg/package.json': {
-                  main: 'index-main.js',
-                },
-              }),
+        const context = {
+          ...baseContext,
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index-main.js',
             },
-            'test-pkg/private/bar',
-            null,
-          ),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/private/bar.js',
-        });
+          }),
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg/private/bar', null)).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: '/root/node_modules/test-pkg/private/bar.js',
+          },
+        );
         // TODO(T142200031): Assert inaccessible import warning is NOT logged
       });
     });
   });
 
   describe('conditional exports', () => {
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          name: 'test-pkg',
+          main: 'index.js',
+          exports: {
+            './foo.js': {
+              import: './lib/foo-module.mjs',
+              development: './lib/foo-dev.js',
+              'react-native': {
+                import: './lib/foo-react-native.mjs',
+                require: './lib/foo-react-native.cjs',
+                default: './lib/foo-react-native.js',
+              },
+              browser: './lib/foo-browser.js',
+              require: './lib/foo-require.cjs',
+              default: './lib/foo.js',
+            },
+          },
+        }),
+        '/root/node_modules/test-pkg/index.js': '',
+        '/root/node_modules/test-pkg/lib/foo.js': '',
+        '/root/node_modules/test-pkg/lib/foo-require.cjs': '',
+        '/root/node_modules/test-pkg/lib/foo-module.mjs': '',
+        '/root/node_modules/test-pkg/lib/foo-dev.js': '',
+        '/root/node_modules/test-pkg/lib/foo-browser.js': '',
+        '/root/node_modules/test-pkg/lib/foo-react-native.cjs': '',
+        '/root/node_modules/test-pkg/lib/foo-react-native.mjs': '',
+        '/root/node_modules/test-pkg/lib/foo-react-native.js': '',
+        '/root/node_modules/test-pkg/lib/foo.web.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: true,
+    };
+
+    test('should resolve "exports" subpath with conditions', () => {
+      const context = {
+        ...baseContext,
+        unstable_conditionNames: ['require', 'react-native'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo-react-native.cjs',
+      });
+    });
+
+    test('should resolve "exports" subpath with nested conditions', () => {
+      const context = {
+        ...baseContext,
+        unstable_conditionNames: ['require', 'react-native'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo-react-native.cjs',
+      });
+    });
+
+    test('should resolve asserted conditions in order specified by package', () => {
+      const context = {
+        ...baseContext,
+        unstable_conditionNames: ['react-native', 'import'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo-module.mjs',
+      });
+    });
+
+    test('should fall back to "default" condition if present', () => {
+      const context = {
+        ...baseContext,
+        unstable_conditionNames: [],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo.js',
+      });
+    });
+
+    test('should throw FailedToResolvePathError when no conditions are matched', () => {
+      const context = {
+        ...baseContext,
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            main: 'index.js',
+            exports: {
+              './foo.js': {
+                import: './lib/foo-module.mjs',
+                require: './lib/foo-require.cjs',
+                // 'default' entry can be omitted
+              },
+            },
+          },
+        }),
+        unstable_conditionNames: [],
+      };
+
+      // TODO(T145206395): Improve this error trace
+      expect(() => Resolver.resolve(context, 'test-pkg/foo.js', null))
+        .toThrowErrorMatchingInlineSnapshot(`
+        "Module does not exist in the Haste module map or in these directories:
+          /root/src/node_modules
+          /root/node_modules
+          /node_modules
+        "
+      `);
+    });
+
+    describe('unstable_conditionsByPlatform', () => {
+      test('should resolve "browser" condition for `web` platform when configured', () => {
+        const context = {
+          ...baseContext,
+          unstable_conditionNames: [],
+          unstable_conditionsByPlatform: {
+            web: ['browser'],
+          },
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
+        expect(Resolver.resolve(context, 'test-pkg/foo.js', 'web')).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo-browser.js',
+        });
+      });
+
+      test('should resolve using overridden per-platform conditions', () => {
+        const context = {
+          ...baseContext,
+          unstable_conditionNames: [],
+          unstable_conditionsByPlatform: {
+            web: ['development', 'browser'],
+          },
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg/foo.js', 'web')).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo-dev.js',
+        });
+        expect(
+          Resolver.resolve(
+            {...context, unstable_conditionsByPlatform: {}},
+            'test-pkg/foo.js',
+            'web',
+          ),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
+      });
+    });
+
     describe('main entry point', () => {
       const baseContext = {
         ...createResolutionContext({
