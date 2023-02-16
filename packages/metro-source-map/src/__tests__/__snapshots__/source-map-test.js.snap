@@ -8,10 +8,6 @@ Array [
       "line": 1,
     },
     "name": null,
-    "original": Object {
-      "column": null,
-      "line": null,
-    },
     "source": null,
   },
   Object {
@@ -56,10 +52,6 @@ Array [
       "line": 12,
     },
     "name": null,
-    "original": Object {
-      "column": null,
-      "line": null,
-    },
     "source": null,
   },
   Object {
@@ -80,10 +72,6 @@ Array [
       "line": 25,
     },
     "name": null,
-    "original": Object {
-      "column": null,
-      "line": null,
-    },
     "source": null,
   },
   Object {
