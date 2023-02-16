@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -21,6 +21,7 @@ const Consumer = require('./Consumer');
 const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
 const {generateFunctionMap} = require('./generateFunctionMap');
 const Generator = require('./Generator');
+// $FlowFixMe[untyped-import] - source-map
 const SourceMap = require('source-map');
 
 export type {IConsumer};
@@ -84,6 +85,15 @@ export type IndexMap = {
 };
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
+
+type SourceMapConsumerMapping = {
+  generatedLine: number,
+  generatedColumn: number,
+  originalLine: ?number,
+  originalColumn: ?number,
+  source: ?string,
+  name: ?string,
+};
 
 function fromRawMappingsImpl(
   isBlocking: boolean,
@@ -205,20 +215,33 @@ function toBabelSegments(
 ): Array<BabelSourceMapSegment> {
   const rawMappings: Array<BabelSourceMapSegment> = [];
 
-  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
-    rawMappings.push({
-      generated: {
-        line: map.generatedLine,
-        column: map.generatedColumn,
-      },
-      original: {
-        line: map.originalLine,
-        column: map.originalColumn,
-      },
-      source: map.source,
-      name: map.name,
-    });
-  });
+  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(
+    (map: SourceMapConsumerMapping) => {
+      rawMappings.push(
+        map.originalLine == null || map.originalColumn == null
+          ? {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              source: map.source,
+              name: map.name,
+            }
+          : {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              original: {
+                line: map.originalLine,
+                column: map.originalColumn,
+              },
+              source: map.source,
+              name: map.name,
+            },
+      );
+    },
+  );
 
   return rawMappings;
 }
@@ -274,11 +297,13 @@ function addMapping(
   if (n === 2) {
     generator.addSimpleMapping(line, column);
   } else if (n === 4) {
-    const sourceMap: SourceMapping = (mapping: any);
+    // $FlowIssue[invalid-tuple-arity] Arity is ensured by conidition on length
+    const sourceMap: SourceMapping = mapping;
 
     generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
   } else if (n === 5) {
-    const sourceMap: SourceMappingWithName = (mapping: any);
+    // $FlowIssue[invalid-tuple-arity] Arity is ensured by conidition on length
+    const sourceMap: SourceMappingWithName = mapping;
 
     generator.addNamedSourceMapping(
       line,
