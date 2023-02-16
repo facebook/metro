@@ -126,6 +126,12 @@ export type GetScriptSourceResponse = {
   bytecode?: string,
 };
 
+export type ErrorResponse = {
+  error: {
+    message: string,
+  },
+};
+
 export type DebuggerRequest =
   | SetBreakpointByUrlRequest
   | GetScriptSourceRequest;

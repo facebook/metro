@@ -11,6 +11,7 @@
 
 import type {
   DebuggerRequest,
+  ErrorResponse,
   GetScriptSourceRequest,
   GetScriptSourceResponse,
   MessageFromDevice,
@@ -385,11 +386,9 @@ class Device {
               'data:application/json;charset=utf-8;base64,' +
               new Buffer(sourceMap).toString('base64');
           } catch (exception) {
-            payload.params.sourceMapURL =
-              'data:application/json;charset=utf-8;base64,' +
-              new Buffer(
-                `Failed to fetch source map: ${exception.message}`,
-              ).toString('base64');
+            this._sendErrorToDebugger(
+              `Failed to fetch source map ${params.sourceMapURL}: ${exception.message}`,
+            );
           }
         }
       }
@@ -497,15 +496,21 @@ class Device {
     }
   }
 
-  async _processDebuggerGetScriptSource(
+  _processDebuggerGetScriptSource(
     req: GetScriptSourceRequest,
     socket: typeof WS,
   ) {
-    let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
-
-    const sendResponse = () => {
+    const sendSuccessResponse = (scriptSource: string) => {
       const result: GetScriptSourceResponse = {scriptSource};
       socket.send(JSON.stringify({id: req.id, result}));
+    };
+    const sendErrorResponse = (error: string) => {
+      // Tell the client that the request failed
+      const result: ErrorResponse = {error: {message: error}};
+      socket.send(JSON.stringify({id: req.id, result}));
+
+      // Send to the console as well, so the user can see it
+      this._sendErrorToDebugger(error);
     };
 
     const pathToSource = this._scriptIdToSourcePathMapping.get(
@@ -515,25 +520,27 @@ class Device {
       const httpURL = this._tryParseHTTPURL(pathToSource);
       if (httpURL) {
         this._fetchText(httpURL).then(
-          text => {
-            scriptSource = text;
-            sendResponse();
-          },
-          err => {
-            scriptSource = err.message;
-            sendResponse();
-          },
+          text => sendSuccessResponse(text),
+          err =>
+            sendErrorResponse(
+              `Failed to fetch source url ${pathToSource}: ${err.message}`,
+            ),
         );
       } else {
+        let file;
         try {
-          scriptSource = fs.readFileSync(
+          file = fs.readFileSync(
             path.resolve(this._projectRoot, pathToSource),
             'utf8',
           );
         } catch (err) {
-          scriptSource = err.message;
+          sendErrorResponse(
+            `Failed to fetch source file ${pathToSource}: ${err.message}`,
+          );
         }
-        sendResponse();
+        if (file) {
+          sendSuccessResponse(file);
+        }
       }
     }
   }
@@ -578,6 +585,27 @@ class Device {
       throw new Error('file too large to fetch via HTTP');
     }
     return text;
+  }
+
+  _sendErrorToDebugger(message: string) {
+    const debuggerSocket = this._debuggerConnection?.socket;
+    if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
+      debuggerSocket.send(
+        JSON.stringify({
+          method: 'Runtime.consoleAPICalled',
+          params: {
+            args: [
+              {
+                type: 'string',
+                value: message,
+              },
+            ],
+            executionContextId: 0,
+            type: 'error',
+          },
+        }),
+      );
+    }
   }
 }
 
