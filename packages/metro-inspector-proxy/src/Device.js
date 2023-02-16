@@ -20,8 +20,8 @@ import type {
 } from './types';
 
 import * as fs from 'fs';
-import * as http from 'http';
 import * as path from 'path';
+import fetch from 'node-fetch';
 import WS from 'ws';
 
 const debug = require('debug')('Metro:InspectorProxy');
@@ -269,11 +269,14 @@ class Device {
 
       if (this._debuggerConnection) {
         // Wrapping just to make flow happy :)
-        this._processMessageFromDevice(parsedPayload, this._debuggerConnection);
+        this._processMessageFromDevice(
+          parsedPayload,
+          this._debuggerConnection,
+        ).then(() => {
+          const messageToSend = JSON.stringify(parsedPayload);
+          debuggerSocket.send(messageToSend);
+        });
       }
-
-      const messageToSend = JSON.stringify(parsedPayload);
-      debuggerSocket.send(messageToSend);
     }
   }
 
@@ -350,7 +353,7 @@ class Device {
   }
 
   // Allows to make changes in incoming message from device.
-  _processMessageFromDevice(
+  async _processMessageFromDevice(
     payload: {method: string, params: {sourceMapURL: string, url: string}},
     debuggerInfo: DebuggerInfo,
   ) {
@@ -366,6 +369,27 @@ class Device {
               'localhost',
             );
             debuggerInfo.originalSourceURLAddress = address;
+          }
+        }
+
+        const sourceMapURL = this._tryParseHTTPURL(params.sourceMapURL);
+        if (sourceMapURL) {
+          // Some debug clients do not support fetching HTTP URLs. If the
+          // message headed to the debug client identifies the source map with
+          // an HTTP URL, fetch the content here and convert the content to a
+          // Data URL (which is more widely supported) before passing the
+          // message to the debug client.
+          try {
+            const sourceMap = await this._fetchText(sourceMapURL);
+            payload.params.sourceMapURL =
+              'data:application/json;charset=utf-8;base64,' +
+              new Buffer(sourceMap).toString('base64');
+          } catch (exception) {
+            payload.params.sourceMapURL =
+              'data:application/json;charset=utf-8;base64,' +
+              new Buffer(
+                `Failed to fetch source map: ${exception.message}`,
+              ).toString('base64');
           }
         }
       }
@@ -390,18 +414,6 @@ class Device {
         // $FlowFixMe[prop-missing]
         if (params.scriptId != null) {
           this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
-        }
-      }
-
-      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE_ID) {
-        // Chrome won't use the source map unless it appears to be new.
-        if (payload.params.sourceMapURL) {
-          payload.params.sourceMapURL +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
-        }
-        if (payload.params.url) {
-          payload.params.url +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
         }
       }
     }
@@ -485,7 +497,7 @@ class Device {
     }
   }
 
-  _processDebuggerGetScriptSource(
+  async _processDebuggerGetScriptSource(
     req: GetScriptSourceRequest,
     socket: typeof WS,
   ) {
@@ -500,35 +512,18 @@ class Device {
       req.params.scriptId,
     );
     if (pathToSource) {
-      let pathIsURL = false;
-      try {
-        pathIsURL = new URL(pathToSource).hostname == 'localhost';
-      } catch {}
-
-      if (pathIsURL) {
-        http
-          // $FlowFixMe[missing-local-annot]
-          .get(pathToSource, httpResponse => {
-            const {statusCode} = httpResponse;
-            if (statusCode == 200) {
-              httpResponse.setEncoding('utf8');
-              scriptSource = '';
-              httpResponse.on('data', (body: string) => {
-                scriptSource += body;
-              });
-              httpResponse.on('end', () => {
-                sendResponse();
-              });
-            } else {
-              scriptSource = `Fetching ${pathToSource} returned status ${statusCode}`;
-              sendResponse();
-              httpResponse.resume();
-            }
-          })
-          .on('error', e => {
-            scriptSource = `Fetching ${pathToSource} failed with error ${e.message}`;
+      const httpURL = this._tryParseHTTPURL(pathToSource);
+      if (httpURL) {
+        this._fetchText(httpURL).then(
+          text => {
+            scriptSource = text;
             sendResponse();
-          });
+          },
+          err => {
+            scriptSource = err.message;
+            sendResponse();
+          },
+        );
       } else {
         try {
           scriptSource = fs.readFileSync(
@@ -552,6 +547,37 @@ class Device {
     } else {
       return pageId;
     }
+  }
+
+  _tryParseHTTPURL(url: string): ?URL {
+    let parsedURL: ?URL;
+    try {
+      parsedURL = new URL(url);
+    } catch {}
+
+    const protocol = parsedURL?.protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      parsedURL = undefined;
+    }
+
+    return parsedURL;
+  }
+
+  // Fetch text, raising an exception if the text could not be fetched,
+  // or is too large.
+  async _fetchText(url: URL): Promise<string> {
+    if (url.hostname !== 'localhost') {
+      throw new Error('remote fetches not permitted');
+    }
+
+    const response = await fetch(url);
+    const text = await response.text();
+    // Restrict the length to well below the 500MB limit for nodejs (leaving
+    // room some some later manipulation, e.g. base64 or wrapping in JSON)
+    if (text.length > 350000000) {
+      throw new Error('file too large to fetch via HTTP');
+    }
+    return text;
   }
 }
 
