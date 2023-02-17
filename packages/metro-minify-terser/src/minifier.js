@@ -36,6 +36,11 @@ async function minify({
 }: MinifierOptions): Promise<{code: string, map: ?string}> {
   const options = {
     ...config,
+    output: {
+      // Mitigate https://github.com/terser/terser/issues/1341 - Terser may
+      // set its internal data on this object, so give it a shallow copy.
+      ...(config.output ?? {}),
+    },
     mangle:
       config.mangle === false
         ? false
