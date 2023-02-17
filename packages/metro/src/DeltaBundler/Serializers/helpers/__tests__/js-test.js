@@ -44,6 +44,7 @@ beforeEach(() => {
       ],
     ]),
     getSource: () => Buffer.from(''),
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     inverseDependencies: new CountingSet(),
     output: [
       {
