@@ -12,6 +12,7 @@
 import type {ExportMap, FileResolution, ResolutionContext} from './types';
 
 import path from 'path';
+import InvalidModuleSpecifierError from './errors/InvalidModuleSpecifierError';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
@@ -28,6 +29,8 @@ import toPosixPath from './utils/toPosixPath';
  *
  * @throws {InvalidPackageConfigurationError} Raised if configuration specified
  *   by `exportsField` is invalid.
+ * @throws {InvalidModuleSpecifierError} Raised if the resolved module specifier
+ *   is invalid.
  * @throws {PackagePathNotExportedError} Raised when the requested subpath is
  *   not exported.
  */
@@ -62,7 +65,7 @@ export function resolvePackageTargetFromExports(
     );
   }
 
-  const match = matchSubpathFromExports(
+  const {target, patternMatch} = matchSubpathFromExports(
     context,
     subpath,
     exportMap,
@@ -70,8 +73,31 @@ export function resolvePackageTargetFromExports(
     raiseConfigError,
   );
 
-  if (match != null) {
-    const filePath = path.join(packagePath, match);
+  if (target != null) {
+    const invalidSegmentInTarget = findInvalidPathSegment(target.slice(2));
+
+    if (invalidSegmentInTarget != null) {
+      raiseConfigError(
+        `The target for "${subpath}" defined in "exports" is "${target}", ` +
+          'however this value is an invalid subpath or subpath pattern ' +
+          `because it includes "${invalidSegmentInTarget}".`,
+      );
+    }
+
+    if (patternMatch != null && findInvalidPathSegment(patternMatch) != null) {
+      throw new InvalidModuleSpecifierError({
+        importSpecifier: modulePath,
+        reason:
+          `The target for "${subpath}" defined in "exports" is "${target}", ` +
+          'however this expands to an invalid subpath because the pattern ' +
+          `match "${patternMatch}" is invalid.`,
+      });
+    }
+
+    const filePath = path.join(
+      packagePath,
+      patternMatch != null ? target.replace('*', patternMatch) : target,
+    );
 
     if (context.isAssetFile(filePath)) {
       const assetResult = resolveAsset(context, filePath);
@@ -134,7 +160,7 @@ function normalizeExportsField(
   if (subpathKeys.length !== 0) {
     raiseConfigError(
       'The "exports" field cannot have keys which are both subpaths and ' +
-        'condition names at the same level',
+        'condition names at the same level.',
     );
   }
 
@@ -183,7 +209,10 @@ function matchSubpathFromExports(
   exportMap: ExportMap,
   platform: string | null,
   raiseConfigError: (reason: string) => void,
-): ?string {
+): $ReadOnly<{
+  target: string | null,
+  patternMatch: string | null,
+}> {
   const conditionNames = new Set([
     'default',
     ...context.unstable_conditionNames,
@@ -198,10 +227,11 @@ function matchSubpathFromExports(
     raiseConfigError,
   );
 
-  let match = exportMapAfterConditions[subpath];
+  let target = exportMapAfterConditions[subpath];
+  let patternMatch = null;
 
   // Attempt to match after expanding any subpath pattern keys
-  if (match == null) {
+  if (target == null) {
     // Gather keys which are subpath patterns in descending order of specificity
     const expansionKeys = Object.keys(exportMapAfterConditions)
       .filter(key => key.includes('*'))
@@ -216,16 +246,16 @@ function matchSubpathFromExports(
         break;
       }
 
-      const patternMatch = matchSubpathPattern(key, subpath);
+      patternMatch = matchSubpathPattern(key, subpath);
 
       if (patternMatch != null) {
-        match = value == null ? null : value.replace('*', patternMatch);
+        target = value;
         break;
       }
     }
   }
 
-  return match;
+  return {target, patternMatch};
 }
 
 type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
@@ -317,6 +347,21 @@ function matchSubpathPattern(
       patternBase.length,
       subpath.length - patternTrailer.length,
     );
+  }
+
+  return null;
+}
+
+function findInvalidPathSegment(subpath: string): ?string {
+  for (const segment of subpath.split(/[\\/]/)) {
+    if (
+      segment === '' ||
+      segment === '.' ||
+      segment === '..' ||
+      segment === 'node_modules'
+    ) {
+      return segment;
+    }
   }
 
   return null;

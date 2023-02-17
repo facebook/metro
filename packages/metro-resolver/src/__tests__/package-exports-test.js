@@ -242,6 +242,7 @@ describe('with package exports resolution enabled', () => {
           exports: {
             '.': './index.js',
             './foo.js': './lib/foo.js',
+            './baz': './node_modules/baz/index.js',
           },
         }),
         '/root/node_modules/test-pkg/index.js': '',
@@ -251,6 +252,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/lib/foo.js.js': '',
         '/root/node_modules/test-pkg/lib/foo.ios.js': '',
         '/root/node_modules/test-pkg/private/bar.js': '',
+        '/root/node_modules/test-pkg/node_modules/baz/index.js': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -278,6 +280,29 @@ describe('with package exports resolution enabled', () => {
       expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
         `"Attempted to import the module \\"/root/node_modules/test-pkg/foo\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
       );
+    });
+
+    test('[nonstrict] should fall back and log warning for an invalid "exports" target value', () => {
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        unstable_logWarning: logWarning,
+      };
+
+      // TODO(T145206395): Improve this error trace
+      expect(() => Resolver.resolve(context, 'test-pkg/baz', null))
+        .toThrowErrorMatchingInlineSnapshot(`
+        "Module does not exist in the Haste module map or in these directories:
+          /root/src/node_modules
+          /root/node_modules
+          /node_modules
+        "
+      `);
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+        "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+        Reason: The target for \\"./baz\\" defined in \\"exports\\" is \\"./node_modules/baz/index.js\\", however this value is an invalid subpath or subpath pattern because it includes \\"node_modules\\". Falling back to file-based resolution."
+      `);
     });
 
     describe('should resolve "exports" target directly', () => {
@@ -360,6 +385,8 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/src/features/foo.js.js': '',
         '/root/node_modules/test-pkg/src/features/bar/Bar.js': '',
         '/root/node_modules/test-pkg/src/features/baz.native.js': '',
+        '/root/node_modules/test-pkg/src/features/node_modules/foo/index.js':
+          '',
         '/root/node_modules/test-pkg/assets/Logo.js': '',
       }),
       originModulePath: '/root/src/main.js',
@@ -412,6 +439,34 @@ describe('with package exports resolution enabled', () => {
           /root/node_modules
           /node_modules
         "
+      `);
+    });
+
+    test('[nonstrict] should fall back and log warning for an invalid pattern match substitution', () => {
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        unstable_logWarning: logWarning,
+      };
+
+      // TODO(T145206395): Improve this error trace
+      expect(() =>
+        Resolver.resolve(
+          context,
+          'test-pkg/features/node_modules/foo/index.js',
+          null,
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(`
+        "Module does not exist in the Haste module map or in these directories:
+          /root/src/node_modules
+          /root/node_modules
+          /node_modules
+        "
+      `);
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+        "Invalid import specifier /root/node_modules/test-pkg/features/node_modules/foo/index.js.
+        Reason: The target for \\"./features/node_modules/foo/index.js\\" defined in \\"exports\\" is \\"./src/features/*.js\\", however this expands to an invalid subpath because the pattern match \\"node_modules/foo/index\\" is invalid. Falling back to file-based resolution."
       `);
     });
 
