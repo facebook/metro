@@ -9,67 +9,72 @@
  * @oncall react_native
  */
 
-import type {ResolutionContext} from '../index';
-
 import Resolver from '../index';
-import {createResolutionContext} from './utils';
-
-const files = {
-  '/root/src/main.js': '',
-  '/root/node_modules/test-pkg/package.json': '',
-  '/root/node_modules/test-pkg/index.js': '',
-  '/root/node_modules/test-pkg/index-browser.js': '',
-  '/root/node_modules/test-pkg/index-react-native.js': '',
-};
+import {createPackageAccessors, createResolutionContext} from './utils';
 
 describe('browser field spec', () => {
   describe('alternate main fields', () => {
-    const resolveTestPkg = (context: $Partial<ResolutionContext>) =>
-      Resolver.resolve(
-        {
-          ...createResolutionContext(files),
-          originModulePath: '/root/src/main.js',
-          ...context,
-        },
-        'test-pkg',
-        null,
-      );
     const packageJson = {
       name: 'test-pkg',
       main: 'index.js',
       browser: 'index-browser.js',
       'react-native': 'index-react-native.js',
     };
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify(packageJson),
+        '/root/node_modules/test-pkg/index.js': '',
+        '/root/node_modules/test-pkg/index-browser.js': '',
+        '/root/node_modules/test-pkg/index-react-native.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+    };
 
     test('should resolve package entry point using passed `mainFields` in order', () => {
       expect(
-        resolveTestPkg({
-          getPackage: () => packageJson,
-          mainFields: ['browser', 'main'],
-        }),
+        Resolver.resolve(
+          {
+            ...baseContext,
+            mainFields: ['browser', 'main'],
+          },
+          'test-pkg',
+          null,
+        ),
       ).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-browser.js',
       });
 
       expect(
-        resolveTestPkg({
-          getPackage: () => packageJson,
-          mainFields: ['react-native', 'browser', 'main'],
-        }),
+        Resolver.resolve(
+          {
+            ...baseContext,
+            mainFields: ['react-native', 'browser', 'main'],
+          },
+          'test-pkg',
+          null,
+        ),
       ).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-react-native.js',
       });
 
       expect(
-        resolveTestPkg({
-          getPackage: () => ({
-            name: 'test-pkg',
-            main: 'index.js',
-          }),
-          mainFields: ['browser', 'main'],
-        }),
+        Resolver.resolve(
+          {
+            ...baseContext,
+            ...createPackageAccessors({
+              '/root/node_modules/test-pkg/package.json': {
+                name: 'test-pkg',
+                main: 'index.js',
+              },
+            }),
+            mainFields: ['browser', 'main'],
+          },
+          'test-pkg',
+          null,
+        ),
       ).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index.js',
@@ -77,15 +82,18 @@ describe('browser field spec', () => {
     });
 
     test('should resolve .js and .json file extensions implicitly', () => {
-      expect(
-        resolveTestPkg({
-          getPackage: () => ({
+      const context = {
+        ...baseContext,
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
             ...packageJson,
             browser: 'index-browser',
-          }),
-          mainFields: ['browser', 'main'],
+          },
         }),
-      ).toEqual({
+        mainFields: ['browser', 'main'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index-browser.js',
       });

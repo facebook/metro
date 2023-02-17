@@ -25,6 +25,7 @@ import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
+import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import {getPackageEntryPoint} from './PackageResolve';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
@@ -235,15 +236,12 @@ function resolvePackage(
   modulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
-  // TODO(T142200031): Evaluate the below when `unstable_enablePackageExports`
-  // is `false`, and always log package encapsulation warning if "exports" is
-  // defined but the module path is not included.
-  if (context.unstable_enablePackageExports) {
-    invariant(
-      path.isAbsolute(modulePath),
-      'resolvePackage expects an absolute module path',
-    );
+  invariant(
+    path.isAbsolute(modulePath),
+    'resolvePackage expects an absolute module path',
+  );
 
+  if (context.unstable_enablePackageExports) {
     const pkg = context.getPackageForModule(modulePath);
     const exportsField = pkg?.packageJson.exports;
 
@@ -261,8 +259,16 @@ function resolvePackage(
           return resolvedAs(packageExportsResult);
         }
       } catch (e) {
-        if (e instanceof InvalidPackageConfigurationError) {
-          context.unstable_logWarning(e.message);
+        if (e instanceof PackagePathNotExportedError) {
+          context.unstable_logWarning(
+            e.message +
+              ' Falling back to file-based resolution. Consider updating the ' +
+              'call site or asking the package maintainer(s) to expose this API.',
+          );
+        } else if (e instanceof InvalidPackageConfigurationError) {
+          context.unstable_logWarning(
+            e.message + ' Falling back to file-based resolution.',
+          );
         } else {
           throw e;
         }

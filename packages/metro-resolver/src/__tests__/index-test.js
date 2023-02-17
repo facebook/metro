@@ -15,28 +15,49 @@ import type {ResolutionContext} from '../index';
 
 const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
 const Resolver = require('../index');
-const path = require('path');
 import {createResolutionContext} from './utils';
 
 const fileMap = {
   '/root/project/foo.js': '',
   '/root/project/bar.js': '',
   '/root/smth/beep.js': '',
-  '/root/node_modules/apple/package.json': '',
+  '/root/node_modules/apple/package.json': JSON.stringify({
+    name: 'apple',
+    main: 'main',
+  }),
   '/root/node_modules/apple/main.js': '',
-  '/root/node_modules/invalid/package.json': '',
+  '/root/node_modules/invalid/package.json': JSON.stringify({
+    name: 'invalid',
+    main: 'main',
+  }),
   '/node_modules/root-module/main.js': '',
-  '/node_modules/root-module/package.json': '',
+  '/node_modules/root-module/package.json': JSON.stringify({
+    name: 'root-module',
+    main: 'main',
+  }),
   '/other-root/node_modules/banana-module/main.js': '',
-  '/other-root/node_modules/banana-module/package.json': '',
+  '/other-root/node_modules/banana-module/package.json': JSON.stringify({
+    name: 'banana-module',
+    main: 'main',
+  }),
   '/other-root/node_modules/banana/main.js': '',
-  '/other-root/node_modules/banana/package.json': '',
+  '/other-root/node_modules/banana/package.json': JSON.stringify({
+    name: 'banana',
+    main: 'main',
+  }),
   '/other-root/node_modules/banana/node_modules/banana-module/main.js': '',
-  '/other-root/node_modules/banana/node_modules/banana-module/package.json': '',
+  '/other-root/node_modules/banana/node_modules/banana-module/package.json':
+    JSON.stringify({
+      name: 'banana-module',
+      main: 'main',
+    }),
   '/haste/Foo.js': '',
   '/haste/Bar.js': '',
   '/haste/Override.js': '',
-  '/haste/some-package/package.json': '',
+  '/haste/some-package/package.json': JSON.stringify({
+    name: 'some-package',
+    main: 'main',
+  }),
   '/haste/some-package/subdir/other-file.js': '',
   '/haste/some-package/main.js': '',
 };
@@ -44,10 +65,6 @@ const fileMap = {
 const CONTEXT: ResolutionContext = {
   ...createResolutionContext(fileMap),
   originModulePath: '/root/project/foo.js',
-  getPackage: (packageJsonPath: string) => ({
-    name: path.basename(path.dirname(packageJsonPath)),
-    main: 'main',
-  }),
   resolveHasteModule: (name: string) => {
     const candidate = '/haste/' + name + '.js';
     if (candidate in fileMap) {

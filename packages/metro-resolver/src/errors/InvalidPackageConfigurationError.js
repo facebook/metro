@@ -19,11 +19,6 @@ export default class InvalidPackageConfigurationError extends Error {
   reason: string;
 
   /**
-   * The module path or import specifier attempted.
-   */
-  modulePath: string;
-
-  /**
    * Absolute path of the package being resolved.
    */
   packagePath: string;
@@ -31,7 +26,6 @@ export default class InvalidPackageConfigurationError extends Error {
   constructor(
     opts: $ReadOnly<{
       reason: string,
-      modulePath: string,
       packagePath: string,
     }>,
   ) {

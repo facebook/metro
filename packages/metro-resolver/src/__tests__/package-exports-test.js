@@ -66,9 +66,42 @@ describe('with package exports resolution disabled', () => {
       type: 'sourceFile',
       filePath: '/root/node_modules/test-pkg/foo.js',
     });
-    expect(Resolver.resolve(context, 'test-pkg/foo', 'ios')).toEqual({
+
+    const logWarning = jest.fn();
+
+    expect(
+      Resolver.resolve(
+        {...context, unstable_logWarning: logWarning},
+        'test-pkg/foo',
+        'ios',
+      ),
+    ).toEqual({
       type: 'sourceFile',
       filePath: '/root/node_modules/test-pkg/foo.ios.js',
+    });
+    expect(logWarning).not.toHaveBeenCalled();
+  });
+
+  test('should ignore invalid "exports" field', () => {
+    const context = {
+      ...createResolutionContext({
+        '/root/src/main.js': '',
+        '/root/node_modules/test-pkg/package.json': JSON.stringify({
+          main: 'index.js',
+          exports: {
+            '.': './index-exports.js',
+            browser: './index.js',
+          },
+        }),
+        '/root/node_modules/test-pkg/index.js': '',
+      }),
+      originModulePath: '/root/src/main.js',
+      unstable_enablePackageExports: false,
+    };
+
+    expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/index.js',
     });
   });
 });
@@ -144,7 +177,7 @@ describe('with package exports resolution enabled', () => {
       expect(logWarning).toHaveBeenCalledTimes(1);
       expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
         "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
-        Reason: The resolution for \\"/root/node_modules/test-pkg\\" defined in \\"exports\\" is /root/node_modules/test-pkg/foo.js, however this file does not exist."
+        Reason: The resolution for \\"/root/node_modules/test-pkg\\" defined in \\"exports\\" is /root/node_modules/test-pkg/foo.js, however this file does not exist. Falling back to file-based resolution."
       `);
     });
 
@@ -168,7 +201,7 @@ describe('with package exports resolution enabled', () => {
       expect(logWarning).toHaveBeenCalledTimes(1);
       expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
         "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
-        Reason: One or more mappings for subpaths defined in \\"exports\\" are invalid. All values must begin with \\"./\\"."
+        Reason: One or more mappings for subpaths defined in \\"exports\\" are invalid. All values must begin with \\"./\\". Falling back to file-based resolution."
       `);
     });
 
@@ -231,11 +264,20 @@ describe('with package exports resolution enabled', () => {
     });
 
     test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
-      expect(Resolver.resolve(baseContext, 'test-pkg/foo', null)).toEqual({
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        unstable_logWarning: logWarning,
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/foo.js',
       });
-      // TODO(T142200031): Assert inaccessible import warning is logged
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
+        `"Attempted to import the module \\"/root/node_modules/test-pkg/foo\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+      );
     });
 
     describe('should resolve "exports" target directly', () => {
@@ -258,23 +300,10 @@ describe('with package exports resolution enabled', () => {
 
     describe('package encapsulation', () => {
       test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
-        expect(
-          Resolver.resolve(baseContext, 'test-pkg/private/bar', null),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/private/bar.js',
-        });
-        // TODO(T142200031): Assert inaccessible import warning is logged
-      });
-
-      test('should not log warning when no "exports" field is present', () => {
+        const logWarning = jest.fn();
         const context = {
           ...baseContext,
-          ...createPackageAccessors({
-            '/root/node_modules/test-pkg/package.json': {
-              main: 'index-main.js',
-            },
-          }),
+          unstable_logWarning: logWarning,
         };
 
         expect(Resolver.resolve(context, 'test-pkg/private/bar', null)).toEqual(
@@ -283,7 +312,31 @@ describe('with package exports resolution enabled', () => {
             filePath: '/root/node_modules/test-pkg/private/bar.js',
           },
         );
-        // TODO(T142200031): Assert inaccessible import warning is NOT logged
+        expect(logWarning).toHaveBeenCalledTimes(1);
+        expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
+          `"Attempted to import the module \\"/root/node_modules/test-pkg/private/bar\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+        );
+      });
+
+      test('should not log warning when no "exports" field is present', () => {
+        const logWarning = jest.fn();
+        const context = {
+          ...baseContext,
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index-main.js',
+            },
+          }),
+          unstable_logWarning: logWarning,
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg/private/bar', null)).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: '/root/node_modules/test-pkg/private/bar.js',
+          },
+        );
+        expect(logWarning).not.toHaveBeenCalled();
       });
     });
   });
@@ -362,14 +415,22 @@ describe('with package exports resolution enabled', () => {
       `);
     });
 
-    test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
-      expect(
-        Resolver.resolve(baseContext, 'test-pkg/assets/Logo.js', null),
-      ).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/assets/Logo.js',
+    describe('package encapsulation', () => {
+      test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+        const logWarning = jest.fn();
+        const context = {
+          ...baseContext,
+          unstable_logWarning: logWarning,
+        };
+
+        expect(
+          Resolver.resolve(context, 'test-pkg/assets/Logo.js', null),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/assets/Logo.js',
+        });
+        expect(logWarning).not.toHaveBeenCalled();
       });
-      // TODO(T142200031): Assert inaccessible import warning is logged
     });
   });
 
@@ -587,6 +648,38 @@ describe('with package exports resolution enabled', () => {
           type: 'sourceFile',
           filePath: '/root/node_modules/test-pkg/index-browser.js',
         });
+      });
+    });
+
+    describe('package encapsulation', () => {
+      test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
+        const logWarning = jest.fn();
+        const context = {
+          ...baseContext,
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index.js',
+              exports: {
+                './lib/foo.js': {
+                  import: './lib/foo-module.mjs',
+                  require: './lib/foo-require.cjs',
+                  // 'default' entry can be omitted
+                },
+              },
+            },
+          }),
+          unstable_conditionNames: [],
+          unstable_logWarning: logWarning,
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg/lib/foo.js', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
+        expect(logWarning).toHaveBeenCalledTimes(1);
+        expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
+          `"Attempted to import the module \\"/root/node_modules/test-pkg/lib/foo.js\\" which is listed in the \\"exports\\" of \\"/root/node_modules/test-pkg, however no match was resolved for thisrequest (platform = null). Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+        );
       });
     });
   });

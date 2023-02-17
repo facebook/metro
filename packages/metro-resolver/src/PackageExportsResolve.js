@@ -13,6 +13,7 @@ import type {ExportMap, FileResolution, ResolutionContext} from './types';
 
 import path from 'path';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
+import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
 import toPosixPath from './utils/toPosixPath';
 
@@ -20,13 +21,15 @@ import toPosixPath from './utils/toPosixPath';
  * Resolve a package subpath based on the entry points defined in the package's
  * "exports" field. If there is no match for the given subpath (which may be
  * augmented by resolution of conditional exports for the passed `context`),
- * returns `null`.
+ * throws a `PackagePathNotExportedError`.
  *
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  *
  * @throws {InvalidPackageConfigurationError} Raised if configuration specified
  *   by `exportsField` is invalid.
+ * @throws {PackagePathNotExportedError} Raised when the requested subpath is
+ *   not exported.
  */
 export function resolvePackageTargetFromExports(
   context: ResolutionContext,
@@ -41,23 +44,28 @@ export function resolvePackageTargetFromExports(
   modulePath: string,
   exportsField: ExportMap | string,
   platform: string | null,
-): FileResolution | null {
+): FileResolution {
   const raiseConfigError = (reason: string) => {
     throw new InvalidPackageConfigurationError({
       reason,
-      modulePath,
       packagePath,
     });
   };
 
-  const packageSubpath = path.relative(packagePath, modulePath);
-  const subpath =
-    // Convert to prefixed POSIX path for "exports" lookup
-    packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
+  const subpath = getExportsSubpath(packagePath, modulePath);
+  const exportMap = normalizeExportsField(exportsField, raiseConfigError);
+
+  if (!isSubpathDefinedInExports(exportMap, subpath)) {
+    throw new PackagePathNotExportedError(
+      `Attempted to import the module "${modulePath}" which is not listed ` +
+        `in the "exports" of "${packagePath}".`,
+    );
+  }
+
   const match = matchSubpathFromExports(
     context,
     subpath,
-    exportsField,
+    exportMap,
     platform,
     raiseConfigError,
   );
@@ -66,7 +74,11 @@ export function resolvePackageTargetFromExports(
     const filePath = path.join(packagePath, match);
 
     if (context.isAssetFile(filePath)) {
-      return resolveAsset(context, filePath);
+      const assetResult = resolveAsset(context, filePath);
+
+      if (assetResult != null) {
+        return assetResult;
+      }
     }
 
     if (context.doesFileExist(filePath)) {
@@ -79,7 +91,80 @@ export function resolvePackageTargetFromExports(
     );
   }
 
-  return null;
+  throw new PackagePathNotExportedError(
+    `Attempted to import the module "${modulePath}" which is listed in the ` +
+      `"exports" of "${packagePath}, however no match was resolved for this` +
+      `request (platform = ${platform ?? 'null'}).`,
+  );
+}
+
+/**
+ * Convert a module path to the package-relative subpath key to attempt for
+ * "exports" field lookup.
+ */
+function getExportsSubpath(packagePath: string, modulePath: string): string {
+  const packageSubpath = path.relative(packagePath, modulePath);
+
+  return packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
+}
+
+/**
+ * Normalise an "exports"-like field by parsing string shorthand and conditions
+ * shorthand at root.
+ *
+ * See https://nodejs.org/docs/latest-v19.x/api/packages.html#exports-sugar.
+ */
+function normalizeExportsField(
+  exportsField: ExportMap | string,
+  raiseConfigError: (reason: string) => void,
+): ExportMap {
+  if (typeof exportsField === 'string') {
+    return {'.': exportsField};
+  }
+
+  const firstLevelKeys = Object.keys(exportsField);
+  const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
+    subpathOrCondition.startsWith('.'),
+  );
+
+  if (subpathKeys.length === firstLevelKeys.length) {
+    return exportsField;
+  }
+
+  if (subpathKeys.length !== 0) {
+    raiseConfigError(
+      'The "exports" field cannot have keys which are both subpaths and ' +
+        'condition names at the same level',
+    );
+  }
+
+  return {'.': exportsField};
+}
+
+/**
+ * Identifies whether the given subpath is defined in the given "exports"-like
+ * mapping. Does not reduce exports conditions (therefore does not identify
+ * whether the subpath is mapped to a value).
+ */
+export function isSubpathDefinedInExports(
+  exportMap: ExportMap,
+  subpath: string,
+): boolean {
+  if (subpath in exportMap) {
+    return true;
+  }
+
+  // Attempt to match after expanding any subpath pattern keys
+  for (const key in exportMap) {
+    if (
+      key.split('*').length === 2 &&
+      matchSubpathPattern(key, subpath) != null
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -95,7 +180,7 @@ function matchSubpathFromExports(
    * an exact subpath key or subpath pattern key in "exports".
    */
   subpath: string,
-  exportsField: ExportMap | string,
+  exportMap: ExportMap,
   platform: string | null,
   raiseConfigError: (reason: string) => void,
 ): ?string {
@@ -107,24 +192,24 @@ function matchSubpathFromExports(
       : []),
   ]);
 
-  const exportMap = reduceExportsField(
-    exportsField,
+  const exportMapAfterConditions = reduceExportMap(
+    exportMap,
     conditionNames,
     raiseConfigError,
   );
 
-  let match = exportMap[subpath];
+  let match = exportMapAfterConditions[subpath];
 
   // Attempt to match after expanding any subpath pattern keys
   if (match == null) {
     // Gather keys which are subpath patterns in descending order of specificity
-    const expansionKeys = Object.keys(exportMap)
+    const expansionKeys = Object.keys(exportMapAfterConditions)
       .filter(key => key.includes('*'))
       .sort(key => key.split('*')[0].length)
       .reverse();
 
     for (const key of expansionKeys) {
-      const value = exportMap[key];
+      const value = exportMapAfterConditions[key];
 
       // Skip invalid values (must include a single '*' or be `null`)
       if (typeof value === 'string' && value.split('*').length !== 2) {
@@ -146,53 +231,27 @@ function matchSubpathFromExports(
 type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
 
 /**
- * Reduce an "exports"-like field to a flat subpath mapping after resolving
- * shorthand syntax and conditional exports.
+ * Reduce an "exports"-like mapping to a flat subpath mapping after resolving
+ * conditional exports.
  */
-function reduceExportsField(
-  exportsField: ExportMap | string,
+function reduceExportMap(
+  exportMap: ExportMap,
   conditionNames: $ReadOnlySet<string>,
   raiseConfigError: (reason: string) => void,
 ): FlattenedExportMap {
-  let result: {[subpath: string]: string | null} = {};
+  const result: {[subpath: string]: string | null} = {};
 
-  if (typeof exportsField === 'string') {
-    result = {'.': exportsField};
-  } else {
-    const firstLevelKeys = Object.keys(exportsField);
-    const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
-      subpathOrCondition.startsWith('.'),
+  for (const subpath in exportMap) {
+    const subpathValue = reduceConditionalExport(
+      exportMap[subpath],
+      conditionNames,
     );
 
-    if (
-      subpathKeys.length !== 0 &&
-      subpathKeys.length !== firstLevelKeys.length
-    ) {
-      raiseConfigError(
-        'The "exports" field cannot have keys which are both subpaths and ' +
-          'condition names at the same level',
-      );
-    }
-
-    let exportMap = exportsField;
-
-    // Normalise conditions shorthand at root
-    if (subpathKeys.length === 0) {
-      exportMap = {'.': exportsField};
-    }
-
-    for (const subpath in exportMap) {
-      const subpathValue = reduceConditionalExport(
-        exportMap[subpath],
-        conditionNames,
-      );
-
-      // If a subpath has no resolution for the passed `conditionNames`, do not
-      // include it in the result. (This includes only explicit `null` values,
-      // which may conditionally hide higher-specificity subpath patterns.)
-      if (subpathValue !== 'no-match') {
-        result[subpath] = subpathValue;
-      }
+    // If a subpath has no resolution for the passed `conditionNames`, do not
+    // include it in the result. (This includes only explicit `null` values,
+    // which may conditionally hide higher-specificity subpath patterns.)
+    if (subpathValue !== 'no-match') {
+      result[subpath] = subpathValue;
     }
   }
 
