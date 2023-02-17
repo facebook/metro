@@ -326,7 +326,59 @@ Note that if you specify your own value for this config option it will replace (
 
 Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
 
+#### `unstable_conditionNames` <div class="label experimental">Experimental</div>
+
+Type: `Array<string>`
+
+:::note
+
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+
+:::
+
+The set of [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to assert globally when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
+
+Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors. The `default` condition is always matched.
+
+Defaults to `['import', 'require']`.
+
+#### `unstable_conditionsByPlatform` <div class="label experimental">Experimental</div>
+
+Type: `{[platform: string]: Array<string>}`
+
+:::note
+
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+
+:::
+
+The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to dynamically assert by platform (see [`platforms`](#platforms)) when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
+
+Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['import', 'require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['import', 'require'])` otherwise. Again, these are resolved in the order specified by each package.
+
+Defaults to `‌{ web: ['browser'] }`.
+
+#### `unstable_enablePackageExports` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Enable experimental [Package Exports](https://nodejs.org/docs/latest-v18.x/api/packages.html#package-entry-points) support. Under this mode, Metro will read the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in `package.json` files when present and use it to resolve package entry points.
+
+When no match is found in `"exports"`, Metro will log a warning and fall back to resolving modules without considering `"exports"`. This makes this mode largely backwards-compatible, with the following exceptions:
+
+- If a module is matched in `"exports"`, [`sourceExts`](#sourceexts) and [`platforms`](#platforms) will not be considered (i.e. platform-specific extensions will not be used). This is done for compatibility with Node.
+- If a module exists at a file path that is also listed in `"exports"`, and the `"exports"` entry maps to a different file, the `"exports"` entry will be preferred.
+
+Defaults to `false`.
+
+:::note
+
+In a future release of Metro, this option will become `true` by default.
+
+:::
+
 ---
+
 ### Transformer Options
 
 #### `asyncRequireModulePath`
