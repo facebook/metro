@@ -10,25 +10,14 @@
  */
 
 import type {Module, Options, Dependency} from '../types.flow';
-import type {Result} from '../Graph';
+import type {Graph as GraphType, Result} from '../Graph';
+
+import path from 'path';
 import CountingSet from '../../lib/CountingSet';
-import {Graph} from '../Graph';
 
 jest.mock('../../Bundler');
 
-const DeltaCalculator = require('../DeltaCalculator');
-const {EventEmitter} = require('events');
-
-const traverseDependencies = jest.spyOn(
-  Graph.prototype,
-  'traverseDependencies',
-);
-const initialTraverseDependencies = jest.spyOn(
-  Graph.prototype,
-  'initialTraverseDependencies',
-);
-
-describe('DeltaCalculator', () => {
+describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let entryModule: Module<$FlowFixMe>;
   let fooModule: Module<$FlowFixMe>;
   let barModule: Module<$FlowFixMe>;
@@ -37,9 +26,12 @@ describe('DeltaCalculator', () => {
 
   let deltaCalculator;
   let fileWatcher;
+  let traverseDependencies;
+  let initialTraverseDependencies;
 
   const options = {
     unstable_allowRequireContext: false,
+    unstable_enablePackageExports: true,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
@@ -61,7 +53,30 @@ describe('DeltaCalculator', () => {
     },
   };
 
+  function p(posixPath: string): string {
+    if (osPlatform === 'win32') {
+      return path.win32.join('C:\\', ...posixPath.split('/'));
+    }
+
+    return posixPath;
+  }
+
   beforeEach(async () => {
+    if (osPlatform === 'win32') {
+      jest.doMock('path', () => jest.requireActual('path/win32'));
+    } else {
+      jest.doMock('path', () => jest.requireActual('path'));
+    }
+
+    const {EventEmitter} = require('events');
+    const {Graph} = require('../Graph');
+
+    traverseDependencies = jest.spyOn(Graph.prototype, 'traverseDependencies');
+    initialTraverseDependencies = jest.spyOn(
+      Graph.prototype,
+      'initialTraverseDependencies',
+    );
+
     fileWatcher = new EventEmitter();
     initialTraverseDependencies.mockImplementationOnce(async function <T>(
       this: Graph<T>,
@@ -72,7 +87,7 @@ describe('DeltaCalculator', () => {
           [
             'foo',
             {
-              absolutePath: '/foo',
+              absolutePath: p('/foo'),
               data: {
                 name: 'foo',
                 // $FlowFixMe[missing-empty-array-annot]
@@ -83,7 +98,7 @@ describe('DeltaCalculator', () => {
           [
             'bar',
             {
-              absolutePath: '/bar',
+              absolutePath: p('/bar'),
               data: {
                 name: 'bar',
                 // $FlowFixMe[missing-empty-array-annot]
@@ -94,7 +109,7 @@ describe('DeltaCalculator', () => {
           [
             'baz',
             {
-              absolutePath: '/baz',
+              absolutePath: p('/baz'),
               data: {
                 name: 'baz',
                 // $FlowFixMe[missing-empty-array-annot]
@@ -105,7 +120,7 @@ describe('DeltaCalculator', () => {
         ]),
         inverseDependencies: new CountingSet(),
         output: [],
-        path: '/bundle',
+        path: p('/bundle'),
         getSource: () => Buffer.of(),
       };
       fooModule = {
@@ -113,7 +128,7 @@ describe('DeltaCalculator', () => {
           [
             'qux',
             {
-              absolutePath: '/qux',
+              absolutePath: p('/qux'),
               data: {
                 name: 'qux',
                 // $FlowFixMe[missing-empty-array-annot]
@@ -122,55 +137,57 @@ describe('DeltaCalculator', () => {
             },
           ],
         ]),
-        inverseDependencies: new CountingSet(['/bundle']),
+        inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
-        path: '/foo',
+        path: p('/foo'),
         getSource: () => Buffer.of(),
       };
       barModule = {
         dependencies: new Map<string, Dependency>(),
-        inverseDependencies: new CountingSet(['/bundle']),
+        inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
-        path: '/bar',
+        path: p('/bar'),
         getSource: () => Buffer.of(),
       };
       bazModule = {
         dependencies: new Map<string, Dependency>(),
-        inverseDependencies: new CountingSet(['/bundle']),
+        inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
-        path: '/baz',
+        path: p('/baz'),
         getSource: () => Buffer.of(),
       };
       quxModule = {
         dependencies: new Map<string, Dependency>(),
-        inverseDependencies: new CountingSet(['/foo']),
+        inverseDependencies: new CountingSet([p('/foo')]),
         output: [],
-        path: '/qux',
+        path: p('/qux'),
         getSource: () => Buffer.of(),
       };
 
-      this.dependencies.set('/bundle', entryModule);
-      this.dependencies.set('/foo', fooModule);
-      this.dependencies.set('/bar', barModule);
-      this.dependencies.set('/baz', bazModule);
-      this.dependencies.set('/qux', quxModule);
+      this.dependencies.set(p('/bundle'), entryModule);
+      this.dependencies.set(p('/foo'), fooModule);
+      this.dependencies.set(p('/bar'), barModule);
+      this.dependencies.set(p('/baz'), bazModule);
+      this.dependencies.set(p('/qux'), quxModule);
 
       return {
         added: new Map([
-          ['/bundle', entryModule],
-          ['/foo', fooModule],
-          ['/bar', barModule],
-          ['/baz', bazModule],
-          ['/qux', quxModule],
+          [p('/bundle'), entryModule],
+          [p('/foo'), fooModule],
+          [p('/bar'), barModule],
+          [p('/baz'), bazModule],
+          [p('/qux'), quxModule],
         ]),
         modified: new Map(),
         deleted: new Set(),
       };
     });
 
+    const DeltaCalculator = require('../DeltaCalculator');
+
     // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(
-      new Set(['/bundle']),
+      new Set([p('/bundle')]),
       fileWatcher,
       options,
     );
@@ -181,6 +198,7 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReset();
     initialTraverseDependencies.mockReset();
+    jest.resetModules();
   });
 
   it('should start listening for file changes after being initialized', async () => {
@@ -201,11 +219,11 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       added: new Map([
-        ['/bundle', entryModule],
-        ['/foo', fooModule],
-        ['/bar', barModule],
-        ['/baz', bazModule],
-        ['/qux', quxModule],
+        [p('/bundle'), entryModule],
+        [p('/foo'), fooModule],
+        [p('/bar'), barModule],
+        [p('/baz'), bazModule],
+        [p('/qux'), quxModule],
       ]),
       modified: new Map(),
       deleted: new Set(),
@@ -240,11 +258,11 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       added: new Map([
-        ['/bundle', entryModule],
-        ['/foo', fooModule],
-        ['/bar', barModule],
-        ['/baz', bazModule],
-        ['/qux', quxModule],
+        [p('/bundle'), entryModule],
+        [p('/foo'), fooModule],
+        [p('/bar'), barModule],
+        [p('/baz'), bazModule],
+        [p('/qux'), quxModule],
       ]),
       modified: new Map(),
       deleted: new Set(),
@@ -256,11 +274,11 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [{type: 'add', filePath: p('/foo'), metadata: {type: 'f'}}],
     });
 
     traverseDependencies.mockResolvedValueOnce({
-      added: new Map([['/foo', fooModule]]),
+      added: new Map([[p('/foo'), fooModule]]),
       modified: new Map(),
       deleted: new Set(),
     });
@@ -285,13 +303,15 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
-        modified: new Map([['/foo', fooModule]]),
+        modified: new Map([[p('/foo'), fooModule]]),
         deleted: new Set(),
       }),
     );
@@ -303,7 +323,7 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       added: new Map(),
-      modified: new Map([['/foo', fooModule]]),
+      modified: new Map([[p('/foo'), fooModule]]),
       deleted: new Set(),
       reset: false,
     });
@@ -316,14 +336,16 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
-        modified: new Map([['/foo', fooModule]]),
-        deleted: new Set(['/baz']),
+        modified: new Map([[p('/foo'), fooModule]]),
+        deleted: new Set([p('/baz')]),
       }),
     );
 
@@ -334,8 +356,8 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       added: new Map(),
-      modified: new Map([['/foo', fooModule]]),
-      deleted: new Set(['/baz']),
+      modified: new Map([[p('/foo'), fooModule]]),
+      deleted: new Set([p('/baz')]),
       reset: false,
     });
 
@@ -347,31 +369,33 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     const quxModule: Module<$FlowFixMe> = {
       dependencies: new Map<string, Dependency>(),
       inverseDependencies: new CountingSet(),
       output: [],
-      path: '/qux',
+      path: p('/qux'),
       getSource: () => Buffer.of(),
     };
 
     traverseDependencies.mockImplementation(async function <T>(
-      this: Graph<T>,
+      this: GraphType<T>,
       paths: $ReadOnlyArray<string>,
       options: Options<T>,
     ): Promise<Result<T>> {
-      this.dependencies.set('/qux', quxModule);
+      this.dependencies.set(p('/qux'), quxModule);
 
       return {
         added: new Map(),
         modified: new Map([
-          ['/foo', fooModule],
-          ['/qux', quxModule],
+          [p('/foo'), fooModule],
+          [p('/qux'), quxModule],
         ]),
-        deleted: new Set(['/bar', '/baz']),
+        deleted: new Set([p('/bar'), p('/baz')]),
       };
     });
 
@@ -382,10 +406,10 @@ describe('DeltaCalculator', () => {
     expect(result).toEqual({
       added: new Map([]),
       modified: new Map([
-        ['/foo', fooModule],
-        ['/qux', quxModule],
+        [p('/foo'), fooModule],
+        [p('/qux'), quxModule],
       ]),
-      deleted: new Set(['/bar', '/baz']),
+      deleted: new Set([p('/bar'), p('/baz')]),
       reset: false,
     });
   });
@@ -397,7 +421,7 @@ describe('DeltaCalculator', () => {
         deltaCalculator.on('change', () => done());
         fileWatcher.emit('change', {
           eventsQueue: [
-            {type: 'change', filePath: '/foo', metadata: {type: 'f'}},
+            {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
           ],
         });
       })
@@ -411,7 +435,7 @@ describe('DeltaCalculator', () => {
     deltaCalculator.on('change', onChangeFile);
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [{type: 'add', filePath: p('/foo'), metadata: {type: 'f'}}],
     });
 
     jest.runAllTimers();
@@ -426,7 +450,9 @@ describe('DeltaCalculator', () => {
     deltaCalculator.on('delete', onChangeFile);
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     jest.runAllTimers();
@@ -438,7 +464,9 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(Promise.reject(new Error()));
@@ -458,19 +486,23 @@ describe('DeltaCalculator', () => {
 
     // First modify the file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     // Then delete that same file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
-        modified: new Map([['/bundle', entryModule]]),
-        deleted: new Set(['/foo']),
+        modified: new Map([[p('/bundle'), entryModule]]),
+        deleted: new Set([p('/foo')]),
       }),
     );
 
@@ -478,13 +510,13 @@ describe('DeltaCalculator', () => {
       await deltaCalculator.getDelta({reset: false, shallow: false}),
     ).toEqual({
       added: new Map(),
-      modified: new Map([['/bundle', entryModule]]),
-      deleted: new Set(['/foo']),
+      modified: new Map([[p('/bundle'), entryModule]]),
+      deleted: new Set([p('/foo')]),
       reset: false,
     });
 
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
+    expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/bundle')]);
   });
 
   it('does not traverse a file after deleting it and one of its dependencies', async () => {
@@ -492,19 +524,23 @@ describe('DeltaCalculator', () => {
 
     // Delete a file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     // Delete a dependency of the deleted file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/qux', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'delete', filePath: p('/qux'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
-        modified: new Map([['/bundle', entryModule]]),
-        deleted: new Set(['/foo']),
+        modified: new Map([[p('/bundle'), entryModule]]),
+        deleted: new Set([p('/foo')]),
       }),
     );
 
@@ -513,7 +549,7 @@ describe('DeltaCalculator', () => {
     // Only the /bundle module should have been traversed (since it's an
     // inverse dependency of /foo).
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
+    expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/bundle')]);
   });
 
   it('should not do unnecessary work when adding a file after deleting it', async () => {
@@ -521,18 +557,22 @@ describe('DeltaCalculator', () => {
 
     // First delete a file
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     // Then add it again
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/foo', metadata: {type: 'f'}}],
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
     });
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
-        modified: new Map([['/foo', entryModule]]),
+        modified: new Map([[p('/foo'), entryModule]]),
         deleted: new Set(),
       }),
     );
@@ -540,7 +580,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);
+    expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/foo')]);
   });
 
   it.each(['add', 'delete'])(
@@ -554,7 +594,7 @@ describe('DeltaCalculator', () => {
 
       fileWatcher.emit('change', {
         eventsQueue: [
-          {type: eventType, filePath: '/link', metadata: {type: 'l'}},
+          {type: eventType, filePath: p('/link'), metadata: {type: 'l'}},
         ],
       });
 
@@ -575,7 +615,7 @@ describe('DeltaCalculator', () => {
 
       // Revisit the whole graph since any resolution could have become invalid.
       expect(traverseDependencies).toHaveBeenCalledWith(
-        ['/bundle', '/foo', '/bar', '/baz', '/qux'],
+        ['/bundle', '/foo', '/bar', '/baz', '/qux'].map(p),
         expect.objectContaining({shallow: false}),
       );
 
@@ -590,6 +630,57 @@ describe('DeltaCalculator', () => {
       expect(traverseDependencies).not.toHaveBeenCalled();
     },
   );
+
+  test('should re-traverse everything after a package.json change (when unstable_enablePackageExports is true)', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    const changeEmitted = new Promise(resolve =>
+      deltaCalculator.once('change', resolve),
+    );
+
+    fileWatcher.emit('change', {
+      eventsQueue: [
+        {
+          type: 'change',
+          filePath: p('/node_modules/foo/package.json'),
+          metadata: {type: 'f'},
+        },
+      ],
+    });
+
+    // Any package.json change should trigger a 'change' event
+    await changeEmitted;
+
+    const traverseResult: Result<{}> = {
+      added: new Map(),
+      modified: new Map(),
+      deleted: new Set(),
+    };
+    traverseDependencies.mockResolvedValueOnce(traverseResult);
+
+    const result = await deltaCalculator.getDelta({
+      reset: false,
+      shallow: false,
+    });
+
+    // Revisit the whole graph
+    // TODO(T142404809): Replace requiresReset approach with better-scoped
+    // invalidation of inverse dependencies
+    expect(traverseDependencies).toHaveBeenCalledWith(
+      ['/bundle', '/foo', '/bar', '/baz', '/qux'].map(p),
+      expect.objectContaining({shallow: false}),
+    );
+
+    expect(result).toEqual({...traverseResult, reset: false});
+
+    // Does not attempt to traverse again on a subsequent delta request.
+    traverseDependencies.mockClear();
+    await deltaCalculator.getDelta({
+      reset: false,
+      shallow: false,
+    });
+    expect(traverseDependencies).not.toHaveBeenCalled();
+  });
 
   it('should not mutate an existing graph when calling end()', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});

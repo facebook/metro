@@ -30,6 +30,7 @@ describe('DeltaBundler', () => {
 
   const options = {
     unstable_allowRequireContext: false,
+    unstable_enablePackageExports: false,
     experimentalImportBundleSupport: false,
     onProgress: null,
     resolve: (from: string, to: string) => {

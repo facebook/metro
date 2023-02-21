@@ -130,6 +130,8 @@ class IncrementalBundler {
         this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
+      unstable_enablePackageExports:
+        this._config.resolver.unstable_enablePackageExports,
       shallow: otherOptions.shallow,
     });
 
@@ -176,6 +178,8 @@ class IncrementalBundler {
           this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
+        unstable_enablePackageExports:
+          this._config.resolver.unstable_enablePackageExports,
         shallow: otherOptions.shallow,
       },
     );

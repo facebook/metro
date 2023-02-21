@@ -69,6 +69,8 @@ async function getPrependedScripts(
       onProgress: null,
       experimentalImportBundleSupport:
         config.server.experimentalImportBundleSupport,
+      unstable_enablePackageExports:
+        config.resolver.unstable_enablePackageExports,
       shallow: false,
     },
   );

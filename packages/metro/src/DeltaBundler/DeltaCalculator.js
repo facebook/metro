@@ -11,6 +11,7 @@
 
 'use strict';
 
+import path from 'path';
 import {Graph} from './Graph';
 import type {DeltaResult, Options} from './types.flow';
 import type {RootPerfLogger} from 'metro-config';
@@ -33,7 +34,7 @@ class DeltaCalculator<T> extends EventEmitter {
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
   _addedFiles: Set<string> = new Set();
-  _hasSymlinkChanges = false;
+  _requiresReset = false;
 
   _graph: Graph<T>;
 
@@ -104,13 +105,13 @@ class DeltaCalculator<T> extends EventEmitter {
     this._deletedFiles = new Set();
     const addedFiles = this._addedFiles;
     this._addedFiles = new Set();
-    const hasSymlinkChanges = this._hasSymlinkChanges;
-    this._hasSymlinkChanges = false;
+    const requiresReset = this._requiresReset;
+    this._requiresReset = false;
 
-    // Revisit all files if changes include symlinks - resolutions may be
+    // Revisit all files if changes require a graph reset - resolutions may be
     // invalidated but we don't yet know which. This should be optimized in the
     // future.
-    if (hasSymlinkChanges) {
+    if (requiresReset) {
       const markModified = (file: string) => {
         if (!addedFiles.has(file) && !deletedFiles.has(file)) {
           modifiedFiles.add(file);
@@ -207,10 +208,13 @@ class DeltaCalculator<T> extends EventEmitter {
     logger: ?RootPerfLogger,
   ): mixed => {
     debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
-    if (metadata.type === 'l') {
-      this._hasSymlinkChanges = true;
+    if (
+      metadata.type === 'l' ||
+      (this._options.unstable_enablePackageExports &&
+        filePath.endsWith(path.sep + 'package.json'))
+    ) {
+      this._requiresReset = true;
       this.emit('change', {logger});
-      return;
     }
     let state: void | 'deleted' | 'modified' | 'added';
     if (this._deletedFiles.has(filePath)) {
@@ -281,13 +285,13 @@ class DeltaCalculator<T> extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach((filePath: string) => {
-      for (const path of this._graph.getModifiedModulesForDeletedPath(
+      for (const modifiedModulePath of this._graph.getModifiedModulesForDeletedPath(
         filePath,
       )) {
         // Only mark the inverse dependency as modified if it's not already
         // marked as deleted (in that case we can just ignore it).
-        if (!deletedFiles.has(path)) {
-          modifiedFiles.add(path);
+        if (!deletedFiles.has(modifiedModulePath)) {
+          modifiedFiles.add(modifiedModulePath);
         }
       }
     });

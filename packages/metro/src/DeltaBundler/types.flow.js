@@ -138,6 +138,7 @@ export type Options<T = MixedOutput> = {
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
   +unstable_allowRequireContext: boolean,
+  +unstable_enablePackageExports: boolean,
   +shallow: boolean,
 };
 

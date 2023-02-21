@@ -713,6 +713,7 @@ describe('processRequest', () => {
         unstable_transformProfile: 'default',
       },
       unstable_allowRequireContext: false,
+      unstable_enablePackageExports: false,
     });
   });
 
@@ -748,6 +749,7 @@ describe('processRequest', () => {
         unstable_transformProfile: 'hermes-stable',
       },
       unstable_allowRequireContext: false,
+      unstable_enablePackageExports: false,
     });
   });
 
@@ -933,6 +935,7 @@ describe('processRequest', () => {
           unstable_transformProfile: 'default',
         },
         unstable_allowRequireContext: false,
+        unstable_enablePackageExports: false,
       });
     });
   });

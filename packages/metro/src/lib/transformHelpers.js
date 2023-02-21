@@ -90,6 +90,8 @@ async function calcTransformerOptions(
         config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
+      unstable_enablePackageExports:
+        config.resolver.unstable_enablePackageExports,
       shallow: false,
     });
 
