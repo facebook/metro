@@ -837,8 +837,11 @@ export default class HasteMap extends EventEmitter {
     moduleMap: RawModuleMap,
     relativeFilePath: Path,
   ) {
-    const moduleName = fileSystem.getModuleName(relativeFilePath);
-    fileSystem.remove(relativeFilePath);
+    const fileMetadata = fileSystem.remove(relativeFilePath);
+    if (fileMetadata == null) {
+      return;
+    }
+    const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
     if (moduleName == null) {
       return;
     }

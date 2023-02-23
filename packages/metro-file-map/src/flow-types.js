@@ -222,7 +222,7 @@ export type ModuleMapItem = {
 export type ModuleMetaData = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): void;
+  remove(filePath: Path): ?FileMetaData;
   addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
 }

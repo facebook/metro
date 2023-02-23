@@ -38,8 +38,14 @@ export default class HasteFS implements MutableFileSystem {
       : path.normalize(relativeOrAbsolutePath);
   }
 
-  remove(filePath: Path) {
-    this.#files.delete(this._normalizePath(filePath));
+  remove(filePath: Path): ?FileMetaData {
+    const normalPath = this._normalizePath(filePath);
+    const fileMetadata = this.#files.get(normalPath);
+    if (!fileMetadata) {
+      return null;
+    }
+    this.#files.delete(normalPath);
+    return fileMetadata;
   }
 
   bulkAddOrModify(changedFiles: FileData) {

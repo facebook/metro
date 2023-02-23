@@ -1425,6 +1425,9 @@ describe('HasteMap', () => {
       });
     }
 
+    hm_it.only = (title, fn, options) =>
+      hm_it(title, fn, {...options, only: true});
+
     hm_it('build returns a "live" fileSystem and hasteModuleMap', async hm => {
       const {fileSystem, hasteModuleMap} = await hm.build();
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
@@ -1465,6 +1468,12 @@ describe('HasteMap', () => {
       type: 'l',
       modifiedTime: 46,
       size: 5,
+    };
+
+    const MOCK_DELETE_LINK = {
+      type: 'l',
+      modifiedTime: null,
+      size: null,
     };
 
     const MOCK_CHANGE_FOLDER = {
@@ -1665,6 +1674,50 @@ describe('HasteMap', () => {
         });
         // getModuleName traverses the symlink, verifying the link is read.
         expect(fileSystem.getModuleName(filePath)).toEqual('Strawberry');
+      },
+      {config: {enableSymlinks: true}},
+    );
+
+    hm_it(
+      'symlink deletion is handled without affecting the symlink target',
+      async hm => {
+        const {fileSystem, hasteModuleMap} = await hm.build();
+
+        const symlinkPath = path.join(
+          '/',
+          'project',
+          'fruits',
+          'LinkToStrawberry.js',
+        );
+        const realPath = path.join('/', 'project', 'fruits', 'Strawberry.js');
+
+        expect(fileSystem.getModuleName(symlinkPath)).toEqual('Strawberry');
+        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteModuleMap.getModule('Strawberry', 'g')).toEqual(realPath);
+
+        // Delete the symlink
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        delete mockFs[symlinkPath];
+        e.emit(
+          'all',
+          'delete',
+          'LinkToStrawberry.js',
+          path.join('/', 'project', 'fruits', ''),
+          null,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath: symlinkPath, metadata: MOCK_DELETE_LINK, type: 'delete'},
+        ]);
+
+        // Symlink is deleted without affecting the Haste module or real file.
+        expect(fileSystem.exists(symlinkPath)).toBe(false);
+        expect(fileSystem.exists(realPath)).toBe(true);
+        expect(fileSystem.getModuleName(symlinkPath)).toEqual(null);
+        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteModuleMap.getModule('Strawberry', 'g')).toEqual(realPath);
       },
       {config: {enableSymlinks: true}},
     );
