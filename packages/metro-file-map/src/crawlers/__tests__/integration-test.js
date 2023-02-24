@@ -103,7 +103,6 @@ describe.each(Object.keys(CRAWLERS))(
     const crawl = CRAWLERS[crawlerName];
     const maybeTest = crawl ? test : test.skip;
 
-    // $FlowFixMe[prop-missing]: Add each to to test.skip
     maybeTest.each(CASES)(
       'Finds the expected files (includeSymlinks: %s)',
       async (includeSymlinks, expectedChangedFiles) => {

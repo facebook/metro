@@ -255,7 +255,6 @@ class ChromeHeapSnapshotRecordAccessor {
       );
       if (Array.isArray(recordTypes)) {
         this._fieldToType = new Map<string, ChromeHeapSnapshotFieldType>(
-          // $FlowIssue[incompatible-call] Object.entries is incompletely typed
           // $FlowFixMe[not-an-object]
           Object.entries(recordTypes).map(([offsetStr, type]) => [
             recordFields[Number(offsetStr)],

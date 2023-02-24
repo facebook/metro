@@ -315,7 +315,6 @@ beforeEach(async () => {
             data: {
               code: '// code' + (context ? ' (context)' : ''),
               lineCount: 1,
-              // $FlowFixMe[missing-empty-array-annot]
               map: [],
             },
             type: 'js/module',

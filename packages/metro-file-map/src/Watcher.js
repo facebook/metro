@@ -23,7 +23,6 @@ import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
-// $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
 import NodeWatcher from './watchers/NodeWatcher';
 import * as path from 'path';
 import * as fs from 'fs';

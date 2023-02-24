@@ -90,7 +90,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/foo'),
               data: {
                 name: 'foo',
-                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'foo', asyncType: null, locs: []},
               },
             },
@@ -101,7 +100,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/bar'),
               data: {
                 name: 'bar',
-                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'bar', asyncType: null, locs: []},
               },
             },
@@ -112,7 +110,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/baz'),
               data: {
                 name: 'baz',
-                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'baz', asyncType: null, locs: []},
               },
             },
@@ -131,7 +128,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/qux'),
               data: {
                 name: 'qux',
-                // $FlowFixMe[missing-empty-array-annot]
                 data: {key: 'qux', asyncType: null, locs: []},
               },
             },

@@ -254,7 +254,6 @@ export default class HasteMap extends EventEmitter {
     return new HasteMap(options);
   }
 
-  // $FlowFixMe[missing-local-annot]
   constructor(options: InputOptions) {
     super();
 
@@ -780,7 +779,6 @@ export default class HasteMap extends EventEmitter {
   _cleanup() {
     const worker = this._worker;
 
-    // $FlowFixMe[prop-missing] - end is not on WorkerInterface
     if (worker && typeof worker.end === 'function') {
       worker.end();
     }

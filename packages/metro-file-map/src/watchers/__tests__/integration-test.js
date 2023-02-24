@@ -140,7 +140,6 @@ describe.each(Object.keys(WATCHERS))(
       });
     });
 
-    // $FlowFixMe: Update RN's Jest libdefs so that `skip` has an `each` static
     maybeTest.each([
       join('.', 'foo'),
       join('.', 'foo', 'bar.js'),

@@ -70,13 +70,11 @@ describe('posix support', () => {
   it('can write then read a file (async)', done => {
     fs.writeFile('/foo.txt', 'test', wrError => {
       if (wrError) {
-        // $FlowFixMe - Upgrading the Jest definition revealed errors
         done(wrError);
         return;
       }
       fs.readFile('/foo.txt', 'utf8', (rdError, str) => {
         if (rdError) {
-          // $FlowFixMe - Upgrading the Jest definition revealed errors
           done(rdError);
           return;
         }
@@ -759,7 +757,6 @@ describe('posix support', () => {
   it('throws when trying to read inexistent file (async)', done => {
     fs.readFile('/foo.txt', (error: any) => {
       if (error.code !== 'ENOENT') {
-        // $FlowFixMe - Upgrading the Jest definition revealed errors
         done(error);
         return;
       }

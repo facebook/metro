@@ -145,9 +145,6 @@ describe('parseOptionsFromUrl', () => {
           new Set([]),
           BYTECODE_VERSION,
         ),
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.111 was deployed. To see the error, delete
-         * this comment and run Flow. */
       ).toMatchObject({[optionName]: defaultValue});
     });
 
@@ -158,9 +155,6 @@ describe('parseOptionsFromUrl', () => {
           new Set([]),
           BYTECODE_VERSION,
         ),
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.111 was deployed. To see the error, delete
-         * this comment and run Flow. */
       ).toMatchObject({[optionName]: true});
 
       expect(
@@ -169,9 +163,6 @@ describe('parseOptionsFromUrl', () => {
           new Set([]),
           BYTECODE_VERSION,
         ),
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.111 was deployed. To see the error, delete
-         * this comment and run Flow. */
       ).toMatchObject({[optionName]: false});
     });
   });

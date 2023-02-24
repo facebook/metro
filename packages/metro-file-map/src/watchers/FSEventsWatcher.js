@@ -64,7 +64,6 @@ export default class FSEventsWatcher extends EventEmitter {
 
   static _normalizeProxy(
     callback: (normalizedPath: string, stats: Stats) => void,
-    // $FlowFixMe[cannot-resolve-name]
   ): (filepath: string, stats: Stats) => void {
     return (filepath: string, stats: Stats): void =>
       callback(path.normalize(filepath), stats);
@@ -102,7 +101,6 @@ export default class FSEventsWatcher extends EventEmitter {
       dot: boolean,
       ...
     }>,
-    // $FlowFixMe[missing-local-annot]
   ) {
     if (!fsevents) {
       throw new Error(

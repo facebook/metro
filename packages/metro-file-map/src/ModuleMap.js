@@ -30,7 +30,6 @@ export default class ModuleMap implements IModuleMap {
   +#raw: RawModuleMap;
 
   constructor(raw: RawModuleMap) {
-    // $FlowIssue[cannot-write] - should be fixed in Flow 0.193 (D41130671)
     this.#raw = raw;
   }
 

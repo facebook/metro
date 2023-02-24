@@ -199,17 +199,14 @@ describe('processRequest', () => {
         dependencies = new Map<string, Module<>>([
           [
             '/root/mybundle.js',
-            // $FlowFixMe[prop-missing]
             {
               path: '/root/mybundle.js',
               // $FlowFixMe[prop-missing]
               dependencies: new Map<string, Dependency>([
                 [
                   'foo',
-                  // $FlowFixMe[prop-missing]
                   {
                     absolutePath: '/root/foo.js',
-                    // $FlowFixMe[prop-missing]
                     data: {isAsync: false, name: 'foo'},
                   },
                 ],
@@ -435,7 +432,6 @@ describe('processRequest', () => {
     const lastModified = response.getHeader('Last-Modified');
 
     global.Date = class {
-      // $FlowFixMe[missing-local-annot]
       constructor() {
         return new NativeDate('2017-07-07T00:10:20.000Z');
       }
@@ -467,7 +463,6 @@ describe('processRequest', () => {
     );
 
     global.Date = class {
-      // $FlowFixMe[missing-local-annot]
       constructor() {
         return new NativeDate('2017-07-07T00:10:20.000Z');
       }

@@ -33,8 +33,6 @@ export default function deepCloneRawModuleMap(
       Object.assign(
         Object.create(null),
         Object.fromEntries(
-          // $FlowFixMe[incompatible-call] Object.entries with { __proto__: null }
-          // $FlowFixMe[incompatible-type] Spreading an unknown type due to above
           Array.from(Object.entries(v), ([key, val]) => [key, [...val]]),
         ),
       ),

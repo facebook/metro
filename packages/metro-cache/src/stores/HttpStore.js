@@ -50,7 +50,6 @@ class HttpStore<T> {
   _getAgent: HttpAgent | HttpsAgent;
   _setAgent: HttpAgent | HttpsAgent;
 
-  // $FlowFixMe[missing-local-annot]
   constructor(options: Options) {
     const uri = url.parse(options.endpoint);
     const module = uri.protocol === 'http:' ? http : https;

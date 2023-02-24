@@ -33,7 +33,6 @@ beforeEach(() => {
         'bar',
         {
           absolutePath: '/bar',
-          // $FlowFixMe[missing-empty-array-annot]
           data: {data: {asyncType: null, locs: [], key: 'bar'}, name: 'bar'},
         },
       ],
@@ -41,7 +40,6 @@ beforeEach(() => {
         'baz',
         {
           absolutePath: '/baz',
-          // $FlowFixMe[missing-empty-array-annot]
           data: {data: {asyncType: null, locs: [], key: 'baz'}, name: 'baz'},
         },
       ],

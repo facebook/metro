@@ -58,7 +58,6 @@ function getAppendScripts<T: number | string>(
               data: {
                 code,
                 lineCount: countLines(code),
-                // $FlowFixMe[missing-empty-array-annot]
                 map: [],
               },
             },
@@ -90,7 +89,6 @@ function getAppendScripts<T: number | string>(
           data: {
             code,
             lineCount: countLines(code),
-            // $FlowFixMe[missing-empty-array-annot]
             map: [],
           },
         },
@@ -111,7 +109,6 @@ function getAppendScripts<T: number | string>(
           data: {
             code,
             lineCount: countLines(code),
-            // $FlowFixMe[missing-empty-array-annot]
             map: [],
           },
         },

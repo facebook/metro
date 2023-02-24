@@ -204,7 +204,6 @@ describe('loadConfig', () => {
     const config = {
       reporter: null,
       maxWorkers: 2,
-      // $FlowFixMe[missing-empty-array-annot]
       cacheStores: jest.fn(() => []),
       transformerPath: '',
       resolver: {

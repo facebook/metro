@@ -109,9 +109,6 @@ const getBabelRC = (function () {
       babelRC.presets = [
         [
           require('metro-react-native-babel-preset'),
-          /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses
-           * an error found when Flow v0.122.0 was deployed. To see the error,
-           * delete this comment and run Flow. */
           {
             projectRoot,
             ...presetOptions,

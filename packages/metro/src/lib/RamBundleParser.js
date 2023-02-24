@@ -29,7 +29,6 @@ class RamBundleParser {
   _startupCodeLength: number;
   _startOffset: number;
 
-  // $FlowFixMe[missing-local-annot]
   constructor(buffer: Buffer) {
     this._buffer = buffer;
 
