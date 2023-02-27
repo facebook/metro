@@ -174,11 +174,6 @@ export type BytecodeOutput = $ReadOnly<{
   type: BytecodeFileType,
 }>;
 
-type DependencySplitCondition = $PropertyType<
-  $PropertyType<TransformResultDependency, 'data'>,
-  'splitCondition',
->;
-
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput | BytecodeOutput>,
@@ -264,7 +259,7 @@ const compileToBytecode = (
   return HermesCompiler.compile(code, options);
 };
 
-const disabledDependencyTransformer: DependencyTransformer<mixed> = {
+const disabledDependencyTransformer: DependencyTransformer = {
   transformSyncRequire: () => void 0,
   transformImportCall: () => void 0,
   transformJSResource: () => void 0,
@@ -402,7 +397,7 @@ async function transformJS(
         unstable_allowRequireContext: config.unstable_allowRequireContext,
       };
       // $FlowFixMe[unsupported-syntax] dynamic require
-      const collectDependencies: CollectDependenciesFn<DependencySplitCondition> = require(config.unstable_collectDependenciesPath);
+      const collectDependencies: CollectDependenciesFn = require(config.unstable_collectDependenciesPath);
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
       if (error instanceof InternalInvalidRequireCallError) {

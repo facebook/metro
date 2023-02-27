@@ -34,7 +34,7 @@ const nullthrows = require('nullthrows');
 const {any, objectContaining} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
-const opts: Options<mixed> = {
+const opts: Options = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
   inlineableCalls: [],
@@ -874,18 +874,6 @@ it('collects __jsResource calls', () => {
   );
 });
 
-it('collects conditionallySplitJSResource calls', () => {
-  const ast = astFromCode(`
-    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'aaa'});
-    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'bbb'});
-  `);
-  const {dependencies} = collectDependencies(ast, opts);
-  expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
-    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
-  ]);
-});
-
 describe('import() prefetching', () => {
   it('collects prefetch calls', () => {
     const ast = astFromCode(`
@@ -1022,7 +1010,7 @@ describe('Evaluating static arguments', () => {
 
   it('throws at runtime when requiring non-strings with special option', () => {
     const ast = astFromCode('require(1)');
-    const opts: Options<mixed> = {
+    const opts: Options = {
       asyncRequireModulePath: 'asyncRequire',
       dynamicRequires: 'throwAtRuntime',
       inlineableCalls: [],
@@ -1129,8 +1117,8 @@ it('records locations of dependencies', () => {
     import type {s} from 'setup/something';
     import('some/async/module').then(foo => {});
     __jsResource('some/async/module');
-    __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
-    __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
+
+
     require('foo'); __prefetchImport('baz');
     interopRequireDefault(require('quux')); // Simulated Babel output
   `;
@@ -1160,18 +1148,10 @@ it('records locations of dependencies', () => {
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 5 | __jsResource('some/async/module');
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
-    > 6 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
-    > 7 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 4 | import('some/async/module').then(foo => {});
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 5 | __jsResource('some/async/module');
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
-    > 6 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
-    > 7 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
         |                 ^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
@@ -1184,7 +1164,7 @@ it('records locations of dependencies', () => {
 });
 
 describe('optional dependencies', () => {
-  const opts: Options<> = {
+  const opts: Options = {
     asyncRequireModulePath: 'asyncRequire',
     dynamicRequires: 'reject',
     inlineableCalls: [],
@@ -1194,7 +1174,7 @@ describe('optional dependencies', () => {
     unstable_allowRequireContext: false,
   };
   const validateDependencies = (
-    dependencies: $ReadOnlyArray<Dependency<void>>,
+    dependencies: $ReadOnlyArray<Dependency>,
     expectedCount: number,
   ) => {
     let hasAsync = false;
@@ -1368,7 +1348,6 @@ it('uses the dependency transformer specified in the options to transform the de
 
     import("some/async/module").then(foo => {});
     __jsResource("some/async/module");
-    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'aaa'});
     __prefetchImport("some/async/module");
   `);
 
@@ -1386,7 +1365,6 @@ it('uses the dependency transformer specified in the options to transform the de
       export { Banana } from 'Banana';
       require("asyncRequire").async(_dependencyMap[3], "some/async/module").then(foo => {});
       require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
-      require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
       require("asyncRequire").prefetch(_dependencyMap[4], "some/async/module");
       `),
   );
@@ -1400,7 +1378,6 @@ it('uses the dependency registry specified in the options to register dependenci
 
       import("some/async/module").then(foo => {});
       __jsResource("a/jsresouce");
-      __conditionallySplitJSResource("a/conditional/jsresource", {mobileConfigName: 'aaa'});
       __prefetchImport("a/prefetch/module");
     `);
 
@@ -1416,10 +1393,6 @@ it('uses the dependency registry specified in the options to register dependenci
     {name: 'Banana', data: objectContaining({asyncType: null})},
     {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     {name: 'a/jsresouce', data: objectContaining({asyncType: 'async'})},
-    {
-      name: 'a/conditional/jsresource',
-      data: objectContaining({splitCondition: {mobileConfigName: 'aaa'}}),
-    },
     {
       name: 'a/prefetch/module',
       data: objectContaining({asyncType: 'prefetch'}),
@@ -1443,7 +1416,7 @@ it('collects require.resolveWeak calls', () => {
 });
 
 function formatDependencyLocs(
-  dependencies: $ReadOnlyArray<Dependency<mixed>>,
+  dependencies: $ReadOnlyArray<Dependency>,
   code: any,
 ) {
   return (
@@ -1474,7 +1447,7 @@ function adjustLocForCodeFrame(loc: BabelSourceLocation) {
 function formatLoc(
   loc: BabelSourceLocation,
   depIndex: number,
-  dep: Dependency<mixed>,
+  dep: Dependency,
   code: any,
 ) {
   return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
@@ -1495,15 +1468,11 @@ function astFromCode(code: string): BabelNodeFile {
 // Allows to verify that the `registerDependency` function was called for each
 // extracted dependency. Collapsing dependencies is implemented by specific
 // `collectDependencies` implementations and should be tested there.
-class MockModuleDependencyRegistry<TSplitCondition>
-  implements ModuleDependencyRegistry<TSplitCondition>
-{
-  _dependencies: Array<InternalDependency<TSplitCondition>> = [];
+class MockModuleDependencyRegistry implements ModuleDependencyRegistry {
+  _dependencies: Array<InternalDependency> = [];
 
-  registerDependency(
-    qualifier: ImportQualifier,
-  ): InternalDependency<TSplitCondition> {
-    const data: MutableInternalDependency<TSplitCondition> = {
+  registerDependency(qualifier: ImportQualifier): InternalDependency {
+    const data: MutableInternalDependency = {
       index: this._dependencies.length,
       name: qualifier.name,
       asyncType: qualifier.asyncType,
@@ -1514,15 +1483,11 @@ class MockModuleDependencyRegistry<TSplitCondition>
       key: String(this._dependencies.length),
     };
 
-    if (qualifier.splitCondition) {
-      data.splitCondition = qualifier.splitCondition.evaluate().value;
-    }
-
     this._dependencies.push(data);
     return data;
   }
 
-  getDependencies(): Array<InternalDependency<TSplitCondition>> {
+  getDependencies(): Array<InternalDependency> {
     return this._dependencies;
   }
 }
@@ -1532,11 +1497,11 @@ class MockModuleDependencyRegistry<TSplitCondition>
 // import() -> require(async moudle name).async(id, module name)
 // jsresource -> require(async moudle name).jsresource(id, module name)
 // prefetch -> require(async moudle name).prefetch(id, module name)
-const MockDependencyTransformer: DependencyTransformer<mixed> = {
+const MockDependencyTransformer: DependencyTransformer = {
   transformSyncRequire(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
     path.replaceWith(
       t.callExpression(t.identifier('require'), [
@@ -1548,29 +1513,29 @@ const MockDependencyTransformer: DependencyTransformer<mixed> = {
 
   transformImportCall(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
     transformAsyncRequire(path, dependency, state, 'async');
   },
 
   transformJSResource(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
     transformAsyncRequire(path, dependency, state, 'jsresource');
   },
 
   transformPrefetch(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
     transformAsyncRequire(path, dependency, state, 'prefetch');
   },
 
-  transformIllegalDynamicRequire(path: NodePath<>, state: State<mixed>): void {
+  transformIllegalDynamicRequire(path: NodePath<>, state: State): void {
     path.replaceWith(
       t.callExpression(t.identifier('requireIllegalDynamicRequire'), []),
     );
@@ -1578,8 +1543,8 @@ const MockDependencyTransformer: DependencyTransformer<mixed> = {
 };
 
 function createModuleIDExpression(
-  dependency: InternalDependency<mixed>,
-  state: State<mixed>,
+  dependency: InternalDependency,
+  state: State,
 ) {
   return t.memberExpression(
     nullthrows(state.dependencyMapIdentifier),
@@ -1590,8 +1555,8 @@ function createModuleIDExpression(
 
 function transformAsyncRequire(
   path: NodePath<>,
-  dependency: InternalDependency<mixed>,
-  state: State<mixed>,
+  dependency: InternalDependency,
+  state: State,
   methodName: string,
 ): void {
   const moduleID = createModuleIDExpression(dependency, state);

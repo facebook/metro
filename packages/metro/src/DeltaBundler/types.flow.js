@@ -45,12 +45,6 @@ export type TransformResultDependency = {
      */
     +asyncType: AsyncDependencyType | null,
     /**
-     * The condition for splitting on this dependency edge.
-     */
-    +splitCondition?: {
-      +mobileConfigName: string,
-    },
-    /**
      * The dependency is enclosed in a try/catch block.
      */
     +isOptional?: boolean,
