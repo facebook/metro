@@ -90,6 +90,7 @@ function createHasteMap(
     rootDir: config.projectRoot,
     roots: config.watchFolders,
     throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
+    unstable_preferTreeFS: config.watcher.unstable_preferTreeFS,
     useWatchman: config.resolver.useWatchman,
     watch: options?.watch == null ? !ci.isCI : options.watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,

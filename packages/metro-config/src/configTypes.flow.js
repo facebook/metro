@@ -187,14 +187,15 @@ type SymbolicatorConfigT = {
 
 type WatcherConfigT = {
   additionalExts: $ReadOnlyArray<string>,
-  watchman: {
-    deferStates: $ReadOnlyArray<string>,
-  },
   healthCheck: {
     enabled: boolean,
     interval: number,
     timeout: number,
     filePrefix: string,
+  },
+  unstable_preferTreeFS: boolean,
+  watchman: {
+    deferStates: $ReadOnlyArray<string>,
   },
 };
 

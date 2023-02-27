@@ -93,17 +93,17 @@ export type InputOptions = $ReadOnly<{
   dependencyExtractor?: ?string,
   hasteImplModulePath?: ?string,
 
+  cacheManagerFactory?: ?CacheManagerFactory,
+  console?: Console,
+  healthCheck: HealthCheckOptions,
+  maxWorkers: number,
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
-  maxWorkers: number,
   throwOnModuleCollision?: ?boolean,
+  unstable_preferTreeFS?: ?boolean,
   useWatchman?: ?boolean,
-  watchmanDeferStates?: $ReadOnlyArray<string>,
   watch?: ?boolean,
-  console?: Console,
-  cacheManagerFactory?: ?CacheManagerFactory,
-
-  healthCheck: HealthCheckOptions,
+  watchmanDeferStates?: $ReadOnlyArray<string>,
 }>;
 
 type HealthCheckOptions = $ReadOnly<{
@@ -120,6 +120,7 @@ type InternalOptions = {
   resetCache: ?boolean,
   maxWorkers: number,
   throwOnModuleCollision: boolean,
+  unstable_preferTreeFS: boolean,
   useWatchman: boolean,
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
@@ -312,6 +313,7 @@ export default class HasteMap extends EventEmitter {
       perfLoggerFactory: options.perfLoggerFactory,
       resetCache: options.resetCache,
       throwOnModuleCollision: !!options.throwOnModuleCollision,
+      unstable_preferTreeFS: !!options.unstable_preferTreeFS,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
       watch: !!options.watch,
       watchmanDeferStates: options.watchmanDeferStates ?? [],
@@ -359,7 +361,10 @@ export default class HasteMap extends EventEmitter {
         const rootDir = this._options.rootDir;
         const fileData = initialData.files;
         this._startupPerfLogger?.point('constructFileSystem_start');
-        const FileSystem = this._options.enableSymlinks ? TreeFS : HasteFS;
+        const useTreeFS =
+          this._options.enableSymlinks || this._options.unstable_preferTreeFS;
+        this._startupPerfLogger?.annotate({bool: {useTreeFS}});
+        const FileSystem = useTreeFS ? TreeFS : HasteFS;
         const fileSystem = new FileSystem({
           files: fileData,
           rootDir,

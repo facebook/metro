@@ -169,6 +169,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_preferTreeFS": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -347,6 +348,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_preferTreeFS": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -525,6 +527,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_preferTreeFS": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -703,6 +706,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_preferTreeFS": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
