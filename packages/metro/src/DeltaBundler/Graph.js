@@ -355,6 +355,8 @@ export class Graph<T = MixedOutput> {
 
     if (options.shallow) {
       // Don't add a node for the module if the graph is shallow (single-module).
+    } else if (dependency.data.data.asyncType === 'weak') {
+      // Exclude weak dependencies from the bundle.
     } else if (
       options.experimentalImportBundleSupport &&
       dependency.data.data.asyncType != null
@@ -413,6 +415,11 @@ export class Graph<T = MixedOutput> {
     parentModule.dependencies.delete(key);
 
     const {absolutePath} = dependency;
+
+    if (dependency.data.data.asyncType === 'weak') {
+      // Weak dependencies are excluded from the bundle.
+      return;
+    }
 
     if (
       options.experimentalImportBundleSupport &&

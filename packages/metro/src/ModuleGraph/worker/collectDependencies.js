@@ -246,6 +246,24 @@ function collectDependencies<TSplitCondition = void>(
         return;
       }
 
+      // Match `require.resolveWeak`
+      if (
+        callee.type === 'MemberExpression' &&
+        // `require`
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'require' &&
+        // `resolveWeak`
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'resolveWeak' &&
+        !callee.computed &&
+        // Ensure `require` refers to the global and not something else.
+        !path.scope.getBinding('require')
+      ) {
+        processResolveWeakCall(path, state);
+        visited.add(path.node);
+        return;
+      }
+
       if (
         name != null &&
         state.dependencyCalls.has(name) &&
@@ -424,6 +442,33 @@ function processRequireContextCall<TSplitCondition>(
   // require() the generated module representing this context
   path.get('callee').replaceWith(types.identifier('require'));
   transformer.transformSyncRequire(path, dep, state);
+}
+
+function processResolveWeakCall<TSplitCondition>(
+  path: NodePath<CallExpression>,
+  state: State<TSplitCondition>,
+): void {
+  const name = getModuleNameFromCallArgs(path);
+
+  if (name == null) {
+    throw new InvalidRequireCallError(path);
+  }
+
+  const dependency = registerDependency(
+    state,
+    {
+      name,
+      asyncType: 'weak',
+      optional: isOptionalDependency(name, path, state),
+    },
+    path,
+  );
+
+  path.replaceWith(
+    makeResolveWeakTemplate({
+      MODULE_ID: createModuleIDExpression(dependency, state),
+    }),
+  );
 }
 
 function collectImports<TSplitCondition>(
@@ -619,7 +664,7 @@ collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
  * is reached. This makes dynamic require errors catchable by libraries that
  * want to use them.
  */
-const dynamicRequireErrorTemplate = template.statement(`
+const dynamicRequireErrorTemplate = template.expression(`
   (function(line) {
     throw new Error(
       'Dynamic require defined at line ' + line + '; not supported by Metro',
@@ -631,16 +676,20 @@ const dynamicRequireErrorTemplate = template.statement(`
  * Produces a Babel template that transforms an "import(...)" call into a
  * "require(...)" call to the asyncRequire specified.
  */
-const makeAsyncRequireTemplate = template.statement(`
+const makeAsyncRequireTemplate = template.expression(`
   require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
-const makeAsyncPrefetchTemplate = template.statement(`
+const makeAsyncPrefetchTemplate = template.expression(`
   require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
-const makeJSResourceTemplate = template.statement(`
+const makeJSResourceTemplate = template.expression(`
   require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
+`);
+
+const makeResolveWeakTemplate = template.expression(`
+  MODULE_ID
 `);
 
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
@@ -722,10 +771,10 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   },
 };
 
-function createModuleIDExpression(
-  dependency: InternalDependency<mixed>,
-  state: State<mixed>,
-) {
+function createModuleIDExpression<TSplitCondition>(
+  dependency: InternalDependency<TSplitCondition>,
+  state: State<TSplitCondition>,
+): BabelNodeExpression {
   return types.memberExpression(
     nullthrows(state.dependencyMapIdentifier),
     types.numericLiteral(dependency.index),

@@ -1427,6 +1427,21 @@ it('uses the dependency registry specified in the options to register dependenci
   ]);
 });
 
+it('collects require.resolveWeak calls', () => {
+  const ast = astFromCode(`
+    require.resolveWeak("some/async/module");
+  `);
+  const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+  expect(dependencies).toEqual([
+    {name: 'some/async/module', data: objectContaining({asyncType: 'weak'})},
+  ]);
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      ${dependencyMapName}[0];
+    `),
+  );
+});
+
 function formatDependencyLocs(
   dependencies: $ReadOnlyArray<Dependency<mixed>>,
   code: any,

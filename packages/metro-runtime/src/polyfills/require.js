@@ -316,6 +316,16 @@ metroRequire.context = function fallbackRequireContext() {
   );
 };
 
+// `require.resolveWeak()` is a compile-time primitive (see collectDependencies.js)
+metroRequire.resolveWeak = function fallbackRequireResolveWeak() {
+  if (__DEV__) {
+    throw new Error(
+      'require.resolveWeak cannot be called dynamically. Ensure you are using the same version of `metro` and `metro-runtime`.',
+    );
+  }
+  throw new Error('require.resolveWeak cannot be called dynamically.');
+};
+
 let inGuard = false;
 function guardedLoadModule(
   moduleId: ModuleID,
