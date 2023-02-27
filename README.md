@@ -42,4 +42,4 @@ Larger discussions and proposals concerning React Native and Metro are discussed
 
 ## License
 
-Metro is MIT licensed, as found in the LICENSE file.
+Metro is MIT licensed, as found in the LICENSE file...
