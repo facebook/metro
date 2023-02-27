@@ -36,29 +36,45 @@ export default function rootRelativeCacheKeys(
   rootDirHash: string,
   relativeConfigHash: string,
 } {
-  const rootDirHash = createHash('md5')
-    .update(buildParameters.rootDir)
-    .digest('hex');
+  const {rootDir, ...otherParameters} = buildParameters;
+  const rootDirHash = createHash('md5').update(rootDir).digest('hex');
+
+  const cacheComponents = Object.keys(otherParameters)
+    .sort()
+    .map(key => {
+      switch (key) {
+        case 'roots':
+          return buildParameters[key].map(root =>
+            fastPath.relative(rootDir, root),
+          );
+        case 'cacheBreaker':
+        case 'extensions':
+        case 'computeDependencies':
+        case 'computeSha1':
+        case 'enableSymlinks':
+        case 'forceNodeFilesystemAPI':
+        case 'platforms':
+        case 'retainAllFiles':
+        case 'skipPackageJson':
+          return buildParameters[key] ?? null;
+        case 'mocksPattern':
+          return buildParameters[key]?.toString() ?? null;
+        case 'ignorePattern':
+          return buildParameters[key].toString();
+        case 'hasteImplModulePath':
+        case 'dependencyExtractor':
+          return moduleCacheKey(buildParameters[key]);
+        default:
+          (key: empty);
+          throw new Error('Unrecognised key in build parameters: ' + key);
+      }
+    });
 
   // JSON.stringify is stable here because we only deal in (nested) arrays of
   // primitives. Use a different approach if this is expanded to include
   // objects/Sets/Maps, etc.
-  const serializedConfig = JSON.stringify([
-    buildParameters.roots.map(root =>
-      fastPath.relative(buildParameters.rootDir, root),
-    ),
-    buildParameters.extensions,
-    buildParameters.platforms,
-    buildParameters.computeSha1,
-    buildParameters.mocksPattern?.toString() ?? null,
-    buildParameters.ignorePattern.toString(),
-    moduleCacheKey(buildParameters.hasteImplModulePath),
-    moduleCacheKey(buildParameters.dependencyExtractor),
-    buildParameters.computeDependencies,
-    buildParameters.cacheBreaker,
-  ]);
   const relativeConfigHash = createHash('md5')
-    .update(serializedConfig)
+    .update(JSON.stringify(cacheComponents))
     .digest('hex');
 
   return {
