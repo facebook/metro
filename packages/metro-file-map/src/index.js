@@ -943,7 +943,9 @@ export default class HasteMap extends EventEmitter {
         // Ignore all directory events
         (metadata.type === 'd' ||
           // Ignore regular files with unwatched extensions
-          (metadata.type === 'f' && !hasWatchedExtension(filePath)))
+          (metadata.type === 'f' && !hasWatchedExtension(filePath)) ||
+          // Don't emit events relating to symlinks if enableSymlinks: false
+          (!this._options.enableSymlinks && metadata?.type === 'l'))
       ) {
         return;
       }
@@ -993,11 +995,6 @@ export default class HasteMap extends EventEmitter {
           const linkStats = fileSystem.linkStats(relativeFilePath);
 
           const enqueueEvent = (metadata: ChangeEventMetadata) => {
-            // Don't emit events relating to symlinks if enableSymlinks: false
-            if (!this._options.enableSymlinks && type === 'l') {
-              return null;
-            }
-
             eventsQueue.push({
               filePath: absoluteFilePath,
               metadata,

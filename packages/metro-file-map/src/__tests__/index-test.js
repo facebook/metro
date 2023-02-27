@@ -1553,6 +1553,74 @@ describe('HasteMap', () => {
     });
 
     hm_it(
+      'suppresses backend symlink events if enableSymlinks: false',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const fruitsRoot = path.join('/', 'project', 'fruits');
+        const e = mockEmitters[fruitsRoot];
+        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
+        // Tomato!
+      `;
+        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
+        e.emit(
+          'all',
+          'change',
+          'LinkToStrawberry.js',
+          fruitsRoot,
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toEqual([
+          {
+            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            metadata: MOCK_CHANGE_FILE,
+            type: 'change',
+          },
+        ]);
+        expect(
+          fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
+        ).toBeNull();
+      },
+    );
+
+    hm_it(
+      'emits symlink events if enableSymlinks: true',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const fruitsRoot = path.join('/', 'project', 'fruits');
+        const e = mockEmitters[fruitsRoot];
+        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
+        // Tomato!
+      `;
+        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
+        e.emit(
+          'all',
+          'change',
+          'LinkToStrawberry.js',
+          fruitsRoot,
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toEqual([
+          {
+            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            metadata: MOCK_CHANGE_FILE,
+            type: 'change',
+          },
+          {
+            filePath: path.join(fruitsRoot, 'LinkToStrawberry.js'),
+            metadata: MOCK_CHANGE_LINK,
+            type: 'change',
+          },
+        ]);
+        expect(
+          fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
+        ).toEqual({fileType: 'l', modifiedTime: 46});
+      },
+      {config: {enableSymlinks: true}},
+    );
+
+    hm_it(
       'emits a change even if a file in node_modules has changed',
       async hm => {
         const {fileSystem} = await hm.build();
