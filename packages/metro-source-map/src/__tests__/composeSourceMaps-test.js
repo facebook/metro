@@ -18,7 +18,7 @@ const fs = require('fs');
 const invariant = require('invariant');
 const {add0, add1} = require('ob1');
 const path = require('path');
-const uglifyEs = require('uglify-es');
+const terser = require('terser');
 
 /* eslint-disable no-multi-str */
 
@@ -83,9 +83,9 @@ describe('composeSourceMaps', () => {
     }
   });
 
-  it('verifies merged source maps work the same as applying them separately', () => {
+  it('verifies merged source maps work the same as applying them separately', async () => {
     // Apply two tranformations: compression, then mangling.
-    const stage1 = uglifyEs.minify(
+    const stage1 = await terser.minify(
       {'test1.js': TestScript1, 'test2.js': TestScript2},
       {
         compress: true,
@@ -98,7 +98,7 @@ describe('composeSourceMaps', () => {
       'Minification error in stage1',
     );
     const {code: code1, map: map1} = stage1;
-    const stage2 = uglifyEs.minify(
+    const stage2 = await terser.minify(
       {'intermediate.js': code1},
       {compress: true, mangle: true, sourceMap: true},
     );
