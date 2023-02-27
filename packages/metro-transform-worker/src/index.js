@@ -262,7 +262,6 @@ const compileToBytecode = (
 const disabledDependencyTransformer: DependencyTransformer = {
   transformSyncRequire: () => void 0,
   transformImportCall: () => void 0,
-  transformJSResource: () => void 0,
   transformPrefetch: () => void 0,
   transformIllegalDynamicRequire: () => void 0,
 };

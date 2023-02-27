@@ -28,7 +28,6 @@ const {isImport} = types;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
-  jsResource?: boolean,
 }>;
 
 export type Dependency = $ReadOnly<{
@@ -122,11 +121,6 @@ export interface DependencyTransformer {
     dependency: InternalDependency,
     state: State,
   ): void;
-  transformJSResource(
-    path: NodePath<>,
-    dependency: InternalDependency,
-    state: State,
-  ): void;
   transformPrefetch(
     path: NodePath<>,
     dependency: InternalDependency,
@@ -188,14 +182,6 @@ function collectDependencies(
       if (name === '__prefetchImport' && !path.scope.getBinding(name)) {
         processImportCall(path, state, {
           asyncType: 'prefetch',
-        });
-        return;
-      }
-
-      if (name === '__jsResource' && !path.scope.getBinding(name)) {
-        processImportCall(path, state, {
-          asyncType: 'async',
-          jsResource: true,
         });
         return;
       }
@@ -480,9 +466,7 @@ function processImportCall(
 
   const transformer = state.dependencyTransformer;
 
-  if (options.jsResource) {
-    transformer.transformJSResource(path, dep, state);
-  } else if (options.asyncType === 'async') {
+  if (options.asyncType === 'async') {
     transformer.transformImportCall(path, dep, state);
   } else {
     transformer.transformPrefetch(path, dep, state);
@@ -649,10 +633,6 @@ const makeAsyncPrefetchTemplate = template.expression(`
   require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
 `);
 
-const makeJSResourceTemplate = template.expression(`
-  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
-`);
-
 const makeResolveWeakTemplate = template.expression(`
   MODULE_ID
 `);
@@ -683,23 +663,6 @@ const DefaultDependencyTransformer: DependencyTransformer = {
   ): void {
     path.replaceWith(
       makeAsyncRequireTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
-      }),
-    );
-  },
-
-  transformJSResource(
-    path: NodePath<>,
-    dependency: InternalDependency,
-    state: State,
-  ): void {
-    path.replaceWith(
-      makeJSResourceTemplate({
         ASYNC_REQUIRE_MODULE_PATH: nullthrows(
           state.asyncRequireModulePathStringLiteral,
         ),

@@ -858,22 +858,6 @@ it('distinguishes sync and async dependencies on the same module; reverse order'
   );
 });
 
-it('collects __jsResource calls', () => {
-  const ast = astFromCode(`
-    __jsResource("some/async/module");
-  `);
-  const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-  expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
-    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
-  ]);
-  expect(codeFromAst(ast)).toEqual(
-    comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire").resource(${dependencyMapName}[0], "some/async/module", _dependencyMap.paths);
-    `),
-  );
-});
-
 describe('import() prefetching', () => {
   it('collects prefetch calls', () => {
     const ast = astFromCode(`
@@ -1116,7 +1100,7 @@ it('records locations of dependencies', () => {
     import * as d from 'do';
     import type {s} from 'setup/something';
     import('some/async/module').then(foo => {});
-    __jsResource('some/async/module');
+
 
 
     require('foo'); __prefetchImport('baz');
@@ -1146,12 +1130,8 @@ it('records locations of dependencies', () => {
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (setup/something)
     > 4 | import('some/async/module').then(foo => {});
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
-    > 5 | __jsResource('some/async/module');
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 4 | import('some/async/module').then(foo => {});
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
-    > 5 | __jsResource('some/async/module');
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
         |                 ^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
@@ -1347,7 +1327,6 @@ it('uses the dependency transformer specified in the options to transform the de
     export {Banana} from 'Banana';
 
     import("some/async/module").then(foo => {});
-    __jsResource("some/async/module");
     __prefetchImport("some/async/module");
   `);
 
@@ -1364,7 +1343,6 @@ it('uses the dependency transformer specified in the options to transform the de
       import b from 'b/lib/b';
       export { Banana } from 'Banana';
       require("asyncRequire").async(_dependencyMap[3], "some/async/module").then(foo => {});
-      require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
       require("asyncRequire").prefetch(_dependencyMap[4], "some/async/module");
       `),
   );
@@ -1377,7 +1355,6 @@ it('uses the dependency registry specified in the options to register dependenci
       export {Banana} from 'Banana';
 
       import("some/async/module").then(foo => {});
-      __jsResource("a/jsresouce");
       __prefetchImport("a/prefetch/module");
     `);
 
@@ -1392,7 +1369,6 @@ it('uses the dependency registry specified in the options to register dependenci
     {name: 'b/lib/b', data: objectContaining({asyncType: null})},
     {name: 'Banana', data: objectContaining({asyncType: null})},
     {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
-    {name: 'a/jsresouce', data: objectContaining({asyncType: 'async'})},
     {
       name: 'a/prefetch/module',
       data: objectContaining({asyncType: 'prefetch'}),
@@ -1495,7 +1471,6 @@ class MockModuleDependencyRegistry implements ModuleDependencyRegistry {
 // Mock transformer for dependencies. Uses a "readable" format
 // require() -> require(id, module name)
 // import() -> require(async moudle name).async(id, module name)
-// jsresource -> require(async moudle name).jsresource(id, module name)
 // prefetch -> require(async moudle name).prefetch(id, module name)
 const MockDependencyTransformer: DependencyTransformer = {
   transformSyncRequire(
@@ -1517,14 +1492,6 @@ const MockDependencyTransformer: DependencyTransformer = {
     state: State,
   ): void {
     transformAsyncRequire(path, dependency, state, 'async');
-  },
-
-  transformJSResource(
-    path: NodePath<>,
-    dependency: InternalDependency,
-    state: State,
-  ): void {
-    transformAsyncRequire(path, dependency, state, 'jsresource');
   },
 
   transformPrefetch(
