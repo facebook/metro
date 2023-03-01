@@ -11,7 +11,7 @@
 'use strict';
 
 const getPackages = require('../_getPackages');
-const METRO_VERSION = require('../../lerna.json').version;
+const METRO_VERSION = require('../../packages/metro/package.json').version;
 const ENGINES = require('../../package.json').engines;
 const fs = require('fs');
 const path = require('path');
