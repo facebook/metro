@@ -22,9 +22,9 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
     From inside our `metro` clone, `yarn link` is responsible for registering local package folders to be linked to elsewhere.
 
-    We recommend using `lerna` to register all packages in the `metro` repo — these can be individually linked into the target project later.
+    We recommend using `npm workspaces exec` to register all packages in the `metro` repo — these can be individually linked into the target project later.
 
-        yarn lerna exec -- yarn link
+        npm workspaces exec -- yarn link
 
 2. **Use `yarn link` to replace Metro packages in your target project**
 

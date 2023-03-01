@@ -34,13 +34,7 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
     yarn
     ```
 
-3. Run `lerna bootstrap`.
-
-    ```sh
-    lerna bootstrap
-    ```
-
-4. If you've added code that should be tested, add tests. You
+3. If you've added code that should be tested, add tests. You
    can use watch mode that continuously transforms changed files
    to make your life easier.
 
@@ -49,9 +43,9 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
    npm run watch
    ```
 
-5. If you've changed APIs, update the documentation.
-6. Ensure the test suite passes via `npm test`.
-7. If you haven't already, complete the CLA.
+4. If you've changed APIs, update the documentation.
+5. Ensure the test suite passes via `npm test`.
+6. If you haven't already, complete the CLA.
 
 ### Contributor License Agreement (CLA)
 
