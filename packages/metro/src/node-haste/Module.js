@@ -14,7 +14,7 @@
 import type ModuleCache from './ModuleCache';
 import type Package from './Package';
 
-const isAbsolutePath = require('absolute-path');
+import path from 'path';
 
 class Module {
   path: string;
@@ -23,7 +23,7 @@ class Module {
   _sourceCode: ?string;
 
   constructor(file: string, moduleCache: ModuleCache) {
-    if (!isAbsolutePath(file)) {
+    if (!path.isAbsolute(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);
     }
 

@@ -19,7 +19,6 @@ import type {
   Result,
 } from './types';
 
-import isAbsolutePath from 'absolute-path';
 import path from 'path';
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
@@ -51,7 +50,7 @@ function resolve(
     );
   }
 
-  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
+  if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
     return resolveModulePath(context, moduleName, platform);
   }
 
@@ -65,7 +64,7 @@ function resolve(
   const {originModulePath} = context;
 
   const isDirectImport =
-    isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
+    isRelativeImport(realModuleName) || path.isAbsolute(realModuleName);
 
   if (isDirectImport) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
@@ -149,7 +148,7 @@ function resolveModulePath(
   toModuleName: string,
   platform: string | null,
 ): Resolution {
-  const modulePath = isAbsolutePath(toModuleName)
+  const modulePath = path.isAbsolute(toModuleName)
     ? resolveWindowsPath(toModuleName)
     : path.join(path.dirname(context.originModulePath), toModuleName);
   const redirectedPath = context.redirectModulePath(modulePath);
