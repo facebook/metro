@@ -1107,10 +1107,16 @@ type MockFSDirContents = $ReadOnly<{
                     name: 'aPackage',
                     [(browserField: string)]: {
                       'left-pad': false,
-                      './foo.js': false,
                     },
                   }),
                   'index.js': '',
+                },
+                'left-pad': {
+                  'package.json': JSON.stringify({
+                    name: 'left-pad',
+                  }),
+                  'index.js': '',
+                  'foo.js': '',
                 },
               },
             });
@@ -1128,23 +1134,16 @@ type MockFSDirContents = $ReadOnly<{
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
             });
+            // Existing limitation: Subpaths of a package are not redirected by "browser"
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './foo',
+                'left-pad/foo',
               ),
             ).toEqual({
               type: 'sourceFile',
-              filePath: p('/root/emptyModule.js'),
+              filePath: p('/root/node_modules/left-pad/foo.js'),
             });
-
-            // TODO: Are the following two cases expected behaviour?
-            expect(() =>
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
-            ).toThrow();
-            expect(() =>
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
-            ).toThrow();
           });
 
           it('supports excluding a package when the empty module is a relative path', async () => {
@@ -1156,7 +1155,6 @@ type MockFSDirContents = $ReadOnly<{
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     [(browserField: string)]: {
-                      'left-pad': false,
                       './foo.js': false,
                     },
                   }),
@@ -1172,29 +1170,24 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad',
-              ),
-            ).toEqual({
-              type: 'sourceFile',
-              filePath: p('/root/emptyModule.js'),
-            });
-            expect(
-              resolver.resolve(
-                p('/root/node_modules/aPackage/index.js'),
                 './foo',
               ),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
             });
-
-            // TODO: Are the following two cases expected behaviour?
-            expect(() =>
+            expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
-            ).toThrow();
-            expect(() =>
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
+            expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
-            ).toThrow();
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
           });
         });
       });

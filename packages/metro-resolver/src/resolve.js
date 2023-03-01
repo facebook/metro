@@ -126,7 +126,11 @@ function resolve(
     .concat(extraPaths);
   for (let i = 0; i < allDirPaths.length; ++i) {
     const candidate = context.redirectModulePath(allDirPaths[i]);
-    // $FlowFixMe[incompatible-call]
+
+    if (candidate === false) {
+      return {type: 'empty'};
+    }
+
     const result = resolvePackage(context, candidate, platform);
     if (result.type === 'resolved') {
       return result.resolution;
