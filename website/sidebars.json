@@ -6,6 +6,7 @@
     ],
     "API Reference": [
       "api",
+      "module-api",
       "configuration",
       "cli"
     ],
