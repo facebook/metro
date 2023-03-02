@@ -1134,7 +1134,8 @@ type MockFSDirContents = $ReadOnly<{
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
             });
-            // Existing limitation: Subpaths of a package are not redirected by "browser"
+            // Existing limitation: Subpaths of a package are not redirected by
+            // a base package name redirection in "browser"
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
@@ -1855,12 +1856,11 @@ type MockFSDirContents = $ReadOnly<{
               type: 'sourceFile',
               filePath: p('/root/aPackage/client.js'),
             });
-            // TODO: Is this behaviour correct?
             expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/main'),
             ).toEqual({
               type: 'sourceFile',
-              filePath: p('/root/aPackage/main.js'),
+              filePath: p('/root/aPackage/client.js'),
             });
           });
         });

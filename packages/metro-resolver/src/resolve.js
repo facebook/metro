@@ -30,7 +30,6 @@ import formatFileCandidates from './errors/formatFileCandidates';
 import {getPackageEntryPoint} from './PackageResolve';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import resolveAsset from './resolveAsset';
-import invariant from 'invariant';
 
 function resolve(
   context: ResolutionContext,
@@ -51,7 +50,11 @@ function resolve(
   }
 
   if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
-    return resolveModulePath(context, moduleName, platform);
+    const result = resolvePackage(context, moduleName, platform);
+    if (result.type === 'failed') {
+      throw new FailedToResolvePathError(result.candidates);
+    }
+    return result.resolution;
   }
 
   const realModuleName = context.redirectModulePath(moduleName);
@@ -75,7 +78,11 @@ function resolve(
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
     const absPath = path.join(originModuleDir, realModuleName);
-    return resolveModulePath(context, absPath, platform);
+    const result = resolvePackage(context, absPath, platform);
+    if (result.type === 'failed') {
+      throw new FailedToResolvePathError(result.candidates);
+    }
+    return result.resolution;
   }
 
   if (context.allowHaste && !isDirectImport) {
@@ -151,19 +158,26 @@ function resolveModulePath(
   context: ResolutionContext,
   toModuleName: string,
   platform: string | null,
-): Resolution {
+): Result<Resolution, FileAndDirCandidates> {
   const modulePath = path.isAbsolute(toModuleName)
     ? resolveWindowsPath(toModuleName)
     : path.join(path.dirname(context.originModulePath), toModuleName);
   const redirectedPath = context.redirectModulePath(modulePath);
   if (redirectedPath === false) {
-    return {type: 'empty'};
+    return resolvedAs({type: 'empty'});
   }
-  const result = resolvePackage(context, redirectedPath, platform);
-  if (result.type === 'resolved') {
-    return result.resolution;
+
+  const dirPath = path.dirname(redirectedPath);
+  const fileName = path.basename(redirectedPath);
+  const fileResult = resolveFile(context, dirPath, fileName, platform);
+  if (fileResult.type === 'resolved') {
+    return fileResult;
   }
-  throw new FailedToResolvePathError(result.candidates);
+  const dirResult = resolvePackageEntryPoint(context, redirectedPath, platform);
+  if (dirResult.type === 'resolved') {
+    return dirResult;
+  }
+  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
 }
 
 /**
@@ -192,7 +206,7 @@ function resolveHasteName(
   const packageDirPath = path.dirname(packageJsonPath);
   const pathInModule = moduleName.substring(packageName.length + 1);
   const potentialModulePath = path.join(packageDirPath, pathInModule);
-  const result = resolvePackage(context, potentialModulePath, platform);
+  const result = resolveModulePath(context, potentialModulePath, platform);
   if (result.type === 'resolved') {
     return result;
   }
@@ -240,11 +254,6 @@ function resolvePackage(
   modulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
-  invariant(
-    path.isAbsolute(modulePath),
-    'resolvePackage expects an absolute module path',
-  );
-
   if (context.unstable_enablePackageExports) {
     const pkg = context.getPackageForModule(modulePath);
     const exportsField = pkg?.packageJson.exports;
@@ -283,17 +292,7 @@ function resolvePackage(
     }
   }
 
-  const dirPath = path.dirname(modulePath);
-  const fileName = path.basename(modulePath);
-  const fileResult = resolveFile(context, dirPath, fileName, platform);
-  if (fileResult.type === 'resolved') {
-    return fileResult;
-  }
-  const dirResult = resolvePackageEntryPoint(context, modulePath, platform);
-  if (dirResult.type === 'resolved') {
-    return dirResult;
-  }
-  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
+  return resolveModulePath(context, modulePath, platform);
 }
 
 /**
