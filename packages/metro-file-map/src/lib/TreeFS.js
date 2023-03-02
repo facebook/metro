@@ -162,7 +162,7 @@ export default class TreeFS implements MutableFileSystem {
         const relativePath =
           path.sep === '/'
             ? relativePosixPath
-            : relativePosixPath.replace(/\//g, path.sep);
+            : relativePosixPath.replaceAll('/', path.sep);
 
         files.push(contextRootAbsolutePath + path.sep + relativePath);
       }

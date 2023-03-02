@@ -28,7 +28,7 @@ function createFileMap(
       let filePath = path.relative(modulePath, file);
 
       if (os.platform() === 'win32') {
-        filePath = filePath.replace(/\\/g, '/');
+        filePath = filePath.replaceAll('\\', '/');
       }
 
       // NOTE(EvanBacon): I'd prefer we prevent the ability for a module to require itself (`require.context('./')`)

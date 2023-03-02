@@ -29,7 +29,7 @@ function getIgnorePattern(config: ConfigT): RegExp {
   const combine = (regexes: Array<RegExp>) =>
     new RegExp(
       regexes
-        .map(regex => '(' + regex.source.replace(/\//g, path.sep) + ')')
+        .map(regex => '(' + regex.source.replaceAll('/', path.sep) + ')')
         .join('|'),
     );
 

@@ -25,7 +25,7 @@ describe.each([['win32'], ['posix']])(
     // to system separators
     const p: string => string = filePath =>
       platform === 'win32'
-        ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
+        ? filePath.replaceAll('/', '\\').replace(/^\\/, 'C:\\')
         : filePath;
 
     describe.each([['TreeFS'], ['HasteFS']])('%s', label => {

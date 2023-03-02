@@ -200,7 +200,7 @@ async function getAssetData(
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   if (path.sep === '\\') {
-    assetUrlPath = assetUrlPath.replace(/\\/g, '/');
+    assetUrlPath = assetUrlPath.replaceAll('\\', '/');
   }
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
