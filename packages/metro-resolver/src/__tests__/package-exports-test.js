@@ -243,6 +243,7 @@ describe('with package exports resolution enabled', () => {
             '.': './index.js',
             './foo.js': './lib/foo.js',
             './baz': './node_modules/baz/index.js',
+            './metadata.json': './metadata.min.json',
           },
         }),
         '/root/node_modules/test-pkg/index.js': '',
@@ -253,6 +254,8 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/lib/foo.ios.js': '',
         '/root/node_modules/test-pkg/private/bar.js': '',
         '/root/node_modules/test-pkg/node_modules/baz/index.js': '',
+        '/root/node_modules/test-pkg/metadata.json': '',
+        '/root/node_modules/test-pkg/metadata.min.json': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -303,6 +306,31 @@ describe('with package exports resolution enabled', () => {
         "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
         Reason: The target for \\"./baz\\" defined in \\"exports\\" is \\"./node_modules/baz/index.js\\", however this value is an invalid subpath or subpath pattern because it includes \\"node_modules\\". Falling back to file-based resolution."
       `);
+    });
+
+    test('should not use "exports" for internal relative imports within a package', () => {
+      const context = {
+        ...baseContext,
+        originModulePath: '/root/node_modules/test-pkg/lib/foo.js',
+      };
+
+      expect(Resolver.resolve(context, '../metadata.json', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/metadata.json',
+      });
+    });
+
+    test('should not use "exports" for an absolute import path', () => {
+      expect(
+        Resolver.resolve(
+          baseContext,
+          '/root/node_modules/test-pkg/metadata.json',
+          null,
+        ),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/metadata.json',
+      });
     });
 
     describe('should resolve "exports" target directly', () => {
@@ -374,6 +402,7 @@ describe('with package exports resolution enabled', () => {
           name: 'test-pkg',
           main: 'index.js',
           exports: {
+            '.': './src/index.js',
             './features/*.js': './src/features/*.js',
             './features/bar/*.js': {
               'react-native': null,
@@ -381,6 +410,7 @@ describe('with package exports resolution enabled', () => {
             './assets/*': './assets/*',
           },
         }),
+        '/root/node_modules/test-pkg/src/index.js': '',
         '/root/node_modules/test-pkg/src/features/foo.js': '',
         '/root/node_modules/test-pkg/src/features/foo.js.js': '',
         '/root/node_modules/test-pkg/src/features/bar/Bar.js': '',

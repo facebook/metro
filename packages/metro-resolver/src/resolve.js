@@ -50,7 +50,7 @@ function resolve(
   }
 
   if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
-    const result = resolvePackage(context, moduleName, platform);
+    const result = resolveModulePath(context, moduleName, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
@@ -78,7 +78,7 @@ function resolve(
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
     const absPath = path.join(originModuleDir, realModuleName);
-    const result = resolvePackage(context, absPath, platform);
+    const result = resolveModulePath(context, absPath, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
@@ -240,10 +240,11 @@ class MissingFileInHastePackageError extends Error {
 }
 
 /**
- * In the NodeJS-style module resolution scheme we want to check potential
- * paths both as directories and as files. For example, `/foo/bar` may resolve
- * to `/foo/bar.js` (preferred), but it might also be `/foo/bar/index.js`, or
- * even a package directory.
+ * Resolve a package entry point or subpath target.
+ *
+ * This should be used when resolving a bare import specifier prefixed with the
+ * package name. Use `resolveModulePath` instead to scope to legacy "browser"
+ * spec behaviour, which is also applicable to relative and absolute imports.
  */
 function resolvePackage(
   context: ResolutionContext,
