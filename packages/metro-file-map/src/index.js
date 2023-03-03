@@ -524,7 +524,7 @@ export default class HasteMap extends EventEmitter {
         // We do NOT want consumers to use a module that is ambiguous.
         delete moduleMapItem[platform];
 
-        if (Object.keys(moduleMap).length === 1) {
+        if (Object.keys(moduleMapItem).length === 0) {
           moduleMap.map.delete(id);
         }
 
@@ -1143,11 +1143,10 @@ export default class HasteMap extends EventEmitter {
       return;
     }
 
-    let dedupMap = moduleMap.map.get(moduleName);
+    let dedupMap: ?ModuleMapItem = moduleMap.map.get(moduleName);
 
     if (dedupMap == null) {
-      // $FlowFixMe[unclear-type] - ModuleMapItem?
-      dedupMap = (Object.create(null): any);
+      dedupMap = (Object.create(null): ModuleMapItem);
       moduleMap.map.set(moduleName, dedupMap);
     }
     dedupMap[platform] = uniqueModule;
