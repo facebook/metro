@@ -33,10 +33,10 @@ export function createResolutionContext(
 ): $Diff<ResolutionContext, {originModulePath: string}> {
   return {
     allowHaste: true,
+    assetExts: new Set(['jpg', 'png']),
     customResolverOptions: {},
     disableHierarchicalLookup: false,
     extraNodeModules: null,
-    isAssetFile: () => false,
     mainFields: ['browser', 'main'],
     nodeModulesPaths: [],
     preferNativePlatform: false,

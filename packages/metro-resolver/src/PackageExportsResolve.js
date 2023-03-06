@@ -16,6 +16,7 @@ import InvalidModuleSpecifierError from './errors/InvalidModuleSpecifierError';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
+import isAssetFile from './utils/isAssetFile';
 import toPosixPath from './utils/toPosixPath';
 
 /**
@@ -99,7 +100,7 @@ export function resolvePackageTargetFromExports(
       patternMatch != null ? target.replace('*', patternMatch) : target,
     );
 
-    if (context.isAssetFile(filePath)) {
+    if (isAssetFile(filePath, context.assetExts)) {
       const assetResult = resolveAsset(context, filePath);
 
       if (assetResult != null) {

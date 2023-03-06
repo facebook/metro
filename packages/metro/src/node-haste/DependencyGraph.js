@@ -53,7 +53,6 @@ function getOrCreateMap<T>(
 }
 
 class DependencyGraph extends EventEmitter {
-  _assetExtensions: Set<string>;
   _config: ConfigT;
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
@@ -89,9 +88,6 @@ class DependencyGraph extends EventEmitter {
     super();
 
     this._config = config;
-    this._assetExtensions = new Set(
-      config.resolver.assetExts.map(asset => '.' + asset),
-    );
 
     const {hasReducedPerformance, watch} = options ?? {};
     const initializingMetroLogEntry = log(
@@ -176,6 +172,7 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleResolver() {
     this._moduleResolver = new ModuleResolver({
+      assetExts: new Set(this._config.resolver.assetExts),
       dirExists: (filePath: string) => {
         try {
           return fs.lstatSync(filePath).isDirectory();
@@ -191,7 +188,6 @@ class DependencyGraph extends EventEmitter {
         this._hasteModuleMap.getModule(name, platform, true),
       getHastePackagePath: (name, platform) =>
         this._hasteModuleMap.getPackage(name, platform, true),
-      isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,

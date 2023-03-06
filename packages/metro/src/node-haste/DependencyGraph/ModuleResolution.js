@@ -16,7 +16,6 @@ import type {
   DoesFileExist,
   FileCandidates,
   GetRealPath,
-  IsAssetFile,
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
@@ -55,6 +54,7 @@ export type ModuleishCache<TPackage> = interface {
 };
 
 type Options<TPackage> = $ReadOnly<{
+  assetExts: $ReadOnlySet<string>,
   dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
@@ -62,7 +62,6 @@ type Options<TPackage> = $ReadOnly<{
   extraNodeModules: ?Object,
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
-  isAssetFile: IsAssetFile,
   mainFields: $ReadOnlyArray<string>,
   moduleCache: ModuleishCache<TPackage>,
   nodeModulesPaths: $ReadOnlyArray<string>,
@@ -126,10 +125,10 @@ class ModuleResolver<TPackage: Packageish> {
     resolverOptions: ResolverInputOptions,
   ): BundlerResolution {
     const {
+      assetExts,
       disableHierarchicalLookup,
       doesFileExist,
       extraNodeModules,
-      isAssetFile,
       mainFields,
       nodeModulesPaths,
       preferNativePlatform,
@@ -146,10 +145,10 @@ class ModuleResolver<TPackage: Packageish> {
       const result = Resolver.resolve(
         createDefaultContext({
           allowHaste,
+          assetExts,
           disableHierarchicalLookup,
           doesFileExist,
           extraNodeModules,
-          isAssetFile,
           mainFields,
           nodeModulesPaths,
           preferNativePlatform,

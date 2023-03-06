@@ -23,8 +23,8 @@ import type {Type} from 'metro-transform-worker';
 import type {RequireContext} from './contextModule';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
+import isAssetFile from 'metro-resolver/src/utils/isAssetFile';
 
-const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
@@ -143,6 +143,7 @@ async function getTransformFn(
     options,
     resolverOptions,
   );
+  const assetExts = new Set(config.resolver.assetExts);
 
   return async (modulePath: string, requireContext: ?RequireContext) => {
     let templateBuffer: Buffer;
@@ -173,11 +174,7 @@ async function getTransformFn(
       modulePath,
       {
         ...transformOptions,
-        type: getType(
-          transformOptions.type,
-          modulePath,
-          config.resolver.assetExts,
-        ),
+        type: getType(transformOptions.type, modulePath, assetExts),
         inlineRequires: removeInlineRequiresBlockListFromOptions(
           modulePath,
           inlineRequires,
@@ -191,13 +188,13 @@ async function getTransformFn(
 function getType(
   type: string,
   filePath: string,
-  assetExts: $ReadOnlyArray<string>,
+  assetExts: $ReadOnlySet<string>,
 ): Type {
   if (type === 'script') {
     return type;
   }
 
-  if (assetExts.indexOf(path.extname(filePath).slice(1)) !== -1) {
+  if (isAssetFile(filePath, assetExts)) {
     return 'asset';
   }
 

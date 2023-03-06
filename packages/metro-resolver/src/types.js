@@ -71,7 +71,6 @@ export type PackageInfo = $ReadOnly<{
  */
 export type DoesFileExist = (filePath: string) => boolean;
 export type GetRealPath = (path: string) => ?string;
-export type IsAssetFile = (fileName: string) => boolean;
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -87,6 +86,7 @@ export type ResolveAsset = (
 
 export type ResolutionContext = $ReadOnly<{
   allowHaste: boolean,
+  assetExts: $ReadOnlySet<string>,
   customResolverOptions: CustomResolverOptions,
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
@@ -102,8 +102,6 @@ export type ResolutionContext = $ReadOnly<{
    * module path, if it is contained within an npm package.
    */
   getPackageForModule: (modulePath: string) => ?PackageInfo,
-
-  isAssetFile: IsAssetFile,
 
   /**
    * The ordered list of fields to read in `package.json` to resolve a main

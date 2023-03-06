@@ -30,6 +30,7 @@ import formatFileCandidates from './errors/formatFileCandidates';
 import {getPackageEntryPoint} from './PackageResolve';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import resolveAsset from './resolveAsset';
+import isAssetFile from './utils/isAssetFile';
 
 function resolve(
   context: ResolutionContext,
@@ -369,7 +370,7 @@ function resolveFile(
   fileName: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  if (context.isAssetFile(fileName)) {
+  if (isAssetFile(fileName, context.assetExts)) {
     const assetResolutions = resolveAsset(
       context,
       path.join(dirPath, fileName),

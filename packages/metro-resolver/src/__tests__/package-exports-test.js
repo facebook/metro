@@ -771,7 +771,6 @@ describe('with package exports resolution enabled', () => {
 
   describe('asset resolutions', () => {
     const assetResolutions = ['1', '1.5', '2', '3', '4'];
-    const isAssetFile = (filePath: string) => filePath.endsWith('.png');
 
     const baseContext = {
       ...createResolutionContext({
@@ -786,7 +785,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/assets/icons/metro@2x.png': '',
         '/root/node_modules/test-pkg/assets/icons/metro@3x.png': '',
       }),
-      isAssetFile,
+      assetExts: new Set(['png']),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
     };
