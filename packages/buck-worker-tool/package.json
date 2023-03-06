@@ -9,7 +9,6 @@
     "duplexer": "^0.1.1",
     "invariant": "^2.2.4",
     "jsonparse": "^1.2.0",
-    "temp": "^0.8.3",
     "through": ">=2.2.7 <3"
   },
   "devDependencies": {
