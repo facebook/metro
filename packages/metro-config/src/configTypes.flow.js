@@ -241,7 +241,7 @@ export type ConfigT = $ReadOnly<{
   }>,
 }>;
 
-export type YargArguments = {
+export type YargArguments = $ReadOnly<{
   config?: string,
   cwd?: string,
   port?: string | number,
@@ -259,4 +259,4 @@ export type YargArguments = {
   runInspectorProxy?: boolean,
   verbose?: boolean,
   ...
-};
+}>;

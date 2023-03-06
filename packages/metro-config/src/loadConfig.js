@@ -265,10 +265,10 @@ function overrideConfigWithArguments(
  * @return {object}                         Configuration returned
  */
 async function loadConfig(
-  argv?: YargArguments = {},
+  argvInput?: YargArguments = {},
   defaultConfigOverrides?: InputConfigT = {},
 ): Promise<ConfigT> {
-  argv.config = overrideArgument(argv.config);
+  const argv = {...argvInput, config: overrideArgument(argvInput.config)};
 
   const configuration = await loadMetroConfigFromDisk(
     argv.config,
