@@ -62,7 +62,7 @@ These are the rules that Metro's default resolver follows. Refer to [`metro-reso
 
 2. Otherwise, try to resolve _moduleName_ as a relative or absolute path:
     1. If the path is relative, convert it to an absolute path by prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)).
-    2. If the path refers to an [asset](#isassetfile-string--boolean):
+    2. If the path refers to an [asset](#assetexts-readonlysetstring):
 
         1. Use [`context.resolveAsset`](#resolveasset-dirpath-string-assetname-string-extension-string--readonlyarraystring) to collect all asset variants.
         2. Return an [asset resolution](#asset-files) containing the collected asset paths.
@@ -120,17 +120,15 @@ These are the rules that Metro's default resolver follows. Refer to [`metro-reso
 
 ### Resolution context
 
+#### `assetExts: $ReadOnlySet<string>`
+
+The set of file extensions used to identify asset files. Defaults to [`resolver.assetExts`](./Configuration.md#assetexts).
+
 #### `doesFileExist: string => boolean`
 
 Returns `true` if the file with the given path exists, or `false` otherwise.
 
 By default, Metro implements this by consulting an in-memory map of the filesystem that has been prepared in advance. This approach avoids disk I/O during module resolution.
-
-#### `isAssetFile: string => boolean`
-
-Returns `true` if the given path represents an asset file, or `false` otherwise.
-
-By default, Metro implements this by checking the file's extension against [`resolver.assetExts`](./Configuration.md#assetexts).
 
 #### `nodeModulesPaths: $ReadOnlyArray<string>`
 
