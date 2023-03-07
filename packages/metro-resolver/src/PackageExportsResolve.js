@@ -120,7 +120,7 @@ export function resolvePackageTargetFromExports(
 
   throw new PackagePathNotExportedError(
     `Attempted to import the module "${modulePath}" which is listed in the ` +
-      `"exports" of "${packagePath}, however no match was resolved for this` +
+      `"exports" of "${packagePath}", however no match was resolved for this ` +
       `request (platform = ${platform ?? 'null'}).`,
   );
 }

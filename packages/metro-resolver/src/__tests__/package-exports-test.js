@@ -763,7 +763,7 @@ describe('with package exports resolution enabled', () => {
         });
         expect(logWarning).toHaveBeenCalledTimes(1);
         expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
-          `"Attempted to import the module \\"/root/node_modules/test-pkg/lib/foo.js\\" which is listed in the \\"exports\\" of \\"/root/node_modules/test-pkg, however no match was resolved for thisrequest (platform = null). Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+          `"Attempted to import the module \\"/root/node_modules/test-pkg/lib/foo.js\\" which is listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\", however no match was resolved for this request (platform = null). Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
         );
       });
     });
