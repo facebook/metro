@@ -173,4 +173,76 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ]);
     });
   });
+
+  describe('mutation', () => {
+    describe('addOrModify', () => {
+      test('accepts non-real and absolute paths', () => {
+        tfs.addOrModify(p('link-to-foo/new.js'), ['', 0, 0, 0, '', '', 0]);
+        tfs.addOrModify(p('/project/fileatroot.js'), ['', 0, 0, 0, '', '', 0]);
+        expect(tfs.getAllFiles().sort()).toEqual([
+          p('/outside/external.js'),
+          p('/project/bar.js'),
+          p('/project/fileatroot.js'),
+          p('/project/foo/another.js'),
+          p('/project/foo/new.js'),
+        ]);
+      });
+    });
+
+    describe('bulkAddOrModify', () => {
+      test('adds new files and modifies existing, new symlinks work', () => {
+        tfs.bulkAddOrModify(
+          new Map([
+            [
+              p('newdir/link-to-link-to-bar.js'),
+              ['', 0, 0, 0, '', '', p('../foo/link-to-bar.js')],
+            ],
+            [p('foo/baz.js'), ['', 0, 0, 0, '', '', 0]],
+            [p('bar.js'), ['', 999, 0, 0, '', '', 0]],
+          ]),
+        );
+
+        expect(tfs.getAllFiles().sort()).toEqual([
+          p('/outside/external.js'),
+          p('/project/bar.js'),
+          p('/project/foo/another.js'),
+          p('/project/foo/baz.js'),
+        ]);
+
+        expect(
+          tfs.getRealPath(p('/project/newdir/link-to-link-to-bar.js')),
+        ).toEqual(p('/project/bar.js'));
+
+        expect(tfs.linkStats('bar.js')).toEqual({
+          modifiedTime: 999,
+          fileType: 'f',
+        });
+      });
+    });
+
+    describe('remove', () => {
+      test.each([
+        [p('bar.js')],
+        [p('./bar.js')],
+        [p('./link-to-foo/.././bar.js')],
+        [p('/outside/../project/./bar.js')],
+      ])('removes a file and returns its metadata: %s', mixedPath => {
+        expect(tfs.linkStats(mixedPath)).not.toBeNull();
+        expect(Array.isArray(tfs.remove(mixedPath))).toBe(true);
+        expect(tfs.linkStats(mixedPath)).toBeNull();
+      });
+
+      test('deletes a symlink, not its target', () => {
+        expect(tfs.linkStats(p('foo/link-to-bar.js'))).not.toBeNull();
+        expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
+        expect(Array.isArray(tfs.remove(p('foo/link-to-bar.js')))).toBe(true);
+        expect(tfs.linkStats(p('foo/link-to-bar.js'))).toBeNull();
+        expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
+      });
+
+      test('returns null for a non-existent file', () => {
+        expect(tfs.remove('notexists.js')).toBeNull();
+      });
+    });
+  });
 });

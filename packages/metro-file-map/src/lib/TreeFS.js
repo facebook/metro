@@ -26,6 +26,13 @@ type FileNode = FileMetaData;
 type LinkNode = string;
 type AnyNode = FileNode | DirectoryNode | LinkNode;
 
+// Terminology:
+//
+// mixedPath - a root-relative or absolute path
+// relativePath - a root-relative path
+// normalPath - a root-relative, normalised path (no extraneous '.' or '..')
+// canonicalPath - a root-relative, normalised, real path (no symlinks in dirname)
+
 export default class TreeFS implements MutableFileSystem {
   +#rootDir: Path;
   +#files: FileData;
@@ -46,18 +53,18 @@ export default class TreeFS implements MutableFileSystem {
     );
   }
 
-  getModuleName(file: Path): ?string {
-    const fileMetadata = this._getFileData(file);
+  getModuleName(mixedPath: Path): ?string {
+    const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.ID]) ?? null;
   }
 
-  getSize(file: Path): ?number {
-    const fileMetadata = this._getFileData(file);
+  getSize(mixedPath: Path): ?number {
+    const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
   }
 
-  getDependencies(file: Path): ?Array<string> {
-    const fileMetadata = this._getFileData(file);
+  getDependencies(mixedPath: Path): ?Array<string> {
+    const fileMetadata = this._getFileData(mixedPath);
 
     if (fileMetadata) {
       return fileMetadata[H.DEPENDENCIES]
@@ -68,13 +75,13 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  getSha1(file: Path): ?string {
-    const fileMetadata = this._getFileData(file);
+  getSha1(mixedPath: Path): ?string {
+    const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SHA1]) ?? null;
   }
 
-  exists(file: Path): boolean {
-    const result = this._getFileData(file);
+  exists(mixedPath: Path): boolean {
+    const result = this._getFileData(mixedPath);
     return result != null;
   }
 
@@ -84,8 +91,8 @@ export default class TreeFS implements MutableFileSystem {
     );
   }
 
-  linkStats(file: Path): ?FileStats {
-    const fileMetadata = this._getFileData(file, {follow: false});
+  linkStats(mixedPath: Path): ?FileStats {
+    const fileMetadata = this._getFileData(mixedPath, {followLeaf: false});
     if (fileMetadata == null) {
       return null;
     }
@@ -133,7 +140,7 @@ export default class TreeFS implements MutableFileSystem {
     if (!contextRootResult) {
       return [];
     }
-    const {normalPath: rootRealPath, node: contextRoot} = contextRootResult;
+    const {canonicalPath: rootRealPath, node: contextRoot} = contextRootResult;
     if (!(contextRoot instanceof Map)) {
       return [];
     }
@@ -171,30 +178,73 @@ export default class TreeFS implements MutableFileSystem {
     return files;
   }
 
-  getRealPath(filePath: Path): ?string {
-    const normalPath = this._normalizePath(filePath);
+  getRealPath(mixedPath: Path): ?string {
+    const normalPath = this._normalizePath(mixedPath);
     const metadata = this.#files.get(normalPath);
     if (metadata && metadata[H.SYMLINK] === 0) {
       return fastPath.resolve(this.#rootDir, normalPath);
     }
-    const result = this._lookupByNormalPath(normalPath, {follow: true});
+    const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
     if (!result || result.node instanceof Map) {
       return null;
     }
-    return fastPath.resolve(this.#rootDir, result.normalPath);
+    return fastPath.resolve(this.#rootDir, result.canonicalPath);
   }
 
-  addOrModify(filePath: Path, metadata: FileMetaData): void {
-    const normalPath = this._normalizePath(filePath);
-    this.bulkAddOrModify(new Map([[normalPath, metadata]]));
+  addOrModify(mixedPath: Path, metadata: FileMetaData): void {
+    const normalPath = this._normalizePath(mixedPath);
+    const parentDirNode = this._lookupByNormalPath(path.dirname(normalPath), {
+      makeDirectories: true,
+    });
+    if (!parentDirNode) {
+      throw new Error(
+        `TreeFS: Failed to make parent directory entry for ${mixedPath}`,
+      );
+    }
+    this.bulkAddOrModify(
+      new Map([
+        [
+          parentDirNode.canonicalPath + path.sep + path.basename(normalPath),
+          metadata,
+        ],
+      ]),
+    );
   }
 
   bulkAddOrModify(addedOrModifiedFiles: FileData): void {
+    const files = this.#files;
+
+    // Optimisation: Bulk FileData are typically clustered by directory, so we
+    // optimise for that case by remembering the last directory we looked up.
+    // Experiments with large result sets show this to be significantly (~30%)
+    // faster than caching all lookups in a Map, and 70% faster than no cache.
+    let lastDir: ?string;
+    let directoryNode: DirectoryNode;
+
     for (const [normalPath, metadata] of addedOrModifiedFiles) {
-      this.#files.set(normalPath, metadata);
-      const directoryParts = normalPath.split(path.sep);
-      const basename = directoryParts.pop();
-      const directoryNode = this._mkdirp(directoryParts);
+      if (addedOrModifiedFiles !== files) {
+        files.set(normalPath, metadata);
+      }
+
+      const lastSepIdx = normalPath.lastIndexOf(path.sep);
+      const dirname = lastSepIdx === -1 ? '' : normalPath.slice(0, lastSepIdx);
+      const basename =
+        lastSepIdx === -1 ? normalPath : normalPath.slice(lastSepIdx + 1);
+
+      if (directoryNode == null || dirname !== lastDir) {
+        const lookup = this._lookupByNormalPath(dirname, {
+          followLeaf: false,
+          makeDirectories: true,
+        });
+        if (!(lookup?.node instanceof Map)) {
+          throw new Error(
+            `TreeFS: Could not add directory ${dirname} when adding files`,
+          );
+        }
+        lastDir = dirname;
+        directoryNode = lookup.node;
+      }
+
       if (metadata[H.SYMLINK] !== 0) {
         const symlinkTarget = metadata[H.SYMLINK];
         invariant(
@@ -219,73 +269,116 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  remove(filePath: Path): ?FileMetaData {
-    const normalPath = this._normalizePath(filePath);
-    const fileMetadata = this.#files.get(normalPath);
-    if (fileMetadata == null) {
+  remove(mixedPath: Path): ?FileMetaData {
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {followLeaf: false});
+    if (!result || result.node instanceof Map) {
       return null;
     }
-    this.#files.delete(normalPath);
-    const directoryParts = normalPath.split(path.sep);
-    const basename = directoryParts.pop();
-    const directoryNode = this._mkdirp(directoryParts);
-    directoryNode.delete(basename);
+    const {parentNode, canonicalPath, node} = result;
+
+    // If node is a symlink, get its metadata from the file map. Otherwise, we
+    // already have it in the lookup result.
+    const fileMetadata =
+      typeof node === 'string' ? this.#files.get(canonicalPath) : node;
+    if (fileMetadata == null) {
+      throw new Error(`TreeFS: Missing metadata for ${mixedPath}`);
+    }
+    if (parentNode == null) {
+      throw new Error(`TreeFS: Missing parent node for ${mixedPath}`);
+    }
+    this.#files.delete(canonicalPath);
+    parentNode.delete(path.basename(canonicalPath));
     return fileMetadata;
   }
 
   _lookupByNormalPath(
-    relativePath: string,
+    requestedNormalPath: string,
     opts: {
       // Like lstat vs stat, whether to follow a symlink at the basename of
       // the given path, or return the details of the symlink itself.
-      follow: boolean,
-    } = {follow: true},
-    seen: Set<string> = new Set(),
-  ): ?{normalPath: string, node: AnyNode} {
-    if (relativePath === '') {
-      return {normalPath: '', node: this.#rootNode};
-    }
-    seen.add(relativePath);
-    const directoryParts = relativePath.split(path.sep);
-    const basename = directoryParts.pop();
-    let node = this.#rootNode;
-    for (const [idx, directoryPart] of directoryParts.entries()) {
-      if (directoryPart === '.') {
+      followLeaf?: boolean,
+      makeDirectories?: boolean,
+    } = {followLeaf: true, makeDirectories: false},
+  ): ?(
+    | {canonicalPath: string, node: AnyNode, parentNode: DirectoryNode}
+    | {canonicalPath: string, node: DirectoryNode, parentNode: null}
+  ) {
+    // We'll update the target if we hit a symlink.
+    let targetNormalPath = requestedNormalPath;
+    // Lazy-initialised set of seen target paths, to detect symlink cycles.
+    let seen: ?Set<string>;
+    // Pointer to the first character of the current path segment in
+    // targetNormalPath.
+    let fromIdx = 0;
+    // The parent of the current segment
+    let parentNode = this.#rootNode;
+
+    while (targetNormalPath.length > fromIdx) {
+      const nextSepIdx = targetNormalPath.indexOf(path.sep, fromIdx);
+      const isLastSegment = nextSepIdx === -1;
+      const segmentName = isLastSegment
+        ? targetNormalPath.slice(fromIdx)
+        : targetNormalPath.slice(fromIdx, nextSepIdx);
+      fromIdx = !isLastSegment ? nextSepIdx + 1 : targetNormalPath.length;
+
+      if (segmentName === '.') {
         continue;
       }
-      const nextNode = node.get(directoryPart);
-      if (nextNode == null) {
-        return null;
+
+      let segmentNode = parentNode.get(segmentName);
+      if (segmentNode == null) {
+        if (opts.makeDirectories !== true) {
+          return null;
+        }
+        segmentNode = new Map();
+        parentNode.set(segmentName, segmentNode);
       }
-      if (Array.isArray(nextNode)) {
+
+      // If there are no more '/' to come, we're done unless this is a symlink
+      // we must follow.
+      if (
+        isLastSegment &&
+        (typeof segmentNode !== 'string' || opts.followLeaf === false)
+      ) {
+        return {
+          canonicalPath: targetNormalPath,
+          node: segmentNode,
+          parentNode,
+        };
+      }
+
+      // If the next node is a directory, go into it
+      if (segmentNode instanceof Map) {
+        parentNode = segmentNode;
+      } else if (Array.isArray(segmentNode)) {
         // Regular file in a directory path
         return null;
-      } else if (typeof nextNode === 'string') {
-        if (seen.has(nextNode)) {
+      } else if (typeof segmentNode === 'string') {
+        // segmentNode is a normalised symlink target. Append any subsequent
+        // path segments to the symlink target, and reset with our new target.
+        targetNormalPath = isLastSegment
+          ? segmentNode
+          : segmentNode + path.sep + targetNormalPath.slice(fromIdx);
+        if (seen == null) {
+          // Optimisation: set this lazily only when we've encountered a symlink
+          seen = new Set([requestedNormalPath]);
+        }
+        if (seen.has(targetNormalPath)) {
           // TODO: Warn `Symlink cycle detected: ${[...seen, node].join(' -> ')}`
           return null;
         }
-        return this._lookupByNormalPath(
-          path.join(nextNode, ...directoryParts.slice(idx + 1), basename),
-          opts,
-          seen,
-        );
+        seen.add(targetNormalPath);
+        fromIdx = 0;
+        parentNode = this.#rootNode;
       }
-      node = nextNode;
     }
-    const basenameNode = node.get(basename);
-    if (typeof basenameNode === 'string') {
-      // basenameNode is a symlink target
-      if (!opts.follow) {
-        return {normalPath: relativePath, node: basenameNode};
-      }
-      if (seen.has(basenameNode)) {
-        // TODO: Warn `Symlink cycle detected: ${[...seen, target].join(' -> ')}`
-        return null;
-      }
-      return this._lookupByNormalPath(basenameNode, opts, seen);
-    }
-    return basenameNode ? {normalPath: relativePath, node: basenameNode} : null;
+    invariant(parentNode === this.#rootNode, 'Unexpectedly escaped traversal');
+    return {
+      canonicalPath: targetNormalPath,
+      node: this.#rootNode,
+      parentNode: null,
+    };
   }
 
   _normalizePath(relativeOrAbsolutePath: Path): string {
@@ -366,39 +459,19 @@ export default class TreeFS implements MutableFileSystem {
 
   _getFileData(
     filePath: Path,
-    opts: {follow: boolean} = {follow: true},
+    opts: {followLeaf: boolean} = {followLeaf: true},
   ): ?FileMetaData {
     const normalPath = this._normalizePath(filePath);
     const metadata = this.#files.get(normalPath);
-    if (metadata && (!opts.follow || metadata[H.SYMLINK] === 0)) {
+    if (metadata && (!opts.followLeaf || metadata[H.SYMLINK] === 0)) {
       return metadata;
     }
-    const result = this._lookupByNormalPath(normalPath, opts);
+    const result = this._lookupByNormalPath(normalPath, {
+      followLeaf: opts.followLeaf,
+    });
     if (!result || result.node instanceof Map) {
       return null;
     }
-    return this.#files.get(result.normalPath);
-  }
-
-  _mkdirp(directoryParts: $ReadOnlyArray<string>): DirectoryNode {
-    let node = this.#rootNode;
-    for (const directoryPart of directoryParts) {
-      if (directoryPart === '.') {
-        continue;
-      }
-      let nextNode = node.get(directoryPart);
-      if (nextNode == null) {
-        nextNode = new Map();
-        node.set(directoryPart, nextNode);
-      }
-      invariant(
-        nextNode instanceof Map,
-        '%s in %s is a file, directory expected',
-        directoryPart,
-        directoryParts,
-      );
-      node = nextNode;
-    }
-    return node;
+    return this.#files.get(result.canonicalPath);
   }
 }
