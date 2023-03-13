@@ -487,7 +487,7 @@ export default class HasteMap extends EventEmitter {
     moduleMap: RawModuleMap,
     filePath: Path,
     fileMetadata: FileMetaData,
-    workerOptions?: {forceInBand: boolean},
+    workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
   ): ?Promise<void> {
     const rootDir = this._options.rootDir;
 
@@ -738,7 +738,9 @@ export default class HasteMap extends EventEmitter {
         this._options.rootDir,
         relativeFilePath,
       );
-      const maybePromise = this._processFile(moduleMap, filePath, fileData);
+      const maybePromise = this._processFile(moduleMap, filePath, fileData, {
+        perfLogger: this._startupPerfLogger,
+      });
       if (maybePromise) {
         promises.push(
           maybePromise.catch(e => {
@@ -819,20 +821,26 @@ export default class HasteMap extends EventEmitter {
   /**
    * Creates workers or parses files and extracts metadata in-process.
    */
-  _getWorker(options?: {forceInBand: boolean}): WorkerInterface {
+  _getWorker(options?: {
+    forceInBand?: ?boolean,
+    perfLogger?: ?PerfLogger,
+  }): WorkerInterface {
     if (!this._worker) {
-      if ((options && options.forceInBand) || this._options.maxWorkers <= 1) {
+      const {forceInBand, perfLogger} = options ?? {};
+      if (forceInBand === true || this._options.maxWorkers <= 1) {
         this._worker = {worker};
       } else {
-        this._worker = new Worker<WorkerObj>(require.resolve('./worker'), {
+        const workerPath = require.resolve('./worker');
+        perfLogger?.point('initWorkers_start');
+        this._worker = new Worker<WorkerObj>(workerPath, {
           exposedMethods: ['worker'],
           maxRetries: 3,
           numWorkers: this._options.maxWorkers,
         });
+        perfLogger?.point('initWorkers_end');
       }
     }
-
-    return this._worker;
+    return nullthrows(this._worker);
   }
 
   _removeIfExists(
