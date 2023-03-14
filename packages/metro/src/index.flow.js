@@ -54,7 +54,7 @@ export type RunMetroOptions = {
   waitForBundler?: boolean,
 };
 
-export type RunServerOptions = {
+export type RunServerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   host?: string,
   onError?: (Error & {code?: string}) => void,
@@ -66,10 +66,10 @@ export type RunServerOptions = {
   secureKey?: string, // deprecated
   waitForBundler?: boolean,
   watch?: boolean,
-  websocketEndpoints?: {
+  websocketEndpoints?: $ReadOnly<{
     [path: string]: typeof ws.Server,
-  },
-};
+  }>,
+}>;
 
 type BuildGraphOptions = {
   entries: $ReadOnlyArray<string>,
@@ -291,7 +291,8 @@ exports.runServer = async (
           onReady(httpServer);
         }
 
-        Object.assign(websocketEndpoints, {
+        websocketEndpoints = {
+          ...websocketEndpoints,
           ...(inspectorProxy
             ? {...inspectorProxy.createWebSocketListeners(httpServer)}
             : {}),
@@ -302,7 +303,7 @@ exports.runServer = async (
               config,
             ),
           }),
-        });
+        };
 
         httpServer.on('upgrade', (request, socket, head) => {
           const {pathname} = parse(request.url);

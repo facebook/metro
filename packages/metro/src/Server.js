@@ -349,7 +349,7 @@ class Server {
     +dev: boolean,
     +entryFile: string,
     +minify: boolean,
-    +platform: string,
+    +platform: ?string,
     ...
   }): Promise<Array<string>> {
     const {

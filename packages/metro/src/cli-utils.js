@@ -11,8 +11,6 @@
 
 'use strict';
 
-import type {YargArguments} from 'metro-config/src/configTypes.flow';
-
 const fs = require('fs');
 
 exports.watchFile = async function (
@@ -27,10 +25,8 @@ exports.watchFile = async function (
 };
 
 exports.makeAsyncCommand =
-  (
-    command: (argv: YargArguments) => Promise<void>,
-  ): ((argv: YargArguments) => void) =>
-  (argv: YargArguments) => {
+  <T>(command: (argv: T) => Promise<void>): ((argv: T) => void) =>
+  (argv: T) => {
     Promise.resolve(command(argv)).catch(error => {
       console.error(error.stack);
       process.exitCode = 1;

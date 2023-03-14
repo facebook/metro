@@ -12,7 +12,6 @@
 'use strict';
 
 import type {RunBuildOptions} from '../index';
-import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
 
@@ -23,6 +22,22 @@ const {Terminal} = require('metro-core');
 
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
+
+type Args = $ReadOnly<{
+  config?: string,
+  dev?: boolean,
+  entry: string,
+  legacyBundler?: boolean,
+  maxWorkers?: number,
+  minify?: boolean,
+  out: string,
+  outputType?: string,
+  platform?: string,
+  projectRoots?: $ReadOnlyArray<string>,
+  resetCache?: boolean,
+  sourceMap?: boolean,
+  sourceMapUrl?: string,
+}>;
 
 module.exports = (): {
   ...ModuleObject,
@@ -58,10 +73,17 @@ module.exports = (): {
     yargs.option('reset-cache', {type: 'boolean'});
   },
 
-  handler: makeAsyncCommand(async (argv: YargArguments) => {
+  handler: makeAsyncCommand(async (argv: Args) => {
     const config = await loadConfig(argv);
-    // $FlowExpectedError YargArguments and RunBuildOptions are used interchangeable but their types are not yet compatible
-    const options = (argv: RunBuildOptions);
+    const options: RunBuildOptions = {
+      entry: argv.entry,
+      dev: argv.dev,
+      out: argv.out,
+      minify: argv.minify,
+      platform: argv.platform,
+      sourceMap: argv.sourceMap,
+      sourceMapUrl: argv.sourceMapUrl,
+    };
 
     // Inline require() to avoid circular dependency with ../index
     const MetroApi = require('../index');

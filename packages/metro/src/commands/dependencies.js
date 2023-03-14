@@ -4,23 +4,35 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow
  * @format
  * @oncall react_native
  */
 
 'use strict';
 
+import type {ConfigT} from 'metro-config';
 import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
 const Server = require('../Server');
-const denodeify = require('denodeify');
 const fs = require('fs');
 const {loadConfig} = require('metro-config');
 const path = require('path');
+const {promisify} = require('util');
 
-async function dependencies(args: any, config: any) {
+type Args = $ReadOnly<{
+  entryFile: string,
+  output?: string,
+  platform?: string,
+  transformer?: string,
+  maxWorkers?: number,
+  dev: boolean,
+  verbose: boolean,
+}>;
+
+async function dependencies(args: Args, config: ConfigT) {
   const rootModuleAbsolutePath = args.entryFile;
   if (!fs.existsSync(rootModuleAbsolutePath)) {
     return Promise.reject(
@@ -28,6 +40,7 @@ async function dependencies(args: any, config: any) {
     );
   }
 
+  // $FlowFixMe[cannot-write]
   config.cacheStores = [];
 
   const relativePath = path.relative(
@@ -43,10 +56,8 @@ async function dependencies(args: any, config: any) {
     generateSourceMaps: !args.dev,
   };
 
-  const writeToFile = args.output;
-  const outStream = writeToFile
-    ? fs.createWriteStream(args.output)
-    : process.stdout;
+  const outStream =
+    args.output != null ? fs.createWriteStream(args.output) : process.stdout;
 
   const server = new Server(config);
   const deps = await server.getOrderedDependencyPaths(options);
@@ -64,12 +75,13 @@ async function dependencies(args: any, config: any) {
   });
 
   server.end();
-  return writeToFile
-    ? denodeify(outStream.end).bind(outStream)()
+  return args.output != null
+    ? // $FlowFixMe[method-unbinding]
+      promisify(outStream.end).bind(outStream)()
     : Promise.resolve();
 }
 
-module.exports = (): ModuleObject => ({
+module.exports = (): {...ModuleObject, handler: Function} => ({
   command: 'get-dependencies',
   desc: 'List dependencies',
   builder: (yargs: Yargs) => {
@@ -109,7 +121,7 @@ module.exports = (): ModuleObject => ({
       description: 'Enables logging',
     });
   },
-  handler: makeAsyncCommand(async (argv: any) => {
+  handler: makeAsyncCommand(async (argv: Args) => {
     const config = await loadConfig(argv);
     await dependencies(argv, config);
   }),
