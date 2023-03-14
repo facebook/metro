@@ -14,7 +14,7 @@
   "dependencies": {
     "@babel/core": "^7.20.0",
     "@babel/types": "^7.20.0",
-    "hermes-parser": "0.8.0",
+    "hermes-parser": "0.10.0",
     "nullthrows": "^1.1.1"
   },
   "license": "MIT",
