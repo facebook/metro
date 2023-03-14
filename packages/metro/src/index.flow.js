@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
@@ -112,6 +113,8 @@ export type RunBuildOptions = {
   platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
+  customResolverOptions?: CustomResolverOptions,
+  customTransformOptions?: CustomTransformOptions,
 };
 
 type BuildCommandOptions = {} | null;
@@ -347,6 +350,8 @@ exports.runServer = async (
 exports.runBuild = async (
   config: ConfigT,
   {
+    customResolverOptions,
+    customTransformOptions,
     dev = false,
     entry,
     onBegin,
@@ -378,6 +383,8 @@ exports.runBuild = async (
       sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
       createModuleIdFactory: config.serializer.createModuleIdFactory,
       onProgress,
+      customResolverOptions,
+      customTransformOptions,
     };
 
     if (onBegin) {

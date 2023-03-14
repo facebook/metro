@@ -139,6 +139,8 @@ export type RequestOptions = {
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  +customResolverOptions?: CustomResolverOptions,
+  +customTransformOptions?: CustomTransformOptions,
 };
 
 export type {MinifierOptions};

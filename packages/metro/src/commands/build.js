@@ -9,8 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
+import parseKeyValueParamArray from '../cli/parseKeyValueParamArray';
 
+import type {CustomTransformOptions} from 'metro-babel-transformer';
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {RunBuildOptions} from '../index';
 import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
@@ -37,6 +39,8 @@ type Args = $ReadOnly<{
   resetCache?: boolean,
   sourceMap?: boolean,
   sourceMapUrl?: string,
+  transformOption: CustomTransformOptions,
+  resolverOption: CustomResolverOptions,
 }>;
 
 module.exports = (): {
@@ -69,6 +73,23 @@ module.exports = (): {
 
     yargs.option('config', {alias: 'c', type: 'string'});
 
+    yargs.option('transform-option', {
+      type: 'string',
+      array: true,
+      alias: 'transformer-option',
+      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      describe:
+        'Custom transform options of the form key=value. URL-encoded. May be specified multiple times.',
+    });
+
+    yargs.option('resolver-option', {
+      type: 'string',
+      array: true,
+      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      describe:
+        'Custom resolver options of the form key=value. URL-encoded. May be specified multiple times.',
+    });
+
     // Deprecated
     yargs.option('reset-cache', {type: 'boolean'});
   },
@@ -83,6 +104,8 @@ module.exports = (): {
       platform: argv.platform,
       sourceMap: argv.sourceMap,
       sourceMapUrl: argv.sourceMapUrl,
+      customResolverOptions: argv.resolverOption,
+      customTransformOptions: argv.transformOption,
     };
 
     // Inline require() to avoid circular dependency with ../index

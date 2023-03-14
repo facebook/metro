@@ -24,6 +24,8 @@ Generates a JavaScript bundle containing the specified entrypoint and its descen
 | `source-map` |  | Whether Metro should generate source maps | Boolean |
 | `source-map-url` |  | URL where the source map can be found | String |
 | `legacy-bundler` |  | Whether Metro should use the legacy bundler | Boolean |
+| `resolver-option` |  | [Custom resolver options](./Resolution.md#customresolveroptions-string-mixed) of the form `key=value` | Array |
+| `transform-option` |  | Custom transform options of the form `key=value` | Array |
 
 
 ## `serve`
