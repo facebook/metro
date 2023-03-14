@@ -1,0 +1,50 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict-local
+ * @format
+ */
+
+'use strict';
+
+const {transform} = require('../index.js');
+
+it('exposes the correct absolute path to a source file to plugins', () => {
+  let visitorFilename;
+  let pluginCwd;
+  transform({
+    filename: 'foo.js',
+    src: 'console.log("foo");',
+    plugins: [
+      (babel, opts, cwd) => {
+        pluginCwd = cwd;
+        return {
+          visitor: {
+            CallExpression: {
+              enter: (_, state) => {
+                visitorFilename = state.filename;
+              },
+            },
+          },
+        };
+      },
+    ],
+    options: {
+      dev: true,
+      enableBabelRuntime: false,
+      enableBabelRCLookup: false,
+      globalPrefix: '__metro__',
+      hot: false,
+      inlineRequires: false,
+      minify: false,
+      platform: null,
+      publicPath: 'test',
+      projectRoot: '/my/project',
+    },
+  });
+  expect(visitorFilename).toEqual('/my/project/foo.js');
+  expect(pluginCwd).toEqual('/my/project');
+});
