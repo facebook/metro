@@ -11,6 +11,9 @@
 'use strict';
 
 const {transform} = require('../index.js');
+const path = require('path');
+
+const PROJECT_ROOT = path.sep === '/' ? '/my/project' : 'C:\\my\\project';
 
 it('exposes the correct absolute path to a source file to plugins', () => {
   let visitorFilename;
@@ -42,9 +45,9 @@ it('exposes the correct absolute path to a source file to plugins', () => {
       minify: false,
       platform: null,
       publicPath: 'test',
-      projectRoot: '/my/project',
+      projectRoot: PROJECT_ROOT,
     },
   });
-  expect(visitorFilename).toEqual('/my/project/foo.js');
-  expect(pluginCwd).toEqual('/my/project');
+  expect(pluginCwd).toEqual(PROJECT_ROOT);
+  expect(visitorFilename).toEqual(path.resolve(PROJECT_ROOT, 'foo.js'));
 });
