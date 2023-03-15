@@ -23,7 +23,7 @@
     "eslint-plugin-relay": "^1.8.3",
     "flow-bin": "^0.201.0",
     "glob": "^7.1.1",
-    "hermes-eslint": "0.10.0",
+    "hermes-eslint": "0.8.0",
     "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",

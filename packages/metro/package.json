@@ -29,7 +29,7 @@
     "denodeify": "^1.2.1",
     "error-stack-parser": "^2.0.6",
     "graceful-fs": "^4.2.4",
-    "hermes-parser": "0.10.0",
+    "hermes-parser": "0.8.0",
     "image-size": "^0.6.0",
     "invariant": "^2.2.4",
     "jest-worker": "^27.2.0",
