@@ -342,6 +342,12 @@ Conditions may be any string value and are resolved in the order specified by ea
 
 Defaults to `['import', 'require']`.
 
+:::note
+
+When Metro is started via React Native CLI, `conditionNames` defaults to `['import', 'require', 'react-native']`.
+
+:::
+
 #### `unstable_conditionsByPlatform` <div class="label experimental">Experimental</div>
 
 Type: `{[platform: string]: Array<string>}`
