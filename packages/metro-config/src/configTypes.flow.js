@@ -48,7 +48,7 @@ export type GetTransformOptions = (
   entryPoints: $ReadOnlyArray<string>,
   options: GetTransformOptionsOpts,
   getDependenciesOf: (string) => Promise<Array<string>>,
-) => Promise<ExtraTransformOptions>;
+) => Promise<Partial<ExtraTransformOptions>>;
 
 export type Middleware = (
   IncomingMessage,
