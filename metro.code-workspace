@@ -7,6 +7,7 @@
 	"extensions": {
 		"recommendations": [
 			"dbaeumer.vscode-eslint",
+			"editorconfig.editorconfig",
 			"esbenp.prettier-vscode",
 			"flowtype.flow-for-vscode",
 		],
