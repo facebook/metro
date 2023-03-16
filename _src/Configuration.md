@@ -14,7 +14,7 @@ You can also give a custom file to the configuration by specifying `--config <pa
 :::note
 
 When Metro is started via the React Native CLI, some defaults are different from those mentioned below.
-See the [React Native repository](https://github.com/react-native-community/cli/blob/master/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
+See the [React Native repository](https://github.com/react-native-community/cli/blob/main/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
 
 :::
 
