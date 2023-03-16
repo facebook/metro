@@ -13,6 +13,7 @@
 
 import type ModuleMap from './ModuleMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
+import type {AbortSignal} from 'node-abort-controller';
 
 export type {PerfLoggerFactory, PerfLogger};
 

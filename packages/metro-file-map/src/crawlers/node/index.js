@@ -175,7 +175,11 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     includeSymlinks,
     perfLogger,
     roots,
+    abortSignal,
   } = options;
+
+  abortSignal?.throwIfAborted();
+
   perfLogger?.point('nodeCrawl_start');
   const useNativeFind =
     !forceNodeFilesystemAPI &&
@@ -184,7 +188,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
 
   debug('Using system find: %s', useNativeFind);
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const callback = (list: Result) => {
       const changedFiles = new Map<Path, FileMetaData>();
       const removedFiles = new Map(previousState.files);
@@ -208,6 +212,13 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       }
 
       perfLogger?.point('nodeCrawl_end');
+
+      try {
+        // TODO: Use AbortSignal.reason directly when Flow supports it
+        abortSignal?.throwIfAborted();
+      } catch (e) {
+        reject(e);
+      }
       resolve({
         changedFiles,
         removedFiles,

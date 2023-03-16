@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-'use strict';
+import {AbortController} from 'node-abort-controller';
 
 jest.useRealTimers();
 
@@ -395,4 +395,61 @@ describe('node crawler', () => {
     // once for strawberry.js, once for tomato.js
     expect(fs.lstat).toHaveBeenCalledTimes(2);
   });
+
+  it('aborts the crawl on pre-aborted signal', async () => {
+    nodeCrawl = require('../node');
+    const err = new Error('aborted for test');
+    await expect(
+      nodeCrawl({
+        abortSignal: abortSignalWithReason(err),
+        previousState: {
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir,
+        roots: ['/project/fruits', '/project/vegtables'],
+      }),
+    ).rejects.toThrow(err);
+  });
+
+  it('aborts the crawl if signalled after start', async () => {
+    const err = new Error('aborted for test');
+    const abortController = new AbortController();
+
+    // Pass a fake perf logger that will trigger the abort controller
+    const fakePerfLogger = {
+      point(name, opts) {
+        abortController.abort(err);
+      },
+      annotate() {
+        abortController.abort(err);
+      },
+      subSpan() {
+        return fakePerfLogger;
+      },
+    };
+
+    nodeCrawl = require('../node');
+    await expect(
+      nodeCrawl({
+        perfLogger: fakePerfLogger,
+        abortSignal: abortController.signal,
+        previousState: {
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir,
+        roots: ['/project/fruits', '/project/vegtables'],
+      }),
+    ).rejects.toThrow(err);
+  });
 });
+
+function abortSignalWithReason(reason) {
+  // TODO: use AbortSignal.abort when node-abort-controller supports it
+  const controller = new AbortController();
+  controller.abort(reason);
+  return controller.signal;
+}

@@ -18,6 +18,7 @@ import type {
   WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
+import type {AbortSignal} from 'node-abort-controller';
 
 import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
@@ -96,6 +97,9 @@ export class Watcher extends EventEmitter {
       path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
+
+    options.abortSignal.throwIfAborted();
+
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
       computeSha1: options.computeSha1,

@@ -56,8 +56,7 @@ import invariant from 'invariant';
 import {escapePathForRegex} from 'jest-regex-util';
 import {Worker} from 'jest-worker';
 import * as path from 'path';
-// $FlowFixMe[untyped-import] - this is a polyfill
-import AbortController from 'abort-controller';
+import {AbortController} from 'node-abort-controller';
 import {performance} from 'perf_hooks';
 import nullthrows from 'nullthrows';
 
@@ -244,7 +243,7 @@ export default class HasteMap extends EventEmitter {
   _watcher: ?Watcher;
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
-  _crawlerAbortController: typeof AbortController;
+  _crawlerAbortController: AbortController;
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
@@ -1164,11 +1163,12 @@ export default class HasteMap extends EventEmitter {
       clearInterval(this._healthCheckInterval);
     }
 
+    this._crawlerAbortController.abort();
+
     if (!this._watcher) {
       return;
     }
     await this._watcher.close();
-    this._crawlerAbortController.abort();
   }
 
   /**

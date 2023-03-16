@@ -8,22 +8,30 @@
  * @oncall react_native
  */
 
-'use strict';
+import {AbortController} from 'node-abort-controller';
 
 const path = require('path');
 
 jest.mock('fb-watchman', () => {
   const normalizePathSep = require('../../lib/normalizePathSep').default;
   const Client = jest.fn();
-  Client.prototype.command = jest.fn((args, callback) =>
+  const endedClients = new WeakSet();
+  Client.prototype.command = jest.fn(function (args, callback) {
+    const self = this;
     setImmediate(() => {
+      if (endedClients.has(self)) {
+        callback(new Error('Client has ended'));
+        return;
+      }
       const path = args[1] ? normalizePathSep(args[1]) : undefined;
       const response = mockResponse[args[0]][path];
       callback(null, response.next ? response.next().value : response);
-    }),
-  );
+    });
+  });
   Client.prototype.on = jest.fn();
-  Client.prototype.end = jest.fn();
+  Client.prototype.end = jest.fn(function () {
+    endedClients.add(this);
+  });
   return {Client};
 });
 
@@ -548,4 +556,61 @@ describe('watchman watch', () => {
       }),
     );
   });
+
+  it('aborts the crawl on pre-aborted signal', async () => {
+    const err = new Error('aborted for test');
+    await expect(
+      watchmanCrawl({
+        abortSignal: abortSignalWithReason(err),
+        previousState: {
+          clocks: new Map(),
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir: ROOT_MOCK,
+        roots: ROOTS,
+      }),
+    ).rejects.toThrow(err);
+  });
+
+  it('aborts the crawl if signalled after start', async () => {
+    const err = new Error('aborted for test');
+    const abortController = new AbortController();
+
+    // Pass a fake perf logger that will trigger the abort controller
+    const fakePerfLogger = {
+      point(name, opts) {
+        abortController.abort(err);
+      },
+      annotate() {
+        abortController.abort(err);
+      },
+      subSpan() {
+        return fakePerfLogger;
+      },
+    };
+
+    await expect(
+      watchmanCrawl({
+        perfLogger: fakePerfLogger,
+        abortSignal: abortController.signal,
+        previousState: {
+          clocks: new Map(),
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir: ROOT_MOCK,
+        roots: ROOTS,
+      }),
+    ).rejects.toThrow(err);
+  });
 });
+
+function abortSignalWithReason(reason) {
+  // TODO: use AbortSignal.abort when node-abort-controller supports it
+  const controller = new AbortController();
+  controller.abort(reason);
+  return controller.signal;
+}

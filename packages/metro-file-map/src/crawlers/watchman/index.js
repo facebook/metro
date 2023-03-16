@@ -62,12 +62,14 @@ module.exports = async function watchmanCrawl({
   removedFiles: FileData,
   clocks: WatchmanClocks,
 }> {
-  perfLogger?.point('watchmanCrawl_start');
-
-  const newClocks = new Map<Path, WatchmanClockSpec>();
+  abortSignal?.throwIfAborted();
 
   const client = new watchman.Client();
   abortSignal?.addEventListener('abort', () => client.end());
+
+  perfLogger?.point('watchmanCrawl_start');
+
+  const newClocks = new Map<Path, WatchmanClockSpec>();
 
   let clientError;
   client.on('error', error => {
@@ -280,6 +282,7 @@ module.exports = async function watchmanCrawl({
       });
     }
     perfLogger?.point('watchmanCrawl_end');
+    abortSignal?.throwIfAborted();
     throw (
       queryError ?? clientError ?? new Error('Watchman file results missing')
     );
@@ -378,6 +381,7 @@ module.exports = async function watchmanCrawl({
 
   perfLogger?.point('watchmanCrawl/processResults_end');
   perfLogger?.point('watchmanCrawl_end');
+  abortSignal?.throwIfAborted();
   return {
     changedFiles,
     removedFiles,
