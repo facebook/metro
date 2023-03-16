@@ -64,6 +64,7 @@ const debug = require('debug')('Metro:FileMap');
 
 export type {
   BuildParameters,
+  BuildResult,
   CacheData,
   ChangeEventMetadata,
   FileData,
