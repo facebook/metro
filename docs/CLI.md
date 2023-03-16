@@ -32,15 +32,15 @@ Generates a JavaScript bundle containing the specified entrypoint and its descen
 
 Starts Metro on the given port, building bundles on the fly.
 
-## `get-dependencies`
+## `get-dependencies <entryFile>`
 
-Lists dependencies.
+List all dependencies that will be bundled for a given entry point.
 
 ### Options
 
 | Option | Description |
 |---|---|
-| `entry-file` | Absolute path to the root JS file |
+| `entry-file` | Absolute path to the root JS file. This can also be given as the first positional arg. |
 | `output` | File name where to store the output, ex. /tmp/dependencies.txt |
 | `platform` | The platform extension used for selecting modules |
 | `transformer` | Specify a custom transformer to be used |

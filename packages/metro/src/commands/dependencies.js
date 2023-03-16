@@ -82,8 +82,8 @@ async function dependencies(args: Args, config: ConfigT) {
 }
 
 module.exports = (): {...ModuleObject, handler: Function} => ({
-  command: 'get-dependencies',
-  desc: 'List dependencies',
+  command: 'get-dependencies [entryFile]',
+  desc: 'List all dependencies that will be bundled for a given entry point',
   builder: (yargs: Yargs) => {
     yargs.option('entry-file', {
       type: 'string',
