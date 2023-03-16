@@ -626,11 +626,19 @@ const dynamicRequireErrorTemplate = template.expression(`
  * "require(...)" call to the asyncRequire specified.
  */
 const makeAsyncRequireTemplate = template.expression(`
-  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, DEPENDENCY_MAP.paths)
+`);
+
+const makeAsyncRequireTemplateWithName = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, DEPENDENCY_MAP.paths, MODULE_NAME)
 `);
 
 const makeAsyncPrefetchTemplate = template.expression(`
-  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME, DEPENDENCY_MAP.paths)
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, DEPENDENCY_MAP.paths)
+`);
+
+const makeAsyncPrefetchTemplateWithName = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, DEPENDENCY_MAP.paths, MODULE_NAME)
 `);
 
 const makeResolveWeakTemplate = template.expression(`
@@ -661,16 +669,20 @@ const DefaultDependencyTransformer: DependencyTransformer = {
     dependency: InternalDependency,
     state: State,
   ): void {
-    path.replaceWith(
-      makeAsyncRequireTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
-      }),
-    );
+    const makeNode = state.keepRequireNames
+      ? makeAsyncRequireTemplateWithName
+      : makeAsyncRequireTemplate;
+    const opts = {
+      ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+        state.asyncRequireModulePathStringLiteral,
+      ),
+      MODULE_ID: createModuleIDExpression(dependency, state),
+      DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
+      ...(state.keepRequireNames
+        ? {MODULE_NAME: createModuleNameLiteral(dependency)}
+        : null),
+    };
+    path.replaceWith(makeNode(opts));
   },
 
   transformPrefetch(
@@ -678,16 +690,20 @@ const DefaultDependencyTransformer: DependencyTransformer = {
     dependency: InternalDependency,
     state: State,
   ): void {
-    path.replaceWith(
-      makeAsyncPrefetchTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-        DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
-      }),
-    );
+    const makeNode = state.keepRequireNames
+      ? makeAsyncPrefetchTemplateWithName
+      : makeAsyncPrefetchTemplate;
+    const opts = {
+      ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+        state.asyncRequireModulePathStringLiteral,
+      ),
+      MODULE_ID: createModuleIDExpression(dependency, state),
+      DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
+      ...(state.keepRequireNames
+        ? {MODULE_NAME: createModuleNameLiteral(dependency)}
+        : null),
+    };
+    path.replaceWith(makeNode(opts));
   },
 
   transformIllegalDynamicRequire(path: NodePath<>, state: State): void {
