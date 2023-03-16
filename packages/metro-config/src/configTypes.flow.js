@@ -216,6 +216,8 @@ export type InputConfigT = $Shape<{
   }>,
 }>;
 
+export type MetroConfig = InputConfigT;
+
 export type IntermediateConfigT = {
   ...MetalConfigT,
   ...{
