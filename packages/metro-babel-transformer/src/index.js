@@ -75,6 +75,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       ast: true,
       babelrc: options.enableBabelRCLookup,
       code: false,
+      cwd: options.projectRoot,
       highlightCode: true,
       filename,
       plugins,

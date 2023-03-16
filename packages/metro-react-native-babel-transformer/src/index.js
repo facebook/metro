@@ -142,6 +142,7 @@ function buildBabelConfig(
         ? options.enableBabelRCLookup
         : true,
     code: false,
+    cwd: options.projectRoot,
     filename,
     highlightCode: true,
   };
