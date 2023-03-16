@@ -41,7 +41,6 @@ import type {
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
-import HasteFS from './HasteFS';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import deepCloneRawModuleMap from './lib/deepCloneRawModuleMap';
 import * as fastPath from './lib/fast_path';
@@ -100,7 +99,6 @@ export type InputOptions = $ReadOnly<{
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
   throwOnModuleCollision?: ?boolean,
-  unstable_preferTreeFS?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
   watchmanDeferStates?: $ReadOnlyArray<string>,
@@ -120,7 +118,6 @@ type InternalOptions = {
   resetCache: ?boolean,
   maxWorkers: number,
   throwOnModuleCollision: boolean,
-  unstable_preferTreeFS: boolean,
   useWatchman: boolean,
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
@@ -313,7 +310,6 @@ export default class HasteMap extends EventEmitter {
       perfLoggerFactory: options.perfLoggerFactory,
       resetCache: options.resetCache,
       throwOnModuleCollision: !!options.throwOnModuleCollision,
-      unstable_preferTreeFS: !!options.unstable_preferTreeFS,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
       watch: !!options.watch,
       watchmanDeferStates: options.watchmanDeferStates ?? [],
@@ -361,11 +357,7 @@ export default class HasteMap extends EventEmitter {
         const rootDir = this._options.rootDir;
         const fileData = initialData.files;
         this._startupPerfLogger?.point('constructFileSystem_start');
-        const useTreeFS =
-          this._options.enableSymlinks || this._options.unstable_preferTreeFS;
-        this._startupPerfLogger?.annotate({bool: {useTreeFS}});
-        const FileSystem = useTreeFS ? TreeFS : HasteFS;
-        const fileSystem = new FileSystem({
+        const fileSystem = new TreeFS({
           files: fileData,
           rootDir,
         });

@@ -144,7 +144,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       interval: 30000,
       timeout: 5000,
     },
-    unstable_preferTreeFS: false,
     watchman: {
       deferStates: ['hg.update'],
     },

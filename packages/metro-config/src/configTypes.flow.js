@@ -193,7 +193,6 @@ type WatcherConfigT = {
     timeout: number,
     filePrefix: string,
   },
-  unstable_preferTreeFS: boolean,
   watchman: {
     deferStates: $ReadOnlyArray<string>,
   },
