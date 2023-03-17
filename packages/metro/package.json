@@ -60,7 +60,7 @@
     "strip-ansi": "^6.0.0",
     "throat": "^5.0.0",
     "ws": "^7.5.1",
-    "yargs": "^17.5.1"
+    "yargs": "^17.6.2"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
