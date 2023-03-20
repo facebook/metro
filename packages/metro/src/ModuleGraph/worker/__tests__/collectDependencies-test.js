@@ -14,10 +14,7 @@
 import type {Dependency} from '../collectDependencies';
 import type {
   DependencyTransformer,
-  ImportQualifier,
   InternalDependency,
-  ModuleDependencyRegistry,
-  MutableInternalDependency,
   Options,
   State,
 } from '../collectDependencies';
@@ -1389,34 +1386,6 @@ it('uses the dependency transformer specified in the options to transform the de
   );
 });
 
-it('uses the dependency registry specified in the options to register dependencies', () => {
-  const ast = astFromCode(`
-      const a = require('b/lib/a');
-      import b from 'b/lib/b';
-      export {Banana} from 'Banana';
-
-      import("some/async/module").then(foo => {});
-      __prefetchImport("a/prefetch/module");
-    `);
-
-  const {dependencies} = collectDependencies(ast, {
-    ...opts,
-    dependencyTransformer: MockDependencyTransformer,
-    dependencyRegistry: new MockModuleDependencyRegistry(),
-  });
-
-  expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
-    {name: 'b/lib/b', data: objectContaining({asyncType: null})},
-    {name: 'Banana', data: objectContaining({asyncType: null})},
-    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
-    {
-      name: 'a/prefetch/module',
-      data: objectContaining({asyncType: 'prefetch'}),
-    },
-  ]);
-});
-
 it('collects require.resolveWeak calls', () => {
   const ast = astFromCode(`
     require.resolveWeak("some/async/module");
@@ -1479,34 +1448,6 @@ function astFromCode(code: string): BabelNodeFile {
     plugins: ['dynamicImport', 'flow'],
     sourceType: 'module',
   });
-}
-
-// Mock registry that collects *all* `registerDependency` calls.
-// Allows to verify that the `registerDependency` function was called for each
-// extracted dependency. Collapsing dependencies is implemented by specific
-// `collectDependencies` implementations and should be tested there.
-class MockModuleDependencyRegistry implements ModuleDependencyRegistry {
-  _dependencies: Array<InternalDependency> = [];
-
-  registerDependency(qualifier: ImportQualifier): InternalDependency {
-    const data: MutableInternalDependency = {
-      index: this._dependencies.length,
-      name: qualifier.name,
-      asyncType: qualifier.asyncType,
-      isOptional: qualifier.optional ?? false,
-      locs: [],
-
-      // Index = easy key for every dependency since we don't collapse/reorder
-      key: String(this._dependencies.length),
-    };
-
-    this._dependencies.push(data);
-    return data;
-  }
-
-  getDependencies(): Array<InternalDependency> {
-    return this._dependencies;
-  }
 }
 
 // Mock transformer for dependencies. Uses a "readable" format

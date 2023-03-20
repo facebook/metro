@@ -33,7 +33,6 @@ import type {
   DependencyTransformer,
   DynamicRequiresBehavior,
 } from 'metro/src/ModuleGraph/worker/collectDependencies';
-import typeof CollectDependenciesFn from 'metro/src/ModuleGraph/worker/collectDependencies';
 
 const getMinifier = require('./utils/getMinifier');
 const {transformFromAstSync} = require('@babel/core');
@@ -52,6 +51,7 @@ const countLines = require('metro/src/lib/countLines');
 const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
 } = require('metro/src/ModuleGraph/worker/collectDependencies');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 const nullthrows = require('nullthrows');
@@ -94,7 +94,6 @@ export type JsTransformerConfig = $ReadOnly<{
   optimizationSizeLimit: number,
   publicPath: string,
   allowOptionalDependencies: AllowOptionalDependencies,
-  unstable_collectDependenciesPath: string,
   unstable_dependencyMapReservedName: ?string,
   unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
@@ -395,8 +394,6 @@ async function transformJS(
         dependencyMapName: config.unstable_dependencyMapReservedName,
         unstable_allowRequireContext: config.unstable_allowRequireContext,
       };
-      // $FlowFixMe[unsupported-syntax] dynamic require
-      const collectDependencies: CollectDependenciesFn = require(config.unstable_collectDependenciesPath);
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
       if (error instanceof InternalInvalidRequireCallError) {
@@ -724,19 +721,13 @@ module.exports = {
   },
 
   getCacheKey: (config: JsTransformerConfig): string => {
-    const {
-      babelTransformerPath,
-      minifierPath,
-      unstable_collectDependenciesPath,
-      ...remainingConfig
-    } = config;
+    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
     const filesKey = getCacheKey([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),
       require.resolve('./utils/assetTransformer'),
-      require.resolve(unstable_collectDependenciesPath),
       require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
       require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),

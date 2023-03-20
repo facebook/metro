@@ -72,7 +72,7 @@ export type InternalDependency = $ReadOnly<MutableInternalDependency>;
 export type State = {
   asyncRequireModulePathStringLiteral: ?StringLiteral,
   dependencyCalls: Set<string>,
-  dependencyRegistry: ModuleDependencyRegistry,
+  dependencyRegistry: DependencyRegistry,
   dependencyTransformer: DependencyTransformer,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
@@ -89,7 +89,6 @@ export type Options = $ReadOnly<{
   inlineableCalls: $ReadOnlyArray<string>,
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
-  dependencyRegistry?: ModuleDependencyRegistry,
   dependencyTransformer?: DependencyTransformer,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
@@ -100,15 +99,6 @@ export type CollectedDependencies = $ReadOnly<{
   dependencyMapName: string,
   dependencies: $ReadOnlyArray<Dependency>,
 }>;
-
-// Registry for the dependency of a module.
-// Defines when dependencies should be collapsed.
-// E.g. should a module that's once required optionally and once not
-// be treated as the same or different dependencies.
-export interface ModuleDependencyRegistry {
-  registerDependency(qualifier: ImportQualifier): InternalDependency;
-  getDependencies(): Array<InternalDependency>;
-}
 
 export interface DependencyTransformer {
   transformSyncRequire(
@@ -149,8 +139,7 @@ function collectDependencies(
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
     dependencyCalls: new Set(),
-    dependencyRegistry:
-      options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
+    dependencyRegistry: new DependencyRegistry(),
     dependencyTransformer:
       options.dependencyTransformer ?? DefaultDependencyTransformer,
     dependencyMapIdentifier: null,
@@ -774,7 +763,7 @@ function getKeyForDependency(qualifier: ImportQualifier): string {
   return key;
 }
 
-class DefaultModuleDependencyRegistry implements ModuleDependencyRegistry {
+class DependencyRegistry {
   _dependencies: Map<string, InternalDependency> = new Map();
 
   registerDependency(qualifier: ImportQualifier): InternalDependency {

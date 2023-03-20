@@ -59,8 +59,6 @@ const baseConfig: JsTransformerConfig = {
   minifierPath: 'minifyModulePath',
   optimizationSizeLimit: 100000,
   publicPath: '/assets',
-  unstable_collectDependenciesPath:
-    'metro/src/ModuleGraph/worker/collectDependencies',
   unstable_dependencyMapReservedName: null,
   unstable_compactOutput: false,
   unstable_disableModuleWrapping: false,
@@ -469,64 +467,6 @@ it('transforms a script to JS source and bytecode', async () => {
     // $FlowFixMe[incompatible-call] Added when annotating Transformer. bytecode property is missing.
     HermesCompiler.validateBytecodeModule(bytecodeOutput.data.bytecode, 0),
   ).not.toThrow();
-});
-
-it('allows replacing the collectDependencies implementation', async () => {
-  jest.mock(
-    'metro-transform-worker/__virtual__/collectModifiedDependencies',
-    () =>
-      jest.fn((ast, opts) => {
-        const metroCoreCollectDependencies = jest.requireActual<
-          (empty, empty) => {dependencies: {map: mixed => mixed}},
-        >('metro/src/ModuleGraph/worker/collectDependencies');
-        const collectedDeps = metroCoreCollectDependencies(ast, opts);
-        return {
-          ...collectedDeps,
-          // $FlowFixMe[missing-local-annot]
-          dependencies: collectedDeps.dependencies.map(dep => ({
-            ...dep,
-            name: 'modified_' + dep.name,
-          })),
-        };
-      }),
-    {virtual: true},
-  );
-
-  const config = {
-    ...baseConfig,
-    unstable_collectDependenciesPath:
-      'metro-transform-worker/__virtual__/collectModifiedDependencies',
-  };
-  const options = {
-    dev: true,
-    type: 'module',
-  };
-  const result = await Transformer.transform(
-    config,
-    '/root',
-    'local/file.js',
-    Buffer.from('require("foo")', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    options,
-  );
-
-  // $FlowIgnore[cannot-resolve-module] this is a virtual module
-  const collectModifiedDependencies = require('metro-transform-worker/__virtual__/collectModifiedDependencies');
-  expect(collectModifiedDependencies).toHaveBeenCalledWith(
-    expect.objectContaining({type: 'File'}),
-    {
-      allowOptionalDependencies: config.allowOptionalDependencies,
-      asyncRequireModulePath: config.asyncRequireModulePath,
-      dynamicRequires: 'reject',
-      inlineableCalls: ['_$$_IMPORT_DEFAULT', '_$$_IMPORT_ALL'],
-      keepRequireNames: options.dev,
-      unstable_allowRequireContext: false,
-      dependencyMapName: null,
-    },
-  );
-  expect(result.dependencies).toEqual([
-    expect.objectContaining({name: 'modified_foo'}),
-  ]);
 });
 
 it('uses a reserved dependency map name and prevents it from being minified', async () => {
