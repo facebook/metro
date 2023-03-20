@@ -38,7 +38,7 @@ jobs:
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - name: Restore yarn cache
-        uses: actions/cache@v1.1.2
+        uses: actions/cache@v3.3.1
         with:
           path: ${{ steps.yarn.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/website/yarn.lock')) }}
