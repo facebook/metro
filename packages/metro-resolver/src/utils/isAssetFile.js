@@ -19,5 +19,17 @@ export default function isAssetFile(
   filePath: string,
   assetExts: $ReadOnlySet<string>,
 ): boolean {
-  return assetExts.has(path.extname(filePath).slice(1));
+  const baseName = path.basename(filePath);
+
+  for (let i = baseName.length - 1; i >= 0; i--) {
+    if (baseName[i] === '.') {
+      const ext = baseName.slice(i + 1);
+
+      if (assetExts.has(ext)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
