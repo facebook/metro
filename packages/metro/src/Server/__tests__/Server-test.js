@@ -33,6 +33,7 @@ const {
   validateBytecodeModule,
 } = require('metro-hermes-compiler');
 const path = require('path');
+import CountingSet from '../../lib/CountingSet';
 
 jest
   .mock('jest-worker', () => ({}))
@@ -195,22 +196,24 @@ describe('processRequest', () => {
         resolverOptions: mixed,
         otherOptions: mixed,
       ) => {
-        // $FlowFixMe[prop-missing]
         dependencies = new Map<string, Module<>>([
           [
             '/root/mybundle.js',
             {
               path: '/root/mybundle.js',
-              // $FlowFixMe[prop-missing]
               dependencies: new Map<string, Dependency>([
                 [
                   'foo',
                   {
                     absolutePath: '/root/foo.js',
-                    data: {isAsync: false, name: 'foo'},
+                    data: {
+                      data: {asyncType: null, key: 'foo', locs: []},
+                      name: 'foo',
+                    },
                   },
                 ],
               ]),
+              inverseDependencies: new CountingSet<string>([]),
               getSource: () => Buffer.from('code-mybundle'),
               output: [
                 {
@@ -234,10 +237,10 @@ describe('processRequest', () => {
           ],
         ]);
         if (!options.shallow) {
-          // $FlowFixMe[prop-missing]
           dependencies.set('/root/foo.js', {
             path: '/root/foo.js',
             dependencies: new Map(),
+            inverseDependencies: new CountingSet(['/root/mybundle.js']),
             getSource: () => Buffer.from('code-foo'),
             output: [
               {

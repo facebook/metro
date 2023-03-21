@@ -4,21 +4,40 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 'use strict';
 
+import type {Module, TransformInputOptions} from '../../types.flow';
+
+import CountingSet from '../../../lib/CountingSet';
+
 const baseBytecodeBundle = require('../baseBytecodeBundle');
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
 const path = require('path');
+
+const transformOptions: TransformInputOptions = {
+  customTransformOptions: {},
+  dev: true,
+  hot: true,
+  minify: true,
+  platform: 'web',
+  runtimeBytecodeVersion: 900,
+  type: 'module',
+  unstable_transformProfile: 'default',
+};
 
 const polyfillCode = '__d(function() {/* code for polyfill */});';
 const polyfillBytecode = compile(polyfillCode, {
   sourceURL: 'polyfill-source',
 }).bytecode;
-const polyfill = {
+const polyfill: Module<> = {
+  path: '/polyfill',
+  dependencies: new Map(),
+  inverseDependencies: new CountingSet<string>(),
   output: [
     {
       type: 'js/script',
@@ -36,9 +55,18 @@ const fooModuleCode = '__d(function() {/* code for foo */});';
 const fooModuleBytecode = compile(fooModuleCode, {
   sourceURL: 'foo-source',
 }).bytecode;
-const fooModule = {
+const fooModule: Module<> = {
   path: '/root/foo',
-  dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
+  dependencies: new Map([
+    [
+      './bar',
+      {
+        absolutePath: '/root/bar',
+        data: {data: {asyncType: null, locs: [], key: './bar'}, name: './bar'},
+      },
+    ],
+  ]),
+  inverseDependencies: new CountingSet(),
   output: [
     {
       type: 'js/module',
@@ -62,9 +90,10 @@ const barModuleCode = '__d(function() {/* code for bar */});';
 const barModuleBytecode = compile(barModuleCode, {
   sourceURL: 'bar-source',
 }).bytecode;
-const barModule = {
+const barModule: Module<> = {
   path: '/root/bar',
   dependencies: new Map(),
+  inverseDependencies: new CountingSet(['/root/foo']),
   output: [
     {
       type: 'js/module',
@@ -84,7 +113,7 @@ const barModule = {
   getSource: () => Buffer.from('bar-source'),
 };
 
-const getRunModuleStatement = moduleId =>
+const getRunModuleStatement = (moduleId: number | string) =>
   `require(${JSON.stringify(moduleId)});`;
 
 it('should generate a bundle', () => {
@@ -96,17 +125,25 @@ it('should generate a bundle', () => {
         ['/root/foo', fooModule],
         ['/root/bar', barModule],
       ]),
-      entryPoints: ['foo'],
+      entryPoints: new Set(['/root/foo']),
+      transformOptions,
     },
     {
-      processModuleFilter: () => true,
+      asyncRequireModulePath: '',
+      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
+      includeAsyncPaths: false,
+      inlineSourceMap: false,
+      modulesOnly: false,
+      processModuleFilter: () => true,
       projectRoot: '/root',
       runBeforeMainModule: [],
       runModule: true,
+      serverRoot: '/root',
       sourceMapUrl: 'http://localhost/bundle.map',
+      sourceUrl: null,
     },
   );
 
@@ -137,18 +174,25 @@ it('does not add polyfills when `modulesOnly` is used', () => {
         ['/root/foo', fooModule],
         ['/root/bar', barModule],
       ]),
-      entryPoints: ['foo'],
+      entryPoints: new Set(['foo']),
+      transformOptions,
     },
     {
-      processModuleFilter: () => true,
+      asyncRequireModulePath: '',
+      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
+      includeAsyncPaths: false,
+      inlineSourceMap: false,
       modulesOnly: true,
+      processModuleFilter: () => true,
       projectRoot: '/root',
       runBeforeMainModule: [],
       runModule: true,
+      serverRoot: '/root',
       sourceMapUrl: 'http://localhost/bundle.map',
+      sourceUrl: null,
     },
   );
 
