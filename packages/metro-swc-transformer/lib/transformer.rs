@@ -7,6 +7,7 @@
 
 mod collector;
 mod module_api;
+mod options;
 mod wrapper;
 
 use std::path::PathBuf;
@@ -30,6 +31,7 @@ use swc_ecma_visit::as_folder;
 
 use crate::api::*;
 use crate::transformer::collector::DependencyCollector;
+use crate::transformer::options::get_config_options;
 use crate::transformer::wrapper::ModuleWrapper;
 
 pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerResult, &'static str> {
@@ -60,33 +62,7 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
       code.into(),
     );
     let global_mark = Mark::fresh(Mark::root());
-    let options = serde_json::from_str(
-      r#"{
-                   "jsc": {
-                       "parser": {
-                           "syntax": "ecmascript",
-                           "jsx": true
-                       },
-                       "target": "es5",
-                       "loose": false,
-                       "minify": {
-                           "compress": false,
-                           "mangle": false
-                       },
-                       "transform": {
-                           "react": {
-                               "runtime": "automatic",
-                               "refresh": true,
-                               "development": true
-                           }
-                       }
-                   },
-                   "module": {
-                       "type": "commonjs"
-                   }
-               }"#,
-    )
-    .unwrap();
+    let options = get_config_options();
     let output = compiler.process_js_with_custom_pass(
       fm.clone(),
       None,
