@@ -825,6 +825,44 @@ describe('processRequest', () => {
       expect(response._getString()).toBe(mockData.slice(0, 4));
     });
 
+    it('should return headers in a range request', async () => {
+      const mockData = 'i am image';
+      getAsset.mockResolvedValue(mockData);
+
+      const response = await makeRequest('/assets/imgs/a.png?platform=ios', {
+        headers: {range: 'bytes=0-3'},
+      });
+
+      expect(response._headers).toEqual({
+        'content-type': 'image/png',
+        'accept-ranges': 'bytes',
+        'content-length': '4',
+        'content-range': 'bytes 0-3/10',
+      });
+    });
+
+    it('should return content-type header for a png asset', async () => {
+      const mockData = 'i am image';
+      getAsset.mockResolvedValue(mockData);
+
+      const response = await makeRequest('/assets/imgs/a.png?platform=ios');
+
+      expect(response._headers).toEqual({
+        'content-type': 'image/png',
+      });
+    });
+
+    it('should return content-type header for an svg asset', async () => {
+      const mockData = 'i am image';
+      getAsset.mockResolvedValue(mockData);
+
+      const response = await makeRequest('/assets/imgs/a.svg?platform=ios');
+
+      expect(response._headers).toEqual({
+        'content-type': 'image/svg+xml',
+      });
+    });
+
     it("should serve assets files's name contain non-latin letter", async () => {
       getAsset.mockResolvedValue('i am image');
 
