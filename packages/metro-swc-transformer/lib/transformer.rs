@@ -35,6 +35,8 @@ use crate::transformer::options::get_config_options;
 use crate::transformer::wrapper::ModuleWrapper;
 
 pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerResult, &'static str> {
+  let is_typescript = input.file_name.clone().unwrap().ends_with(".ts")
+    || input.file_name.clone().unwrap().ends_with(".tsx");
   let cm = Arc::<SourceMap>::default();
   let compiler = Compiler::new(cm.clone());
   let handler = Arc::new(Handler::with_tty_emitter(
@@ -62,7 +64,7 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
       code.into(),
     );
     let global_mark = Mark::fresh(Mark::root());
-    let options = get_config_options();
+    let options = get_config_options(is_typescript);
     let output = compiler.process_js_with_custom_pass(
       fm.clone(),
       None,

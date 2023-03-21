@@ -1,19 +1,27 @@
 use swc::config::{Config, JsMinifyOptions, JscConfig, ModuleConfig, Options, TransformConfig};
 use swc_config::config_types::{BoolConfig, BoolOrDataConfig};
-use swc_ecma_parser::{EsConfig, Syntax};
+use swc_ecma_parser::{EsConfig, Syntax, TsConfig};
 use swc_ecma_transforms_react as react;
 use swc_ecma_utils::swc_ecma_ast::EsVersion;
 
-pub fn get_config_options() -> Options {
+pub fn get_config_options(is_typescript: bool) -> Options {
+  let syntax = match is_typescript {
+    true => Syntax::Typescript(TsConfig {
+      tsx: true,
+      ..Default::default()
+    }),
+    false => Syntax::Es(EsConfig {
+      jsx: true,
+      ..Default::default()
+    }),
+  };
+
   let opts = &Options {
     config: Config {
       jsc: JscConfig {
         loose: BoolConfig::new(Some(false)),
         target: Some(EsVersion::Es5),
-        syntax: Some(Syntax::Es(EsConfig {
-          jsx: true,
-          ..Default::default()
-        })),
+        syntax: Some(syntax),
         minify: Some(JsMinifyOptions {
           compress: BoolOrDataConfig::from_bool(false),
           mangle: BoolOrDataConfig::from_bool(false),
