@@ -83,7 +83,6 @@ const transformOptions: TransformInputOptions = {
   hot: true,
   minify: true,
   platform: 'web',
-  runtimeBytecodeVersion: null,
   type: 'module',
   unstable_transformProfile: 'default',
 };

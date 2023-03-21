@@ -19,10 +19,6 @@ import type {
   TransformProfile,
 } from 'metro-babel-transformer';
 import type {
-  HermesCompilerResult,
-  Options as HermesCompilerOptions,
-} from 'metro-hermes-compiler';
-import type {
   BasicSourceMap,
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
@@ -114,16 +110,10 @@ export type JsTransformOptions = $ReadOnly<{
   minify: boolean,
   nonInlinedRequires?: $ReadOnlyArray<string>,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_transformProfile: TransformProfile,
 }>;
-
-export type BytecodeFileType =
-  | 'bytecode/module'
-  | 'bytecode/module/asset'
-  | 'bytecode/script';
 
 opaque type Path = string;
 
@@ -168,14 +158,9 @@ export type JsOutput = $ReadOnly<{
   type: JSFileType,
 }>;
 
-export type BytecodeOutput = $ReadOnly<{
-  data: HermesCompilerResult,
-  type: BytecodeFileType,
-}>;
-
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<JsOutput | BytecodeOutput>,
+  output: $ReadOnlyArray<JsOutput>,
 }>;
 
 function getDynamicDepsBehavior(
@@ -239,23 +224,6 @@ const minifyCode = async (
 
     throw error;
   }
-};
-
-const compileToBytecode = (
-  rawCode: string,
-  type: string,
-  options: HermesCompilerOptions,
-): HermesCompilerResult => {
-  let code = rawCode;
-  if (type.startsWith('js/module')) {
-    const index = code.lastIndexOf(')');
-    code =
-      code.slice(0, index) +
-      ',$$METRO_D[0],$$METRO_D[1],$$METRO_D[2]' +
-      code.slice(index);
-  }
-  const HermesCompiler = require('metro-hermes-compiler');
-  return HermesCompiler.compile(code, options);
 };
 
 const disabledDependencyTransformer: DependencyTransformer = {
@@ -464,7 +432,7 @@ async function transformJS(
     ));
   }
 
-  const output: Array<JsOutput | BytecodeOutput> = [
+  const output: Array<JsOutput> = [
     {
       data: {
         code,
@@ -475,24 +443,6 @@ async function transformJS(
       type: file.type,
     },
   ];
-
-  if (options.runtimeBytecodeVersion != null) {
-    output.push({
-      data: (compileToBytecode(code, file.type, {
-        sourceURL: file.filename,
-        sourceMap: fromRawMappings([
-          {
-            code,
-            source: file.code,
-            map,
-            functionMap: null,
-            path: file.filename,
-          },
-        ]).toString(),
-      }): HermesCompilerResult),
-      type: getBytecodeFileType(file.type),
-    });
-  }
 
   return {
     dependencies,
@@ -588,50 +538,17 @@ async function transformJSON(
     jsType = 'js/module';
   }
 
-  const output: Array<JsOutput | BytecodeOutput> = [
+  const output: Array<JsOutput> = [
     {
       data: {code, lineCount: countLines(code), map, functionMap: null},
       type: jsType,
     },
   ];
 
-  if (options.runtimeBytecodeVersion != null) {
-    output.push({
-      data: (compileToBytecode(code, jsType, {
-        sourceURL: file.filename,
-        sourceMap: fromRawMappings([
-          {
-            code,
-            source: file.code,
-            map,
-            functionMap: null,
-            path: file.filename,
-          },
-        ]).toString(),
-      }): HermesCompilerResult),
-      type: getBytecodeFileType(jsType),
-    });
-  }
-
   return {
     dependencies: [],
     output,
   };
-}
-
-/**
- * Returns the bytecode type for a file type
- */
-function getBytecodeFileType(type: JSFileType): BytecodeFileType {
-  switch (type) {
-    case 'js/module/asset':
-      return 'bytecode/module/asset';
-    case 'js/script':
-      return 'bytecode/script';
-    default:
-      (type: 'js/module');
-      return 'bytecode/module';
-  }
 }
 
 function getBabelTransformArgs(

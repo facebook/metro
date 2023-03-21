@@ -24,14 +24,7 @@ import MockRequest from 'mock-req';
 import {mergeConfig} from 'metro-config/src';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
-const {MAGIC_NUMBER} = require('../../lib/bundleToBytecode');
 const {getDefaultValues} = require('metro-config/src/defaults');
-const {
-  VERSION: BYTECODE_VERSION,
-  align,
-  compile,
-  validateBytecodeModule,
-} = require('metro-hermes-compiler');
 const path = require('path');
 import CountingSet from '../../lib/CountingSet';
 
@@ -224,14 +217,6 @@ describe('processRequest', () => {
                     map: [[1, 16, 1, 0]],
                   },
                 },
-                {
-                  type: 'bytecode/module',
-                  data: {
-                    bytecode: compile('__d(function() {entry();});', {
-                      sourceURL: '/root/mybundle.js',
-                    }).bytecode,
-                  },
-                },
               ],
             },
           ],
@@ -250,14 +235,6 @@ describe('processRequest', () => {
                   lineCount: 1,
                   map: [[1, 16, 1, 0]],
                   functionMap: {names: ['<global>'], mappings: 'AAA'},
-                },
-              },
-              {
-                type: 'bytecode/module',
-                data: {
-                  bytecode: compile('__d(function() {foo();});', {
-                    sourceURL: '/root/foo.js',
-                  }).bytecode,
                 },
               },
             ],
@@ -307,14 +284,6 @@ describe('processRequest', () => {
                 map: [],
               },
             },
-            {
-              type: 'bytecode/script',
-              data: {
-                bytecode: compile('(function () {require();})', {
-                  sourceURL: 'require-js',
-                }).bytecode,
-              },
-            },
           ],
         },
       ]),
@@ -353,33 +322,6 @@ describe('processRequest', () => {
         '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
       ].join('\n'),
     );
-  });
-
-  it('returns a bytecode bundle source on request of *.bundle?runtimeBytecodeVersion', async () => {
-    const response = await makeRequest(
-      `mybundle.bundle?runtimeBytecodeVersion=${BYTECODE_VERSION}&runModule=true`,
-      null,
-    );
-
-    expect(response.getHeader('Content-Type')).toEqual(
-      'application/x-metro-bytecode-bundle',
-    );
-
-    const buffer = Buffer.concat(response._responseData);
-    const numberOfModules = buffer.readUInt32LE(4);
-
-    expect(buffer.readUInt32LE(0)).toEqual(MAGIC_NUMBER);
-    expect(numberOfModules).toEqual(8);
-
-    let offset = 8;
-    let modules = 0;
-    while (offset < buffer.length) {
-      expect(() => validateBytecodeModule(buffer, offset + 4)).not.toThrow();
-      offset = align(offset + buffer.readUInt32LE(offset)) + 4;
-      modules++;
-    }
-
-    expect(modules).toEqual(numberOfModules);
   });
 
   it('returns JS bundle without the initial require() call', async () => {
@@ -706,7 +648,6 @@ describe('processRequest', () => {
         hot: true,
         minify: false,
         platform: 'ios',
-        runtimeBytecodeVersion: null,
         type: 'module',
         unstable_transformProfile: 'default',
       },
@@ -742,7 +683,6 @@ describe('processRequest', () => {
         hot: true,
         minify: false,
         platform: null,
-        runtimeBytecodeVersion: null,
         type: 'module',
         unstable_transformProfile: 'hermes-stable',
       },
@@ -908,7 +848,6 @@ describe('processRequest', () => {
           hot: false,
           minify: false,
           platform: undefined,
-          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },
@@ -928,7 +867,6 @@ describe('processRequest', () => {
           hot: false,
           minify: false,
           platform: undefined,
-          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },

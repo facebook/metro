@@ -28,7 +28,6 @@ import typeof TransformerType from '../index';
 import typeof FSType from 'fs';
 
 const {Buffer} = require('buffer');
-const HermesCompiler = require('metro-hermes-compiler');
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
@@ -433,40 +432,6 @@ it('does not wrap a JSON file when disableModuleWrapping is enabled', async () =
       )
     ).output[0].data.code,
   ).toBe('module.exports = arbitrary(code);;');
-});
-
-it('transforms a script to JS source and bytecode', async () => {
-  const result = await Transformer.transform(
-    baseConfig,
-    '/root',
-    'local/file.js',
-    Buffer.from('someReallyArbitrary(code)', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      runtimeBytecodeVersion: 1,
-      type: 'script',
-    },
-  );
-
-  const jsOutput = result.output.find(output => output.type === 'js/script');
-  const bytecodeOutput = result.output.find(
-    output => output.type === 'bytecode/script',
-  );
-  // $FlowFixMe[incompatible-use] Added when annotating Transformer. data missing in jsOutput.
-  expect(jsOutput.data.code).toBe(
-    [
-      '(function (global) {',
-      '  someReallyArbitrary(code);',
-      "})(typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this);",
-    ].join('\n'),
-  );
-
-  expect(() =>
-    // $FlowFixMe[incompatible-use] Added when annotating Transformer. data missing in bytecodeOutput.
-    // $FlowFixMe[incompatible-call] Added when annotating Transformer. bytecode property is missing.
-    HermesCompiler.validateBytecodeModule(bytecodeOutput.data.bytecode, 0),
-  ).not.toThrow();
 });
 
 it('uses a reserved dependency map name and prevents it from being minified', async () => {

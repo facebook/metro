@@ -55,7 +55,6 @@ export type BundleOptions = {
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
-  runtimeBytecodeVersion: ?number,
   +shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,

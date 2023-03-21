@@ -26,7 +26,6 @@ export type BundleDetails = {
   entryFile: string,
   minify: boolean,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   ...
 };
 
