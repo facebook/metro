@@ -18,7 +18,6 @@ use swc_ecma_visit::VisitMutWith;
 
 use super::module_api::FactoryParams;
 use crate::api::Dependency;
-use crate::api::DependencyKey;
 use crate::api::DependencyMap;
 
 pub struct DependencyCollector<'a> {
@@ -28,8 +27,8 @@ pub struct DependencyCollector<'a> {
 }
 
 impl DependencyCollector<'_> {
-  fn next_dependency_index(&self) -> usize {
-    self.dependencies.len()
+  fn next_dependency_index(&self) -> i32 {
+    self.dependencies.len().try_into().unwrap()
   }
 }
 
@@ -77,24 +76,23 @@ impl VisitMut for DependencyCollector<'_> {
     if is_require_call(call_expr, self.unresolved_mark) {
       HANDLER.with(|handler| {
         if let Some(specifier) = get_require_specifier(call_expr) {
-          let key = DependencyKey {
-            specifier: specifier.to_owned(),
-          };
-          let index = match self.dependencies.get(&key) {
+          let str_key = specifier.to_string();
+          let index = match self.dependencies.get(&str_key) {
             Some(existing_dependency) => existing_dependency.index,
             None => {
               let index = self.next_dependency_index();
               let new_dependency = Dependency { index };
-              self.dependencies.insert(key, new_dependency);
+              self.dependencies.insert(str_key, new_dependency);
               index
             }
           };
+          let index_usize = index as usize;
           call_expr.args = vec![Expr::Member(MemberExpr {
             span: DUMMY_SP,
             obj: Box::new(self.factory_params.dependency_map.clone().into()),
             prop: MemberProp::Computed(ComputedPropName {
               span: DUMMY_SP,
-              expr: Box::new(Expr::Lit(index.into())),
+              expr: Box::new(Expr::Lit(index_usize.into())),
             }),
           })
           .as_arg()];

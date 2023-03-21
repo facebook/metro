@@ -6,34 +6,30 @@
  */
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 use serde::Deserialize;
 use serde::Serialize;
-use swc::atoms::JsWordStaticSet;
 
+#[napi(object)]
 #[derive(Serialize, Deserialize)]
 pub struct MetroJSTransformerInput {
   pub code: String,
-  pub file_name: Option<PathBuf>,
+  pub file_name: Option<String>,
   pub global_prefix: Option<String>,
 }
 
-pub type DependencyMap = HashMap<DependencyKey, Dependency>;
+pub type DependencyMap = HashMap<String, Dependency>;
 
-#[derive(Serialize, Deserialize)]
+#[napi(object)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MetroJSTransformerResult {
   pub code: String,
   pub dependencies: DependencyMap,
   pub dependency_map_ident: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[napi(object)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Dependency {
-  pub index: usize,
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct DependencyKey {
-  pub specifier: string_cache::Atom<JsWordStaticSet>,
+  pub index: i32,
 }

@@ -5,35 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+#[macro_use]
+extern crate napi_derive;
 
-use serde::Deserialize;
-use serde::Serialize;
-use swc::atoms::JsWordStaticSet;
+mod api;
+mod transformer;
 
-#[derive(Serialize, Deserialize)]
-pub struct MetroJSTransformerInput {
-  pub code: String,
-  pub file_name: Option<PathBuf>,
-  pub global_prefix: Option<String>,
-}
+use api::{MetroJSTransformerInput, MetroJSTransformerResult};
 
-pub type DependencyMap = HashMap<DependencyKey, Dependency>;
-
-#[derive(Serialize, Deserialize)]
-pub struct MetroJSTransformerResult {
-  pub code: String,
-  pub dependencies: DependencyMap,
-  pub dependency_map_ident: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Dependency {
-  pub index: usize,
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct DependencyKey {
-  pub specifier: string_cache::Atom<JsWordStaticSet>,
+#[napi]
+pub fn transform(input: MetroJSTransformerInput) -> MetroJSTransformerResult {
+  transformer::transform(input).expect("transform error")
 }

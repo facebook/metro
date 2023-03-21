@@ -9,12 +9,10 @@ mod collector;
 mod module_api;
 mod wrapper;
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
-use js_sys::Error;
 use module_api::FactoryParams;
-use swc::config::ModuleConfig;
-use swc::config::Options;
 use swc::Compiler;
 use swc_common::chain;
 use swc_common::comments::SingleThreadedComments;
@@ -29,15 +27,12 @@ use swc_ecma_transforms_base::hygiene::hygiene;
 use swc_ecma_transforms_base::pass::noop;
 use swc_ecma_transforms_base::resolver;
 use swc_ecma_visit::as_folder;
-use swc_ecma_visit::swc_ecma_ast::*;
-use wasm_bindgen::JsValue;
 
 use crate::api::*;
 use crate::transformer::collector::DependencyCollector;
 use crate::transformer::wrapper::ModuleWrapper;
 
-pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerResult, JsValue> {
-  crate::utils::set_panic_hook();
+pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerResult, &'static str> {
   let cm = Arc::<SourceMap>::default();
   let compiler = Compiler::new(cm.clone());
   let handler = Arc::new(Handler::with_tty_emitter(
@@ -47,7 +42,8 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
     Some(cm.clone()),
   ));
   let globals = Globals::new();
-  let mut result = Err(Error::new("Uninitialized").into());
+
+  let mut result: Result<MetroJSTransformerResult, &'static str> = Err("Uninitialized");
   GLOBALS.set(&globals, || {
     let unresolved_mark = Mark::fresh(Mark::root());
     let mut dependencies = DependencyMap::new();
@@ -58,82 +54,86 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
       file_name,
     } = input;
     let fm = cm.new_source_file(
-      file_name.map_or(FileName::Anon, |file_name| FileName::Real(file_name)),
+      file_name.map_or(FileName::Anon, |file_name| {
+        FileName::Real(PathBuf::from(file_name))
+      }),
       code.into(),
     );
     let global_mark = Mark::fresh(Mark::root());
     let options = serde_json::from_str(
       r#"{
-                  "jsc": {
-                      "parser": {
-                          "syntax": "ecmascript",
-                          "jsx": true
-                      },
-                      "target": "es5",
-                      "loose": false,
-                      "minify": {
-                          "compress": false,
-                          "mangle": false
-                      },
-                      "transform": {
-                          "react": {
-                              "runtime": "automatic",
-                              "refresh": true,
-                              "development": true
-                          }
-                      }
-                  },
-                  "module": {
-                      "type": "commonjs"
-                  }
-              }"#,
+                   "jsc": {
+                       "parser": {
+                           "syntax": "ecmascript",
+                           "jsx": true
+                       },
+                       "target": "es5",
+                       "loose": false,
+                       "minify": {
+                           "compress": false,
+                           "mangle": false
+                       },
+                       "transform": {
+                           "react": {
+                               "runtime": "automatic",
+                               "refresh": true,
+                               "development": true
+                           }
+                       }
+                   },
+                   "module": {
+                       "type": "commonjs"
+                   }
+               }"#,
     )
     .unwrap();
-    let output = compiler
-      .process_js_with_custom_pass(
-        fm.clone(),
-        None,
-        &handler,
-        &options,
-        SingleThreadedComments::default(),
-        |_| noop(),
-        |_| {
-          chain!(
-            resolver(
-              unresolved_mark,
-              global_mark,
-              options
-                .config
-                .jsc
-                .syntax
-                .map_or(false, |syntax| syntax.typescript())
-            ),
-            as_folder(DependencyCollector {
-              factory_params: &factory_params,
-              unresolved_mark,
-              dependencies: &mut dependencies,
-            }),
-            ModuleWrapper {
-              factory_params: &factory_params,
-              unresolved_mark,
-              global_prefix: global_prefix.unwrap_or_default(),
-            },
-            // TODO: Can we avoid this second hygiene pass? (And perhaps the first one built into swc?)
-            // Its purpose here is to prevent collisions with the `dependencyMap` identifier.
-            hygiene(),
-          )
-        },
-      )
-      .unwrap();
-    result = if handler.has_errors() {
-      // TODO: Include diagnostics from `handler`
-      Err(Error::new("Had compilation errors").into())
+    let output = compiler.process_js_with_custom_pass(
+      fm.clone(),
+      None,
+      &handler,
+      &options,
+      SingleThreadedComments::default(),
+      |_| noop(),
+      |_| {
+        chain!(
+          resolver(
+            unresolved_mark,
+            global_mark,
+            options
+              .config
+              .jsc
+              .syntax
+              .map_or(false, |syntax| syntax.typescript())
+          ),
+          as_folder(DependencyCollector {
+            factory_params: &factory_params,
+            unresolved_mark,
+            dependencies: &mut dependencies,
+          }),
+          ModuleWrapper {
+            factory_params: &factory_params,
+            unresolved_mark,
+            global_prefix: global_prefix.unwrap_or_default(),
+          },
+          // TODO: Can we avoid this second hygiene pass? (And perhaps the first one built into swc?)
+          // Its purpose here is to prevent collisions with the `dependencyMap` identifier.
+          hygiene(),
+        )
+      },
+    );
+    result = if let Ok(out) = output {
+      if handler.has_errors() {
+        // TODO: Include diagnostics from `handler`
+        Err("Had compilation errors")
+      } else {
+        Ok(MetroJSTransformerResult {
+          code: out.code,
+          dependencies,
+          dependency_map_ident: factory_params.dependency_map.sym.to_string(),
+        })
+      }
     } else {
-      Ok(MetroJSTransformerResult {
-        code: output.code,
-        dependencies,
-        dependency_map_ident: factory_params.dependency_map.sym.to_string(),
-      })
+      Err("Had compilation errors")
     }
   });
   result
