@@ -52,7 +52,6 @@ async function calcTransformerOptions(
     inlinePlatform: true,
     minify: options.minify,
     platform: options.platform,
-    runtimeBytecodeVersion: options.runtimeBytecodeVersion,
     unstable_transformProfile: options.unstable_transformProfile,
   };
 

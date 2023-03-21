@@ -50,10 +50,6 @@ type ClientGroup = {
   +unlisten: () => void,
 };
 
-function getBytecodeVersion() {
-  return require('metro-hermes-compiler').VERSION;
-}
-
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
   sendFns.forEach((sendFn: string => void) => sendFn(strMessage));
@@ -106,7 +102,6 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
     );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);

@@ -45,7 +45,6 @@ function getGraphId(
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
-        runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,
         experimentalImportBundleSupport,
         unstable_allowRequireContext,

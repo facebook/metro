@@ -43,7 +43,6 @@ import type {CustomResolverOptions} from 'metro-resolver/src/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const {getAsset} = require('./Assets');
-const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
@@ -54,7 +53,6 @@ const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const IncrementalBundler = require('./IncrementalBundler');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const bundleToBytecode = require('./lib/bundleToBytecode');
 const bundleToString = require('./lib/bundleToString');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
@@ -127,10 +125,6 @@ export type ServerOptions = $ReadOnly<{
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
-
-function getBytecodeVersion() {
-  return require('metro-hermes-compiler').VERSION;
-}
 
 class Server {
   _bundler: IncrementalBundler;
@@ -480,11 +474,7 @@ class Server {
   };
 
   _parseOptions(url: string): BundleOptions {
-    return parseOptionsFromUrl(
-      url,
-      new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
-    );
+    return parseOptionsFromUrl(url, new Set(this._config.resolver.platforms));
   }
 
   async _processRequest(
@@ -510,20 +500,13 @@ class Server {
     const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
-      if (options.runtimeBytecodeVersion) {
-        await this._processBytecodeBundleRequest(req, res, options, {
-          buildNumber,
-          bundlePerfLogger: noopLogger,
-        });
-      } else {
-        await this._processBundleRequest(req, res, options, {
-          buildNumber,
-          bundlePerfLogger:
-            this._config.unstable_perfLoggerFactory?.('BUNDLING_REQUEST', {
-              key: buildNumber,
-            }) ?? noopLogger,
-        });
-      }
+      await this._processBundleRequest(req, res, options, {
+        buildNumber,
+        bundlePerfLogger:
+          this._config.unstable_perfLoggerFactory?.('BUNDLING_REQUEST', {
+            key: buildNumber,
+          }) ?? noopLogger,
+      });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
         this._serverOptions.onBundleBuilt(pathname);
@@ -697,7 +680,6 @@ class Server {
           entryFile: resolvedEntryFilePath,
           minify: transformOptions.minify,
           platform: transformOptions.platform,
-          runtimeBytecodeVersion: transformOptions.runtimeBytecodeVersion,
         },
         isPrefetch: req.method === 'HEAD',
         type: 'bundle_build_started',
@@ -937,129 +919,6 @@ class Server {
     },
   });
 
-  _processBytecodeBundleRequest: (
-    req: IncomingMessage,
-    res: ServerResponse,
-    bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
-      buildNumber: number,
-      bundlePerfLogger: RootPerfLogger,
-    }>,
-  ) => Promise<void> = this._createRequestProcessor({
-    createStartEntry(context: ProcessStartContext) {
-      return {
-        action_name: 'Requesting bundle',
-        bundle_url: context.req.url,
-        entry_point: context.entryFile,
-        bundler: 'delta',
-        build_id: getBuildID(context.buildNumber),
-        bundle_options: context.bundleOptions,
-        bundle_hash: context.graphId,
-      };
-    },
-    createEndEntry(
-      context: ProcessEndContext<{
-        bytecode: Buffer,
-        lastModifiedDate: Date,
-        nextRevId: RevisionId,
-        numModifiedFiles: number,
-      }>,
-    ) {
-      return {
-        outdated_modules: context.result.numModifiedFiles,
-      };
-    },
-    build: async ({
-      entryFile,
-      graphId,
-      graphOptions,
-      onProgress,
-      resolverOptions,
-      serializerOptions,
-      transformOptions,
-    }) => {
-      const revPromise = this._bundler.getRevisionByGraphId(graphId);
-
-      const {delta, revision} = await (revPromise != null
-        ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(
-            entryFile,
-            transformOptions,
-            resolverOptions,
-            {
-              onProgress,
-              shallow: graphOptions.shallow,
-            },
-          ));
-
-      const bundle = bundleToBytecode(
-        baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
-          asyncRequireModulePath: await this._resolveRelativePath(
-            this._config.transformer.asyncRequireModulePath,
-            {
-              relativeTo: 'project',
-              resolverOptions,
-              transformOptions,
-            },
-          ),
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          includeAsyncPaths:
-            this._config.server.experimentalImportBundleSupport,
-          dev: transformOptions.dev,
-          projectRoot: this._config.projectRoot,
-          modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule:
-            this._config.serializer.getModulesRunBeforeMainModule(
-              path.relative(this._config.projectRoot, entryFile),
-            ),
-          runModule: serializerOptions.runModule,
-          sourceMapUrl: serializerOptions.sourceMapUrl,
-          sourceUrl: serializerOptions.sourceUrl,
-          inlineSourceMap: serializerOptions.inlineSourceMap,
-          serverRoot:
-            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
-        }),
-      );
-
-      return {
-        numModifiedFiles: delta.reset
-          ? delta.added.size + revision.prepend.length
-          : delta.added.size + delta.modified.size + delta.deleted.size,
-        lastModifiedDate: revision.date,
-        nextRevId: revision.id,
-        bytecode: bundle.bytecode,
-      };
-    },
-    finish({req, mres, result}) {
-      if (
-        // We avoid parsing the dates since the client should never send a more
-        // recent date than the one returned by the Delta Bundler (if that's the
-        // case it's fine to return the whole bundle).
-        req.headers['if-modified-since'] ===
-        result.lastModifiedDate.toUTCString()
-      ) {
-        debug('Responding with 304');
-        mres.writeHead(304);
-        mres.end();
-      } else {
-        mres.setHeader(
-          FILES_CHANGED_COUNT_HEADER,
-          String(result.numModifiedFiles),
-        );
-        mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
-        mres.setHeader('Content-Type', 'application/x-metro-bytecode-bundle');
-        mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
-        mres.setHeader(
-          'Content-Length',
-          String(Buffer.byteLength(result.bytecode)),
-        );
-        mres.end(result.bytecode);
-      }
-    },
-  });
-
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
   _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
@@ -1292,7 +1151,6 @@ class Server {
     const options = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
     );
 
     const {
@@ -1390,7 +1248,6 @@ class Server {
     dev: boolean,
     hot: boolean,
     minify: boolean,
-    runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
   }> = {
     customResolverOptions: Object.create(null),
@@ -1398,7 +1255,6 @@ class Server {
     dev: true,
     hot: false,
     minify: false,
-    runtimeBytecodeVersion: null,
     unstable_transformProfile: 'default',
   };
 

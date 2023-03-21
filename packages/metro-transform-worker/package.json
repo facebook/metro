@@ -22,7 +22,6 @@
     "metro-babel-transformer": "0.76.0",
     "metro-cache": "0.76.0",
     "metro-cache-key": "0.76.0",
-    "metro-hermes-compiler": "0.76.0",
     "metro-source-map": "0.76.0",
     "metro-transform-plugins": "0.76.0",
     "nullthrows": "^1.1.1"

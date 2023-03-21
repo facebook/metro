@@ -40,7 +40,6 @@
     "metro-config": "0.76.0",
     "metro-core": "0.76.0",
     "metro-file-map": "0.76.0",
-    "metro-hermes-compiler": "0.76.0",
     "metro-inspector-proxy": "0.76.0",
     "metro-minify-terser": "0.76.0",
     "metro-minify-uglify": "0.76.0",

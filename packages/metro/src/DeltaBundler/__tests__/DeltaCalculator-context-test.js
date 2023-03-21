@@ -54,7 +54,6 @@ describe('DeltaCalculator + require.context', () => {
       hot: false,
       minify: false,
       platform: null,
-      runtimeBytecodeVersion: null,
       type: 'module',
       unstable_transformProfile: 'default',
     },

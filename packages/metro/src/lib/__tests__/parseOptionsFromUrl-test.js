@@ -11,18 +11,12 @@
 
 'use strict';
 
-const BYTECODE_VERSION = 48;
-
 const parseOptionsFromUrl = require('../parseOptionsFromUrl');
 
 describe('parseOptionsFromUrl', () => {
   it.each([['map'], ['bundle']])('detects %s requests', type => {
     expect(
-      parseOptionsFromUrl(
-        `http://localhost/my/bundle.${type}`,
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
+      parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([])),
     ).toMatchObject({bundleType: type});
   });
 
@@ -31,7 +25,6 @@ describe('parseOptionsFromUrl', () => {
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=ios',
         new Set([]),
-        BYTECODE_VERSION,
       ),
     ).toMatchObject({platform: 'ios'});
   });
@@ -41,18 +34,13 @@ describe('parseOptionsFromUrl', () => {
       parseOptionsFromUrl(
         'http://localhost/my/bundle.test.bundle',
         new Set(['test']),
-        BYTECODE_VERSION,
       ),
     ).toMatchObject({platform: 'test'});
   });
 
   it('infers the source map url from the pathname', () => {
     expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
+      parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([])),
     ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
   });
 
@@ -61,7 +49,6 @@ describe('parseOptionsFromUrl', () => {
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=ios',
         new Set(['ios']),
-        BYTECODE_VERSION,
       ),
     ).toMatchObject({
       sourceMapUrl: 'http://localhost/my/bundle.map?platform=ios',
@@ -71,7 +58,6 @@ describe('parseOptionsFromUrl', () => {
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=android',
         new Set(['android']),
-        BYTECODE_VERSION,
       ),
     ).toMatchObject({
       sourceMapUrl: 'http://localhost/my/bundle.map?platform=android',
@@ -80,55 +66,14 @@ describe('parseOptionsFromUrl', () => {
 
   it('always sets the `hot` option to `true`', () => {
     expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
+      parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([])),
     ).toMatchObject({hot: true});
   });
 
   it('retrieves stuff from HMR urls', () => {
-    expect(
-      parseOptionsFromUrl('my/bundle.bundle', new Set([]), BYTECODE_VERSION),
-    ).toMatchObject({
+    expect(parseOptionsFromUrl('my/bundle.bundle', new Set([]))).toMatchObject({
       entryFile: './my/bundle',
     });
-  });
-
-  it('parses the `runtimeBytecodeVersion` as a number', () => {
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
-    ).toMatchObject({runtimeBytecodeVersion: null});
-
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle?runtimeBytecodeVersion=48',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
-    ).toMatchObject({runtimeBytecodeVersion: BYTECODE_VERSION});
-
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle?runtimeBytecodeVersion=true',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
-    ).toMatchObject({runtimeBytecodeVersion: null});
-
-    // Do not use bytecode if the version is incompatible.
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle?runtimeBytecodeVersion=47',
-        new Set([]),
-        BYTECODE_VERSION,
-      ),
-    ).toMatchObject({runtimeBytecodeVersion: null});
   });
 
   describe.each([
@@ -140,11 +85,7 @@ describe('parseOptionsFromUrl', () => {
   ])('boolean option `%s`', (optionName, defaultValue) => {
     it(`defaults to \`${String(defaultValue)}\``, () => {
       expect(
-        parseOptionsFromUrl(
-          'http://localhost/my/bundle.bundle',
-          new Set([]),
-          BYTECODE_VERSION,
-        ),
+        parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([])),
       ).toMatchObject({[optionName]: defaultValue});
     });
 
@@ -153,7 +94,6 @@ describe('parseOptionsFromUrl', () => {
         parseOptionsFromUrl(
           `http://localhost/my/bundle.bundle?${optionName}=true`,
           new Set([]),
-          BYTECODE_VERSION,
         ),
       ).toMatchObject({[optionName]: true});
 
@@ -161,7 +101,6 @@ describe('parseOptionsFromUrl', () => {
         parseOptionsFromUrl(
           `http://localhost/my/bundle.bundle?${optionName}=false`,
           new Set([]),
-          BYTECODE_VERSION,
         ),
       ).toMatchObject({[optionName]: false});
     });

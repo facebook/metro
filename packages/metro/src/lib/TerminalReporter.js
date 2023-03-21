@@ -101,7 +101,7 @@ class TerminalReporter {
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, bundleType, runtimeBytecodeVersion},
+      bundleDetails: {entryFile, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
@@ -109,10 +109,6 @@ class TerminalReporter {
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    if (runtimeBytecodeVersion) {
-      bundleType = 'bytecodebundle';
-    }
-
     if (isPrefetch) {
       bundleType = 'PREBUNDLE';
     }

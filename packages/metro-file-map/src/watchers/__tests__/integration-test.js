@@ -206,6 +206,33 @@ describe.each(Object.keys(WATCHERS))(
       });
     });
 
+    maybeTest('detects changes to files in a new directory', async () => {
+      expect(
+        await eventHelpers.nextEvent(() => mkdir(join(watchRoot, 'newdir'))),
+      ).toStrictEqual({
+        path: join('newdir'),
+        eventType: 'add',
+        metadata: {
+          modifiedTime: expect.any(Number),
+          size: expect.any(Number),
+          type: 'd',
+        },
+      });
+      expect(
+        await eventHelpers.nextEvent(() =>
+          writeFile(join(watchRoot, 'newdir', 'file-in-new-dir.js'), 'code'),
+        ),
+      ).toStrictEqual({
+        path: join('newdir', 'file-in-new-dir.js'),
+        eventType: 'add',
+        metadata: {
+          modifiedTime: expect.any(Number),
+          size: expect.any(Number),
+          type: 'f',
+        },
+      });
+    });
+
     maybeTest(
       'emits deletion for all files when a directory is deleted',
       async () => {
