@@ -776,12 +776,10 @@ describe('processRequest', () => {
         headers: {range: 'bytes=0-3'},
       });
 
-      expect(response._headers).toEqual({
-        'content-type': 'image/png',
-        'accept-ranges': 'bytes',
-        'content-length': '4',
-        'content-range': 'bytes 0-3/10',
-      });
+      expect(response.getHeader('content-type')).toBe('image/png');
+      expect(response.getHeader('accept-ranges')).toBe('bytes');
+      expect(response.getHeader('content-length')).toBe('4');
+      expect(response.getHeader('content-range')).toBe('bytes 0-3/10');
     });
 
     it('should return content-type header for a png asset', async () => {
@@ -790,9 +788,7 @@ describe('processRequest', () => {
 
       const response = await makeRequest('/assets/imgs/a.png?platform=ios');
 
-      expect(response._headers).toEqual({
-        'content-type': 'image/png',
-      });
+      expect(response.getHeader('content-type')).toBe('image/png');
     });
 
     it('should return content-type header for an svg asset', async () => {
@@ -801,9 +797,7 @@ describe('processRequest', () => {
 
       const response = await makeRequest('/assets/imgs/a.svg?platform=ios');
 
-      expect(response._headers).toEqual({
-        'content-type': 'image/svg+xml',
-      });
+      expect(response.getHeader('content-type')).toBe('image/svg+xml');
     });
 
     it("should serve assets files's name contain non-latin letter", async () => {
