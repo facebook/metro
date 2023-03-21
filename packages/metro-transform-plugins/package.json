@@ -1,6 +1,6 @@
 {
   "name": "metro-transform-plugins",
-  "version": "0.73.8",
+  "version": "0.73.9",
   "description": "🚇 Transform plugins for Metro.",
   "main": "src/index.js",
   "repository": {
@@ -24,6 +24,6 @@
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "@babel/types": "^7.20.0",
-    "metro": "0.73.8"
+    "metro": "0.73.9"
   }
 }
