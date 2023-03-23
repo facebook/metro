@@ -779,6 +779,7 @@ export default class HasteMap extends EventEmitter {
     const worker = this._worker;
 
     if (worker && typeof worker.end === 'function') {
+      // $FlowFixMe[unused-promise]
       worker.end();
     }
 
@@ -1085,6 +1086,7 @@ export default class HasteMap extends EventEmitter {
         if (!this._watcher) {
           return;
         }
+        // $FlowFixMe[unused-promise]
         this._watcher
           .checkHealth(this._options.healthCheck.timeout)
           .then(result => {

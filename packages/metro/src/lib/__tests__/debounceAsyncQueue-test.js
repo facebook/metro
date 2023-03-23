@@ -17,8 +17,11 @@ describe('debounceAsyncQueue', () => {
   it('debounces calls', async () => {
     const fn = jest.fn();
     const debounced = debounceAsyncQueue<void>(fn, 50);
+    // $FlowFixMe[unused-promise]
     debounced();
+    // $FlowFixMe[unused-promise]
     debounced();
+    // $FlowFixMe[unused-promise]
     debounced();
     expect(fn).toHaveBeenCalledTimes(0);
     jest.runAllTimers();

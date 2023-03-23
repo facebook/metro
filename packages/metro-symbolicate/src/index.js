@@ -12,4 +12,5 @@
 
 'use strict';
 
+// $FlowFixMe[unused-promise]
 require('./symbolicate.js')().then(code => process.exit(code));

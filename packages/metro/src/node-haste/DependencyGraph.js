@@ -279,6 +279,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   end() {
+    // $FlowFixMe[unused-promise]
     this._haste.end();
   }
 

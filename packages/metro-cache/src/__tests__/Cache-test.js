@@ -87,6 +87,7 @@ describe('Cache', () => {
     store2.get.mockImplementation(() => 'hit!');
 
     // Get and set. Set should only affect store 1, not 2 (hit) and 3 (after).
+    // $FlowFixMe[unused-promise]
     cache.get(key);
     cache.set(key);
 

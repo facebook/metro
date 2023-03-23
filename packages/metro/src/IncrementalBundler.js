@@ -80,6 +80,7 @@ class IncrementalBundler {
 
   end(): void {
     this._deltaBundler.end();
+    // $FlowFixMe[unused-promise]
     this._bundler.end();
   }
 

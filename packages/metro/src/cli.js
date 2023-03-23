@@ -20,4 +20,5 @@ try {
 const {attachMetroCli} = require('./index');
 const yargs = require('yargs');
 
+// $FlowFixMe[unused-promise]
 attachMetroCli(yargs.demandCommand(1)).argv;

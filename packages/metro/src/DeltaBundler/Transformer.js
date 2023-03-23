@@ -165,6 +165,7 @@ class Transformer {
   }
 
   end(): void {
+    // $FlowFixMe[unused-promise]
     this._workerFarm.kill();
   }
 }

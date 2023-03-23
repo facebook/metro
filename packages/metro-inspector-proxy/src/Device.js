@@ -270,6 +270,7 @@ class Device {
 
       if (this._debuggerConnection) {
         // Wrapping just to make flow happy :)
+        // $FlowFixMe[unused-promise]
         this._processMessageFromDevice(
           parsedPayload,
           this._debuggerConnection,

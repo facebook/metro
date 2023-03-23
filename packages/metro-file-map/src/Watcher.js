@@ -318,6 +318,7 @@ export class Watcher extends EventEmitter {
     this._pendingHealthChecks.delete(basename);
     // Chain a deletion to the creation promise (which may not have even settled yet!),
     // don't await it, and swallow errors. This is just best-effort cleanup.
+    // $FlowFixMe[unused-promise]
     creationPromise.then(() =>
       fs.promises.unlink(healthCheckPath).catch(() => {}),
     );
