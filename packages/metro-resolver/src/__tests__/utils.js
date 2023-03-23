@@ -45,7 +45,7 @@ export function createResolutionContext(
     resolveHasteModule: (name: string) => null,
     resolveHastePackage: (name: string) => null,
     sourceExts: ['js', 'jsx', 'json', 'ts', 'tsx'],
-    unstable_conditionNames: ['import', 'require'],
+    unstable_conditionNames: ['require'],
     unstable_conditionsByPlatform: {
       web: ['browser'],
     },
