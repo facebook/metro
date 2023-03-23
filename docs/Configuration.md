@@ -227,7 +227,7 @@ Metro's default resolver processes each of these fields according to the [`brows
 
 :::note
 
-When Metro is started via the React Native CLI, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
+When using React Native, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
 
 :::
 
@@ -340,11 +340,11 @@ The set of [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.h
 
 Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors. The `default` condition is always matched.
 
-Defaults to `['import', 'require']`.
+Defaults to `['require']`.
 
 :::note
 
-When Metro is started via React Native CLI, `conditionNames` defaults to `['import', 'require', 'react-native']`.
+When using React Native, `unstable_conditionNames` defaults to `['require', 'react-native']`.
 
 :::
 
@@ -360,7 +360,7 @@ This setting will take effect when [`unstable_enablePackageExports`](#unstable_e
 
 The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to dynamically assert by platform (see [`platforms`](#platforms)) when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
 
-Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['import', 'require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['import', 'require'])` otherwise. Again, these are resolved in the order specified by each package.
+Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['require'])` otherwise. Again, these are resolved in the order specified by each package.
 
 Defaults to `‌{ web: ['browser'] }`.
 

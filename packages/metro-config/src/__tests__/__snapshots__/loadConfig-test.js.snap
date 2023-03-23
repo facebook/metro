@@ -74,7 +74,6 @@ Object {
       "tsx",
     ],
     "unstable_conditionNames": Array [
-      "import",
       "require",
     ],
     "unstable_conditionsByPlatform": Object {
@@ -251,7 +250,6 @@ Object {
       "tsx",
     ],
     "unstable_conditionNames": Array [
-      "import",
       "require",
     ],
     "unstable_conditionsByPlatform": Object {
@@ -428,7 +426,6 @@ Object {
       "tsx",
     ],
     "unstable_conditionNames": Array [
-      "import",
       "require",
     ],
     "unstable_conditionsByPlatform": Object {
@@ -605,7 +602,6 @@ Object {
       "tsx",
     ],
     "unstable_conditionNames": Array [
-      "import",
       "require",
     ],
     "unstable_conditionsByPlatform": Object {
