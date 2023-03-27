@@ -6,6 +6,7 @@
  */
 
 mod collector;
+mod collector_optional;
 mod module_api;
 mod options;
 mod wrapper;
@@ -28,9 +29,11 @@ use swc_ecma_transforms_base::hygiene::hygiene;
 use swc_ecma_transforms_base::pass::noop;
 use swc_ecma_transforms_base::resolver;
 use swc_ecma_visit::as_folder;
+use swc_ecma_visit::VisitWithPath;
 
 use crate::api::*;
 use crate::transformer::collector::DependencyCollector;
+use crate::transformer::collector_optional::OptionalDependencyCollector;
 use crate::transformer::options::get_config_options;
 use crate::transformer::wrapper::ModuleWrapper;
 
@@ -51,6 +54,7 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
   GLOBALS.set(&globals, || {
     let unresolved_mark = Mark::fresh(Mark::root());
     let mut dependencies = DependencyMap::new();
+    let mut optional_dependencies: Vec<String> = vec![];
     let factory_params = FactoryParams::new(unresolved_mark);
     let MetroJSTransformerInput {
       code,
@@ -65,9 +69,26 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
     );
     let global_mark = Mark::fresh(Mark::root());
     let options = get_config_options(is_typescript);
+    let program = compiler
+      .parse_js(
+        fm.clone(),
+        &handler,
+        options.config.jsc.target.unwrap(),
+        options.config.jsc.syntax.unwrap(),
+        swc::config::IsModule::Bool(true), // is_module
+        None,
+      )
+      .unwrap();
+    let mut optional_dependencies_collector = OptionalDependencyCollector {
+      optional_dependencies: &mut optional_dependencies,
+    };
+    program.visit_with_path(
+      &mut optional_dependencies_collector,
+      &mut Default::default(),
+    );
     let output = compiler.process_js_with_custom_pass(
       fm.clone(),
-      None,
+      Some(program),
       &handler,
       &options,
       SingleThreadedComments::default(),
@@ -107,6 +128,7 @@ pub fn transform(input: MetroJSTransformerInput) -> Result<MetroJSTransformerRes
         Ok(MetroJSTransformerResult {
           code: out.code,
           dependencies,
+          optional_dependencies,
           dependency_map_ident: factory_params.dependency_map.sym.to_string(),
         })
       }

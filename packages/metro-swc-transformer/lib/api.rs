@@ -25,6 +25,7 @@ pub type DependencyMap = HashMap<String, Dependency>;
 pub struct MetroJSTransformerResult {
   pub code: String,
   pub dependencies: DependencyMap,
+  pub optional_dependencies: Vec<String>,
   pub dependency_map_ident: String,
 }
 
