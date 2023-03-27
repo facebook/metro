@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.0.0
+        uses: actions/checkout@v3.5.0
 
       - name: Use Node.js ${{ env.node-version }}
         uses: actions/setup-node@v1.4.5
