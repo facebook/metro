@@ -177,8 +177,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   describe('mutation', () => {
     describe('addOrModify', () => {
       test('accepts non-real and absolute paths', () => {
-        tfs.addOrModify(p('link-to-foo/new.js'), ['', 0, 0, 0, '', '', 0]);
-        tfs.addOrModify(p('/project/fileatroot.js'), ['', 0, 0, 0, '', '', 0]);
+        tfs.addOrModify(p('link-to-foo/new.js'), ['', 0, 1, 0, '', '', 0]);
+        tfs.addOrModify(p('/project/fileatroot.js'), ['', 0, 2, 0, '', '', 0]);
         expect(tfs.getAllFiles().sort()).toEqual([
           p('/outside/external.js'),
           p('/project/bar.js'),
@@ -186,6 +186,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           p('/project/foo/another.js'),
           p('/project/foo/new.js'),
         ]);
+        expect(tfs.getSize(p('/project/link-to-foo/new.js'))).toEqual(1);
+        expect(tfs.getSize(p('/project/fileatroot.js'))).toEqual(2);
       });
     });
 

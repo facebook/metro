@@ -193,6 +193,8 @@ export default class TreeFS implements MutableFileSystem {
 
   addOrModify(mixedPath: Path, metadata: FileMetaData): void {
     const normalPath = this._normalizePath(mixedPath);
+    // Walk the tree to find the *real* path of the parent node, creating
+    // directories as we need.
     const parentDirNode = this._lookupByNormalPath(path.dirname(normalPath), {
       makeDirectories: true,
     });
@@ -201,14 +203,11 @@ export default class TreeFS implements MutableFileSystem {
         `TreeFS: Failed to make parent directory entry for ${mixedPath}`,
       );
     }
-    this.bulkAddOrModify(
-      new Map([
-        [
-          parentDirNode.canonicalPath + path.sep + path.basename(normalPath),
-          metadata,
-        ],
-      ]),
+    // Normalize the resulting path to account for the parent node being root.
+    const canonicalPath = this._normalizePath(
+      parentDirNode.canonicalPath + path.sep + path.basename(normalPath),
     );
+    this.bulkAddOrModify(new Map([[canonicalPath, metadata]]));
   }
 
   bulkAddOrModify(addedOrModifiedFiles: FileData): void {
