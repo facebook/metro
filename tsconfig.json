@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "include": ["./packages/*/types/**/*.d.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "skipLibCheck": false,
+    "paths": {
+      "metro": ["./packages/metro/types"],
+      "metro/*": ["./packages/metro/types/*"],
+      "metro-*": ["./packages/metro-*/types"]
+    }
+  }
+}

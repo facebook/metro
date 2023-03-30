@@ -5,6 +5,9 @@
     "@babel/plugin-syntax-class-properties": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
+    "@tsconfig/node16": "1.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
     "acorn": "^8.7.1",
     "babel-jest": "^29.2.1",
     "chalk": "^4.0.0",
@@ -34,7 +37,8 @@
     "micromatch": "^4.0.4",
     "prettier": "2.7.1",
     "progress": "^2.0.0",
-    "promise": "^8.3.0"
+    "promise": "^8.3.0",
+    "typescript": "4.1.3"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
@@ -46,10 +50,11 @@
     "postpublish": "yarn workspaces run cleanup-release",
     "publish": "yarn run build-clean && yarn run build && yarn workspaces run prepare-release && npm publish --workspaces",
     "start": "node packages/metro/src/cli",
+    "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
     "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
     "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
-    "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
     "typecheck": "flow check",
+    "typecheck-ts": "tsc --project tsconfig.json",
     "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [

@@ -57,6 +57,7 @@ jobs:
       - checkout
       - yarn_install
       - run: yarn typecheck
+      - run: yarn typecheck-ts
       - run: yarn lint
       - run: yarn test-smoke
 

@@ -10,7 +10,6 @@
 
 'use strict';
 
-/** @type {import('eslint').Linter.Config} */
 module.exports = {
   extends: './scripts/eslint/base',
   overrides: [
@@ -20,6 +19,10 @@ module.exports = {
         'babel/quotes': 'off',
         'lint/flow-function-shape': 'off',
       },
+    },
+    {
+      files: ['packages/*/types/**/*.d.ts'],
+      extends: './scripts/eslint/typescript',
     },
     {
       files: ['packages/metro-source-map/**/*.js'],
