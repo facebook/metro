@@ -16,7 +16,13 @@ export * from './lib/reporting';
 
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-import type {ConfigT, InputConfigT, loadConfig, Middleware} from 'metro-config';
+import type {
+  ConfigT,
+  InputConfigT,
+  loadConfig,
+  MetroConfig,
+  Middleware,
+} from 'metro-config';
 import type {CustomTransformOptions} from 'metro-babel-transformer';
 import type {ReadOnlyGraph} from './DeltaBundler/types';
 import type {Server} from 'ws';
@@ -100,6 +106,8 @@ interface BuildGraphOptions {
   platform?: string;
   type?: 'module' | 'script';
 }
+
+export {MetroConfig};
 
 export function runMetro(
   config: InputConfigT,

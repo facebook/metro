@@ -20,6 +20,7 @@ import type {Server as HttpsServer} from 'https';
 import type {
   ConfigT,
   InputConfigT,
+  MetroConfig,
   Middleware,
 } from 'metro-config/src/configTypes.flow';
 import type {CustomTransformOptions} from 'metro-transform-worker';
@@ -119,6 +120,8 @@ export type RunBuildOptions = {
 
 type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
+
+export type {MetroConfig};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);
