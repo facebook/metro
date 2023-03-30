@@ -27,7 +27,7 @@ export function loadConfig(
 export function resolveConfig(
   filePath?: string,
   cwd?: string,
-): Promise<ConfigT>;
+): Promise<CosmiConfigResult>;
 
 export function mergeConfig(
   defaultConfig: InputConfigT,
