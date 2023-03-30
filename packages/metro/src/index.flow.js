@@ -170,6 +170,7 @@ async function runMetro(
 
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
+exports.mergeConfig = mergeConfig;
 
 const createConnectMiddleware = async function (
   config: ConfigT,
