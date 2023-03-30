@@ -401,6 +401,8 @@ class Server {
       return data.slice(dataStart, dataEnd + 1);
     }
 
+    res.setHeader('Content-Length', String(Buffer.byteLength(data)));
+
     return data;
   }
 
