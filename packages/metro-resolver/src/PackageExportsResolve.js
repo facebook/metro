@@ -11,6 +11,7 @@
 
 import type {
   ExportMap,
+  ExportMapWithFallbacks,
   ExportsField,
   FileResolution,
   ResolutionContext,
@@ -54,15 +55,15 @@ export function resolvePackageTargetFromExports(
   exportsField: ExportsField,
   platform: string | null,
 ): FileResolution {
-  const raiseConfigError = (reason: string) => {
-    throw new InvalidPackageConfigurationError({
+  const createConfigError = (reason: string) => {
+    return new InvalidPackageConfigurationError({
       reason,
       packagePath,
     });
   };
 
   const subpath = getExportsSubpath(packagePath, modulePath);
-  const exportMap = normalizeExportsField(exportsField, raiseConfigError);
+  const exportMap = normalizeExportsField(exportsField, createConfigError);
 
   if (!isSubpathDefinedInExports(exportMap, subpath)) {
     throw new PackagePathNotExportedError(
@@ -76,14 +77,14 @@ export function resolvePackageTargetFromExports(
     subpath,
     exportMap,
     platform,
-    raiseConfigError,
+    createConfigError,
   );
 
   if (target != null) {
     const invalidSegmentInTarget = findInvalidPathSegment(target.slice(2));
 
     if (invalidSegmentInTarget != null) {
-      raiseConfigError(
+      throw createConfigError(
         `The target for "${subpath}" defined in "exports" is "${target}", ` +
           'however this value is an invalid subpath or subpath pattern ' +
           `because it includes "${invalidSegmentInTarget}".`,
@@ -117,7 +118,7 @@ export function resolvePackageTargetFromExports(
       return {type: 'sourceFile', filePath};
     }
 
-    raiseConfigError(
+    throw createConfigError(
       `The resolution for "${modulePath}" defined in "exports" is ${filePath}, ` +
         'however this file does not exist.',
     );
@@ -142,45 +143,86 @@ function getExportsSubpath(packagePath: string, modulePath: string): string {
 
 /**
  * Normalise an "exports"-like field by parsing string shorthand and conditions
- * shorthand at root.
+ * shorthand at root, and flattening any legacy Node.js <13.7 array values.
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#exports-sugar.
  */
 function normalizeExportsField(
   exportsField: ExportsField,
-  raiseConfigError: (reason: string) => void,
+  createConfigError: (reason: string) => Error,
 ): ExportMap {
-  if (typeof exportsField === 'string') {
-    return {'.': exportsField};
-  }
+  let rootValue;
 
   if (Array.isArray(exportsField)) {
-    return exportsField.reduce(
-      (result, subpath) => ({
-        ...result,
-        [subpath]: subpath,
-      }),
-      {},
+    // If an array of strings, expand as subpath mapping (legacy root shorthand)
+    if (exportsField.every(value => typeof value === 'string')) {
+      // $FlowIssue[incompatible-call] exportsField is refined to `string[]`
+      return exportsField.reduce(
+        (result: ExportMap, subpath: string) => ({
+          ...result,
+          [subpath]: subpath,
+        }),
+        {},
+      );
+    }
+
+    // Otherwise, should be a condition map and fallback string (Node.js <13.7)
+    rootValue = exportsField[0];
+  } else {
+    rootValue = exportsField;
+  }
+
+  if (rootValue == null || Array.isArray(rootValue)) {
+    throw createConfigError(
+      'Could not parse non-standard array value at root of "exports" field.',
     );
   }
 
-  const firstLevelKeys = Object.keys(exportsField);
+  if (typeof rootValue === 'string') {
+    return {'.': rootValue};
+  }
+
+  const firstLevelKeys = Object.keys(rootValue);
   const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
     subpathOrCondition.startsWith('.'),
   );
 
   if (subpathKeys.length === firstLevelKeys.length) {
-    return exportsField;
+    return flattenLegacySubpathValues(rootValue, createConfigError);
   }
 
   if (subpathKeys.length !== 0) {
-    raiseConfigError(
+    throw createConfigError(
       'The "exports" field cannot have keys which are both subpaths and ' +
         'condition names at the same level.',
     );
   }
 
-  return {'.': exportsField};
+  return {'.': flattenLegacySubpathValues(rootValue, createConfigError)};
+}
+
+/**
+ * Flatten legacy Node.js <13.7 array subpath values in an exports mapping.
+ */
+function flattenLegacySubpathValues(
+  exportMap: ExportMap | ExportMapWithFallbacks,
+  createConfigError: (reason: string) => Error,
+): ExportMap {
+  return Object.keys(exportMap).reduce((result: ExportMap, subpath: string) => {
+    const value = exportMap[subpath];
+
+    // We do not support empty or nested arrays (non-standard)
+    if (Array.isArray(value) && (!value.length || Array.isArray(value[0]))) {
+      throw createConfigError(
+        'Could not parse non-standard array value in "exports" field.',
+      );
+    }
+
+    return {
+      ...result,
+      [subpath]: Array.isArray(value) ? value[0] : value,
+    };
+  }, {});
 }
 
 /**
@@ -224,7 +266,7 @@ function matchSubpathFromExports(
   subpath: string,
   exportMap: ExportMap,
   platform: string | null,
-  raiseConfigError: (reason: string) => void,
+  createConfigError: (reason: string) => Error,
 ): $ReadOnly<{
   target: string | null,
   patternMatch: string | null,
@@ -240,7 +282,7 @@ function matchSubpathFromExports(
   const exportMapAfterConditions = reduceExportMap(
     exportMap,
     conditionNames,
-    raiseConfigError,
+    createConfigError,
   );
 
   let target = exportMapAfterConditions[subpath];
@@ -283,7 +325,7 @@ type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
 function reduceExportMap(
   exportMap: ExportMap,
   conditionNames: $ReadOnlySet<string>,
-  raiseConfigError: (reason: string) => void,
+  createConfigError: (reason: string) => Error,
 ): FlattenedExportMap {
   const result: {[subpath: string]: string | null} = {};
 
@@ -306,7 +348,7 @@ function reduceExportMap(
   );
 
   if (invalidValues.length) {
-    raiseConfigError(
+    throw createConfigError(
       'One or more mappings for subpaths defined in "exports" are invalid. ' +
         'All values must begin with "./".',
     );
@@ -325,7 +367,7 @@ function reduceExportMap(
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports.
  */
 function reduceConditionalExport(
-  subpathValue: ExportMap | string | null,
+  subpathValue: $Values<ExportMap>,
   conditionNames: $ReadOnlySet<string>,
 ): string | null | 'no-match' {
   let reducedValue = subpathValue;

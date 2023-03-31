@@ -51,10 +51,26 @@ export type FileCandidates =
     };
 
 export type ExportMap = $ReadOnly<{
-  [subpathOrCondition: string]: ExportMap | string | null,
+  [subpathOrCondition: string]: string | ExportMap | null,
 }>;
 
-export type ExportsField = string | $ReadOnlyArray<string> | ExportMap;
+/** "exports" mapping where values may be legacy Node.js <13.7 array format. */
+export type ExportMapWithFallbacks = $ReadOnly<{
+  [subpath: string]: $Values<ExportMap> | ExportValueWithFallback,
+}>;
+
+/** "exports" subpath value when in legacy Node.js <13.7 array format. */
+export type ExportValueWithFallback =
+  | $ReadOnlyArray<ExportMap | string>
+  // JSON can also contain exotic nested array structure, which will not be parsed
+  | $ReadOnlyArray<$ReadOnlyArray<mixed>>;
+
+export type ExportsField =
+  | string
+  | $ReadOnlyArray<string>
+  | ExportValueWithFallback
+  | ExportMap
+  | ExportMapWithFallbacks;
 
 export type PackageJson = $ReadOnly<{
   name?: string,

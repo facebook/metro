@@ -308,6 +308,20 @@ describe('with package exports resolution enabled', () => {
       `);
     });
 
+    test('should use "exports" for bare specifiers within the same package', () => {
+      const context = {
+        ...baseContext,
+        originModulePath: '/root/node_modules/test-pkg/lib/foo.js',
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/metadata.json', null)).toEqual(
+        {
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/metadata.min.json',
+        },
+      );
+    });
+
     test('should not use "exports" for internal relative imports within a package', () => {
       const context = {
         ...baseContext,
@@ -847,6 +861,180 @@ describe('with package exports resolution enabled', () => {
         'metro',
         '.png',
       );
+    });
+  });
+
+  describe('compatibility with non-standard "exports" array formats', () => {
+    // Node.js versions >=13.0.0, <13.7.0 support the `exports` field but not
+    // conditional exports. Used by packages such as @babel/runtime.
+    // See https://github.com/babel/babel/pull/12877
+    describe('early Node.js 13 versions', () => {
+      test('should use first value when subpath is an array including a condition mapping', () => {
+        const context = {
+          ...createResolutionContext({
+            '/root/src/main.js': '',
+            '/root/node_modules/@babel/runtime/package.json': JSON.stringify({
+              exports: {
+                './helpers/typeof': [
+                  {
+                    node: './helpers/typeof.js',
+                    import: './helpers/esm/typeof.js',
+                    default: './helpers/typeof.js',
+                  },
+                  './helpers/typeof.js',
+                ],
+                './helpers/interopRequireDefault': [
+                  {
+                    node: './helpers/interopRequireDefault.js',
+                    import: './helpers/esm/interopRequireDefault.js',
+                    default: './helpers/interopRequireDefault.js',
+                  },
+                  './helpers/interopRequireDefault.js',
+                ],
+              },
+            }),
+            '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js':
+              '',
+            '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js':
+              '',
+            '/root/node_modules/@babel/runtime/helpers/esm/typeof.js': '',
+          }),
+          originModulePath: '/root/src/main.js',
+          unstable_conditionNames: [],
+          unstable_enablePackageExports: true,
+        };
+
+        expect(
+          Resolver.resolve(
+            context,
+            '@babel/runtime/helpers/interopRequireDefault',
+            null,
+          ),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath:
+            '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js',
+        });
+        expect(
+          Resolver.resolve(
+            {...context, unstable_conditionNames: ['import']},
+            '@babel/runtime/helpers/interopRequireDefault',
+            null,
+          ),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath:
+            '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js',
+        });
+        // Check internal self-reference case explicitly!
+        expect(
+          Resolver.resolve(
+            {
+              ...context,
+              originModulePath:
+                '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js',
+              unstable_conditionNames: ['import'],
+            },
+            '@babel/runtime/helpers/typeof',
+            null,
+          ),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/@babel/runtime/helpers/esm/typeof.js',
+        });
+      });
+
+      test('should use first value when subpath (root shorthand) is an array including a condition mapping', () => {
+        const context = {
+          ...createResolutionContext({
+            '/root/src/main.js': '',
+            '/root/node_modules/test-pkg/package.json': JSON.stringify({
+              exports: [
+                {browser: './index-browser.js', default: 'index.js'},
+                './index-alt.js',
+              ],
+            }),
+            '/root/node_modules/test-pkg/index.js': '',
+            '/root/node_modules/test-pkg/index-browser.js': '',
+          }),
+          originModulePath: '/root/src/main.js',
+          unstable_conditionNames: ['browser'],
+          unstable_enablePackageExports: true,
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index-browser.js',
+        });
+      });
+    });
+
+    // Array as order-preserving data structure for other environments.
+    // See https://github.com/nodejs/node/issues/37777#issuecomment-804164719
+    describe('[unsupported] exotic nested arrays', () => {
+      test('should fall back and log warning for nested array at root', () => {
+        const logWarning = jest.fn();
+        const context = {
+          ...createResolutionContext({
+            '/root/src/main.js': '',
+            '/root/node_modules/test-pkg/package.json': JSON.stringify({
+              main: './index.js',
+              exports: [
+                [{import: 'index.mjs'}],
+                [{require: 'index.cjs'}],
+                ['index.cjs'],
+              ],
+            }),
+            '/root/node_modules/test-pkg/index.js': '',
+          }),
+          originModulePath: '/root/src/main.js',
+          unstable_enablePackageExports: true,
+          unstable_logWarning: logWarning,
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index.js',
+        });
+        expect(logWarning).toHaveBeenCalledTimes(1);
+        expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+          "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+          Reason: Could not parse non-standard array value at root of \\"exports\\" field. Falling back to file-based resolution."
+        `);
+      });
+
+      test('should fall back and log warning for nested array at subpath', () => {
+        const logWarning = jest.fn();
+        const context = {
+          ...createResolutionContext({
+            '/root/src/main.js': '',
+            '/root/node_modules/test-pkg/package.json': JSON.stringify({
+              main: './index.js',
+              exports: {
+                '.': [
+                  [{import: 'index.mjs'}],
+                  [{require: 'index.cjs'}],
+                  ['index.cjs'],
+                ],
+              },
+            }),
+            '/root/node_modules/test-pkg/index.js': '',
+          }),
+          originModulePath: '/root/src/main.js',
+          unstable_enablePackageExports: true,
+          unstable_logWarning: logWarning,
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index.js',
+        });
+        expect(logWarning).toHaveBeenCalledTimes(1);
+        expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
+          "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+          Reason: Could not parse non-standard array value in \\"exports\\" field. Falling back to file-based resolution."
+        `);
+      });
     });
   });
 });
