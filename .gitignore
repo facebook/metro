@@ -5,6 +5,7 @@
 /reports
 npm-debug.log*
 packages/*/build/
+packages/*/target/
 
 website/build/
 website/i18n/*
