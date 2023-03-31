@@ -782,22 +782,28 @@ describe('processRequest', () => {
       expect(response.getHeader('content-range')).toBe('bytes 0-3/10');
     });
 
-    it('should return content-type header for a png asset', async () => {
+    it('should return content-type and content-length header for a png asset', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
       const response = await makeRequest('/assets/imgs/a.png?platform=ios');
 
       expect(response.getHeader('content-type')).toBe('image/png');
+      expect(response.getHeader('content-length')).toBe(
+        String(Buffer.byteLength(mockData)),
+      );
     });
 
-    it('should return content-type header for an svg asset', async () => {
+    it('should return content-type and content-length header for an svg asset', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
       const response = await makeRequest('/assets/imgs/a.svg?platform=ios');
 
       expect(response.getHeader('content-type')).toBe('image/svg+xml');
+      expect(response.getHeader('content-length')).toBe(
+        String(Buffer.byteLength(mockData)),
+      );
     });
 
     it("should serve assets files's name contain non-latin letter", async () => {
