@@ -54,10 +54,12 @@ export type ExportMap = $ReadOnly<{
   [subpathOrCondition: string]: ExportMap | string | null,
 }>;
 
+export type ExportsField = string | $ReadOnlyArray<string> | ExportMap;
+
 export type PackageJson = $ReadOnly<{
   name?: string,
   main?: string,
-  exports?: string | ExportMap,
+  exports?: ExportsField,
   ...
 }>;
 

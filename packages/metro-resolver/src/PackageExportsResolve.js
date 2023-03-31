@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {ExportMap, FileResolution, ResolutionContext} from './types';
+import type {
+  ExportMap,
+  ExportsField,
+  FileResolution,
+  ResolutionContext,
+} from './types';
 
 import path from 'path';
 import InvalidModuleSpecifierError from './errors/InvalidModuleSpecifierError';
@@ -46,7 +51,7 @@ export function resolvePackageTargetFromExports(
    * to a package-relative subpath for comparison.
    */
   modulePath: string,
-  exportsField: ExportMap | string,
+  exportsField: ExportsField,
   platform: string | null,
 ): FileResolution {
   const raiseConfigError = (reason: string) => {
@@ -142,11 +147,21 @@ function getExportsSubpath(packagePath: string, modulePath: string): string {
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#exports-sugar.
  */
 function normalizeExportsField(
-  exportsField: ExportMap | string,
+  exportsField: ExportsField,
   raiseConfigError: (reason: string) => void,
 ): ExportMap {
   if (typeof exportsField === 'string') {
     return {'.': exportsField};
+  }
+
+  if (Array.isArray(exportsField)) {
+    return exportsField.reduce(
+      (result, subpath) => ({
+        ...result,
+        [subpath]: subpath,
+      }),
+      {},
+    );
   }
 
   const firstLevelKeys = Object.keys(exportsField);
