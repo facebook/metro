@@ -508,13 +508,23 @@ Where to fetch the assets from.
 
 ### Babel-specific transformer options
 
+#### `babelRCPath`
+
+Type: `string`
+
+The path to the file that contains the Babel config. Supports out of the box the defaults located on root of the project: `babel.config.js`, `.babelrc` or `.babelrc.js`.
+
+Example: `babelRCPath: 'src/babel.config.native.js'`
+
+:::note
+This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.
+:::
+
 #### `babelTransformerPath`
 
 Type: `string`
 
 The name of a module that compiles code with Babel, returning an AST and optional metadata. Defaults to `metro-babel-transformer`.
-
-Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`metro-react-native-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
 
 :::note
 This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.

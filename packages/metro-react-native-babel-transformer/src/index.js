@@ -56,6 +56,7 @@ const getBabelRC = (function () {
   return function _getBabelRC({
     projectRoot,
     extendsBabelConfigPath,
+    babelRCPath,
     ...options
   }) {
     if (babelRC != null) {
@@ -70,31 +71,36 @@ const getBabelRC = (function () {
     if (extendsBabelConfigPath) {
       return babelRC;
     }
+    if (babelRCPath && fs.existsSync(babelRCPath)) {
+      //A babelRCPath was provided and it exists. We'll use that.
+      // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
+      babelRC.extends = path.resolve(projectRoot, babelRCPath);
+    } else {
+      // Let's look for a babel config file in the project root.
+      let projectBabelRCPath;
 
-    // Let's look for a babel config file in the project root.
-    let projectBabelRCPath;
-
-    // .babelrc
-    if (projectRoot) {
-      projectBabelRCPath = path.resolve(projectRoot, '.babelrc');
-    }
-
-    if (projectBabelRCPath) {
-      // .babelrc.js
-      if (!fs.existsSync(projectBabelRCPath)) {
-        projectBabelRCPath = path.resolve(projectRoot, '.babelrc.js');
+      // .babelrc
+      if (projectRoot) {
+        projectBabelRCPath = path.resolve(projectRoot, '.babelrc');
       }
 
-      // babel.config.js
-      if (!fs.existsSync(projectBabelRCPath)) {
-        projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
-      }
+      if (projectBabelRCPath) {
+        // .babelrc.js
+        if (!fs.existsSync(projectBabelRCPath)) {
+          projectBabelRCPath = path.resolve(projectRoot, '.babelrc.js');
+        }
 
-      // If we found a babel config file, extend our config off of it
-      // otherwise the default config will be used
-      if (fs.existsSync(projectBabelRCPath)) {
-        // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
-        babelRC.extends = projectBabelRCPath;
+        // babel.config.js
+        if (!fs.existsSync(projectBabelRCPath)) {
+          projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
+        }
+
+        // If we found a babel config file, extend our config off of it
+        // otherwise the default config will be used
+        if (fs.existsSync(projectBabelRCPath)) {
+          // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
+          babelRC.extends = projectBabelRCPath;
+        }
       }
     }
 

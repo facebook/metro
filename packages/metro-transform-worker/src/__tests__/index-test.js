@@ -48,6 +48,7 @@ const baseConfig: JsTransformerConfig = {
   assetPlugins: [],
   assetRegistryPath: '',
   asyncRequireModulePath: 'asyncRequire',
+  babelRCPath: '',
   babelTransformerPath,
   dynamicDepsInPackages: 'reject',
   enableBabelRCLookup: false,
