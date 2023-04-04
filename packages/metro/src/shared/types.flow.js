@@ -60,7 +60,6 @@ export type BundleOptions = {
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
   +unstable_transformProfile: TransformProfile,
-  ...
 };
 
 export type ResolverInputOptions = $ReadOnly<{
