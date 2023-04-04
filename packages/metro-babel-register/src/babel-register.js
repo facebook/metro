@@ -17,16 +17,6 @@ const path = require('path');
 let _only = [];
 
 function register(onlyList) {
-  // This prevents `babel-register` from transforming the code of the
-  // plugins/presets that we are require-ing themselves before setting up the
-  // actual config.
-  require('@babel/register')({
-    babelrc: false,
-    configFile: false,
-    // make sure we don't transpile any npm packages
-    ignore: [/\/node_modules\//],
-    only: [],
-  });
   require('@babel/register')({
     ...config(onlyList),
     extensions: [
