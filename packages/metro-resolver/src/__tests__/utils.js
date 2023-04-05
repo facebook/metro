@@ -102,6 +102,9 @@ export function createPackageAccessors(
     let dir = path.join(parsedPath.dir, parsedPath.name);
 
     do {
+      if (path.basename(dir) === 'node_modules') {
+        return null;
+      }
       const candidate = path.join(dir, 'package.json');
       const packageJson = getPackage(candidate);
 

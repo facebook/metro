@@ -254,6 +254,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/lib/foo.ios.js': '',
         '/root/node_modules/test-pkg/private/bar.js': '',
         '/root/node_modules/test-pkg/node_modules/baz/index.js': '',
+        '/root/node_modules/test-pkg/node_modules/baz/package.json': '',
         '/root/node_modules/test-pkg/metadata.json': '',
         '/root/node_modules/test-pkg/metadata.min.json': '',
       }),
@@ -345,6 +346,31 @@ describe('with package exports resolution enabled', () => {
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/metadata.json',
       });
+    });
+
+    test('should resolve subpath when package is located in nested node_modules path', () => {
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        ...createPackageAccessors({
+          '/root/node_modules/test-pkg/package.json': {
+            exports: './index-exports.js',
+          },
+          '/root/node_modules/test-pkg/node_modules/baz/package.json': {
+            exports: './index.js',
+          },
+        }),
+        originModulePath: '/root/node_modules/test-pkg/private/bar.js',
+        unstable_logWarning: logWarning,
+      };
+
+      expect(Resolver.resolve(context, 'baz', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/node_modules/baz/index.js',
+      });
+      // If a warning was logged, we have incorrectly tried to resolve "exports"
+      // against the parent package.json.
+      expect(logWarning).not.toHaveBeenCalled();
     });
 
     test('should expand array of strings as subpath mapping (root shorthand)', () => {
@@ -506,34 +532,6 @@ describe('with package exports resolution enabled', () => {
           /root/node_modules
           /node_modules
         "
-      `);
-    });
-
-    test('[nonstrict] should fall back and log warning for an invalid pattern match substitution', () => {
-      const logWarning = jest.fn();
-      const context = {
-        ...baseContext,
-        unstable_logWarning: logWarning,
-      };
-
-      // TODO(T145206395): Improve this error trace
-      expect(() =>
-        Resolver.resolve(
-          context,
-          'test-pkg/features/node_modules/foo/index.js',
-          null,
-        ),
-      ).toThrowErrorMatchingInlineSnapshot(`
-        "Module does not exist in the Haste module map or in these directories:
-          /root/src/node_modules
-          /root/node_modules
-          /node_modules
-        "
-      `);
-      expect(logWarning).toHaveBeenCalledTimes(1);
-      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(`
-        "Invalid import specifier /root/node_modules/test-pkg/features/node_modules/foo/index.js.
-        Reason: The target for \\"./features/node_modules/foo/index.js\\" defined in \\"exports\\" is \\"./src/features/*.js\\", however this expands to an invalid subpath because the pattern match \\"node_modules/foo/index\\" is invalid. Falling back to file-based resolution."
       `);
     });
 
