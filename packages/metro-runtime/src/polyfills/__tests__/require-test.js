@@ -29,6 +29,8 @@ function createModule(
   );
 }
 
+const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
 describe('require', () => {
   const moduleSystemCode = (() => {
     const rawCode = fs.readFileSync(require.resolve('../require'), 'utf8');
@@ -85,6 +87,7 @@ describe('require', () => {
 
   beforeEach(() => {
     moduleSystem = {};
+    consoleWarnSpy.mockClear();
   });
 
   it('does not need any babel helper logic', () => {
@@ -567,15 +570,10 @@ describe('require', () => {
         },
       );
 
-      const warn = console.warn;
-      console.warn = jest.fn();
-
       expect(moduleSystem.__r('foo.js')).toEqual('Hi!');
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
         'Requiring module "foo.js" by name is only supported for debugging purposes and will BREAK IN PRODUCTION!',
       );
-
-      console.warn = warn;
     });
 
     it('throws an error when requiring an incorrect verboseNames in dev mode', () => {
