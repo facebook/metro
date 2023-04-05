@@ -77,6 +77,7 @@ function prepareModule(
 ): string {
   const code = wrapModule(module, {
     ...options,
+    sourceUrl: url.format(options.clientUrl),
     dev: true,
   });
 
