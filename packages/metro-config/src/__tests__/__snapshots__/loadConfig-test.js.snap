@@ -108,6 +108,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -284,6 +285,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -460,6 +462,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -636,6 +639,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,

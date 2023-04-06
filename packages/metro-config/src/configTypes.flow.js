@@ -17,6 +17,7 @@ import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
+
 import type {
   DeltaResult,
   Module,
@@ -25,6 +26,7 @@ import type {
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
 import type Server from 'metro/src/Server';
+import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true, ...} | false,
@@ -183,6 +185,10 @@ type SymbolicatorConfigT = {
     +methodName: ?string,
     ...
   }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
+  customizeStack: (
+    Array<IntermediateStackFrame>,
+    mixed,
+  ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>,
 };
 
 type WatcherConfigT = {
