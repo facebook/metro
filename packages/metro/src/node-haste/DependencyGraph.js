@@ -154,6 +154,11 @@ class DependencyGraph extends EventEmitter {
     const root = parsedPath.root;
     let dir = parsedPath.dir;
     do {
+      // If we've hit a node_modules directory, the closest package was not
+      // found (`filePath` was likely nonexistent).
+      if (path.basename(dir) === 'node_modules') {
+        return null;
+      }
       const candidate = path.join(dir, 'package.json');
       if (this._fileSystem.exists(candidate)) {
         return candidate;

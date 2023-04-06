@@ -22,7 +22,6 @@ import type {
 import path from 'path';
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
-import InvalidModuleSpecifierError from './errors/InvalidModuleSpecifierError';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
@@ -280,10 +279,7 @@ function resolvePackage(
               ' Falling back to file-based resolution. Consider updating the ' +
               'call site or asking the package maintainer(s) to expose this API.',
           );
-        } else if (
-          e instanceof InvalidModuleSpecifierError ||
-          e instanceof InvalidPackageConfigurationError
-        ) {
+        } else if (e instanceof InvalidPackageConfigurationError) {
           context.unstable_logWarning(
             e.message + ' Falling back to file-based resolution.',
           );

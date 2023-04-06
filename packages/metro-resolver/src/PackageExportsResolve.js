@@ -18,7 +18,6 @@ import type {
 } from './types';
 
 import path from 'path';
-import InvalidModuleSpecifierError from './errors/InvalidModuleSpecifierError';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
@@ -89,16 +88,6 @@ export function resolvePackageTargetFromExports(
           'however this value is an invalid subpath or subpath pattern ' +
           `because it includes "${invalidSegmentInTarget}".`,
       );
-    }
-
-    if (patternMatch != null && findInvalidPathSegment(patternMatch) != null) {
-      throw new InvalidModuleSpecifierError({
-        importSpecifier: modulePath,
-        reason:
-          `The target for "${subpath}" defined in "exports" is "${target}", ` +
-          'however this expands to an invalid subpath because the pattern ' +
-          `match "${patternMatch}" is invalid.`,
-      });
     }
 
     const filePath = path.join(
