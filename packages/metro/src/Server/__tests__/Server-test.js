@@ -146,6 +146,15 @@ describe('processRequest', () => {
         }
         return null;
       },
+      customizeStack: (stack, extraData) => {
+        return stack.map(frame => {
+          return {
+            ...frame,
+            ...extraData,
+            wasCollapsedBefore: frame.collapse === true ? true : undefined,
+          };
+        });
+      },
     },
   });
 
@@ -953,7 +962,6 @@ describe('processRequest', () => {
           },
           "stack": Array [
             Object {
-              "collapse": false,
               "column": 0,
               "customPropShouldBeLeftUnchanged": "foo",
               "file": "/root/mybundle.js",
@@ -1116,7 +1124,6 @@ describe('processRequest', () => {
           },
           "stack": Array [
             Object {
-              "collapse": false,
               "column": 0,
               "customPropShouldBeLeftUnchanged": "foo",
               "file": "/root/mybundle.js",
@@ -1175,6 +1182,35 @@ describe('processRequest', () => {
       });
     });
 
+    it('should transform frames as specified in customizeStack', async () => {
+      // NOTE: See implementation of symbolicator.customizeStack above.
+
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 3,
+              column: 18,
+            },
+          ],
+          extraData: {
+            customAnnotation: 'Baz',
+          },
+        }),
+      });
+
+      expect(response._getJSON()).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            file: '/root/foo.js',
+            wasCollapsedBefore: true,
+            customAnnotation: 'Baz',
+          }),
+        ],
+      });
+    });
+
     it('should leave original file and position when cannot symbolicate', async () => {
       const response = await makeRequest('/symbolicate', {
         rawBody: JSON.stringify({
@@ -1195,7 +1231,6 @@ describe('processRequest', () => {
           "codeFrame": null,
           "stack": Array [
             Object {
-              "collapse": false,
               "column": 18,
               "customPropShouldBeLeftUnchanged": "foo",
               "file": "http://localhost:8081/mybundle.bundle?runModule=true",
