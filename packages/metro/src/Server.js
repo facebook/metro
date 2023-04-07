@@ -1094,7 +1094,8 @@ class Server {
       debug('Start symbolication');
       /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
       const body = await req.rawBody;
-      const stack = JSON.parse(body).stack.map(frame => {
+      const parsedBody = JSON.parse(body);
+      const stack = parsedBody.stack.map(frame => {
         if (frame.file && frame.file.includes('://')) {
           return {
             ...frame,
@@ -1126,10 +1127,11 @@ class Server {
       );
 
       debug('Performing fast symbolication');
-      const symbolicatedStack = await await symbolicate(
+      const symbolicatedStack = await symbolicate(
         stack,
         zip(urls.values(), sourceMaps),
         this._config,
+        parsedBody.extraData ?? {},
       );
 
       debug('Symbolication done');

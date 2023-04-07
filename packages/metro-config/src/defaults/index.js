@@ -83,6 +83,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
 
   symbolicator: {
     customizeFrame: () => {},
+    customizeStack: async (stack, _) => stack,
   },
 
   transformer: {
