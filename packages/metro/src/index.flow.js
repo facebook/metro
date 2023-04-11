@@ -38,7 +38,13 @@ const chalk = require('chalk');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
-const {getDefaultConfig, loadConfig, mergeConfig} = require('metro-config');
+const {
+  getDefaultConfig,
+  loadConfig,
+  mergeConfig,
+  resolveConfig,
+} = require('metro-config');
+const {Terminal} = require('metro-core');
 const {InspectorProxy} = require('metro-inspector-proxy');
 const net = require('net');
 const {parse} = require('url');
@@ -121,6 +127,8 @@ export type RunBuildOptions = {
 type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
 
+exports.Terminal = Terminal;
+
 export type {MetroConfig};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
@@ -174,6 +182,7 @@ async function runMetro(
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 exports.mergeConfig = mergeConfig;
+exports.resolveConfig = resolveConfig;
 
 const createConnectMiddleware = async function (
   config: ConfigT,

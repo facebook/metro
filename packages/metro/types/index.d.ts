@@ -19,7 +19,6 @@ import type {Server as HttpsServer} from 'https';
 import type {
   ConfigT,
   InputConfigT,
-  loadConfig,
   MetroConfig,
   Middleware,
 } from 'metro-config';
@@ -29,6 +28,9 @@ import type {Server} from 'ws';
 import Yargs = require('yargs');
 import type {default as MetroServer, ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types';
+
+export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
+export {Terminal} from 'metro-core';
 
 export {HttpServer, HttpsServer};
 
@@ -113,8 +115,6 @@ export function runMetro(
   config: InputConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroServer>;
-
-export {loadConfig};
 
 export function createConnectMiddleWare(
   config: ConfigT,
