@@ -44,6 +44,7 @@ const {
   mergeConfig,
   resolveConfig,
 } = require('metro-config');
+const {Terminal} = require('metro-core');
 const {InspectorProxy} = require('metro-inspector-proxy');
 const net = require('net');
 const {parse} = require('url');
@@ -125,6 +126,8 @@ export type RunBuildOptions = {
 
 type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
+
+exports.Terminal = Terminal;
 
 export type {MetroConfig};
 

@@ -30,6 +30,7 @@ import type {default as MetroServer, ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types';
 
 export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
+export {Terminal} from 'metro-core';
 
 export {HttpServer, HttpsServer};
 
