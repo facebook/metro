@@ -7,7 +7,7 @@
     "skipLibCheck": false,
     "paths": {
       "metro": ["./packages/metro/types"],
-      "metro/*": ["./packages/metro/types/*"],
+      "metro/src/*": ["./packages/metro/types/*"],
       "metro-*": ["./packages/metro-*/types"]
     }
   }

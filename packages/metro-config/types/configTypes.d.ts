@@ -18,9 +18,9 @@ import type {
   ReadOnlyGraph,
   SerializerOptions,
   TransformResult,
-} from 'metro/DeltaBundler/types';
-import type {Reporter} from 'metro/lib/reporting';
-import type Server from 'metro/Server';
+} from 'metro/src/DeltaBundler/types';
+import type {Reporter} from 'metro/src/lib/reporting';
+import type Server from 'metro/src/Server';
 
 export interface ExtraTransformOptions {
   readonly preloadedModules: {[path: string]: true} | false;
