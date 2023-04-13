@@ -96,10 +96,10 @@ it('forces all packages to have an .npmignore with expected entries', () => {
     const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
     expect(lines).toEqual(
       expect.arrayContaining([
-        '**/__mocks__/**',
-        '**/__tests__/**',
-        'build',
-        'src.real',
+        '**/__mocks__/',
+        '**/__tests__/',
+        '/build/',
+        '/src.real/',
         'yarn.lock',
       ]),
     );
