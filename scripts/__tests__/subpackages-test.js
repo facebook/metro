@@ -100,6 +100,7 @@ it('forces all packages to have an .npmignore with expected entries', () => {
         '**/__tests__/',
         '/build/',
         '/src.real/',
+        '/types/',
         'yarn.lock',
       ]),
     );
