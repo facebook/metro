@@ -36,7 +36,9 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
 
 3. Code in this repo is typechecked with [Flow](https://flow.org/). [Optional] If you are using VS Code, we recommend opening the `metro.code-workspace` file, which should configure the Flow Language Service and other workspace settings correctly.
 4. If you've added code that should be tested, add tests.
-5. If you've changed APIs, update the documentation.
+5. If you've changed APIs:
+    1. Update the documentation if necessary.
+    2. Update any relevant `.d.ts` files under the package's `types/` directory.
 6. Ensure the test suite passes via `npm test`.
 7. If you haven't already, complete the CLA.
 
