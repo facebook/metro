@@ -14,7 +14,8 @@ export * from './ModuleGraph/worker/collectDependencies';
 export * from './Server';
 export * from './lib/reporting';
 
-import type {Server as HttpServer} from 'http';
+import type {EventEmitter} from 'events';
+import type {IncomingMessage, Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 import type {
   ConfigT,
@@ -24,7 +25,7 @@ import type {
 } from 'metro-config';
 import type {CustomTransformOptions} from 'metro-babel-transformer';
 import type {ReadOnlyGraph} from './DeltaBundler/types';
-import type {Server} from 'ws';
+import type {Duplex} from 'stream';
 import Yargs = require('yargs');
 import type {default as MetroServer, ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types';
@@ -43,6 +44,15 @@ interface MetroMiddleWare {
 
 export interface RunMetroOptions extends ServerOptions {
   waitForBundler?: boolean;
+}
+
+interface WebsocketServer extends EventEmitter {
+  handleUpgrade<T = WebsocketServer>(
+    request: IncomingMessage,
+    socket: Duplex,
+    upgradeHead: Buffer,
+    callback: (client: T, request: IncomingMessage) => void,
+  ): void;
 }
 
 export interface RunServerOptions {
@@ -65,7 +75,7 @@ export interface RunServerOptions {
   waitForBundler?: boolean;
   watch?: boolean;
   websocketEndpoints?: {
-    [path: string]: Server;
+    [path: string]: WebsocketServer;
   };
 }
 

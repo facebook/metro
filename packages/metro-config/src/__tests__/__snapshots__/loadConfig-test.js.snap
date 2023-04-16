@@ -75,6 +75,7 @@ Object {
     ],
     "unstable_conditionNames": Array [
       "require",
+      "import",
     ],
     "unstable_conditionsByPlatform": Object {
       "web": Array [
@@ -253,6 +254,7 @@ Object {
     ],
     "unstable_conditionNames": Array [
       "require",
+      "import",
     ],
     "unstable_conditionsByPlatform": Object {
       "web": Array [
@@ -431,6 +433,7 @@ Object {
     ],
     "unstable_conditionNames": Array [
       "require",
+      "import",
     ],
     "unstable_conditionsByPlatform": Object {
       "web": Array [
@@ -609,6 +612,7 @@ Object {
     ],
     "unstable_conditionNames": Array [
       "require",
+      "import",
     ],
     "unstable_conditionsByPlatform": Object {
       "web": Array [

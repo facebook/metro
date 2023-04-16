@@ -15,7 +15,8 @@ import type {CustomResolverOptions} from 'metro-resolver';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
-import type {Server as HttpServer} from 'http';
+import type EventEmitter from 'events';
+import type {IncomingMessage, Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 import type {
   ConfigT,
@@ -24,6 +25,7 @@ import type {
   Middleware,
 } from 'metro-config/src/configTypes.flow';
 import type {CustomTransformOptions} from 'metro-transform-worker';
+import type {Duplex} from 'stream';
 import typeof Yargs from 'yargs';
 
 const makeBuildCommand = require('./commands/build');
@@ -48,7 +50,6 @@ const {Terminal} = require('metro-core');
 const {InspectorProxy} = require('metro-inspector-proxy');
 const net = require('net');
 const {parse} = require('url');
-const ws = require('ws');
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -61,6 +62,15 @@ export type RunMetroOptions = {
   ...ServerOptions,
   waitForBundler?: boolean,
 };
+
+interface WebsocketServer extends EventEmitter {
+  handleUpgrade<T = WebsocketServer>(
+    request: IncomingMessage,
+    socket: Duplex,
+    upgradeHead: Buffer,
+    callback: (client: T, request: IncomingMessage) => void,
+  ): void;
+}
 
 export type RunServerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
@@ -75,7 +85,7 @@ export type RunServerOptions = $ReadOnly<{
   waitForBundler?: boolean,
   watch?: boolean,
   websocketEndpoints?: $ReadOnly<{
-    [path: string]: typeof ws.Server,
+    [path: string]: WebsocketServer,
   }>,
 }>;
 

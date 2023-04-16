@@ -118,6 +118,8 @@ export type ResolutionContext = $ReadOnly<{
   /**
    * Get the package information and parsed `package.json` file for for a given
    * module path, if it is contained within an npm package.
+   *
+   * @deprecated See https://github.com/facebook/metro/commit/29c77bff31e2475a086bc3f04073f485da8f9ff0
    */
   getPackageForModule: (modulePath: string) => ?PackageInfo,
 

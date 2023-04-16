@@ -99,7 +99,7 @@ export function createPackageAccessors(
   const getPackageForModule = (modulePath: string) => {
     const parsedPath = path.parse(modulePath);
     const root = parsedPath.root;
-    let dir = path.join(parsedPath.dir, parsedPath.name);
+    let dir = path.join(parsedPath.dir, parsedPath.base);
 
     do {
       if (path.basename(dir) === 'node_modules') {

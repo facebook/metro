@@ -152,7 +152,8 @@ class DependencyGraph extends EventEmitter {
   _getClosestPackage(filePath: string): ?string {
     const parsedPath = path.parse(filePath);
     const root = parsedPath.root;
-    let dir = parsedPath.dir;
+    let dir = path.join(parsedPath.dir, parsedPath.base);
+
     do {
       // If we've hit a node_modules directory, the closest package was not
       // found (`filePath` was likely nonexistent).

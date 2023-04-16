@@ -97,6 +97,8 @@ export interface ResolutionContext {
   /**
    * Get the package information and parsed `package.json` file for for a given
    * module path, if it is contained within an npm package.
+   *
+   * @deprecated
    */
   readonly getPackageForModule: (modulePath: string) => PackageInfo | null;
 

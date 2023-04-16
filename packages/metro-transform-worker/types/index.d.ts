@@ -9,8 +9,8 @@
  */
 
 import type {DynamicRequiresBehavior} from 'metro';
-import type {TransformResultDependency} from 'metro/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/DeltaBundler/types';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types';
 import type {
   CustomTransformOptions,
   TransformProfile,

@@ -8,7 +8,6 @@
  * @oncall react_native
  */
 
-import type {SourceLocation} from '@babel/code-frame';
 import type {JsTransformOptions} from 'metro-transform-worker';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
@@ -55,7 +54,10 @@ export interface TransformResultDependency {
      */
     readonly isOptional?: boolean;
 
-    readonly locs: ReadonlyArray<SourceLocation>;
+    readonly locs: ReadonlyArray<{
+      readonly start: {readonly line: number; readonly column: number};
+      readonly end: {readonly line: number; readonly column: number};
+    }>;
 
     /** Context for requiring a collection of modules. */
     readonly contextParams?: RequireContextParams;
