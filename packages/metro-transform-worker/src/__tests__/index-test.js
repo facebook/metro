@@ -63,6 +63,7 @@ const baseConfig: JsTransformerConfig = {
   unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
   unstable_allowRequireContext: false,
+  unstable_preserveComments: false,
 };
 
 beforeEach(() => {
@@ -582,4 +583,24 @@ it('counts all line endings correctly', async () => {
   expect(differentEndingsResult.output[0].data.lineCount).toEqual(
     standardEndingsResult.output[0].data.lineCount,
   );
+});
+
+it('allows preservation of comments', async () => {
+  const result = await Transformer.transform(
+    {...baseConfig, unstable_preserveComments: true},
+    '/root',
+    'local/file.js',
+    Buffer.from('/*#__PURE__*/arbitrary(code);', 'utf8'),
+    // $FlowFixMe[prop-missing] Added when annotating Transformer.
+    {
+      dev: false,
+      minify: false,
+      type: 'module',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+      /*#__PURE__*/arbitrary(code);
+    });"
+  `);
 });

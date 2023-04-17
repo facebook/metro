@@ -96,6 +96,7 @@ export type JsTransformerConfig = $ReadOnly<{
   unstable_compactOutput: boolean,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
+  unstable_preserveComments: boolean,
 }>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -299,7 +300,7 @@ async function transformJS(
       babelrc: false,
       code: false,
       configFile: false,
-      comments: false,
+      comments: config.unstable_preserveComments,
       filename: file.filename,
       plugins,
       sourceMaps: false,
@@ -322,7 +323,7 @@ async function transformJS(
         babelrc: false,
         code: false,
         configFile: false,
-        comments: false,
+        comments: config.unstable_preserveComments,
         filename: file.filename,
         plugins: [
           [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
@@ -407,7 +408,7 @@ async function transformJS(
   const result = generate(
     wrappedAst,
     {
-      comments: false,
+      comments: config.unstable_preserveComments,
       compact: config.unstable_compactOutput,
       filename: file.filename,
       retainLines: false,
