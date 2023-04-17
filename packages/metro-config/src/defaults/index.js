@@ -111,6 +111,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       },
       output: {
         ascii_only: true,
+        comments: false,
         quote_style: 3,
         wrap_iife: true,
       },
@@ -134,7 +135,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
-    unstable_preserveComments: false,
   },
   watcher: {
     additionalExts,

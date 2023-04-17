@@ -12,10 +12,15 @@
 'use strict';
 
 jest
-  .mock('../utils/getMinifier', () => () => ({code, map}) => ({
-    code: code.replace('arbitrary(code)', 'minified(code)'),
-    map,
-  }))
+  .mock('../utils/getMinifier', () => () => ({code, map, config}) => {
+    const trimmed = config.output.comments
+      ? code
+      : code.replace('/*#__PURE__*/', '');
+    return {
+      code: trimmed.replace('arbitrary(code)', 'minified(code)'),
+      map,
+    };
+  })
   .mock('metro-transform-plugins', () => ({
     ...jest.requireActual('metro-transform-plugins'),
     inlinePlugin: () => ({}),
@@ -23,7 +28,7 @@ jest
   }))
   .mock('metro-minify-terser');
 
-import type {JsTransformerConfig} from '../index';
+import type {JsTransformerConfig, JsTransformOptions} from '../index';
 import typeof TransformerType from '../index';
 import typeof FSType from 'fs';
 
@@ -54,7 +59,7 @@ const baseConfig: JsTransformerConfig = {
   enableBabelRuntime: true,
   globalPrefix: '',
   hermesParser: false,
-  minifierConfig: {},
+  minifierConfig: {output: {comments: false}},
   minifierPath: 'minifyModulePath',
   optimizationSizeLimit: 100000,
   publicPath: '/assets',
@@ -63,7 +68,17 @@ const baseConfig: JsTransformerConfig = {
   unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
   unstable_allowRequireContext: false,
-  unstable_preserveComments: false,
+};
+
+const baseTransformOptions: JsTransformOptions = {
+  dev: true,
+  hot: false,
+  inlinePlatform: false,
+  inlineRequires: false,
+  minify: false,
+  platform: 'ios',
+  type: 'module',
+  unstable_transformProfile: 'default',
 };
 
 beforeEach(() => {
@@ -87,11 +102,7 @@ it('transforms a simple script', async () => {
     '/root',
     'local/file.js',
     Buffer.from('someReallyArbitrary(code)', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'script',
-    },
+    {...baseTransformOptions, type: 'script'},
   );
 
   expect(result.output[0].type).toBe('js/script');
@@ -113,11 +124,7 @@ it('transforms a simple module', async () => {
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code)', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'module',
-    },
+    baseTransformOptions,
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -143,11 +150,7 @@ it('transforms a module with dependencies', async () => {
     '/root',
     'local/file.js',
     Buffer.from(contents, 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'module',
-    },
+    baseTransformOptions,
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -183,11 +186,7 @@ it('transforms an es module with asyncToGenerator', async () => {
     '/root',
     'local/file.js',
     Buffer.from('export async function test() {}', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'module',
-    },
+    baseTransformOptions,
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -212,11 +211,7 @@ it('transforms async generators', async () => {
     '/root',
     'local/file.js',
     Buffer.from('export async function* test() { yield "ok"; }', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'module',
-    },
+    baseTransformOptions,
   );
 
   expect(result.output[0].data.code).toMatchSnapshot();
@@ -244,12 +239,7 @@ it('transforms import/export syntax when experimental flag is on', async () => {
     '/root',
     'local/file.js',
     Buffer.from(contents, 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      experimentalImportSupport: true,
-      type: 'module',
-    },
+    {...baseTransformOptions, experimentalImportSupport: true},
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -280,12 +270,7 @@ it('does not add "use strict" on non-modules', async () => {
     '/root',
     'node_modules/local/file.js',
     Buffer.from('module.exports = {};', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      experimentalImportSupport: true,
-      type: 'module',
-    },
+    {...baseTransformOptions, experimentalImportSupport: true},
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -305,11 +290,7 @@ it('preserves require() calls when module wrapping is disabled', async () => {
     '/root',
     'local/file.js',
     Buffer.from(contents, 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: true,
-      type: 'module',
-    },
+    baseTransformOptions,
   );
 
   expect(result.output[0].type).toBe('js/module');
@@ -329,11 +310,7 @@ it('reports filename when encountering unsupported dynamic dependency', async ()
       '/root',
       'local/file.js',
       Buffer.from(contents, 'utf8'),
-      // $FlowFixMe[prop-missing] Added when annotating Transformer.
-      {
-        dev: true,
-        type: 'module',
-      },
+      baseTransformOptions,
     );
     throw new Error('should not reach this');
   } catch (error) {
@@ -352,11 +329,7 @@ it('supports dynamic dependencies from within `node_modules`', async () => {
         '/root',
         'node_modules/foo/bar.js',
         Buffer.from('require(foo.bar);', 'utf8'),
-        // $FlowFixMe[prop-missing] Added when annotating Transformer.
-        {
-          dev: true,
-          type: 'module',
-        },
+        baseTransformOptions,
       )
     ).output[0].data.code,
   ).toBe(
@@ -378,12 +351,7 @@ it('minifies the code correctly', async () => {
         '/root',
         'local/file.js',
         Buffer.from('arbitrary(code);', 'utf8'),
-        // $FlowFixMe[prop-missing] Added when annotating Transformer.
-        {
-          dev: true,
-          minify: true,
-          type: 'module',
-        },
+        {...baseTransformOptions, minify: true},
       )
     ).output[0].data.code,
   ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
@@ -397,12 +365,7 @@ it('minifies a JSON file', async () => {
         '/root',
         'local/file.json',
         Buffer.from('arbitrary(code);', 'utf8'),
-        // $FlowFixMe[prop-missing] Added when annotating Transformer.
-        {
-          dev: true,
-          minify: true,
-          type: 'module',
-        },
+        {...baseTransformOptions, minify: true},
       )
     ).output[0].data.code,
   ).toBe(
@@ -425,11 +388,7 @@ it('does not wrap a JSON file when disableModuleWrapping is enabled', async () =
         '/root',
         'local/file.json',
         Buffer.from('arbitrary(code);', 'utf8'),
-        // $FlowFixMe[prop-missing] Added when annotating Transformer.
-        {
-          dev: true,
-          type: 'module',
-        },
+        baseTransformOptions,
       )
     ).output[0].data.code,
   ).toBe('module.exports = arbitrary(code);;');
@@ -441,12 +400,7 @@ it('uses a reserved dependency map name and prevents it from being minified', as
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: false,
-      minify: true,
-      type: 'module',
-    },
+    {...baseTransformOptions, dev: false, minify: true},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
     "__d(function (g, r, i, a, m, e, THE_DEP_MAP) {
@@ -465,12 +419,7 @@ it('throws if the reserved dependency map name appears in the input', async () =
         'arbitrary(code); /* the code is not allowed to mention THE_DEP_MAP, even in a comment */',
         'utf8',
       ),
-      // $FlowFixMe[prop-missing] Added when annotating Transformer.
-      {
-        dev: false,
-        minify: true,
-        type: 'module',
-      },
+      {...baseTransformOptions, dev: false, minify: true},
     ),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Source code contains the reserved string \`THE_DEP_MAP\` at character offset 55"`,
@@ -483,12 +432,7 @@ it('allows disabling the normalizePseudoGlobals pass when minifying', async () =
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: false,
-      minify: true,
-      type: 'module',
-    },
+    {...baseTransformOptions, dev: false, minify: true},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
     "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
@@ -503,12 +447,7 @@ it('allows emitting compact code when not minifying', async () => {
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: false,
-      minify: false,
-      type: 'module',
-    },
+    {...baseTransformOptions, dev: false, minify: false},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(
     `"__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,_dependencyMap){arbitrary(code);});"`,
@@ -521,11 +460,10 @@ it('skips minification in Hermes stable transform profile', async () => {
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
     {
+      ...baseTransformOptions,
       dev: false,
       minify: true,
-      type: 'module',
       unstable_transformProfile: 'hermes-canary',
     },
   );
@@ -542,11 +480,10 @@ it('skips minification in Hermes canary transform profile', async () => {
     '/root',
     'local/file.js',
     Buffer.from('arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
     {
+      ...baseTransformOptions,
       dev: false,
       minify: true,
-      type: 'module',
       unstable_transformProfile: 'hermes-canary',
     },
   );
@@ -564,12 +501,7 @@ it('counts all line endings correctly', async () => {
       '/root',
       'local/file.js',
       Buffer.from(str, 'utf8'),
-      // $FlowFixMe[prop-missing] Added when annotating Transformer.
-      {
-        dev: false,
-        minify: false,
-        type: 'module',
-      },
+      {...baseTransformOptions, dev: false, minify: false},
     );
 
   const differentEndingsResult = await transformStr(
@@ -585,22 +517,47 @@ it('counts all line endings correctly', async () => {
   );
 });
 
-it('allows preservation of comments', async () => {
+it('outputs comments when `minify: false`', async () => {
   const result = await Transformer.transform(
-    {...baseConfig, unstable_preserveComments: true},
+    baseConfig,
     '/root',
     'local/file.js',
     Buffer.from('/*#__PURE__*/arbitrary(code);', 'utf8'),
-    // $FlowFixMe[prop-missing] Added when annotating Transformer.
-    {
-      dev: false,
-      minify: false,
-      type: 'module',
-    },
+    {...baseTransformOptions, dev: false, minify: false},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
     "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
       /*#__PURE__*/arbitrary(code);
+    });"
+  `);
+});
+
+it('omits comments when `minify: true`', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    Buffer.from('/*#__PURE__*/arbitrary(code);', 'utf8'),
+    {...baseTransformOptions, dev: false, minify: true},
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (g, r, i, a, m, e, d) {
+      minified(code);
+    });"
+  `);
+});
+
+it('allows outputting comments when `minify: true`', async () => {
+  const result = await Transformer.transform(
+    {...baseConfig, minifierConfig: {output: {comments: true}}},
+    '/root',
+    'local/file.js',
+    Buffer.from('/*#__PURE__*/arbitrary(code);', 'utf8'),
+    {...baseTransformOptions, dev: false, minify: true},
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (g, r, i, a, m, e, d) {
+      /*#__PURE__*/minified(code);
     });"
   `);
 });
