@@ -35,20 +35,21 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
     yarn link metro metro-config metro-runtime
     ```
 
+    Note: At mininum, the `metro` and `metro-runtime` packages need to be linked.
+
 3. **Configure Metro `watchFolders` to work with our linked packages**
 
     Because `yarn link` has included files outside of the immediate React Native project folder, we need to inform Metro that this set of files exists (as it will not automatically follow the symlinks). Add the following to your `metro.config.js`:
 
     ```diff
-    + const os = require('os');
     + const path = require('path');
 
       module.exports = {
     +   watchFolders: [
     +     path.resolve(__dirname, './node_modules'),
     +     // Include necessary file paths for `yarn link`ed modules
-    +     path.resolve(os.homedir(), 'fbsource/xplat/js/node_modules'),
-    +     path.resolve(os.homedir(), 'fbsource/xplat/js/tools/metro'),
+    +     path.resolve(__dirname, '../metro/packages'),
+    +     path.resolve(__dirname, '../metro/node_modules'),
     +   ],
         ...
       };
