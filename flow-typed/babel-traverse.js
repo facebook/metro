@@ -1417,7 +1417,7 @@ declare module '@babel/traverse' {
     state: TState,
   ) => void;
 
-  declare export type VisitNodeObject<-TNode: BabelNode, TState> = $Shape<{
+  declare export type VisitNodeObject<-TNode: BabelNode, TState> = Partial<{
     enter(path: NodePath<TNode>, state: TState): void,
     exit(path: NodePath<TNode>, state: TState): void,
   }>;

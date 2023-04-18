@@ -143,6 +143,8 @@ export type {MetroConfig};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(defaultConfig, config);
 }
 
@@ -198,6 +200,8 @@ const createConnectMiddleware = async function (
   config: ConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   const metroServer = await runMetro(config, options);
 
   let enhancedMiddleware: Middleware = metroServer.processRequest;
@@ -392,6 +396,8 @@ exports.runBuild = async (
   map: string,
   ...
 }> => {
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   const metroServer = await runMetro(config, {
     watch: false,
   });

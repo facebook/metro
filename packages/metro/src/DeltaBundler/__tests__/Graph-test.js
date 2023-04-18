@@ -30,7 +30,7 @@ import {Graph} from '../Graph';
 
 const {objectContaining} = expect;
 
-type DependencyDataInput = $Shape<TransformResultDependency['data']>;
+type DependencyDataInput = Partial<TransformResultDependency['data']>;
 
 let mockedDependencies: Set<string> = new Set();
 let mockedDependencyTree: Map<
@@ -304,6 +304,7 @@ beforeEach(async () => {
             asyncType: null,
             // $FlowFixMe[missing-empty-array-annot]
             locs: [],
+            // $FlowFixMe[incompatible-call]
             key: dep.data.key,
             ...dep.data,
           },
