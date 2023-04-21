@@ -201,6 +201,7 @@ class Server {
       {
         onProgress,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       },
     );
 
@@ -219,7 +220,7 @@ class Server {
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule:
@@ -282,7 +283,11 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: graphOptions.shallow},
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
+      },
     );
 
     const entryPoint = this._getEntryPointAbsolutePath(entryFile);
@@ -302,7 +307,7 @@ class Server {
       excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
@@ -327,7 +332,7 @@ class Server {
       [entryFile],
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     return await getAssets(dependencies, {
@@ -364,7 +369,7 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     const platform =
@@ -596,12 +601,11 @@ class Server {
         transformOptions,
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        experimentalImportBundleSupport:
-          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         resolverOptions,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -830,6 +834,7 @@ class Server {
             {
               onProgress,
               shallow: graphOptions.shallow,
+              lazy: graphOptions.lazy,
             },
           ));
       bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
@@ -856,8 +861,7 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          includeAsyncPaths:
-            this._config.server.experimentalImportBundleSupport,
+          includeAsyncPaths: graphOptions.lazy,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
@@ -974,7 +978,11 @@ class Server {
           entryFile,
           transformOptions,
           resolverOptions,
-          {onProgress, shallow: graphOptions.shallow},
+          {
+            onProgress,
+            shallow: graphOptions.shallow,
+            lazy: graphOptions.lazy,
+          },
         ));
       } else {
         ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -1028,7 +1036,7 @@ class Server {
         [entryFile],
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: false},
+        {onProgress, shallow: false, lazy: false},
       );
 
       return await getAssets(dependencies, {
@@ -1177,12 +1185,11 @@ class Server {
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       resolverOptions,
       shallow: graphOptions.shallow,
+      lazy: graphOptions.lazy,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1191,7 +1198,11 @@ class Server {
         resolvedEntryFilePath,
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: graphOptions.shallow},
+        {
+          onProgress,
+          shallow: graphOptions.shallow,
+          lazy: graphOptions.lazy,
+        },
       ));
     } else {
       ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -1266,6 +1277,7 @@ class Server {
     ...typeof Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,
@@ -1276,6 +1288,7 @@ class Server {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,

@@ -646,7 +646,7 @@ describe('processRequest', () => {
     expect(getResolveDependencyFn).toBeCalled();
 
     expect(buildGraph).toBeCalledWith(['/root/index.js'], {
-      experimentalImportBundleSupport: false,
+      lazy: false,
       onProgress: expect.any(Function),
       resolve: expect.any(Function),
       shallow: false,
@@ -681,7 +681,7 @@ describe('processRequest', () => {
     expect(getResolveDependencyFn).toBeCalled();
 
     expect(buildGraph).toBeCalledWith(['/root/index.js'], {
-      experimentalImportBundleSupport: false,
+      lazy: false,
       onProgress: expect.any(Function),
       resolve: expect.any(Function),
       shallow: false,
@@ -903,7 +903,7 @@ describe('processRequest', () => {
       expect(getResolveDependencyFn).toBeCalled();
 
       expect(buildGraph).toBeCalledWith(['/root/foo file'], {
-        experimentalImportBundleSupport: false,
+        lazy: false,
         onProgress: null,
         resolve: expect.any(Function),
         shallow: false,

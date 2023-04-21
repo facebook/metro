@@ -163,7 +163,6 @@ export interface MetalConfigT {
 
 export interface ServerConfigT {
   enhanceMiddleware: (middleware: Middleware, server: Server) => Middleware;
-  experimentalImportBundleSupport: boolean;
   port: number;
   rewriteRequestUrl: (url: string) => string;
   runInspectorProxy: boolean;

@@ -13,6 +13,9 @@
 
 const vm = require('vm');
 
-module.exports = function execBundle(code: string, context: {...} = {}): mixed {
+module.exports = function execBundle(code: string, context: any = {}): mixed {
+  if (vm.isContext(context)) {
+    return vm.runInContext(code, context);
+  }
   return vm.runInNewContext(code, context);
 };

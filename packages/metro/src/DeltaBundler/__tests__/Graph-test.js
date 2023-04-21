@@ -228,10 +228,7 @@ function computeInverseDependencies(
   }
   for (const module of graph.dependencies.values()) {
     for (const dependency of module.dependencies.values()) {
-      if (
-        options.experimentalImportBundleSupport &&
-        dependency.data.data.asyncType != null
-      ) {
+      if (options.lazy && dependency.data.data.asyncType != null) {
         // Async deps aren't tracked in inverseDependencies
         continue;
       }
@@ -327,7 +324,7 @@ beforeEach(async () => {
   options = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: false,
-    experimentalImportBundleSupport: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       const deps = getMockDependency(from);
@@ -1411,7 +1408,7 @@ describe('edge cases', () => {
     beforeEach(() => {
       localOptions = {
         ...options,
-        experimentalImportBundleSupport: true,
+        lazy: true,
       };
     });
 

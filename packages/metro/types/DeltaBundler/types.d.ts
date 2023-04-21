@@ -139,7 +139,7 @@ export interface Options<T = MixedOutput> {
   readonly onProgress:
     | ((numProcessed: number, total: number) => unknown)
     | null;
-  readonly experimentalImportBundleSupport: boolean;
+  readonly lazy: boolean;
   readonly unstable_allowRequireContext: boolean;
   readonly shallow: boolean;
 }

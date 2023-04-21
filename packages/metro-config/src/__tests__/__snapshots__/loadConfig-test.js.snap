@@ -98,7 +98,6 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -276,7 +275,6 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -454,7 +452,6 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
@@ -632,7 +629,6 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,

@@ -60,6 +60,7 @@ module.exports = function parseOptionsFromUrl(
     excludeSource: getBoolean(query, 'excludeSource', false),
     hot: true,
     inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
+    lazy: getBoolean(query, 'lazy', false),
     minify: getBoolean(query, 'minify', false),
     modulesOnly: getBoolean(query, 'modulesOnly', false),
     onProgress: null,

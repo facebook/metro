@@ -126,7 +126,6 @@ describe('HmrServer', () => {
       },
       resolver: {platforms: []},
       server: {
-        experimentalImportBundleSupport: false,
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
             /__REMOVE_THIS_WHEN_REWRITING__/g,
@@ -209,7 +208,7 @@ describe('HmrServer', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -236,7 +235,7 @@ describe('HmrServer', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -263,7 +262,7 @@ describe('HmrServer', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -290,7 +289,7 @@ describe('HmrServer', () => {
       },
       {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {},
       },

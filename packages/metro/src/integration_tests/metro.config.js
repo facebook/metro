@@ -40,4 +40,9 @@ module.exports = {
       ramGroups: [],
     }),
   },
+  serializer: {
+    getPolyfills: () => [
+      require.resolve('./basic_bundle/loadBundleAsyncForTest'),
+    ],
+  },
 };
