@@ -34,10 +34,12 @@ async function asyncRequireImpl(
 
   if (loadBundle != null) {
     const stringModuleID = String(moduleID);
-    const bundlePath = nullthrows(paths)[stringModuleID];
-    if (bundlePath != null) {
-      // NOTE: Errors will be swallowed by asyncRequire.prefetch
-      await loadBundle(bundlePath);
+    if (paths != null) {
+      const bundlePath = paths[stringModuleID];
+      if (bundlePath != null) {
+        // NOTE: Errors will be swallowed by asyncRequire.prefetch
+        await loadBundle(bundlePath);
+      }
     }
   }
 
@@ -68,11 +70,3 @@ asyncRequire.prefetch = function (
 };
 
 module.exports = asyncRequire;
-
-// Inline definition to save on a dependency
-function nullthrows<T>(value: ?T): T {
-  if (value == null) {
-    throw new Error('Unexpected null or undefined');
-  }
-  return value;
-}
