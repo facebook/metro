@@ -299,7 +299,7 @@ async function transformJS(
       babelrc: false,
       code: false,
       configFile: false,
-      comments: false,
+      comments: true,
       filename: file.filename,
       plugins,
       sourceMaps: false,
@@ -322,7 +322,7 @@ async function transformJS(
         babelrc: false,
         code: false,
         configFile: false,
-        comments: false,
+        comments: true,
         filename: file.filename,
         plugins: [
           [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
@@ -407,7 +407,7 @@ async function transformJS(
   const result = generate(
     wrappedAst,
     {
-      comments: false,
+      comments: true,
       compact: config.unstable_compactOutput,
       filename: file.filename,
       retainLines: false,

@@ -110,6 +110,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       },
       output: {
         ascii_only: true,
+        comments: false,
         quote_style: 3,
         wrap_iife: true,
       },
