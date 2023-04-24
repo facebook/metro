@@ -44,6 +44,16 @@ We currently recommend the use of [`@babel/plugin-transform-modules-commonjs`](h
 In React Native projects that use `metro-react-native-babel-preset`, `import` and `export` are supported out of the box.
 :::
 
+## `import()` (dynamic import)
+
+[`import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) calls are supported out of the box. In React Native, using `import()` automatically splits your application code so that it loads faster during development, without affecting release builds.
+
+:::info
+**For framework implementers**:
+1. Enable [lazy bundling](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0605-lazy-bundling.md) by adding `&lazy=true` to the initial HTTP bundle URL your framework requests from Metro.
+2. At runtime, `import()` calls a framework-defined function to [fetch and evaluate](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0605-lazy-bundling.md#__loadbundleasync-in-metro) the split bundle. Your framework **must** implement this function if it uses the `lazy=true` parameter, or runtime errors will occur.
+:::
+
 ## `require.resolveWeak()`
 
 Takes a module name (or path) and returns that module's opaque ID, without including it in the bundle. This is a specialised API intended to be used by frameworks; application code will rarely need to use it directly. See the section about [using `require` at runtime](#advanced-usage-require-at-runtime).
