@@ -46,6 +46,7 @@ export interface BundleOptions {
   readonly excludeSource: boolean;
   readonly hot: boolean;
   readonly inlineSourceMap: boolean;
+  readonly lazy: boolean;
   minify: boolean;
   readonly modulesOnly: boolean;
   onProgress?: (doneCont: number, totalCount: number) => unknown;
@@ -73,6 +74,7 @@ export interface SerializerOptions {
 }
 
 export interface GraphOptions {
+  readonly lazy: boolean;
   readonly shallow: boolean;
 }
 

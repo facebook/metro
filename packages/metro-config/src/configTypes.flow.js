@@ -168,7 +168,6 @@ type MetalConfigT = {
 
 type ServerConfigT = {
   enhanceMiddleware: (Middleware, Server) => Middleware,
-  experimentalImportBundleSupport: boolean,
   port: number,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,

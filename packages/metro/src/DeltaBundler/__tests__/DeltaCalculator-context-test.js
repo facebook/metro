@@ -39,7 +39,7 @@ describe('DeltaCalculator + require.context', () => {
   const options = {
     unstable_allowRequireContext: true,
     unstable_enablePackageExports: false,
-    experimentalImportBundleSupport: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       throw new Error('Never called');

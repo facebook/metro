@@ -41,6 +41,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
     },
     graphOptions: {
       shallow: options.shallow,
+      lazy: options.lazy,
     },
     onProgress: options.onProgress,
   };

@@ -67,8 +67,7 @@ async function getPrependedScripts(
         config.transformer.unstable_allowRequireContext,
       transformOptions,
       onProgress: null,
-      experimentalImportBundleSupport:
-        config.server.experimentalImportBundleSupport,
+      lazy: false,
       unstable_enablePackageExports:
         config.resolver.unstable_enablePackageExports,
       shallow: false,
