@@ -387,7 +387,10 @@ In a future release of Metro, this option will become `true` by default.
 
 ### Transformer Options
 
-#### `asyncRequireModulePath`
+<!-- Keep old links to `asyncRequireModulePath` working -->
+<a name="asyncrequiremodulepath"></a>
+
+#### `asyncRequireModulePath` <div class="label deprecated">Deprecated</div>
 
 Type: `string`
 
@@ -398,19 +401,7 @@ The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) rela
 :::
 
 :::info
-Although Metro doesn't perform bundle splitting out of the box, a custom `asyncRequire` implementation can be used as part of a bundle splitting solution:
-
-```flow
-// Get a reference to the dynamic `require` function provided by Metro.
-const dynamicRequire = (require: {importAll: mixed => mixed});
-
-module.exports = async function asyncRequire(moduleID: mixed): Promise<mixed> {
-  // 1. Do any work necessary (not detailed here) to fetch and evaluate the
-  //    module's code, as transformed by Metro.
-  // 2. Require the module from Metro's module registry using `dynamicRequire`.
-  return dynamicRequire.importAll(moduleID);
-};
-```
+In older versions of Metro, a custom `asyncRequireModulePath` could be used as part of a bundle splitting solution. This usage is now deprecated in favor of the [`__loadBundleAsync`](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0605-lazy-bundling.md#__loadbundleasync-in-metro) API.
 :::
 
 #### `dynamicDepsInPackages`
