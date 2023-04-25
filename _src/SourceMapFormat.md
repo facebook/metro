@@ -135,3 +135,7 @@ decoded.push({column, name: names[nameIndex] /* 'b' */, line});
   ]
 */
 ```
+
+## `x_google_ignoreList`
+
+Metro's source maps include the [`x_google_ignoreList`](https://developer.chrome.com/articles/x-google-ignore-list/) field by default. The [`serializer.isThirdPartyModule`](./Configuration.md#isthirdpartymodule) option can be used to control which modules are ignore-listed.
