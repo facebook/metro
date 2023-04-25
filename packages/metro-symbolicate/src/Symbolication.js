@@ -16,6 +16,7 @@ import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 import {typeof SourceMapConsumer} from 'source-map';
 
 const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+const GoogleIgnoreListConsumer = require('./GoogleIgnoreListConsumer');
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 const fs = require('fs');
 const invariant = require('invariant');
@@ -104,6 +105,7 @@ type SymbolicatedStackFrame = $ReadOnly<{
   source: ?string,
   functionName: ?string,
   name: ?string,
+  isIgnored: boolean,
 }>;
 
 const UNKNOWN_MODULE_IDS: SingleMapModuleIds = {
@@ -499,6 +501,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
+      +googleIgnoreListConsumer: GoogleIgnoreListConsumer,
     },
     ...
   };
@@ -557,6 +560,14 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         // $FlowFixMe[object-this-reference]
         return this.sourceFunctionsConsumer;
       },
+      get googleIgnoreListConsumer() {
+        // $FlowFixMe[object-this-reference]
+        Object.defineProperty(this, 'googleIgnoreListConsumer', {
+          value: new GoogleIgnoreListConsumer(map),
+        });
+        // $FlowFixMe[object-this-reference]
+        return this.googleIgnoreListConsumer;
+      },
       hermesOffsets: map.x_hermes_function_offsets,
     };
   }
@@ -595,6 +606,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
               source: null,
               functionName: null,
               name: null,
+              isIgnored: false,
             });
           } else {
             const segmentOffsets =
@@ -688,6 +700,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     } else {
       original.functionName = null;
     }
+    original.isIgnored = metadata.googleIgnoreListConsumer.isIgnored(original);
     return {
       ...original,
       line:
@@ -789,6 +802,7 @@ class DirectorySymbolicationContext extends SymbolicationContext<string> {
         source: filename,
         name: null,
         functionName: null,
+        isIgnored: false,
       };
     }
     return this._loadMap(mapFilename).getOriginalPositionDetailsFor(
