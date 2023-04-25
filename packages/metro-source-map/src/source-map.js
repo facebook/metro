@@ -59,6 +59,7 @@ export type BasicSourceMap = {
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: Array<number>,
 };
 
 export type IndexMapSection = {
@@ -82,6 +83,7 @@ export type IndexMap = {
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: void,
 };
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;

@@ -27,6 +27,7 @@ function composeSourceMaps(
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
   const SourceMetadataMapConsumer = require('metro-symbolicate/src/SourceMetadataMapConsumer');
+  const GoogleIgnoreListConsumer = require('metro-symbolicate/src/GoogleIgnoreListConsumer');
   if (maps.length < 1) {
     throw new Error('composeSourceMaps: Expected at least one map');
   }
@@ -80,6 +81,11 @@ function composeSourceMaps(
   const function_offsets = maps[maps.length - 1].x_hermes_function_offsets;
   if (function_offsets) {
     composedMap.x_hermes_function_offsets = function_offsets;
+  }
+  const ignoreListConsumer = new GoogleIgnoreListConsumer(firstMap);
+  const x_google_ignoreList = ignoreListConsumer.toArray(composedMap.sources);
+  if (x_google_ignoreList.length) {
+    composedMap.x_google_ignoreList = x_google_ignoreList;
   }
   return composedMap;
 }
