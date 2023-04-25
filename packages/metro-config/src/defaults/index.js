@@ -68,6 +68,8 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
     customSerializer: null,
+    isThirdPartyModule: module =>
+      /(?:^|[/\\])node_modules[/\\]/.test(module.path),
   },
 
   server: {

@@ -195,7 +195,16 @@ const minifyCode = async (
   ...
 }> => {
   const sourceMap = fromRawMappings([
-    {code, source, map, functionMap: null, path: filename},
+    {
+      code,
+      source,
+      map,
+      // functionMap is overridden by the serializer
+      functionMap: null,
+      path: filename,
+      // isIgnored is overriden by the serializer
+      isIgnored: false,
+    },
   ]).toMap(undefined, {});
 
   const minify = getMinifier(config.minifierPath);

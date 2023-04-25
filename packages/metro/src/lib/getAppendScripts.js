@@ -20,17 +20,18 @@ const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const countLines = require('./countLines');
 const nullthrows = require('nullthrows');
 
-type Options<T: number | string> = {
-  +asyncRequireModulePath: string,
-  +createModuleId: string => T,
-  +getRunModuleStatement: T => string,
-  +inlineSourceMap: ?boolean,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +sourceMapUrl: ?string,
-  +sourceUrl: ?string,
+type Options<T: number | string> = $ReadOnly<{
+  asyncRequireModulePath: string,
+  createModuleId: string => T,
+  getRunModuleStatement: T => string,
+  inlineSourceMap: ?boolean,
+  runBeforeMainModule: $ReadOnlyArray<string>,
+  runModule: boolean,
+  shouldAddToIgnoreList: (Module<>) => boolean,
+  sourceMapUrl: ?string,
+  sourceUrl: ?string,
   ...
-};
+}>;
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
@@ -73,6 +74,7 @@ function getAppendScripts<T: number | string>(
           sourceMapString(modules, {
             processModuleFilter: (): boolean => true,
             excludeSource: false,
+            shouldAddToIgnoreList: options.shouldAddToIgnoreList,
           }),
         )
       : nullthrows(options.sourceMapUrl);

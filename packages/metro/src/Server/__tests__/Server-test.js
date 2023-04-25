@@ -127,6 +127,7 @@ describe('processRequest', () => {
         `require(${JSON.stringify(moduleId)});`,
       polyfillModuleNames: [],
       getModulesRunBeforeMainModule: () => ['InitializeCore'],
+      isThirdPartyModule: module => module.path === '/root/foo.js',
     },
 
     reporter: require('../../lib/reporting').nullReporter,
@@ -562,6 +563,7 @@ describe('processRequest', () => {
           },
         ],
       ],
+      x_google_ignoreList: [2],
     });
   });
 
@@ -583,6 +585,7 @@ describe('processRequest', () => {
           },
         ],
       ],
+      x_google_ignoreList: [1],
     });
   });
 

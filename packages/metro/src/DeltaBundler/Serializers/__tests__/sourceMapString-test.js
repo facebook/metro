@@ -83,6 +83,7 @@ it('should serialize a very simple bundle', () => {
       sourceMapString([polyfill, fooModule, barModule], {
         excludeSource: false,
         processModuleFilter: module => true,
+        shouldAddToIgnoreList: module => false,
       }),
     ),
   ).toEqual({
@@ -101,6 +102,7 @@ it('modules should appear in their original order', () => {
       sourceMapString([polyfill, barModule, fooModule], {
         excludeSource: false,
         processModuleFilter: module => true,
+        shouldAddToIgnoreList: module => false,
       }),
     ),
   ).toEqual({
@@ -138,6 +140,7 @@ it('should not include the source of an asset', () => {
       sourceMapString([fooModule, assetModule], {
         excludeSource: false,
         processModuleFilter: module => true,
+        shouldAddToIgnoreList: module => false,
       }),
     ),
   ).toEqual({
@@ -147,5 +150,25 @@ it('should not include the source of an asset', () => {
     x_facebook_sources: [[{names: ['<global>'], mappings: 'AAA'}], null],
     names: [],
     mappings: '',
+  });
+});
+
+it('should emit x_google_ignoreList based on shouldAddToIgnoreList', () => {
+  expect(
+    JSON.parse(
+      sourceMapString([polyfill, fooModule, barModule], {
+        excludeSource: false,
+        processModuleFilter: module => true,
+        shouldAddToIgnoreList: module => true,
+      }),
+    ),
+  ).toEqual({
+    version: 3,
+    sources: ['/root/pre.js', '/root/foo.js', '/root/bar.js'],
+    sourcesContent: ['source pre', 'source foo', 'source bar'],
+    x_facebook_sources: [null, [{names: ['<global>'], mappings: 'AAA'}], null],
+    names: [],
+    mappings: '',
+    x_google_ignoreList: [0, 1, 2],
   });
 });

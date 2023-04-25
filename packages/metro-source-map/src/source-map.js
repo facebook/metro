@@ -106,7 +106,8 @@ function fromRawMappingsImpl(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number,
 ): void {
@@ -173,7 +174,8 @@ function fromRawMappings(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Generator {
@@ -199,7 +201,8 @@ async function fromRawMappingsNonBlocking(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Promise<Generator> {
@@ -274,11 +277,14 @@ function addMappingsForFile(
     +map: ?Array<MetroSourceMapSegmentTuple>,
     +path: string,
     +source: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   },
   carryOver: number,
 ) {
-  generator.startFile(module.path, module.source, module.functionMap);
+  generator.startFile(module.path, module.source, module.functionMap, {
+    addToIgnoreList: module.isIgnored,
+  });
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
     addMapping(generator, mappings[i], carryOver);

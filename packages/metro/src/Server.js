@@ -233,6 +233,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -260,6 +262,7 @@ class Server {
         {
           excludeSource: serializerOptions.excludeSource,
           processModuleFilter: this._config.serializer.processModuleFilter,
+          shouldAddToIgnoreList: bundleOptions.shouldAddToIgnoreList,
         },
       );
     }
@@ -321,6 +324,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     });
   }
 
@@ -875,6 +880,8 @@ class Server {
           inlineSourceMap: serializerOptions.inlineSourceMap,
           serverRoot:
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+          shouldAddToIgnoreList: (module: Module<>) =>
+            this._shouldAddModuleToIgnoreList(module),
         },
       );
       bundlePerfLogger.point('serializingBundle_end');
@@ -996,6 +1003,8 @@ class Server {
       return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
+        shouldAddToIgnoreList: (module: Module<>) =>
+          this._shouldAddModuleToIgnoreList(module),
       });
     },
     finish({mres, result}) {
@@ -1308,6 +1317,18 @@ class Server {
   // Wait for the server to finish initializing.
   async ready(): Promise<void> {
     await this._bundler.ready();
+  }
+
+  _shouldAddModuleToIgnoreList(module: Module<>): boolean {
+    // TODO: Add flag to Module signifying whether it represents generated code
+    // and clean up these heuristics.
+    return (
+      // Prelude code, see getPrependedScripts.js
+      module.path === '__prelude__' ||
+      // Generated require.context() module, see contextModule.js
+      module.path.includes('?ctx=') ||
+      this._config.serializer.isThirdPartyModule(module)
+    );
   }
 }
 

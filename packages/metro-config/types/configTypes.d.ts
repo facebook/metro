@@ -136,6 +136,7 @@ export interface SerializerConfigT {
   getRunModuleStatement: (moduleId: number | string) => string;
   polyfillModuleNames: ReadonlyArray<string>;
   processModuleFilter: (modules: Module) => boolean;
+  isThirdPartyModule: (module: {readonly path: string}) => boolean;
 }
 
 export interface TransformerConfigT extends JsTransformerConfig {

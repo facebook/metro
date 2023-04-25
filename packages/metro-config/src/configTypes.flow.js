@@ -139,6 +139,7 @@ type SerializerConfigT = {
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
+  isThirdPartyModule: (module: $ReadOnly<{path: string, ...}>) => boolean,
 };
 
 type TransformerConfigT = {
