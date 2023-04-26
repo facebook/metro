@@ -127,6 +127,7 @@ describe('processRequest', () => {
         `require(${JSON.stringify(moduleId)});`,
       polyfillModuleNames: [],
       getModulesRunBeforeMainModule: () => ['InitializeCore'],
+      isThirdPartyModule: module => module.path === '/root/foo.js',
     },
 
     reporter: require('../../lib/reporting').nullReporter,
@@ -562,6 +563,7 @@ describe('processRequest', () => {
           },
         ],
       ],
+      x_google_ignoreList: [2],
     });
   });
 
@@ -583,6 +585,7 @@ describe('processRequest', () => {
           },
         ],
       ],
+      x_google_ignoreList: [1],
     });
   });
 
@@ -646,7 +649,7 @@ describe('processRequest', () => {
     expect(getResolveDependencyFn).toBeCalled();
 
     expect(buildGraph).toBeCalledWith(['/root/index.js'], {
-      experimentalImportBundleSupport: false,
+      lazy: false,
       onProgress: expect.any(Function),
       resolve: expect.any(Function),
       shallow: false,
@@ -681,7 +684,7 @@ describe('processRequest', () => {
     expect(getResolveDependencyFn).toBeCalled();
 
     expect(buildGraph).toBeCalledWith(['/root/index.js'], {
-      experimentalImportBundleSupport: false,
+      lazy: false,
       onProgress: expect.any(Function),
       resolve: expect.any(Function),
       shallow: false,
@@ -903,7 +906,7 @@ describe('processRequest', () => {
       expect(getResolveDependencyFn).toBeCalled();
 
       expect(buildGraph).toBeCalledWith(['/root/foo file'], {
-        experimentalImportBundleSupport: false,
+        lazy: false,
         onProgress: null,
         resolve: expect.any(Function),
         shallow: false,

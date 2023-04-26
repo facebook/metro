@@ -136,6 +136,7 @@ export interface SerializerConfigT {
   getRunModuleStatement: (moduleId: number | string) => string;
   polyfillModuleNames: ReadonlyArray<string>;
   processModuleFilter: (modules: Module) => boolean;
+  isThirdPartyModule: (module: {readonly path: string}) => boolean;
 }
 
 export interface TransformerConfigT extends JsTransformerConfig {
@@ -163,7 +164,6 @@ export interface MetalConfigT {
 
 export interface ServerConfigT {
   enhanceMiddleware: (middleware: Middleware, server: Server) => Middleware;
-  experimentalImportBundleSupport: boolean;
   port: number;
   rewriteRequestUrl: (url: string) => string;
   runInspectorProxy: boolean;

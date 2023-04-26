@@ -28,7 +28,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -46,7 +46,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -68,7 +68,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -86,7 +86,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -108,7 +108,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -126,7 +126,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -152,7 +152,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -174,7 +174,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -195,7 +195,7 @@ describe('getGraphId', () => {
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -206,7 +206,7 @@ describe('getGraphId', () => {
     ).not.toBe(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -230,7 +230,7 @@ describe('getGraphId', () => {
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -242,7 +242,7 @@ describe('getGraphId', () => {
     ).toBe(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -270,7 +270,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {
             customResolverOptions: undefined,
@@ -290,7 +290,7 @@ describe('getGraphId', () => {
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },

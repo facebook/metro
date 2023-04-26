@@ -50,6 +50,7 @@ export type BundleOptions = {
   +excludeSource: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
+  +lazy: boolean,
   minify: boolean,
   +modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
@@ -76,6 +77,7 @@ export type SerializerOptions = {
 };
 
 export type GraphOptions = {
+  +lazy: boolean,
   +shallow: boolean,
 };
 

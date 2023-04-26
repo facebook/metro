@@ -13,6 +13,12 @@
 
 import type {Module} from '../types.flow';
 
+export type SourceMapGeneratorOptions = $ReadOnly<{
+  excludeSource: boolean,
+  processModuleFilter: (module: Module<>) => boolean,
+  shouldAddToIgnoreList: (module: Module<>) => boolean,
+}>;
+
 const getSourceMapInfo = require('./helpers/getSourceMapInfo');
 const {isJsModule} = require('./helpers/js');
 const {
@@ -26,10 +32,7 @@ function getSourceMapInfosImpl(
   isBlocking: boolean,
   onDone: ($ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>) => void,
   modules: $ReadOnlyArray<Module<>>,
-  options: {
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  },
+  options: SourceMapGeneratorOptions,
 ): void {
   const sourceMapInfos = [];
   const modulesToProcess = modules
@@ -44,6 +47,7 @@ function getSourceMapInfosImpl(
     const mod = modulesToProcess.shift();
     const info = getSourceMapInfo(mod, {
       excludeSource: options.excludeSource,
+      shouldAddToIgnoreList: options.shouldAddToIgnoreList,
     });
     sourceMapInfos.push(info);
     return false;
@@ -77,10 +81,7 @@ function getSourceMapInfosImpl(
 
 function sourceMapGenerator(
   modules: $ReadOnlyArray<Module<>>,
-  options: {
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  },
+  options: SourceMapGeneratorOptions,
 ): ReturnType<typeof fromRawMappings> {
   let sourceMapInfos;
   getSourceMapInfosImpl(
@@ -101,10 +102,7 @@ function sourceMapGenerator(
 
 async function sourceMapGeneratorNonBlocking(
   modules: $ReadOnlyArray<Module<>>,
-  options: {
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  },
+  options: SourceMapGeneratorOptions,
 ): ReturnType<typeof fromRawMappingsNonBlocking> {
   const sourceMapInfos = await new Promise<
     $ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>,

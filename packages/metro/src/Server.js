@@ -201,6 +201,7 @@ class Server {
       {
         onProgress,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       },
     );
 
@@ -219,7 +220,7 @@ class Server {
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule:
@@ -232,6 +233,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -259,6 +262,7 @@ class Server {
         {
           excludeSource: serializerOptions.excludeSource,
           processModuleFilter: this._config.serializer.processModuleFilter,
+          shouldAddToIgnoreList: bundleOptions.shouldAddToIgnoreList,
         },
       );
     }
@@ -282,7 +286,11 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: graphOptions.shallow},
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
+      },
     );
 
     const entryPoint = this._getEntryPointAbsolutePath(entryFile);
@@ -302,7 +310,7 @@ class Server {
       excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
@@ -316,6 +324,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     });
   }
 
@@ -327,7 +337,7 @@ class Server {
       [entryFile],
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     return await getAssets(dependencies, {
@@ -364,7 +374,7 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     const platform =
@@ -596,12 +606,11 @@ class Server {
         transformOptions,
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        experimentalImportBundleSupport:
-          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         resolverOptions,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -830,6 +839,7 @@ class Server {
             {
               onProgress,
               shallow: graphOptions.shallow,
+              lazy: graphOptions.lazy,
             },
           ));
       bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
@@ -856,8 +866,7 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          includeAsyncPaths:
-            this._config.server.experimentalImportBundleSupport,
+          includeAsyncPaths: graphOptions.lazy,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
@@ -871,6 +880,8 @@ class Server {
           inlineSourceMap: serializerOptions.inlineSourceMap,
           serverRoot:
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+          shouldAddToIgnoreList: (module: Module<>) =>
+            this._shouldAddModuleToIgnoreList(module),
         },
       );
       bundlePerfLogger.point('serializingBundle_end');
@@ -974,7 +985,11 @@ class Server {
           entryFile,
           transformOptions,
           resolverOptions,
-          {onProgress, shallow: graphOptions.shallow},
+          {
+            onProgress,
+            shallow: graphOptions.shallow,
+            lazy: graphOptions.lazy,
+          },
         ));
       } else {
         ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -988,6 +1003,8 @@ class Server {
       return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
+        shouldAddToIgnoreList: (module: Module<>) =>
+          this._shouldAddModuleToIgnoreList(module),
       });
     },
     finish({mres, result}) {
@@ -1028,7 +1045,7 @@ class Server {
         [entryFile],
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: false},
+        {onProgress, shallow: false, lazy: false},
       );
 
       return await getAssets(dependencies, {
@@ -1177,12 +1194,11 @@ class Server {
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       resolverOptions,
       shallow: graphOptions.shallow,
+      lazy: graphOptions.lazy,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1191,7 +1207,11 @@ class Server {
         resolvedEntryFilePath,
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: graphOptions.shallow},
+        {
+          onProgress,
+          shallow: graphOptions.shallow,
+          lazy: graphOptions.lazy,
+        },
       ));
     } else {
       ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -1266,6 +1286,7 @@ class Server {
     ...typeof Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,
@@ -1276,6 +1297,7 @@ class Server {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,
@@ -1295,6 +1317,18 @@ class Server {
   // Wait for the server to finish initializing.
   async ready(): Promise<void> {
     await this._bundler.ready();
+  }
+
+  _shouldAddModuleToIgnoreList(module: Module<>): boolean {
+    // TODO: Add flag to Module signifying whether it represents generated code
+    // and clean up these heuristics.
+    return (
+      // Prelude code, see getPrependedScripts.js
+      module.path === '__prelude__' ||
+      // Generated require.context() module, see contextModule.js
+      module.path.includes('?ctx=') ||
+      this._config.serializer.isThirdPartyModule(module)
+    );
   }
 }
 

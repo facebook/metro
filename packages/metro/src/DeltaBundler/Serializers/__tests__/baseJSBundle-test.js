@@ -19,6 +19,8 @@ const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const baseJSBundle = require('../baseJSBundle');
 const path = require('path');
 
+const {objectContaining} = expect;
+
 const polyfill: Module<> = {
   path: '/polyfill',
   dependencies: new Map(),
@@ -114,6 +116,7 @@ it('should generate a very simple bundle', () => {
         runBeforeMainModule: [],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
       },
@@ -164,6 +167,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
       },
@@ -201,6 +205,7 @@ it('should handle numeric module ids', () => {
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
       },
@@ -247,6 +252,7 @@ it('outputs custom runModule statements', () => {
         runBeforeMainModule: ['/root/bar'],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: null,
         sourceUrl: null,
       },
@@ -283,6 +289,7 @@ it('should add an inline source map to a very simple bundle', () => {
       runBeforeMainModule: [],
       runModule: true,
       serverRoot: '/root',
+      shouldAddToIgnoreList: () => false,
       sourceMapUrl: null,
       sourceUrl: null,
     },
@@ -304,6 +311,55 @@ it('should add an inline source map to a very simple bundle', () => {
     sourcesContent: ['foo-source', 'bar-source'],
     version: 3,
   });
+});
+
+it('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
+  const bundle = baseJSBundle(
+    '/root/foo',
+    [polyfill],
+    {
+      dependencies: new Map([
+        ['/root/foo', fooModule],
+        ['/root/bar', barModule],
+      ]),
+      entryPoints: new Set(['/root/foo']),
+      transformOptions,
+    },
+    {
+      asyncRequireModulePath: '',
+      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+      createModuleId: filePath => path.basename(filePath),
+      dev: true,
+      getRunModuleStatement,
+      includeAsyncPaths: false,
+      inlineSourceMap: true,
+      modulesOnly: false,
+      processModuleFilter: () => true,
+      projectRoot: '/root',
+      runBeforeMainModule: [],
+      runModule: true,
+      serverRoot: '/root',
+      shouldAddToIgnoreList: () => true,
+      sourceMapUrl: null,
+      sourceUrl: null,
+    },
+  );
+  expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
+    'require("foo");\n//# sourceMappingURL=data:application/json;charset=utf-8;',
+  );
+  expect(
+    JSON.parse(
+      Buffer.from(
+        bundle.post.slice(bundle.post.lastIndexOf('base64') + 7),
+        'base64',
+      ).toString(),
+    ),
+  ).toEqual(
+    objectContaining({
+      sources: ['/root/foo', '/root/bar'],
+      x_google_ignoreList: [0, 1],
+    }),
+  );
 });
 
 it('does not add polyfills when `modulesOnly` is used', () => {
@@ -333,6 +389,7 @@ it('does not add polyfills when `modulesOnly` is used', () => {
         runBeforeMainModule: [],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
       },

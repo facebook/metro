@@ -68,11 +68,12 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
     customSerializer: null,
+    isThirdPartyModule: module =>
+      /(?:^|[/\\])node_modules[/\\]/.test(module.path),
   },
 
   server: {
     enhanceMiddleware: middleware => middleware,
-    experimentalImportBundleSupport: false,
     port: 8080,
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
@@ -112,6 +113,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       },
       output: {
         ascii_only: true,
+        comments: false,
         quote_style: 3,
         wrap_iife: true,
       },

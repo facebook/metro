@@ -196,7 +196,16 @@ const minifyCode = async (
   ...
 }> => {
   const sourceMap = fromRawMappings([
-    {code, source, map, functionMap: null, path: filename},
+    {
+      code,
+      source,
+      map,
+      // functionMap is overridden by the serializer
+      functionMap: null,
+      path: filename,
+      // isIgnored is overriden by the serializer
+      isIgnored: false,
+    },
   ]).toMap(undefined, {});
 
   const minify = getMinifier(config.minifierPath);
@@ -300,7 +309,7 @@ async function transformJS(
       babelrc: false,
       code: false,
       configFile: false,
-      comments: false,
+      comments: true,
       filename: file.filename,
       plugins,
       sourceMaps: false,
@@ -323,7 +332,7 @@ async function transformJS(
         babelrc: false,
         code: false,
         configFile: false,
-        comments: false,
+        comments: true,
         filename: file.filename,
         plugins: [
           [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
@@ -408,7 +417,7 @@ async function transformJS(
   const result = generate(
     wrappedAst,
     {
-      comments: false,
+      comments: true,
       compact: config.unstable_compactOutput,
       filename: file.filename,
       retainLines: false,

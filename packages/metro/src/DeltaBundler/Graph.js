@@ -94,7 +94,7 @@ type Delta = $ReadOnly<{
 }>;
 
 type InternalOptions<T> = $ReadOnly<{
-  experimentalImportBundleSupport: boolean,
+  lazy: boolean,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
   resolve: Options<T>['resolve'],
@@ -106,14 +106,14 @@ function getInternalOptions<T>({
   transform,
   resolve,
   onProgress,
-  experimentalImportBundleSupport,
+  lazy,
   shallow,
 }: Options<T>): InternalOptions<T> {
   let numProcessed = 0;
   let total = 0;
 
   return {
-    experimentalImportBundleSupport,
+    lazy,
     transform,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
@@ -357,10 +357,7 @@ export class Graph<T = MixedOutput> {
       // Don't add a node for the module if the graph is shallow (single-module).
     } else if (dependency.data.data.asyncType === 'weak') {
       // Exclude weak dependencies from the bundle.
-    } else if (
-      options.experimentalImportBundleSupport &&
-      dependency.data.data.asyncType != null
-    ) {
+    } else if (options.lazy && dependency.data.data.asyncType != null) {
       // Don't add a node for the module if we are traversing async dependencies
       // lazily (and this is an async dependency). Instead, record it in
       // importBundleNodes.
@@ -421,10 +418,7 @@ export class Graph<T = MixedOutput> {
       return;
     }
 
-    if (
-      options.experimentalImportBundleSupport &&
-      dependency.data.data.asyncType != null
-    ) {
+    if (options.lazy && dependency.data.data.asyncType != null) {
       this._decrementImportBundleReference(dependency, parentModule);
     }
 
@@ -629,7 +623,7 @@ export class Graph<T = MixedOutput> {
     );
     invariant(
       importBundleNode.inverseDependencies.has(parentModule.path),
-      'experimentalImportBundleSupport: import bundle inverse references',
+      'lazy: import bundle inverse references',
     );
     importBundleNode.inverseDependencies.delete(parentModule.path);
     if (importBundleNode.inverseDependencies.size === 0) {
@@ -784,13 +778,12 @@ export class Graph<T = MixedOutput> {
 function dependenciesEqual(
   a: Dependency,
   b: Dependency,
-  options: $ReadOnly<{experimentalImportBundleSupport: boolean, ...}>,
+  options: $ReadOnly<{lazy: boolean, ...}>,
 ): boolean {
   return (
     a === b ||
     (a.absolutePath === b.absolutePath &&
-      (!options.experimentalImportBundleSupport ||
-        a.data.data.asyncType === b.data.data.asyncType) &&
+      (!options.lazy || a.data.data.asyncType === b.data.data.asyncType) &&
       contextParamsEqual(a.data.data.contextParams, b.data.data.contextParams))
   );
 }

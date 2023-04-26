@@ -64,6 +64,7 @@ function baseJSBundle(
       inlineSourceMap: options.inlineSourceMap,
       runBeforeMainModule: options.runBeforeMainModule,
       runModule: options.runModule,
+      shouldAddToIgnoreList: options.shouldAddToIgnoreList,
       sourceMapUrl: options.sourceMapUrl,
       sourceUrl: options.sourceUrl,
     }),

@@ -40,7 +40,10 @@ function createModule(
       inverseDependencies: new CountingSet(),
       getSource: () => Buffer.from(`source of ${name}`),
       output: [
-        {type, data: {code: `__d(function() {${name}()});`, lineCount: 1}},
+        {
+          type,
+          data: {code: `__d(function() {${name}()});`, lineCount: 1, map: []},
+        },
       ],
     },
   ];
@@ -100,6 +103,41 @@ it('should return the RAM bundle info', async () => {
         runBeforeMainModule: [],
         runModule: true,
         serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
+        sourceMapUrl: 'http://localhost/bundle.map',
+        sourceUrl: null,
+      },
+    ),
+  ).toMatchSnapshot();
+});
+
+it('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
+  expect(
+    await getRamBundleInfo(
+      '/root/entry.js',
+      pre,
+      {...graph, entryPoints: new Set(['/root/entry.js'])},
+      {
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        createModuleId: path => path,
+        dev: true,
+        excludeSource: false,
+        getRunModuleStatement,
+        getTransformOptions: async () => ({
+          preloadedModules: {},
+          ramGroups: [],
+        }),
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        platform: null,
+        processModuleFilter: module => true,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => true,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
       },
@@ -134,6 +172,7 @@ it('should use the preloadedModules and ramGroup configs to build a RAM bundle',
       runBeforeMainModule: [],
       runModule: true,
       serverRoot: '/root',
+      shouldAddToIgnoreList: () => false,
       sourceMapUrl: 'http://localhost/bundle.map',
       sourceUrl: null,
     },

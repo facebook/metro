@@ -85,8 +85,7 @@ async function calcTransformerOptions(
       ),
       transformOptions: options,
       onProgress: null,
-      experimentalImportBundleSupport:
-        config.server.experimentalImportBundleSupport,
+      lazy: false,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
       unstable_enablePackageExports:

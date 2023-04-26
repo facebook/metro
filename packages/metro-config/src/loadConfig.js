@@ -117,45 +117,56 @@ function mergeConfig<T: InputConfigT>(
 
       resolver: {
         ...totalConfig.resolver,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.resolver || {}),
         dependencyExtractor:
           nextConfig.resolver && nextConfig.resolver.dependencyExtractor != null
             ? resolve(nextConfig.resolver.dependencyExtractor)
-            : totalConfig.resolver.dependencyExtractor,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.resolver.dependencyExtractor,
         hasteImplModulePath:
           nextConfig.resolver && nextConfig.resolver.hasteImplModulePath != null
             ? resolve(nextConfig.resolver.hasteImplModulePath)
-            : totalConfig.resolver.hasteImplModulePath,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.resolver.hasteImplModulePath,
       },
       serializer: {
         ...totalConfig.serializer,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.serializer || {}),
       },
       transformer: {
         ...totalConfig.transformer,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.transformer || {}),
         babelTransformerPath:
           nextConfig.transformer &&
           nextConfig.transformer.babelTransformerPath != null
             ? resolve(nextConfig.transformer.babelTransformerPath)
-            : totalConfig.transformer.babelTransformerPath,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.transformer.babelTransformerPath,
       },
       server: {
         ...totalConfig.server,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.server || {}),
       },
       symbolicator: {
         ...totalConfig.symbolicator,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.symbolicator || {}),
       },
       watcher: {
         ...totalConfig.watcher,
+        // $FlowFixMe[exponential-spread]
         ...nextConfig.watcher,
         watchman: {
+          // $FlowFixMe[exponential-spread]
           ...totalConfig.watcher?.watchman,
           ...nextConfig.watcher?.watchman,
         },
         healthCheck: {
+          // $FlowFixMe[exponential-spread]
           ...totalConfig.watcher?.healthCheck,
           // $FlowFixMe: Spreading shapes creates an explosion of union types
           ...nextConfig.watcher?.healthCheck,
@@ -180,6 +191,8 @@ async function loadMetroConfigFromDisk(
   const rootPath = dirname(filepath);
 
   const defaults = await getDefaultConfig(rootPath);
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   const defaultConfig: ConfigT = mergeConfig(defaults, defaultConfigOverrides);
 
   if (typeof configModule === 'function') {
@@ -187,9 +200,13 @@ async function loadMetroConfigFromDisk(
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
+    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-variance]
     return mergeConfig(defaultConfig, resultedConfig);
   }
 
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(defaultConfig, configModule);
 }
 
@@ -207,10 +224,12 @@ function overrideConfigWithArguments(
   };
 
   if (argv.port != null) {
+    // $FlowFixMe[incompatible-use]
     output.server.port = Number(argv.port);
   }
 
   if (argv.runInspectorProxy != null) {
+    // $FlowFixMe[incompatible-use]
     output.server.runInspectorProxy = Boolean(argv.runInspectorProxy);
   }
 
@@ -223,14 +242,17 @@ function overrideConfigWithArguments(
   }
 
   if (argv.assetExts != null) {
+    // $FlowFixMe[incompatible-use]
     output.resolver.assetExts = argv.assetExts;
   }
 
   if (argv.sourceExts != null) {
+    // $FlowFixMe[incompatible-use]
     output.resolver.sourceExts = argv.sourceExts;
   }
 
   if (argv.platforms != null) {
+    // $FlowFixMe[incompatible-use]
     output.resolver.platforms = argv.platforms;
   }
 
@@ -239,6 +261,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
+    // $FlowFixMe[incompatible-use]
     output.transformer.babelTransformerPath = argv.transformer;
   }
 
@@ -255,6 +278,8 @@ function overrideConfigWithArguments(
     // TODO: Ask if this is the way to go
   }
 
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(config, output);
 }
 
@@ -298,6 +323,9 @@ async function loadConfig(
 
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-indexer]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(configWithArgs, overriddenConfig);
 }
 

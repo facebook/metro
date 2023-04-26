@@ -32,7 +32,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   const options = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: true,
-    experimentalImportBundleSupport: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       throw new Error('Never called');

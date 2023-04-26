@@ -139,6 +139,7 @@ type SerializerConfigT = {
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
+  isThirdPartyModule: (module: $ReadOnly<{path: string, ...}>) => boolean,
 };
 
 type TransformerConfigT = {
@@ -168,7 +169,6 @@ type MetalConfigT = {
 
 type ServerConfigT = {
   enhanceMiddleware: (Middleware, Server) => Middleware,
-  experimentalImportBundleSupport: boolean,
   port: number,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,

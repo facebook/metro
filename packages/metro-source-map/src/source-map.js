@@ -59,6 +59,7 @@ export type BasicSourceMap = {
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: Array<number>,
 };
 
 export type IndexMapSection = {
@@ -82,6 +83,7 @@ export type IndexMap = {
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: void,
 };
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
@@ -104,7 +106,8 @@ function fromRawMappingsImpl(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number,
 ): void {
@@ -171,7 +174,8 @@ function fromRawMappings(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Generator {
@@ -197,7 +201,8 @@ async function fromRawMappingsNonBlocking(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Promise<Generator> {
@@ -272,11 +277,14 @@ function addMappingsForFile(
     +map: ?Array<MetroSourceMapSegmentTuple>,
     +path: string,
     +source: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   },
   carryOver: number,
 ) {
-  generator.startFile(module.path, module.source, module.functionMap);
+  generator.startFile(module.path, module.source, module.functionMap, {
+    addToIgnoreList: module.isIgnored,
+  });
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
     addMapping(generator, mappings[i], carryOver);

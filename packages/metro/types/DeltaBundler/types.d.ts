@@ -139,7 +139,7 @@ export interface Options<T = MixedOutput> {
   readonly onProgress:
     | ((numProcessed: number, total: number) => unknown)
     | null;
-  readonly experimentalImportBundleSupport: boolean;
+  readonly lazy: boolean;
   readonly unstable_allowRequireContext: boolean;
   readonly shallow: boolean;
 }
@@ -164,6 +164,7 @@ export interface SerializerOptions<T = MixedOutput> {
   readonly runBeforeMainModule: ReadonlyArray<string>;
   readonly runModule: boolean;
   readonly serverRoot: string;
+  readonly shouldAddToIgnoreList: (module: Module<T>) => boolean;
   readonly sourceMapUrl?: string;
   readonly sourceUrl?: string;
 }

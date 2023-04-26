@@ -23,12 +23,12 @@ function getGraphId(
   options: TransformInputOptions,
   {
     shallow,
-    experimentalImportBundleSupport,
+    lazy,
     unstable_allowRequireContext,
     resolverOptions,
   }: $ReadOnly<{
     shallow: boolean,
-    experimentalImportBundleSupport: boolean,
+    lazy: boolean,
     unstable_allowRequireContext: boolean,
     resolverOptions: ResolverInputOptions,
   }>,
@@ -46,7 +46,7 @@ function getGraphId(
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
         type: options.type,
-        experimentalImportBundleSupport,
+        lazy,
         unstable_allowRequireContext,
         shallow,
         unstable_transformProfile:
