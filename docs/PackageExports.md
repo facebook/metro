@@ -101,3 +101,113 @@ maintainer(s) to expose this API.
 :::note
 We plan to implement a strict mode for package encapsulation in future, to align with Node's default behavior. **We recommend that all developers fix encapsulation warnings in their code**.
 :::
+
+## Migration guide for package maintainers
+
+**Adding an `"exports"` field to your package is entirely optional**. Existing package resolution features will behave identically for packages which don't use `"exports"` — and we have no plans to remove this behaviour.
+
+### Recommended: Introducing `"exports"` is a breaking change
+
+The Node.js spec gives guidance on migrating to `"exports"` in a non-breaking manner, however this is challenging in practice. For instance, if your React Native package uses [platform-specific extensions](https://reactnative.dev/docs/platform-specific-code) on its public exports, this is a breaking change by default.
+
+> To make the introduction of `"exports"` non-breaking, ensure that every previously supported entry point is exported. It is best to explicitly specify entry points so that the package's public API is well-defined.
+>
+> — https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points
+
+### Package subpaths
+
+:::caution
+**Please do not rely on [lenient package encapsulation](#package-encapsulation-is-lenient) under Metro.** While Metro does this for backwards compatibility, packages should follow how `"exports"` is documented in the spec and strictly implemented by other tools.
+:::
+
+#### File extensions are important!
+
+Each subpath is an exact specifier ([see section in RFC](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md#exact-path-specifiers)).
+
+We recommend continuing to use **extensionless specifiers** for subpaths in packages targeting React Native — or **defining both extensioned and extensionless specifiers**. This will match matching existing user expectations.
+
+```json
+  "exports": {
+    ".": "./src/index.js",
+    "./FooComponent": "./src/FooComponent.js",
+    "./FooComponent.js": "./src/FooComponent.js"
+  }
+```
+
+#### Subpath patterns do not permit expansion
+
+Subpath patterns are a shorthand for mapping multiple subpaths — they do not permit path expansion (strictly a substring replacement), however will match nested directories ([see section in RFC](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md#subpath-patterns)).
+
+Only one `*` is permitted per side of a subpath pattern.
+
+```json
+  "exports": {
+    ".": "./index.js",
+    "./utils/*": "./utils/*.js"
+  }
+```
+
+- `'pkg/utils/foo'` matches `'pkg/utils/foo.js'`.
+- `'pkg/utils/foo/bar'` matches `'pkg/utils/foo/bar.js'`.
+- `'pkg/utils/foo'` **does not match** `'pkg/utils/foo.bar.js'`.
+
+### Replacing `"browser"` and `"react-native"` fields
+
+We've introduced `"react-native"` as a community condition (for use with conditional exports). This represents React Native, the framework, sitting alongside other recognised runtimes such as `"node"` and `"deno"` ([RFC](https://github.com/nodejs/node/pull/45367)).
+
+> [Community Conditions Definitions — **`"react-native"`**](https://nodejs.org/docs/latest-v19.x/api/packages.html#community-conditions-definitions)
+>
+> _Will be matched by the React Native framework (all platforms). To target React Native for Web, "browser" should be specified before this condition._
+
+This replaces the previous `"react-native"` root field. The priority order for how this was previously resolved was determined by projects, [which created ambiguity when using React Native for Web](https://github.com/expo/router/issues/37#issuecomment-1275925758). Under `"exports"`, _packages concretely define the resolution order for conditional entry points_ — removing this ambiguity.
+
+#### Example: Use conditional exports to target web and React Native
+
+```json
+  "exports": {
+    "browser": "./dist/index-browser.js",
+    "react-native": "./dist/index-react-native.js",
+    "default": "./dist/index.js"
+  }
+```
+
+:::note
+We chose not to introduce `"android"` and `"ios"` conditions, due to the prevalence of other existing platform selection methods, and the complexity of how this behavior might work across frameworks. We recommend the [`Platform.select()`](https://reactnative.dev/docs/platform#select) API instead.
+:::
+
+### Replacing platform-specific extensions
+
+> **Breaking change**: Subpaths matched in `"exports"` (including via [subpath patterns](https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns)) will use the exact file path specified by a package, and will not attempt to expand `sourceExts` or platform-specific extensions.
+
+#### Use [`Platform.select()`](https://reactnative.dev/docs/platform#select) (React Native)
+
+```json
+  "exports": {
+    "./FooComponent": "./src/FooComponent.js"
+  }
+```
+
+```js
+// src/FooComponent.js
+
+const FooComponent = Platform.select({
+  android: require('./FooComponentAndroid.js'),
+  ios: require('FooComponentIOS.js'),
+});
+
+export default FooComponent;
+```
+
+### Asset files
+
+As with source files, assets must be listed in `"exports"` to be imported without warnings. Asset files with [multiple densities](/docs/configuration#assetresolutions), e.g. `icon.png` and `icon@2x.png`, will continue to work without being listed individually.
+
+Using subpath patterns can be a convenient method to export many assets. We recommend specifying asset subpaths **with their file extension**.
+
+```json
+{
+  "exports": {
+    "./assets/*.png": "./dist/assets/*.png"
+  }
+}
+```
