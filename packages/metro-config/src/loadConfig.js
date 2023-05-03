@@ -97,7 +97,7 @@ async function resolveConfig(
   return result;
 }
 
-function mergeConfig<T: InputConfigT>(
+function mergeConfig<T: $ReadOnly<InputConfigT>>(
   defaultConfig: T,
   ...configs: Array<InputConfigT>
 ): T {
@@ -225,11 +225,13 @@ function overrideConfigWithArguments(
 
   if (argv.port != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.server.port = Number(argv.port);
   }
 
   if (argv.runInspectorProxy != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.server.runInspectorProxy = Boolean(argv.runInspectorProxy);
   }
 
@@ -243,16 +245,19 @@ function overrideConfigWithArguments(
 
   if (argv.assetExts != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.assetExts = argv.assetExts;
   }
 
   if (argv.sourceExts != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.sourceExts = argv.sourceExts;
   }
 
   if (argv.platforms != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.platforms = argv.platforms;
   }
 
@@ -262,6 +267,7 @@ function overrideConfigWithArguments(
 
   if (argv.transformer != null) {
     // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.transformer.babelTransformerPath = argv.transformer;
   }
 

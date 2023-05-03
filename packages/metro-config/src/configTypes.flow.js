@@ -58,7 +58,7 @@ export type Middleware = (
   ((e: ?Error) => mixed),
 ) => mixed;
 
-type PerfAnnotations = $Shape<{
+type PerfAnnotations = Partial<{
   string: {[key: string]: string},
   int: {[key: string]: number},
   double: {[key: string]: number},
@@ -204,21 +204,23 @@ type WatcherConfigT = {
   },
 };
 
-export type InputConfigT = $Shape<{
+export type InputConfigT = Partial<{
   ...MetalConfigT,
   ...$ReadOnly<{
     cacheStores:
       | $ReadOnlyArray<CacheStore<TransformResult<>>>
       | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
-    resolver: $Shape<ResolverConfigT>,
-    server: $Shape<ServerConfigT>,
-    serializer: $Shape<SerializerConfigT>,
-    symbolicator: $Shape<SymbolicatorConfigT>,
-    transformer: $Shape<TransformerConfigT>,
-    watcher: $Shape<{
-      ...WatcherConfigT,
-      healthCheck?: $Shape<WatcherConfigT['healthCheck']>,
-    }>,
+    resolver: $ReadOnly<Partial<ResolverConfigT>>,
+    server: $ReadOnly<Partial<ServerConfigT>>,
+    serializer: $ReadOnly<Partial<SerializerConfigT>>,
+    symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
+    transformer: $ReadOnly<Partial<TransformerConfigT>>,
+    watcher: $ReadOnly<
+      Partial<{
+        ...WatcherConfigT,
+        healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
+      }>,
+    >,
   }>,
 }>;
 
