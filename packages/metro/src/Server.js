@@ -56,6 +56,7 @@ const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundErro
 const bundleToString = require('./lib/bundleToString');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
+const jscUrlUtils = require('./lib/jscUrlUtils');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
@@ -495,7 +496,18 @@ class Server {
     next: (?Error) => mixed,
   ) {
     const originalUrl = req.url;
-    req.url = this._config.server.rewriteRequestUrl(req.url);
+    const normalizedUrl = jscUrlUtils.normalizeJscUrl(originalUrl);
+
+    // TODO: rewriteRequestUrl should receive originalUrl, but this is a
+    // breaking change with the introduction of ';&' "query string" support.
+    // Expose a way for consumers to parse+construct these "JSC URLs" and
+    // require custom rewriteRequestUrl implementations to handle+emit them.
+    req.url = this._config.server.rewriteRequestUrl(normalizedUrl);
+
+    // TOOD: Remove this once the above breaking change is made.
+    if (originalUrl !== normalizedUrl) {
+      req.url = jscUrlUtils.toJscUrl(req.url);
+    }
 
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
