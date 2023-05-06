@@ -19,6 +19,7 @@ const babylon = require('@babel/parser');
 const template = require('@babel/template').default;
 const babelTypes = require('@babel/types');
 const nullthrows = require('nullthrows');
+const getImageSize = require('image-size');
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {
@@ -146,10 +147,34 @@ function generateRemoteAssetCodeFileAst(
 // If it's not one of these, we won't treat it as an image.
 function isAssetTypeAnImage(type: string): boolean {
   return (
-    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(
-      type,
-    ) !== -1
+    [
+      'png',
+      'jpg',
+      'jpeg',
+      'bmp',
+      'gif',
+      'webp',
+      'psd',
+      'svg',
+      'tiff',
+      'ktx',
+    ].indexOf(type) !== -1
   );
+}
+
+function getAssetSize(
+  type: string,
+  content: Buffer,
+  filePath: string,
+): ?{+width: number, +height: number} {
+  if (!isAssetTypeAnImage(type)) {
+    return null;
+  }
+  if (content.length === 0) {
+    throw new Error(`Image asset \`${filePath}\` cannot be an empty file.`);
+  }
+  const {width, height} = getImageSize(content);
+  return {width, height};
 }
 
 function filterObject(
@@ -247,5 +272,6 @@ module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
   generateRemoteAssetCodeFileAst,
+  getAssetSize,
   isAssetTypeAnImage,
 };
