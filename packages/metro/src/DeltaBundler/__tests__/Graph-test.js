@@ -675,6 +675,39 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
+  it('remove a dependency, modify it, and re-add it elsewhere', async () => {
+    await graph.initialTraverseDependencies(options);
+
+    Actions.removeDependency('/foo', '/bar');
+    Actions.modifyFile('/bar');
+    Actions.addDependency('/baz', '/bar');
+
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo', '/bar', '/baz']),
+      deleted: new Set(),
+    });
+  });
+
+  it('Add a dependency, modify it, and remove it', async () => {
+    await graph.initialTraverseDependencies(options);
+
+    Actions.createFile('/quux');
+    Actions.addDependency('/bar', '/quux');
+    Actions.modifyFile('/quux');
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
   it('removes a cyclic dependency but should not remove any dependency', async () => {
     Actions.createFile('/bar1');
     Actions.addDependency('/bar', '/bar1');

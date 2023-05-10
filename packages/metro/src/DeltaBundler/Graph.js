@@ -174,11 +174,19 @@ export class Graph<T = MixedOutput> {
 
     const internalOptions = getInternalOptions(options);
 
-    for (const path of paths) {
-      // Start traversing from modules that are already part of the dependency graph.
-      if (this.dependencies.get(path)) {
-        delta.modified.add(path);
+    // Record the paths that are part of the dependency graph before we start
+    // traversing - we'll use this to ensure we don't report modules modified
+    // that only exist as part of the graph mid-traversal.
+    const existingPaths = paths.filter(path => this.dependencies.has(path));
 
+    for (const path of existingPaths) {
+      // Traverse over modules that are part of the dependency graph.
+      //
+      // Note: A given path may not be part of the graph *at this time*, in
+      // particular it may have been removed since we started traversing, but
+      // in that case the path will be visited if and when we add it back to
+      // the graph in a subsequent iteration.
+      if (this.dependencies.get(path)) {
         await this._traverseDependenciesForSingleFile(
           path,
           delta,
@@ -195,10 +203,23 @@ export class Graph<T = MixedOutput> {
     }
 
     const modified = new Map<string, Module<T>>();
-    for (const path of delta.modified) {
-      // Only report a module as modified if we're not already reporting it as added or deleted.
-      if (!delta.added.has(path) && !delta.deleted.has(path)) {
-        modified.set(path, nullthrows(this.dependencies.get(path)));
+
+    // A path in delta.modified has been processed during this traversal,
+    // but may not actually differ, may be new, or may have been deleted after
+    // processing. The actually-modified modules are the intersection of
+    // delta.modified with the pre-existing paths, minus modules deleted.
+    for (const path of existingPaths) {
+      invariant(
+        !delta.added.has(path),
+        'delta.added has %s, but this path was already in the graph.',
+        path,
+      );
+      if (delta.modified.has(path)) {
+        // Only report a module as modified if we're not already reporting it
+        // as added or deleted.
+        if (!delta.deleted.has(path)) {
+          modified.set(path, nullthrows(this.dependencies.get(path)));
+        }
       }
     }
 
@@ -268,6 +289,11 @@ export class Graph<T = MixedOutput> {
     options: InternalOptions<T>,
   ): Promise<Module<T>> {
     const resolvedContext = this.#resolvedContexts.get(path);
+
+    // Mark any module processed as potentially modified. Once we've finished
+    // traversing we'll filter this set down.
+    delta.modified.add(path);
+
     // Transform the file via the given option.
     // TODO: Unbind the transform method from options
     const result = await options.transform(path, resolvedContext);
