@@ -155,6 +155,7 @@ class Transformer {
 
     return {
       ...data.result,
+      unstable_transformResultKey: fullKey.toString(),
       getSource(): Buffer {
         if (fileBuffer) {
           return fileBuffer;

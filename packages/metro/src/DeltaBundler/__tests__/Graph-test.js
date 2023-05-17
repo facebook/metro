@@ -43,7 +43,14 @@ let mockedDependencyTree: Map<
     }>,
   >,
 > = new Map();
-const files = new Set<string>();
+
+/* `files` emulates the changed paths typically aggregated by DeltaCalcutor.
+ * Paths will be added to this set by any addition, deletion or modification,
+ * respecting getModifiedModulesForDeletedPath. Each such operation will
+ * increment the count - we'll intepret count as a file revision number, with
+ * a changed count reflected in a change to the transform output key.
+ */
+const files = new CountingSet<string>();
 let graph: TestGraph;
 let options;
 
@@ -161,11 +168,14 @@ const Actions = {
   },
 };
 
-function deferred(value: {
-  +dependencies: $ReadOnlyArray<TransformResultDependency>,
-  +getSource: () => Buffer,
-  +output: $ReadOnlyArray<MixedOutput>,
-}) {
+function deferred(
+  value: $ReadOnly<{
+    dependencies: $ReadOnlyArray<TransformResultDependency>,
+    getSource: () => Buffer,
+    output: $ReadOnlyArray<MixedOutput>,
+    unstable_transformResultKey?: ?string,
+  }>,
+) {
   let resolve;
   const promise = new Promise(res => (resolve = res));
 
@@ -249,7 +259,7 @@ class TestGraph extends Graph<> {
   ): Promise<Result<MixedOutput>> {
     // Get a snapshot of the graph before the traversal.
     const dependenciesBefore = new Set(this.dependencies.keys());
-    const pathsBefore = new Set(paths);
+    const modifiedPaths = new Set(files);
 
     // Mutate the graph and calculate a delta.
     const delta = await super.traverseDependencies(paths, options);
@@ -258,7 +268,7 @@ class TestGraph extends Graph<> {
     const expectedDelta = computeDelta(
       dependenciesBefore,
       this.dependencies,
-      pathsBefore,
+      modifiedPaths,
     );
     expect(getPaths(delta)).toEqual(expectedDelta);
 
@@ -294,6 +304,17 @@ beforeEach(async () => {
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(async (path: string, context: ?RequireContext) => {
+      const unstable_transformResultKey =
+        path +
+        (context
+          ? // For context modules, the real transformer will hash the
+            // generated template, which varies according to its dependencies.
+            // Approximate that by concatenating dependency paths.
+            (mockedDependencyTree.get(path) ?? [])
+              .map(d => d.path)
+              .sort()
+              .join('|')
+          : ` (revision ${files.count(path)})`);
       return {
         dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
           name: dep.name,
@@ -318,6 +339,7 @@ beforeEach(async () => {
             type: 'js/module',
           },
         ],
+        unstable_transformResultKey,
       };
     });
 
@@ -407,7 +429,7 @@ it('should return an empty result when there are no changes', async () => {
     getPaths(await graph.traverseDependencies(['/bundle'], options)),
   ).toEqual({
     added: new Set(),
-    modified: new Set(['/bundle']),
+    modified: new Set([]),
     deleted: new Set(),
   });
 });
@@ -1959,6 +1981,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
+      mockTransform.mockClear();
       expect(
         getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
@@ -1966,6 +1989,7 @@ describe('edge cases', () => {
         modified: new Set(['/bundle']),
         deleted: new Set([]),
       });
+      expect(mockTransform).toHaveBeenCalledWith('/bundle', undefined);
     });
   });
 

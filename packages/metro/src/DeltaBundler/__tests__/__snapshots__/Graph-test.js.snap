@@ -30,6 +30,7 @@ TestGraph {
         },
       ],
       "path": "/bundle",
+      "unstable_transformResultKey": "/bundle (revision 0)",
     },
     "/foo" => Object {
       "dependencies": Map {
@@ -71,6 +72,7 @@ TestGraph {
         },
       ],
       "path": "/foo",
+      "unstable_transformResultKey": "/foo (revision 0)",
     },
     "/bar" => Object {
       "dependencies": Map {},
@@ -89,6 +91,7 @@ TestGraph {
         },
       ],
       "path": "/bar",
+      "unstable_transformResultKey": "/bar (revision 0)",
     },
     "/baz" => Object {
       "dependencies": Map {},
@@ -107,6 +110,7 @@ TestGraph {
         },
       ],
       "path": "/baz",
+      "unstable_transformResultKey": "/baz (revision 0)",
     },
   },
   "entryPoints": Set {
@@ -153,6 +157,7 @@ TestGraph {
         },
       ],
       "path": "/bundle",
+      "unstable_transformResultKey": "/bundle (revision 0)",
     },
   },
   "entryPoints": Set {

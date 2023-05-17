@@ -323,9 +323,16 @@ class DeltaCalculator<T> extends EventEmitter {
       };
     }
 
+    debug('Traversing dependencies for %s paths', modifiedDependencies.length);
     const {added, modified, deleted} = await this._graph.traverseDependencies(
       modifiedDependencies,
       this._options,
+    );
+    debug(
+      'Calculated graph delta {added: %s, modified: %d, deleted: %d}',
+      added.size,
+      modified.size,
+      deleted.size,
     );
 
     return {

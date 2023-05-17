@@ -176,17 +176,24 @@ export class Graph<T = MixedOutput> {
 
     // Record the paths that are part of the dependency graph before we start
     // traversing - we'll use this to ensure we don't report modules modified
-    // that only exist as part of the graph mid-traversal.
-    const existingPaths = paths.filter(path => this.dependencies.has(path));
+    // that only exist as part of the graph mid-traversal, and to eliminate
+    // modules that end up in the same state that they started from the delta.
+    const originalModules = new Map<string, Module<T>>();
+    for (const path of paths) {
+      const originalModule = this.dependencies.get(path);
+      if (originalModule) {
+        originalModules.set(path, originalModule);
+      }
+    }
 
-    for (const path of existingPaths) {
+    for (const [path] of originalModules) {
       // Traverse over modules that are part of the dependency graph.
       //
       // Note: A given path may not be part of the graph *at this time*, in
       // particular it may have been removed since we started traversing, but
       // in that case the path will be visited if and when we add it back to
       // the graph in a subsequent iteration.
-      if (this.dependencies.get(path)) {
+      if (this.dependencies.has(path)) {
         await this._traverseDependenciesForSingleFile(
           path,
           delta,
@@ -208,17 +215,35 @@ export class Graph<T = MixedOutput> {
     // but may not actually differ, may be new, or may have been deleted after
     // processing. The actually-modified modules are the intersection of
     // delta.modified with the pre-existing paths, minus modules deleted.
-    for (const path of existingPaths) {
+    for (const [path, originalModule] of originalModules) {
       invariant(
         !delta.added.has(path),
         'delta.added has %s, but this path was already in the graph.',
         path,
       );
       if (delta.modified.has(path)) {
-        // Only report a module as modified if we're not already reporting it
-        // as added or deleted.
+        // It's expected that a module may be both modified and subsequently
+        // deleted - we'll only return it as deleted.
         if (!delta.deleted.has(path)) {
-          modified.set(path, nullthrows(this.dependencies.get(path)));
+          // If a module existed before and has not been deleted, it must be
+          // in the dependencies map.
+          const newModule = nullthrows(this.dependencies.get(path));
+          if (
+            // Module.dependencies is mutable, so it's not obviously the case
+            // that referential equality implies no modification. However, we
+            // only mutate dependencies in two cases:
+            // 1. Within _processModule. In that case, we always mutate a new
+            //    module and set a new reference in this.dependencies.
+            // 2. During _releaseModule, when recursively removing
+            //    dependencies. In that case, we immediately discard the module
+            //    object.
+            // TODO: Refactor for more explicit immutability
+            newModule !== originalModule ||
+            transfromOutputMayDiffer(newModule, originalModule) ||
+            !allDependenciesEqual(newModule, originalModule)
+          ) {
+            modified.set(path, newModule);
+          }
         }
       }
     }
@@ -290,10 +315,6 @@ export class Graph<T = MixedOutput> {
   ): Promise<Module<T>> {
     const resolvedContext = this.#resolvedContexts.get(path);
 
-    // Mark any module processed as potentially modified. Once we've finished
-    // traversing we'll filter this set down.
-    delta.modified.add(path);
-
     // Transform the file via the given option.
     // TODO: Unbind the transform method from options
     const result = await options.transform(path, resolvedContext);
@@ -306,48 +327,67 @@ export class Graph<T = MixedOutput> {
       options,
     );
 
-    const previousModule = this.dependencies.get(path) || {
-      inverseDependencies:
-        delta.earlyInverseDependencies.get(path) || new CountingSet(),
-      path,
-    };
-    const previousDependencies = previousModule.dependencies || new Map();
+    const previousModule = this.dependencies.get(path);
 
-    // Update the module information.
-    const module = {
-      ...previousModule,
+    const previousDependencies = previousModule?.dependencies ?? new Map();
+
+    const nextModule = {
+      ...(previousModule ?? {
+        inverseDependencies:
+          delta.earlyInverseDependencies.get(path) ?? new CountingSet(),
+        path,
+      }),
       dependencies: new Map(previousDependencies),
       getSource: result.getSource,
       output: result.output,
+      unstable_transformResultKey: result.unstable_transformResultKey,
     };
-    this.dependencies.set(module.path, module);
+
+    // Update the module information.
+    this.dependencies.set(nextModule.path, nextModule);
 
     // Diff dependencies (1/2): remove dependencies that have changed or been removed.
+    let dependenciesRemoved = false;
     for (const [key, prevDependency] of previousDependencies) {
       const curDependency = currentDependencies.get(key);
       if (
         !curDependency ||
         !dependenciesEqual(prevDependency, curDependency, options)
       ) {
-        this._removeDependency(module, key, prevDependency, delta, options);
+        dependenciesRemoved = true;
+        this._removeDependency(nextModule, key, prevDependency, delta, options);
       }
     }
 
     // Diff dependencies (2/2): add dependencies that have changed or been added.
-    const promises = [];
+    const addDependencyPromises = [];
     for (const [key, curDependency] of currentDependencies) {
       const prevDependency = previousDependencies.get(key);
       if (
         !prevDependency ||
         !dependenciesEqual(prevDependency, curDependency, options)
       ) {
-        promises.push(
-          this._addDependency(module, key, curDependency, delta, options),
+        addDependencyPromises.push(
+          this._addDependency(nextModule, key, curDependency, delta, options),
         );
       }
     }
 
-    await Promise.all(promises);
+    if (
+      previousModule &&
+      !transfromOutputMayDiffer(previousModule, nextModule) &&
+      !dependenciesRemoved &&
+      addDependencyPromises.length === 0
+    ) {
+      // We have not operated on nextModule, so restore previousModule
+      // to aid diffing.
+      this.dependencies.set(previousModule.path, previousModule);
+      return previousModule;
+    }
+
+    delta.modified.add(path);
+
+    await Promise.all(addDependencyPromises);
 
     // Replace dependencies with the correctly-ordered version. As long as all
     // the above promises have resolved, this will be the same map but without
@@ -357,13 +397,13 @@ export class Graph<T = MixedOutput> {
 
     // Catch obvious errors with a cheap assertion.
     invariant(
-      module.dependencies.size === currentDependencies.size,
+      nextModule.dependencies.size === currentDependencies.size,
       'Failed to add the correct dependencies',
     );
 
-    module.dependencies = currentDependencies;
+    nextModule.dependencies = currentDependencies;
 
-    return module;
+    return nextModule;
   }
 
   async _addDependency(
@@ -470,7 +510,10 @@ export class Graph<T = MixedOutput> {
   /**
    * Collect a list of context modules which include a given file.
    */
-  markModifiedContextModules(filePath: string, modifiedPaths: Set<string>) {
+  markModifiedContextModules(
+    filePath: string,
+    modifiedPaths: Set<string> | CountingSet<string>,
+  ) {
     for (const [absolutePath, context] of this.#resolvedContexts) {
       if (
         !modifiedPaths.has(absolutePath) &&
@@ -814,6 +857,23 @@ function dependenciesEqual(
   );
 }
 
+function allDependenciesEqual<T>(
+  a: Module<T>,
+  b: Module<T>,
+  options: $ReadOnly<{lazy: boolean, ...}>,
+): boolean {
+  if (a.dependencies.size !== b.dependencies.size) {
+    return false;
+  }
+  for (const [key, depA] of a.dependencies) {
+    const depB = b.dependencies.get(key);
+    if (!depB || !dependenciesEqual(depA, depB, options)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function contextParamsEqual(
   a: ?RequireContextParams,
   b: ?RequireContextParams,
@@ -827,5 +887,12 @@ function contextParamsEqual(
       a.filter.pattern === b.filter.pattern &&
       a.filter.flags === b.filter.flags &&
       a.mode === b.mode)
+  );
+}
+
+function transfromOutputMayDiffer<T>(a: Module<T>, b: Module<T>): boolean {
+  return (
+    a.unstable_transformResultKey == null ||
+    a.unstable_transformResultKey !== b.unstable_transformResultKey
   );
 }

@@ -61,13 +61,14 @@ export type Dependency = {
   +data: TransformResultDependency,
 };
 
-export type Module<T = MixedOutput> = {
-  +dependencies: Map<string, Dependency>,
-  +inverseDependencies: CountingSet<string>,
-  +output: $ReadOnlyArray<T>,
-  +path: string,
-  +getSource: () => Buffer,
-};
+export type Module<T = MixedOutput> = $ReadOnly<{
+  dependencies: Map<string, Dependency>,
+  inverseDependencies: CountingSet<string>,
+  output: $ReadOnlyArray<T>,
+  path: string,
+  getSource: () => Buffer,
+  unstable_transformResultKey?: ?string,
+}>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
@@ -102,6 +103,7 @@ export type {Graph};
 export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
+  unstable_transformResultKey?: ?string,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
