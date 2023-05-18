@@ -3,7 +3,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@babel/plugin-syntax-class-properties": "^7.0.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
     "@tsconfig/node16": "1.0.1",
     "@typescript-eslint/eslint-plugin": "^5.57.1",

@@ -62,7 +62,7 @@
     "yargs": "^17.6.2"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "babel-jest": "^29.2.1",
     "dedent": "^0.7.0",
     "jest-snapshot": "^26.5.2",
