@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.20.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
     "@babel/preset-typescript": "^7.18.0",
     "@babel/register": "^7.0.0",

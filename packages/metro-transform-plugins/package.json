@@ -22,7 +22,7 @@
   "devDependencies": {
     "@babel/code-frame": "^7.0.0",
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/types": "^7.20.0",
     "metro": "0.76.4"
   },
