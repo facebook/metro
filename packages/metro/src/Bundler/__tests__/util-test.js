@@ -10,10 +10,7 @@
 
 'use strict';
 
-const {
-  generateAssetCodeFileAst,
-  generateRemoteAssetCodeFileAst,
-} = require('../util');
+const {generateAssetCodeFileAst} = require('../util');
 const babelGenerate = require('@babel/generator').default;
 
 describe('Util', () => {
@@ -28,33 +25,6 @@ describe('Util', () => {
     width: 240,
   };
 
-  const remoteFileMap = {
-    '/foo/bar': {
-      'my-asset': {
-        1: {
-          handle: 'GCRaTwHwaI1plCgBAAAAAAC5oAcJbnsvAAAZ',
-          hash: 'baa06e3fa558fe7f246b3f3e5ee33bc86357c879',
-        },
-        1.5: {
-          handle: 'GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ',
-          hash: '7e5c0190b0fab299dab0351a5079368a91a372fe',
-        },
-        2: {
-          handle: 'GMsbUgHQlgBGbPsCAAAAAAABXchsbnsvAAAZ',
-          hash: '328184a20a8a938b378153280bc636182b9136ac',
-        },
-        3: {
-          handle: 'GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ',
-          hash: '4b41f231da982f153257e8384663fae20c7c607d',
-        },
-        4: {
-          handle: 'GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ',
-          hash: 'd022de9b8d34bb1b621ef357f1da7573d5a4205d',
-        },
-      },
-    },
-  };
-
   it('generates a local asset for a given descriptor', () => {
     const {code} = babelGenerate(
       generateAssetCodeFileAst(
@@ -64,29 +34,5 @@ describe('Util', () => {
     );
 
     expect(code).toMatchSnapshot();
-  });
-
-  it('generates a remote asset for a given descriptor', () => {
-    const {code} = babelGenerate(
-      generateRemoteAssetCodeFileAst(
-        'react-native-module/asset-utils',
-        assetDescriptor,
-        'https://example.com',
-        remoteFileMap,
-      ),
-    );
-
-    expect(code).toMatchSnapshot();
-  });
-
-  it('returns null if the asset is not present on the map', () => {
-    const asset = generateRemoteAssetCodeFileAst(
-      'react-native-module/asset-utils',
-      assetDescriptor,
-      'https://example.com',
-      {},
-    );
-
-    expect(asset).toBe(null);
   });
 });
