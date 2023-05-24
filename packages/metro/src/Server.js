@@ -906,7 +906,7 @@ class Server {
         bundle: bundleCode,
       };
     },
-    finish({req, mres, result}) {
+    finish({req, mres, serializerOptions, result}) {
       if (
         // We avoid parsing the dates since the client should never send a more
         // recent date than the one returned by the Delta Bundler (if that's the
@@ -923,6 +923,9 @@ class Server {
           String(result.numModifiedFiles),
         );
         mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
+        if (serializerOptions?.sourceUrl != null) {
+          mres.setHeader('Content-Location', serializerOptions.sourceUrl);
+        }
         mres.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
         mres.setHeader(
