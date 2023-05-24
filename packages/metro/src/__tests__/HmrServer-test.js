@@ -341,12 +341,12 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -425,11 +425,11 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
 
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
@@ -484,10 +484,10 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -538,7 +538,7 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -589,7 +589,7 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],

@@ -318,7 +318,7 @@ describe('processRequest', () => {
           '__d(function() {foo();},1,[],"foo.js");',
           'require(0);',
           '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
-          '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
+          '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=true',
         ].join('\n'),
       );
     },
@@ -360,7 +360,7 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=false',
-        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=false',
       ].join('\n'),
     );
   });
@@ -381,6 +381,14 @@ describe('processRequest', () => {
     return makeRequest('mybundle.bundle?runModule=true').then(response => {
       expect(response.getHeader('Content-Length')).toEqual(
         '' + Buffer.byteLength(response._getString()),
+      );
+    });
+  });
+
+  it('returns Content-Location header on request of *.bundle', () => {
+    return makeRequest('mybundle.bundle?runModule=true').then(response => {
+      expect(response.getHeader('Content-Location')).toEqual(
+        'http://localhost:8081/mybundle.bundle//&runModule=true',
       );
     });
   });
@@ -464,7 +472,7 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?modulesOnly=true&runModule=false',
-        '//# sourceURL=http://localhost:8081/mybundle.bundle?modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle//&modulesOnly=true&runModule=false',
       ].join('\n'),
     );
   });
@@ -479,7 +487,7 @@ describe('processRequest', () => {
       [
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?shallow=true&modulesOnly=true&runModule=false',
-        '//# sourceURL=http://localhost:8081/mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle//&shallow=true&modulesOnly=true&runModule=false',
       ].join('\n'),
     );
   });
@@ -741,7 +749,7 @@ describe('processRequest', () => {
           '__d(function() {foo();},1,[],"foo.js");',
           'require(0);',
           '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true&TEST_URL_WAS_REWRITTEN=true',
-          '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+          '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=true&TEST_URL_WAS_REWRITTEN=true',
         ].join('\n'),
       );
     },
