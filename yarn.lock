@@ -5043,6 +5043,11 @@ jsbn@~0.1.0:
   resolved "https://registry.yarnpkg.com/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
   integrity sha1-peZUwuWi3rXyAdls77yoDA7y9RM=
 
+jsc-safe-url@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/jsc-safe-url/-/jsc-safe-url-0.2.2.tgz#9ce79116d6271fce4b3d1b59b879e66b82457be1"
+  integrity sha512-F6ezJ+Ys7yUaZ2tG7VVGwDgmCB8T1kaDB2AlxhLnPIfTpJqgFWSjptCAU04wz7RB3oEta/SiDuy4vQxh2F4jXg==
+
 jsdom@^16.4.0:
   version "16.4.0"
   resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-16.4.0.tgz#36005bde2d136f73eee1a830c6d45e55408edddb"
