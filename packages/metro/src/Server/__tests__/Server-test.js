@@ -132,13 +132,13 @@ describe('processRequest', () => {
 
     reporter: require('../../lib/reporting').nullReporter,
     server: {
-      rewriteRequestUrl(requrl) {
+      rewriteRequestUrl: jest.fn().mockImplementation(requrl => {
         const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
         if (rewritten !== requrl) {
           return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
         }
         return requrl;
-      },
+      }),
     },
     symbolicator: {
       customizeFrame: ({file}) => {
@@ -319,20 +319,26 @@ describe('processRequest', () => {
     fs.realpath = jest.fn((file, cb) => cb?.(null, '/root/foo.js'));
   });
 
-  it('returns JS bundle source on request of *.bundle', async () => {
-    const response = await makeRequest('mybundle.bundle?runModule=true', null);
+  it.each(['?', '//&'])(
+    'returns JS bundle source on request of *.bundle (delimiter: %s)',
+    async delimiter => {
+      const response = await makeRequest(
+        `mybundle.bundle${delimiter}runModule=true`,
+        null,
+      );
 
-    expect(response._getString()).toEqual(
-      [
-        'function () {require();}',
-        '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
-        'require(0);',
-        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
-        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
-      ].join('\n'),
-    );
-  });
+      expect(response._getString()).toEqual(
+        [
+          'function () {require();}',
+          '__d(function() {entry();},0,[1],"mybundle.js");',
+          '__d(function() {foo();},1,[],"foo.js");',
+          'require(0);',
+          '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
+          '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
+        ].join('\n'),
+      );
+    },
+  );
 
   it('returns JS bundle without the initial require() call', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=false', null);
@@ -703,23 +709,32 @@ describe('processRequest', () => {
     });
   });
 
-  it('rewrites URLs before bundling', async () => {
-    const response = await makeRequest(
-      'mybundle.bundle?runModule=true__REMOVE_THIS_WHEN_REWRITING__',
-      null,
-    );
+  it.each(['?', '//&'])(
+    'rewrites URLs before bundling (query delimiter: %s)',
+    async delimiter => {
+      jest.clearAllMocks();
 
-    expect(response._getString()).toEqual(
-      [
-        'function () {require();}',
-        '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
-        'require(0);',
-        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true&TEST_URL_WAS_REWRITTEN=true',
-        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
-      ].join('\n'),
-    );
-  });
+      const response = await makeRequest(
+        `mybundle.bundle${delimiter}runModule=true__REMOVE_THIS_WHEN_REWRITING__`,
+        null,
+      );
+
+      expect(config.server.rewriteRequestUrl).toHaveBeenCalledWith(
+        'mybundle.bundle?runModule=true__REMOVE_THIS_WHEN_REWRITING__',
+      );
+
+      expect(response._getString()).toEqual(
+        [
+          'function () {require();}',
+          '__d(function() {entry();},0,[1],"mybundle.js");',
+          '__d(function() {foo();},1,[],"foo.js");',
+          'require(0);',
+          '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+          '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+        ].join('\n'),
+      );
+    },
+  );
 
   it('does not rebuild the bundle when making concurrent requests', async () => {
     // Delay the response of the buildGraph method.
@@ -926,31 +941,33 @@ describe('processRequest', () => {
     });
   });
 
-  describe('/symbolicate endpoint', () => {
-    beforeEach(() => {
-      fs.mkdirSync('/root');
-      fs.writeFileSync(
-        '/root/mybundle.js',
-        'this\nis\njust an example and it is all fake data, yay!',
-      );
-    });
-
-    it('should symbolicate given stack trace', async () => {
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
-          stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 2,
-              column: 18,
-              customPropShouldBeLeftUnchanged: 'foo',
-              methodName: 'clientSideMethodName',
-            },
-          ],
-        }),
+  describe.each(['?', '//&'])(
+    '/symbolicate endpoint (query delimiter: %s)',
+    queryDelimiter => {
+      beforeEach(() => {
+        fs.mkdirSync('/root');
+        fs.writeFileSync(
+          '/root/mybundle.js',
+          'this\nis\njust an example and it is all fake data, yay!',
+        );
       });
 
-      expect(response._getJSON()).toMatchInlineSnapshot(`
+      it('should symbolicate given stack trace', async () => {
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 2,
+                column: 18,
+                customPropShouldBeLeftUnchanged: 'foo',
+                methodName: 'clientSideMethodName',
+              },
+            ],
+          }),
+        });
+
+        expect(response._getJSON()).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
             "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
@@ -974,145 +991,148 @@ describe('processRequest', () => {
           ],
         }
       `);
-    });
+      });
 
-    describe('should rewrite URLs before symbolicating', () => {
-      test('mapped location symbolicates correctly', async () => {
-        const mappedLocation = {
-          lineNumber: 2,
-          column: 18,
-          customPropShouldBeLeftUnchanged: 'foo',
-          methodName: 'clientSideMethodName',
+      describe('should rewrite URLs before symbolicating', () => {
+        test('mapped location symbolicates correctly', async () => {
+          const mappedLocation = {
+            lineNumber: 2,
+            column: 18,
+            customPropShouldBeLeftUnchanged: 'foo',
+            methodName: 'clientSideMethodName',
+          };
+
+          const response = await makeRequest('/symbolicate', {
+            rawBody: JSON.stringify({
+              stack: [
+                {
+                  file: `http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle${queryDelimiter}runModule=true`,
+                  ...mappedLocation,
+                },
+              ],
+            }),
+          });
+
+          expect(response._getJSON()).toEqual(
+            JSON.parse(
+              (
+                await makeRequest('/symbolicate', {
+                  rawBody: JSON.stringify({
+                    stack: [
+                      {
+                        file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                        ...mappedLocation,
+                      },
+                    ],
+                  }),
+                })
+              )._getString(),
+            ),
+          );
+        });
+
+        test('unmapped location returns the rewritten URL', async () => {
+          const unmappedLocation = {
+            lineNumber: 200000,
+            column: 18,
+            customPropShouldBeLeftUnchanged: 'foo',
+            methodName: 'clientSideMethodName',
+          };
+
+          const response = await makeRequest('/symbolicate', {
+            rawBody: JSON.stringify({
+              stack: [
+                {
+                  file: `http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle${queryDelimiter}runModule=true`,
+                  ...unmappedLocation,
+                },
+              ],
+            }),
+          });
+
+          expect(response._getJSON().stack[0].file).toBe(
+            'http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+          );
+        });
+      });
+
+      it('should update the graph when symbolicating a second time', async () => {
+        const requestData = {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 2,
+                column: 18,
+                customPropShouldBeLeftUnchanged: 'foo',
+                methodName: 'clientSideMethodName',
+              },
+            ],
+          }),
         };
 
+        const IncrementalBundler = require('../../IncrementalBundler');
+        const updateSpy = jest.spyOn(
+          IncrementalBundler.prototype,
+          'updateGraph',
+        );
+        const initSpy = jest.spyOn(
+          IncrementalBundler.prototype,
+          'initializeGraph',
+        );
+
+        // When symbolicating a bundle the first time, we expect to create a graph for it.
+        await makeRequest('/symbolicate', requestData);
+        expect(initSpy).toBeCalledTimes(1);
+        expect(updateSpy).not.toBeCalled();
+
+        // When symbolicating the same bundle a second time, the bundle graph may be out of date.
+        // Let's be sure to update the bundle graph.
+        await makeRequest('/symbolicate', requestData);
+        expect(initSpy).toBeCalledTimes(1);
+        expect(updateSpy).toBeCalledTimes(1);
+      });
+
+      it('supports the `modulesOnly` option', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
               {
-                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
-                ...mappedLocation,
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&modulesOnly=true`,
+                lineNumber: 2,
+                column: 16,
               },
             ],
           }),
         });
 
-        expect(response._getJSON()).toEqual(
-          JSON.parse(
-            (
-              await makeRequest('/symbolicate', {
-                rawBody: JSON.stringify({
-                  stack: [
-                    {
-                      file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-                      ...mappedLocation,
-                    },
-                  ],
-                }),
-              })
-            )._getString(),
-          ),
-        );
+        expect(response._getJSON()).toMatchObject({
+          stack: [
+            expect.objectContaining({
+              column: 0,
+              file: '/root/foo.js',
+              lineNumber: 1,
+            }),
+          ],
+        });
       });
 
-      test('unmapped location returns the rewritten URL', async () => {
-        const unmappedLocation = {
-          lineNumber: 200000,
-          column: 18,
-          customPropShouldBeLeftUnchanged: 'foo',
-          methodName: 'clientSideMethodName',
-        };
-
+      it('supports the `shallow` option', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
               {
-                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
-                ...unmappedLocation,
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&shallow=true`,
+                lineNumber: 2,
+                column: 18,
+                customPropShouldBeLeftUnchanged: 'foo',
+                methodName: 'clientSideMethodName',
               },
             ],
           }),
         });
 
-        expect(response._getJSON().stack[0].file).toBe(
-          'http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
-        );
-      });
-    });
-
-    it('should update the graph when symbolicating a second time', async () => {
-      const requestData = {
-        rawBody: JSON.stringify({
-          stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 2,
-              column: 18,
-              customPropShouldBeLeftUnchanged: 'foo',
-              methodName: 'clientSideMethodName',
-            },
-          ],
-        }),
-      };
-
-      const IncrementalBundler = require('../../IncrementalBundler');
-      const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
-      const initSpy = jest.spyOn(
-        IncrementalBundler.prototype,
-        'initializeGraph',
-      );
-
-      // When symbolicating a bundle the first time, we expect to create a graph for it.
-      await makeRequest('/symbolicate', requestData);
-      expect(initSpy).toBeCalledTimes(1);
-      expect(updateSpy).not.toBeCalled();
-
-      // When symbolicating the same bundle a second time, the bundle graph may be out of date.
-      // Let's be sure to update the bundle graph.
-      await makeRequest('/symbolicate', requestData);
-      expect(initSpy).toBeCalledTimes(1);
-      expect(updateSpy).toBeCalledTimes(1);
-    });
-
-    it('supports the `modulesOnly` option', async () => {
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
-          stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
-              lineNumber: 2,
-              column: 16,
-            },
-          ],
-        }),
-      });
-
-      expect(response._getJSON()).toMatchObject({
-        stack: [
-          expect.objectContaining({
-            column: 0,
-            file: '/root/foo.js',
-            lineNumber: 1,
-          }),
-        ],
-      });
-    });
-
-    it('supports the `shallow` option', async () => {
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
-          stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
-              lineNumber: 2,
-              column: 18,
-              customPropShouldBeLeftUnchanged: 'foo',
-              methodName: 'clientSideMethodName',
-            },
-          ],
-        }),
-      });
-
-      expect(response._getJSON()).toMatchInlineSnapshot(`
+        expect(response._getJSON()).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
             "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
@@ -1136,115 +1156,118 @@ describe('processRequest', () => {
           ],
         }
       `);
-    });
-
-    it('should symbolicate function name if available', async () => {
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
-          stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 3,
-              column: 18,
-            },
-          ],
-        }),
       });
 
-      expect(response._getJSON()).toMatchObject({
-        stack: [
-          expect.objectContaining({
-            methodName: '<global>',
+      it('should symbolicate function name if available', async () => {
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 3,
+                column: 18,
+              },
+            ],
           }),
-        ],
-      });
-    });
+        });
 
-    it('should collapse frames as specified in customizeFrame', async () => {
-      // NOTE: See implementation of symbolicator.customizeFrame above.
-
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
+        expect(response._getJSON()).toMatchObject({
           stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 3,
-              column: 18,
-            },
+            expect.objectContaining({
+              methodName: '<global>',
+            }),
           ],
-        }),
+        });
       });
 
-      expect(response._getJSON()).toMatchObject({
-        stack: [
-          expect.objectContaining({
-            file: '/root/foo.js',
-            collapse: true,
+      it('should collapse frames as specified in customizeFrame', async () => {
+        // NOTE: See implementation of symbolicator.customizeFrame above.
+
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 3,
+                column: 18,
+              },
+            ],
           }),
-        ],
-      });
-    });
+        });
 
-    it('should transform frames as specified in customizeStack', async () => {
-      // NOTE: See implementation of symbolicator.customizeStack above.
-
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
+        expect(response._getJSON()).toMatchObject({
           stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 3,
-              column: 18,
-            },
+            expect.objectContaining({
+              file: '/root/foo.js',
+              collapse: true,
+            }),
           ],
-          extraData: {
-            customAnnotation: 'Baz',
-          },
-        }),
+        });
       });
 
-      expect(response._getJSON()).toMatchObject({
-        stack: [
-          expect.objectContaining({
-            file: '/root/foo.js',
-            wasCollapsedBefore: true,
-            customAnnotation: 'Baz',
+      it('should transform frames as specified in customizeStack', async () => {
+        // NOTE: See implementation of symbolicator.customizeStack above.
+
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 3,
+                column: 18,
+              },
+            ],
+            extraData: {
+              customAnnotation: 'Baz',
+            },
           }),
-        ],
-      });
-    });
+        });
 
-    it('should leave original file and position when cannot symbolicate', async () => {
-      const response = await makeRequest('/symbolicate', {
-        rawBody: JSON.stringify({
+        expect(response._getJSON()).toMatchObject({
           stack: [
-            {
-              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
-              lineNumber: 200,
-              column: 18,
-              customPropShouldBeLeftUnchanged: 'foo',
-              methodName: 'clientSideMethodName',
-            },
+            expect.objectContaining({
+              file: '/root/foo.js',
+              wasCollapsedBefore: true,
+              customAnnotation: 'Baz',
+            }),
           ],
-        }),
+        });
       });
 
-      expect(response._getJSON()).toMatchInlineSnapshot(`
+      // TODO: This probably should restore the *original* file before rewrite
+      // or normalisation.
+      it('should leave original file and position when cannot symbolicate (after normalisation and rewriting?)', async () => {
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&foo__REMOVE_THIS_WHEN_REWRITING__=bar`,
+                lineNumber: 200,
+                column: 18,
+                customPropShouldBeLeftUnchanged: 'foo',
+                methodName: 'clientSideMethodName',
+              },
+            ],
+          }),
+        });
+
+        expect(response._getJSON()).toMatchInlineSnapshot(`
         Object {
           "codeFrame": null,
           "stack": Array [
             Object {
               "column": 18,
               "customPropShouldBeLeftUnchanged": "foo",
-              "file": "http://localhost:8081/mybundle.bundle?runModule=true",
+              "file": "http://localhost:8081/mybundle.bundle?runModule=true&foo=bar&TEST_URL_WAS_REWRITTEN=true",
               "lineNumber": 200,
               "methodName": "clientSideMethodName",
             },
           ],
         }
       `);
-    });
-  });
+      });
+    },
+  );
 
   describe('/symbolicate handles errors', () => {
     it('should symbolicate given stack trace', async () => {
