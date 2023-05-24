@@ -16,6 +16,7 @@ import type {DeltaResult, Module, ReadOnlyGraph} from '../types.flow';
 import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
 
 const {isJsModule, wrapModule} = require('./helpers/js');
+const jscSafeUrl = require('jsc-safe-url');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 const url = require('url');
@@ -53,7 +54,7 @@ function generateModules(
       };
 
       const sourceMappingURL = getURL('map');
-      const sourceURL = getURL('bundle');
+      const sourceURL = jscSafeUrl.toJscSafeUrl(getURL('bundle'));
       const code =
         prepareModule(module, graph, options) +
         `\n//# sourceMappingURL=${sourceMappingURL}\n` +
