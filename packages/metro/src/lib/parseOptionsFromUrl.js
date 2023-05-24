@@ -17,6 +17,7 @@ import type {TransformProfile} from 'metro-babel-transformer';
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const parseCustomResolverOptions = require('./parseCustomResolverOptions');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+const jscSafeUrl = require('jsc-safe-url');
 const nullthrows = require('nullthrows');
 const path = require('path');
 const url = require('url');
@@ -93,7 +94,7 @@ module.exports = function parseOptionsFromUrl(
         platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
-    sourceUrl: normalizedRequestUrl,
+    sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
     unstable_transformProfile: getTransformProfile(
       query.unstable_transformProfile,
     ),
