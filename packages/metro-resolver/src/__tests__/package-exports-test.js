@@ -871,74 +871,38 @@ describe('with package exports resolution enabled', () => {
         const context = {
           ...createResolutionContext({
             '/root/src/main.js': '',
-            '/root/node_modules/@babel/runtime/package.json': JSON.stringify({
+            '/root/node_modules/test-pkg/package.json': JSON.stringify({
               exports: {
-                './helpers/typeof': [
+                '.': [
                   {
-                    node: './helpers/typeof.js',
-                    import: './helpers/esm/typeof.js',
-                    default: './helpers/typeof.js',
+                    'react-native': './index-react-native.js',
+                    default: './index.js',
                   },
-                  './helpers/typeof.js',
-                ],
-                './helpers/interopRequireDefault': [
-                  {
-                    node: './helpers/interopRequireDefault.js',
-                    import: './helpers/esm/interopRequireDefault.js',
-                    default: './helpers/interopRequireDefault.js',
-                  },
-                  './helpers/interopRequireDefault.js',
+                  './index.js',
                 ],
               },
             }),
-            '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js':
-              '',
-            '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js':
-              '',
-            '/root/node_modules/@babel/runtime/helpers/esm/typeof.js': '',
+            '/root/node_modules/test-pkg/index.js': '',
+            '/root/node_modules/test-pkg/index-react-native.js': '',
           }),
           originModulePath: '/root/src/main.js',
           unstable_conditionNames: [],
           unstable_enablePackageExports: true,
         };
 
-        expect(
-          Resolver.resolve(
-            context,
-            '@babel/runtime/helpers/interopRequireDefault',
-            null,
-          ),
-        ).toEqual({
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
           type: 'sourceFile',
-          filePath:
-            '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js',
+          filePath: '/root/node_modules/test-pkg/index.js',
         });
         expect(
           Resolver.resolve(
-            {...context, unstable_conditionNames: ['import']},
-            '@babel/runtime/helpers/interopRequireDefault',
+            {...context, unstable_conditionNames: ['react-native']},
+            'test-pkg',
             null,
           ),
         ).toEqual({
           type: 'sourceFile',
-          filePath:
-            '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js',
-        });
-        // Check internal self-reference case explicitly!
-        expect(
-          Resolver.resolve(
-            {
-              ...context,
-              originModulePath:
-                '/root/node_modules/@babel/runtime/helpers/esm/interopRequireDefault.js',
-              unstable_conditionNames: ['import'],
-            },
-            '@babel/runtime/helpers/typeof',
-            null,
-          ),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: '/root/node_modules/@babel/runtime/helpers/esm/typeof.js',
+          filePath: '/root/node_modules/test-pkg/index-react-native.js',
         });
       });
 
@@ -1032,6 +996,45 @@ describe('with package exports resolution enabled', () => {
           "The package /root/node_modules/test-pkg contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
           Reason: Could not parse non-standard array value in \\"exports\\" field. Falling back to file-based resolution."
         `);
+      });
+    });
+  });
+
+  describe('@babel/runtime compatibility (special case)', () => {
+    test('should never assert "import" condition', () => {
+      const context = {
+        ...createResolutionContext({
+          '/root/src/main.js': '',
+          '/root/node_modules/@babel/runtime/package.json': JSON.stringify({
+            exports: {
+              './helpers/interopRequireDefault': [
+                {
+                  node: './helpers/interopRequireDefault.js',
+                  import: './helpers/esm/interopRequireDefault.js',
+                  default: './helpers/interopRequireDefault.js',
+                },
+                './helpers/interopRequireDefault.js',
+              ],
+            },
+          }),
+          '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js':
+            '',
+        }),
+        originModulePath: '/root/src/main.js',
+        unstable_conditionNames: ['require', 'import'],
+        unstable_enablePackageExports: true,
+      };
+
+      expect(
+        Resolver.resolve(
+          context,
+          '@babel/runtime/helpers/interopRequireDefault',
+          null,
+        ),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath:
+          '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js',
       });
     });
   });

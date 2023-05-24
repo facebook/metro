@@ -260,9 +260,21 @@ function resolvePackage(
     const exportsField = pkg?.packageJson.exports;
 
     if (pkg != null && exportsField != null) {
+      let conditionNamesOverride = context.unstable_conditionNames;
+
+      // HACK!: Do not assert the "import" condition for `@babel/runtime`. This
+      // is a workaround for ESM <-> CJS interop, as we need the CJS versions of
+      // `@babel/runtime` helpers.
+      // TODO(T154157178): Remove with better "require"/"import" solution
+      if (pkg.packageJson.name === '@babel/runtime') {
+        conditionNamesOverride = context.unstable_conditionNames.filter(
+          condition => condition !== 'import',
+        );
+      }
+
       try {
         const packageExportsResult = resolvePackageTargetFromExports(
-          context,
+          {...context, unstable_conditionNames: conditionNamesOverride},
           pkg.rootPath,
           modulePath,
           exportsField,
