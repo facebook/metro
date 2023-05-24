@@ -34,6 +34,7 @@
     "image-size": "^0.6.0",
     "invariant": "^2.2.4",
     "jest-worker": "^27.2.0",
+    "jsc-safe-url": "^0.2.2",
     "lodash.throttle": "^4.1.1",
     "metro-babel-transformer": "0.73.9",
     "metro-cache": "0.73.9",
