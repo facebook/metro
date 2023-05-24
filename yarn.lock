@@ -5126,6 +5126,11 @@ js-yaml@^4.1.0:
   dependencies:
     argparse "^2.0.1"
 
+jsc-safe-url@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/jsc-safe-url/-/jsc-safe-url-0.2.2.tgz#9ce79116d6271fce4b3d1b59b879e66b82457be1"
+  integrity sha512-F6ezJ+Ys7yUaZ2tG7VVGwDgmCB8T1kaDB2AlxhLnPIfTpJqgFWSjptCAU04wz7RB3oEta/SiDuy4vQxh2F4jXg==
+
 jsdom@^16.4.0:
   version "16.7.0"
   resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-16.7.0.tgz#918ae71965424b197c819f8183a754e18977b710"
