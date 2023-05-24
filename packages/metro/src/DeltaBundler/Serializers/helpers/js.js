@@ -15,6 +15,7 @@ import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
 
 const invariant = require('invariant');
+const jscSafeUrl = require('jsc-safe-url');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 
@@ -59,7 +60,9 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
         // Construct a server-relative URL for the split bundle, propagating
         // most parameters from the main bundle's URL.
 
-        const {searchParams} = new URL(options.sourceUrl);
+        const {searchParams} = new URL(
+          jscSafeUrl.toNormalUrl(options.sourceUrl),
+        );
         searchParams.set('modulesOnly', 'true');
         searchParams.set('runModule', 'false');
 
