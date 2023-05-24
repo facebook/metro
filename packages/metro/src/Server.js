@@ -65,6 +65,8 @@ const {codeFrameColumns} = require('@babel/code-frame');
 const MultipartResponse = require('./Server/MultipartResponse');
 const debug = require('debug')('Metro:Server');
 const fs = require('graceful-fs');
+const invariant = require('invariant');
+const jscSafeUrl = require('jsc-safe-url');
 const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
@@ -489,14 +491,19 @@ class Server {
     return parseOptionsFromUrl(url, new Set(this._config.resolver.platforms));
   }
 
+  _rewriteAndNormalizeUrl(requestUrl: string): string {
+    return jscSafeUrl.toNormalUrl(
+      this._config.server.rewriteRequestUrl(jscSafeUrl.toNormalUrl(requestUrl)),
+    );
+  }
+
   async _processRequest(
     req: IncomingMessage,
     res: ServerResponse,
     next: (?Error) => mixed,
   ) {
     const originalUrl = req.url;
-    req.url = this._config.server.rewriteRequestUrl(req.url);
-
+    req.url = this._rewriteAndNormalizeUrl(req.url);
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(
@@ -1112,19 +1119,33 @@ class Server {
       /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
       const body = await req.rawBody;
       const parsedBody = JSON.parse(body);
-      const stack = parsedBody.stack.map(frame => {
-        if (frame.file && frame.file.includes('://')) {
+
+      const rewriteAndNormalizeStackFrame = <T>(
+        frame: T,
+        lineNumber: number,
+      ): T => {
+        invariant(
+          frame != null && typeof frame === 'object',
+          'Bad stack frame at line %d, expected object, received: %s',
+          lineNumber,
+          typeof frame,
+        );
+        const frameFile = frame.file;
+        if (typeof frameFile === 'string' && frameFile.includes('://')) {
           return {
             ...frame,
-            file: this._config.server.rewriteRequestUrl(frame.file),
+            file: this._rewriteAndNormalizeUrl(frameFile),
           };
         }
         return frame;
-      });
+      };
+
+      const stack = parsedBody.stack.map(rewriteAndNormalizeStackFrame);
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
       const urls = new Set<string>();
 
       stack.forEach(frame => {
+        // These urls have been rewritten and normalized above.
         const sourceUrl = frame.file;
         // Skip `/debuggerWorker.js` which does not need symbolication.
         if (
@@ -1139,8 +1160,11 @@ class Server {
 
       debug('Getting source maps for symbolication');
       const sourceMaps = await Promise.all(
-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-        Array.from(urls.values()).map(this._explodedSourceMapForURL, this),
+        Array.from(urls.values()).map(normalizedUrl =>
+          this._explodedSourceMapForBundleOptions(
+            this._parseOptions(normalizedUrl),
+          ),
+        ),
       );
 
       debug('Performing fast symbolication');
@@ -1168,12 +1192,9 @@ class Server {
     }
   }
 
-  async _explodedSourceMapForURL(reqUrl: string): Promise<ExplodedSourceMap> {
-    const options = parseOptionsFromUrl(
-      reqUrl,
-      new Set(this._config.resolver.platforms),
-    );
-
+  async _explodedSourceMapForBundleOptions(
+    bundleOptions: BundleOptions,
+  ): Promise<ExplodedSourceMap> {
     const {
       entryFile,
       graphOptions,
@@ -1181,7 +1202,7 @@ class Server {
       resolverOptions,
       serializerOptions,
       transformOptions,
-    } = splitBundleOptions(options);
+    } = splitBundleOptions(bundleOptions);
 
     /**
      * `entryFile` is relative to projectRoot, we need to use resolution function
