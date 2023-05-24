@@ -57,11 +57,11 @@ const getTransformProfile = (
     : 'default';
 
 module.exports = function parseOptionsFromUrl(
-  requestUrl: string,
+  normalizedRequestUrl: string,
   platforms: Set<string>,
   bytecodeVersion: number,
 ): BundleOptions {
-  const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
+  const parsedURL = nullthrows(url.parse(normalizedRequestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
     query.bundleEntry ||
@@ -101,7 +101,7 @@ module.exports = function parseOptionsFromUrl(
         platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
-    sourceUrl: requestUrl,
+    sourceUrl: normalizedRequestUrl,
     unstable_transformProfile: getTransformProfile(
       query.unstable_transformProfile,
     ),

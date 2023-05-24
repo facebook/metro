@@ -36,6 +36,7 @@
     "invariant": "^2.2.4",
     "jest-haste-map": "^27.3.1",
     "jest-worker": "^27.2.0",
+    "jsc-safe-url": "^0.2.2",
     "lodash.throttle": "^4.1.1",
     "metro-babel-transformer": "0.70.3",
     "metro-cache": "0.70.3",
