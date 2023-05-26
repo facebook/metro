@@ -19,7 +19,7 @@ yarn add --dev metro metro-core
 
 You can run Metro by either running the [CLI](./CLI.md) or by calling it programmatically.
 
-### Running Programatically
+### Running Programmatically
 
 First, require the module by doing:
 
@@ -86,7 +86,7 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 * `secure (boolean)`: **DEPRECATED** Whether the server should run on `https` instead of `http`.
 * `secureKey (string)`: **DEPRECATED** The key to use for `https` when `secure` is on.
 * `secureCert (string)`: **DEPRECATED** The cert to use for `https` when `secure` is on.
-* `secureServerOptions (Object)`: The options object to pass to the Metro's https server. The presence of this object will make Metro's server run on `https`. Refer to the [nodejs docs](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) for valid options.
+* `secureServerOptions (Object)`: The options object to pass to Metro's HTTPS server. The presence of this object will make Metro's server run on `https`. Refer to the [Node docs](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) for valid options.
 * `waitForBundler (boolean)`: Whether to wait for the bundler to finish initializing before returning the server instance.
 
 ```js
@@ -148,7 +148,7 @@ Instead of creating the full server, creates a Connect middleware that answers t
 
 #### Options
 
-* `port (number)`: Port for the Connect Middleware (Only for logging purposes).
+* `port (number)`: Port for the Connect middleware (only for logging purposes).
 
 ```js
 const Metro = require('metro');
@@ -199,7 +199,7 @@ Source maps are built for each bundle by using the same URL as the bundle (thus,
 
 ## JavaScript transformer
 
-The JavaScript transformer (`babelTransformerPath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
+The JavaScript transformer ([`babelTransformerPath`](./Configuration.md#babeltransformerpath)) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
 
 ### Method `transform(module)`
 
@@ -215,7 +215,7 @@ module.exports.transform = (file: {filename: string, src: string}) => {
 };
 ```
 
-If you would like to plug-in babel, you can simply do that by passing the code to it:
+If you would like to plug-in Babel, you can simply do that by passing the code to it:
 
 ```js
 const {transformSync} = require('@babel/core');

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -61,8 +62,14 @@ function saveAsIndexedFile(
 
   if (sourcemapOutput) {
     const sourceMap = buildSourcemapWithMetadata({
-      startupModules: startupModules.concat(),
-      lazyModules: lazyModules.concat(),
+      startupModules: startupModules.concat<
+        ModuleTransportLike,
+        ModuleTransportLike,
+      >(),
+      lazyModules: lazyModules.concat<
+        ModuleTransportLike,
+        ModuleTransportLike,
+      >(),
       moduleGroups,
       fixWrapperOffset: true,
     });
@@ -109,7 +116,7 @@ function moduleToBuffer(
   id: number,
   code: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-): {|buffer: Buffer, id: number|} {
+): {buffer: Buffer, id: number} {
   return {
     id,
     buffer: nullTerminatedBuffer(code, encoding),

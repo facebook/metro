@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_foundation
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -70,13 +70,11 @@ describe('posix support', () => {
   it('can write then read a file (async)', done => {
     fs.writeFile('/foo.txt', 'test', wrError => {
       if (wrError) {
-        // $FlowFixMe - Upgrading the Jest definition revealed errors
         done(wrError);
         return;
       }
       fs.readFile('/foo.txt', 'utf8', (rdError, str) => {
         if (rdError) {
-          // $FlowFixMe - Upgrading the Jest definition revealed errors
           done(rdError);
           return;
         }
@@ -202,7 +200,15 @@ describe('posix support', () => {
       // expect(fs.statSync('/glo.txt').mode).toBe(0o600);
     });
 
-    function readWithReadStream(options, filePath = '/foo.txt') {
+    function readWithReadStream(
+      options:
+        | null
+        | {end: number}
+        | {end: number, start: number}
+        | {flags: string, mode: number}
+        | {start: number},
+      filePath: string = '/foo.txt',
+    ) {
       return new Promise(resolve => {
         const st = fs.createReadStream(
           filePath,
@@ -504,7 +510,9 @@ describe('posix support', () => {
 
   describe('watch', () => {
     it('reports changed files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       fs.writeFileSync('/bar.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -518,7 +526,9 @@ describe('posix support', () => {
     });
 
     it('does not report nested changed files if non-recursive', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.mkdirSync('/foo');
       fs.writeFileSync('/foo/bar.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -528,7 +538,9 @@ describe('posix support', () => {
     });
 
     it('does report nested changed files if recursive', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.mkdirSync('/foo');
       fs.writeFileSync('/foo/bar.txt', '');
       const watcher = collectWatchEvents('/', {recursive: true}, changedPaths);
@@ -538,7 +550,9 @@ describe('posix support', () => {
     });
 
     it('reports created files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       const watcher = collectWatchEvents('/', {}, changedPaths);
       const fd = fs.openSync('/foo.txt', 'w');
       expect(changedPaths).toEqual([['rename', 'foo.txt']]);
@@ -547,7 +561,9 @@ describe('posix support', () => {
     });
 
     it('reports unlinked files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/bar.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.unlinkSync('/bar.txt');
@@ -556,7 +572,9 @@ describe('posix support', () => {
     });
 
     it('reports changed files when watching a file directly', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       const watcher = collectWatchEvents('/foo.txt', {}, changedPaths);
       fs.writeFileSync('/foo.txt', 'test');
@@ -565,7 +583,9 @@ describe('posix support', () => {
     });
 
     it('does not report changes when just reading a file', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', '');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.readFileSync('/foo.txt');
@@ -574,7 +594,9 @@ describe('posix support', () => {
     });
 
     it('reports source and destination files when renaming', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/src.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.renameSync('/src.txt', '/dest.txt');
@@ -586,7 +608,9 @@ describe('posix support', () => {
     });
 
     it('reports destination file twice when renaming and overwriting ', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/src.txt', 'text');
       fs.writeFileSync('/dest.txt', 'overwriteThis');
       const watcher = collectWatchEvents('/', {}, changedPaths);
@@ -600,7 +624,9 @@ describe('posix support', () => {
     });
 
     it('reports new hard links', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/foo.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.linkSync('/foo.txt', '/bar.txt');
@@ -609,7 +635,9 @@ describe('posix support', () => {
     });
 
     it('reports truncated files', () => {
-      const changedPaths = [];
+      const changedPaths: Array<
+        Array<?(Buffer | string | 'change' | 'rename')>,
+      > = [];
       fs.writeFileSync('/bar.txt', 'text');
       const watcher = collectWatchEvents('/', {}, changedPaths);
       fs.truncateSync('/bar.txt');
@@ -620,7 +648,13 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    function collectWatchEvents(entPath, options, events) {
+    function collectWatchEvents(
+      entPath: string,
+      /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+       * Flow's LTI update could not be added via codemod */
+      options,
+      events: Array<Array<?(Buffer | string | 'change' | 'rename')>>,
+    ) {
       return fs.watch(entPath, options, (eventName, filePath) => {
         events.push([eventName, filePath]);
       });
@@ -721,9 +755,8 @@ describe('posix support', () => {
   });
 
   it('throws when trying to read inexistent file (async)', done => {
-    fs.readFile('/foo.txt', error => {
+    fs.readFile('/foo.txt', (error: any) => {
       if (error.code !== 'ENOENT') {
-        // $FlowFixMe - Upgrading the Jest definition revealed errors
         done(error);
         return;
       }
@@ -1527,7 +1560,11 @@ describe('promises', () => {
   });
 });
 
-function expectFsError(code, handler, {noSnapshot} = {}) {
+function expectFsError(
+  code: string,
+  handler: () => $FlowFixMe,
+  {noSnapshot}: {noSnapshot?: boolean} = {...null},
+) {
   try {
     handler();
     throw new Error('an error was expected but did not happen');

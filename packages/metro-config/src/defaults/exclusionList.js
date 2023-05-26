@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -29,7 +30,7 @@ function escapeRegExp(pattern) {
     var escaped = pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
     // convert the '/' into an escaped local file separator. The separator needs
     // to be escaped in the regular expression source string, hence the '\\' prefix.
-    return escaped.replace(/\//g, '\\' + path.sep);
+    return escaped.replaceAll('/', '\\' + path.sep);
   } else {
     throw new Error('Unexpected exclusion pattern: ' + pattern);
   }

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -19,12 +20,12 @@ const {
   joinModules,
 } = require('./util');
 
-type Params = {|
+type Params = {
   fixWrapperOffset: boolean,
   lazyModules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ?ModuleGroups,
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
-|};
+};
 
 module.exports = (({
   fixWrapperOffset,

@@ -4,13 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {mergeConfig} = require('metro-config');
+import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {InputConfigT} from 'metro-config/src/configTypes.flow';
+
+const {getDefaultConfig, mergeConfig} = require('metro-config');
 const path = require('path');
 const mockPlatform = process.platform;
 
@@ -19,6 +23,7 @@ jest
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))
   .mock('os', () => ({
+    ...jest.requireActual('os'),
     platform: () => 'test',
     tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
@@ -32,8 +37,12 @@ jest.setTimeout(10000);
 let fs;
 let resolver;
 
+type MockFSDirContents = $ReadOnly<{
+  [name: string]: string | MockFSDirContents,
+}>;
+
 ['linux', 'win32'].forEach(osPlatform => {
-  function setMockFileSystem(object) {
+  function setMockFileSystem(object: MockFSDirContents) {
     const root = p('/root');
 
     fs.mkdirSync(root);
@@ -45,7 +54,7 @@ let resolver;
     return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
-  function mockDir(dirPath, desc) {
+  function mockDir(dirPath: string, desc: MockFSDirContents): void {
     for (const entName in desc) {
       const ent = desc[entName];
 
@@ -62,7 +71,7 @@ let resolver;
     }
   }
 
-  const defaultConfig = {
+  const defaultConfig: InputConfigT = {
     resolver: {
       assetExts: ['png', 'jpg'],
       assetResolutions: ['1', '1.5', '2', '3', '4'],
@@ -74,24 +83,38 @@ let resolver;
       sourceExts: ['js', 'json'],
       useWatchman: false,
     },
+    watcher: {
+      additionalExts: ['cjs', 'mjs'],
+    },
     maxWorkers: 1,
     projectRoot: p('/root'),
     reporter: require('../../lib/reporting').nullReporter,
     transformer: {},
-    watch: true,
     watchFolders: [p('/root')],
   };
 
-  async function createResolver(config = {}, platform = '') {
+  async function createResolver(config: InputConfigT = {}, platform?: string) {
     const DependencyGraph = require('../../node-haste/DependencyGraph');
-    const dependencyGraph = await DependencyGraph.load(
-      mergeConfig(defaultConfig, config),
+    const dependencyGraph = new DependencyGraph(
+      mergeConfig(await getDefaultConfig(p('/root')), defaultConfig, config),
     );
+    await dependencyGraph.ready();
 
     return {
-      resolve: (from, to, options) =>
-        dependencyGraph.resolveDependency(from, to, platform, options),
-      end: dependencyGraph.end.bind(dependencyGraph),
+      resolve: (
+        from: string,
+        to: string,
+        resolverOptions?: ResolverInputOptions = {},
+        options: void | {assumeFlatNodeModules: boolean},
+      ) =>
+        dependencyGraph.resolveDependency(
+          from,
+          to,
+          platform ?? null,
+          resolverOptions,
+          options,
+        ),
+      end: () => dependencyGraph.end(),
     };
   }
 
@@ -106,6 +129,7 @@ let resolver;
   const joinPath = osPlatform === 'win32' ? path.win32.join : path.posix.join;
 
   describe(osPlatform, () => {
+    let originalError = console.error;
     beforeEach(() => {
       jest.resetModules();
 
@@ -116,7 +140,10 @@ let resolver;
       });
 
       if (osPlatform === 'win32') {
-        jest.mock('path', () => jest.requireActual('path').win32);
+        jest.mock(
+          'path',
+          () => jest.requireActual<{win32: mixed}>('path').win32,
+        );
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),
@@ -126,17 +153,33 @@ let resolver;
         jest.mock('fs', () => new (require('metro-memory-fs'))());
       }
 
+      // $FlowFixMe[cannot-write]
       require('os').tmpdir = () => p('/tmp');
 
       fs = require('fs');
-
-      jest.spyOn(console, 'error');
+      originalError = console.error;
+      // $FlowFixMe[cannot-write]
+      console.error = jest.fn((...args) => {
+        // Silence expected errors that we assert on later
+        if (
+          typeof args[0] === 'string' &&
+          args[0].startsWith('metro-file-map:')
+        ) {
+          return;
+        }
+        originalError(...args);
+      });
     });
 
     afterEach(async () => {
-      resolver && (await resolver.end());
-      resolver = null;
-      console.error.mockRestore();
+      try {
+        if (resolver) {
+          await resolver.end();
+        }
+      } finally {
+        // $FlowFixMe[cannot-write]
+        console.error = originalError;
+      }
     });
 
     describe('relative paths', () => {
@@ -148,9 +191,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a.js')).toBe(
-          p('/root/a.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './a.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a.js'),
+        });
       });
 
       it('resolves relative paths without extension', async () => {
@@ -161,9 +205,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a')).toBe(
-          p('/root/a.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a.js'),
+        });
       });
 
       it('resolves extensions correctly', async () => {
@@ -175,9 +220,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a')).toBe(
-          p('/root/a.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a.js'),
+        });
       });
 
       it('resolves shorthand syntax for parent directory', async () => {
@@ -196,15 +242,16 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/folderA/folderB/foo.js'), '..')).toBe(
-          p('/root/folderA/index.js'),
-        );
+        expect(
+          resolver.resolve(p('/root/folderA/folderB/foo.js'), '..'),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/folderA/index.js')});
         expect(
           resolver.resolve(p('/root/folderA/folderB/index.js'), '..'),
-        ).toBe(p('/root/folderA/index.js'));
-        expect(resolver.resolve(p('/root/folderA/foo.js'), '..')).toBe(
-          p('/root/index.js'),
-        );
+        ).toEqual({type: 'sourceFile', filePath: p('/root/folderA/index.js')});
+        expect(resolver.resolve(p('/root/folderA/foo.js'), '..')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/index.js'),
+        });
       });
 
       it('resolves shorthand syntax for relative index module', async () => {
@@ -215,9 +262,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/foo.js'), '.')).toBe(
-          p('/root/index.js'),
-        );
+        expect(resolver.resolve(p('/root/foo.js'), '.')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/index.js'),
+        });
       });
 
       it('resolves shorthand syntax for nested relative index module with resolution cache', async () => {
@@ -232,12 +280,14 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/foo.js'), '.')).toBe(
-          p('/root/index.js'),
-        );
-        expect(resolver.resolve(p('/root/folderA/foo.js'), '.')).toBe(
-          p('/root/folderA/index.js'),
-        );
+        expect(resolver.resolve(p('/root/foo.js'), '.')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/index.js'),
+        });
+        expect(resolver.resolve(p('/root/folderA/foo.js'), '.')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folderA/index.js'),
+        });
       });
 
       it('resolves custom extensions in the correct order', async () => {
@@ -250,18 +300,22 @@ let resolver;
         const {resolve, end} = await createResolver({
           resolver: {sourceExts: ['another', 'js']},
         });
-        expect(resolve(p('/root/index.js'), './a')).toBe(p('/root/a.another'));
+        expect(resolve(p('/root/index.js'), './a')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a.another'),
+        });
         end();
 
         resolver = await createResolver({
           resolver: {sourceExts: ['js', 'another']},
         });
-        expect(resolver.resolve(p('/root/index.js'), './a')).toBe(
-          p('/root/a.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a.js'),
+        });
       });
 
-      it('fails when trying to require a non supported extension', async () => {
+      it('fails when trying to implicitly require an extension not listed in sourceExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import root from './a.another';"),
           'a.another': '',
@@ -283,15 +337,18 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './folder/foo')).toBe(
-          p('/root/folder/foo.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), './folder')).toBe(
-          p('/root/folder/index.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), './folder/')).toBe(
-          p('/root/folder/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './folder/foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folder/foo.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), './folder')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folder/index.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), './folder/')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folder/index.js'),
+        });
       });
 
       it('resolves files when there is a folder with the same name', async () => {
@@ -304,12 +361,55 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './folder')).toBe(
-          p('/root/folder.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), './folder.js')).toBe(
-          p('/root/folder.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './folder')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folder.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), './folder.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/folder.js'),
+        });
+      });
+
+      describe('with additional files included in the file map (watcher.additionalExts)', () => {
+        it('resolves modules outside sourceExts when required explicitly', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a.cjs';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(resolver.resolve(p('/root/index.js'), './a.cjs')).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/a.cjs'),
+          });
+        });
+
+        it('fails when implicitly requiring a file outside sourceExts', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from './a';"),
+            'a.cjs': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+            watcher: {
+              additionalExts: ['cjs'],
+            },
+          });
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), './a'),
+          ).toThrowErrorMatchingSnapshot();
+        });
       });
     });
 
@@ -325,7 +425,7 @@ let resolver;
         resolver = await createResolver();
         expect(
           resolver.resolve(p('/root/index.js'), p('/root/folder/index.js')),
-        ).toBe(p('/root/folder/index.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/root/folder/index.js')});
       });
     });
 
@@ -337,8 +437,8 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './package.json')).toBe(
-          p('/root/package.json'),
+        expect(resolver.resolve(p('/root/index.js'), './package.json')).toEqual(
+          {type: 'sourceFile', filePath: p('/root/package.json')},
         );
       });
 
@@ -372,18 +472,25 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'bar')).toBe(
-          p('/root/node_modules/bar/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'bar')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/bar/index.js'),
+        });
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'qux'),
         ).toThrowErrorMatchingSnapshot();
         expect(
           resolver.resolve(p('/root/node_modules/foo/index.js'), 'bar'),
-        ).toBe(p('/root/node_modules/foo/node_modules/bar/index.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/node_modules/bar/index.js'),
+        });
         expect(
           resolver.resolve(p('/root/node_modules/foo/index.js'), 'baz'),
-        ).toBe(p('/root/node_modules/baz/index.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/baz/index.js'),
+        });
       });
 
       it('can require specific files inside a package', async () => {
@@ -399,12 +506,14 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'foo/lib/foo')).toBe(
-          p('/root/node_modules/foo/lib/foo.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), 'foo/lib')).toBe(
-          p('/root/node_modules/foo/lib/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'foo/lib/foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/lib/foo.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'foo/lib')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/lib/index.js'),
+        });
       });
 
       it('finds the appropiate node_modules folder', async () => {
@@ -430,15 +539,19 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/lib/index.js'), 'foo')).toBe(
-          p('/root/node_modules/foo/index.js'),
-        );
+        expect(resolver.resolve(p('/root/lib/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/index.js'),
+        });
         expect(
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
             'foo',
           ),
-        ).toBe(p('/root/lib/subfolder/node_modules/foo/index.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/lib/subfolder/node_modules/foo/index.js'),
+        });
       });
 
       it('caches the closest node_modules folder if a flat layout is assumed', async () => {
@@ -465,17 +578,24 @@ let resolver;
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/lib/index.js'), 'foo', {
+          resolver.resolve(p('/root/lib/index.js'), 'foo', undefined, {
             assumeFlatNodeModules: true,
           }),
-        ).toBe(p('/root/node_modules/foo/index.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/index.js'),
+        });
         expect(
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
             'foo',
+            undefined,
             {assumeFlatNodeModules: true},
           ),
-        ).toBe(p('/root/node_modules/foo/index.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/index.js'),
+        });
       });
 
       it('works with packages with a .js extension', async () => {
@@ -490,9 +610,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'sha.js')).toBe(
-          p('/root/node_modules/sha.js/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'sha.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/sha.js/index.js'),
+        });
       });
 
       it('works with one-character packages', async () => {
@@ -507,9 +628,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'Y')).toBe(
-          p('/root/node_modules/Y/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'Y')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/Y/index.js'),
+        });
       });
 
       it('uses the folder name and not the name in the package.json', async () => {
@@ -528,9 +650,10 @@ let resolver;
         resolver = await createResolver();
 
         // TODO: Should we fail here?
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
-          p('/root/node_modules/foo/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/index.js'),
+        });
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'invalidName'),
         ).toThrowErrorMatchingSnapshot();
@@ -549,9 +672,10 @@ let resolver;
         resolver = await createResolver();
 
         // TODO: Is this behaviour correct?
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
-          p('/root/node_modules/foo/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/index.js'),
+        });
       });
 
       it('resolves main package module to index.js by default', async () => {
@@ -566,9 +690,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/node_modules/aPackage/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/index.js'),
+        });
       });
 
       it('resolves main field correctly if it is a folder', async () => {
@@ -588,9 +713,35 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/node_modules/aPackage/lib/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/lib/index.js'),
+        });
+      });
+
+      it('resolves main field correctly for a fully specified module included by watcher.additionalExts', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            foo: {
+              'package.json': JSON.stringify({
+                name: 'foo',
+                main: './main.cjs',
+              }),
+              'main.cjs': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          watcher: {
+            additionalExts: ['cjs'],
+          },
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/main.cjs'),
+        });
       });
 
       it('allows package names with dots', async () => {
@@ -609,12 +760,14 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toBe(
-          p('/root/node_modules/leftpad.js/index.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toBe(
-          p('/root/node_modules/x.y.z/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/leftpad.js/index.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/x.y.z/index.js'),
+        });
       });
 
       it('allows relative requires against packages', async () => {
@@ -634,10 +787,14 @@ let resolver;
         resolver = await createResolver();
         expect(
           resolver.resolve(p('/root/index.js'), './node_modules/aPackage'),
-        ).toBe(p('/root/node_modules/aPackage/main.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/main.js'),
+        });
       });
 
       it('allows to require package sub-dirs', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -652,7 +809,10 @@ let resolver;
         resolver = await createResolver();
         expect(
           resolver.resolve(p('/root/index.js'), 'aPackage/lib/foo/bar'),
-        ).toBe(p('/root/node_modules/aPackage/lib/foo/bar.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/lib/foo/bar.js'),
+        });
       });
 
       ['browser', 'react-native'].forEach(browserField => {
@@ -664,7 +824,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: 'client.js',
+                    [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
                 },
@@ -672,9 +832,10 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
           });
 
           it('overrides the main field', async () => {
@@ -685,7 +846,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'another.js',
-                    [browserField]: 'client.js',
+                    [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
                 },
@@ -693,9 +854,10 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
           });
 
           it('can omit file extension', async () => {
@@ -705,7 +867,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: 'client',
+                    [(browserField: string)]: 'client',
                   }),
                   'client.js': '',
                 },
@@ -713,9 +875,10 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
           });
 
           it('resolves mappings from external calls', async () => {
@@ -726,7 +889,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {'main.js': 'client.js'},
+                    [(browserField: string)]: {'main.js': 'client.js'},
                   }),
                   'client.js': '',
                   'main.js': '',
@@ -735,13 +898,17 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
             // TODO: Is this behaviour correct?
             expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/main.js'),
-            ).toBe(p('/root/node_modules/aPackage/main.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/main.js'),
+            });
           });
 
           it('resolves mappings without extensions', async () => {
@@ -752,7 +919,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {'./main': './client'},
+                    [(browserField: string)]: {'./main': './client'},
                   }),
                   'client.js': '',
                   'main.js': '',
@@ -761,12 +928,16 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage/main')).toBe(
-              p('/root/node_modules/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
+            expect(
+              resolver.resolve(p('/root/index.js'), 'aPackage/main'),
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/client.js'),
+            });
           });
 
           it('resolves mappings from internal calls', async () => {
@@ -777,7 +948,7 @@ let resolver;
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
-                    [browserField]: {
+                    [(browserField: string)]: {
                       './main.js': 'main-client.js',
                       'foo.js': 'foo-client.js',
                       './dir/file.js': 'dir/file-client.js',
@@ -802,7 +973,10 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 './main.js',
               ),
-            ).toBe(p('/root/node_modules/aPackage/main-client.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/main-client.js'),
+            });
             // TODO: Is this behaviour correct?
             expect(() =>
               resolver.resolve(
@@ -815,26 +989,38 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 './dir/file',
               ),
-            ).toBe(p('/root/node_modules/aPackage/dir/file-client.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/dir/file-client.js'),
+            });
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
                 './dir',
               ),
-            ).toBe(p('/root/node_modules/aPackage/dir/file-client.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/dir/file-client.js'),
+            });
             // TODO: Is this behaviour correct?
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
                 './dir/index',
               ),
-            ).toBe(p('/root/node_modules/aPackage/dir/index.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/dir/index.js'),
+            });
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/dir/index.js'),
                 '../main',
               ),
-            ).toBe(p('/root/node_modules/aPackage/main-client.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/main-client.js'),
+            });
           });
 
           it('resolves mappings to other packages', async () => {
@@ -843,7 +1029,7 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {
+                    [(browserField: string)]: {
                       'left-pad': 'left-pad-browser',
                     },
                   }),
@@ -854,7 +1040,7 @@ let resolver;
                 'left-pad-browser': {
                   'package.json': JSON.stringify({
                     name: 'left-pad-browser',
-                    [browserField]: {'./main.js': 'main-client'},
+                    [(browserField: string)]: {'./main.js': 'main-client'},
                   }),
                   'index.js': '',
                   'main-client.js': '',
@@ -869,7 +1055,10 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 'left-pad',
               ),
-            ).toBe(p('/root/node_modules/left-pad-browser/index.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/left-pad-browser/index.js'),
+            });
             // TODO: Is this behaviour expected?
             expect(() =>
               resolver.resolve(
@@ -885,7 +1074,9 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': './left-pad-browser'},
+                    [(browserField: string)]: {
+                      'left-pad': './left-pad-browser',
+                    },
                   }),
                   'index.js': '',
                   './left-pad-browser.js': '',
@@ -900,7 +1091,10 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 'left-pad',
               ),
-            ).toBe(p('/root/node_modules/aPackage/left-pad-browser.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/aPackage/left-pad-browser.js'),
+            });
           });
 
           it('supports excluding a package', async () => {
@@ -911,9 +1105,18 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': false, './foo.js': false},
+                    [(browserField: string)]: {
+                      'left-pad': false,
+                    },
                   }),
                   'index.js': '',
+                },
+                'left-pad': {
+                  'package.json': JSON.stringify({
+                    name: 'left-pad',
+                  }),
+                  'index.js': '',
+                  'foo.js': '',
                 },
               },
             });
@@ -927,21 +1130,21 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 'left-pad',
               ),
-            ).toBe(p('/root/emptyModule.js'));
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
+            // Existing limitation: Subpaths of a package are not redirected by
+            // a base package name redirection in "browser"
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './foo',
+                'left-pad/foo',
               ),
-            ).toBe(p('/root/emptyModule.js'));
-
-            // TODO: Are the following two cases expected behaviour?
-            expect(() =>
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
-            ).toThrow();
-            expect(() =>
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
-            ).toThrow();
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/node_modules/left-pad/foo.js'),
+            });
           });
 
           it('supports excluding a package when the empty module is a relative path', async () => {
@@ -952,7 +1155,9 @@ let resolver;
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
-                    [browserField]: {'left-pad': false, './foo.js': false},
+                    [(browserField: string)]: {
+                      './foo.js': false,
+                    },
                   }),
                   'index.js': '',
                 },
@@ -966,23 +1171,24 @@ let resolver;
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad',
-              ),
-            ).toBe(p('/root/emptyModule.js'));
-            expect(
-              resolver.resolve(
-                p('/root/node_modules/aPackage/index.js'),
                 './foo',
               ),
-            ).toBe(p('/root/emptyModule.js'));
-
-            // TODO: Are the following two cases expected behaviour?
-            expect(() =>
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
+            expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
-            ).toThrow();
-            expect(() =>
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
+            expect(
               resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
-            ).toThrow();
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/emptyModule.js'),
+            });
           });
         });
       });
@@ -1009,7 +1215,10 @@ let resolver;
             p('/root/node_modules/aPackage/index.js'),
             'left-pad',
           ),
-        ).toBe(p('/root/node_modules/aPackage/left-pad-react-native.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/left-pad-react-native.js'),
+        });
       });
 
       it('works with custom main fields', async () => {
@@ -1036,7 +1245,10 @@ let resolver;
             p('/root/node_modules/aPackage/index.js'),
             'left-pad',
           ),
-        ).toBe(p('/root/node_modules/aPackage/left-pad-custom.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/left-pad-custom.js'),
+        });
       });
 
       it('merges custom main fields', async () => {
@@ -1064,10 +1276,16 @@ let resolver;
             p('/root/node_modules/aPackage/index.js'),
             'left-pad',
           ),
-        ).toBe(p('/root/node_modules/aPackage/left-pad-custom.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/left-pad-custom.js'),
+        });
         expect(
           resolver.resolve(p('/root/node_modules/aPackage/index.js'), 'jest'),
-        ).toBe(p('/root/node_modules/aPackage/jest-browser.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/jest-browser.js'),
+        });
       });
 
       it('uses main attribute from custom main fields', async () => {
@@ -1089,7 +1307,10 @@ let resolver;
         });
         expect(
           resolver.resolve(p('/root/node_modules/index.js'), 'aPackage'),
-        ).toBe(p('/root/node_modules/aPackage/main-custom.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/aPackage/main-custom.js'),
+        });
       });
     });
 
@@ -1102,16 +1323,18 @@ let resolver;
 
         resolver = await createResolver({}, 'ios');
 
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toBe(
-          p('/root/foo.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.ios.js'),
+        });
         // TODO: Is this behaviour expected?
         expect(() =>
           resolver.resolve(p('/root/index.js'), './foo.js'),
         ).toThrowErrorMatchingSnapshot();
-        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toBe(
-          p('/root/foo.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.ios.js'),
+        });
       });
 
       it('takes precedence over non-platform files', async () => {
@@ -1123,16 +1346,19 @@ let resolver;
 
         resolver = await createResolver({}, 'ios');
 
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toBe(
-          p('/root/foo.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.ios.js'),
+        });
         // TODO: Is this behaviour expected?
-        expect(resolver.resolve(p('/root/index.js'), './foo.js')).toBe(
-          p('/root/foo.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toBe(
-          p('/root/foo.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './foo.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.ios.js'),
+        });
       });
 
       it('resolves platforms on folder index files', async () => {
@@ -1144,12 +1370,14 @@ let resolver;
         });
 
         resolver = await createResolver({}, 'ios');
-        expect(resolver.resolve(p('/root/index.js'), './dir/index')).toBe(
-          p('/root/dir/index.ios.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), './dir')).toBe(
-          p('/root/dir/index.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './dir/index')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/dir/index.ios.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), './dir')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/dir/index.ios.js'),
+        });
       });
 
       it('resolves platforms on the main field of node_modules packages', async () => {
@@ -1167,9 +1395,10 @@ let resolver;
         });
 
         resolver = await createResolver({}, 'ios');
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
-          p('/root/node_modules/foo/main.ios.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/main.ios.js'),
+        });
       });
 
       it('does not resolve when the main field of node_modules packages when it has the extension', async () => {
@@ -1186,7 +1415,7 @@ let resolver;
           },
         });
 
-        resolver = await createResolver('ios');
+        resolver = await createResolver({}, 'ios');
 
         // TODO: Is this behaviour expected?
         expect(() => resolver.resolve(p('/root/index.js'), 'foo')).toThrow();
@@ -1227,9 +1456,10 @@ let resolver;
           {resolver: {platforms: ['playstation']}},
           'playstation',
         );
-        expect(resolve(p('/root/index.js'), './foo')).toBe(
-          p('/root/foo.playstation.js'),
-        );
+        expect(resolve(p('/root/index.js'), './foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.playstation.js'),
+        });
         end();
 
         resolver = await createResolver(
@@ -1237,9 +1467,10 @@ let resolver;
           'xbox',
         );
         // TODO: Is this behaviour expected?
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toBe(
-          p('/root/foo.xbox.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo.xbox.js'),
+        });
       });
     });
 
@@ -1251,9 +1482,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './asset.png')).toBe(
-          p('/root/asset.png'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './asset.png')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/asset.png'),
+        });
       });
 
       it('resolves asset files with resolution suffixes (matching size)', async () => {
@@ -1266,9 +1498,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a.png')).toBe(
-          p('/root/a@1.5x.png'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './a.png')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/a@1.5x.png'),
+        });
         expect(() =>
           resolver.resolve(p('/root/index.js'), './a@1.5x.png'),
         ).toThrowErrorMatchingSnapshot();
@@ -1284,9 +1517,10 @@ let resolver;
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './c.png')).toBe(
-          p('/root/c.png'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './c.png')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/c.png'),
+        });
         expect(() =>
           resolver.resolve(p('/root/index.js'), './c@2x.png'),
         ).toThrowErrorMatchingSnapshot();
@@ -1315,9 +1549,10 @@ let resolver;
 
         resolver = await createResolver({resolver: {assetExts: ['ast']}});
 
-        expect(resolver.resolve(p('/root/index.js'), './asset1.ast')).toBe(
-          p('/root/asset1.ast'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './asset1.ast')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/asset1.ast'),
+        });
         expect(() =>
           resolver.resolve(p('/root/index.js'), './asset2.png'),
         ).toThrowErrorMatchingSnapshot();
@@ -1338,7 +1573,10 @@ let resolver;
 
         expect(
           resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
-        ).toBe(p('/root/node_modules/foo/asset.png'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/asset.png'),
+        });
       });
     });
 
@@ -1357,14 +1595,16 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage/main.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage/')).toBe(
-          p('/root/aPackage/main.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage/other')).toBe(
-          p('/root/aPackage/other.js'),
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/main.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage/')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/main.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage/other')).toEqual(
+          {type: 'sourceFile', filePath: p('/root/aPackage/other.js')},
         );
       });
 
@@ -1378,9 +1618,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/index.js'),
+        });
       });
 
       it('uses the name in the package.json as the package name', async () => {
@@ -1400,9 +1641,10 @@ let resolver;
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'aPackage'),
         ).toThrowErrorMatchingSnapshot();
-        expect(resolver.resolve(p('/root/index.js'), 'bPackage')).toBe(
-          p('/root/randomFolderName/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'bPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/randomFolderName/index.js'),
+        });
       });
 
       it('uses main field from the package.json', async () => {
@@ -1417,9 +1659,10 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage/lib/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/lib/index.js'),
+        });
       });
 
       it('supports package names with dots', async () => {
@@ -1436,12 +1679,14 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toBe(
-          p('/root/leftpad.js/index.js'),
-        );
-        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toBe(
-          p('/root/x.y.z/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/leftpad.js/index.js'),
+        });
+        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/x.y.z/index.js'),
+        });
       });
 
       it('allows relative requires against packages', async () => {
@@ -1458,15 +1703,20 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './aPackage')).toBe(
-          p('/root/aPackage/main.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/main.js'),
+        });
         expect(
           resolver.resolve(p('/root/aPackage/index.js'), '../anotherPackage'),
-        ).toBe(p('/root/anotherPackage/main.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/anotherPackage/main.js'),
+        });
       });
 
       it('fatals on multiple packages with the same name', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -1484,7 +1734,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
             `    * ${joinPath('<rootDir>', 'anotherPackage', 'package.json')}`,
@@ -1511,7 +1761,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath(
               '<rootDir>',
@@ -1540,12 +1790,14 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toBe(
-          p('/root/foo/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo/index.js'),
+        });
       });
 
       it('allows to require global package sub-dirs', async () => {
+        // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
           'index.js': '',
@@ -1558,7 +1810,10 @@ let resolver;
         resolver = await createResolver();
         expect(
           resolver.resolve(p('/root/index.js'), 'aPackage/lib/foo/bar'),
-        ).toBe(p('/root/aPackage/lib/foo/bar.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/lib/foo/bar.js'),
+        });
       });
 
       ['browser', 'react-native'].forEach(browserField => {
@@ -1569,16 +1824,17 @@ let resolver;
               aPackage: {
                 'package.json': JSON.stringify({
                   name: 'aPackage',
-                  [browserField]: 'client.js',
+                  [(browserField: string)]: 'client.js',
                 }),
                 'client.js': '',
               },
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/aPackage/client.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/aPackage/client.js'),
+            });
           });
 
           it('resolves mappings without extensions', async () => {
@@ -1588,7 +1844,7 @@ let resolver;
                 'package.json': JSON.stringify({
                   name: 'aPackage',
                   main: 'main.js',
-                  [browserField]: {'./main': './client'},
+                  [(browserField: string)]: {'./main': './client'},
                 }),
                 'client.js': '',
                 'main.js': '',
@@ -1596,13 +1852,16 @@ let resolver;
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-              p('/root/aPackage/client.js'),
-            );
-            // TODO: Is this behaviour correct?
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage/main')).toBe(
-              p('/root/aPackage/main.js'),
-            );
+            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/aPackage/client.js'),
+            });
+            expect(
+              resolver.resolve(p('/root/index.js'), 'aPackage/main'),
+            ).toEqual({
+              type: 'sourceFile',
+              filePath: p('/root/aPackage/client.js'),
+            });
           });
         });
       });
@@ -1624,9 +1883,12 @@ let resolver;
           resolver: {resolverMainFields: ['custom-field', 'browser']},
         });
 
-        expect(resolver.resolve(p('/root/aPackage/index.js'), 'left-pad')).toBe(
-          p('/root/aPackage/left-pad-custom.js'),
-        );
+        expect(
+          resolver.resolve(p('/root/aPackage/index.js'), 'left-pad'),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/left-pad-custom.js'),
+        });
       });
     });
 
@@ -1651,9 +1913,10 @@ let resolver;
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.js'),
+        });
       });
 
       it('does not take file name or extension into account', async () => {
@@ -1680,9 +1943,10 @@ let resolver;
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/dir/subdir/hasteModule.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/dir/subdir/hasteModule.js'),
+        });
       });
 
       it('fatals when there are duplicated haste names', async () => {
@@ -1697,7 +1961,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'anotherHasteModule.js')}`,
@@ -1719,9 +1983,10 @@ let resolver;
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.js'),
+        });
       });
 
       it('fatals when a haste module collides with a global package', async () => {
@@ -1738,7 +2003,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
@@ -1758,15 +2023,17 @@ let resolver;
         });
 
         const {resolve, end} = await createResolver(config, 'ios');
-        expect(resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.ios.js'),
-        );
+        expect(resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.ios.js'),
+        });
         end();
 
         resolver = await createResolver(config, 'android');
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/aPackage/index.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/aPackage/index.js'),
+        });
       });
 
       it('resolves duplicated haste names when the filenames have different platforms', async () => {
@@ -1777,15 +2044,17 @@ let resolver;
         });
 
         const {resolve, end} = await createResolver(config, 'ios');
-        expect(resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.ios.js'),
-        );
+        expect(resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.ios.js'),
+        });
         end();
 
         resolver = await createResolver(config, 'android');
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.js'),
+        });
       });
 
       it('fatals when a filename uses a non-supported platform and there are collisions', async () => {
@@ -1800,7 +2069,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'hasteModule.invalid.js')}`,
@@ -1839,9 +2108,10 @@ let resolver;
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-          p('/root/hasteModule.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/hasteModule.js'),
+        });
       });
 
       it('respects package.json replacements for global (Haste) packages', async () => {
@@ -1871,7 +2141,12 @@ let resolver;
             p('/root/node_modules/aPackage/index.js'),
             'hastePackage',
           ),
-        ).toBe(p('/root/node_modules/aPackage/hastePackage-local-override.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p(
+            '/root/node_modules/aPackage/hastePackage-local-override.js',
+          ),
+        });
       });
 
       it('respects package.json replacements for Haste modules', async () => {
@@ -1896,7 +2171,12 @@ let resolver;
             p('/root/node_modules/aPackage/index.js'),
             'hasteModule',
           ),
-        ).toBe(p('/root/node_modules/aPackage/hasteModule-local-override.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p(
+            '/root/node_modules/aPackage/hasteModule-local-override.js',
+          ),
+        });
       });
     });
 
@@ -1920,12 +2200,14 @@ let resolver;
           },
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toBe(
-          p('/root/providesFoo/lib/bar.js'),
-        );
-        expect(resolver.resolve(p('/root/folder/index.js'), 'bar')).toBe(
-          p('/root/providesBar/index.js'),
-        );
+        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesFoo/lib/bar.js'),
+        });
+        expect(resolver.resolve(p('/root/folder/index.js'), 'bar')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesBar/index.js'),
+        });
       });
 
       it('uses extraNodeModules only after checking all possible filesystem locations', async () => {
@@ -1946,12 +2228,13 @@ let resolver;
           resolver: {extraNodeModules: {foo: p('/root/providesFoo')}},
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toBe(
-          p('/root/foo/index.js'),
-        );
+        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/foo/index.js'),
+        });
         expect(
           resolver.resolve(p('/root/folder/index.js'), 'foo/lib/bar'),
-        ).toBe(p('/root/foo/lib/bar.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/root/foo/lib/bar.js')});
       });
 
       it('supports scoped `extraNodeModules`', async () => {
@@ -1968,12 +2251,18 @@ let resolver;
           resolver: {extraNodeModules: {'@foo/bar': p('/root/providesFoo')}},
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), '@foo/bar')).toBe(
-          p('/root/providesFoo/index.js'),
-        );
+        expect(
+          resolver.resolve(p('/root/folder/index.js'), '@foo/bar'),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesFoo/index.js'),
+        });
         expect(
           resolver.resolve(p('/root/folder/index.js'), '@foo/bar/lib/bar'),
-        ).toBe(p('/root/providesFoo/lib/bar.js'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesFoo/lib/bar.js'),
+        });
       });
 
       it('supports browser mappings in its package.json', async () => {
@@ -1992,9 +2281,10 @@ let resolver;
           resolver: {extraNodeModules: {foo: p('/root/providesFoo')}},
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toBe(
-          p('/root/providesFoo/index-client.js'),
-        );
+        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesFoo/index-client.js'),
+        });
       });
 
       it('resolves assets', async () => {
@@ -2009,7 +2299,10 @@ let resolver;
 
         expect(
           resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
-        ).toBe(p('/root/providesFoo/asset.png'));
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/providesFoo/asset.png'),
+        });
       });
     });
 
@@ -2032,12 +2325,13 @@ let resolver;
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), './myFolder/foo')).toBe(
-          p('/root/overriden.js'),
+        expect(resolver.resolve(p('/root/index.js'), './myFolder/foo')).toEqual(
+          {type: 'sourceFile', filePath: p('/root/overriden.js')},
         );
-        expect(resolver.resolve(p('/root/index.js'), './invalid')).toBe(
-          p('/root/overriden.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), './invalid')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/overriden.js'),
+        });
       });
 
       it('overrides node_modules package resolutions', async () => {
@@ -2054,9 +2348,10 @@ let resolver;
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/overriden.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/overriden.js'),
+        });
       });
 
       it('overrides global package resolutions', async () => {
@@ -2071,9 +2366,10 @@ let resolver;
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/overriden.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/overriden.js'),
+        });
       });
 
       it('overrides haste names', async () => {
@@ -2093,9 +2389,10 @@ let resolver;
           },
         });
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/overriden.js'),
-        );
+        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/overriden.js'),
+        });
       });
 
       it('calls resolveRequest with the correct arguments', async () => {
@@ -2139,32 +2436,38 @@ let resolver;
           type: 'sourceFile',
           filePath: p('/target1.js'),
         });
-        expect(resolver.resolve(p('/root1/dir/a.js'), 'target')).toBe(
-          p('/target1.js'),
-        );
-        expect(resolver.resolve(p('/root1/dir/b.js'), 'target')).toBe(
-          p('/target1.js'),
-        );
+        expect(resolver.resolve(p('/root1/dir/a.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(resolver.resolve(p('/root1/dir/b.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
         expect(resolveRequest).toHaveBeenCalledTimes(1);
-        expect(resolver.resolve(p('/root1/fake.js'), 'target')).toBe(
-          p('/target1.js'),
-        );
+        expect(resolver.resolve(p('/root1/fake.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
         expect(resolveRequest).toHaveBeenCalledTimes(2);
 
         resolveRequest.mockReturnValue({
           type: 'sourceFile',
           filePath: p('/target2.js'),
         });
-        expect(resolver.resolve(p('/root2/dir/a.js'), 'target')).toBe(
-          p('/target2.js'),
-        );
-        expect(resolver.resolve(p('/root2/dir/b.js'), 'target')).toBe(
-          p('/target2.js'),
-        );
+        expect(resolver.resolve(p('/root2/dir/a.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target2.js'),
+        });
+        expect(resolver.resolve(p('/root2/dir/b.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target2.js'),
+        });
         expect(resolveRequest).toHaveBeenCalledTimes(3);
-        expect(resolver.resolve(p('/root2/fake.js'), 'target')).toBe(
-          p('/target2.js'),
-        );
+        expect(resolver.resolve(p('/root2/fake.js'), 'target')).toEqual({
+          type: 'sourceFile',
+          filePath: p('/target2.js'),
+        });
         expect(resolveRequest).toHaveBeenCalledTimes(4);
       });
 
@@ -2192,31 +2495,95 @@ let resolver;
           filePath: p('/target-always.js'),
         });
         expect(
-          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+          resolver.resolve(p('/root1/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
-        ).toBe(p('/target-always.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
-        ).toBe(p('/target-always.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
 
         resolveRequest.mockReturnValue({
           type: 'sourceFile',
           filePath: p('/target-never.js'),
         });
         expect(
-          resolver.resolve(p('/root2/dir/a.js'), 'target', {
+          resolver.resolve(p('/root2/dir/a.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
-        ).toBe(p('/target-always.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
         expect(
-          resolver.resolve(p('/root2/dir/b.js'), 'target', {
+          resolver.resolve(p('/root2/dir/b.js'), 'target', undefined, {
             assumeFlatNodeModules: true,
           }),
-        ).toBe(p('/target-always.js'));
+        ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
 
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+      });
+
+      it('forks the cache by customResolverOptions', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            customResolverOptions: {
+              foo: 'bar',
+              key: 'value',
+            },
+          }),
+        ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: reverse order from what we passed above
+              key: 'value',
+              foo: 'bar',
+            },
+          }),
+        ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              // NOTE: only a subset of the options passed above
+              foo: 'bar',
+            },
+          }),
+        ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+
+        resolveRequest.mockClear();
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            customResolverOptions: {
+              something: 'else',
+            },
+          }),
+        ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });

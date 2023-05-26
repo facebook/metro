@@ -6,12 +6,13 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-export type CacheStore<T> = interface {
-  get(key: Buffer): ?T | Promise<?T>,
-  set(key: Buffer, value: T): void | Promise<void>,
-  clear(): void | Promise<void>,
-};
+export interface CacheStore<T> {
+  get(key: Buffer): ?T | Promise<?T>;
+  set(key: Buffer, value: T): void | Promise<void>;
+  clear(): void | Promise<void>;
+}

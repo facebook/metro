@@ -6,20 +6,19 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {Module} from '../types.flow';
+import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 
 const {sourceMapGenerator} = require('./sourceMapGenerator');
 
 function sourceMapString(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  options: SourceMapGeneratorOptions,
 ): string {
   return sourceMapGenerator(modules, options).toString(undefined, {
     excludeSource: options.excludeSource,

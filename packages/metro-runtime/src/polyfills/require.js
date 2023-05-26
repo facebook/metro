@@ -4,9 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @polyfill
  * @flow
  * @format
+ * @oncall react_native
+ * @polyfill
  */
 
 'use strict';
@@ -16,7 +17,18 @@
 declare var __DEV__: boolean;
 declare var __METRO_GLOBAL_PREFIX__: string;
 
-type DependencyMap = Array<ModuleID>;
+// A simpler $ArrayLike<T>. Not iterable and doesn't have a `length`.
+// This is compatible with actual arrays as well as with objects that look like
+// {0: 'value', 1: '...'}
+type ArrayIndexable<T> = interface {
+  +[indexer: number]: T,
+};
+type DependencyMap = $ReadOnly<
+  ArrayIndexable<ModuleID> & {
+    paths?: {[id: ModuleID]: string},
+  },
+>;
+type InverseDependencyMap = {[key: ModuleID]: Array<ModuleID>, ...};
 type Exports = any;
 type FactoryFn = (
   global: Object,
@@ -28,13 +40,13 @@ type FactoryFn = (
   dependencyMap: ?DependencyMap,
 ) => void;
 type HotModuleReloadingCallback = () => void;
-type HotModuleReloadingData = {|
+type HotModuleReloadingData = {
   _acceptCallback: ?HotModuleReloadingCallback,
   _disposeCallback: ?HotModuleReloadingCallback,
   _didAccept: boolean,
   accept: (callback?: HotModuleReloadingCallback) => void,
   dispose: (callback?: HotModuleReloadingCallback) => void,
-|};
+};
 type ModuleID = number;
 type Module = {
   id?: ModuleID,
@@ -42,7 +54,7 @@ type Module = {
   hot?: HotModuleReloadingData,
   ...
 };
-type ModuleDefinition = {|
+type ModuleDefinition = {
   dependencyMap: ?DependencyMap,
   error?: any,
   factory: FactoryFn,
@@ -54,18 +66,26 @@ type ModuleDefinition = {|
   path?: string,
   publicModule: Module,
   verboseName?: string,
-|};
+};
 type ModuleList = {
   [number]: ?ModuleDefinition,
   __proto__: null,
   ...
 };
-type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
+export type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
+export type DefineFn = (
+  factory: FactoryFn,
+  moduleId: number,
+  dependencyMap?: DependencyMap,
+  verboseName?: string,
+  inverseDependencies?: InverseDependencyMap,
+) => void;
+
 type VerboseModuleNameForDev = string;
 type ModuleDefiner = (moduleId: ModuleID) => void;
 
-global.__r = metroRequire;
-global[`${__METRO_GLOBAL_PREFIX__}__d`] = define;
+global.__r = (metroRequire: RequireFn);
+global[`${__METRO_GLOBAL_PREFIX__}__d`] = (define: DefineFn);
 global.__c = clear;
 global.__registerSegment = registerSegment;
 
@@ -74,6 +94,7 @@ var modules = clear();
 // Don't use a Symbol here, it would pull in an extra polyfill with all sorts of
 // additional stuff (e.g. Array.from).
 const EMPTY = {};
+const CYCLE_DETECTED = {};
 const {hasOwnProperty} = {};
 
 if (__DEV__) {
@@ -176,13 +197,15 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
         .map((id: number) =>
           modules[id] ? modules[id].verboseName : '[unknown]',
         );
-      // We want to show A -> B -> A:
-      cycle.push(cycle[0]);
-      console.warn(
-        `Require cycle: ${cycle.join(' -> ')}\n\n` +
-          'Require cycles are allowed, but can result in uninitialized values. ' +
-          'Consider refactoring to remove the need for a cycle.',
-      );
+
+      if (shouldPrintRequireCycle(cycle)) {
+        cycle.push(cycle[0]); // We want to print A -> B -> A:
+        console.warn(
+          `Require cycle: ${cycle.join(' -> ')}\n\n` +
+            'Require cycles are allowed, but can result in uninitialized values. ' +
+            'Consider refactoring to remove the need for a cycle.',
+        );
+      }
     }
   }
 
@@ -193,7 +216,25 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     : guardedLoadModule(moduleIdReallyIsNumber, module);
 }
 
-function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
+// We print require cycles unless they match a pattern in the
+// `requireCycleIgnorePatterns` configuration.
+function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
+  const regExps =
+    global[__METRO_GLOBAL_PREFIX__ + '__requireCycleIgnorePatterns'];
+  if (!Array.isArray(regExps)) {
+    return true;
+  }
+
+  const isIgnored = (module: ?string) =>
+    module != null && regExps.some(regExp => regExp.test(module));
+
+  // Print the cycle unless any part of it is ignored
+  return modules.every(module => !isIgnored(module));
+}
+
+function metroImportDefault(
+  moduleId: ModuleID | VerboseModuleNameForDev,
+): any | Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -209,8 +250,8 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
     return modules[moduleIdReallyIsNumber].importedDefault;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  const importedDefault =
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  const importedDefault: any | Exports =
     exports && exports.__esModule ? exports.default : exports;
 
   // $FlowFixMe The metroRequire call above will throw if modules[id] is null
@@ -218,7 +259,9 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
 }
 metroRequire.importDefault = metroImportDefault;
 
-function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
+function metroImportAll(
+  moduleId: ModuleID | VerboseModuleNameForDev | number,
+): any | Exports | {[string]: any} {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -234,17 +277,17 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
     return modules[moduleIdReallyIsNumber].importedAll;
   }
 
-  const exports = metroRequire(moduleIdReallyIsNumber);
-  let importedAll;
+  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  let importedAll: Exports | {[string]: any};
 
   if (exports && exports.__esModule) {
     importedAll = exports;
   } else {
-    importedAll = {};
+    importedAll = ({}: {[string]: any});
 
     // Refrain from using Object.assign, it has to work in ES3 environments.
     if (exports) {
-      for (const key in exports) {
+      for (const key: string in exports) {
         if (hasOwnProperty.call(exports, key)) {
           importedAll[key] = exports[key];
         }
@@ -258,6 +301,30 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
   return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
 }
 metroRequire.importAll = metroImportAll;
+
+// The `require.context()` syntax is never executed in the runtime because it is converted
+// to `require()` in `metro/src/ModuleGraph/worker/collectDependencies.js` after collecting
+// dependencies. If the feature flag is not enabled then the conversion never takes place and this error is thrown (development only).
+metroRequire.context = function fallbackRequireContext() {
+  if (__DEV__) {
+    throw new Error(
+      'The experimental Metro feature `require.context` is not enabled in your project.\nThis can be enabled by setting the `transformer.unstable_allowRequireContext` property to `true` in your Metro configuration.',
+    );
+  }
+  throw new Error(
+    'The experimental Metro feature `require.context` is not enabled in your project.',
+  );
+};
+
+// `require.resolveWeak()` is a compile-time primitive (see collectDependencies.js)
+metroRequire.resolveWeak = function fallbackRequireResolveWeak() {
+  if (__DEV__) {
+    throw new Error(
+      'require.resolveWeak cannot be called dynamically. Ensure you are using the same version of `metro` and `metro-runtime`.',
+    );
+  }
+  throw new Error('require.resolveWeak cannot be called dynamically.');
+};
 
 let inGuard = false;
 function guardedLoadModule(
@@ -360,7 +427,7 @@ function loadModuleImplementation(
   }
 
   if (module.hasError) {
-    throw moduleThrewError(moduleId, module.error);
+    throw module.error;
   }
 
   if (__DEV__) {
@@ -460,21 +527,13 @@ function unknownModuleError(id: ModuleID): Error {
   return Error(message);
 }
 
-function moduleThrewError(id: ModuleID, error: any): Error {
-  const displayName = (__DEV__ && modules[id] && modules[id].verboseName) || id;
-  return Error(
-    'Requiring module "' +
-      displayName +
-      '", which threw an exception: ' +
-      error,
-  );
-}
-
 if (__DEV__) {
+  // $FlowFixMe[prop-missing]
   metroRequire.Systrace = {
     beginEvent: (): void => {},
     endEvent: (): void => {},
   };
+  // $FlowFixMe[prop-missing]
   metroRequire.getModules = (): ModuleList => {
     return modules;
   };
@@ -496,13 +555,13 @@ if (__DEV__) {
     return hot;
   };
 
-  let reactRefreshTimeout = null;
+  let reactRefreshTimeout: null | TimeoutID = null;
 
   const metroHotUpdateModule = function (
     id: ModuleID,
     factory: FactoryFn,
     dependencyMap: DependencyMap,
-    inverseDependencies: {[key: ModuleID]: Array<ModuleID>, ...},
+    inverseDependencies: InverseDependencyMap,
   ) {
     const mod = modules[id];
     if (!mod) {
@@ -522,7 +581,7 @@ if (__DEV__) {
     }
 
     const Refresh = requireRefresh();
-    const refreshBoundaryIDs = new Set();
+    const refreshBoundaryIDs = new Set<ModuleID>();
 
     // In this loop, we will traverse the dependency tree upwards from the
     // changed module. Updates "bubble" up to the closest accepted parent.
@@ -542,56 +601,67 @@ if (__DEV__) {
     // have side effects and lead to confusing and meaningless crashes.
 
     let didBailOut = false;
-    const updatedModuleIDs = topologicalSort(
-      [id], // Start with the changed module and go upwards
-      pendingID => {
-        const pendingModule = modules[pendingID];
-        if (pendingModule == null) {
-          // Nothing to do.
-          return [];
-        }
-        const pendingHot = pendingModule.hot;
-        if (pendingHot == null) {
-          throw new Error(
-            '[Refresh] Expected module.hot to always exist in DEV.',
-          );
-        }
-        // A module can be accepted manually from within itself.
-        let canAccept = pendingHot._didAccept;
-        if (!canAccept && Refresh != null) {
-          // Or React Refresh may mark it accepted based on exports.
-          const isBoundary = isReactRefreshBoundary(
-            Refresh,
-            pendingModule.publicModule.exports,
-          );
-          if (isBoundary) {
-            canAccept = true;
-            refreshBoundaryIDs.add(pendingID);
+    let updatedModuleIDs;
+    try {
+      updatedModuleIDs = topologicalSort(
+        [id], // Start with the changed module and go upwards
+        pendingID => {
+          const pendingModule = modules[pendingID];
+          if (pendingModule == null) {
+            // Nothing to do.
+            return [];
           }
-        }
-        if (canAccept) {
-          // Don't look at parents.
-          return [];
-        }
-        // If we bubble through the roof, there is no way to do a hot update.
-        // Bail out altogether. This is the failure case.
-        const parentIDs = inverseDependencies[pendingID];
-        if (parentIDs.length === 0) {
-          // Reload the app because the hot reload can't succeed.
-          // This should work both on web and React Native.
-          performFullRefresh('No root boundary', {
-            source: mod,
-            failed: pendingModule,
-          });
-          didBailOut = true;
-          return [];
-        }
-        // This module can't handle the update but maybe all its parents can?
-        // Put them all in the queue to run the same set of checks.
-        return parentIDs;
-      },
-      () => didBailOut, // Should we stop?
-    ).reverse();
+          const pendingHot = pendingModule.hot;
+          if (pendingHot == null) {
+            throw new Error(
+              '[Refresh] Expected module.hot to always exist in DEV.',
+            );
+          }
+          // A module can be accepted manually from within itself.
+          let canAccept = pendingHot._didAccept;
+          if (!canAccept && Refresh != null) {
+            // Or React Refresh may mark it accepted based on exports.
+            const isBoundary = isReactRefreshBoundary(
+              Refresh,
+              pendingModule.publicModule.exports,
+            );
+            if (isBoundary) {
+              canAccept = true;
+              refreshBoundaryIDs.add(pendingID);
+            }
+          }
+          if (canAccept) {
+            // Don't look at parents.
+            return [];
+          }
+          // If we bubble through the roof, there is no way to do a hot update.
+          // Bail out altogether. This is the failure case.
+          const parentIDs = inverseDependencies[pendingID];
+          if (parentIDs.length === 0) {
+            // Reload the app because the hot reload can't succeed.
+            // This should work both on web and React Native.
+            performFullRefresh('No root boundary', {
+              source: mod,
+              failed: pendingModule,
+            });
+            didBailOut = true;
+            return [];
+          }
+          // This module can't handle the update but maybe all its parents can?
+          // Put them all in the queue to run the same set of checks.
+          return parentIDs;
+        },
+        () => didBailOut, // Should we stop?
+      ).reverse();
+    } catch (e) {
+      if (e === CYCLE_DETECTED) {
+        performFullRefresh('Dependency cycle', {
+          source: mod,
+        });
+        return;
+      }
+      throw e;
+    }
 
     if (didBailOut) {
       return;
@@ -599,9 +669,8 @@ if (__DEV__) {
 
     // If we reached here, it is likely that hot reload will be successful.
     // Run the actual factories.
-    const seenModuleIDs = new Set();
+    const seenModuleIDs = new Set<ModuleID>();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
-      // Don't process twice if we have a cycle.
       const updatedID = updatedModuleIDs[i];
       if (seenModuleIDs.has(updatedID)) {
         continue;
@@ -708,25 +777,30 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): Array<T> {
     const result = [];
-    const visited = new Set();
-    function traverseDependentNodes(node: T) {
+    const visited = new Set<mixed>();
+    const stack = new Set<mixed>();
+    function traverseDependentNodes(node: T): void {
+      if (stack.has(node)) {
+        throw CYCLE_DETECTED;
+      }
+      if (visited.has(node)) {
+        return;
+      }
       visited.add(node);
+      stack.add(node);
       const dependentNodes = getEdges(node);
       if (earlyStop(node)) {
+        stack.delete(node);
         return;
       }
       dependentNodes.forEach(dependent => {
-        if (visited.has(dependent)) {
-          return;
-        }
         traverseDependentNodes(dependent);
       });
+      stack.delete(node);
       result.push(node);
     }
     roots.forEach(root => {
-      if (!visited.has(root)) {
-        traverseDependentNodes(root);
-      }
+      traverseDependentNodes(root);
     });
     return result;
   };
@@ -806,7 +880,10 @@ if (__DEV__) {
 
   const performFullRefresh = (
     reason: string,
-    modules: $ReadOnly<{source: ModuleDefinition, failed: ModuleDefinition}>,
+    modules: $ReadOnly<{
+      source?: ModuleDefinition,
+      failed?: ModuleDefinition,
+    }>,
   ) => {
     /* global window */
     if (
@@ -830,7 +907,10 @@ if (__DEV__) {
   };
 
   // Modules that only export components become React Refresh boundaries.
-  var isReactRefreshBoundary = function (Refresh, moduleExports): boolean {
+  var isReactRefreshBoundary = function (
+    Refresh: any,
+    moduleExports: Exports,
+  ): boolean {
     if (Refresh.isLikelyComponentType(moduleExports)) {
       return true;
     }
@@ -845,7 +925,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         return false;
@@ -859,9 +939,9 @@ if (__DEV__) {
   };
 
   var shouldInvalidateReactRefreshBoundary = (
-    Refresh,
-    prevExports,
-    nextExports,
+    Refresh: any,
+    prevExports: Exports,
+    nextExports: Exports,
   ) => {
     const prevSignature = getRefreshBoundarySignature(Refresh, prevExports);
     const nextSignature = getRefreshBoundarySignature(Refresh, nextExports);
@@ -877,7 +957,10 @@ if (__DEV__) {
   };
 
   // When this signature changes, it's unsafe to stop at this refresh boundary.
-  var getRefreshBoundarySignature = (Refresh, moduleExports): Array<mixed> => {
+  var getRefreshBoundarySignature = (
+    Refresh: any,
+    moduleExports: Exports,
+  ): Array<mixed> => {
     const signature = [];
     signature.push(Refresh.getFamilyByType(moduleExports));
     if (moduleExports == null || typeof moduleExports !== 'object') {
@@ -889,7 +972,7 @@ if (__DEV__) {
       if (key === '__esModule') {
         continue;
       }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         continue;
       }
@@ -900,7 +983,11 @@ if (__DEV__) {
     return signature;
   };
 
-  var registerExportsForReactRefresh = (Refresh, moduleExports, moduleID) => {
+  var registerExportsForReactRefresh = (
+    Refresh: any,
+    moduleExports: Exports,
+    moduleID: ModuleID,
+  ) => {
     Refresh.register(moduleExports, moduleID + ' %exports%');
     if (moduleExports == null || typeof moduleExports !== 'object') {
       // Exit if we can't iterate over exports.
@@ -908,7 +995,7 @@ if (__DEV__) {
       return;
     }
     for (const key in moduleExports) {
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         continue;
@@ -931,12 +1018,14 @@ if (__DEV__) {
 
   var requireSystrace = function requireSystrace() {
     return (
+      // $FlowFixMe[prop-missing]
       global[__METRO_GLOBAL_PREFIX__ + '__SYSTRACE'] || metroRequire.Systrace
     );
   };
 
   var requireRefresh = function requireRefresh() {
     return (
+      // $FlowFixMe[prop-missing]
       global[__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] || metroRequire.Refresh
     );
   };

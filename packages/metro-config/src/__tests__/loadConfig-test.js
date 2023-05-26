@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -26,7 +26,7 @@ describe('loadConfig', () => {
   });
 
   it('can load config objects', async () => {
-    const config = {
+    const config: any = {
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -45,7 +45,7 @@ describe('loadConfig', () => {
   });
 
   it('can load config from function', async () => {
-    const config = (defaultConfig: any) => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       cacheStores: [],
       reporter: null,
@@ -75,7 +75,7 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path', async () => {
-    const config = (defaultConfig: any) => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,
@@ -114,7 +114,7 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path pointing to a directory', async () => {
-    const config = (defaultConfig: any) => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,

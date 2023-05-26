@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,9 +17,11 @@ const {
   DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
+  additionalExts,
   defaultCreateModuleIdFactory,
   platforms,
   sourceExts,
+  noopPerfLoggerFactory,
 } = require('./defaults');
 const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
@@ -37,16 +40,22 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     blockList: exclusionList(),
     dependencyExtractor: undefined,
     disableHierarchicalLookup: false,
+    unstable_enableSymlinks: false,
     emptyModulePath: require.resolve(
       'metro-runtime/src/modules/empty-module.js',
     ),
     extraNodeModules: {},
     hasteImplModulePath: undefined,
-    unstable_hasteMapModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    unstable_conditionNames: ['require', 'import'],
+    unstable_conditionsByPlatform: {
+      web: ['browser'],
+    },
+    unstable_enablePackageExports: false,
     useWatchman: true,
+    requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
 
   serializer: {
@@ -54,26 +63,28 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     getRunModuleStatement: (moduleId: number | string) =>
       `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
-    postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
     customSerializer: null,
+    isThirdPartyModule: module =>
+      /(?:^|[/\\])node_modules[/\\]/.test(module.path),
   },
 
   server: {
-    useGlobalHotkey: true,
-    port: 8080,
     enhanceMiddleware: middleware => middleware,
+    port: 8080,
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
-    verifyConnections: false,
     unstable_serverRoot: null,
+    useGlobalHotkey: true,
+    verifyConnections: false,
   },
 
   symbolicator: {
     customizeFrame: () => {},
+    customizeStack: async (stack, _) => stack,
   },
 
   transformer: {
@@ -84,7 +95,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
-    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
@@ -102,6 +112,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       },
       output: {
         ascii_only: true,
+        comments: false,
         quote_style: 3,
         wrap_iife: true,
       },
@@ -120,12 +131,23 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
-    unstable_collectDependenciesPath:
-      'metro/src/ModuleGraph/worker/collectDependencies.js',
+    unstable_allowRequireContext: false,
     unstable_dependencyMapReservedName: null,
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
+  },
+  watcher: {
+    additionalExts,
+    healthCheck: {
+      enabled: false,
+      filePrefix: '.metro-health-check',
+      interval: 30000,
+      timeout: 5000,
+    },
+    watchman: {
+      deferStates: ['hg.update'],
+    },
   },
   cacheStores: [
     new FileStore({
@@ -138,10 +160,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   stickyWorkers: true,
   watchFolders: [],
-  transformerPath: require.resolve('metro-transform-worker'),
+  transformerPath: 'metro-transform-worker',
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  unstable_perfLoggerFactory: noopPerfLoggerFactory,
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
@@ -151,5 +174,5 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
   return getDefaultValues(rootPath);
 }
 
+getDefaultConfig.getDefaultValues = getDefaultValues;
 module.exports = getDefaultConfig;
-module.exports.getDefaultValues = getDefaultValues;

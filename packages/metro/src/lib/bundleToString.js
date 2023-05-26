@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,10 +19,10 @@ import type {
 /**
  * Serializes a bundle into a plain JS bundle.
  */
-function bundleToString(bundle: Bundle): {|
+function bundleToString(bundle: Bundle): {
   +code: string,
   +metadata: BundleMetadata,
-|} {
+} {
   let code = bundle.pre.length > 0 ? bundle.pre + '\n' : '';
   const modules = [];
 

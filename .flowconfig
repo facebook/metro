@@ -1,10 +1,11 @@
 [ignore]
 <PROJECT_ROOT>/packages/.*/build/.*
+# this transient dep bundles tests with their package, which flow attempts to parse
+# and crashes out as the test includes purposely malformed json
+<PROJECT_ROOT>/node_modules/.*/node_modules/resolve/.*
 
 [options]
 emoji=true
-
-exact_by_default=true
 
 format.bracket_spacing=false
 
@@ -27,7 +28,7 @@ nonstrict-import=warn
 deprecated-type=error
 unsafe-getters-setters=warn
 unnecessary-invariant=warn
-signature-verification-failure=warn
+unused-promise=error
 
 [strict]
 deprecated-type
@@ -39,4 +40,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.171.0
+^0.206.0

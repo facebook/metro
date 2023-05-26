@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -69,18 +70,16 @@ class InspectorProxy {
       request.url === PAGES_LIST_JSON_URL_2
     ) {
       // Build list of pages from all devices.
-      let result = [];
-      Array.from(this._devices.entries()).forEach(
-        ([deviceId: number, device: Device]) => {
-          result = result.concat(
-            device
-              .getPagesList()
-              .map((page: Page) =>
-                this._buildPageDescription(deviceId, device, page),
-              ),
-          );
-        },
-      );
+      let result: Array<PageDescription> = [];
+      Array.from(this._devices.entries()).forEach(([deviceId, device]) => {
+        result = result.concat(
+          device
+            .getPagesList()
+            .map((page: Page) =>
+              this._buildPageDescription(deviceId, device, page),
+            ),
+        );
+      });
 
       this._sendJsonResponse(response, result);
     } else if (request.url === PAGES_LIST_JSON_VERSION_URL) {
@@ -130,6 +129,7 @@ class InspectorProxy {
       type: 'node',
       webSocketDebuggerUrl,
       vm: page.vm,
+      deviceName: device.getName(),
     };
   }
 
@@ -154,7 +154,7 @@ class InspectorProxy {
   // HTTP GET params.
   // For each new websocket connection we parse device and app names and create
   // new instance of Device class.
-  _createDeviceConnectionWSServer() {
+  _createDeviceConnectionWSServer(): any {
     const wss = new WS.Server({
       noServer: true,
       perMessageDeflate: true,
@@ -179,7 +179,7 @@ class InspectorProxy {
         });
       } catch (e) {
         console.error('error', e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;
@@ -190,7 +190,7 @@ class InspectorProxy {
   // in /json response.
   // When debugger connects we try to parse device and page IDs from the query and pass
   // websocket object to corresponding Device instance.
-  _createDebuggerConnectionWSServer() {
+  _createDebuggerConnectionWSServer(): any {
     const wss = new WS.Server({
       noServer: true,
       perMessageDeflate: false,
@@ -214,7 +214,7 @@ class InspectorProxy {
         device.handleDebuggerConnection(socket, pageId);
       } catch (e) {
         console.error(e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;

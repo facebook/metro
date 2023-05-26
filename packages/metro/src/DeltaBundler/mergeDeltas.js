@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -19,9 +20,9 @@ function mergeDeltas(delta1: DeltaBundle, delta2: DeltaBundle): DeltaBundle {
   const added2 = new Map(delta2.added);
   const modified2 = new Map(delta2.modified);
   const deleted2 = new Set(delta2.deleted);
-  const added = new Map();
-  const modified = new Map();
-  const deleted = new Set();
+  const added = new Map<number, string>();
+  const modified = new Map<number, string>();
+  const deleted = new Set<number>();
 
   for (const [id, code] of added1) {
     if (!deleted2.has(id) && !modified2.has(id)) {

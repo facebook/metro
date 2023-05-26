@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -93,15 +94,15 @@ type _SourceMapOptions =
       ...
     };
 
-type _Error = {|error: Error|};
-type _Result = {|code: string, warnings?: Array<string>|};
+type _Error = {error: Error};
+type _Result = {code: string, warnings?: Array<string>};
 
 declare module 'uglify-es' {
   declare function minify(code: _Input, options?: _Options): _Error | _Result;
   declare function minify(
     code: _Input,
     options: {..._Options, sourceMap: _SourceMapOptions, ...},
-  ): _Error | {|..._Result, map: string|};
+  ): _Error | {..._Result, map: string};
 }
 
 declare module 'terser' {
@@ -109,5 +110,5 @@ declare module 'terser' {
   declare function minify(
     code: _Input,
     options: {..._Options, sourceMap: _SourceMapOptions, ...},
-  ): _Error | {|..._Result, map: string|};
+  ): _Error | {..._Result, map: string};
 }

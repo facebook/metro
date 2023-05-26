@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,7 +14,7 @@
 import type {IterationOrder, LookupBias} from './constants';
 import type {Number0, Number1} from 'ob1';
 export type {IterationOrder, LookupBias};
-export type GeneratedOffset = {|+lines: Number0, +columns: Number0|};
+export type GeneratedOffset = {+lines: Number0, +columns: Number0};
 export type SourcePosition = {
   source: ?string,
   line: ?Number1,

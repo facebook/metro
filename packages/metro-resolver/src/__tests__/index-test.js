@@ -6,117 +6,80 @@
  *
  * @flow strict-local
  * @format
- * @emails oncall+metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {ResolutionContext} from '../index';
 
-const FailedToResolvePathError = require('../FailedToResolvePathError');
+const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
 const Resolver = require('../index');
-const path = require('path');
+import {createResolutionContext} from './utils';
 
-const CONTEXT: ResolutionContext = (() => {
-  const fileSet = new Set();
-  (function fillFileSet(fileTree, prefix: string) {
-    for (const entName in fileTree) {
-      const entPath = path.join(prefix, entName);
-      if (fileTree[entName] === true) {
-        fileSet.add(entPath);
-        continue;
-      }
-      fillFileSet(fileTree[entName], entPath);
+const fileMap = {
+  '/root/project/foo.js': '',
+  '/root/project/bar.js': '',
+  '/root/smth/beep.js': '',
+  '/root/node_modules/apple/package.json': JSON.stringify({
+    name: 'apple',
+    main: 'main',
+  }),
+  '/root/node_modules/apple/main.js': '',
+  '/root/node_modules/invalid/package.json': JSON.stringify({
+    name: 'invalid',
+    main: 'main',
+  }),
+  '/node_modules/root-module/main.js': '',
+  '/node_modules/root-module/package.json': JSON.stringify({
+    name: 'root-module',
+    main: 'main',
+  }),
+  '/other-root/node_modules/banana-module/main.js': '',
+  '/other-root/node_modules/banana-module/package.json': JSON.stringify({
+    name: 'banana-module',
+    main: 'main',
+  }),
+  '/other-root/node_modules/banana/main.js': '',
+  '/other-root/node_modules/banana/package.json': JSON.stringify({
+    name: 'banana',
+    main: 'main',
+  }),
+  '/other-root/node_modules/banana/node_modules/banana-module/main.js': '',
+  '/other-root/node_modules/banana/node_modules/banana-module/package.json':
+    JSON.stringify({
+      name: 'banana-module',
+      main: 'main',
+    }),
+  '/haste/Foo.js': '',
+  '/haste/Bar.js': '',
+  '/haste/Override.js': '',
+  '/haste/some-package/package.json': JSON.stringify({
+    name: 'some-package',
+    main: 'main',
+  }),
+  '/haste/some-package/subdir/other-file.js': '',
+  '/haste/some-package/main.js': '',
+};
+
+const CONTEXT: ResolutionContext = {
+  ...createResolutionContext(fileMap),
+  originModulePath: '/root/project/foo.js',
+  resolveHasteModule: (name: string) => {
+    const candidate = '/haste/' + name + '.js';
+    if (candidate in fileMap) {
+      return candidate;
     }
-  })(
-    {
-      root: {
-        project: {
-          'foo.js': true,
-          'bar.js': true,
-        },
-        smth: {
-          'beep.js': true,
-        },
-        node_modules: {
-          apple: {
-            'package.json': true,
-            'main.js': true,
-          },
-          invalid: {
-            'package.json': true,
-          },
-        },
-      },
-      node_modules: {
-        'root-module': {
-          'package.json': true,
-          'main.js': true,
-        },
-      },
-      'other-root': {
-        node_modules: {
-          'banana-module': {
-            'package.json': true,
-            'main.js': true,
-          },
-          banana: {
-            'package.json': true,
-            'main.js': true,
-            node_modules: {
-              'banana-module': {
-                'package.json': true,
-                'main.js': true,
-              },
-            },
-          },
-        },
-      },
-      haste: {
-        'Foo.js': true,
-        'Bar.js': true,
-        'Override.js': true,
-        'some-package': {
-          'package.json': true,
-          subdir: {
-            'other-file.js': true,
-          },
-          'main.js': true,
-        },
-      },
-    },
-    '/',
-  );
-  return {
-    allowHaste: true,
-    disableHierarchicalLookup: false,
-    doesFileExist: (filePath: string) => fileSet.has(filePath),
-    extraNodeModules: null,
-    getPackageMainPath: (dirPath: string) =>
-      path.join(path.dirname(dirPath), 'main'),
-    isAssetFile: () => false,
-    nodeModulesPaths: [],
-    originModulePath: '/root/project/foo.js',
-    preferNativePlatform: false,
-    redirectModulePath: (filePath: string) => filePath,
-    resolveAsset: (filePath: string) => null,
-    resolveHasteModule: (name: string) => {
-      const candidate = '/haste/' + name + '.js';
-      if (fileSet.has(candidate)) {
-        return candidate;
-      }
-      return null;
-    },
-    resolveHastePackage: (name: string) => {
-      const candidate = '/haste/' + name + '/package.json';
-      if (fileSet.has(candidate)) {
-        return candidate;
-      }
-      return null;
-    },
-    sourceExts: ['js'],
-  };
-})();
+    return null;
+  },
+  resolveHastePackage: (name: string) => {
+    const candidate = '/haste/' + name + '/package.json';
+    if (candidate in fileMap) {
+      return candidate;
+    }
+    return null;
+  },
+};
 
 it('resolves a relative path', () => {
   expect(Resolver.resolve(CONTEXT, './bar', null)).toEqual({
@@ -149,12 +112,12 @@ it('fails to resolve a relative path', () => {
     }
     expect(error.candidates).toEqual({
       dir: {
-        candidateExts: ['', '.js'],
+        candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
         filePathPrefix: '/root/project/apple/index',
         type: 'sourceFile',
       },
       file: {
-        candidateExts: ['', '.js'],
+        candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
         filePathPrefix: '/root/project/apple',
         type: 'sourceFile',
       },
@@ -172,16 +135,16 @@ it('throws on invalid package name', () => {
     }
     expect(error.message).toMatchSnapshot();
     expect(error.fileCandidates).toEqual({
-      candidateExts: ['', '.js'],
+      candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
       filePathPrefix: '/root/node_modules/invalid/main',
       type: 'sourceFile',
     });
     expect(error.indexCandidates).toEqual({
-      candidateExts: ['', '.js'],
+      candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
       filePathPrefix: '/root/node_modules/invalid/main/index',
       type: 'sourceFile',
     });
-    expect(error.mainPrefixPath).toBe('/root/node_modules/invalid/main');
+    expect(error.mainModulePath).toBe('/root/node_modules/invalid/main');
     expect(error.packageJsonPath).toBe(
       '/root/node_modules/invalid/package.json',
     );
@@ -216,9 +179,7 @@ it('does not resolve to additional `node_modules` if `nodeModulesPaths` is not s
 });
 
 it('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
-  const context = Object.assign({}, CONTEXT, {
-    nodeModulesPaths: ['/other-root/node_modules'],
-  });
+  const context = {...CONTEXT, nodeModulesPaths: ['/other-root/node_modules']};
   expect(Resolver.resolve(context, 'banana', null)).toEqual({
     type: 'sourceFile',
     filePath: '/other-root/node_modules/banana/main.js',
@@ -236,13 +197,11 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
 });
 
 it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
-  const context = Object.assign(
-    {},
-    {...CONTEXT, originModulePath: '/other-root/node_modules/banana/main.js'},
-    {
-      nodeModulesPaths: ['/other-root/node_modules'],
-    },
-  );
+  const context = {
+    ...CONTEXT,
+    originModulePath: '/other-root/node_modules/banana/main.js',
+    nodeModulesPaths: ['/other-root/node_modules'],
+  };
 
   expect(Resolver.resolve(context, 'banana-module', null)).toEqual({
     type: 'sourceFile',
@@ -257,9 +216,7 @@ it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
 });
 
 describe('disableHierarchicalLookup', () => {
-  const context = Object.assign({}, CONTEXT, {
-    disableHierarchicalLookup: true,
-  });
+  const context = {...CONTEXT, disableHierarchicalLookup: true};
 
   it('disables node_modules lookup', () => {
     expect(() => Resolver.resolve(context, 'apple', null))
@@ -346,16 +303,14 @@ it('throws a descriptive error when a file inside a Haste package cannot be reso
   }).toThrowErrorMatchingInlineSnapshot(`
     "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
 
-      * \`/haste/some-package/subdir/does-not-exist(.js)\`
-      * \`/haste/some-package/subdir/does-not-exist/index(.js)\`"
+      * \`/haste/some-package/subdir/does-not-exist(.js|.jsx|.json|.ts|.tsx)\`
+      * \`/haste/some-package/subdir/does-not-exist/index(.js|.jsx|.json|.ts|.tsx)\`"
   `);
 });
 
 describe('redirectModulePath', () => {
   const redirectModulePath = jest.fn();
-  const context = Object.assign({}, CONTEXT, {
-    redirectModulePath,
-  });
+  const context = {...CONTEXT, redirectModulePath};
 
   beforeEach(() => {
     redirectModulePath.mockReset();
@@ -499,8 +454,9 @@ describe('redirectModulePath', () => {
 });
 
 describe('resolveRequest', () => {
-  const resolveRequest = jest.fn();
-  const context = Object.assign({}, CONTEXT, {resolveRequest});
+  // $FlowFixMe[unclear-type]: `resolveRequest` is used too dynamically.
+  const resolveRequest = jest.fn<any, any>();
+  const context = {...CONTEXT, resolveRequest};
 
   beforeEach(() => {
     resolveRequest.mockReset();
@@ -582,9 +538,10 @@ describe('resolveRequest', () => {
   });
 
   it('is called with the platform and non-redirected module path', () => {
-    const contextWithRedirect = Object.assign({}, context, {
-      redirectModulePath: filePath => filePath + '.redirected',
-    });
+    const contextWithRedirect = {
+      ...context,
+      redirectModulePath: (filePath: string) => filePath + '.redirected',
+    };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
@@ -604,9 +561,10 @@ describe('resolveRequest', () => {
       type: 'sourceFile',
       filePath: '/some/fake/path',
     }));
-    const contextWithRedirect = Object.assign({}, context, {
-      redirectModulePath: filePath => false,
-    });
+    const contextWithRedirect = {
+      ...context,
+      redirectModulePath: (filePath: string) => false,
+    };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
@@ -626,7 +584,7 @@ describe('resolveRequest', () => {
     // This test shows a common pattern for wrapping the standard resolver.
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       return Resolver.resolve(
-        Object.assign({}, ctx, {resolveRequest: null}),
+        {...ctx, resolveRequest: null},
         moduleName,
         platform,
       );
@@ -716,6 +674,30 @@ describe('resolveRequest', () => {
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
       {...context, resolveRequest: Resolver.resolve},
+      '/root/project/foo.js',
+      'android',
+    );
+  });
+
+  it('receives customResolverOptions', () => {
+    expect(
+      Resolver.resolve(
+        {...context, customResolverOptions: {key: 'value'}},
+        '/root/project/foo.js',
+        'android',
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {
+        ...context,
+        resolveRequest: Resolver.resolve,
+        customResolverOptions: {key: 'value'},
+      },
       '/root/project/foo.js',
       'android',
     );

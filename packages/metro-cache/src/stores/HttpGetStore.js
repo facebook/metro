@@ -11,6 +11,8 @@
 'use strict';
 
 import type {HttpOptions} from 'metro-cache';
+import type HttpError from './HttpError';
+import type NetworkError from './NetworkError';
 
 const HttpStore = require('./HttpStore');
 const {Logger} = require('metro-core');
@@ -45,7 +47,7 @@ class HttpGetStore<T> extends HttpStore<T> {
     return Promise.resolve(undefined);
   }
 
-  _warn(err) {
+  _warn(err: HttpError | NetworkError) {
     if (!this._warned) {
       process.emitWarning(
         [

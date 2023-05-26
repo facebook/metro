@@ -6,6 +6,7 @@
  *
  * @flow
  * @noformat
+ * @oncall react_native
  */
 
 // Note: cannot use prettier here because this file is ran as-is
@@ -33,6 +34,7 @@ const path = require('path');
 const prettier = require('prettier');
 
 const SRC_DIR = 'src';
+const TYPES_DIR = 'types';
 const BUILD_DIR = 'build';
 const JS_FILES_PATTERN = '**/*.js';
 const IGNORE_PATTERN = '**/__tests__/**';
@@ -51,11 +53,11 @@ const fixedWidth = function(str/*: string*/) {
     .join('\n');
 };
 
-function getPackageName(file) {
+function getPackageName(file /*: string */) {
   return path.relative(PACKAGES_DIR, file).split(path.sep)[0];
 }
 
-function getBuildPath(file, buildFolder) {
+function getBuildPath(file /*: string */, buildFolder /*: string */) {
   const pkgName = getPackageName(file);
   const pkgSrcPath = path.resolve(PACKAGES_DIR, pkgName, SRC_DIR);
   const pkgBuildPath = process.env.PACKAGES_DIR != null
@@ -65,18 +67,25 @@ function getBuildPath(file, buildFolder) {
   return path.resolve(pkgBuildPath, relativeToSrcPath);
 }
 
-function buildPackage(p) {
+function buildPackage(p /*: string */) {
   const srcDir = path.resolve(p, SRC_DIR);
+  const typesDir = path.resolve(p, TYPES_DIR);
+  const buildDir = path.resolve(p, BUILD_DIR);
   const pattern = path.resolve(srcDir, '**/*');
   const files = glob.sync(pattern, {nodir: true});
+  const typescriptDefs = glob.sync(path.join(typesDir, '**/*.d.ts'));
 
   process.stdout.write(fixedWidth(`${path.basename(p)}\n`));
 
   files.forEach(file => buildFile(file, true));
+  typescriptDefs.forEach(
+    file => fs.copyFileSync(file, file.replace(typesDir, buildDir))
+  );
+
   process.stdout.write(`[  ${chalk.green('OK')}  ]\n`);
 }
 
-function buildFile(file, silent) {
+function buildFile(file /*: string */, silent /*: number | boolean */) {
   const destPath = getBuildPath(file, BUILD_DIR);
 
   fs.mkdirSync(path.dirname(destPath), {recursive: true});

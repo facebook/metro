@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -34,7 +35,12 @@ function constantFoldingPlugin(context: {
     value: mixed,
   } {
     const state = {safe: true};
-    const unsafe = (path, state) => {
+    const unsafe = (
+      path:
+        | NodePath<BabelNodeAssignmentExpression>
+        | NodePath<BabelNodeCallExpression>,
+      state: {safe: boolean},
+    ) => {
       state.safe = false;
     };
 
@@ -58,7 +64,7 @@ function constantFoldingPlugin(context: {
   };
 
   const FunctionDeclaration = {
-    exit(path, state): void {
+    exit(path: NodePath<BabelNodeFunctionDeclaration>, state: State): void {
       const binding =
         path.node.id != null && path.scope.parent.getBinding(path.node.id.name);
 
@@ -72,59 +78,65 @@ function constantFoldingPlugin(context: {
   const FunctionExpression: VisitNode<
     BabelNodeFunctionExpression | BabelNodeArrowFunctionExpression,
     State,
-  > = {
-    exit(path, state) {
-      const parentPath = path.parentPath;
-      const parentNode = parentPath?.node;
+  > =
+    // $FlowFixMe[incompatible-type]
+    {
+      exit(path, state) {
+        const parentPath = path.parentPath;
+        const parentNode = parentPath?.node;
 
-      if (isVariableDeclarator(parentNode) && parentNode.id.name != null) {
-        const binding = parentPath?.scope.getBinding(parentNode.id.name);
+        if (isVariableDeclarator(parentNode) && parentNode.id.name != null) {
+          const binding = parentPath?.scope.getBinding(parentNode.id.name);
 
-        if (binding && !binding.referenced) {
-          state.stripped = true;
-          parentPath?.remove();
+          if (binding && !binding.referenced) {
+            state.stripped = true;
+            parentPath?.remove();
+          }
         }
-      }
-    },
-  };
+      },
+    };
 
   const Conditional: VisitNode<
     BabelNodeIfStatement | BabelNodeConditionalExpression,
     State,
-  > = {
-    exit(path, state): void {
-      const node = path.node;
-      const result = evaluate(path.get('test'));
+  > =
+    // $FlowFixMe[incompatible-type]
+    {
+      exit(path, state): void {
+        const node = path.node;
+        const result = evaluate(path.get('test'));
 
-      if (result.confident) {
-        state.stripped = true;
+        if (result.confident) {
+          state.stripped = true;
 
-        if (result.value || node.alternate) {
-          // $FlowFixMe Flow error uncovered by typing Babel more strictly
-          path.replaceWith(result.value ? node.consequent : node.alternate);
-        } else if (!result.value) {
-          path.remove();
+          if (result.value || node.alternate) {
+            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            path.replaceWith(result.value ? node.consequent : node.alternate);
+          } else if (!result.value) {
+            path.remove();
+          }
         }
-      }
-    },
-  };
+      },
+    };
 
   const Expression: VisitNode<
     BabelNodeUnaryExpression | BabelNodeBinaryExpression,
     State,
-  > = {
-    exit(path) {
-      const result = evaluate(path);
+  > =
+    // $FlowFixMe[incompatible-type]
+    {
+      exit(path) {
+        const result = evaluate(path);
 
-      if (result.confident) {
-        path.replaceWith(t.valueToNode(result.value));
-        path.skip();
-      }
-    },
-  };
+        if (result.confident) {
+          path.replaceWith(t.valueToNode(result.value));
+          path.skip();
+        }
+      },
+    };
 
   const LogicalExpression = {
-    exit(path) {
+    exit(path: NodePath<BabelNodeLogicalExpression>) {
       const node = path.node;
       const result = evaluate(path.get('left'));
 
@@ -149,15 +161,16 @@ function constantFoldingPlugin(context: {
   };
 
   const Program = {
-    enter(path, state): void {
+    enter(path: NodePath<BabelNodeProgram>, state: State): void {
       state.stripped = false;
     },
 
-    exit(path, state): void {
+    exit(path: NodePath<BabelNodeProgram>, state: State): void {
       path.traverse(
         {
           ArrowFunctionExpression: FunctionExpression,
           ConditionalExpression: Conditional,
+          // $FlowFixMe[incompatible-call]
           FunctionDeclaration,
           FunctionExpression,
           IfStatement: Conditional,
@@ -180,6 +193,7 @@ function constantFoldingPlugin(context: {
 
   const visitor: Visitor<State> = {
     BinaryExpression: Expression,
+    // $FlowFixMe[incompatible-type]
     LogicalExpression,
     Program: {...Program}, // Babel mutates objects passed.
     UnaryExpression: Expression,

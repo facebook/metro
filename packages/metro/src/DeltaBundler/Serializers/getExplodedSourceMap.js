@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,18 +19,18 @@ import type {
 
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-export type ExplodedSourceMap = $ReadOnlyArray<{|
+export type ExplodedSourceMap = $ReadOnlyArray<{
   +map: Array<MetroSourceMapSegmentTuple>,
   +firstLine1Based: number,
   +functionMap: ?FBSourceFunctionMap,
   +path: string,
-|}>;
+}>;
 
 function getExplodedSourceMap(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): ExplodedSourceMap {
   const modulesToProcess = modules
     .filter(isJsModule)

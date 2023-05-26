@@ -6,18 +6,21 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 export type {
   AssetFileResolution,
+  CustomResolutionContext,
   CustomResolver,
+  CustomResolverOptions,
   DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
-  IsAssetFile,
+  GetRealPath,
   ResolutionContext,
   Resolution,
   ResolveAsset,
@@ -25,10 +28,10 @@ export type {
 } from './types';
 
 const Resolver = {
-  FailedToResolveNameError: require('./FailedToResolveNameError'),
-  FailedToResolvePathError: require('./FailedToResolvePathError'),
-  formatFileCandidates: require('./formatFileCandidates'),
-  InvalidPackageError: require('./InvalidPackageError'),
+  FailedToResolveNameError: require('./errors/FailedToResolveNameError'),
+  FailedToResolvePathError: require('./errors/FailedToResolvePathError'),
+  formatFileCandidates: require('./errors/formatFileCandidates'),
+  InvalidPackageError: require('./errors/InvalidPackageError'),
   resolve: require('./resolve'),
 };
 

@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 // Note: This is a fork of the fb-specific transform.js
@@ -23,7 +24,6 @@ const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const crypto = require('crypto');
 const fs = require('fs');
-const HermesParser = require('hermes-parser');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
@@ -35,11 +35,11 @@ const cacheKeyParts = [
 ];
 
 // TS detection conditions copied from metro-react-native-babel-preset
-function isTypeScriptSource(fileName) {
+function isTypeScriptSource(fileName: string) {
   return !!fileName && fileName.endsWith('.ts');
 }
 
-function isTSXSource(fileName) {
+function isTSXSource(fileName: string) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
@@ -51,6 +51,8 @@ function isTSXSource(fileName) {
 const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   return function _getBabelRC({
     projectRoot,
     extendsBabelConfigPath,
@@ -91,21 +93,22 @@ const getBabelRC = (function () {
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
       if (fs.existsSync(projectBabelRCPath)) {
+        // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
         babelRC.extends = projectBabelRCPath;
       }
     }
 
     // If a babel config file doesn't exist in the project then
     // the default preset for react-native will be used instead.
+    // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
+    // $FlowFixMe[incompatible-type] `extends` is missing in null or undefined.
     if (!babelRC.extends) {
       const {experimentalImportSupport, ...presetOptions} = options;
 
+      // $FlowFixMe[incompatible-use] `presets` is missing in null or undefined.
       babelRC.presets = [
         [
           require('metro-react-native-babel-preset'),
-          /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses
-           * an error found when Flow v0.122.0 was deployed. To see the error,
-           * delete this comment and run Flow. */
           {
             projectRoot,
             ...presetOptions,
@@ -125,7 +128,9 @@ const getBabelRC = (function () {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(
-  filename,
+  filename: string,
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   options,
   plugins?: Plugins = [],
 ): BabelCoreOptions {
@@ -137,6 +142,7 @@ function buildBabelConfig(
         ? options.enableBabelRCLookup
         : true,
     code: false,
+    cwd: options.projectRoot,
     filename,
     highlightCode: true,
   };
@@ -170,7 +176,7 @@ function buildBabelConfig(
     if (mayContainEditableReactComponents) {
       const hmrConfig = makeHMRConfig();
       hmrConfig.plugins = withExtrPlugins.concat(hmrConfig.plugins);
-      config = Object.assign({}, config, hmrConfig);
+      config = {...config, ...hmrConfig};
     }
   }
 
@@ -197,21 +203,25 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
       ...buildBabelConfig(filename, options, plugins),
       caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst =
       isTypeScriptSource(filename) ||
       isTSXSource(filename) ||
       !options.hermesParser
         ? parseSync(src, babelConfig)
-        : HermesParser.parse(src, {
+        : require('hermes-parser').parse(src, {
             babel: true,
             sourceType: babelConfig.sourceType,
           });
-    /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.111 was deployed. To see the error, delete this
-     * comment and run Flow. */
-    const result = transformFromAstSync(sourceAst, src, babelConfig);
+
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const result = transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {

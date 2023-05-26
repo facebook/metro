@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,8 +15,8 @@ import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
   version: 3,
-  sources: [],
-  names: [],
+  sources: ([]: Array<string>),
+  names: ([]: Array<string>),
   mappings: 'A',
 };
 
@@ -98,10 +99,10 @@ class BundleBuilder {
 
 const reLineBreak = /\r\n|\r|\n/g;
 
-function measureString(str: string): {|
+function measureString(str: string): {
   lineBreaks: number,
   lastLineColumns: number,
-|} {
+} {
   let lineBreaks = 0;
   let match;
   let lastLineStart = 0;

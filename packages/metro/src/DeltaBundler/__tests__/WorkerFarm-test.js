@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -24,16 +24,15 @@ describe('Worker Farm', function () {
     jest
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
-      .mock('temp', () => ({path: () => '/arbitrary/path'}))
-      .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
+      .mock('jest-worker', () => ({__esModule: true, Worker: jest.fn()}));
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
     config = await getDefaultConfig();
 
     fs.writeFileSync.mockClear();
-    jestWorker.default.mockClear();
-    jestWorker.default.mockImplementation(function (workerPath, opts) {
+    jestWorker.Worker.mockClear();
+    jestWorker.Worker.mockImplementation(function (workerPath, opts) {
       api = {
         end: jest.fn(),
         getStdout: () => new Readable({read() {}}),
@@ -76,6 +75,7 @@ describe('Worker Farm', function () {
       transformOptions,
       config.projectRoot,
       transformerConfig,
+      undefined,
     );
   });
 
@@ -96,6 +96,7 @@ describe('Worker Farm', function () {
       {},
       '/foo',
       transformerConfig,
+      undefined,
     );
 
     await farm.kill();
@@ -111,6 +112,7 @@ describe('Worker Farm', function () {
       {},
       '/bar',
       transformerConfig,
+      undefined,
     );
   });
 

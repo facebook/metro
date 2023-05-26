@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -69,7 +70,7 @@ class ModuleCache {
   }
 
   getPackageOf(modulePath: string): ?Package {
-    let packagePath = this._packagePathByModulePath[modulePath];
+    let packagePath: ?string = this._packagePathByModulePath[modulePath];
     if (packagePath && this._packageCache[packagePath]) {
       return this._packageCache[packagePath];
     }
@@ -88,7 +89,7 @@ class ModuleCache {
     return this.getPackage(packagePath);
   }
 
-  processFileChange(type: string, filePath: string) {
+  invalidate(filePath: string) {
     if (this._moduleCache[filePath]) {
       this._moduleCache[filePath].invalidate();
       delete this._moduleCache[filePath];

@@ -6,11 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type {
   DebuggerRequest,
-  DebuggerResponse,
+  ErrorResponse,
   GetScriptSourceRequest,
   GetScriptSourceResponse,
   MessageFromDevice,
@@ -21,6 +22,7 @@ import type {
 
 import * as fs from 'fs';
 import * as path from 'path';
+import fetch from 'node-fetch';
 import WS from 'ws';
 
 const debug = require('debug')('Metro:InspectorProxy');
@@ -176,14 +178,13 @@ class Device {
     socket.on('message', (message: string) => {
       debug('(Debugger) -> (Proxy)    (Device): ' + message);
       const debuggerRequest = JSON.parse(message);
-      const interceptedResponse = this._interceptMessageFromDebugger(
+      const handled = this._interceptMessageFromDebugger(
         debuggerRequest,
         debuggerInfo,
+        socket,
       );
 
-      if (interceptedResponse) {
-        socket.send(JSON.stringify(interceptedResponse));
-      } else {
+      if (!handled) {
         this._sendMessageToDevice({
           event: 'wrappedEvent',
           payload: {
@@ -269,11 +270,15 @@ class Device {
 
       if (this._debuggerConnection) {
         // Wrapping just to make flow happy :)
-        this._processMessageFromDevice(parsedPayload, this._debuggerConnection);
+        // $FlowFixMe[unused-promise]
+        this._processMessageFromDevice(
+          parsedPayload,
+          this._debuggerConnection,
+        ).then(() => {
+          const messageToSend = JSON.stringify(parsedPayload);
+          debuggerSocket.send(messageToSend);
+        });
       }
-
-      const messageToSend = JSON.stringify(parsedPayload);
-      debuggerSocket.send(messageToSend);
     }
   }
 
@@ -350,7 +355,7 @@ class Device {
   }
 
   // Allows to make changes in incoming message from device.
-  _processMessageFromDevice(
+  async _processMessageFromDevice(
     payload: {method: string, params: {sourceMapURL: string, url: string}},
     debuggerInfo: DebuggerInfo,
   ) {
@@ -366,6 +371,25 @@ class Device {
               'localhost',
             );
             debuggerInfo.originalSourceURLAddress = address;
+          }
+        }
+
+        const sourceMapURL = this._tryParseHTTPURL(params.sourceMapURL);
+        if (sourceMapURL) {
+          // Some debug clients do not support fetching HTTP URLs. If the
+          // message headed to the debug client identifies the source map with
+          // an HTTP URL, fetch the content here and convert the content to a
+          // Data URL (which is more widely supported) before passing the
+          // message to the debug client.
+          try {
+            const sourceMap = await this._fetchText(sourceMapURL);
+            payload.params.sourceMapURL =
+              'data:application/json;charset=utf-8;base64,' +
+              new Buffer(sourceMap).toString('base64');
+          } catch (exception) {
+            this._sendErrorToDebugger(
+              `Failed to fetch source map ${params.sourceMapURL}: ${exception.message}`,
+            );
           }
         }
       }
@@ -387,20 +411,9 @@ class Device {
           debuggerInfo.prependedFilePrefix = true;
         }
 
+        // $FlowFixMe[prop-missing]
         if (params.scriptId != null) {
           this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
-        }
-      }
-
-      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE_ID) {
-        // Chrome won't use the source map unless it appears to be new.
-        if (payload.params.sourceMapURL) {
-          payload.params.sourceMapURL +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
-        }
-        if (payload.params.url) {
-          payload.params.url +=
-            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
         }
       }
     }
@@ -435,21 +448,21 @@ class Device {
     }
   }
 
-  // Allows to make changes in incoming messages from debugger.
+  // Allows to make changes in incoming messages from debugger. Returns a boolean
+  // indicating whether the message has been handled locally (i.e. does not need
+  // to be forwarded to the target).
   _interceptMessageFromDebugger(
     req: DebuggerRequest,
     debuggerInfo: DebuggerInfo,
-  ): ?DebuggerResponse {
-    let response = null;
+    socket: typeof WS,
+  ): boolean {
     if (req.method === 'Debugger.setBreakpointByUrl') {
       this._processDebuggerSetBreakpointByUrl(req, debuggerInfo);
     } else if (req.method === 'Debugger.getScriptSource') {
-      response = {
-        id: req.id,
-        result: this._processDebuggerGetScriptSource(req),
-      };
+      this._processDebuggerGetScriptSource(req, socket);
+      return true;
     }
-    return response;
+    return false;
   }
 
   _processDebuggerSetBreakpointByUrl(
@@ -470,12 +483,14 @@ class Device {
           debuggerInfo.prependedFilePrefix
         ) {
           // Remove fake URL prefix if we modified URL in _processMessageFromDevice.
+          // $FlowFixMe[incompatible-use]
           req.params.url = req.params.url.slice(FILE_PREFIX.length);
         }
       }
       if (req.params.urlRegex) {
         req.params.urlRegex = req.params.urlRegex.replace(
           /localhost/g,
+          // $FlowFixMe[incompatible-call]
           debuggerInfo.originalSourceURLAddress,
         );
       }
@@ -484,26 +499,51 @@ class Device {
 
   _processDebuggerGetScriptSource(
     req: GetScriptSourceRequest,
-  ): GetScriptSourceResponse {
-    let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
+    socket: typeof WS,
+  ) {
+    const sendSuccessResponse = (scriptSource: string) => {
+      const result: GetScriptSourceResponse = {scriptSource};
+      socket.send(JSON.stringify({id: req.id, result}));
+    };
+    const sendErrorResponse = (error: string) => {
+      // Tell the client that the request failed
+      const result: ErrorResponse = {error: {message: error}};
+      socket.send(JSON.stringify({id: req.id, result}));
+
+      // Send to the console as well, so the user can see it
+      this._sendErrorToDebugger(error);
+    };
 
     const pathToSource = this._scriptIdToSourcePathMapping.get(
       req.params.scriptId,
     );
     if (pathToSource) {
-      try {
-        scriptSource = fs.readFileSync(
-          path.resolve(this._projectRoot, pathToSource),
-          'utf8',
+      const httpURL = this._tryParseHTTPURL(pathToSource);
+      if (httpURL) {
+        this._fetchText(httpURL).then(
+          text => sendSuccessResponse(text),
+          err =>
+            sendErrorResponse(
+              `Failed to fetch source url ${pathToSource}: ${err.message}`,
+            ),
         );
-      } catch (err) {
-        scriptSource = err.message;
+      } else {
+        let file;
+        try {
+          file = fs.readFileSync(
+            path.resolve(this._projectRoot, pathToSource),
+            'utf8',
+          );
+        } catch (err) {
+          sendErrorResponse(
+            `Failed to fetch source file ${pathToSource}: ${err.message}`,
+          );
+        }
+        if (file) {
+          sendSuccessResponse(file);
+        }
       }
     }
-
-    return {
-      scriptSource,
-    };
   }
 
   _mapToDevicePageId(pageId: string): string {
@@ -514,6 +554,58 @@ class Device {
       return this._lastConnectedReactNativePage.id;
     } else {
       return pageId;
+    }
+  }
+
+  _tryParseHTTPURL(url: string): ?URL {
+    let parsedURL: ?URL;
+    try {
+      parsedURL = new URL(url);
+    } catch {}
+
+    const protocol = parsedURL?.protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      parsedURL = undefined;
+    }
+
+    return parsedURL;
+  }
+
+  // Fetch text, raising an exception if the text could not be fetched,
+  // or is too large.
+  async _fetchText(url: URL): Promise<string> {
+    if (url.hostname !== 'localhost') {
+      throw new Error('remote fetches not permitted');
+    }
+
+    const response = await fetch(url);
+    const text = await response.text();
+    // Restrict the length to well below the 500MB limit for nodejs (leaving
+    // room some some later manipulation, e.g. base64 or wrapping in JSON)
+    if (text.length > 350000000) {
+      throw new Error('file too large to fetch via HTTP');
+    }
+    return text;
+  }
+
+  _sendErrorToDebugger(message: string) {
+    const debuggerSocket = this._debuggerConnection?.socket;
+    if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
+      debuggerSocket.send(
+        JSON.stringify({
+          method: 'Runtime.consoleAPICalled',
+          params: {
+            args: [
+              {
+                type: 'string',
+                value: message,
+              },
+            ],
+            executionContextId: 0,
+            type: 'error',
+          },
+        }),
+      );
     }
   }
 }

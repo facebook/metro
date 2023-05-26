@@ -1,6 +1,6 @@
 {
   "name": "metro-cache",
-  "version": "0.68.0",
+  "version": "0.76.5",
   "description": "🚇 Cache layers for Metro.",
   "main": "src/index.js",
   "repository": {
@@ -12,11 +12,14 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "metro-core": "0.68.0",
-    "rimraf": "^2.5.4"
+    "metro-core": "0.76.5",
+    "rimraf": "^3.0.2"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.68.0"
+    "metro-memory-fs": "0.76.5"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
 }

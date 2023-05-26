@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 declare module 'ci-info' {

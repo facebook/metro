@@ -4,11 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+import CountingSet from '../../lib/CountingSet';
 
 const Metro = require('../../..');
 const path = require('path');
@@ -50,7 +52,7 @@ it('should build the dependency graph', async () => {
   expect(graph.dependencies.get(entryPoint)).toEqual(
     expect.objectContaining({
       path: entryPoint,
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
       output: [
         expect.objectContaining({
           type: 'js/module',

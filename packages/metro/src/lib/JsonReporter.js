@@ -6,11 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {Writable} = require('stream');
+import type {Writable} from 'stream';
 
 class JsonReporter<TEvent: {[string]: any, ...}> {
   _stream: Writable;

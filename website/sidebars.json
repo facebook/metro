@@ -1,18 +1,9 @@
 {
   "docs": {
-    "Introduction": [
-      "getting-started",
-      "concepts",
-      "bundling",
-      "caching"
-    ],
-    "API Reference": [
-      "api",
-      "configuration",
-      "cli"
-    ],
-    "Guides": [
-      "troubleshooting"
-    ]
+    "Introduction": ["getting-started", "concepts"],
+    "API Reference": ["api", "module-api", "configuration", "cli"],
+    "Guides": ["package-exports", "troubleshooting"],
+    "Contributing": ["local-development"],
+    "Deep Dives": ["bundling", "caching", "resolution", "source-map-format"]
   }
 }

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 // Symbolicates a JavaScript stack trace using a source map.
@@ -49,6 +50,7 @@ function printHelp() {
 
 async function main(
   argvInput: Array<string> = process.argv.slice(2),
+  // prettier-ignore
   {
     stdin,
     stderr,
@@ -58,11 +60,12 @@ async function main(
     stderr: stream$Writable,
     stdout: stream$Writable,
     ...
+    // $FlowFixMe[class-object-subtyping]
   } = process,
 ): Promise<number> {
   const argv = argvInput.slice();
-  function checkAndRemoveArg(arg, valuesPerArg = 0) {
-    let values = null;
+  function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {
+    let values: null | Array<Array<string>> = null;
     for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
       argv.splice(idx, 1);
       values = values || [];
@@ -71,7 +74,7 @@ async function main(
     return values;
   }
 
-  function checkAndRemoveArgWithValue(arg) {
+  function checkAndRemoveArgWithValue(arg: string) {
     const values = checkAndRemoveArg(arg, 1);
     return values ? values[0][0] : null;
   }
@@ -165,6 +168,8 @@ async function main(
       await waitForStream(
         stdin
           .pipe(
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
             through2(function (data, enc, callback) {
               // Take arbitrary strings, output single lines
               buffer += data;
@@ -177,6 +182,8 @@ async function main(
             }),
           )
           .pipe(
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
             through2.obj(function (data, enc, callback) {
               // This is JSONL, so each line is a separate JSON object
               const obj = JSON.parse(data);
@@ -222,8 +229,8 @@ async function main(
   return 0;
 }
 
-function readAll(stream) {
-  return new Promise(resolve => {
+function readAll(stream: stream$Readable | tty$ReadStream) {
+  return new Promise<string>(resolve => {
     let data = '';
     if (stream.isTTY === true) {
       resolve(data);
@@ -244,7 +251,7 @@ function readAll(stream) {
   });
 }
 
-function waitForStream(stream) {
+function waitForStream(stream: $FlowFixMe) {
   return new Promise(resolve => {
     stream.on('finish', resolve);
   });

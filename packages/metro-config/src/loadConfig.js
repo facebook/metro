@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -96,7 +97,7 @@ async function resolveConfig(
   return result;
 }
 
-function mergeConfig<T: InputConfigT>(
+function mergeConfig<T: $ReadOnly<InputConfigT>>(
   defaultConfig: T,
   ...configs: Array<InputConfigT>
 ): T {
@@ -115,52 +116,61 @@ function mergeConfig<T: InputConfigT>(
           : totalConfig.cacheStores,
 
       resolver: {
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
-         * an error found when Flow v0.111 was deployed. To see the error,
-         * delete this comment and run Flow. */
         ...totalConfig.resolver,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.resolver || {}),
         dependencyExtractor:
           nextConfig.resolver && nextConfig.resolver.dependencyExtractor != null
             ? resolve(nextConfig.resolver.dependencyExtractor)
-            : totalConfig.resolver.dependencyExtractor,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.resolver.dependencyExtractor,
         hasteImplModulePath:
           nextConfig.resolver && nextConfig.resolver.hasteImplModulePath != null
             ? resolve(nextConfig.resolver.hasteImplModulePath)
-            : totalConfig.resolver.hasteImplModulePath,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.resolver.hasteImplModulePath,
       },
       serializer: {
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
-         * an error found when Flow v0.111 was deployed. To see the error,
-         * delete this comment and run Flow. */
         ...totalConfig.serializer,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.serializer || {}),
       },
       transformer: {
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
-         * an error found when Flow v0.111 was deployed. To see the error,
-         * delete this comment and run Flow. */
         ...totalConfig.transformer,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.transformer || {}),
         babelTransformerPath:
           nextConfig.transformer &&
           nextConfig.transformer.babelTransformerPath != null
             ? resolve(nextConfig.transformer.babelTransformerPath)
-            : totalConfig.transformer.babelTransformerPath,
+            : // $FlowFixMe[incompatible-use]
+              totalConfig.transformer.babelTransformerPath,
       },
       server: {
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
-         * an error found when Flow v0.111 was deployed. To see the error,
-         * delete this comment and run Flow. */
         ...totalConfig.server,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.server || {}),
       },
       symbolicator: {
-        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
-         * an error found when Flow v0.111 was deployed. To see the error,
-         * delete this comment and run Flow. */
         ...totalConfig.symbolicator,
+        // $FlowFixMe[exponential-spread]
         ...(nextConfig.symbolicator || {}),
+      },
+      watcher: {
+        ...totalConfig.watcher,
+        // $FlowFixMe[exponential-spread]
+        ...nextConfig.watcher,
+        watchman: {
+          // $FlowFixMe[exponential-spread]
+          ...totalConfig.watcher?.watchman,
+          ...nextConfig.watcher?.watchman,
+        },
+        healthCheck: {
+          // $FlowFixMe[exponential-spread]
+          ...totalConfig.watcher?.healthCheck,
+          // $FlowFixMe: Spreading shapes creates an explosion of union types
+          ...nextConfig.watcher?.healthCheck,
+        },
       },
     }),
     defaultConfig,
@@ -181,6 +191,8 @@ async function loadMetroConfigFromDisk(
   const rootPath = dirname(filepath);
 
   const defaults = await getDefaultConfig(rootPath);
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   const defaultConfig: ConfigT = mergeConfig(defaults, defaultConfigOverrides);
 
   if (typeof configModule === 'function') {
@@ -188,9 +200,13 @@ async function loadMetroConfigFromDisk(
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
+    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-variance]
     return mergeConfig(defaultConfig, resultedConfig);
   }
 
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(defaultConfig, configModule);
 }
 
@@ -208,10 +224,14 @@ function overrideConfigWithArguments(
   };
 
   if (argv.port != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.server.port = Number(argv.port);
   }
 
   if (argv.runInspectorProxy != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.server.runInspectorProxy = Boolean(argv.runInspectorProxy);
   }
 
@@ -224,14 +244,20 @@ function overrideConfigWithArguments(
   }
 
   if (argv.assetExts != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.assetExts = argv.assetExts;
   }
 
   if (argv.sourceExts != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.sourceExts = argv.sourceExts;
   }
 
   if (argv.platforms != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.resolver.platforms = argv.platforms;
   }
 
@@ -240,6 +266,8 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
     output.transformer.babelTransformerPath = argv.transformer;
   }
 
@@ -256,6 +284,8 @@ function overrideConfigWithArguments(
     // TODO: Ask if this is the way to go
   }
 
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(config, output);
 }
 
@@ -266,10 +296,10 @@ function overrideConfigWithArguments(
  * @return {object}                         Configuration returned
  */
 async function loadConfig(
-  argv?: YargArguments = {},
+  argvInput?: YargArguments = {},
   defaultConfigOverrides?: InputConfigT = {},
 ): Promise<ConfigT> {
-  argv.config = overrideArgument(argv.config);
+  const argv = {...argvInput, config: overrideArgument(argvInput.config)};
 
   const configuration = await loadMetroConfigFromDisk(
     argv.config,
@@ -279,7 +309,7 @@ async function loadConfig(
 
   validate(configuration, {
     exampleConfig: await validConfig(),
-    recursiveBlacklist: ['reporter', 'resolver', 'transformer'],
+    recursiveDenylist: ['reporter', 'resolver', 'transformer'],
     deprecatedConfig: {
       blacklistRE: () =>
         `Warning: Metro config option \`blacklistRE\` is deprecated.
@@ -290,15 +320,7 @@ async function loadConfig(
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
 
-  const overriddenConfig = {};
-
-  // The resolver breaks if "json" is missing from `resolver.sourceExts`
-  const sourceExts = configWithArgs.resolver.sourceExts;
-  if (!configWithArgs.resolver.sourceExts.includes('json')) {
-    overriddenConfig.resolver = {
-      sourceExts: [...sourceExts, 'json'],
-    };
-  }
+  const overriddenConfig: {[string]: mixed} = {};
 
   overriddenConfig.watchFolders = [
     configWithArgs.projectRoot,
@@ -307,6 +329,9 @@ async function loadConfig(
 
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-indexer]
+  // $FlowFixMe[incompatible-call]
   return mergeConfig(configWithArgs, overriddenConfig);
 }
 

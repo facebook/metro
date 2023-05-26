@@ -6,9 +6,12 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+export type * from './configTypes.flow';
 
 const getDefaultConfig = require('./defaults');
 const {loadConfig, mergeConfig, resolveConfig} = require('./loadConfig');

@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -40,6 +41,7 @@ class DelegatingConsumer implements IConsumer {
 
   _rootConsumer: IConsumer;
 
+  // $FlowFixMe[incompatible-return]
   constructor(sourceMap: MixedSourceMap): IConsumer {
     this._rootConsumer = createConsumer(sourceMap);
     return this._rootConsumer;

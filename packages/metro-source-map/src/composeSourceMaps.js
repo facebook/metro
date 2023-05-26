@@ -6,10 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {SourcePosition} from './Consumer/types.flow';
 import type {IConsumer, MixedSourceMap} from './source-map';
 import type {Number0, Number1} from 'ob1';
 
@@ -25,6 +27,7 @@ function composeSourceMaps(
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
   const SourceMetadataMapConsumer = require('metro-symbolicate/src/SourceMetadataMapConsumer');
+  const GoogleIgnoreListConsumer = require('metro-symbolicate/src/GoogleIgnoreListConsumer');
   if (maps.length < 1) {
     throw new Error('composeSourceMaps: Expected at least one map');
   }
@@ -79,6 +82,11 @@ function composeSourceMaps(
   if (function_offsets) {
     composedMap.x_hermes_function_offsets = function_offsets;
   }
+  const ignoreListConsumer = new GoogleIgnoreListConsumer(firstMap);
+  const x_google_ignoreList = ignoreListConsumer.toArray(composedMap.sources);
+  if (x_google_ignoreList.length) {
+    composedMap.x_google_ignoreList = x_google_ignoreList;
+  }
   return composedMap;
 }
 
@@ -93,9 +101,9 @@ function findOriginalPosition(
   name: ?string,
   ...
 } {
-  let currentLine = generatedLine;
-  let currentColumn = generatedColumn;
-  let original = {
+  let currentLine: ?Number1 = generatedLine;
+  let currentColumn: ?Number0 = generatedColumn;
+  let original: SourcePosition = {
     line: null,
     column: null,
     source: null,
@@ -123,6 +131,7 @@ function findOriginalPosition(
       };
     }
   }
+  // $FlowFixMe[incompatible-return] `Number0`, `Number1` is incompatible with number
   return original;
 }
 

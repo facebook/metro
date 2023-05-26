@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,7 +16,6 @@ import type {BundleOptions} from 'metro/src/shared/types.flow';
 const VERSION = require('../package.json').version;
 const {EventEmitter} = require('events');
 const os = require('os');
-const path = require('path');
 
 export type ActionLogEntryData = {
   action_name: string,
@@ -59,11 +59,6 @@ function createEntry(data: LogEntry | string): LogEntry {
   const logEntry: LogEntry =
     typeof data === 'string' ? {log_entry_label: data} : data;
 
-  const entryPoint = logEntry.entry_point;
-  if (entryPoint) {
-    logEntry.entry_point = path.relative(process.cwd(), entryPoint);
-  }
-
   return {
     ...logEntry,
     log_session,
@@ -99,10 +94,10 @@ function createActionEndEntry(logEntry: ActionStartLogEntry): LogEntry {
     action_name,
     action_phase: 'end',
     duration_ms,
-    /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+    /* $FlowFixMe[incompatible-cast] (>=0.111.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.111 was deployed. To see the error, delete this
      * comment and run Flow. */
-    log_entry_label: action_name,
+    log_entry_label: (action_name: string),
   });
 }
 

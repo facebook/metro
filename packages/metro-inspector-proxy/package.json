@@ -1,6 +1,6 @@
 {
   "name": "metro-inspector-proxy",
-  "version": "0.68.0",
+  "version": "0.76.5",
   "description": "🚇 Inspector proxy for React Native and dev tools integration.",
   "main": "src/index.js",
   "bin": "src/cli.js",
@@ -20,6 +20,10 @@
     "connect": "^3.6.5",
     "debug": "^2.2.0",
     "ws": "^7.5.1",
-    "yargs": "^15.3.1"
+    "yargs": "^17.6.2",
+    "node-fetch": "^2.2.0"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }

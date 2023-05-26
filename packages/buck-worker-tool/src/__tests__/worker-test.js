@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -22,20 +22,15 @@ jest
     return {Console};
   })
   .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('temp', () => ({
-    path() {
-      return '/tmp/repro.args';
-    },
-  }))
   .useRealTimers();
 
-const JSONStream = require('JSONStream');
-
+const JSONStream = require('../third-party/JSONStream');
 const buckWorker = require('../worker-tool');
 // mocked
 const {Console} = require('console');
 const fs = require('fs');
 const path = require('path');
+const through = require('through');
 
 const {any, anything} = expect;
 
@@ -488,6 +483,33 @@ describe('Buck worker:', () => {
       }
     }).then(JSON.parse);
   }
+});
+
+test('terminates on ] even if stdin remains open', async () => {
+  const output = [];
+  await new Promise((resolve, reject) => {
+    const worker = buckWorker({});
+    worker.on('data', chunk => output.push(chunk));
+    worker.once('error', reject);
+    worker.once('end', resolve);
+
+    const inStream = through();
+    inStream.pipe(worker);
+    inStream.write('[');
+    inStream.write(JSON.stringify(handshake()));
+    inStream.write(']');
+    // do not end() the input stream
+  });
+  expect(JSON.parse(output.join(''))).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "capabilities": Array [],
+        "id": 0,
+        "protocol_version": "0",
+        "type": "handshake",
+      },
+    ]
+  `);
 });
 
 function command(overrides) {

@@ -6,6 +6,7 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,13 +14,13 @@
 const parsePlatformFilePath = require('./parsePlatformFilePath');
 const path = require('path');
 
-export type AssetPath = {|
+export type AssetPath = {
   assetName: string,
   name: string,
   platform: ?string,
   resolution: number,
   type: string,
-|};
+};
 
 const ASSET_BASE_NAME_RE = /(.+?)(@([\d.]+)x)?$/;
 

@@ -7,11 +7,18 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+try {
+  // $FlowFixMe[untyped-import]
+  require('metro-babel-register').unstable_registerForMetroMonorepo();
+} catch {}
+
 const {attachMetroCli} = require('./index');
 const yargs = require('yargs');
 
+// $FlowFixMe[unused-promise]
 attachMetroCli(yargs.demandCommand(1)).argv;

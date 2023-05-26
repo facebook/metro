@@ -7,8 +7,10 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+// $FlowFixMe[unused-promise]
 require('./symbolicate.js')().then(code => process.exit(code));

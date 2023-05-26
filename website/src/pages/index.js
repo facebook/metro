@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -39,13 +40,11 @@ const contents = [
 
 const Button = ({children, href}) => {
   return (
-    <div className="col col--2 margin-horiz--sm">
-      <Link
-        className="button button--outline button--primary button--lg"
-        to={href}>
-        {children}
-      </Link>
-    </div>
+    <Link
+      className="button button--outline button--primary button--lg margin-horiz--sm"
+      to={href}>
+      {children}
+    </Link>
   );
 };
 
@@ -81,11 +80,32 @@ const HomeSplash = () => {
   );
 };
 
+const VideoContainer = () => {
+  return (
+    <div className="container text--center margin-bottom--xl">
+      <div className="row">
+        <div className="col" style={{textAlign: 'center'}}>
+          <h2>Check it out in the intro video</h2>
+          <iframe
+            className={styles.video}
+            src="https://www.youtube.com/embed/E13sgMCODDk"
+            title="Explain Like I'm 5: Metro"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   return (
     <Layout title="Metro">
       <HomeSplash />
       <div className="container">
+        <VideoContainer />
         <div class="row">
           {contents.map(({content, title, image}) => {
             return (

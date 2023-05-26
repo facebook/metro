@@ -5,38 +5,77 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
-
-'use strict';
 
 import Layout from '@theme/Layout';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 
 const supportLinks = [
   {
-    content: `Find what you're looking for in our detailed documentation and
-        guides.\n\n- Learn how to [get
-        started](/metro/docs/getting-started) with Metro.\n- [Troubleshoot](/metro/docs/troubleshooting) problems with
-        Metro.\n- Learn how to [configure
-        Metro](/metro/docs/configuration).\n- Look at the full [API
-        Reference](/metro/docs/api).`,
     title: 'Browse the docs',
+    summary:
+      "Find what you're looking for in our detailed documentation and guides",
+    content: (
+      <ul>
+        <li>
+          Learn how to <a href="/metro/docs/getting-started">get started</a>{' '}
+          with Metro.
+        </li>
+        <li>
+          <a href="/metro/docs/troubleshooting">Troubleshoot</a> problems with
+          Metro.
+        </li>
+        <li>
+          Learn how to <a href="/metro/docs/configuration">configure Metro</a>.
+        </li>
+        <li>
+          Look at the full <a href="/metro/docs/api">API Reference</a>.
+        </li>
+      </ul>
+    ),
   },
   {
-    content: `Ask questions and find answers from other Metro users like you.\n\n- Join the
-        [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384)
-        channel on [Reactiflux](http://www.reactiflux.com/), a Discord
-        community.\n- Many members of the community use Stack Overflow. Read
-        through the [existing questions](https://stackoverflow.com/search?q=metro+bundler)
-        or [ask your own](https://stackoverflow.com/questions/ask)!`,
+    summary: 'Ask questions and find answers from other Metro users like you.',
     title: 'Join the community',
+    content: (
+      <ul>
+        <li>
+          Join the{' '}
+          <a href="https://discordapp.com/channels/102860784329052160/103622435865104384">
+            #metro
+          </a>{' '}
+          channel on <a href="http://www.reactiflux.com/">Reactiflux</a>, a
+          Discord community.
+        </li>
+        <li>
+          Many members of the community use Stack Overflow. Read through the{' '}
+          <a href="https://stackoverflow.com/search?q=metro+bundler">
+            existing questions
+          </a>{' '}
+          or <a href="https://stackoverflow.com/questions/ask">ask your own</a>!
+        </li>
+      </ul>
+    ),
   },
   {
-    content: `Find out what's new with Metro.\n\n- Follow
-        [Metro](https://twitter.com/MetroBundler) on Twitter.\n- Subscribe
-        to the [Metro blog](/metro/blog/).`,
     title: 'Stay up to date',
+    summary: "Find out what's new with Metro.",
+    content: (
+      <ul>
+        <li>
+          Follow <a href="https://twitter.com/MetroBundler">Metro</a> on
+          Twitter.
+        </li>
+        <li>
+          Browse our{' '}
+          <a href="https://github.com/facebook/metro/releases">
+            latest releases on GitHub
+          </a>
+          .
+        </li>
+      </ul>
+    ),
   },
 ];
 
@@ -52,12 +91,15 @@ const Help = () => {
           often around and available for questions.
         </p>
 
-        <div class="row">
-          {supportLinks.map(({content, title}) => {
+        <div className="row">
+          {supportLinks.map(({content, summary, title}, i) => {
             return (
-              <div className="col col--4 margin-vert--md">
+              <div
+                key={`help-column-${i}`}
+                className="col col--4 margin-vert--md">
                 <h2>{title}</h2>
-                <ReactMarkdown source={content} />
+                <p>{summary}</p>
+                {content}
               </div>
             );
           })}

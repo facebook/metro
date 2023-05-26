@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -54,7 +55,7 @@ type RangeMapping = {
   start: Position,
   ...
 };
-type Context = {filename?: string, ...};
+export type Context = {filename?: string, ...};
 
 /**
  * Generate a map of source positions to function names. The names are meant to
@@ -99,7 +100,7 @@ function forEachMapping(
   context: ?Context,
   pushMapping: RangeMapping => void,
 ) {
-  const nameStack = [];
+  const nameStack: Array<{loc: BabelNodeSourceLocation, name: string}> = [];
   let tailPos = {line: 1, column: 0};
   let tailName = null;
 
@@ -164,11 +165,21 @@ function forEachMapping(
     },
   };
 
+  // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
+  // values missing the `hub` property needed by Babel transformation, so we
+  // save, clear, and restore the cache around our traversal.
+  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
+  const previousCache = traverse.cache.path;
+  traverse.cache.clearPath();
   traverse(ast, {
+    // Our visitor doesn't care about scope
+    noScope: true,
+
     Function: visitor,
     Program: visitor,
     Class: visitor,
   });
+  traverse.cache.path = previousCache;
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
@@ -190,7 +201,7 @@ function getNameForPath(path: NodePath<>): string {
     return node.id.name;
   }
   let propertyPath;
-  let kind = '';
+  let kind: ?string;
 
   // Find or construct an AST node that names the current node.
   if (isObjectMethod(node) || isClassMethod(node)) {
@@ -275,17 +286,16 @@ function getNameForPath(path: NodePath<>): string {
   }
 
   // Annotate getters and setters.
-  if (kind) {
+  if (kind != null) {
     name = kind + '__' + name;
   }
 
   // Annotate members with the name of their containing object/class.
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
-      // $FlowFixMe Disvoered when typing babel-traverse
+      // $FlowFixMe Discovered when typing babel-traverse
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         const separator = propertyPath.node.static ? '.' : '#';
         name = className + separator + name;
       }
@@ -511,12 +521,7 @@ class RelativeValue {
   }
 }
 
-function positionGreater(
-  x: {column: number, line: number},
-  y:
-    | {column: number, line: number}
-    | $TEMPORARY$object<{column: number, line: number}>,
-) {
+function positionGreater(x: Position, y: Position) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 

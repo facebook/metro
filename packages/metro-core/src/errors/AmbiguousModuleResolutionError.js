@@ -6,19 +6,19 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
-import {ModuleMap} from 'jest-haste-map';
-const {DuplicateHasteCandidatesError} = ModuleMap;
+'use strict';
+
+import type {DuplicateHasteCandidatesError} from 'metro-file-map';
 
 class AmbiguousModuleResolutionError extends Error {
   fromModulePath: string;
-  // $FlowFixMe[value-as-type]
   hasteError: DuplicateHasteCandidatesError;
 
   constructor(
     fromModulePath: string,
-    // $FlowFixMe[value-as-type]
     hasteError: DuplicateHasteCandidatesError,
   ) {
     super(

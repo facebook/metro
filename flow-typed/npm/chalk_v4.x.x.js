@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 declare module 'chalk' {
@@ -19,17 +20,17 @@ declare module 'chalk' {
     ...
   }>;
 
-  declare type ChalkOptions = {|
+  declare type ChalkOptions = {
     enabled?: boolean,
     level?: Level,
-  |};
+  };
 
-  declare type ColorSupport = {|
+  declare type ColorSupport = {
     level: Level,
     hasBasic: boolean,
     has256: boolean,
     has16m: boolean,
-  |};
+  };
 
   declare interface Chalk {
     (...text: string[]): string,

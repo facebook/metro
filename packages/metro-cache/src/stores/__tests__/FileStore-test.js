@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,7 +18,7 @@ describe('FileStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers()
+      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
       .mock('fs', () => new (require('metro-memory-fs'))());
 
     FileStore = require('../FileStore');

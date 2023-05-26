@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,12 +16,7 @@ describe('Cache', () => {
   let Logger;
   let log;
 
-  function createStore(
-    name:
-      | string
-      | $TEMPORARY$string<'Local'>
-      | $TEMPORARY$string<'Network'> = '',
-  ) {
+  function createStore(name: string = '') {
     // eslint-disable-next-line no-eval
     const TempClass = eval(`(class ${name} {})`);
 
@@ -43,7 +38,9 @@ describe('Cache', () => {
       });
     });
 
-    log = [];
+    log = ([]: Array<
+      $FlowFixMe | {a: void | string, l: string, p: void | string},
+    >);
   });
 
   afterEach(() => {
@@ -90,6 +87,7 @@ describe('Cache', () => {
     store2.get.mockImplementation(() => 'hit!');
 
     // Get and set. Set should only affect store 1, not 2 (hit) and 3 (after).
+    // $FlowFixMe[unused-promise]
     cache.get(key);
     cache.set(key);
 
@@ -125,8 +123,6 @@ describe('Cache', () => {
   });
 
   it('throws on a buggy store set', async () => {
-    jest.useFakeTimers();
-
     const store1 = createStore();
     const store2 = createStore();
     const cache = new Cache([store1, store2]);
@@ -222,6 +218,7 @@ describe('Cache', () => {
 
   describe('disabled cache', () => {
     it('returns null for reads', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
       const cache = new Cache([]);
 
       const result = await cache.get(Buffer.from('foo'));
@@ -230,6 +227,7 @@ describe('Cache', () => {
     });
 
     it('ignores writes', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
       const cache = new Cache([]);
 
       await cache.set(Buffer.from('foo'), 'value');
@@ -239,6 +237,7 @@ describe('Cache', () => {
     });
 
     it('logs nothing', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
       const cache = new Cache([]);
 
       await cache.set(Buffer.from('foo'), 'value');

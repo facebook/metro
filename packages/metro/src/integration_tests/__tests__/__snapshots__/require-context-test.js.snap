@@ -1,0 +1,110 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`require-context/conflict.js 1`] = `
+Object {
+  "contextModule": Object {
+    "./index.js": "contents of subdir-conflict/index.js",
+  },
+  "normalModule": "contents of subdir-conflict/index.js",
+}
+`;
+
+exports[`require-context/empty.js - release 1`] = `
+Object {
+  "error": Object {
+    "code": "MODULE_NOT_FOUND",
+    "message": "No modules in context",
+  },
+}
+`;
+
+exports[`require-context/empty.js 1`] = `
+Object {
+  "error": Object {
+    "code": "MODULE_NOT_FOUND",
+    "message": "No modules in context",
+  },
+}
+`;
+
+exports[`require-context/matching.js 1`] = `
+Object {
+  "ab": Array [
+    "./a.js",
+    "./b.js",
+  ],
+  "abc": Array [
+    "./a.js",
+    "./b.js",
+    "./c.js",
+  ],
+  "abcd": Array [
+    "./a.js",
+    "./b.js",
+    "./c.js",
+    "./nested/d.js",
+  ],
+}
+`;
+
+exports[`require-context/mode-eager.js 1`] = `
+Object {
+  "./a.js": "a",
+  "./b.js": Object {
+    "default": "b",
+  },
+  "./c.js": "c",
+  "./nested/d.js": "d",
+}
+`;
+
+exports[`require-context/mode-lazy.js 1`] = `
+Object {
+  "./a.js": Object {
+    "0": "a",
+    "default": "a",
+  },
+  "./b.js": Object {
+    "default": "b",
+  },
+  "./c.js": Object {
+    "0": "c",
+    "default": "c",
+  },
+  "./nested/d.js": Object {
+    "0": "d",
+    "default": "d",
+  },
+}
+`;
+
+exports[`require-context/mode-lazy-once.js 1`] = `
+Object {
+  "./a.js": Object {
+    "0": "a",
+    "default": "a",
+  },
+  "./b.js": Object {
+    "default": "b",
+  },
+  "./c.js": Object {
+    "0": "c",
+    "default": "c",
+  },
+  "./nested/d.js": Object {
+    "0": "d",
+    "default": "d",
+  },
+}
+`;
+
+exports[`require-context/mode-sync.js 1`] = `
+Object {
+  "./a.js": "a",
+  "./b.js": Object {
+    "default": "b",
+  },
+  "./c.js": "c",
+  "./nested/d.js": "d",
+}
+`;

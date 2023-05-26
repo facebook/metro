@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,7 +15,6 @@ import type {BabelCoreOptions} from '@babel/core';
 import type {FBSourceFunctionMap} from 'metro-source-map';
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
 const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
 
@@ -30,7 +30,7 @@ type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   enableBabelRCLookup?: boolean,
-  enableBabelRuntime: boolean,
+  enableBabelRuntime: boolean | string,
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
@@ -47,21 +47,21 @@ type BabelTransformerOptions = $ReadOnly<{
   ...
 }>;
 
-export type BabelTransformerArgs = $ReadOnly<{|
+export type BabelTransformerArgs = $ReadOnly<{
   filename: string,
   options: BabelTransformerOptions,
   plugins?: $PropertyType<BabelCoreOptions, 'plugins'>,
   src: string,
-|}>;
+}>;
 
-export type BabelTransformer = {|
+export type BabelTransformer = {
   transform: BabelTransformerArgs => {
     ast: BabelNodeFile,
     functionMap: ?FBSourceFunctionMap,
     ...
   },
   getCacheKey?: () => string,
-|};
+};
 
 function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
@@ -75,19 +75,29 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       ast: true,
       babelrc: options.enableBabelRCLookup,
       code: false,
+      cwd: options.projectRoot,
       highlightCode: true,
       filename,
       plugins,
       sourceType: 'module',
+
+      // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
+      // Hermes parsing, but this defaults to cloning the AST which increases
+      // the transformation time by a fair amount.
+      // You get this behavior by default when using Babel's `transform` method directly.
+      cloneInputAst: false,
     };
     const sourceAst = options.hermesParser
-      ? HermesParser.parse(src, {
+      ? require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
         })
       : parseSync(src, babelConfig);
-    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
+
+    // Generate the function map before we transform the AST to
+    // ensure we aren't reading from mutated AST.
     const functionMap = generateFunctionMap(sourceAst, {filename});
+    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
 
     return {ast: nullthrows(ast), functionMap};
   } finally {

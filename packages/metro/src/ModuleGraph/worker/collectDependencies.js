@@ -17,110 +17,106 @@ import type {
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
+const crypto = require('crypto');
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
-const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
 const {isImport} = types;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
-  jsResource?: boolean,
-  splitCondition?: NodePath<>,
 }>;
 
-export type Dependency<TSplitCondition> = $ReadOnly<{
-  data: DependencyData<TSplitCondition>,
+export type Dependency = $ReadOnly<{
+  data: DependencyData,
   name: string,
 }>;
 
-type DependencyData<TSplitCondition> = $ReadOnly<{
+// TODO: Convert to a Flow enum
+export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
+
+type ContextFilter = {pattern: string, flags: string};
+
+export type RequireContextParams = $ReadOnly<{
+  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
+  recursive: boolean,
+  /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
+  filter: $ReadOnly<ContextFilter>,
+  /** Mode for resolving dynamic dependencies. Defaults to `sync` */
+  mode: ContextMode,
+}>;
+
+type DependencyData = $ReadOnly<{
+  // A locally unique key for this dependency within the current module.
+  key: string,
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
-  // If left unspecified, then the dependency is unconditionally split.
-  splitCondition?: TSplitCondition,
   locs: Array<BabelSourceLocation>,
+  /** Context for requiring a collection of modules. */
+  contextParams?: RequireContextParams,
 }>;
 
-export type MutableInternalDependency<TSplitCondition> = {
-  ...DependencyData<TSplitCondition>,
+export type MutableInternalDependency = {
+  ...DependencyData,
   index: number,
   name: string,
 };
 
-export type InternalDependency<TSplitCondition> = $ReadOnly<
-  MutableInternalDependency<TSplitCondition>,
->;
+export type InternalDependency = $ReadOnly<MutableInternalDependency>;
 
-export type State<TSplitCondition> = {
+export type State = {
   asyncRequireModulePathStringLiteral: ?StringLiteral,
   dependencyCalls: Set<string>,
-  dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
-  dependencyTransformer: DependencyTransformer<TSplitCondition>,
+  dependencyRegistry: DependencyRegistry,
+  dependencyTransformer: DependencyTransformer,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext: boolean,
 };
 
-export type Options<TSplitCondition = void> = $ReadOnly<{
+export type Options = $ReadOnly<{
   asyncRequireModulePath: string,
   dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
   inlineableCalls: $ReadOnlyArray<string>,
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
-  dependencyRegistry?: ModuleDependencyRegistry<TSplitCondition>,
-  dependencyTransformer?: DependencyTransformer<TSplitCondition>,
+  dependencyTransformer?: DependencyTransformer,
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext: boolean,
 }>;
 
-export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
+export type CollectedDependencies = $ReadOnly<{
   ast: BabelNodeFile,
   dependencyMapName: string,
-  dependencies: $ReadOnlyArray<Dependency<TSplitCondition>>,
+  dependencies: $ReadOnlyArray<Dependency>,
 }>;
 
-// Registry for the dependency of a module.
-// Defines when dependencies should be collapsed.
-// E.g. should a module that's once required optinally and once not
-// be tretaed as the smae or different dependencies.
-export interface ModuleDependencyRegistry<+TSplitCondition> {
-  registerDependency(
-    qualifier: ImportQualifier,
-  ): InternalDependency<TSplitCondition>;
-  getDependencies(): Array<InternalDependency<TSplitCondition>>;
-}
-
-export interface DependencyTransformer<-TSplitCondition> {
+export interface DependencyTransformer {
   transformSyncRequire(
     path: NodePath<CallExpression>,
-    dependency: InternalDependency<TSplitCondition>,
-    state: State<TSplitCondition>,
+    dependency: InternalDependency,
+    state: State,
   ): void;
   transformImportCall(
     path: NodePath<>,
-    dependency: InternalDependency<TSplitCondition>,
-    state: State<TSplitCondition>,
-  ): void;
-  transformJSResource(
-    path: NodePath<>,
-    dependency: InternalDependency<TSplitCondition>,
-    state: State<TSplitCondition>,
+    dependency: InternalDependency,
+    state: State,
   ): void;
   transformPrefetch(
     path: NodePath<>,
-    dependency: InternalDependency<TSplitCondition>,
-    state: State<TSplitCondition>,
+    dependency: InternalDependency,
+    state: State,
   ): void;
-  transformIllegalDynamicRequire(
-    path: NodePath<>,
-    state: State<TSplitCondition>,
-  ): void;
+  transformIllegalDynamicRequire(path: NodePath<>, state: State): void;
 }
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
@@ -134,27 +130,30 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  *
  * The second argument is only provided for debugging purposes.
  */
-function collectDependencies<TSplitCondition = void>(
+function collectDependencies(
   ast: BabelNodeFile,
-  options: Options<TSplitCondition>,
-): CollectedDependencies<TSplitCondition> {
-  const visited = new WeakSet();
+  options: Options,
+): CollectedDependencies {
+  const visited = new WeakSet<BabelNodeCallExpression>();
 
-  const state: State<TSplitCondition> = {
+  const state: State = {
     asyncRequireModulePathStringLiteral: null,
     dependencyCalls: new Set(),
-    dependencyRegistry:
-      options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
+    dependencyRegistry: new DependencyRegistry(),
     dependencyTransformer:
       options.dependencyTransformer ?? DefaultDependencyTransformer,
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
     allowOptionalDependencies: options.allowOptionalDependencies,
+    unstable_allowRequireContext: options.unstable_allowRequireContext,
   };
 
   const visitor = {
-    CallExpression(path, state): void {
+    CallExpression(
+      path: NodePath<BabelNodeCallExpression>,
+      state: State,
+    ): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -176,26 +175,41 @@ function collectDependencies<TSplitCondition = void>(
         return;
       }
 
-      if (name === '__jsResource' && !path.scope.getBinding(name)) {
-        processImportCall(path, state, {
-          asyncType: 'async',
-          jsResource: true,
-        });
+      // Match `require.context`
+      if (
+        // Feature gate, defaults to `false`.
+        state.unstable_allowRequireContext &&
+        callee.type === 'MemberExpression' &&
+        // `require`
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'require' &&
+        // `context`
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'context' &&
+        !callee.computed &&
+        // Ensure `require` refers to the global and not something else.
+        !path.scope.getBinding('require')
+      ) {
+        processRequireContextCall(path, state);
+        visited.add(path.node);
         return;
       }
 
+      // Match `require.resolveWeak`
       if (
-        name === '__conditionallySplitJSResource' &&
-        !path.scope.getBinding(name)
+        callee.type === 'MemberExpression' &&
+        // `require`
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'require' &&
+        // `resolveWeak`
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'resolveWeak' &&
+        !callee.computed &&
+        // Ensure `require` refers to the global and not something else.
+        !path.scope.getBinding('require')
       ) {
-        const args = path.get('arguments');
-        invariant(Array.isArray(args), 'Expected arguments to be an array');
-
-        processImportCall(path, state, {
-          asyncType: 'async',
-          jsResource: true,
-          splitCondition: args[1],
-        });
+        processResolveWeakCall(path, state);
+        visited.add(path.node);
         return;
       }
 
@@ -213,7 +227,7 @@ function collectDependencies<TSplitCondition = void>(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path, state) {
+    Program(path: NodePath<BabelNodeProgram>, state: State) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -235,7 +249,7 @@ function collectDependencies<TSplitCondition = void>(
 
   const collectedDependencies = state.dependencyRegistry.getDependencies();
   // Compute the list of dependencies.
-  const dependencies = new Array(collectedDependencies.length);
+  const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
     dependencies[index] = {
@@ -251,10 +265,160 @@ function collectDependencies<TSplitCondition = void>(
   };
 }
 
-function collectImports<TSplitCondition>(
-  path: NodePath<>,
-  state: State<TSplitCondition>,
+/** Extract args passed to the `require.context` method. */
+function getRequireContextArgs(
+  path: NodePath<CallExpression>,
+): [string, RequireContextParams] {
+  const args = path.get('arguments');
+
+  let directory: string;
+  if (!Array.isArray(args) || args.length < 1) {
+    throw new InvalidRequireCallError(path);
+  } else {
+    const result = args[0].evaluate();
+    if (result.confident && typeof result.value === 'string') {
+      directory = result.value;
+    } else {
+      throw new InvalidRequireCallError(
+        result.deopt ?? args[0],
+        'First argument of `require.context` should be a string denoting the directory to require.',
+      );
+    }
+  }
+
+  // Default to requiring through all directories.
+  let recursive: boolean = true;
+  if (args.length > 1) {
+    const result = args[1].evaluate();
+    if (result.confident && typeof result.value === 'boolean') {
+      recursive = result.value;
+    } else if (!(result.confident && typeof result.value === 'undefined')) {
+      throw new InvalidRequireCallError(
+        result.deopt ?? args[1],
+        'Second argument of `require.context` should be an optional boolean indicating if files should be imported recursively or not.',
+      );
+    }
+  }
+
+  // Default to all files.
+  let filter: ContextFilter = {pattern: '.*', flags: ''};
+  if (args.length > 2) {
+    // evaluate() to check for undefined (because it's technically a scope lookup)
+    // but check the AST for the regex literal, since evaluate() doesn't do regex.
+    const result = args[2].evaluate();
+    const argNode = args[2].node;
+    if (argNode.type === 'RegExpLiteral') {
+      // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
+      filter = {
+        pattern: argNode.pattern,
+        flags: argNode.flags || '',
+      };
+    } else if (!(result.confident && typeof result.value === 'undefined')) {
+      throw new InvalidRequireCallError(
+        args[2],
+        `Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: ${argNode.type}.`,
+      );
+    }
+  }
+
+  // Default to `sync`.
+  let mode: ContextMode = 'sync';
+  if (args.length > 3) {
+    const result = args[3].evaluate();
+    if (result.confident && typeof result.value === 'string') {
+      mode = getContextMode(args[3], result.value);
+    } else if (!(result.confident && typeof result.value === 'undefined')) {
+      throw new InvalidRequireCallError(
+        result.deopt ?? args[3],
+        'Fourth argument of `require.context` should be an optional string "mode" denoting how the modules will be resolved.',
+      );
+    }
+  }
+
+  if (args.length > 4) {
+    throw new InvalidRequireCallError(
+      path,
+      `Too many arguments provided to \`require.context\` call. Expected 4, got: ${args.length}`,
+    );
+  }
+
+  return [
+    directory,
+    {
+      recursive,
+      filter,
+      mode,
+    },
+  ];
+}
+
+function getContextMode(path: NodePath<>, mode: string): ContextMode {
+  if (
+    mode === 'sync' ||
+    mode === 'eager' ||
+    mode === 'lazy' ||
+    mode === 'lazy-once'
+  ) {
+    return mode;
+  }
+  throw new InvalidRequireCallError(
+    path,
+    `require.context "${mode}" mode is not supported. Expected one of: sync, eager, lazy, lazy-once`,
+  );
+}
+
+function processRequireContextCall(
+  path: NodePath<CallExpression>,
+  state: State,
 ): void {
+  const [directory, contextParams] = getRequireContextArgs(path);
+  const transformer = state.dependencyTransformer;
+  const dep = registerDependency(
+    state,
+    {
+      // We basically want to "import" every file in a folder and then filter them out with the given `filter` RegExp.
+      name: directory,
+      // Capture the matching context
+      contextParams,
+      asyncType: null,
+      optional: isOptionalDependency(directory, path, state),
+    },
+    path,
+  );
+
+  // require() the generated module representing this context
+  path.get('callee').replaceWith(types.identifier('require'));
+  transformer.transformSyncRequire(path, dep, state);
+}
+
+function processResolveWeakCall(
+  path: NodePath<CallExpression>,
+  state: State,
+): void {
+  const name = getModuleNameFromCallArgs(path);
+
+  if (name == null) {
+    throw new InvalidRequireCallError(path);
+  }
+
+  const dependency = registerDependency(
+    state,
+    {
+      name,
+      asyncType: 'weak',
+      optional: isOptionalDependency(name, path, state),
+    },
+    path,
+  );
+
+  path.replaceWith(
+    makeResolveWeakTemplate({
+      MODULE_ID: createModuleIDExpression(dependency, state),
+    }),
+  );
+}
+
+function collectImports(path: NodePath<>, state: State): void {
   if (path.node.source) {
     registerDependency(
       state,
@@ -268,9 +432,9 @@ function collectImports<TSplitCondition>(
   }
 }
 
-function processImportCall<TSplitCondition>(
+function processImportCall(
   path: NodePath<CallExpression>,
-  state: State<TSplitCondition>,
+  state: State,
   options: ImportDependencyOptions,
 ): void {
   const name = getModuleNameFromCallArgs(path);
@@ -284,7 +448,6 @@ function processImportCall<TSplitCondition>(
     {
       name,
       asyncType: options.asyncType,
-      splitCondition: options.splitCondition,
       optional: isOptionalDependency(name, path, state),
     },
     path,
@@ -292,18 +455,16 @@ function processImportCall<TSplitCondition>(
 
   const transformer = state.dependencyTransformer;
 
-  if (options.jsResource) {
-    transformer.transformJSResource(path, dep, state);
-  } else if (options.asyncType === 'async') {
+  if (options.asyncType === 'async') {
     transformer.transformImportCall(path, dep, state);
   } else {
     transformer.transformPrefetch(path, dep, state);
   }
 }
 
-function processRequireCall<TSplitCondition>(
+function processRequireCall(
   path: NodePath<CallExpression>,
-  state: State<TSplitCondition>,
+  state: State,
 ): void {
   const name = getModuleNameFromCallArgs(path);
 
@@ -332,7 +493,7 @@ function processRequireCall<TSplitCondition>(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
-  let current = path;
+  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
   while (current && !current.node.loc) {
     current = current.parentPath;
   }
@@ -342,17 +503,16 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
 export type ImportQualifier = $ReadOnly<{
   name: string,
   asyncType: AsyncDependencyType | null,
-  splitCondition?: NodePath<>,
   optional: boolean,
+  contextParams?: RequireContextParams,
 }>;
 
-function registerDependency<TSplitCondition>(
-  state: State<TSplitCondition>,
+function registerDependency(
+  state: State,
   qualifier: ImportQualifier,
   path: NodePath<>,
-): InternalDependency<TSplitCondition> {
+): InternalDependency {
   const dependency = state.dependencyRegistry.registerDependency(qualifier);
-
   const loc = getNearestLocFromPath(path);
   if (loc != null) {
     dependency.locs.push(loc);
@@ -361,10 +521,10 @@ function registerDependency<TSplitCondition>(
   return dependency;
 }
 
-function isOptionalDependency<TSplitCondition>(
+function isOptionalDependency(
   name: string,
   path: NodePath<>,
-  state: State<TSplitCondition>,
+  state: State,
 ): boolean {
   const {allowOptionalDependencies} = state;
 
@@ -383,7 +543,7 @@ function isOptionalDependency<TSplitCondition>(
 
   // Valid statement stack for single-level try-block: expressionStatement -> blockStatement -> tryStatement
   let sCount = 0;
-  let p = path;
+  let p: ?(NodePath<> | NodePath<BabelNode>) = path;
   while (p && sCount < 3) {
     if (p.isStatement()) {
       if (p.node.type === 'BlockStatement') {
@@ -404,10 +564,8 @@ function isOptionalDependency<TSplitCondition>(
 }
 
 function getModuleNameFromCallArgs(path: NodePath<CallExpression>): ?string {
-  const expectedCount =
-    path.node.callee.name === '__conditionallySplitJSResource' ? 2 : 1;
   const args = path.get('arguments');
-  if (!Array.isArray(args) || args.length !== expectedCount) {
+  if (!Array.isArray(args) || args.length !== 1) {
     throw new InvalidRequireCallError(path);
   }
 
@@ -419,14 +577,20 @@ function getModuleNameFromCallArgs(path: NodePath<CallExpression>): ?string {
 
   return null;
 }
+
 collectDependencies.getModuleNameFromCallArgs = getModuleNameFromCallArgs;
 
 class InvalidRequireCallError extends Error {
-  constructor({node}: any) {
+  constructor({node}: NodePath<>, message?: string) {
     const line = node.loc && node.loc.start && node.loc.start.line;
 
     super(
-      `Invalid call at line ${line || '<unknown>'}: ${generate(node).code}`,
+      [
+        `Invalid call at line ${line || '<unknown>'}: ${generate(node).code}`,
+        message,
+      ]
+        .filter(Boolean)
+        .join('\n'),
     );
   }
 }
@@ -438,7 +602,7 @@ collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
  * is reached. This makes dynamic require errors catchable by libraries that
  * want to use them.
  */
-const dynamicRequireErrorTemplate = template.statement(`
+const dynamicRequireErrorTemplate = template.expression(`
   (function(line) {
     throw new Error(
       'Dynamic require defined at line ' + line + '; not supported by Metro',
@@ -450,79 +614,88 @@ const dynamicRequireErrorTemplate = template.statement(`
  * Produces a Babel template that transforms an "import(...)" call into a
  * "require(...)" call to the asyncRequire specified.
  */
-const makeAsyncRequireTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
+const makeAsyncRequireTemplate = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, DEPENDENCY_MAP.paths)
 `);
 
-const makeAsyncPrefetchTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
+const makeAsyncRequireTemplateWithName = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, DEPENDENCY_MAP.paths, MODULE_NAME)
 `);
 
-const makeJSResourceTemplate = template.statement(`
-  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
+const makeAsyncPrefetchTemplate = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, DEPENDENCY_MAP.paths)
 `);
 
-const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
+const makeAsyncPrefetchTemplateWithName = template.expression(`
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, DEPENDENCY_MAP.paths, MODULE_NAME)
+`);
+
+const makeResolveWeakTemplate = template.expression(`
+  MODULE_ID
+`);
+
+const DefaultDependencyTransformer: DependencyTransformer = {
   transformSyncRequire(
     path: NodePath<CallExpression>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
-    path.node.arguments = state.keepRequireNames
-      ? [moduleIDExpression, types.stringLiteral(dependency.name)]
-      : [moduleIDExpression];
+    path.node.arguments = ([moduleIDExpression]: Array<
+      | BabelNodeExpression
+      | BabelNodeSpreadElement
+      | BabelNodeJSXNamespacedName
+      | BabelNodeArgumentPlaceholder,
+    >);
+    // Always add the debug name argument last
+    if (state.keepRequireNames) {
+      path.node.arguments.push(types.stringLiteral(dependency.name));
+    }
   },
 
   transformImportCall(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
-    path.replaceWith(
-      makeAsyncRequireTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-      }),
-    );
-  },
-
-  transformJSResource(
-    path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
-  ): void {
-    path.replaceWith(
-      makeJSResourceTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-      }),
-    );
+    const makeNode = state.keepRequireNames
+      ? makeAsyncRequireTemplateWithName
+      : makeAsyncRequireTemplate;
+    const opts = {
+      ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+        state.asyncRequireModulePathStringLiteral,
+      ),
+      MODULE_ID: createModuleIDExpression(dependency, state),
+      DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
+      ...(state.keepRequireNames
+        ? {MODULE_NAME: createModuleNameLiteral(dependency)}
+        : null),
+    };
+    path.replaceWith(makeNode(opts));
   },
 
   transformPrefetch(
     path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
+    dependency: InternalDependency,
+    state: State,
   ): void {
-    path.replaceWith(
-      makeAsyncPrefetchTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
-          state.asyncRequireModulePathStringLiteral,
-        ),
-        MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-      }),
-    );
+    const makeNode = state.keepRequireNames
+      ? makeAsyncPrefetchTemplateWithName
+      : makeAsyncPrefetchTemplate;
+    const opts = {
+      ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+        state.asyncRequireModulePathStringLiteral,
+      ),
+      MODULE_ID: createModuleIDExpression(dependency, state),
+      DEPENDENCY_MAP: nullthrows(state.dependencyMapIdentifier),
+      ...(state.keepRequireNames
+        ? {MODULE_NAME: createModuleNameLiteral(dependency)}
+        : null),
+    };
+    path.replaceWith(makeNode(opts));
   },
 
-  transformIllegalDynamicRequire(path: NodePath<>, state: State<mixed>): void {
+  transformIllegalDynamicRequire(path: NodePath<>, state: State): void {
     path.replaceWith(
       dynamicRequireErrorTemplate({
         LINE: types.numericLiteral(path.node.loc?.start.line ?? 0),
@@ -532,9 +705,9 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
 };
 
 function createModuleIDExpression(
-  dependency: InternalDependency<mixed>,
-  state: State<mixed>,
-) {
+  dependency: InternalDependency,
+  state: State,
+): BabelNodeExpression {
   return types.memberExpression(
     nullthrows(state.dependencyMapIdentifier),
     types.numericLiteral(dependency.index),
@@ -542,81 +715,97 @@ function createModuleIDExpression(
   );
 }
 
-function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
+function createModuleNameLiteral(dependency: InternalDependency) {
   return types.stringLiteral(dependency.name);
 }
 
-class DefaultModuleDependencyRegistry<TSplitCondition = void>
-  implements ModuleDependencyRegistry<TSplitCondition>
-{
-  _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
+/**
+ * Given an import qualifier, return a key used to register the dependency.
+ * Generally this return the `ImportQualifier.name` property, but more
+ * attributes can be appended to distinguish various combinations that would
+ * otherwise conflict.
+ *
+ * For example, the following case would have collision issues if they all utilized the `name` property:
+ * ```
+ * require('./foo');
+ * require.context('./foo');
+ * require.context('./foo', true, /something/);
+ * require.context('./foo', false, /something/);
+ * require.context('./foo', false, /something/, 'lazy');
+ * ```
+ *
+ * This method should be utilized by `registerDependency`.
+ */
+function getKeyForDependency(qualifier: ImportQualifier): string {
+  let key = qualifier.name;
 
-  registerDependency(
-    qualifier: ImportQualifier,
-  ): InternalDependency<TSplitCondition> {
-    let dependency: ?InternalDependency<TSplitCondition> =
-      this._dependencies.get(qualifier.name);
+  const {asyncType} = qualifier;
+  if (asyncType) {
+    key += ['', asyncType].join('\0');
+  }
+
+  const {contextParams} = qualifier;
+  // Add extra qualifiers when using `require.context` to prevent collisions.
+  if (contextParams) {
+    // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
+    // then this key algorithm should be updated to account for those properties.
+    // Example: `./directory__true__/foobar/m__lazy`
+    key += [
+      '',
+      'context',
+      String(contextParams.recursive),
+      String(contextParams.filter.pattern),
+      String(contextParams.filter.flags),
+      contextParams.mode,
+      // Join together and append to the name:
+    ].join('\0');
+  }
+  return key;
+}
+
+class DependencyRegistry {
+  _dependencies: Map<string, InternalDependency> = new Map();
+
+  registerDependency(qualifier: ImportQualifier): InternalDependency {
+    const key = getKeyForDependency(qualifier);
+    let dependency: ?InternalDependency = this._dependencies.get(key);
 
     if (dependency == null) {
-      const newDependency: MutableInternalDependency<TSplitCondition> = {
+      const newDependency: MutableInternalDependency = {
         name: qualifier.name,
         asyncType: qualifier.asyncType,
         locs: [],
         index: this._dependencies.size,
+        key: crypto.createHash('sha1').update(key).digest('base64'),
       };
 
       if (qualifier.optional) {
         newDependency.isOptional = true;
       }
+      if (qualifier.contextParams) {
+        newDependency.contextParams = qualifier.contextParams;
+      }
 
       dependency = newDependency;
-      this._dependencies.set(qualifier.name, dependency);
     } else {
-      const original = dependency;
-      dependency = collapseDependencies(original, qualifier);
-      if (original !== dependency) {
-        this._dependencies.set(qualifier.name, dependency);
+      if (dependency.isOptional && !qualifier.optional) {
+        // A previously optionally required dependency was required non-optionally.
+        // Mark it non optional for the whole module
+        dependency = {
+          ...dependency,
+          isOptional: false,
+        };
       }
     }
+
+    this._dependencies.set(key, dependency);
 
     return dependency;
   }
 
-  getDependencies(): Array<InternalDependency<TSplitCondition>> {
+  getDependencies(): Array<InternalDependency> {
     return Array.from(this._dependencies.values());
   }
-}
-
-function collapseDependencies<TSplitCondition>(
-  dependency: InternalDependency<TSplitCondition>,
-  qualifier: ImportQualifier,
-): InternalDependency<TSplitCondition> {
-  let collapsed = dependency;
-
-  // A previously optionally required dependency was required non-optionaly.
-  // Mark it non optional for the whole module
-  if (collapsed.isOptional && !qualifier.optional) {
-    collapsed = {
-      ...dependency,
-      isOptional: false,
-    };
-  }
-
-  // A previously asynchronously (or prefetch) required module was required synchronously.
-  // Make the dependency sync.
-  if (collapsed.asyncType != null && qualifier.asyncType == null) {
-    collapsed = {...dependency, asyncType: null};
-  }
-
-  // A prefetched dependency was required async in the module. Mark it as async.
-  if (collapsed.asyncType === 'prefetch' && qualifier.asyncType === 'async') {
-    collapsed = {
-      ...dependency,
-      asyncType: 'async',
-    };
-  }
-
-  return collapsed;
 }
 
 module.exports = collectDependencies;

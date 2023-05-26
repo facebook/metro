@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -79,7 +79,7 @@ describe('heap snapshots/timelines', () => {
 // Returns a node in the heap snapshot that has an incoming property edge with
 // the name passed as `propertyName`.
 function findObjectByInboundProperty(
-  propertyName: $TEMPORARY$string<'RETAIN_ME'>,
+  propertyName: string,
   data: ChromeHeapSnapshotProcessor,
   rawData: $FlowFixMe,
 ) {
@@ -107,7 +107,9 @@ function getStackTrace(traceNodeId: number, data: ChromeHeapSnapshotProcessor) {
   const functionInfoStack = [];
   const FOUND = Symbol('FOUND');
 
-  function visit(traceNode) {
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
+  function visit(traceNode): void {
     functionInfoStack.push(traceNode.getNumber('function_info_index'));
     if (traceNode.getNumber('id') === traceNodeId) {
       throw FOUND;

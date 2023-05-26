@@ -6,13 +6,12 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {YargArguments} from 'metro-config/src/configTypes.flow';
-
-const fs = require('fs-extra');
+const fs = require('fs');
 
 exports.watchFile = async function (
   filename: string,
@@ -26,10 +25,8 @@ exports.watchFile = async function (
 };
 
 exports.makeAsyncCommand =
-  (
-    command: (argv: YargArguments) => Promise<mixed>,
-  ): ((argv: YargArguments) => void) =>
-  (argv: YargArguments) => {
+  <T>(command: (argv: T) => Promise<void>): ((argv: T) => void) =>
+  (argv: T) => {
     Promise.resolve(command(argv)).catch(error => {
       console.error(error.stack);
       process.exitCode = 1;

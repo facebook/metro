@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -22,7 +23,7 @@ function canonicalize(key: string, value: mixed): mixed {
 
   const keys = Object.keys(value).sort();
   const length = keys.length;
-  const object = {};
+  const object: {[string]: mixed} = {};
 
   for (let i = 0; i < length; i++) {
     object[keys[i]] = value[keys[i]];

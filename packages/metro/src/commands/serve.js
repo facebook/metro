@@ -6,28 +6,39 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {RunServerOptions} from '../index';
-import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+import type {ModuleObject} from 'yargs';
 
 const {makeAsyncCommand, watchFile} = require('../cli-utils');
-const MetroApi = require('../index');
 const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
-module.exports = (): ({|
-  builder: (yargs: Yargs) => void,
-  command: $TEMPORARY$string<'serve'>,
-  description: string,
-  handler: (argv: YargArguments) => void,
-|}) => ({
-  command: 'serve',
+type Args = $ReadOnly<{
+  projectRoots?: $ReadOnlyArray<string>,
+  host: string,
+  port: number,
+  maxWorkers?: number,
+  secure?: boolean,
+  secureKey?: string,
+  secureCert?: string,
+  secureServerOptions?: string,
+  hmrEnabled?: boolean,
+  config?: string,
+  resetCache?: boolean,
+}>;
 
-  description: 'Starts Metro on the given port, building bundles on the fly',
+module.exports = (): {
+  ...ModuleObject,
+  handler: Function,
+} => ({
+  command: 'serve',
+  aliases: ['start'],
+  desc: 'Starts Metro on the given port, building bundles on the fly',
 
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {
@@ -64,7 +75,7 @@ module.exports = (): ({|
     );
   },
 
-  handler: makeAsyncCommand(async (argv: YargArguments) => {
+  handler: makeAsyncCommand(async (argv: Args) => {
     let server = null;
     let restarting = false;
 
@@ -84,13 +95,24 @@ module.exports = (): ({|
 
       const config = await loadConfig(argv);
 
-      // $FlowExpectedError YargArguments and RunBuildOptions are used interchangeable but their types are not yet compatible
-      server = await MetroApi.runServer(config, (argv: RunServerOptions));
+      // Inline require() to avoid circular dependency with ../index
+      const MetroApi = require('../index');
+
+      const {
+        config: _config,
+        hmrEnabled: _hmrEnabled,
+        maxWorkers: _maxWorkers,
+        port: _port,
+        projectRoots: _projectRoots,
+        resetCache: _resetCache,
+        ...runServerOptions
+      } = argv;
+      server = await MetroApi.runServer(config, runServerOptions);
 
       restarting = false;
     }
 
-    const foundConfig = await resolveConfig(argv.config, argv.cwd);
+    const foundConfig = await resolveConfig(argv.config);
 
     if (foundConfig) {
       await watchFile(foundConfig.filepath, restart);

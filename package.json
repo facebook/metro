@@ -1,74 +1,94 @@
 {
   "private": true,
   "devDependencies": {
-    "@babel/core": "^7.14.0",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+    "@babel/core": "^7.20.0",
     "@babel/plugin-syntax-class-properties": "^7.0.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
-    "acorn": "^5.1.2",
-    "babel-eslint": "^10.1.0",
-    "babel-jest": "^26.6.3",
+    "@tsconfig/node16": "1.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "acorn": "^8.7.1",
+    "babel-jest": "^29.2.1",
     "chalk": "^4.0.0",
-    "codecov": "^3.6.5",
     "debug": "^2.2.0",
-    "eslint": "^7.32.0",
-    "eslint-config-fb-strict": "^26.0.0",
-    "eslint-config-prettier": "^8.3.0",
+    "eslint": "^8.19.0",
+    "eslint-config-fb-strict": "^27.0.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-babel": "^5.3.1",
-    "eslint-plugin-flowtype": "^7.0.0",
-    "eslint-plugin-import": "^2.9.0",
-    "eslint-plugin-jest": "^25.2.4",
-    "eslint-plugin-jsx-a11y": "^6.4.1",
-    "eslint-plugin-lint": "1.0.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.26.1",
-    "eslint-plugin-relay": "^1.8.2",
-    "flow-bin": "^0.171.0",
+    "eslint-plugin-ft-flow": "^2.0.1",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.5.3",
+    "eslint-plugin-jsx-a11y": "^6.6.0",
+    "eslint-plugin-lint": "^1.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.30.1",
+    "eslint-plugin-relay": "^1.8.3",
+    "flow-bin": "^0.206.0",
     "glob": "^7.1.1",
+    "hermes-eslint": "0.8.0",
+    "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
-    "jest": "^26.6.3",
-    "lerna": "2.4.0",
-    "micromatch": "^4.0.2",
-    "prettier": "^2.4.1",
+    "jest": "^29.2.1",
+    "jest-junit": "^10.0.0",
+    "jest-watch-typeahead": "^2.2.0",
+    "metro-babel-register": "*",
+    "micromatch": "^4.0.4",
+    "prettier": "2.7.1",
     "progress": "^2.0.0",
-    "promise": "^8.0.3",
-    "temp": "^0.8.3"
+    "promise": "^8.3.0",
+    "typescript": "5.0.4"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
     "build": "node ./scripts/build.js",
     "clean-all": "rm -rf ./node_modules && rm -rf ./packages/*/node_modules && yarn run build-clean",
-    "jest-coverage": "yarn run jest --coverage",
-    "lint": "eslint . --cache",
     "lint-fix": "eslint . --fix --cache",
+    "lint": "eslint . --cache",
     "postinstall": "node ./scripts/build.js",
-    "preinstall": "node ./scripts/preinstall.js",
-    "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna exec -- npm publish",
-    "postpublish": "lerna run cleanup-release",
-    "test-ci": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest-coverage -i && node scripts/mapCoverage.js && codecov",
+    "postpublish": "yarn workspaces run cleanup-release",
+    "publish": "yarn run build-clean && yarn run build && yarn workspaces run prepare-release && npm publish --workspaces",
+    "start": "node packages/metro/src/cli",
     "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
-    "typecheck": "flow check"
+    "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
+    "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
+    "typecheck": "flow check",
+    "typecheck-ts": "tsc --project tsconfig.json",
+    "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [
     "packages/*"
   ],
   "jest": {
     "modulePathIgnorePatterns": [
+      "/node_modules/",
       "packages/[^/]+/build/"
     ],
+    "snapshotFormat": {
+      "escapeString": true,
+      "printBasicPrototype": true
+    },
     "testEnvironment": "node",
     "testRegex": "/__tests__/.*-test\\.js$",
-    "timers": "fake",
+    "fakeTimers": {
+      "enableGlobally": true,
+      "legacyFakeTimers": true
+    },
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
     },
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
+    ],
+    "watchPlugins": [
+      "jest-watch-typeahead/filename",
+      "jest-watch-typeahead/testname"
     ]
   },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {},
+  "engines": {
+    "node": ">=16"
+  }
 }

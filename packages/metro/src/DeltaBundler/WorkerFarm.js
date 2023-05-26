@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,20 +16,20 @@ import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Readable} from 'stream';
 
-const JestWorker = require('jest-worker').default;
+const {Worker: JestWorker} = require('jest-worker');
 const {Logger} = require('metro-core');
 
-type WorkerInterface = {|
+type WorkerInterface = {
   getStdout(): Readable,
   getStderr(): Readable,
   end(): void,
   ...Worker,
-|};
+};
 
-type TransformerResult = $ReadOnly<{|
+type TransformerResult = $ReadOnly<{
   result: TransformResult<>,
   sha1: string,
-|}>;
+}>;
 
 class WorkerFarm {
   _config: ConfigT;
@@ -78,6 +79,7 @@ class WorkerFarm {
   async transform(
     filename: string,
     options: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -85,6 +87,7 @@ class WorkerFarm {
         options,
         this._config.projectRoot,
         this._transformerConfig,
+        fileBuffer,
       );
 
       Logger.log(data.transformFileStartLogEntry);
@@ -107,7 +110,7 @@ class WorkerFarm {
     workerPath: string,
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
-  ) {
+  ): any {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
@@ -117,6 +120,7 @@ class WorkerFarm {
     return new JestWorker(workerPath, {
       computeWorkerKey: this._config.stickyWorkers
         ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+          // $FlowFixMe[incompatible-call]
           this._computeWorkerKey
         : undefined,
       exposedMethods,
@@ -136,7 +140,7 @@ class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err, filename: string): TransformError {
+  _formatGenericError(err: any, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
@@ -145,7 +149,7 @@ class WorkerFarm {
     });
   }
 
-  _formatBabelError(err, filename: string): TransformError {
+  _formatBabelError(err: any, filename: string): TransformError {
     const error = new TransformError(
       `${err.type || 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename

@@ -6,29 +6,33 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {EntryPointURL} from '../../HmrServer';
-import type {DeltaResult, Graph, Module} from '../types.flow';
+import type {DeltaResult, Module, ReadOnlyGraph} from '../types.flow';
 import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
 
 const {isJsModule, wrapModule} = require('./helpers/js');
+const jscSafeUrl = require('jsc-safe-url');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 const url = require('url');
 
-type Options = {
-  +clientUrl: EntryPointURL,
-  +createModuleId: string => number,
-  +projectRoot: string,
+type Options = $ReadOnly<{
+  clientUrl: EntryPointURL,
+  createModuleId: string => number,
+  includeAsyncPaths: boolean,
+  projectRoot: string,
+  serverRoot: string,
   ...
-};
+}>;
 
 function generateModules(
   sourceModules: Iterable<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): $ReadOnlyArray<HmrModule> {
   const modules = [];
@@ -36,9 +40,7 @@ function generateModules(
   for (const module of sourceModules) {
     if (isJsModule(module)) {
       // Construct a bundle URL for this specific module only
-      const getURL = (
-        extension: $TEMPORARY$string<'bundle'> | $TEMPORARY$string<'map'>,
-      ) => {
+      const getURL = (extension: 'bundle' | 'map') => {
         options.clientUrl.pathname = path.relative(
           options.projectRoot,
           path.join(
@@ -52,7 +54,7 @@ function generateModules(
       };
 
       const sourceMappingURL = getURL('map');
-      const sourceURL = getURL('bundle');
+      const sourceURL = jscSafeUrl.toJscSafeUrl(getURL('bundle'));
       const code =
         prepareModule(module, graph, options) +
         `\n//# sourceMappingURL=${sourceMappingURL}\n` +
@@ -71,11 +73,12 @@ function generateModules(
 
 function prepareModule(
   module: Module<>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): string {
   const code = wrapModule(module, {
     ...options,
+    sourceUrl: url.format(options.clientUrl),
     dev: true,
   });
 
@@ -83,6 +86,7 @@ function prepareModule(
   // Transform the inverse dependency paths to ids.
   const inverseDependenciesById = Object.create(null);
   Object.keys(inverseDependencies).forEach((path: string) => {
+    // $FlowFixMe[prop-missing]
     inverseDependenciesById[options.createModuleId(path)] = inverseDependencies[
       path
     ].map(options.createModuleId);
@@ -98,7 +102,7 @@ function prepareModule(
  */
 function getInverseDependencies(
   path: string,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   inverseDependencies: {[key: string]: Array<string>, ...} = {},
 ): {[key: string]: Array<string>, ...} {
   // Dependency alredy traversed.
@@ -122,13 +126,13 @@ function getInverseDependencies(
 
 function hmrJSBundle(
   delta: DeltaResult<>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
-): {|
+): {
   +added: $ReadOnlyArray<HmrModule>,
   +deleted: $ReadOnlyArray<number>,
   +modified: $ReadOnlyArray<HmrModule>,
-|} {
+} {
   return {
     added: generateModules(delta.added.values(), graph, options),
     modified: generateModules(delta.modified.values(), graph, options),

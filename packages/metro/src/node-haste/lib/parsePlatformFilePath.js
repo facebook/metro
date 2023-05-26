@@ -6,18 +6,19 @@
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const path = require('path');
 
-type PlatformFilePathParts = {|
+type PlatformFilePathParts = {
   dirPath: string,
   baseName: string,
   platform: ?string,
   extension: ?string,
-|};
+};
 
 const PATH_RE = /^(.+?)(\.([^.]+))?\.([^.]+)$/;
 

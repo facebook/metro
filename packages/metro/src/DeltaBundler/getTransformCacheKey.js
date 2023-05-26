@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -21,11 +22,11 @@ type CacheKeyProvider = {
   getCacheKey?: JsTransformerConfig => string,
 };
 
-function getTransformCacheKey(opts: {|
+function getTransformCacheKey(opts: {
   +cacheVersion: string,
   +projectRoot: string,
   +transformerConfig: TransformerConfig,
-|}): string {
+}): string {
   const {transformerPath, transformerConfig} = opts.transformerConfig;
 
   // eslint-disable-next-line no-useless-call

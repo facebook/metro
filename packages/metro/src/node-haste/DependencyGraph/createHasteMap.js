@@ -6,18 +6,15 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
-import type {HasteConfig, HasteMap} from './types';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-// $FlowFixMe: Types for `jest-haste-map`
-import JestHasteMap from 'jest-haste-map';
+import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
 
 const ci = require('ci-info');
 const path = require('path');
-
-const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
@@ -29,10 +26,10 @@ function getIgnorePattern(config: ConfigT): RegExp {
     return / ^/;
   }
 
-  const combine = regexes =>
+  const combine = (regexes: Array<RegExp>) =>
     new RegExp(
       regexes
-        .map(regex => '(' + regex.source.replace(/\//g, path.sep) + ')')
+        .map(regex => '(' + regex.source.replaceAll('/', path.sep) + ')')
         .join('|'),
     );
 
@@ -50,28 +47,43 @@ function createHasteMap(
     extractDependencies?: boolean,
     watch?: boolean,
     throwOnModuleCollision?: boolean,
-    name?: string,
+    cacheFilePrefix?: string,
   }>,
-): HasteMap {
+): MetroFileMap {
   const dependencyExtractor =
     options?.extractDependencies === false
       ? null
       : config.resolver.dependencyExtractor;
   const computeDependencies = dependencyExtractor != null;
 
-  const hasteConfig: HasteConfig = {
-    cacheDirectory: config.hasteMapCacheDirectory,
+  return MetroFileMap.create({
+    cacheManagerFactory:
+      config?.unstable_fileMapCacheManagerFactory ??
+      (buildParameters =>
+        new DiskCacheManager({
+          buildParameters,
+          cacheDirectory:
+            config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+          cacheFilePrefix: options?.cacheFilePrefix,
+        })),
+    perfLoggerFactory: config.unstable_perfLoggerFactory,
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
-    extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
+    enableSymlinks: config.resolver.unstable_enableSymlinks,
+    extensions: Array.from(
+      new Set([
+        ...config.resolver.sourceExts,
+        ...config.resolver.assetExts,
+        ...config.watcher.additionalExts,
+      ]),
+    ),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
-    hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
+    healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',
-    name: `${options?.name ?? 'metro'}-${JEST_HASTE_MAP_CACHE_BREAKER}`,
     platforms: config.resolver.platforms,
     retainAllFiles: true,
     resetCache: config.resetCache,
@@ -80,9 +92,8 @@ function createHasteMap(
     throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
     useWatchman: config.resolver.useWatchman,
     watch: options?.watch == null ? !ci.isCI : options.watch,
-  };
-
-  return JestHasteMap.create(hasteConfig);
+    watchmanDeferStates: config.watcher.watchman.deferStates,
+  });
 }
 
 module.exports = createHasteMap;

@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_symbolication
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -482,8 +482,8 @@ describe('BundleBuilder', () => {
     const abcMap = {
       version: 3,
       mappings: 'A',
-      names: [],
-      sources: [],
+      names: ([]: Array<string>),
+      sources: ([]: Array<string>),
     };
 
     const builderBase = new BundleBuilder('bundle.js');
@@ -611,14 +611,7 @@ describe('BundleBuilder', () => {
   });
 });
 
-function find(
-  text: string,
-  string:
-    | $TEMPORARY$string<'abc'>
-    | $TEMPORARY$string<'def'>
-    | $TEMPORARY$string<'g'>
-    | $TEMPORARY$string<'hi'>,
-) {
+function find(text: string, string: string) {
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const column = lines[i].indexOf(string);

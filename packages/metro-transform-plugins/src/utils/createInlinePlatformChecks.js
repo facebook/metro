@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -60,27 +61,37 @@ function createInlinePlatformChecks(
 
   const isPlatformOS = (
     node: MemberExpression,
-    scope,
+    scope: Scope,
     isWrappedModule: boolean,
   ): boolean =>
     isIdentifier(node.property, {name: 'OS'}) &&
     isImportOrGlobal(node.object, scope, [{name: 'Platform'}], isWrappedModule);
 
-  const isReactPlatformOS = (node, scope, isWrappedModule: boolean): boolean =>
+  const isReactPlatformOS = (
+    node: MemberExpression,
+    scope: Scope,
+    isWrappedModule: boolean,
+  ): boolean =>
     isIdentifier(node.property, {name: 'OS'}) &&
     isMemberExpression(node.object) &&
     isIdentifier(node.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
+      // $FlowFixMe[incompatible-call]
       node.object.object,
       scope,
       [{name: 'React'}, {name: 'ReactNative'}],
       isWrappedModule,
     );
 
-  const isPlatformSelect = (node, scope, isWrappedModule: boolean): boolean =>
+  const isPlatformSelect = (
+    node: CallExpression,
+    scope: Scope,
+    isWrappedModule: boolean,
+  ): boolean =>
     isMemberExpression(node.callee) &&
     isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
+      // $FlowFixMe[incompatible-call]
       node.callee.object,
       scope,
       [{name: 'Platform'}],
@@ -97,32 +108,44 @@ function createInlinePlatformChecks(
     isMemberExpression(node.callee.object) &&
     isIdentifier(node.callee.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
+      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-use]
       node.callee.object.object,
       scope,
       [{name: 'React'}, {name: 'ReactNative'}],
       isWrappedModule,
     );
 
-  const isGlobal = (binding): boolean %checks => !binding;
+  function isGlobal(binding: mixed): boolean %checks {
+    return !binding;
+  }
 
-  const isRequireCall = (node, dependencyId: string, scope): boolean =>
+  const isRequireCall = (
+    node: BabelNodeExpression,
+    dependencyId: string,
+    scope: Scope,
+  ): boolean =>
     isCallExpression(node) &&
     isIdentifier(node.callee, {name: requireName}) &&
     checkRequireArgs(node.arguments, dependencyId);
 
-  const isImport = (node, scope, patterns: Array<{|name: string|}>): boolean =>
-    patterns.some((pattern: {|name: string|}) => {
+  const isImport = (
+    node: BabelNodeExpression,
+    scope: Scope,
+    patterns: Array<{name: string}>,
+  ): boolean =>
+    patterns.some((pattern: {name: string}) => {
       const importName = importMap.get(pattern.name) || pattern.name;
       return isRequireCall(node, importName, scope);
     });
 
   const isImportOrGlobal = (
-    node,
-    scope,
-    patterns: Array<{|name: string|}>,
+    node: BabelNodeExpression,
+    scope: Scope,
+    patterns: Array<{name: string}>,
     isWrappedModule: boolean,
   ): boolean => {
-    const identifier = patterns.find((pattern: {|name: string|}) =>
+    const identifier = patterns.find((pattern: {name: string}) =>
       isIdentifier(node, pattern),
     );
     return (
@@ -135,7 +158,15 @@ function createInlinePlatformChecks(
     );
   };
 
-  const checkRequireArgs = (args, dependencyId: string): boolean => {
+  const checkRequireArgs = (
+    args: Array<
+      | BabelNodeExpression
+      | BabelNodeSpreadElement
+      | BabelNodeJSXNamespacedName
+      | BabelNodeArgumentPlaceholder,
+    >,
+    dependencyId: string,
+  ): boolean => {
     const pattern = t.stringLiteral(dependencyId);
     return (
       isStringLiteral(args[0], pattern) ||
@@ -145,7 +176,10 @@ function createInlinePlatformChecks(
     );
   };
 
-  const isToplevelBinding = (binding, isWrappedModule: boolean): boolean =>
+  const isToplevelBinding = (
+    binding: void | $FlowFixMe,
+    isWrappedModule: boolean,
+  ): boolean =>
     isGlobal(binding) ||
     !binding.scope.parent ||
     (isWrappedModule && !binding.scope.parent.parent);

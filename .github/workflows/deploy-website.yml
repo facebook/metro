@@ -9,15 +9,20 @@ on:
       - "website/**"
       - ".github/workflows/deploy-website.yml"
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
+    permissions:
+      contents: write # to deploy
     runs-on: ubuntu-latest
 
     if: github.repository == 'facebook/metro'
 
     env:
       working-directory: website
-      node-version: 12.x
+      node-version: 16.x
 
     steps:
       - name: Checkout code

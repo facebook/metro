@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 // This is the set of modules that React Native publicly exports and that we
@@ -24,7 +25,6 @@ module.exports = new Set([
   'ImageBackground',
   'InputAccessoryView',
   'KeyboardAvoidingView',
-  'MaskedViewIOS',
   'Modal',
   'Pressable',
   'ProgressBarAndroid',
@@ -32,7 +32,6 @@ module.exports = new Set([
   'SafeAreaView',
   'ScrollView',
   'SectionList',
-  'SegmentedControlIOS',
   'Slider',
   'Switch',
   'RefreshControl',
@@ -91,10 +90,4 @@ module.exports = new Set([
   'Platform',
   'processColor',
   'requireNativeComponent',
-
-  // Prop Types
-  'DeprecatedColorPropType',
-  'DeprecatedEdgeInsetsPropType',
-  'DeprecatedPointPropType',
-  'DeprecatedViewPropTypes',
 ]);

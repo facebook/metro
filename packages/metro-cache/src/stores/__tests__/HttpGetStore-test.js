@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+react_native
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -38,7 +38,11 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest.resetModules().resetAllMocks().useFakeTimers().mock('http');
+    jest
+      .resetModules()
+      .resetAllMocks()
+      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
+      .mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);

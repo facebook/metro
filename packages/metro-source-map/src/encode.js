@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 /**
@@ -88,7 +89,7 @@ const VLQ_CONTINUATION_BIT = VLQ_BASE;
  *   1 becomes 2 (10 binary), -1 becomes 3 (11 binary)
  *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
  */
-function toVLQSigned(value) {
+function toVLQSigned(value: number) {
   return value < 0 ? (-value << 1) + 1 : (value << 1) + 0;
 }
 

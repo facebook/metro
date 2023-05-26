@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -19,13 +20,11 @@ import type {BabelCoreOptions} from '@babel/core';
 */
 const plugins = [
   '@babel/plugin-transform-flow-strip-types',
-  '@babel/plugin-proposal-nullish-coalescing-operator', // Node 14
-  '@babel/plugin-proposal-optional-chaining', // Node 14
   '@babel/plugin-transform-modules-commonjs',
   '@babel/plugin-syntax-class-properties',
 ];
 
-const presets = [];
+const presets /*: Array<string> */ = [];
 
 function getConfig(api /*: any */) /*: BabelCoreOptions */ {
   api.cache.never();

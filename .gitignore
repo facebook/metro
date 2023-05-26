@@ -2,7 +2,7 @@
 /node_modules
 /packages/*/node_modules/
 /coverage
-lerna-debug.log
+/reports
 npm-debug.log*
 packages/*/build/
 

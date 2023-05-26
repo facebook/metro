@@ -6,6 +6,7 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
@@ -15,6 +16,7 @@ import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 import {typeof SourceMapConsumer} from 'source-map';
 
 const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+const GoogleIgnoreListConsumer = require('./GoogleIgnoreListConsumer');
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 const fs = require('fs');
 const invariant = require('invariant');
@@ -67,7 +69,7 @@ type HermesMinidumpCrashInfo = {
   ...
 };
 
-type HermesMinidumpStackFrame = $ReadOnly<{|
+type HermesMinidumpStackFrame = $ReadOnly<{
   ByteCodeOffset: number,
   FunctionID: number,
   // NOTE: CJSModuleOffset has been renamed to SegmentID. Support both formats for now.
@@ -76,7 +78,7 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   SourceURL: string,
   StackFrameRegOffs: string,
   SourceLocation?: string,
-|}>;
+}>;
 
 type HermesCoverageInfo = {
   +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
@@ -88,22 +90,23 @@ type HermesCoverageStackFrame = $ReadOnly<{
   SourceURL: ?string,
 }>;
 
-type NativeCodeStackFrame = $ReadOnly<{|
+type NativeCodeStackFrame = $ReadOnly<{
   NativeCode: true,
   StackFrameRegOffs: string,
-|}>;
+}>;
 
 type SymbolicatedStackTrace = $ReadOnlyArray<
   SymbolicatedStackFrame | NativeCodeStackFrame,
 >;
 
-type SymbolicatedStackFrame = $ReadOnly<{|
+type SymbolicatedStackFrame = $ReadOnly<{
   line: ?number,
   column: ?number,
   source: ?string,
   functionName: ?string,
   name: ?string,
-|}>;
+  isIgnored: boolean,
+}>;
 
 const UNKNOWN_MODULE_IDS: SingleMapModuleIds = {
   segmentId: 0,
@@ -140,6 +143,7 @@ class SymbolicationContext<ModuleIdsT> {
         }
       }
       if (options.nameSource != null) {
+        // $FlowFixMe[cannot-write]
         this.options.nameSource = options.nameSource;
       }
     }
@@ -361,12 +365,12 @@ class SymbolicationContext<ModuleIdsT> {
     lineNumber: ?number,
     columnNumber: ?number,
     moduleIds: ?ModuleIdsT,
-  ): {|
+  ): {
     line: ?number,
     column: ?number,
     source: ?string,
     name: ?string,
-  |} {
+  } {
     const position = this.getOriginalPositionDetailsFor(
       lineNumber,
       columnNumber,
@@ -491,13 +495,14 @@ class SymbolicationContext<ModuleIdsT> {
 
 class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModuleIds> {
   +_segments: {
-    +[id: string]: {|
+    +[id: string]: {
       // $FlowFixMe[value-as-type]
       +consumer: SourceMapConsumer,
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
-    |},
+      +googleIgnoreListConsumer: GoogleIgnoreListConsumer,
+    },
     ...
   };
   +_legacyFormat: boolean;
@@ -521,7 +526,9 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     };
     if (sourceMapJson.x_facebook_segments) {
       for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
+        // $FlowFixMe[incompatible-use]
         const map = sourceMapJson.x_facebook_segments[key];
+        // $FlowFixMe[prop-missing]
         segments[key] = this._initSegment(map);
       }
     }
@@ -531,22 +538,35 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     this._segments = segments;
   }
 
-  _initSegment(map) {
+  // $FlowFixMe[missing-local-annot]
+  _initSegment(map: MixedSourceMap) {
     const useFunctionNames = this.options.nameSource === 'function_names';
     const {_SourceMapConsumer: SourceMapConsumer} = this;
     return {
       get consumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'consumer', {
           value: new SourceMapConsumer(map),
         });
+        // $FlowFixMe[object-this-reference]
         return this.consumer;
       },
       moduleOffsets: map.x_facebook_offsets || [],
       get sourceFunctionsConsumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'sourceFunctionsConsumer', {
           value: useFunctionNames ? new SourceMetadataMapConsumer(map) : null,
         });
+        // $FlowFixMe[object-this-reference]
         return this.sourceFunctionsConsumer;
+      },
+      get googleIgnoreListConsumer() {
+        // $FlowFixMe[object-this-reference]
+        Object.defineProperty(this, 'googleIgnoreListConsumer', {
+          value: new GoogleIgnoreListConsumer(map),
+        });
+        // $FlowFixMe[object-this-reference]
+        return this.googleIgnoreListConsumer;
       },
       hermesOffsets: map.x_hermes_function_offsets,
     };
@@ -586,6 +606,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
               source: null,
               functionName: null,
               name: null,
+              isIgnored: false,
             });
           } else {
             const segmentOffsets =
@@ -679,6 +700,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     } else {
       original.functionName = null;
     }
+    original.isIgnored = metadata.googleIgnoreListConsumer.isIgnored(original);
     return {
       ...original,
       line:
@@ -780,6 +802,7 @@ class DirectorySymbolicationContext extends SymbolicationContext<string> {
         source: filename,
         name: null,
         functionName: null,
+        isIgnored: false,
       };
     }
     return this._loadMap(mapFilename).getOriginalPositionDetailsFor(
@@ -845,12 +868,12 @@ function getOriginalPositionFor<ModuleIdsT>(
   columnNumber: ?number,
   moduleIds: ?ModuleIdsT,
   context: SymbolicationContext<ModuleIdsT>,
-): {|
+): {
   line: ?number,
   column: ?number,
   source: ?string,
   name: ?string,
-|} {
+} {
   return context.getOriginalPositionFor(lineNumber, columnNumber, moduleIds);
 }
 

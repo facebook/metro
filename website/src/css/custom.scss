@@ -1,0 +1,227 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #ef4242;
+  --ifm-color-primary-dark: #ed2626;
+  --ifm-color-primary-darker: #eb1818;
+  --ifm-color-primary-darkest: #c51111;
+  --ifm-color-primary-light: #f15e5e;
+  --ifm-color-primary-lighter: #f36c6c;
+  --ifm-color-primary-lightest: #f69696;
+  --ifm-code-font-size: 95%;
+  --text: #1a1a1a;
+}
+
+/* Announcement banner */
+div[class^="announcementBarContent"] {
+  a {
+    display: inline-block;
+    color: var(--brand) !important;
+    &:hover {
+      color: var(--ifm-color-primary) !important;
+    }
+  }
+}
+
+
+/* Labels */
+
+.label {
+  display: inline-block;
+  position: relative;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 0 2px 2px 0;
+
+  /* Label sharp end */
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -12px;
+    border-color: transparent;
+    border-style: solid;
+    border-width: 12px 12px 12px 0;
+  }
+
+  /* Label skeuomorphic hole */
+  &:after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background: #fff;
+  }
+
+  /* Basic label */
+  &.basic {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 2px;
+
+    &:before,
+    &:after {
+      display: none;
+    }
+  }
+
+  /* Label variants */
+  &.experimental {
+    background: #f9a825;
+
+    &:before {
+      border-right-color: #f9a825;
+    }
+  }
+
+  &.deprecated {
+    background: #888;
+
+    &:before {
+      border-right-color: #888;
+    }
+  }
+
+  &.required {
+    margin-left: 0;
+    margin-right: 16px;
+    color: #fa5035;
+    border-color: #fa5035;
+  }
+}
+
+html[data-theme="dark"] .label {
+  color: var(--text);
+
+  &:after {
+    background: var(--ifm-background-color);
+  }
+
+  &.experimental {
+    background: #ffc400;
+
+    &:before {
+      border-right-color: #ffc400;
+    }
+  }
+
+  &.deprecated {
+    background: #ccc;
+
+    &:before {
+      border-right-color: #ccc;
+    }
+  }
+
+  &.required {
+    color: #fa5035;
+  }
+}
+
+/* Label inside other tags */
+
+li .label {
+  margin-left: 10px;
+  margin-right: 2px;
+  padding: 0px 10px;
+  height: 20px;
+  line-height: 20px;
+  &:before {
+    left: -10px;
+    border-width: 10px 10px 10px 0px;
+  }
+  &:after {
+    top: 8px;
+  }
+}
+
+h2 .label {
+  top: -6px;
+  margin-left: 12px;
+  padding: 3px 12px;
+}
+
+h3 .label {
+  top: -3px;
+  margin-left: 22px;
+  line-height: 20px;
+}
+
+h4 .label {
+  margin-left: 16px;
+  line-height: 20px;
+}
+
+td .label {
+  padding: 0 8px 0 10px;
+  font-size: 0.7rem;
+  margin-left: 14px;
+
+  &:before {
+    left: -8px;
+    border-width: 10px 8px 10px 0;
+  }
+
+  &:after {
+    top: 8px;
+  }
+
+  &.required {
+    margin-left: 8px;
+    letter-spacing: 0.02rem;
+    padding: 0 6px;
+    border-width: 1px;
+    margin-right: 0;
+  }
+
+  &.two-lines {
+    margin-left: 0;
+    margin-top: 5px;
+  }
+}
+
+/* Label as dot in the right sidebar */
+
+.table-of-contents .label {
+  position: absolute;
+  padding: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 100%;
+  margin-left: 4px;
+  margin-top: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  color: transparent;
+  float: initial;
+
+  &.required {
+    position: initial;
+    margin-left: 0;
+    margin-right: 6px;
+    border-width: 3px;
+    background: #fa5035;
+  }
+
+  /* Second dot shift */
+  &:nth-child(3) {
+    margin-left: 13px;
+  }
+}

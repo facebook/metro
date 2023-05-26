@@ -6,6 +6,7 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -20,19 +21,22 @@ const {getJsOutput} = require('./js');
 
 function getSourceMapInfo(
   module: Module<>,
-  options: {|
+  options: {
     +excludeSource: boolean,
-  |},
-): {|
+    +shouldAddToIgnoreList: (Module<>) => boolean,
+  },
+): {
   +map: Array<MetroSourceMapSegmentTuple>,
   +functionMap: ?FBSourceFunctionMap,
   +code: string,
   +path: string,
   +source: string,
   +lineCount: number,
-|} {
+  +isIgnored: boolean,
+} {
   return {
     ...getJsOutput(module).data,
+    isIgnored: options.shouldAddToIgnoreList(module),
     path: module.path,
     source: options.excludeSource ? '' : getModuleSource(module),
   };

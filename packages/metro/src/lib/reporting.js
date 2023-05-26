@@ -6,12 +6,15 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
+import type {Terminal} from 'metro-core';
+
 const chalk = require('chalk');
-const {Terminal} = require('metro-core');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
 
@@ -23,7 +26,6 @@ export type BundleDetails = {
   entryFile: string,
   minify: boolean,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   ...
 };
 
@@ -61,6 +63,7 @@ export type ReportableEvent =
   | {
       buildID: string,
       bundleDetails: BundleDetails,
+      isPrefetch?: boolean,
       type: 'bundle_build_started',
       ...
     }
@@ -124,6 +127,10 @@ export type ReportableEvent =
       ...
     }
   | {
+      type: 'resolver_warning',
+      message: string,
+    }
+  | {
       type: 'transformer_load_started',
     }
   | {
@@ -132,6 +139,14 @@ export type ReportableEvent =
   | {
       type: 'transformer_load_failed',
       error: Error,
+    }
+  | {
+      type: 'watcher_health_check_result',
+      result: HealthCheckResult,
+    }
+  | {
+      type: 'watcher_status',
+      status: WatcherStatus,
     };
 
 /**

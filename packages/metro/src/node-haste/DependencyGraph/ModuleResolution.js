@@ -6,36 +6,37 @@
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {ModuleMap} from './types';
 import type {
   CustomResolver,
   DoesFileExist,
   FileCandidates,
-  IsAssetFile,
+  GetRealPath,
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
+import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {PackageInfo, PackageJson} from 'metro-resolver/src/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
 const invariant = require('invariant');
 const Resolver = require('metro-resolver');
+const createDefaultContext = require('metro-resolver/src/createDefaultContext');
 const path = require('path');
 const util = require('util');
+import type {BundlerResolution} from '../../DeltaBundler/types.flow';
+import type {Reporter} from '../../lib/reporting';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
 export type Packageish = interface {
   path: string,
-  redirectRequire(
-    toModuleName: string,
-    mainFields: $ReadOnlyArray<string>,
-  ): string | false,
-  getMain(mainFields: $ReadOnlyArray<string>): string,
+  read(): PackageJson,
 };
 
 export type Moduleish = interface {
@@ -43,42 +44,49 @@ export type Moduleish = interface {
   getPackage(): ?Packageish,
 };
 
-export type ModuleishCache<TModule, TPackage> = interface {
+export type ModuleishCache<TPackage> = interface {
   getPackage(
     name: string,
     platform?: string,
     supportsNativePlatform?: boolean,
   ): TPackage,
-  getModule(path: string): TModule,
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = {|
-  +dirExists: DirExistsFn,
-  +disableHierarchicalLookup: boolean,
-  +doesFileExist: DoesFileExist,
-  +emptyModulePath: string,
-  +extraNodeModules: ?Object,
-  +isAssetFile: IsAssetFile,
-  +mainFields: $ReadOnlyArray<string>,
-  +moduleCache: ModuleishCache<TModule, TPackage>,
-  +moduleMap: ModuleMap,
-  +nodeModulesPaths: $ReadOnlyArray<string>,
-  +preferNativePlatform: boolean,
-  +projectRoot: string,
-  +resolveAsset: ResolveAsset,
-  +resolveRequest: ?CustomResolver,
-  +sourceExts: $ReadOnlyArray<string>,
-|};
+type Options<TPackage> = $ReadOnly<{
+  assetExts: $ReadOnlySet<string>,
+  dirExists: DirExistsFn,
+  disableHierarchicalLookup: boolean,
+  doesFileExist: DoesFileExist,
+  emptyModulePath: string,
+  extraNodeModules: ?Object,
+  getHasteModulePath: (name: string, platform: ?string) => ?string,
+  getHastePackagePath: (name: string, platform: ?string) => ?string,
+  mainFields: $ReadOnlyArray<string>,
+  moduleCache: ModuleishCache<TPackage>,
+  nodeModulesPaths: $ReadOnlyArray<string>,
+  preferNativePlatform: boolean,
+  projectRoot: string,
+  reporter: Reporter,
+  resolveAsset: ResolveAsset,
+  resolveRequest: ?CustomResolver,
+  sourceExts: $ReadOnlyArray<string>,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
+  unstable_getRealPath: ?GetRealPath,
+}>;
 
-class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
-  _options: Options<TModule, TPackage>;
+class ModuleResolver<TPackage: Packageish> {
+  _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModule: Moduleish;
   // An empty module, the result of resolving `emptyModulePath` from the project root.
-  _cachedEmptyModule: ?TModule;
+  _cachedEmptyModule: ?BundlerResolution;
 
-  constructor(options: Options<TModule, TPackage>) {
+  constructor(options: Options<TPackage>) {
     this._options = options;
     const {projectRoot, moduleCache} = this._options;
     this._projectRootFakeModule = {
@@ -94,7 +102,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     };
   }
 
-  _getEmptyModule() {
+  _getEmptyModule(): BundlerResolution {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
@@ -102,63 +110,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         this._options.emptyModulePath,
         false,
         null,
+        /* resolverOptions */ {},
       );
       this._cachedEmptyModule = emptyModule;
     }
     return emptyModule;
-  }
-
-  _redirectRequire(fromModule: Moduleish, modulePath: string): string | false {
-    const moduleCache = this._options.moduleCache;
-    try {
-      if (modulePath.startsWith('.')) {
-        const fromPackage = fromModule.getPackage();
-
-        if (fromPackage) {
-          // We need to convert the module path from module-relative to
-          // package-relative, so that we can easily match it against the
-          // "browser" map (where all paths are relative to the package root)
-          const fromPackagePath =
-            './' +
-            path.relative(
-              path.dirname(fromPackage.path),
-              path.resolve(path.dirname(fromModule.path), modulePath),
-            );
-
-          let redirectedPath = fromPackage.redirectRequire(
-            fromPackagePath,
-            this._options.mainFields,
-          );
-
-          // Since the redirected path is still relative to the package root,
-          // we have to transform it back to be module-relative (as it
-          // originally was)
-          if (redirectedPath !== false) {
-            redirectedPath =
-              './' +
-              path.relative(
-                path.dirname(fromModule.path),
-                path.resolve(path.dirname(fromPackage.path), redirectedPath),
-              );
-          }
-
-          return redirectedPath;
-        }
-      } else {
-        const pck = path.isAbsolute(modulePath)
-          ? moduleCache.getPackageOf(modulePath)
-          : fromModule.getPackage();
-
-        if (pck) {
-          return pck.redirectRequire(modulePath, this._options.mainFields);
-        }
-      }
-    } catch (err) {
-      // Do nothing. The standard module cache does not trigger any error, but
-      // the ModuleGraph one does, if the module does not exist.
-    }
-
-    return modulePath;
   }
 
   resolveDependency(
@@ -166,22 +122,54 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     moduleName: string,
     allowHaste: boolean,
     platform: string | null,
-  ): TModule {
+    resolverOptions: ResolverInputOptions,
+  ): BundlerResolution {
+    const {
+      assetExts,
+      disableHierarchicalLookup,
+      doesFileExist,
+      extraNodeModules,
+      mainFields,
+      nodeModulesPaths,
+      preferNativePlatform,
+      resolveAsset,
+      resolveRequest,
+      sourceExts,
+      unstable_conditionNames,
+      unstable_conditionsByPlatform,
+      unstable_enablePackageExports,
+      unstable_getRealPath,
+    } = this._options;
+
     try {
       const result = Resolver.resolve(
-        {
-          ...this._options,
-          originModulePath: fromModule.path,
-          redirectModulePath: (modulePath: string) =>
-            this._redirectRequire(fromModule, modulePath),
+        createDefaultContext({
           allowHaste,
-          platform,
+          assetExts,
+          disableHierarchicalLookup,
+          doesFileExist,
+          extraNodeModules,
+          mainFields,
+          nodeModulesPaths,
+          preferNativePlatform,
+          resolveAsset,
+          resolveRequest,
+          sourceExts,
+          unstable_conditionNames,
+          unstable_conditionsByPlatform,
+          unstable_enablePackageExports,
+          unstable_getRealPath,
+          unstable_logWarning: this._logWarning,
+          customResolverOptions: resolverOptions.customResolverOptions ?? {},
+          originModulePath: fromModule.path,
           resolveHasteModule: (name: string) =>
-            this._options.moduleMap.getModule(name, platform, true),
+            this._options.getHasteModulePath(name, platform),
           resolveHastePackage: (name: string) =>
-            this._options.moduleMap.getPackage(name, platform, true),
-          getPackageMainPath: this._getPackageMainPath,
-        },
+            this._options.getHastePackagePath(name, platform),
+          getPackage: this._getPackage,
+          getPackageForModule: (modulePath: string) =>
+            this._getPackageForModule(fromModule, modulePath),
+        }),
         moduleName,
         platform,
       );
@@ -201,18 +189,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
               this._removeRoot(candidates.dir),
             )}`,
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {
-          dirPaths,
-          extraPaths,
-        }: {
-          // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
-          dirPaths: $ReadOnlyArray<string>,
-          extraPaths: $ReadOnlyArray<string>,
-          ...
-        } = error;
+        const dirPaths = error.dirPaths;
+        const extraPaths = error.extraPaths;
         const displayDirPaths = dirPaths
           .filter((dirPath: string) => this._options.dirExists(dirPath))
           .map(dirPath => path.relative(this._options.projectRoot, dirPath))
@@ -227,31 +211,60 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       throw error;
     }
   }
 
-  _getPackageMainPath = (packageJsonPath: string): string => {
-    const package_ = this._options.moduleCache.getPackage(packageJsonPath);
-    return package_.getMain(this._options.mainFields);
+  _getPackage = (packageJsonPath: string): ?PackageJson => {
+    try {
+      return this._options.moduleCache.getPackage(packageJsonPath).read();
+    } catch (e) {
+      // Do nothing. The standard module cache does not trigger any error, but
+      // the ModuleGraph one does, if the module does not exist.
+    }
+
+    return null;
+  };
+
+  _getPackageForModule = (
+    fromModule: Moduleish,
+    modulePath: string,
+  ): ?PackageInfo => {
+    let pkg;
+
+    try {
+      pkg = this._options.moduleCache.getPackageOf(modulePath);
+    } catch (e) {
+      // Do nothing. The standard module cache does not trigger any error, but
+      // the ModuleGraph one does, if the module does not exist.
+    }
+
+    return pkg != null
+      ? {
+          rootPath: path.dirname(pkg.path),
+          packageJson: pkg.read(),
+        }
+      : null;
   };
 
   /**
-   * FIXME: get rid of this function and of the reliance on `TModule`
-   * altogether, return strongly typed resolutions at the top-level instead.
+   * TODO: Return Resolution instead of coercing to BundlerResolution here
    */
-  _getFileResolvedModule(resolution: Resolution): TModule {
+  _getFileResolvedModule(resolution: Resolution): BundlerResolution {
     switch (resolution.type) {
       case 'sourceFile':
-        return this._options.moduleCache.getModule(resolution.filePath);
+        return resolution;
       case 'assetFiles':
         // FIXME: we should forward ALL the paths/metadata,
         // not just an arbitrary item!
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
-        return this._options.moduleCache.getModule(arbitrary);
+        return {type: 'sourceFile', filePath: arbitrary};
       case 'empty':
         return this._getEmptyModule();
       default:
@@ -260,7 +273,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
   }
 
-  _removeRoot(candidates: FileCandidates) {
+  _logWarning = (message: string): void => {
+    this._options.reporter.update({
+      type: 'resolver_warning',
+      message,
+    });
+  };
+
+  _removeRoot(candidates: FileCandidates): FileCandidates {
     if (candidates.filePathPrefix) {
       candidates.filePathPrefix = path.relative(
         this._options.projectRoot,
@@ -294,11 +314,18 @@ class UnableToResolveError extends Error {
    * ex. `./bar`, or `invariant`.
    */
   targetModuleName: string;
+  /**
+   * Original error that causes this error
+   */
+  cause: ?Error;
 
   constructor(
     originModulePath: string,
     targetModuleName: string,
     message: string,
+    options?: $ReadOnly<{
+      cause?: Error,
+    }>,
   ) {
     super();
     this.originModulePath = originModulePath;
@@ -311,6 +338,8 @@ class UnableToResolveError extends Error {
         originModulePath,
         message,
       ) + (codeFrameMessage ? '\n' + codeFrameMessage : '');
+
+    this.cause = options?.cause;
   }
 
   buildCodeFrameMessage(): ?string {

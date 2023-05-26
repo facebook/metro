@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -15,7 +15,7 @@ const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
 const {PassThrough} = require('stream');
-const resolve = (fileName: string | $TEMPORARY$string<'directory'>) =>
+const resolve = (fileName: string) =>
   path.resolve(__dirname, '__fixtures__', fileName);
 const read = (fileName: string) => fs.readFileSync(resolve(fileName), 'utf8');
 
@@ -267,7 +267,19 @@ test('symbolicating an attribution file with 1-based column output', async () =>
   ).resolves.toMatchSnapshot());
 
 describe('symbolicating an attribution file specifying unmapped offsets', () => {
-  const attribute = async obj =>
+  const attribute = async (
+    obj:
+      | {
+          functionId: number,
+          location: {bytecodeSize: number, virtualOffset: number},
+          usage: Array<$FlowFixMeEmpty>,
+        }
+      | {
+          functionId: number,
+          location: {virtualOffset: number},
+          usage: Array<$FlowFixMeEmpty>,
+        },
+  ) =>
     (
       await execute(
         [resolve('testfile.partial.js.map'), '--attribution'],

@@ -6,11 +6,13 @@
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 import type {Module} from '../types.flow';
+import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {MixedSourceMap} from 'metro-source-map';
 
 const {
@@ -20,10 +22,7 @@ const {
 
 function sourceMapObject(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  options: SourceMapGeneratorOptions,
 ): MixedSourceMap {
   const generator = sourceMapGenerator(modules, options);
   return generator.toMap(undefined, {
@@ -33,10 +32,7 @@ function sourceMapObject(
 
 async function sourceMapObjectNonBlocking(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
-    +excludeSource: boolean,
-    +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  options: SourceMapGeneratorOptions,
 ): Promise<MixedSourceMap> {
   const generator = await sourceMapGeneratorNonBlocking(modules, options);
   return generator.toMap(undefined, {

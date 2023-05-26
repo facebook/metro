@@ -5,20 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
+ * @oncall react_native
  */
 
 'use strict';
 
+/*::
+import type {BabelCoreOptions} from '@babel/core';
+*/
+
 const escapeRegExp = require('escape-string-regexp');
+const fs = require('fs');
 const path = require('path');
 
-let _only = [];
+let _only /*: $ReadOnlyArray<RegExp | string> */ = [];
 
-function register(onlyList) {
-  // This prevents `babel-register` from transforming the code of the
-  // plugins/presets that we are require-ing themselves before setting up the
-  // actual config.
-  require('@babel/register')({only: [], babelrc: false, configFile: false});
+function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
   require('@babel/register')({
     ...config(onlyList),
     extensions: [
@@ -34,15 +37,21 @@ function register(onlyList) {
   });
 }
 
-function config(onlyList, options) {
+function config(
+  onlyList /*: $ReadOnlyArray<RegExp | string> */,
+  options /*: ?$ReadOnly<{
+    lazy?: boolean,
+  }> */,
+) /*: BabelCoreOptions */ {
   _only = _only.concat(onlyList);
   return {
     babelrc: false,
     compact: false,
     configFile: false,
     browserslistConfigFile: false,
-    ignore: null,
-    only: _only,
+    // make sure we don't transpile any npm packages
+    ignore: [/\/node_modules\//],
+    only: [..._only],
     plugins: [
       [require('@babel/plugin-transform-flow-strip-types').default],
       [
@@ -51,9 +60,6 @@ function config(onlyList, options) {
           lazy: options && options.lazy,
         },
       ],
-      [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
-      [require('@babel/plugin-proposal-optional-chaining').default],
-      [require('@babel/plugin-syntax-class-properties').default],
     ],
     presets: [],
     retainLines: true,
@@ -86,7 +92,10 @@ function config(onlyList, options) {
  * example, we would not want to match some deeply nested folder that happens to
  * have the same name as one of `BABEL_ENABLED_PATHS`.
  */
-function buildRegExps(basePath, dirPaths) {
+function buildRegExps(
+  basePath /*: string */,
+  dirPaths /*: $ReadOnlyArray<RegExp | string> */,
+) /*: $ReadOnlyArray<RegExp> */ {
   return dirPaths.map(folderPath =>
     // Babel cares about Windows/Unix paths since v7b44
     // https://github.com/babel/babel/issues/8184
@@ -104,6 +113,39 @@ function buildRegExps(basePath, dirPaths) {
   );
 }
 
+let isRegisteredForMetroMonorepo = false;
+
+function registerForMetroMonorepo() {
+  // Noop if we have already registered Babel here.
+  if (isRegisteredForMetroMonorepo) {
+    return;
+  }
+  // Noop if we are in NODE_ENV=production.
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+  // Noop if we seem to be outside of the Metro source tree.
+  if (
+    !__dirname.endsWith(
+      ['', 'packages', 'metro-babel-register', 'src'].join(path.sep),
+    )
+  ) {
+    return;
+  }
+  // Bail out if prepare-release has run here.
+  if (
+    fs.existsSync(
+      path.join(__dirname, '..', 'src.real', path.basename(__filename)),
+    )
+  ) {
+    return;
+  }
+  register([path.resolve(__dirname, '..', '..')]);
+  isRegisteredForMetroMonorepo = true;
+}
+
+register.config = config;
+register.buildRegExps = buildRegExps;
+register.unstable_registerForMetroMonorepo = registerForMetroMonorepo;
+
 module.exports = register;
-module.exports.config = config;
-module.exports.buildRegExps = buildRegExps;

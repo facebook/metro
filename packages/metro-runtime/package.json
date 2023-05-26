@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.68.0",
+  "version": "0.76.5",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "main": "src",
   "repository": {
@@ -12,7 +12,16 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "license": "MIT",
+  "dependencies": {
+    "@babel/runtime": "^7.0.0",
+    "react-refresh": "^0.4.0"
+  },
   "devDependencies": {
-    "@babel/core": "^7.14.0"
+    "@babel/core": "^7.20.0",
+    "react": "^18.2.0",
+    "react-test-renderer": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }

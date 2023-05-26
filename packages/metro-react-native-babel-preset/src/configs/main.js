@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -20,8 +21,9 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPluginsBeforeRegenerator = [
+const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
+  [require('babel-plugin-transform-flow-enums')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -31,9 +33,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-];
-
-const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -41,20 +40,17 @@ const getPreset = (src, options) => {
   const transformProfile =
     (options && options.unstable_transformProfile) || 'default';
   const isHermesStable = transformProfile === 'hermes-stable';
-  // Temporarily treating canary profile as "ES5 Hermes".
-  // TODO(jsx): Restore check for transformProfile === 'hermes-canary'
-  const isHermesCanary = false;
+  const isHermesCanary = transformProfile === 'hermes-canary';
   const isHermes = isHermesStable || isHermesCanary;
 
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
-  const hasForOf =
-    isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
     extraPlugins.push([
-      require('@babel/plugin-transform-react-jsx', {useBuiltIns: true}),
+      require('@babel/plugin-transform-react-jsx'),
+      {runtime: 'automatic'},
     ]);
   }
 
@@ -95,7 +91,12 @@ const getPreset = (src, options) => {
     ]);
     extraPlugins.push([require('@babel/plugin-transform-function-name')]);
     extraPlugins.push([require('@babel/plugin-transform-literals')]);
+    extraPlugins.push([require('@babel/plugin-proposal-numeric-separator')]);
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
+  } else {
+    extraPlugins.push([
+      require('@babel/plugin-transform-named-capturing-groups-regex'),
+    ]);
   }
   if (!isHermesCanary) {
     extraPlugins.push([
@@ -113,32 +114,11 @@ const getPreset = (src, options) => {
       ],
     );
   }
-  if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-template-literals'),
-      {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
-    ]);
-  }
   if (isNull || src.indexOf('async') !== -1) {
     extraPlugins.push([
       require('@babel/plugin-proposal-async-generator-functions'),
     ]);
-    if (isHermes) {
-      extraPlugins.push([
-        require('@babel/plugin-transform-async-to-generator'),
-      ]);
-    }
-  }
-  if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
-  if (!isHermes && hasForOf) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-for-of'),
-      {loose: true},
-    ]);
+    extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (
     isNull ||
@@ -166,11 +146,15 @@ const getPreset = (src, options) => {
   }
 
   if (!options || options.enableBabelRuntime !== false) {
+    // Allows configuring a specific runtime version to optimize output
+    const isVersion = typeof options?.enableBabelRuntime === 'string';
+
     extraPlugins.push([
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
         regenerator: !isHermes,
+        ...(isVersion && {version: options.enableBabelRuntime}),
       },
     ]);
   }
@@ -185,11 +169,7 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: [
-          ...defaultPluginsBeforeRegenerator,
-          isHermes ? null : require('@babel/plugin-transform-regenerator'),
-          ...defaultPluginsAfterRegenerator,
-        ].filter(Boolean),
+        plugins: defaultPlugins,
       },
       {
         test: isTypeScriptSource,

@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -62,15 +62,12 @@ it('minimizes arguments given', () => {
   expect(result.code).toMatchInlineSnapshot(`
     "__d(function (g, _r, m, e, d) {
       _r(27).foo();
-
       (function () {
         {
           const r = 1; // _$$_REQUIRE will be renamed to \\"_r\\".
-
           return r++;
         }
       })();
-
       (function () {
         var global = 'potato';
         return global + 'tomato';
