@@ -162,16 +162,28 @@ class InspectorProxy {
     // $FlowFixMe[value-as-type]
     wss.on('connection', async (socket: WS, req) => {
       try {
+        const fallbackDeviceId = String(this._deviceCounter++);
+
         const query = url.parse(req.url || '', true).query || {};
+        const deviceId = query.device || fallbackDeviceId;
         const deviceName = query.name || 'Unknown';
         const appName = query.app || 'Unknown';
-        const deviceId = String(this._deviceCounter++);
+
+        const oldDevice = this._devices.get(deviceId);
+        if (oldDevice) {
+          // Keep the debugger connection alive when disconnecting the device, if possible
+          if (oldDevice._name === deviceName && oldDevice._app === appName) {
+            oldDevice._debuggerConnection = null;
+          }
+          oldDevice._deviceSocket.close();
+        }
+
         this._devices.set(
-          SdeviceId,
+          deviceId,
           new Device(deviceId, deviceName, appName, socket, this._projectRoot),
         );
 
-        debug(`Got new connection: device=${deviceName}, app=${appName}`);
+        debug(`Got new connection: device=${deviceName}, app=${appName}, id=${deviceId}`);
 
         socket.on('close', () => {
           this._devices.delete(deviceId);
