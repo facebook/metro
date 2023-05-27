@@ -183,7 +183,9 @@ class InspectorProxy {
           new Device(deviceId, deviceName, appName, socket, this._projectRoot),
         );
 
-        debug(`Got new connection: device=${deviceName}, app=${appName}, id=${deviceId}`);
+        debug(
+          `Got new connection: device=${deviceName}, app=${appName}, id=${deviceId}`,
+        );
 
         socket.on('close', () => {
           this._devices.delete(deviceId);
