@@ -55,7 +55,7 @@ const REACT_NATIVE_RELOADABLE_PAGE_ID = '-1';
  */
 class Device {
   // ID of the device.
-  _id: number;
+  _id: string;
 
   // Name of the device.
   _name: string;

@@ -41,7 +41,7 @@ class InspectorProxy {
   _projectRoot: string;
 
   // Maps device ID to Device instance.
-  _devices: Map<number, Device>;
+  _devices: Map<string, Device>;
 
   // Internal counter for device IDs -- just gets incremented for each new device.
   _deviceCounter: number = 0;
@@ -111,7 +111,7 @@ class InspectorProxy {
   // Converts page information received from device into PageDescription object
   // that is sent to debugger.
   _buildPageDescription(
-    deviceId: number,
+    deviceId: string,
     device: Device,
     page: Page,
   ): PageDescription {
@@ -165,9 +165,9 @@ class InspectorProxy {
         const query = url.parse(req.url || '', true).query || {};
         const deviceName = query.name || 'Unknown';
         const appName = query.app || 'Unknown';
-        const deviceId = this._deviceCounter++;
+        const deviceId = String(this._deviceCounter++);
         this._devices.set(
-          deviceId,
+          SdeviceId,
           new Device(deviceId, deviceName, appName, socket, this._projectRoot),
         );
 
@@ -206,7 +206,7 @@ class InspectorProxy {
           throw new Error('Incorrect URL - must provide device and page IDs');
         }
 
-        const device = this._devices.get(parseInt(deviceId, 10));
+        const device = this._devices.get(deviceId);
         if (device == null) {
           throw new Error('Unknown device with ID ' + deviceId);
         }
