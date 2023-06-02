@@ -10,13 +10,14 @@
 
 'use strict';
 
-import type {IncomingMessage, ServerResponse} from 'http';
+import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
+import type MetroServer from 'metro/src/Server';
 
 import type {
   DeltaResult,
@@ -25,7 +26,6 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type Server from 'metro/src/Server';
 import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 
 export type ExtraTransformOptions = {
@@ -52,11 +52,7 @@ export type GetTransformOptions = (
   getDependenciesOf: (string) => Promise<Array<string>>,
 ) => Promise<Partial<ExtraTransformOptions>>;
 
-export type Middleware = (
-  IncomingMessage,
-  ServerResponse,
-  ((e: ?Error) => mixed),
-) => mixed;
+export type Middleware = HandleFunction;
 
 type PerfAnnotations = Partial<{
   string: {[key: string]: string},
@@ -168,7 +164,7 @@ type MetalConfigT = {
 };
 
 type ServerConfigT = {
-  enhanceMiddleware: (Middleware, Server) => Middleware,
+  enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
   port: number,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,

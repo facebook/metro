@@ -607,9 +607,23 @@ Whether we should enable CMD+R hotkey for refreshing the bundle.
 
 #### `enhanceMiddleware`
 
-Type: `(Middleware, Server) => Middleware`
+Type: `(Middleware, MetroServer) => Middleware`
 
-The possibility to add custom middleware to the server response chain.
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. For example:
+
+:::tip
+You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a util to extend the base `metroMiddleware` and to mount additional middleware handlers.
+:::
+
+```ts
+enhanceMiddleware: (metroMiddleware: Middleware, metroServer: MetroServer) => {
+  return connect()
+    .use(metroMiddleware)
+    .use('/custom-endpoint', customEndpointMiddleware());
+},
+```
+
+The `Middleware` type is an alias for [`connect.HandleFunction`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/876b9ec96ba02d0c84b1e49af5890c8f5aa2dfe3/types/connect/index.d.ts#L29).
 
 #### `rewriteRequestUrl`
 

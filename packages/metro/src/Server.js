@@ -31,7 +31,8 @@ import type {
   ResolverInputOptions,
   SplitBundleOptions,
 } from './shared/types.flow';
-import type {IncomingMessage, ServerResponse} from 'http';
+import type {IncomingMessage} from 'connect';
+import type {ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
 import type {
@@ -478,11 +479,11 @@ class Server {
   processRequest: (
     IncomingMessage,
     ServerResponse,
-    ((e: ?Error) => mixed),
+    ((e: ?Error) => void),
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
-    next: (?Error) => mixed,
+    next: (?Error) => void,
   ) => {
     this._processRequest(req, res, next).catch(next);
   };
@@ -500,7 +501,7 @@ class Server {
   async _processRequest(
     req: IncomingMessage,
     res: ServerResponse,
-    next: (?Error) => mixed,
+    next: (?Error) => void,
   ) {
     const originalUrl = req.url;
     req.url = this._rewriteAndNormalizeUrl(req.url);

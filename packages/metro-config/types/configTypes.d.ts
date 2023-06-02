@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-import type {IncomingMessage, ServerResponse} from 'http';
+import type {HandleFunction, Server} from 'connect';
 import type {CacheStore, MetroCache} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
@@ -20,7 +20,7 @@ import type {
   TransformResult,
 } from 'metro/src/DeltaBundler/types';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type Server from 'metro/src/Server';
+import type MetroServer from 'metro/src/Server';
 
 export interface ExtraTransformOptions {
   readonly preloadedModules: {[path: string]: true} | false;
@@ -45,11 +45,7 @@ export type GetTransformOptions = (
   getDependenciesOf: (filePath: string) => Promise<string[]>,
 ) => Promise<Partial<ExtraTransformOptions>>;
 
-export type Middleware = (
-  incomingMessage: IncomingMessage,
-  serverResponse: ServerResponse,
-  error: (e?: Error) => unknown,
-) => unknown;
+export type Middleware = HandleFunction;
 
 export type PerfAnnotations = Partial<{
   string: {[key: string]: string};
@@ -163,7 +159,10 @@ export interface MetalConfigT {
 }
 
 export interface ServerConfigT {
-  enhanceMiddleware: (middleware: Middleware, server: Server) => Middleware;
+  enhanceMiddleware: (
+    metroMiddleware: Middleware,
+    metroServer: MetroServer,
+  ) => Middleware | Server;
   port: number;
   rewriteRequestUrl: (url: string) => string;
   runInspectorProxy: boolean;
