@@ -170,18 +170,19 @@ class InspectorProxy {
         const appName = query.app || 'Unknown';
 
         const oldDevice = this._devices.get(deviceId);
+        const newDevice = new Device(
+          deviceId,
+          deviceName,
+          appName,
+          socket,
+          this._projectRoot,
+        );
+
         if (oldDevice) {
-          // Keep the debugger connection alive when disconnecting the device, if possible
-          if (oldDevice._name === deviceName && oldDevice._app === appName) {
-            oldDevice._debuggerConnection = null;
-          }
-          oldDevice._deviceSocket.close();
+          oldDevice.handleDuplicateDeviceConnection(newDevice);
         }
 
-        this._devices.set(
-          deviceId,
-          new Device(deviceId, deviceName, appName, socket, this._projectRoot),
-        );
+        this._devices.set(deviceId, newDevice);
 
         debug(
           `Got new connection: device=${deviceName}, app=${appName}, id=${deviceId}`,
