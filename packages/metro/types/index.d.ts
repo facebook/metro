@@ -126,7 +126,7 @@ export function runMetro(
   options?: RunMetroOptions,
 ): Promise<MetroServer>;
 
-export function createConnectMiddleWare(
+export function createConnectMiddleware(
   config: ConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare>;
