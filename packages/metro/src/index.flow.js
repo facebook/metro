@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {HandleFunction} from 'connect';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
@@ -82,6 +83,7 @@ export type RunServerOptions = $ReadOnly<{
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
+  unstable_extraMiddleware?: $ReadOnlyArray<HandleFunction>,
   waitForBundler?: boolean,
   watch?: boolean,
   websocketEndpoints?: $ReadOnly<{
@@ -254,6 +256,7 @@ exports.runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
+    unstable_extraMiddleware,
     waitForBundler = false,
     websocketEndpoints = {},
     watch,
@@ -282,6 +285,10 @@ exports.runServer = async (
   });
 
   serverApp.use(middleware);
+
+  for (const handler of unstable_extraMiddleware ?? []) {
+    serverApp.use(handler);
+  }
 
   let inspectorProxy: ?InspectorProxy = null;
   if (config.server.runInspectorProxy) {

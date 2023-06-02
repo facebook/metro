@@ -14,6 +14,7 @@ export * from './ModuleGraph/worker/collectDependencies';
 export * from './Server';
 export * from './lib/reporting';
 
+import type {HandleFunction} from 'connect';
 import type {EventEmitter} from 'events';
 import type {IncomingMessage, Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
@@ -72,6 +73,7 @@ export interface RunServerOptions {
   /** @deprecated since version 0.61 */
   secureKey?: string;
 
+  unstable_extraMiddleware?: ReadonlyArray<HandleFunction>;
   waitForBundler?: boolean;
   watch?: boolean;
   websocketEndpoints?: {

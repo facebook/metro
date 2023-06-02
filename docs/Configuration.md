@@ -612,7 +612,7 @@ Type: `(Middleware, MetroServer) => Middleware`
 A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. For example:
 
 :::tip
-You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a util to extend the base `metroMiddleware` and to mount additional middleware handlers.
+You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a utility to extend the base `metroMiddleware` and to mount additional middleware handlers.
 :::
 
 ```ts
