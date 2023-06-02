@@ -159,6 +159,7 @@ export interface MetalConfigT {
 }
 
 export interface ServerConfigT {
+  /** @deprecated */
   enhanceMiddleware: (
     metroMiddleware: Middleware,
     metroServer: MetroServer,

@@ -164,6 +164,7 @@ type MetalConfigT = {
 };
 
 type ServerConfigT = {
+  /** @deprecated */
   enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
   port: number,
   rewriteRequestUrl: string => string,

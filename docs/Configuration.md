@@ -605,7 +605,7 @@ Type: `boolean`
 
 Whether we should enable CMD+R hotkey for refreshing the bundle.
 
-#### `enhanceMiddleware`
+#### `enhanceMiddleware` <div class="label deprecated">Deprecated</div>
 
 Type: `(Middleware, MetroServer) => Middleware`
 
