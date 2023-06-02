@@ -216,13 +216,15 @@ class Device {
     };
   }
 
-  // Handles cleaning up a duplicate device connection, by client-side device ID.
-  // 1. Checks if the same device is attempting to reconnect for the same app.
-  // 2. If not, close both the device and debugger socket.
-  // 3. If the debugger connection can be reused, close the device socket only.
-  //
-  // This allows users to reload the app, either as result of a crash, or manually
-  // reloading, without having to restart the debugger.
+  /**
+   * Handles cleaning up a duplicate device connection, by client-side device ID.
+   * 1. Checks if the same device is attempting to reconnect for the same app.
+   * 2. If not, close both the device and debugger socket.
+   * 3. If the debugger connection can be reused, close the device socket only.
+   *
+   * This allows users to reload the app, either as result of a crash, or manually
+   * reloading, without having to restart the debugger.
+   */
   handleDuplicateDeviceConnection(newDevice: Device) {
     if (
       this._app !== newDevice.getApp() ||
