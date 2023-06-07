@@ -98,10 +98,6 @@ export default class TreeFS implements MutableFileSystem {
     }
     const fileType = fileMetadata[H.SYMLINK] === 0 ? 'f' : 'l';
     const modifiedTime = fileMetadata[H.MTIME];
-    invariant(
-      typeof modifiedTime === 'number',
-      'File in TreeFS missing modified time',
-    );
     return {
       fileType,
       modifiedTime,

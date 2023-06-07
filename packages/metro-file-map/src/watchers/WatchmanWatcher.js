@@ -289,8 +289,9 @@ export default class WatchmanWatcher extends EventEmitter {
         // Change event on dirs are mostly useless.
         !(type === 'd' && eventType === CHANGE_EVENT)
       ) {
+        const mtime = Number(mtime_ms);
         self._emitEvent(eventType, relativePath, self.root, {
-          modifiedTime: Number(mtime_ms),
+          modifiedTime: mtime !== 0 ? mtime : null,
           size,
           type,
         });

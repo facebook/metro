@@ -146,7 +146,7 @@ export type FileData = Map<Path, FileMetaData>;
 
 export type FileMetaData = [
   /* id */ string,
-  /* mtime */ number,
+  /* mtime */ ?number,
   /* size */ number,
   /* visited */ 0 | 1,
   /* dependencies */ string,
@@ -156,7 +156,7 @@ export type FileMetaData = [
 
 export type FileStats = $ReadOnly<{
   fileType: 'f' | 'l',
-  modifiedTime: number,
+  modifiedTime: ?number,
 }>;
 
 export interface FileSystem {

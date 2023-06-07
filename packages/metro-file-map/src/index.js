@@ -962,11 +962,14 @@ export default class HasteMap extends EventEmitter {
       const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
       const linkStats = fileSystem.linkStats(relativeFilePath);
 
-      // The file has been accessed, not modified
+      // The file has been accessed, not modified. If the modified time is
+      // null, then it is assumed that the watcher does not have capabilities
+      // to detect modified time, and change processing proceeds.
       if (
         type === 'change' &&
         linkStats != null &&
         metadata &&
+        metadata.modifiedTime != null &&
         linkStats.modifiedTime === metadata.modifiedTime
       ) {
         return;
@@ -987,6 +990,8 @@ export default class HasteMap extends EventEmitter {
                 ((!event.metadata && !metadata) ||
                   (event.metadata &&
                     metadata &&
+                    event.metadata.modifiedTime != null &&
+                    metadata.modifiedTime != null &&
                     event.metadata.modifiedTime === metadata.modifiedTime)),
             )
           ) {
@@ -1013,9 +1018,7 @@ export default class HasteMap extends EventEmitter {
           // parse it and update the haste map.
           if (type === 'add' || type === 'change') {
             invariant(
-              metadata != null &&
-                metadata.modifiedTime != null &&
-                metadata.size != null,
+              metadata != null && metadata.size != null,
               'since the file exists or changed, it should have metadata',
             );
             const fileMetadata: FileMetaData = [
