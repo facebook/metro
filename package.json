@@ -35,7 +35,7 @@
     "jest-watch-typeahead": "^2.2.0",
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
-    "prettier": "2.7.1",
+    "prettier": "2.8.8",
     "progress": "^2.0.0",
     "promise": "^8.3.0",
     "typescript": "5.0.4"
