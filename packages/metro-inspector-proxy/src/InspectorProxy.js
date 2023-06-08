@@ -41,7 +41,7 @@ class InspectorProxy {
   _projectRoot: string;
 
   // Maps device ID to Device instance.
-  _devices: Map<number, Device>;
+  _devices: Map<string, Device>;
 
   // Internal counter for device IDs -- just gets incremented for each new device.
   _deviceCounter: number = 0;
@@ -111,7 +111,7 @@ class InspectorProxy {
   // Converts page information received from device into PageDescription object
   // that is sent to debugger.
   _buildPageDescription(
-    deviceId: number,
+    deviceId: string,
     device: Device,
     page: Page,
   ): PageDescription {
@@ -162,16 +162,31 @@ class InspectorProxy {
     // $FlowFixMe[value-as-type]
     wss.on('connection', async (socket: WS, req) => {
       try {
+        const fallbackDeviceId = String(this._deviceCounter++);
+
         const query = url.parse(req.url || '', true).query || {};
+        const deviceId = query.device || fallbackDeviceId;
         const deviceName = query.name || 'Unknown';
         const appName = query.app || 'Unknown';
-        const deviceId = this._deviceCounter++;
-        this._devices.set(
+
+        const oldDevice = this._devices.get(deviceId);
+        const newDevice = new Device(
           deviceId,
-          new Device(deviceId, deviceName, appName, socket, this._projectRoot),
+          deviceName,
+          appName,
+          socket,
+          this._projectRoot,
         );
 
-        debug(`Got new connection: device=${deviceName}, app=${appName}`);
+        if (oldDevice) {
+          oldDevice.handleDuplicateDeviceConnection(newDevice);
+        }
+
+        this._devices.set(deviceId, newDevice);
+
+        debug(
+          `Got new connection: name=${deviceName}, app=${appName}, device=${deviceId}`,
+        );
 
         socket.on('close', () => {
           this._devices.delete(deviceId);
@@ -206,7 +221,7 @@ class InspectorProxy {
           throw new Error('Incorrect URL - must provide device and page IDs');
         }
 
-        const device = this._devices.get(parseInt(deviceId, 10));
+        const device = this._devices.get(deviceId);
         if (device == null) {
           throw new Error('Unknown device with ID ' + deviceId);
         }

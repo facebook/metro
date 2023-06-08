@@ -55,7 +55,7 @@ const REACT_NATIVE_RELOADABLE_PAGE_ID = '-1';
  */
 class Device {
   // ID of the device.
-  _id: number;
+  _id: string;
 
   // Name of the device.
   _name: string;
@@ -90,7 +90,7 @@ class Device {
   _projectRoot: string;
 
   constructor(
-    id: number,
+    id: string,
     name: string,
     app: string,
     socket: typeof WS,
@@ -132,6 +132,10 @@ class Device {
 
   getName(): string {
     return this._name;
+  }
+
+  getApp(): string {
+    return this._app;
   }
 
   getPagesList(): Array<Page> {
@@ -210,6 +214,37 @@ class Device {
       debug('(Debugger) <- (Proxy)    (Device): ' + message);
       return sendFunc.call(socket, message);
     };
+  }
+
+  /**
+   * Handles cleaning up a duplicate device connection, by client-side device ID.
+   * 1. Checks if the same device is attempting to reconnect for the same app.
+   * 2. If not, close both the device and debugger socket.
+   * 3. If the debugger connection can be reused, close the device socket only.
+   *
+   * This allows users to reload the app, either as result of a crash, or manually
+   * reloading, without having to restart the debugger.
+   */
+  handleDuplicateDeviceConnection(newDevice: Device) {
+    if (
+      this._app !== newDevice.getApp() ||
+      this._name !== newDevice.getName()
+    ) {
+      this._deviceSocket.close();
+      this._debuggerConnection?.socket.close();
+    }
+
+    const oldDebugger = this._debuggerConnection;
+    this._debuggerConnection = null;
+
+    if (oldDebugger) {
+      oldDebugger.socket.removeAllListeners();
+      this._deviceSocket.close();
+      newDevice.handleDebuggerConnection(
+        oldDebugger.socket,
+        oldDebugger.pageId,
+      );
+    }
   }
 
   // Handles messages received from device:
