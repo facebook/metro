@@ -11,7 +11,9 @@
 
 'use strict';
 
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 import type {FBSourceFunctionMap} from './source-map';
+import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {Node} from '@babel/types';
 
@@ -42,6 +44,7 @@ import {
 
 const B64Builder = require('./B64Builder');
 const t = require('@babel/types');
+const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const fsPath = require('path');
 
@@ -55,7 +58,21 @@ type RangeMapping = {
   start: Position,
   ...
 };
-export type Context = {filename?: string, ...};
+type FunctionMapVisitor = {
+  enter: (
+    path:
+      | NodePath<BabelNodeProgram>
+      | NodePath<BabelNodeFunction>
+      | NodePath<BabelNodeClass>,
+  ) => void,
+  exit: (
+    path:
+      | NodePath<BabelNodeProgram>
+      | NodePath<BabelNodeFunction>
+      | NodePath<BabelNodeClass>,
+  ) => void,
+};
+export type Context = {filename?: ?string, ...};
 
 /**
  * Generate a map of source positions to function names. The names are meant to
@@ -91,15 +108,52 @@ function generateFunctionMappingsArray(
   return mappings;
 }
 
-/**
- * Traverses a Babel AST and calls the supplied callback with function name
- * mappings, one at a time.
- */
-function forEachMapping(
-  ast: BabelNode,
+function functionMapBabelPlugin(): PluginObj<> {
+  return {
+    // Eagerly traverse the tree on `pre`, before any visitors have run, so
+    // that regardless of plugin order we're dealing with the AST before any
+    // mutations.
+    visitor: {},
+    pre: ({path, metadata, opts}) => {
+      const {filename} = nullthrows(opts);
+      const encoder = new MappingEncoder();
+      const visitor = getFunctionMapVisitor({filename}, mapping =>
+        encoder.push(mapping),
+      );
+      invariant(
+        path && t.isProgram(path.node),
+        'path missing or not a program node',
+      );
+      // $FlowFixMe[prop-missing] checked above
+      // $FlowFixMe[incompatible-type-arg] checked above
+      const programPath: NodePath<BabelNodeProgram> = path;
+
+      visitor.enter(programPath);
+      programPath.traverse({
+        Function: visitor,
+        Class: visitor,
+      });
+      visitor.exit(programPath);
+
+      // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+      const metroMetadata: MetroBabelFileMetadata = metadata;
+
+      const functionMap = encoder.getResult();
+
+      // Set the result on a metadata property
+      if (!metroMetadata.metro) {
+        metroMetadata.metro = {functionMap};
+      } else {
+        metroMetadata.metro.functionMap = functionMap;
+      }
+    },
+  };
+}
+
+function getFunctionMapVisitor(
   context: ?Context,
   pushMapping: RangeMapping => void,
-) {
+): FunctionMapVisitor {
   const nameStack: Array<{loc: BabelNodeSourceLocation, name: string}> = [];
   let tailPos = {line: 1, column: 0};
   let tailName = null;
@@ -140,30 +194,31 @@ function forEachMapping(
     ? fsPath.basename(context.filename).replace(/\..+$/, '')
     : null;
 
-  const visitor = {
-    enter(
-      path:
-        | NodePath<BabelNodeProgram>
-        | NodePath<BabelNodeFunction>
-        | NodePath<BabelNodeClass>,
-    ) {
+  return {
+    enter(path) {
       let name = getNameForPath(path);
       if (basename) {
         name = removeNamePrefix(name, basename);
       }
-
       pushFrame(name, nullthrows(path.node.loc));
     },
 
-    exit(
-      path:
-        | NodePath<BabelNodeProgram>
-        | NodePath<BabelNodeFunction>
-        | NodePath<BabelNodeClass>,
-    ): void {
+    exit(path) {
       popFrame();
     },
   };
+}
+
+/**
+ * Traverses a Babel AST and calls the supplied callback with function name
+ * mappings, one at a time.
+ */
+function forEachMapping(
+  ast: BabelNode,
+  context: ?Context,
+  pushMapping: RangeMapping => void,
+) {
+  const visitor = getFunctionMapVisitor(context, pushMapping);
 
   // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
   // values missing the `hub` property needed by Babel transformation, so we
@@ -525,4 +580,8 @@ function positionGreater(x: Position, y: Position) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 
-module.exports = {generateFunctionMap, generateFunctionMappingsArray};
+module.exports = {
+  functionMapBabelPlugin,
+  generateFunctionMap,
+  generateFunctionMappingsArray,
+};

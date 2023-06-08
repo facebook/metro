@@ -19,7 +19,10 @@ const composeSourceMaps = require('./composeSourceMaps');
 const Consumer = require('./Consumer');
 // We need to export this for `metro-symbolicate`
 const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-const {generateFunctionMap} = require('./generateFunctionMap');
+const {
+  functionMapBabelPlugin,
+  generateFunctionMap,
+} = require('./generateFunctionMap');
 const Generator = require('./Generator');
 // $FlowFixMe[untyped-import] - source-map
 const SourceMap = require('source-map');
@@ -338,6 +341,7 @@ module.exports = {
   generateFunctionMap,
   fromRawMappings,
   fromRawMappingsNonBlocking,
+  functionMapBabelPlugin,
   normalizeSourcePath,
   toBabelSegments,
   toSegmentTuple,

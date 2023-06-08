@@ -11,9 +11,11 @@
 
 'use strict';
 
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 import type {Context} from '../generateFunctionMap';
 
 const {
+  functionMapBabelPlugin,
   generateFunctionMap,
   generateFunctionMappingsArray,
 } = require('../generateFunctionMap');
@@ -1599,6 +1601,43 @@ function parent2() {
           "names": Array [
             "<global>",
             "inner",
+          ],
+        }
+      `);
+    });
+  });
+
+  describe('functionMapBabelPlugin', () => {
+    it('exports a Babel plugin to be used during transformation', () => {
+      const code = 'export default function foo(bar){}';
+      const result = transformFromAstSync<MetroBabelFileMetadata>(
+        getAst(code),
+        code,
+        {
+          filename: 'file.js',
+          cwd: '/my/root',
+          plugins: [functionMapBabelPlugin],
+        },
+      );
+      expect(result.metadata.metro?.functionMap).toEqual({
+        mappings: 'AAA,eC',
+        names: ['<global>', 'foo'],
+      });
+    });
+
+    it('omits parent class name when it matches filename', () => {
+      const ast = getAst('class FooBar { baz() {} }');
+      expect(
+        transformFromAstSync<MetroBabelFileMetadata>(ast, '', {
+          plugins: [functionMapBabelPlugin],
+          filename: 'FooBar.ios.js',
+        }).metadata.metro?.functionMap,
+      ).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,eC,QD",
+          "names": Array [
+            "FooBar",
+            "baz",
           ],
         }
       `);

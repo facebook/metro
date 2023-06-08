@@ -8,8 +8,6 @@
  * @oncall react_native
  */
 
-import type {FBSourceFunctionMap} from 'metro-source-map';
-
 export interface CustomTransformOptions {
   [key: string]: unknown;
 }
@@ -46,7 +44,7 @@ export interface BabelTransformerArgs {
 export interface BabelTransformer {
   transform: (args: BabelTransformerArgs) => {
     ast: unknown;
-    functionMap: FBSourceFunctionMap | null;
+    metadata: unknown;
   };
   getCacheKey?: () => string;
 }

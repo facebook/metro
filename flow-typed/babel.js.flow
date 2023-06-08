@@ -298,15 +298,14 @@ declare module '@babel/core' {
   };
 
   declare export type BabelFileMetadata = {
-    usedHelpers: Array<string>,
-
-    marked: Array<{
+    usedHelpers?: Array<string>,
+    marked?: Array<{
       type: string,
       message: string,
       loc: BabelNodeSourceLocation,
     }>,
-
-    modules: BabelFileModulesMetadata,
+    modules?: BabelFileModulesMetadata,
+    ...
   };
 
   declare class Store {
@@ -372,9 +371,9 @@ declare module '@babel/core' {
 
     addAst(ast: BabelNode): void;
 
-    transform(): TransformResult;
+    transform(): TransformResult<>;
 
-    wrap(code: string, callback: () => mixed): TransformResult;
+    wrap(code: string, callback: () => mixed): TransformResult<>;
 
     addCode(code: string): void;
 
@@ -384,9 +383,9 @@ declare module '@babel/core' {
 
     parseShebang(): void;
 
-    makeResult(TransformResult): TransformResult;
+    makeResult<T>(TransformResult<T>): TransformResult<T>;
 
-    generate(): TransformResult;
+    generate(): TransformResult<>;
   }
 
   declare export type MatchPattern =
@@ -919,8 +918,8 @@ declare module '@babel/core' {
     moduleRoot?: string,
   |};
 
-  declare export type TransformResult = {|
-    metadata: BabelFileMetadata,
+  declare export type TransformResult<T = BabelFileMetadata> = {|
+    metadata: T,
     options: BabelCoreOptions,
     code: string,
     map: _BabelSourceMap | null,
@@ -928,87 +927,87 @@ declare module '@babel/core' {
     ignored?: boolean,
   |};
 
-  declare type TransformCallback =
+  declare type TransformCallback<TMetadata> =
     | ((Error, null) => mixed)
-    | ((null, TransformResult | null) => mixed);
+    | ((null, TransformResult<TMetadata> | null) => mixed);
 
   /**
    * Transforms the passed in code. Calling a callback with an object with the generated code, source map, and AST.
    */
-  declare export function transform(
+  declare export function transform<TMetadata = BabelFileMetadata>(
     code: string,
     options: ?BabelCoreOptions,
-    callback: TransformCallback,
+    callback: TransformCallback<TMetadata>,
   ): void;
 
   /***
    * Transforms the passed in code. Returning an object with the generated code, source map, and AST.
    */
-  declare export function transformSync(
+  declare export function transformSync<TMetadata = BabelFileMetadata>(
     code: string,
     options?: BabelCoreOptions,
-  ): TransformResult;
+  ): TransformResult<TMetadata>;
 
   /**
    * Transforms the passed in code. Returning an promise for an object with the generated code, source map, and AST.
    */
-  declare export function transformAsync(
+  declare export function transformAsync<TMetadata = BabelFileMetadata>(
     code: string,
     options?: BabelCoreOptions,
-  ): Promise<TransformResult>;
+  ): Promise<TransformResult<TMetadata>>;
 
   /**
    * Asynchronously transforms the entire contents of a file.
    */
-  declare export function transformFile(
+  declare export function transformFile<TMetadata = BabelFileMetadata>(
     filename: string,
     options?: BabelCoreOptions,
-    callback: TransformCallback,
+    callback: TransformCallback<TMetadata>,
   ): void;
 
   /**
    * Synchronous version of babel.transformFile. Returns the transformed contents of the filename.
    */
-  declare export function transformFileSync(
+  declare export function transformFileSync<TMetadata = BabelFileMetadata>(
     filename: string,
     options?: BabelCoreOptions,
-  ): TransformResult;
+  ): TransformResult<TMetadata>;
 
   /**
    * Promise version of babel.transformFile. Returns a promise for the transformed contents of the filename.
    */
-  declare export function transformFileAsync(
+  declare export function transformFileAsync<TMetadata = BabelFileMetadata>(
     filename: string,
     options?: BabelCoreOptions,
-  ): Promise<TransformResult>;
+  ): Promise<TransformResult<TMetadata>>;
 
   /**
    * Given an AST, transform it.
    */
-  declare export function transformFromAst(
+  declare export function transformFromAst<TMetadata = BabelFileMetadata>(
     ast: BabelNodeFile | BabelNodeProgram,
     code?: string,
     options?: BabelCoreOptions,
-    callback: TransformCallback,
+    callback: TransformCallback<TMetadata>,
   ): void;
 
   /**
    * Given an AST, transform it.
    */
-  declare export function transformFromAstSync(
+  declare export function transformFromAstSync<TMetadata = BabelFileMetadata>(
     ast: BabelNodeFile | BabelNodeProgram,
     code?: string,
     options?: BabelCoreOptions,
-  ): TransformResult;
+  ): TransformResult<TMetadata>;
 
   /**
    * Given an AST, transform it.
    */
-  declare export function transformFromAstAsync(
+  declare export function transformFromAstAsync<TMetadata = BabelFileMetadata>(
     ast: BabelNodeFile | BabelNodeProgram,
     code?: string,
     options?: BabelCoreOptions,
-  ): Promise<TransformResult>;
+  ): Promise<TransformResult<TMetadata>>;
 
   /**
    * Given some code, parse it using Babel's standard behavior. Referenced presets and plugins will be loaded such that optional syntax plugins are automatically enabled.

@@ -19,7 +19,6 @@
   "dependencies": {
     "@babel/core": "^7.20.0",
     "hermes-parser": "0.12.0",
-    "metro-source-map": "0.76.6",
     "nullthrows": "^1.1.1"
   },
   "engines": {

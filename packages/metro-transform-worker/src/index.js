@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {PluginEntry} from '@babel/core';
+import type {PluginEntry, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -39,6 +39,7 @@ const {stableHash} = require('metro-cache');
 const getCacheKey = require('metro-cache-key');
 const {
   fromRawMappings,
+  functionMapBabelPlugin,
   toBabelSegments,
   toSegmentTuple,
 } = require('metro-source-map');
@@ -498,13 +499,18 @@ async function transformJSWithBabel(
   const transformer: BabelTransformer = require(babelTransformerPath);
 
   const transformResult = await transformer.transform(
-    getBabelTransformArgs(file, context),
+    // functionMapBabelPlugin populates metadata.metro.functionMap
+    getBabelTransformArgs(file, context, [functionMapBabelPlugin]),
   );
 
   const jsFile: JSFile = {
     ...file,
     ast: transformResult.ast,
-    functionMap: transformResult.functionMap ?? null,
+    functionMap:
+      transformResult.metadata?.metro?.functionMap ??
+      // Fallback to deprecated explicitly-generated `functionMap`
+      transformResult.functionMap ??
+      null,
   };
 
   return await transformJS(jsFile, context);
@@ -563,6 +569,7 @@ async function transformJSON(
 function getBabelTransformArgs(
   file: $ReadOnly<{filename: Path, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
+  plugins?: Plugins = [],
 ): BabelTransformerArgs {
   return {
     filename: file.filename,
@@ -580,7 +587,7 @@ function getBabelTransformArgs(
       projectRoot,
       publicPath: config.publicPath,
     },
-    plugins: [],
+    plugins,
     src: file.code,
   };
 }

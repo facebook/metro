@@ -16,16 +16,14 @@
 import type {BabelCoreOptions, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
-  BabelTransformerArgs,
+  MetroBabelFileMetadata,
 } from 'metro-babel-transformer';
-import type {FBSourceFunctionMap} from 'metro-source-map/src/source-map';
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const crypto = require('crypto');
 const fs = require('fs');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
-const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
@@ -186,11 +184,12 @@ function buildBabelConfig(
   };
 }
 
-function transform({filename, options, src, plugins}: BabelTransformerArgs): {
-  ast: BabelNodeFile,
-  functionMap: ?FBSourceFunctionMap,
-  ...
-} {
+const transform: BabelTransformer['transform'] = ({
+  filename,
+  options,
+  src,
+  plugins,
+}) => {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev
     ? 'development'
@@ -220,23 +219,26 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
             sourceType: babelConfig.sourceType,
           });
 
-    const functionMap = generateFunctionMap(sourceAst, {filename});
-    const result = transformFromAstSync(sourceAst, src, babelConfig);
+    const result = transformFromAstSync<MetroBabelFileMetadata>(
+      sourceAst,
+      src,
+      babelConfig,
+    );
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
       /* $FlowFixMe BabelTransformer specifies that the `ast` can never be null but
        * the function returns here. Discovered when typing `BabelNode`. */
-      return {ast: null, functionMap};
+      return {ast: null};
     }
 
-    return {ast: nullthrows(result.ast), functionMap};
+    return {ast: nullthrows(result.ast), metadata: result.metadata};
   } finally {
     if (OLD_BABEL_ENV) {
       process.env.BABEL_ENV = OLD_BABEL_ENV;
     }
   }
-}
+};
 
 function getCacheKey() {
   var key = crypto.createHash('md5');
