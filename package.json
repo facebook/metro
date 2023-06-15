@@ -36,6 +36,7 @@
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
     "prettier": "2.8.8",
+    "prettier-plugin-hermes-parser": "0.12.1",
     "progress": "^2.0.0",
     "promise": "^8.3.0",
     "typescript": "5.0.4"
