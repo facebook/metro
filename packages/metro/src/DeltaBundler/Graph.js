@@ -240,6 +240,7 @@ export class Graph<T = MixedOutput> {
             // TODO: Refactor for more explicit immutability
             newModule !== originalModule ||
             transfromOutputMayDiffer(newModule, originalModule) ||
+            // $FlowFixMe[incompatible-call]
             !allDependenciesEqual(newModule, originalModule)
           ) {
             modified.set(path, newModule);
