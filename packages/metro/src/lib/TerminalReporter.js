@@ -515,7 +515,7 @@ class TerminalReporter {
 
   /**
    * Single entry point for reporting events. That allows us to implement the
-   * corresponding JSON reporter easily and have a consistent repor∏ting.
+   * corresponding JSON reporter easily and have a consistent reporting.
    */
   update(event: TerminalReportableEvent): void {
     if (event.type === 'bundle_transform_progressed') {
