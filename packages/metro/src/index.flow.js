@@ -35,6 +35,7 @@ const makeServeCommand = require('./commands/serve');
 const MetroHmrServer = require('./HmrServer');
 const IncrementalBundler = require('./IncrementalBundler');
 const createWebsocketServer = require('./lib/createWebsocketServer');
+const TerminalReporter = require('./lib/TerminalReporter');
 const MetroServer = require('./Server');
 const outputBundle = require('./shared/output/bundle');
 const chalk = require('chalk');
@@ -140,6 +141,7 @@ type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
 
 exports.Terminal = Terminal;
+exports.TerminalReporter = TerminalReporter;
 
 export type {MetroConfig};
 
