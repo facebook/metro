@@ -340,7 +340,7 @@ module.exports = class NodeWatcher extends EventEmitter {
         }
       }
     } catch (error) {
-      if (error?.code !== 'ENOENT') {
+      if (!isIgnorableFileError(error)) {
         this.emit('error', error);
         return;
       }
@@ -403,7 +403,11 @@ module.exports = class NodeWatcher extends EventEmitter {
 function isIgnorableFileError(error: Error | {code: string}) {
   return (
     error.code === 'ENOENT' ||
-    // Workaround Windows EPERM on watched folder deletion.
+    // Workaround Windows EPERM on watched folder deletion, and when
+    // reading locked files (pending further writes or pending deletion).
+    // In such cases, we'll receive a subsequent event when the file is
+    // deleted or ready to read.
+    // https://github.com/facebook/metro/issues/1001
     // https://github.com/nodejs/node-v0.x-archive/issues/4337
     (error.code === 'EPERM' && platform === 'win32')
   );
