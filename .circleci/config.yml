@@ -10,8 +10,8 @@ references:
   # For stability, Node.js versions we run against in CI are defined explicitly
   # (the "lts" alias may bring in a future version before we support it)
   node_supported_lts_versions: &node_supported_lts_versions
-    - &node_min_supported_version "16.18"
-    - "18.12"
+    - &node_min_supported_version "18.12"
+    - "20.2"
   node_lts_image: &node_lts_image cimg/node:18.12
 
   secure_unset_publish_token: &secure_unset_publish_token
