@@ -26,8 +26,6 @@ const {
   fromRawMappingsNonBlocking,
 } = require('metro-source-map');
 
-type ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
-
 function getSourceMapInfosImpl(
   isBlocking: boolean,
   onDone: ($ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>) => void,
