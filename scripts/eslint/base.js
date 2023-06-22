@@ -23,7 +23,7 @@ module.exports = {
   },
   root: true,
   extends: ['eslint-config-fb-strict', 'plugin:prettier/recommended'],
-  plugins: ['babel', 'ft-flow', 'import', 'lint', 'prettier'],
+  plugins: ['babel', 'ft-flow', 'import', 'jest', 'lint', 'prettier'],
   parser: 'hermes-eslint',
   rules: {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
@@ -63,6 +63,10 @@ module.exports = {
           'error',
           'single',
           {avoidEscape: true, allowTemplateLiterals: true},
+        ],
+        'jest/consistent-test-it': [
+          'warn',
+          {fn: 'test', withinDescribe: 'test'},
         ],
         quotes: 'off',
       },
