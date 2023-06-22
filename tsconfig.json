@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node18/tsconfig.json",
   "include": ["./packages/*/types/**/*.d.ts"],
   "compilerOptions": {
     "noEmit": true,

@@ -32,6 +32,6 @@
     "metro-react-native-babel-transformer": "0.76.7"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   }
 }
