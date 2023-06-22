@@ -13,7 +13,8 @@ import {AbortController} from 'node-abort-controller';
 const path = require('path');
 
 jest.mock('fb-watchman', () => {
-  const normalizePathSep = require('../../lib/normalizePathSep').default;
+  const normalizePathSeparatorsToSystem =
+    require('../../lib/normalizePathSeparatorsToSystem').default;
   const Client = jest.fn();
   const endedClients = new WeakSet();
   Client.prototype.command = jest.fn(function (args, callback) {
@@ -23,7 +24,9 @@ jest.mock('fb-watchman', () => {
         callback(new Error('Client has ended'));
         return;
       }
-      const path = args[1] ? normalizePathSep(args[1]) : undefined;
+      const path = args[1]
+        ? normalizePathSeparatorsToSystem(args[1])
+        : undefined;
       const response = mockResponse[args[0]][path];
       callback(null, response.next ? response.next().value : response);
     });

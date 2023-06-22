@@ -12,6 +12,7 @@
 import type {BuildParameters} from '../flow-types';
 
 import * as fastPath from './fast_path';
+import normalizePathSeparatorsToPosix from './normalizePathSeparatorsToPosix';
 import {createHash} from 'crypto';
 
 function moduleCacheKey(modulePath: ?string) {
@@ -37,7 +38,9 @@ export default function rootRelativeCacheKeys(
   relativeConfigHash: string,
 } {
   const {rootDir, ...otherParameters} = buildParameters;
-  const rootDirHash = createHash('md5').update(rootDir).digest('hex');
+  const rootDirHash = createHash('md5')
+    .update(normalizePathSeparatorsToPosix(rootDir))
+    .digest('hex');
 
   const cacheComponents = Object.keys(otherParameters)
     .sort()
@@ -45,7 +48,7 @@ export default function rootRelativeCacheKeys(
       switch (key) {
         case 'roots':
           return buildParameters[key].map(root =>
-            fastPath.relative(rootDir, root),
+            normalizePathSeparatorsToPosix(fastPath.relative(rootDir, root)),
           );
         case 'cacheBreaker':
         case 'extensions':

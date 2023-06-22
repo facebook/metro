@@ -45,7 +45,7 @@ import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import deepCloneRawModuleMap from './lib/deepCloneRawModuleMap';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
-import normalizePathSep from './lib/normalizePathSep';
+import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import TreeFS from './lib/TreeFS';
 import HasteModuleMap from './ModuleMap';
 import {Watcher} from './Watcher';
@@ -866,7 +866,7 @@ export default class HasteMap extends EventEmitter {
     if (this._options.mocksPattern) {
       const absoluteFilePath = path.join(
         this._options.rootDir,
-        normalizePathSep(relativeFilePath),
+        normalizePathSeparatorsToSystem(relativeFilePath),
       );
       if (
         this._options.mocksPattern &&
@@ -951,7 +951,10 @@ export default class HasteMap extends EventEmitter {
         return;
       }
 
-      const absoluteFilePath = path.join(root, normalizePathSep(filePath));
+      const absoluteFilePath = path.join(
+        root,
+        normalizePathSeparatorsToSystem(filePath),
+      );
 
       // Ignore files (including symlinks) whose path matches ignorePattern
       // (we don't ignore node_modules in watch mode)

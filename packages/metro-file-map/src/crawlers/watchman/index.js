@@ -21,7 +21,7 @@ import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
 import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
-import normalizePathSep from '../../lib/normalizePathSep';
+import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
 import {planQuery} from './planQuery';
 import invariant from 'invariant';
 import * as path from 'path';
@@ -291,7 +291,7 @@ module.exports = async function watchmanCrawl({
   perfLogger?.point('watchmanCrawl/processResults_start');
 
   for (const [watchRoot, response] of results) {
-    const fsRoot = normalizePathSep(watchRoot);
+    const fsRoot = normalizePathSeparatorsToSystem(watchRoot);
     const relativeFsRoot = fastPath.relative(rootDir, fsRoot);
     newClocks.set(
       relativeFsRoot,
@@ -302,7 +302,8 @@ module.exports = async function watchmanCrawl({
     );
 
     for (const fileData of response.files) {
-      const filePath = fsRoot + path.sep + normalizePathSep(fileData.name);
+      const filePath =
+        fsRoot + path.sep + normalizePathSeparatorsToSystem(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
       const existingFileData = previousState.files.get(relativeFilePath);
 

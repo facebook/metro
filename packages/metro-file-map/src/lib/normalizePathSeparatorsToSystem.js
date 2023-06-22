@@ -10,12 +10,12 @@
 
 import * as path from 'path';
 
-let normalizePathSep: (string: string) => string;
+let normalizePathSeparatorsToSystem: (string: string) => string;
 if (path.sep === '/') {
-  normalizePathSep = (filePath: string): string => filePath;
+  normalizePathSeparatorsToSystem = (filePath: string): string => filePath;
 } else {
-  normalizePathSep = (filePath: string): string =>
+  normalizePathSeparatorsToSystem = (filePath: string): string =>
     filePath.replace(/\//g, path.sep);
 }
 
-export default normalizePathSep;
+export default normalizePathSeparatorsToSystem;
