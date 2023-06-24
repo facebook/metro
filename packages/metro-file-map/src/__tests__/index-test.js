@@ -48,7 +48,7 @@ jest.mock('../crawlers/watchman', () =>
       includeSymlinks,
     } = options;
     const list = mockChangedFiles || mockFs;
-    const removedFiles = new Map();
+    const removedFiles = new Set();
     const changedFiles = new Map();
 
     previousState.clocks = mockClocks;
@@ -76,7 +76,7 @@ jest.mock('../crawlers/watchman', () =>
         } else {
           const fileData = previousState.files.get(relativeFilePath);
           if (fileData) {
-            removedFiles.set(relativeFilePath, fileData);
+            removedFiles.add(relativeFilePath);
           }
         }
       }
@@ -568,7 +568,7 @@ describe('HasteMap', () => {
 
           return Promise.resolve({
             changedFiles,
-            removedFiles: new Map(),
+            removedFiles: new Set(),
           });
         });
 
@@ -1255,7 +1255,7 @@ describe('HasteMap', () => {
       changedFiles.set(invalidFilePath, ['', 34, 44, 0, [], null, 0]);
       return {
         changedFiles,
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       };
     });
 
@@ -1359,7 +1359,7 @@ describe('HasteMap', () => {
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       });
     });
 
@@ -1396,7 +1396,7 @@ describe('HasteMap', () => {
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       });
     });
 

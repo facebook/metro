@@ -191,7 +191,7 @@ describe('node crawler', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('updates only changed files', async () => {
@@ -219,7 +219,7 @@ describe('node crawler', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('returns removed files', async () => {
@@ -247,11 +247,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 33, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(
-      createMap({
-        'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null, 0],
-      }),
-    );
+    expect(removedFiles).toEqual(new Set(['fruits/previouslyExisted.js']));
   });
 
   it('uses node fs APIs with incompatible find binary', async () => {
@@ -282,7 +278,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses node fs APIs without find binary', async () => {
@@ -308,7 +304,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
@@ -332,7 +328,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('completes with empty roots', async () => {
@@ -349,7 +345,7 @@ describe('node crawler', () => {
     });
 
     expect(changedFiles).toEqual(new Map());
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('completes with fs.readdir throwing an error', async () => {
@@ -366,7 +362,7 @@ describe('node crawler', () => {
     });
 
     expect(changedFiles).toEqual(new Map());
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses the withFileTypes option with readdir', async () => {
@@ -389,7 +385,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
     // once for /project/fruits, once for /project/fruits/directory
     expect(fs.readdir).toHaveBeenCalledTimes(2);
     // once for strawberry.js, once for tomato.js

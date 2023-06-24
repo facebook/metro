@@ -53,17 +53,25 @@ export type CacheData = $ReadOnly<{
   files: FileData,
 }>;
 
+export type CacheDelta = $ReadOnly<{
+  changed: $ReadOnlyMap<CanonicalPath, FileMetaData>,
+  removed: $ReadOnlySet<CanonicalPath>,
+}>;
+
 export interface CacheManager {
   read(): Promise<?CacheData>;
-  write(
-    dataSnapshot: CacheData,
-    delta: $ReadOnly<{changed: FileData, removed: FileData}>,
-  ): Promise<void>;
+  write(dataSnapshot: CacheData, delta: CacheDelta): Promise<void>;
 }
 
 export type CacheManagerFactory = (
   buildParameters: BuildParameters,
 ) => CacheManager;
+
+// A path that is
+//  - Relative to the contextual `rootDir`
+//  - Normalised (no extraneous '.' or '..')
+//  - Real (no symlinks in path, though the path itself may be a symlink)
+export type CanonicalPath = string;
 
 export type ChangeEvent = {
   logger: ?RootPerfLogger,
@@ -87,8 +95,8 @@ export type CrawlerOptions = {
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
   previousState: $ReadOnly<{
-    clocks: $ReadOnlyMap<Path, WatchmanClockSpec>,
-    files: $ReadOnlyMap<Path, FileMetaData>,
+    clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
+    files: $ReadOnlyMap<CanonicalPath, FileMetaData>,
   }>,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -142,7 +150,7 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type FileData = Map<Path, FileMetaData>;
+export type FileData = Map<CanonicalPath, FileMetaData>;
 
 export type FileMetaData = [
   /* id */ string,

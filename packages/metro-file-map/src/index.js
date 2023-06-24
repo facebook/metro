@@ -16,6 +16,7 @@ import type {
   CacheData,
   CacheManager,
   CacheManagerFactory,
+  CanonicalPath,
   ChangeEvent,
   ChangeEventMetadata,
   CrawlerOptions,
@@ -132,6 +133,7 @@ export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError
 export type {IModuleMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
 export type {
+  CacheDelta,
   CacheManager,
   CacheManagerFactory,
   ChangeEvent,
@@ -426,7 +428,7 @@ export default class HasteMap extends EventEmitter {
   async _buildFileDelta(
     previousState: CrawlerOptions['previousState'],
   ): Promise<{
-    removedFiles: FileData,
+    removedFiles: Set<CanonicalPath>,
     changedFiles: FileData,
     clocks?: WatchmanClocks,
   }> {
@@ -691,11 +693,11 @@ export default class HasteMap extends EventEmitter {
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
-    delta: {
+    delta: $ReadOnly<{
       changedFiles: FileData,
-      removedFiles: FileData,
+      removedFiles: $ReadOnlySet<CanonicalPath>,
       clocks?: WatchmanClocks,
-    },
+    }>,
   ): Promise<void> {
     this._startupPerfLogger?.point('applyFileDelta_start');
     const {changedFiles, removedFiles} = delta;
@@ -706,7 +708,7 @@ export default class HasteMap extends EventEmitter {
     // Remove files first so that we don't mistake moved mocks or Haste
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
-    for (const [relativeFilePath] of removedFiles) {
+    for (const relativeFilePath of removedFiles) {
       this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
     }
     this._startupPerfLogger?.point('applyFileDelta_remove_end');
@@ -794,7 +796,7 @@ export default class HasteMap extends EventEmitter {
     clocks: WatchmanClocks,
     moduleMap: ReadOnlyRawModuleMap,
     changed: FileData,
-    removed: FileData,
+    removed: Set<CanonicalPath>,
   ) {
     this._startupPerfLogger?.point('persist_start');
     const {map, duplicates, mocks} = deepCloneRawModuleMap(moduleMap);

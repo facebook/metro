@@ -10,7 +10,12 @@
  */
 
 import type {Path, FileMetaData} from '../../flow-types';
-import type {CrawlerOptions, FileData, IgnoreMatcher} from '../../flow-types';
+import type {
+  CanonicalPath,
+  CrawlerOptions,
+  FileData,
+  IgnoreMatcher,
+} from '../../flow-types';
 
 import hasNativeFindSupport from './hasNativeFindSupport';
 import H from '../../constants';
@@ -163,7 +168,7 @@ function findNative(
 }
 
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
-  removedFiles: FileData,
+  removedFiles: Set<CanonicalPath>,
   changedFiles: FileData,
 }> {
   const {
@@ -191,7 +196,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   return new Promise((resolve, reject) => {
     const callback = (list: Result) => {
       const changedFiles = new Map<Path, FileMetaData>();
-      const removedFiles = new Map(previousState.files);
+      const removedFiles = new Set(previousState.files.keys());
       for (const fileData of list) {
         const [filePath, mtime, size, symlink] = fileData;
         const relativeFilePath = fastPath.relative(rootDir, filePath);

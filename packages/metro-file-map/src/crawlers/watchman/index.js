@@ -11,6 +11,7 @@
 
 import type {WatchmanClockSpec} from '../../flow-types';
 import type {
+  CanonicalPath,
   CrawlerOptions,
   FileData,
   FileMetaData,
@@ -59,7 +60,7 @@ module.exports = async function watchmanCrawl({
   roots,
 }: CrawlerOptions): Promise<{
   changedFiles: FileData,
-  removedFiles: FileData,
+  removedFiles: Set<CanonicalPath>,
   clocks: WatchmanClocks,
 }> {
   abortSignal?.throwIfAborted();
@@ -242,8 +243,8 @@ module.exports = async function watchmanCrawl({
     };
   }
 
-  let removedFiles = new Map<Path, FileMetaData>();
-  const changedFiles = new Map<Path, FileMetaData>();
+  let removedFiles: Set<CanonicalPath> = new Set();
+  const changedFiles: FileData = new Map();
   let results: Map<string, WatchmanQueryResponse>;
   let isFresh = false;
   let queryError: ?Error;
@@ -254,7 +255,7 @@ module.exports = async function watchmanCrawl({
     // Reset the file map if watchman was restarted and sends us a list of
     // files.
     if (watchmanFileResults.isFresh) {
-      removedFiles = new Map(previousState.files);
+      removedFiles = new Set(previousState.files.keys());
       isFresh = true;
     }
 
@@ -319,7 +320,7 @@ module.exports = async function watchmanCrawl({
           // If watchman is not fresh, we will know what specific files were
           // deleted since we last ran and can track only those files.
           if (!isFresh) {
-            removedFiles.set(relativeFilePath, existingFileData);
+            removedFiles.add(relativeFilePath);
           }
         }
       } else if (!ignore(filePath)) {

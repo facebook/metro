@@ -39,7 +39,7 @@ const MAX_WAIT_TIME = 240000;
 type CrawlResult = {
   changedFiles: FileData,
   clocks?: WatchmanClocks,
-  removedFiles: FileData,
+  removedFiles: Set<Path>,
 };
 
 type WatcherOptions = {
