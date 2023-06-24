@@ -126,9 +126,7 @@ describe.each(Object.keys(CRAWLERS))(
         // Map comparison is unordered, which is what we want
         expect(result).toMatchObject({
           changedFiles: expectedChangedFiles,
-          removedFiles: new Map([
-            ['removed.js', ['', 123, 234, 0, '', null, 0]],
-          ]),
+          removedFiles: new Set(['removed.js']),
         });
         if (crawlerName === 'watchman') {
           expect(result.clocks).toBeInstanceOf(Map);

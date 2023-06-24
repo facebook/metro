@@ -12,8 +12,8 @@
 import type {
   BuildParameters,
   CacheData,
+  CacheDelta,
   CacheManager,
-  FileData,
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
@@ -81,7 +81,7 @@ export class DiskCacheManager implements CacheManager {
 
   async write(
     dataSnapshot: CacheData,
-    {changed, removed}: $ReadOnly<{changed: FileData, removed: FileData}>,
+    {changed, removed}: CacheDelta,
   ): Promise<void> {
     if (changed.size > 0 || removed.size > 0) {
       writeFileSync(this._cachePath, serialize(dataSnapshot));

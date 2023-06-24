@@ -168,7 +168,7 @@ describe('watchman watch', () => {
 
     expect(changedFiles).toEqual(mockFiles);
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
 
     expect(client.end).toBeCalled();
   });
@@ -224,11 +224,7 @@ describe('watchman watch', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(
-      createMap({
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
-      }),
-    );
+    expect(removedFiles).toEqual(new Set([TOMATO_RELATIVE]));
   });
 
   test('resets the file map and tracks removedFiles when watchman is fresh', async () => {
@@ -306,10 +302,7 @@ describe('watchman watch', () => {
     expect(changedFiles.get(TOMATO_RELATIVE)).not.toBe(mockTomatoMetadata);
 
     expect(removedFiles).toEqual(
-      createMap({
-        [MELON_RELATIVE]: ['', 33, 43, 0, '', null, 0],
-        [STRAWBERRY_RELATIVE]: ['', 30, 40, 0, '', null, 0],
-      }),
+      new Set([MELON_RELATIVE, STRAWBERRY_RELATIVE]),
     );
   });
 
@@ -382,10 +375,7 @@ describe('watchman watch', () => {
     );
 
     expect(removedFiles).toEqual(
-      createMap({
-        [STRAWBERRY_RELATIVE]: ['', 30, 40, 0, '', null, 0],
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
-      }),
+      new Set([STRAWBERRY_RELATIVE, TOMATO_RELATIVE]),
     );
   });
 
@@ -454,7 +444,7 @@ describe('watchman watch', () => {
 
     expect(changedFiles).toEqual(new Map());
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
 
     expect(client.end).toBeCalled();
   });
@@ -553,11 +543,7 @@ describe('watchman watch', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(
-      createMap({
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
-      }),
-    );
+    expect(removedFiles).toEqual(new Set([TOMATO_RELATIVE]));
   });
 
   it('aborts the crawl on pre-aborted signal', async () => {
