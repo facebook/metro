@@ -96,7 +96,7 @@ export type CrawlerOptions = {
   perfLogger?: ?PerfLogger,
   previousState: $ReadOnly<{
     clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
-    files: $ReadOnlyMap<CanonicalPath, FileMetaData>,
+    fileSystem: FileSystem,
   }>,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -171,6 +171,10 @@ export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
   getDependencies(file: Path): ?Array<string>;
+  getDifference(files: FileData): {
+    changedFiles: FileData,
+    removedFiles: Set<string>,
+  };
   getModuleName(file: Path): ?string;
   getRealPath(file: Path): ?string;
   getSerializableSnapshot(): FileData;

@@ -75,6 +75,47 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
+  getDifference(files: FileData): {
+    changedFiles: FileData,
+    removedFiles: Set<string>,
+  } {
+    const changedFiles: FileData = new Map(files);
+    const removedFiles: Set<string> = new Set();
+    for (const [normalPath, metadata] of this.#files) {
+      const newMetadata = files.get(normalPath);
+      if (newMetadata) {
+        if ((newMetadata[H.SYMLINK] === 0) !== (metadata[H.SYMLINK] === 0)) {
+          // Types differ, file has changed
+          continue;
+        }
+        if (
+          newMetadata[H.MTIME] != null &&
+          // TODO: Remove when mtime is null if not populated
+          newMetadata[H.MTIME] != 0 &&
+          newMetadata[H.MTIME] === metadata[H.MTIME]
+        ) {
+          // Types and modified time match - not changed.
+          changedFiles.delete(normalPath);
+        } else if (
+          newMetadata[H.SHA1] != null &&
+          newMetadata[H.SHA1] === metadata[H.SHA1] &&
+          metadata[H.VISITED] === 1
+        ) {
+          // Content matches - update modified time but don't revisit
+          const updatedMetadata = [...metadata];
+          updatedMetadata[H.MTIME] = newMetadata[H.MTIME];
+          changedFiles.set(normalPath, updatedMetadata);
+        }
+      } else {
+        removedFiles.add(normalPath);
+      }
+    }
+    return {
+      changedFiles,
+      removedFiles,
+    };
+  }
+
   getSha1(mixedPath: Path): ?string {
     const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SHA1]) ?? null;

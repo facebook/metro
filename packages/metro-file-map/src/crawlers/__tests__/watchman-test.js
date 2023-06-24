@@ -9,6 +9,7 @@
  */
 
 import {AbortController} from 'node-abort-controller';
+import TreeFS from '../../lib/TreeFS';
 
 const path = require('path');
 
@@ -45,6 +46,7 @@ let watchman;
 let watchmanCrawl;
 let mockResponse;
 let mockFiles;
+const getFS = files => new TreeFS({files, rootDir: ROOT_MOCK});
 
 const ROOT_MOCK = path.sep === '/' ? '/root-mock' : 'M:\\root-mock';
 const FRUITS_RELATIVE = 'fruits';
@@ -129,7 +131,7 @@ describe('watchman watch', () => {
     const {changedFiles, clocks, removedFiles} = await watchmanCrawl({
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -204,7 +206,7 @@ describe('watchman watch', () => {
         clocks: createMap({
           '': 'c:fake-clock:1',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -272,7 +274,7 @@ describe('watchman watch', () => {
         clocks: createMap({
           '': 'c:fake-clock:1',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -352,7 +354,7 @@ describe('watchman watch', () => {
           [FRUITS_RELATIVE]: 'c:fake-clock:1',
           [VEGETABLES_RELATIVE]: 'c:fake-clock:2',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -407,7 +409,7 @@ describe('watchman watch', () => {
     const {changedFiles, clocks, removedFiles} = await watchmanCrawl({
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -470,7 +472,7 @@ describe('watchman watch', () => {
       computeSha1: true,
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       rootDir: ROOT_MOCK,

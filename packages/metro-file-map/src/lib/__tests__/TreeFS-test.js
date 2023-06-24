@@ -10,6 +10,7 @@
  */
 
 import type TreeFS from '../TreeFS';
+import type {FileData} from '../../flow-types';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
@@ -37,10 +38,10 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('bar.js'), ['', 234, 0, 0, '', '', 0]],
         [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./foo')]],
         [p('root'), ['', 0, 0, 0, '', '', '..']],
-        [p('link-to-nowhere'), ['', 0, 0, 0, '', '', p('./nowhere')]],
-        [p('link-to-self'), ['', 0, 0, 0, '', '', p('./link-to-self')]],
-        [p('link-cycle-1'), ['', 0, 0, 0, '', '', p('./link-cycle-2')]],
-        [p('link-cycle-2'), ['', 0, 0, 0, '', '', p('./link-cycle-1')]],
+        [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
+        [p('link-to-self'), ['', 123, 0, 0, '', '', p('./link-to-self')]],
+        [p('link-cycle-1'), ['', 123, 0, 0, '', '', p('./link-cycle-2')]],
+        [p('link-cycle-2'), ['', 123, 0, 0, '', '', p('./link-cycle-1')]],
       ]),
     });
   });
@@ -106,6 +107,36 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     ])('returns null for directories or broken paths: %s', givenPath =>
       expect(tfs.getRealPath(givenPath)).toEqual(null),
     );
+  });
+
+  describe('getDifference', () => {
+    test('returns changed (inc. new) and removed files in given FileData', () => {
+      const newFiles: FileData = new Map([
+        [p('new-file'), ['', 789, 0, 0, '', '', 0]],
+        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./foo')]],
+        // Different modified time, expect new mtime in changedFiles
+        [p('foo/another.js'), ['', 124, 0, 0, '', '', 0]],
+        [p('link-cycle-1'), ['', 123, 0, 0, '', '', p('./link-cycle-2')]],
+        [p('link-cycle-2'), ['', 123, 0, 0, '', '', p('./link-cycle-1')]],
+        // Was a symlink, now a regular file
+        [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
+        [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
+      ]);
+      expect(tfs.getDifference(newFiles)).toEqual({
+        changedFiles: new Map([
+          [p('new-file'), ['', 789, 0, 0, '', '', 0]],
+          [p('foo/another.js'), ['', 124, 0, 0, '', '', 0]],
+          [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
+        ]),
+        removedFiles: new Set([
+          p('foo/link-to-bar.js'),
+          p('foo/link-to-another.js'),
+          p('../outside/external.js'),
+          p('bar.js'),
+          p('root'),
+        ]),
+      });
+    });
   });
 
   describe('matchFilesWithContext', () => {
