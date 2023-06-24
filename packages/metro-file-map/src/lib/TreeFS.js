@@ -34,22 +34,20 @@ type MixedNode = FileNode | DirectoryNode;
 
 export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTarkets: WeakMap<FileNode, Path> = new WeakMap();
-  +#files: FileData;
   +#rootDir: Path;
   +#rootNode: DirectoryNode = new Map();
 
   constructor({rootDir, files}: {rootDir: Path, files: FileData}) {
     this.#rootDir = rootDir;
-    this.#files = files;
     this.bulkAddOrModify(files);
   }
 
   getSerializableSnapshot(): FileData {
     return new Map(
-      Array.from(this.#files.entries(), ([k, v]: [Path, FileMetaData]) => [
-        k,
-        [...v],
-      ]),
+      Array.from(
+        this._metadataIterator(this.#rootNode, {includeSymlinks: true}),
+        ({normalPath, metadata}) => [normalPath, [...metadata]],
+      ),
     );
   }
 
@@ -81,7 +79,10 @@ export default class TreeFS implements MutableFileSystem {
   } {
     const changedFiles: FileData = new Map(files);
     const removedFiles: Set<string> = new Set();
-    for (const [normalPath, metadata] of this.#files) {
+    for (const {normalPath, metadata} of this._metadataIterator(
+      this.#rootNode,
+      {includeSymlinks: true},
+    )) {
       const newMetadata = files.get(normalPath);
       if (newMetadata) {
         if ((newMetadata[H.SYMLINK] === 0) !== (metadata[H.SYMLINK] === 0)) {
@@ -227,10 +228,6 @@ export default class TreeFS implements MutableFileSystem {
 
   getRealPath(mixedPath: Path): ?string {
     const normalPath = this._normalizePath(mixedPath);
-    const metadata = this.#files.get(normalPath);
-    if (metadata && metadata[H.SYMLINK] === 0) {
-      return fastPath.resolve(this.#rootDir, normalPath);
-    }
     const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
     if (!result || result.node instanceof Map) {
       return null;
@@ -258,8 +255,6 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   bulkAddOrModify(addedOrModifiedFiles: FileData): void {
-    const files = this.#files;
-
     // Optimisation: Bulk FileData are typically clustered by directory, so we
     // optimise for that case by remembering the last directory we looked up.
     // Experiments with large result sets show this to be significantly (~30%)
@@ -268,10 +263,6 @@ export default class TreeFS implements MutableFileSystem {
     let directoryNode: DirectoryNode;
 
     for (const [normalPath, metadata] of addedOrModifiedFiles) {
-      if (addedOrModifiedFiles !== files) {
-        files.set(normalPath, metadata);
-      }
-
       const lastSepIdx = normalPath.lastIndexOf(path.sep);
       const dirname = lastSepIdx === -1 ? '' : normalPath.slice(0, lastSepIdx);
       const basename =
@@ -297,22 +288,22 @@ export default class TreeFS implements MutableFileSystem {
   remove(mixedPath: Path): ?FileMetaData {
     const normalPath = this._normalizePath(mixedPath);
     const result = this._lookupByNormalPath(normalPath, {followLeaf: false});
-    if (!result || result.node instanceof Map) {
+    if (!result) {
       return null;
     }
     const {parentNode, canonicalPath, node} = result;
 
-    // If node is a symlink, get its metadata from the file map. Otherwise, we
-    // already have it in the lookup result.
-    const fileMetadata =
-      typeof node === 'string' ? this.#files.get(canonicalPath) : node;
+    if (node instanceof Map) {
+      throw new Error(`TreeFS: remove called on a directory: ${mixedPath}`);
+    }
+    // If node is a symlink, get its metadata from the tuple.
+    const fileMetadata = node;
     if (fileMetadata == null) {
       throw new Error(`TreeFS: Missing metadata for ${mixedPath}`);
     }
     if (parentNode == null) {
       throw new Error(`TreeFS: Missing parent node for ${mixedPath}`);
     }
-    this.#files.delete(canonicalPath);
     parentNode.delete(path.basename(canonicalPath));
     return fileMetadata;
   }
@@ -549,16 +540,12 @@ export default class TreeFS implements MutableFileSystem {
     opts: {followLeaf: boolean} = {followLeaf: true},
   ): ?FileMetaData {
     const normalPath = this._normalizePath(filePath);
-    const metadata = this.#files.get(normalPath);
-    if (metadata && (!opts.followLeaf || metadata[H.SYMLINK] === 0)) {
-      return metadata;
-    }
     const result = this._lookupByNormalPath(normalPath, {
       followLeaf: opts.followLeaf,
     });
-    if (!result || result.node instanceof Map) {
+    if (result == null || result.node instanceof Map) {
       return null;
     }
-    return this.#files.get(result.canonicalPath);
+    return result.node;
   }
 }
