@@ -9,6 +9,7 @@
  */
 
 import type {
+  CacheData,
   FileData,
   FileMetaData,
   FileStats,
@@ -35,20 +36,29 @@ type MixedNode = FileNode | DirectoryNode;
 export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTarkets: WeakMap<FileNode, Path> = new WeakMap();
   +#rootDir: Path;
-  +#rootNode: DirectoryNode = new Map();
+  #rootNode: DirectoryNode = new Map();
 
-  constructor({rootDir, files}: {rootDir: Path, files: FileData}) {
+  constructor({rootDir, files}: {rootDir: Path, files?: FileData}) {
     this.#rootDir = rootDir;
-    this.bulkAddOrModify(files);
+    if (files != null) {
+      this.bulkAddOrModify(files);
+    }
   }
 
-  getSerializableSnapshot(): FileData {
-    return new Map(
-      Array.from(
-        this._metadataIterator(this.#rootNode, {includeSymlinks: true}),
-        ({normalPath, metadata}) => [normalPath, [...metadata]],
-      ),
-    );
+  getSerializableSnapshot(): CacheData['fileSystemData'] {
+    return this._cloneTree(this.#rootNode);
+  }
+
+  static fromDeserializedSnapshot({
+    rootDir,
+    fileSystemData,
+  }: {
+    rootDir: string,
+    fileSystemData: DirectoryNode,
+  }): TreeFS {
+    const tfs = new TreeFS({rootDir});
+    tfs.#rootNode = fileSystemData;
+    return tfs;
   }
 
   getModuleName(mixedPath: Path): ?string {
@@ -547,5 +557,17 @@ export default class TreeFS implements MutableFileSystem {
       return null;
     }
     return result.node;
+  }
+
+  _cloneTree(root: DirectoryNode): DirectoryNode {
+    const clone: DirectoryNode = new Map();
+    for (const [name, node] of root) {
+      if (node instanceof Map) {
+        clone.set(name, this._cloneTree(node));
+      } else {
+        clone.set(name, [...node]);
+      }
+    }
+    return clone;
   }
 }
