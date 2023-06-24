@@ -152,8 +152,7 @@ async function getTransformFn(
       // TODO: Check delta changes to avoid having to look over all files each time
       // this is a massive performance boost.
 
-      // Search against all files, this is very expensive.
-      // TODO: Maybe we could let the user specify which root to check against.
+      // Search against all files in a subtree.
       const files = graph.matchFilesWithContext(requireContext.from, {
         filter: requireContext.filter,
         recursive: requireContext.recursive,

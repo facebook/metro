@@ -146,12 +146,20 @@ export default class TreeFS implements MutableFileSystem {
     };
   }
 
-  matchFiles(pattern: RegExp | string): Array<Path> {
+  matchFiles(
+    pattern: RegExp | string,
+    opts: $ReadOnly<{follow?: boolean}> = {},
+  ): Array<Path> {
     const regexpPattern =
       pattern instanceof RegExp ? pattern : new RegExp(pattern);
     const files = [];
     const rootDir = this.#rootDir;
-    for (const filePath of this._pathIterator()) {
+    for (const filePath of this._pathIterator(this.#rootNode, {
+      follow: opts.follow ?? false,
+      pathSep: path.sep,
+      recursive: true,
+      subtreeOnly: false,
+    })) {
       const absolutePath = fastPath.resolve(rootDir, filePath);
       if (regexpPattern.test(absolutePath)) {
         files.push(absolutePath);
@@ -172,6 +180,8 @@ export default class TreeFS implements MutableFileSystem {
       recursive: boolean,
       /* Filter relative paths against a pattern. */
       filter: RegExp,
+      /* Follow symlinks to directories when enumerating paths. */
+      follow: boolean,
     }>,
   ): Array<Path> {
     const normalRoot = this._normalizePath(root);
@@ -191,11 +201,11 @@ export default class TreeFS implements MutableFileSystem {
     const files = [];
     const prefix = './';
 
-    for (const relativePosixPath of this._pathIterator({
+    for (const relativePosixPath of this._pathIterator(contextRoot, {
       pathSep: '/',
       recursive: context.recursive,
-      rootNode: contextRoot,
       subtreeOnly: true,
+      follow: context.follow,
     })) {
       if (
         context.filter.test(
@@ -434,55 +444,45 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  *_pathIterator({
-    pathSep = path.sep,
-    recursive = true,
-    rootNode,
-    subtreeOnly = false,
-  }: {
-    pathSep?: string,
-    recursive?: boolean,
-    rootNode?: DirectoryNode,
-    subtreeOnly?: boolean,
-  } = {}): Iterable<Path> {
+  /**
+   * Enumerate paths under a given node, including symlinks and through
+   * symlinks (if `follow` is enabled).
+   */
+  *_pathIterator(
+    rootNode: DirectoryNode,
+    opts: $ReadOnly<{
+      pathSep: string,
+      recursive: boolean,
+      follow: boolean,
+      subtreeOnly: boolean,
+    }>,
+    pathPrefix: string = '',
+  ): Iterable<Path> {
+    const prefixWithSep =
+      pathPrefix === '' ? pathPrefix : pathPrefix + opts.pathSep;
     for (const [name, node] of rootNode ?? this.#rootNode) {
-      if (subtreeOnly && name === '..') {
+      if (opts.subtreeOnly && name === '..') {
         continue;
       }
+      const nodePath = prefixWithSep + name;
+
       if (Array.isArray(node)) {
-        yield name;
+        yield nodePath;
       } else if (typeof node === 'string') {
         const resolved = this._lookupByNormalPath(node);
         if (resolved == null) {
           continue;
         }
         const target = resolved.node;
-        if (target instanceof Map) {
-          if (!recursive) {
-            continue;
-          }
-          // symlink points to a directory - iterate over its contents
-          for (const file of this._pathIterator({
-            pathSep,
-            recursive,
-            rootNode: target,
-            subtreeOnly,
-          })) {
-            yield name + pathSep + file;
-          }
-        } else {
+        if (!(target instanceof Map)) {
           // symlink points to a file - report it
-          yield name;
+          yield nodePath;
+        } else if (opts.recursive && opts.follow) {
+          // symlink points to a directory - iterate over its contents
+          yield* this._pathIterator(target, opts, nodePath);
         }
-      } else if (recursive) {
-        for (const file of this._pathIterator({
-          pathSep,
-          recursive,
-          rootNode: node,
-          subtreeOnly,
-        })) {
-          yield name + pathSep + file;
-        }
+      } else if (opts.recursive) {
+        yield* this._pathIterator(node, opts, nodePath);
       }
     }
   }
