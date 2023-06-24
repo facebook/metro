@@ -174,22 +174,20 @@ export interface FileSystem {
    */
   linkStats(file: Path): FileStats | null;
 
-  matchFiles(pattern: RegExp | string): Path[];
-
-  /**
-   * Given a search context, return a list of file paths matching the query.
-   * The query matches against normalized paths which start with `./`,
-   * for example: `a/b.js` -> `./a/b.js`
-   */
-  matchFilesWithContext(
-    root: Path,
-    context: Readonly<{
-      /* Should search for files recursively. */
-      recursive: boolean;
-      /* Filter relative paths against a pattern. */
-      filter: RegExp;
-    }>,
-  ): Path[];
+  matchFiles(opts: {
+    /* Filter relative paths against a pattern. */
+    filter?: RegExp | null;
+    /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
+    filterCompareAbsolute?: boolean;
+    /* `filter` is applied against posix-delimited paths, even on Windows. (default: false) */
+    filterComparePosix?: boolean;
+    /* Follow symlinks when enumerating paths. (default: false) */
+    follow?: boolean;
+    /* Should search for files recursively. (default: true) */
+    recursive?: boolean;
+    /* Match files under a given root, or null for all files */
+    rootDir?: Path | null;
+  }): Iterable<Path>;
 }
 
 export type Glob = string;

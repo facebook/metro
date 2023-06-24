@@ -283,7 +283,7 @@ describe('HasteMap', () => {
       // Kiwi!
     `;
     const {fileSystem} = await new HasteMap(config).build();
-    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
+    expect([...fileSystem.matchFiles({filter: /Kiwi/})]).toEqual([]);
   });
 
   it('ignores vcs directories without ignore pattern', async () => {
@@ -291,7 +291,7 @@ describe('HasteMap', () => {
       // test
     `;
     const {fileSystem} = await new HasteMap(defaultConfig).build();
-    expect(fileSystem.matchFiles('.git')).toEqual([]);
+    expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
   it('ignores vcs directories with ignore pattern regex', async () => {
@@ -304,8 +304,8 @@ describe('HasteMap', () => {
       // test
     `;
     const {fileSystem} = await new HasteMap(config).build();
-    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
-    expect(fileSystem.matchFiles('.git')).toEqual([]);
+    expect([...fileSystem.matchFiles({filter: /Kiwi/})]).toEqual([]);
+    expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
   it('throw on ignore pattern except for regex', async () => {

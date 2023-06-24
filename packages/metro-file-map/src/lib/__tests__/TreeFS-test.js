@@ -143,27 +143,34 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
-  describe('matchFilesWithContext', () => {
+  describe('matchFiles', () => {
     test('non-recursive, skipping deep paths', () => {
       expect(
-        tfs.matchFilesWithContext(p('/project'), {
-          filter: new RegExp(
-            // Test starting with `./` since this is mandatory for parity with Webpack.
-            /^\.\/.*/,
-          ),
-          follow: true,
-          recursive: false,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(
+              // Test starting with `./` since this is mandatory for parity with Webpack.
+              /^\.\/.*/,
+            ),
+            filterComparePosix: true,
+            follow: true,
+            recursive: false,
+            rootDir: p('/project'),
+          }),
+        ),
       ).toEqual([p('/project/bar.js')]);
     });
 
     test('inner directory', () => {
       expect(
-        tfs.matchFilesWithContext(p('/project/foo'), {
-          filter: new RegExp(/.*/),
-          follow: true,
-          recursive: true,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/.*/),
+            follow: true,
+            recursive: true,
+            rootDir: p('/project/foo'),
+          }),
+        ),
       ).toEqual([
         p('/project/foo/another.js'),
         p('/project/foo/owndir/another.js'),
@@ -176,21 +183,27 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
     test('outside rootDir', () => {
       expect(
-        tfs.matchFilesWithContext(p('/outside'), {
-          filter: new RegExp(/.*/),
-          follow: true,
-          recursive: true,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/.*/),
+            follow: true,
+            recursive: true,
+            rootDir: p('/outside'),
+          }),
+        ),
       ).toEqual([p('/outside/external.js')]);
     });
 
     test('recursive', () => {
       expect(
-        tfs.matchFilesWithContext(p('/project'), {
-          filter: new RegExp(/.*/),
-          follow: true,
-          recursive: true,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/.*/),
+            follow: true,
+            recursive: true,
+            rootDir: p('/project'),
+          }),
+        ),
       ).toEqual([
         p('/project/foo/another.js'),
         p('/project/foo/owndir/another.js'),
@@ -212,11 +225,14 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
     test('recursive, no follow', () => {
       expect(
-        tfs.matchFilesWithContext(p('/project'), {
-          filter: new RegExp(/.*/),
-          follow: false,
-          recursive: true,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/.*/),
+            follow: false,
+            recursive: true,
+            rootDir: p('/project'),
+          }),
+        ),
       ).toEqual([
         p('/project/foo/another.js'),
         p('/project/foo/link-to-bar.js'),
@@ -227,11 +243,15 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
     test('recursive with filter', () => {
       expect(
-        tfs.matchFilesWithContext(p('/project'), {
-          filter: new RegExp(/\/another\.js/),
-          follow: true,
-          recursive: true,
-        }),
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/\/another\.js/),
+            filterComparePosix: true,
+            follow: true,
+            recursive: true,
+            rootDir: p('/project'),
+          }),
+        ),
       ).toEqual([
         p('/project/foo/another.js'),
         p('/project/foo/owndir/another.js'),
@@ -239,6 +259,51 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         p('/project/link-to-foo/owndir/another.js'),
       ]);
     });
+
+    test('outside root, null rootDir returns matches', () => {
+      expect(
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/external/),
+            follow: false,
+            recursive: true,
+            rootDir: null,
+          }),
+        ),
+      ).toEqual([p('/outside/external.js')]);
+    });
+
+    test('outside root, rootDir set to root has no matches', () => {
+      expect(
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(/external/),
+            follow: false,
+            recursive: true,
+            rootDir: '',
+          }),
+        ),
+      ).toEqual([]);
+    });
+  });
+
+  test('compare absolute', () => {
+    expect(
+      Array.from(
+        tfs.matchFiles({
+          filter: new RegExp(/project/),
+          filterCompareAbsolute: true,
+          follow: false,
+          recursive: true,
+          rootDir: null,
+        }),
+      ),
+    ).toEqual([
+      p('/project/foo/another.js'),
+      p('/project/foo/link-to-bar.js'),
+      p('/project/foo/link-to-another.js'),
+      p('/project/bar.js'),
+    ]);
   });
 
   describe('mutation', () => {

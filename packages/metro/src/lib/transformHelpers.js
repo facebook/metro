@@ -153,10 +153,12 @@ async function getTransformFn(
       // this is a massive performance boost.
 
       // Search against all files in a subtree.
-      const files = graph.matchFilesWithContext(requireContext.from, {
-        filter: requireContext.filter,
-        recursive: requireContext.recursive,
-      });
+      const files = Array.from(
+        graph.matchFilesWithContext(requireContext.from, {
+          filter: requireContext.filter,
+          recursive: requireContext.recursive,
+        }),
+      );
 
       const template = getContextModuleTemplate(
         requireContext.mode,

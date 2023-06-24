@@ -298,9 +298,12 @@ class DependencyGraph extends EventEmitter {
       /* Filter relative paths against a pattern. */
       filter: RegExp,
     }>,
-  ): string[] {
-    return this._fileSystem.matchFilesWithContext(from, {
-      ...context,
+  ): Iterable<string> {
+    return this._fileSystem.matchFiles({
+      rootDir: from,
+      recursive: context.recursive,
+      filter: context.filter,
+      filterComparePosix: true,
       follow: true,
     });
   }
