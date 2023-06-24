@@ -32,11 +32,13 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       rootDir: p('/project'),
       files: new Map([
         [p('foo/another.js'), ['', 123, 0, 0, '', '', 0]],
+        [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
         [p('foo/link-to-bar.js'), ['', 0, 0, 0, '', '', p('../bar.js')]],
         [p('foo/link-to-another.js'), ['', 0, 0, 0, '', '', p('another.js')]],
         [p('../outside/external.js'), ['', 0, 0, 0, '', '', 0]],
         [p('bar.js'), ['', 234, 0, 0, '', '', 0]],
-        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./foo')]],
+        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('././abnormal/../foo')]],
+        [p('abs-link-out'), ['', 456, 0, 0, '', '', p('/outside/./baz/..')]],
         [p('root'), ['', 0, 0, 0, '', '', '..']],
         [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
         [p('link-to-self'), ['', 123, 0, 0, '', '', p('./link-to-self')]],
@@ -129,10 +131,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
         ]),
         removedFiles: new Set([
+          p('foo/owndir'),
           p('foo/link-to-bar.js'),
           p('foo/link-to-another.js'),
           p('../outside/external.js'),
           p('bar.js'),
+          p('abs-link-out'),
           p('root'),
         ]),
       });
@@ -162,6 +166,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         }),
       ).toEqual([
         p('/project/foo/another.js'),
+        p('/project/foo/owndir/another.js'),
+        p('/project/foo/owndir/link-to-bar.js'),
+        p('/project/foo/owndir/link-to-another.js'),
         p('/project/foo/link-to-bar.js'),
         p('/project/foo/link-to-another.js'),
       ]);
@@ -186,12 +193,19 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         }),
       ).toEqual([
         p('/project/foo/another.js'),
+        p('/project/foo/owndir/another.js'),
+        p('/project/foo/owndir/link-to-bar.js'),
+        p('/project/foo/owndir/link-to-another.js'),
         p('/project/foo/link-to-bar.js'),
         p('/project/foo/link-to-another.js'),
         p('/project/bar.js'),
         p('/project/link-to-foo/another.js'),
+        p('/project/link-to-foo/owndir/another.js'),
+        p('/project/link-to-foo/owndir/link-to-bar.js'),
+        p('/project/link-to-foo/owndir/link-to-another.js'),
         p('/project/link-to-foo/link-to-bar.js'),
         p('/project/link-to-foo/link-to-another.js'),
+        p('/project/abs-link-out/external.js'),
         p('/project/root/outside/external.js'),
       ]);
     });
@@ -220,7 +234,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         }),
       ).toEqual([
         p('/project/foo/another.js'),
+        p('/project/foo/owndir/another.js'),
         p('/project/link-to-foo/another.js'),
+        p('/project/link-to-foo/owndir/another.js'),
       ]);
     });
   });

@@ -458,6 +458,7 @@ export default class TreeFS implements MutableFileSystem {
       subtreeOnly: boolean,
     }>,
     pathPrefix: string = '',
+    followedLinks: $ReadOnlySet<FileMetaData> = new Set(),
   ): Iterable<Path> {
     const pathSep = opts.alwaysYieldPosix ? '/' : path.sep;
     const prefixWithSep = pathPrefix === '' ? pathPrefix : pathPrefix + pathSep;
@@ -498,17 +499,27 @@ export default class TreeFS implements MutableFileSystem {
             // Symlink goes nowhere, nothing to report.
             continue;
           }
-          if (!(resolved.node instanceof Map)) {
+          const target = resolved.node;
+          if (!(target instanceof Map)) {
             // Symlink points to a file, just yield the path of the symlink.
             yield nodePath;
-          } else if (opts.recursive && opts.follow) {
+          } else if (
+            opts.recursive &&
+            opts.follow &&
+            !followedLinks.has(node)
+          ) {
             // Symlink points to a directory - iterate over its contents using
             // the path where we found the symlink as a prefix.
-            yield* this._pathIterator(resolved.node, opts, nodePath);
+            yield* this._pathIterator(
+              target,
+              opts,
+              nodePath,
+              new Set([...followedLinks, node]),
+            );
           }
         }
       } else if (opts.recursive) {
-        yield* this._pathIterator(node, opts, nodePath);
+        yield* this._pathIterator(node, opts, nodePath, followedLinks);
       }
     }
   }
