@@ -147,6 +147,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
             // Test starting with `./` since this is mandatory for parity with Webpack.
             /^\.\/.*/,
           ),
+          follow: true,
           recursive: false,
         }),
       ).toEqual([p('/project/bar.js')]);
@@ -156,6 +157,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       expect(
         tfs.matchFilesWithContext(p('/project/foo'), {
           filter: new RegExp(/.*/),
+          follow: true,
           recursive: true,
         }),
       ).toEqual([
@@ -169,6 +171,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       expect(
         tfs.matchFilesWithContext(p('/outside'), {
           filter: new RegExp(/.*/),
+          follow: true,
           recursive: true,
         }),
       ).toEqual([p('/outside/external.js')]);
@@ -178,6 +181,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       expect(
         tfs.matchFilesWithContext(p('/project'), {
           filter: new RegExp(/.*/),
+          follow: true,
           recursive: true,
         }),
       ).toEqual([
@@ -192,10 +196,26 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ]);
     });
 
+    test('recursive, no follow', () => {
+      expect(
+        tfs.matchFilesWithContext(p('/project'), {
+          filter: new RegExp(/.*/),
+          follow: false,
+          recursive: true,
+        }),
+      ).toEqual([
+        p('/project/foo/another.js'),
+        p('/project/foo/link-to-bar.js'),
+        p('/project/foo/link-to-another.js'),
+        p('/project/bar.js'),
+      ]);
+    });
+
     test('recursive with filter', () => {
       expect(
         tfs.matchFilesWithContext(p('/project'), {
           filter: new RegExp(/\/another\.js/),
+          follow: true,
           recursive: true,
         }),
       ).toEqual([

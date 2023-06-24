@@ -186,7 +186,10 @@ export interface FileSystem {
    */
   linkStats(file: Path): ?FileStats;
 
-  matchFiles(pattern: RegExp | string): Array<Path>;
+  matchFiles(
+    pattern: RegExp | string,
+    opts?: $ReadOnly<{follow?: boolean}>,
+  ): Array<Path>;
 
   /**
    * Given a search context, return a list of file paths matching the query.
@@ -200,6 +203,8 @@ export interface FileSystem {
       recursive: boolean,
       /* Filter relative paths against a pattern. */
       filter: RegExp,
+      /* Follow symlinks when enumerating paths. */
+      follow: boolean,
     }>,
   ): Array<Path>;
 }

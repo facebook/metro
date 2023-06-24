@@ -299,7 +299,10 @@ class DependencyGraph extends EventEmitter {
       filter: RegExp,
     }>,
   ): string[] {
-    return this._fileSystem.matchFilesWithContext(from, context);
+    return this._fileSystem.matchFilesWithContext(from, {
+      ...context,
+      follow: true,
+    });
   }
 
   resolveDependency(
