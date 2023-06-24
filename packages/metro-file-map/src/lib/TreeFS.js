@@ -127,8 +127,9 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   getAllFiles(): Array<Path> {
+    const rootDir = this.#rootDir;
     return Array.from(this._regularFileIterator(), normalPath =>
-      this._normalToAbsolutePath(normalPath),
+      fastPath.resolve(rootDir, normalPath),
     );
   }
 
@@ -149,8 +150,9 @@ export default class TreeFS implements MutableFileSystem {
     const regexpPattern =
       pattern instanceof RegExp ? pattern : new RegExp(pattern);
     const files = [];
+    const rootDir = this.#rootDir;
     for (const filePath of this._pathIterator()) {
-      const absolutePath = this._normalToAbsolutePath(filePath);
+      const absolutePath = fastPath.resolve(rootDir, filePath);
       if (regexpPattern.test(absolutePath)) {
         files.push(absolutePath);
       }
@@ -421,14 +423,6 @@ export default class TreeFS implements MutableFileSystem {
     return path.isAbsolute(relativeOrAbsolutePath)
       ? fastPath.relative(this.#rootDir, relativeOrAbsolutePath)
       : path.normalize(relativeOrAbsolutePath);
-  }
-
-  _normalToAbsolutePath(normalPath: Path): Path {
-    if (normalPath[0] === '.') {
-      return path.normalize(this.#rootDir + path.sep + normalPath);
-    } else {
-      return this.#rootDir + path.sep + normalPath;
-    }
   }
 
   *_regularFileIterator(): Iterator<Path> {
