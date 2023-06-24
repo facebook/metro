@@ -21,10 +21,9 @@ import * as fastPath from '../lib/fast_path';
 import invariant from 'invariant';
 import path from 'path';
 
-type DirectoryNode = Map<string, AnyNode>;
+type DirectoryNode = Map<string, MixedNode>;
 type FileNode = FileMetaData;
-type LinkNode = string;
-type AnyNode = FileNode | DirectoryNode | LinkNode;
+type MixedNode = FileNode | DirectoryNode;
 
 // Terminology:
 //
@@ -34,8 +33,9 @@ type AnyNode = FileNode | DirectoryNode | LinkNode;
 // canonicalPath - a root-relative, normalised, real path (no symlinks in dirname)
 
 export default class TreeFS implements MutableFileSystem {
-  +#rootDir: Path;
+  +#cachedNormalSymlinkTarkets: WeakMap<FileNode, Path> = new WeakMap();
   +#files: FileData;
+  +#rootDir: Path;
   +#rootNode: DirectoryNode = new Map();
 
   constructor({rootDir, files}: {rootDir: Path, files: FileData}) {
@@ -128,8 +128,9 @@ export default class TreeFS implements MutableFileSystem {
 
   getAllFiles(): Array<Path> {
     const rootDir = this.#rootDir;
-    return Array.from(this._regularFileIterator(), normalPath =>
-      fastPath.resolve(rootDir, normalPath),
+    return Array.from(
+      this._metadataIterator(this.#rootNode, {includeSymlinks: false}),
+      ({normalPath}) => fastPath.resolve(rootDir, normalPath),
     );
   }
 
@@ -155,8 +156,9 @@ export default class TreeFS implements MutableFileSystem {
     const files = [];
     const rootDir = this.#rootDir;
     for (const filePath of this._pathIterator(this.#rootNode, {
+      alwaysYieldPosix: false,
+      canonicalPathOfRoot: '',
       follow: opts.follow ?? false,
-      pathSep: path.sep,
       recursive: true,
       subtreeOnly: false,
     })) {
@@ -202,10 +204,11 @@ export default class TreeFS implements MutableFileSystem {
     const prefix = './';
 
     for (const relativePosixPath of this._pathIterator(contextRoot, {
-      pathSep: '/',
+      alwaysYieldPosix: true,
+      canonicalPathOfRoot: rootRealPath,
+      follow: context.follow,
       recursive: context.recursive,
       subtreeOnly: true,
-      follow: context.follow,
     })) {
       if (
         context.filter.test(
@@ -292,28 +295,7 @@ export default class TreeFS implements MutableFileSystem {
         lastDir = dirname;
         directoryNode = lookup.node;
       }
-
-      if (metadata[H.SYMLINK] !== 0) {
-        const symlinkTarget = metadata[H.SYMLINK];
-        invariant(
-          typeof symlinkTarget === 'string',
-          'expected symlink targets to be populated',
-        );
-        let rootRelativeSymlinkTarget;
-        if (path.isAbsolute(symlinkTarget)) {
-          rootRelativeSymlinkTarget = fastPath.relative(
-            this.#rootDir,
-            symlinkTarget,
-          );
-        } else {
-          rootRelativeSymlinkTarget = path.normalize(
-            path.join(path.dirname(normalPath), symlinkTarget),
-          );
-        }
-        directoryNode.set(basename, rootRelativeSymlinkTarget);
-      } else {
-        directoryNode.set(basename, metadata);
-      }
+      directoryNode.set(basename, metadata);
     }
   }
 
@@ -349,7 +331,7 @@ export default class TreeFS implements MutableFileSystem {
       makeDirectories?: boolean,
     } = {followLeaf: true, makeDirectories: false},
   ): ?(
-    | {canonicalPath: string, node: AnyNode, parentNode: DirectoryNode}
+    | {canonicalPath: string, node: MixedNode, parentNode: DirectoryNode}
     | {canonicalPath: string, node: DirectoryNode, parentNode: null}
   ) {
     // We'll update the target if we hit a symlink.
@@ -387,7 +369,9 @@ export default class TreeFS implements MutableFileSystem {
       // we must follow.
       if (
         isLastSegment &&
-        (typeof segmentNode !== 'string' || opts.followLeaf === false)
+        (segmentNode instanceof Map ||
+          segmentNode[H.SYMLINK] === 0 ||
+          opts.followLeaf === false)
       ) {
         return {
           canonicalPath: targetNormalPath,
@@ -399,15 +383,25 @@ export default class TreeFS implements MutableFileSystem {
       // If the next node is a directory, go into it
       if (segmentNode instanceof Map) {
         parentNode = segmentNode;
-      } else if (Array.isArray(segmentNode)) {
-        // Regular file in a directory path
-        return null;
-      } else if (typeof segmentNode === 'string') {
-        // segmentNode is a normalised symlink target. Append any subsequent
-        // path segments to the symlink target, and reset with our new target.
+      } else {
+        if (segmentNode[H.SYMLINK] === 0) {
+          // Regular file in a directory path
+          return null;
+        }
+
+        // Symlink in a directory path
+        const normalSymlinkTarget = this._resolveSymlinkTargetToNormalPath(
+          segmentNode,
+          isLastSegment
+            ? targetNormalPath
+            : targetNormalPath.slice(0, fromIdx - 1),
+        );
+
+        // Append any subsequent path segments to the symlink target, and reset
+        // with our new target.
         targetNormalPath = isLastSegment
-          ? segmentNode
-          : segmentNode + path.sep + targetNormalPath.slice(fromIdx);
+          ? normalSymlinkTarget
+          : normalSymlinkTarget + path.sep + targetNormalPath.slice(fromIdx);
         if (seen == null) {
           // Optimisation: set this lazily only when we've encountered a symlink
           seen = new Set([requestedNormalPath]);
@@ -429,19 +423,25 @@ export default class TreeFS implements MutableFileSystem {
     };
   }
 
+  *_metadataIterator(
+    rootNode: DirectoryNode,
+    opts: {includeSymlinks: boolean},
+    prefix: string = '',
+  ): Iterator<{normalPath: string, metadata: FileMetaData}> {
+    for (const [name, node] of rootNode) {
+      const prefixedName = prefix === '' ? name : prefix + path.sep + name;
+      if (node instanceof Map) {
+        yield* this._metadataIterator(node, opts, prefixedName);
+      } else if (node[H.SYMLINK] === 0 || opts.includeSymlinks) {
+        yield {normalPath: prefixedName, metadata: node};
+      }
+    }
+  }
+
   _normalizePath(relativeOrAbsolutePath: Path): string {
     return path.isAbsolute(relativeOrAbsolutePath)
       ? fastPath.relative(this.#rootDir, relativeOrAbsolutePath)
       : path.normalize(relativeOrAbsolutePath);
-  }
-
-  *_regularFileIterator(): Iterator<Path> {
-    for (const [normalPath, metadata] of this.#files) {
-      if (metadata[H.SYMLINK] !== 0) {
-        continue;
-      }
-      yield normalPath;
-    }
   }
 
   /**
@@ -451,40 +451,91 @@ export default class TreeFS implements MutableFileSystem {
   *_pathIterator(
     rootNode: DirectoryNode,
     opts: $ReadOnly<{
-      pathSep: string,
-      recursive: boolean,
+      alwaysYieldPosix: boolean,
+      canonicalPathOfRoot: string,
       follow: boolean,
+      recursive: boolean,
       subtreeOnly: boolean,
     }>,
     pathPrefix: string = '',
   ): Iterable<Path> {
-    const prefixWithSep =
-      pathPrefix === '' ? pathPrefix : pathPrefix + opts.pathSep;
+    const pathSep = opts.alwaysYieldPosix ? '/' : path.sep;
+    const prefixWithSep = pathPrefix === '' ? pathPrefix : pathPrefix + pathSep;
     for (const [name, node] of rootNode ?? this.#rootNode) {
       if (opts.subtreeOnly && name === '..') {
         continue;
       }
-      const nodePath = prefixWithSep + name;
 
-      if (Array.isArray(node)) {
-        yield nodePath;
-      } else if (typeof node === 'string') {
-        const resolved = this._lookupByNormalPath(node);
-        if (resolved == null) {
-          continue;
-        }
-        const target = resolved.node;
-        if (!(target instanceof Map)) {
-          // symlink points to a file - report it
+      const nodePath = prefixWithSep + name;
+      if (!(node instanceof Map)) {
+        if (node[H.SYMLINK] === 0) {
+          // regular file
           yield nodePath;
-        } else if (opts.recursive && opts.follow) {
-          // symlink points to a directory - iterate over its contents
-          yield* this._pathIterator(target, opts, nodePath);
+        } else {
+          // symlink
+          const nodePathWithSystemSeparators =
+            pathSep === path.sep
+              ? nodePath
+              : nodePath.replaceAll(pathSep, path.sep);
+
+          // Although both paths are normal, the node path may begin '..' so we
+          // can't simply concatenate.
+          const normalPathOfSymlink = path.join(
+            opts.canonicalPathOfRoot,
+            nodePathWithSystemSeparators,
+          );
+
+          // We can't resolve the symlink directly here because we only have
+          // its normal path, and we need a canonical path for resolution
+          // (imagine our normal path contains a symlink 'bar' -> '.', and we
+          // are at /foo/bar/baz where baz -> '..' - that should resolve to
+          // /foo, not /foo/bar). We *can* use _lookupByNormalPath to walk to
+          // the canonical symlink, and then to its target.
+          const resolved = this._lookupByNormalPath(normalPathOfSymlink, {
+            followLeaf: true,
+          });
+          if (resolved == null) {
+            // Symlink goes nowhere, nothing to report.
+            continue;
+          }
+          if (!(resolved.node instanceof Map)) {
+            // Symlink points to a file, just yield the path of the symlink.
+            yield nodePath;
+          } else if (opts.recursive && opts.follow) {
+            // Symlink points to a directory - iterate over its contents using
+            // the path where we found the symlink as a prefix.
+            yield* this._pathIterator(resolved.node, opts, nodePath);
+          }
         }
       } else if (opts.recursive) {
         yield* this._pathIterator(node, opts, nodePath);
       }
     }
+  }
+
+  _resolveSymlinkTargetToNormalPath(
+    symlinkNode: FileMetaData,
+    canonicalPathOfSymlink: Path,
+  ): Path {
+    let normalSymlinkTarget = this.#cachedNormalSymlinkTarkets.get(symlinkNode);
+    if (normalSymlinkTarget != null) {
+      return normalSymlinkTarget;
+    }
+
+    const literalSymlinkTarget = symlinkNode[H.SYMLINK];
+    invariant(
+      typeof literalSymlinkTarget === 'string',
+      'Expected symlink target to be populated.',
+    );
+    if (path.isAbsolute(literalSymlinkTarget)) {
+      normalSymlinkTarget = path.relative(this.#rootDir, literalSymlinkTarget);
+    } else {
+      normalSymlinkTarget = path.normalize(
+        path.join(path.dirname(canonicalPathOfSymlink), literalSymlinkTarget),
+      );
+    }
+    this.#cachedNormalSymlinkTarkets.set(symlinkNode, normalSymlinkTarget);
+    return normalSymlinkTarget;
   }
 
   _getFileData(
