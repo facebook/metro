@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as path from 'path';
+import {serialize} from 'v8';
 
 jest.useRealTimers();
 
@@ -153,7 +154,13 @@ jest.mock('fs', () => ({
 }));
 
 const object = data => Object.assign(Object.create(null), data);
-const createMap = obj => new Map(Object.keys(obj).map(key => [key, obj[key]]));
+const createMap = obj => new Map(Object.entries(obj));
+const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
+  expect(fileSystem.getDifference(fileData)).toEqual({
+    changedFiles: new Map(),
+    removedFiles: new Set(),
+  });
+};
 
 // Jest toEqual does not match Map instances from different contexts
 // This normalizes them for the uses cases in this test
@@ -406,11 +413,12 @@ describe('HasteMap', () => {
       mocksPattern: '__mocks__',
     });
 
-    await hasteMap.build();
+    const {fileSystem} = await hasteMap.build();
 
     expect(cacheContent.clocks).toEqual(mockClocks);
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',
@@ -581,7 +589,7 @@ describe('HasteMap', () => {
 
         await hasteMap.build();
 
-        expect(cacheContent.files).toEqual(
+        expect(
           createMap({
             [path.join('fruits', 'Banana.js')]: [
               'Banana',
@@ -693,11 +701,14 @@ describe('HasteMap', () => {
       roots: [...defaultConfig.roots, path.join('/', 'project', 'video')],
     });
 
-    await hasteMap.build();
+    const {fileSystem} = await hasteMap.build();
     const data = cacheContent;
 
     expect(data.map.get('IRequireAVideo')).toBeDefined();
-    expect(data.files.get(path.join('video', 'video.mp4'))).toBeDefined();
+    expect(fileSystem.linkStats(path.join('video', 'video.mp4'))).toEqual({
+      fileType: 'f',
+      modifiedTime: 32,
+    });
     expect(fs.readFileSync.mock.calls.map(call => call[0])).not.toContain(
       path.join('video', 'video.mp4'),
     );
@@ -716,15 +727,15 @@ describe('HasteMap', () => {
       retainAllFiles: true,
     });
 
-    await hasteMap.build();
+    const {fileSystem} = await hasteMap.build();
 
     // Expect the node module to be part of files but make sure it wasn't
     // read.
     expect(
-      cacheContent.files.get(
+      fileSystem.linkStats(
         path.join('fruits', 'node_modules', 'fbjs', 'fbjs.js'),
       ),
-    ).toEqual(['', 32, 42, 0, [], null, 0]);
+    ).toEqual({fileType: 'f', modifiedTime: 32});
 
     expect(cacheContent.map.get('fbjs')).not.toBeDefined();
 
@@ -835,9 +846,10 @@ describe('HasteMap', () => {
       const Blackberry = require("Blackberry");
     `;
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Strawberry.android.js')]: [
           'Strawberry',
@@ -915,13 +927,22 @@ describe('HasteMap', () => {
     // Expect no fs reads, because there have been no changes
     expect(fs.readFileSync.mock.calls.length).toBe(0);
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
-    expect(deepNormalize(data.files)).toEqual(initialData.files);
+    expect(serialize(data.fileSystem)).toEqual(
+      serialize(initialData.fileSystem),
+    );
     expect(deepNormalize(data.map)).toEqual(initialData.map);
   });
 
   it('only does minimal file system access when files change', async () => {
     // Run with a cold cache initially
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem: initialFileSystem} = await new HasteMap(
+      defaultConfig,
+    ).build();
+
+    expect(
+      initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+    ).toEqual(['Strawberry']);
+
     const initialData = cacheContent;
     fs.readFileSync.mockClear();
     expect(mockCacheManager.read).toHaveBeenCalledTimes(1);
@@ -939,7 +960,7 @@ describe('HasteMap', () => {
       vegetables: 'c:fake-clock:2',
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
     const data = cacheContent;
 
     expect(mockCacheManager.read).toHaveBeenCalledTimes(2);
@@ -950,18 +971,9 @@ describe('HasteMap', () => {
 
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
 
-    const files = new Map(initialData.files);
-    files.set(path.join('fruits', 'Banana.js'), [
-      'Banana',
-      32,
-      42,
-      1,
-      'Kiwi',
-      null,
-      0,
-    ]);
-
-    expect(deepNormalize(data.files)).toEqual(files);
+    expect(
+      fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+    ).toEqual(['Kiwi']);
 
     const map = new Map(initialData.map);
     expect(deepNormalize(data.map)).toEqual(map);
@@ -984,16 +996,13 @@ describe('HasteMap', () => {
       vegetables: 'c:fake-clock:2',
     });
 
-    await new HasteMap(defaultConfig).build();
-    const data = cacheContent;
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
 
-    const files = new Map(initialData.files);
-    files.delete(path.join('fruits', 'Banana.js'));
-    expect(deepNormalize(data.files)).toEqual(files);
+    expect(fileSystem.exists(path.join('fruits', 'Banana.js'))).toEqual(false);
 
     const map = new Map(initialData.map);
     map.delete('Banana');
-    expect(deepNormalize(data.map)).toEqual(map);
+    expect(deepNormalize(cacheContent.map)).toEqual(map);
   });
 
   it('correctly handles platform-specific file additions', async () => {
@@ -1258,11 +1267,11 @@ describe('HasteMap', () => {
       };
     });
 
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.files.size).toBe(5);
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
+    expect(fileSystem.getDifference(new Map()).removedFiles.size).toBe(5);
 
     // Ensure this file is not part of the file list.
-    expect(cacheContent.files.get(invalidFilePath)).toBe(undefined);
+    expect(fileSystem.exists(invalidFilePath)).toBe(false);
   });
 
   it('distributes work across workers', async () => {
@@ -1362,11 +1371,13 @@ describe('HasteMap', () => {
       });
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
+
     expect(watchman).toBeCalled();
     expect(node).toBeCalled();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',
@@ -1399,12 +1410,13 @@ describe('HasteMap', () => {
       });
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new HasteMap(defaultConfig).build();
 
     expect(watchman).toBeCalled();
     expect(node).toBeCalled();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',

@@ -143,7 +143,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '4';
+const CACHE_BREAKER = '5';
 
 const CHANGE_INTERVAL = 30;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
@@ -341,30 +341,29 @@ export default class HasteMap extends EventEmitter {
         }
         if (!initialData) {
           debug('Not using a cache');
-          initialData = {
-            files: new Map(),
-            map: new Map(),
-            duplicates: new Map(),
-            clocks: new Map(),
-            mocks: new Map(),
-          };
         } else {
-          debug(
-            'Cache loaded (%d file(s), %d clock(s))',
-            initialData.files.size,
-            initialData.clocks.size,
-          );
+          debug('Cache loaded (%d clock(s))', initialData.clocks.size);
         }
 
         const rootDir = this._options.rootDir;
-        const fileData = initialData.files;
         this._startupPerfLogger?.point('constructFileSystem_start');
-        const fileSystem = new TreeFS({
-          files: fileData,
-          rootDir,
-        });
+        const fileSystem =
+          initialData != null
+            ? TreeFS.fromDeserializedSnapshot({
+                rootDir,
+                // Typed `mixed` because we've read this from an external
+                // source. It'd be too expensive to validate at runtime, so
+                // trust our cache manager that this is correct.
+                // $FlowIgnore
+                fileSystemData: initialData.fileSystemData,
+              })
+            : new TreeFS({rootDir});
         this._startupPerfLogger?.point('constructFileSystem_end');
-        const {map, mocks, duplicates} = initialData;
+        const {map, mocks, duplicates} = initialData ?? {
+          map: new Map(),
+          mocks: new Map(),
+          duplicates: new Map(),
+        };
         const rawModuleMap: RawModuleMap = {
           duplicates,
           map,
@@ -374,7 +373,7 @@ export default class HasteMap extends EventEmitter {
 
         const fileDelta = await this._buildFileDelta({
           fileSystem,
-          clocks: initialData.clocks,
+          clocks: initialData?.clocks ?? new Map(),
         });
 
         await this._applyFileDelta(fileSystem, rawModuleMap, fileDelta);
@@ -386,7 +385,11 @@ export default class HasteMap extends EventEmitter {
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
-        debug('Finished mapping %d files.', fileData.size);
+        debug(
+          'Finished mapping files (%d changes, %d removed).',
+          fileDelta.changedFiles.size,
+          fileDelta.removedFiles.size,
+        );
 
         await this._watch(fileSystem, rawModuleMap);
         return {
@@ -802,7 +805,7 @@ export default class HasteMap extends EventEmitter {
     const {map, duplicates, mocks} = deepCloneRawModuleMap(moduleMap);
     await this._cacheManager.write(
       {
-        files: fileSystem.getSerializableSnapshot(),
+        fileSystemData: fileSystem.getSerializableSnapshot(),
         map,
         clocks: new Map(clocks),
         duplicates,

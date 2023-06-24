@@ -50,7 +50,7 @@ export type CacheData = $ReadOnly<{
   map: RawModuleMap['map'],
   mocks: RawModuleMap['mocks'],
   duplicates: RawModuleMap['duplicates'],
-  files: FileData,
+  fileSystemData: mixed,
 }>;
 
 export type CacheDelta = $ReadOnly<{
@@ -177,7 +177,7 @@ export interface FileSystem {
   };
   getModuleName(file: Path): ?string;
   getRealPath(file: Path): ?string;
-  getSerializableSnapshot(): FileData;
+  getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
 
   /**
