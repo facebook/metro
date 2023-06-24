@@ -147,87 +147,82 @@ export default class TreeFS implements MutableFileSystem {
     };
   }
 
-  matchFiles(
-    pattern: RegExp | string,
-    opts: $ReadOnly<{follow?: boolean}> = {},
-  ): Array<Path> {
-    const regexpPattern =
-      pattern instanceof RegExp ? pattern : new RegExp(pattern);
-    const files = [];
-    const rootDir = this.#rootDir;
-    for (const filePath of this._pathIterator(this.#rootNode, {
-      alwaysYieldPosix: false,
-      canonicalPathOfRoot: '',
-      follow: opts.follow ?? false,
-      recursive: true,
-      subtreeOnly: false,
-    })) {
-      const absolutePath = fastPath.resolve(rootDir, filePath);
-      if (regexpPattern.test(absolutePath)) {
-        files.push(absolutePath);
-      }
-    }
-    return files;
-  }
-
   /**
    * Given a search context, return a list of file paths matching the query.
    * The query matches against normalized paths which start with `./`,
    * for example: `a/b.js` -> `./a/b.js`
    */
-  matchFilesWithContext(
-    root: Path,
-    context: $ReadOnly<{
-      /* Should search for files recursively. */
-      recursive: boolean,
-      /* Filter relative paths against a pattern. */
-      filter: RegExp,
-      /* Follow symlinks to directories when enumerating paths. */
-      follow: boolean,
-    }>,
-  ): Array<Path> {
-    const normalRoot = this._normalizePath(root);
+  *matchFiles({
+    filter = null,
+    filterCompareAbsolute = false,
+    filterComparePosix = false,
+    follow = false,
+    recursive = true,
+    rootDir = null,
+  }: $ReadOnly<{
+    /* Filter relative paths against a pattern. */
+    filter?: ?RegExp,
+    /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
+    filterCompareAbsolute?: boolean,
+    /* `filter` is applied against posix-delimited paths, even on Windows. (default: false) */
+    filterComparePosix?: boolean,
+    /* Follow symlinks when enumerating paths. (default: false) */
+    follow?: boolean,
+    /* Should search for files recursively. (default: true) */
+    recursive?: boolean,
+    /* Match files under a given root, or null for all files */
+    rootDir?: ?Path,
+  }>): Iterable<Path> {
+    const normalRoot = rootDir == null ? '' : this._normalizePath(rootDir);
     const contextRootResult = this._lookupByNormalPath(normalRoot);
     if (!contextRootResult) {
-      return [];
+      return;
     }
     const {canonicalPath: rootRealPath, node: contextRoot} = contextRootResult;
     if (!(contextRoot instanceof Map)) {
-      return [];
+      return;
     }
     const contextRootAbsolutePath =
       rootRealPath === ''
         ? this.#rootDir
         : path.join(this.#rootDir, rootRealPath);
 
-    const files = [];
-    const prefix = './';
+    const prefix = filterComparePosix ? './' : '.' + path.sep;
 
-    for (const relativePosixPath of this._pathIterator(contextRoot, {
-      alwaysYieldPosix: true,
+    const contextRootAbsolutePathForComparison =
+      filterComparePosix && path.sep !== '/'
+        ? contextRootAbsolutePath.replaceAll(path.sep, '/')
+        : contextRootAbsolutePath;
+
+    for (const relativePathForComparison of this._pathIterator(contextRoot, {
+      alwaysYieldPosix: filterComparePosix,
       canonicalPathOfRoot: rootRealPath,
-      follow: context.follow,
-      recursive: context.recursive,
-      subtreeOnly: true,
+      follow,
+      recursive,
+      subtreeOnly: rootDir != null,
     })) {
       if (
-        context.filter.test(
+        filter == null ||
+        filter.test(
           // NOTE(EvanBacon): Ensure files start with `./` for matching purposes
           // this ensures packages work across Metro and Webpack (ex: Storybook for React DOM / React Native).
           // `a/b.js` -> `./a/b.js`
-          prefix + relativePosixPath,
+          filterCompareAbsolute === true
+            ? path.join(
+                contextRootAbsolutePathForComparison,
+                relativePathForComparison,
+              )
+            : prefix + relativePathForComparison,
         )
       ) {
         const relativePath =
-          path.sep === '/'
-            ? relativePosixPath
-            : relativePosixPath.replaceAll('/', path.sep);
+          filterComparePosix === true && path.sep !== '/'
+            ? relativePathForComparison.replaceAll('/', path.sep)
+            : relativePathForComparison;
 
-        files.push(contextRootAbsolutePath + path.sep + relativePath);
+        yield path.join(contextRootAbsolutePath, relativePath);
       }
     }
-
-    return files;
   }
 
   getRealPath(mixedPath: Path): ?string {
@@ -427,7 +422,7 @@ export default class TreeFS implements MutableFileSystem {
     rootNode: DirectoryNode,
     opts: {includeSymlinks: boolean},
     prefix: string = '',
-  ): Iterator<{normalPath: string, metadata: FileMetaData}> {
+  ): Iterable<{normalPath: string, metadata: FileMetaData}> {
     for (const [name, node] of rootNode) {
       const prefixedName = prefix === '' ? name : prefix + path.sep + name;
       if (node instanceof Map) {

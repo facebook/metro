@@ -63,7 +63,7 @@ export function fileMatchesContext(
   context: RequireContext,
 ): boolean {
   // NOTE(EvanBacon): Ensure this logic is synchronized with the similar
-  // functionality in `metro-file-map/src/HasteFS.js` (`matchFilesWithContext()`)
+  // functionality in `metro-file-map/src/lib/TreeFS.js` (`matchFiles()`)
 
   const filePath = path.relative(nullthrows(context.from), testPath);
   const filter = context.filter;

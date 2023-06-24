@@ -47,7 +47,11 @@ test('watchman crawler and node crawler both include dotfiles', async () => {
   ]);
 
   expect(
-    builtHasteMapWithWatchman.fileSystem.matchFiles('.eslintrc.js'),
+    Array.from(
+      builtHasteMapWithWatchman.fileSystem.matchFiles({
+        filter: /\.eslintrc\.js/,
+      }),
+    ),
   ).toHaveLength(1);
 
   expect(builtHasteMapWithWatchman.fileSystem.getAllFiles().sort()).toEqual(
