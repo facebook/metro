@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import TreeFS from '../../lib/TreeFS';
 import nodeCrawl from '../node';
 import watchmanCrawl from '../watchman';
 import {execSync} from 'child_process';
@@ -109,7 +110,10 @@ describe.each(Object.keys(CRAWLERS))(
         invariant(crawl, 'crawl should not be null within maybeTest');
         const result = await crawl({
           previousState: {
-            files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+            fileSystem: new TreeFS({
+              rootDir: FIXTURES_DIR,
+              files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+            }),
             clocks: new Map(),
           },
           includeSymlinks,

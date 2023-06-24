@@ -9,6 +9,7 @@
  */
 
 import {AbortController} from 'node-abort-controller';
+import TreeFS from '../../lib/TreeFS';
 
 jest.useRealTimers();
 
@@ -124,6 +125,8 @@ const createMap = obj =>
   new Map(Object.keys(obj).map(key => [normalize(key), obj[key]]));
 
 const rootDir = '/project';
+const emptyFS = new TreeFS({rootDir, files: new Map()});
+const getFS = (files: FileData) => new TreeFS({rootDir, files});
 let mockResponse;
 let mockSpawnExit;
 let nodeCrawl;
@@ -154,9 +157,7 @@ describe('node crawler', () => {
     ].join('\n');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js', 'json'],
       ignore: pearMatcher,
       rootDir,
@@ -205,7 +206,7 @@ describe('node crawler', () => {
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -234,7 +235,7 @@ describe('node crawler', () => {
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -258,9 +259,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -289,9 +288,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -311,9 +308,8 @@ describe('node crawler', () => {
     childProcess = require('child_process');
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -334,9 +330,8 @@ describe('node crawler', () => {
   it('completes with empty roots', async () => {
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -351,9 +346,8 @@ describe('node crawler', () => {
   it('completes with fs.readdir throwing an error', async () => {
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -369,9 +363,8 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
     const fs = require('graceful-fs');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -398,9 +391,7 @@ describe('node crawler', () => {
     await expect(
       nodeCrawl({
         abortSignal: abortSignalWithReason(err),
-        previousState: {
-          files: new Map(),
-        },
+        previousState: {fileSystem: emptyFS},
         extensions: ['js', 'json'],
         ignore: pearMatcher,
         rootDir,
@@ -431,9 +422,7 @@ describe('node crawler', () => {
       nodeCrawl({
         perfLogger: fakePerfLogger,
         abortSignal: abortController.signal,
-        previousState: {
-          files: new Map(),
-        },
+        previousState: {fileSystem: emptyFS},
         extensions: ['js', 'json'],
         ignore: pearMatcher,
         rootDir,

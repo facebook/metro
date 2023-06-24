@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {Path, FileMetaData} from '../../flow-types';
 import type {
   CanonicalPath,
   CrawlerOptions,
@@ -18,7 +17,6 @@ import type {
 } from '../../flow-types';
 
 import hasNativeFindSupport from './hasNativeFindSupport';
-import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
@@ -194,19 +192,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
 
   return new Promise((resolve, reject) => {
     const callback = (fileData: FileData) => {
-      const changedFiles = new Map<Path, FileMetaData>();
-      const removedFiles = new Set(previousState.files.keys());
-      for (const [normalPath, fileMetaData] of fileData) {
-        const existingFile = previousState.files.get(normalPath);
-        removedFiles.delete(normalPath);
-        if (
-          existingFile == null ||
-          existingFile[H.MTIME] !== fileMetaData[H.MTIME]
-        ) {
-          // See ../constants.js; SHA-1 will always be null and fulfilled later.
-          changedFiles.set(normalPath, fileMetaData);
-        }
-      }
+      const difference = previousState.fileSystem.getDifference(fileData);
 
       perfLogger?.point('nodeCrawl_end');
 
@@ -216,10 +202,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       } catch (e) {
         reject(e);
       }
-      resolve({
-        changedFiles,
-        removedFiles,
-      });
+      resolve(difference);
     };
 
     if (useNativeFind) {

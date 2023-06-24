@@ -74,8 +74,7 @@ jest.mock('../crawlers/watchman', () =>
             ]);
           }
         } else {
-          const fileData = previousState.files.get(relativeFilePath);
-          if (fileData) {
+          if (previousState.fileSystem.exists(relativeFilePath)) {
             removedFiles.add(relativeFilePath);
           }
         }

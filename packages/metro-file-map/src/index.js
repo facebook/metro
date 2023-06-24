@@ -373,7 +373,7 @@ export default class HasteMap extends EventEmitter {
         };
 
         const fileDelta = await this._buildFileDelta({
-          files: initialData.files,
+          fileSystem,
           clocks: initialData.clocks,
         });
 

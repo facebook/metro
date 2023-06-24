@@ -20,7 +20,6 @@ import type {
 } from '../../flow-types';
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
-import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
 import {planQuery} from './planQuery';
@@ -244,22 +243,15 @@ module.exports = async function watchmanCrawl({
   }
 
   let removedFiles: Set<CanonicalPath> = new Set();
-  const changedFiles: FileData = new Map();
+  let changedFiles: FileData = new Map();
   let results: Map<string, WatchmanQueryResponse>;
   let isFresh = false;
   let queryError: ?Error;
   try {
     const watchmanRoots = await getWatchmanRoots(roots);
     const watchmanFileResults = await queryWatchmanForDirs(watchmanRoots);
-
-    // Reset the file map if watchman was restarted and sends us a list of
-    // files.
-    if (watchmanFileResults.isFresh) {
-      removedFiles = new Set(previousState.files.keys());
-      isFresh = true;
-    }
-
     results = watchmanFileResults.results;
+    isFresh = watchmanFileResults.isFresh;
   } catch (e) {
     queryError = e;
   }
@@ -291,6 +283,8 @@ module.exports = async function watchmanCrawl({
 
   perfLogger?.point('watchmanCrawl/processResults_start');
 
+  const freshFileData: FileData = new Map();
+
   for (const [watchRoot, response] of results) {
     const fsRoot = normalizePathSeparatorsToSystem(watchRoot);
     const relativeFsRoot = fastPath.relative(rootDir, fsRoot);
@@ -306,23 +300,13 @@ module.exports = async function watchmanCrawl({
       const filePath =
         fsRoot + path.sep + normalizePathSeparatorsToSystem(fileData.name);
       const relativeFilePath = fastPath.relative(rootDir, filePath);
-      const existingFileData = previousState.files.get(relativeFilePath);
-
-      // If watchman is fresh, the removed files map starts with all files
-      // and we remove them as we verify they still exist.
-      if (isFresh && existingFileData && fileData.exists) {
-        removedFiles.delete(relativeFilePath);
-      }
 
       if (!fileData.exists) {
-        // No need to act on files that do not exist and were not tracked.
-        if (existingFileData) {
-          // If watchman is not fresh, we will know what specific files were
-          // deleted since we last ran and can track only those files.
-          if (!isFresh) {
-            removedFiles.add(relativeFilePath);
-          }
+        if (!isFresh) {
+          removedFiles.add(relativeFilePath);
         }
+        // Whether watchman can return exists: false in a fresh instance
+        // response is unknown, but there's nothing we need to do in that case.
       } else if (!ignore(filePath)) {
         const {mtime_ms, size} = fileData;
         invariant(
@@ -331,10 +315,6 @@ module.exports = async function watchmanCrawl({
         );
         const mtime =
           typeof mtime_ms === 'number' ? mtime_ms : mtime_ms.toNumber();
-
-        if (existingFileData && existingFileData[H.MTIME] === mtime) {
-          continue;
-        }
 
         let sha1hex = fileData['content.sha1hex'];
         if (typeof sha1hex !== 'string' || sha1hex.length !== 40) {
@@ -346,7 +326,7 @@ module.exports = async function watchmanCrawl({
           symlinkInfo = fileData['symlink_target'] ?? 1;
         }
 
-        let nextData: FileMetaData = [
+        const nextData: FileMetaData = [
           '',
           mtime,
           size,
@@ -356,29 +336,20 @@ module.exports = async function watchmanCrawl({
           symlinkInfo,
         ];
 
-        if (
-          existingFileData &&
-          sha1hex != null &&
-          existingFileData[H.SHA1] === sha1hex &&
-          // File is still of the same type
-          (existingFileData[H.SYMLINK] !== 0) === (fileData.type === 'l')
-        ) {
-          // Special case - file touched but not modified, so we can reuse the
-          // metadata and just update mtime.
-          nextData = [
-            existingFileData[0],
-            mtime,
-            existingFileData[2],
-            existingFileData[3],
-            existingFileData[4],
-            existingFileData[5],
-            typeof symlinkInfo === 'string' ? symlinkInfo : existingFileData[6],
-          ];
+        // If watchman is fresh, the removed files map starts with all files
+        // and we remove them as we verify they still exist.
+        if (isFresh) {
+          freshFileData.set(relativeFilePath, nextData);
+        } else {
+          changedFiles.set(relativeFilePath, nextData);
         }
-
-        changedFiles.set(relativeFilePath, nextData);
       }
     }
+  }
+
+  if (isFresh) {
+    ({changedFiles, removedFiles} =
+      previousState.fileSystem.getDifference(freshFileData));
   }
 
   perfLogger?.point('watchmanCrawl/processResults_end');
