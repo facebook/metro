@@ -43,7 +43,6 @@
     "metro-file-map": "0.76.7",
     "metro-inspector-proxy": "0.76.7",
     "metro-minify-terser": "0.76.7",
-    "metro-minify-uglify": "0.76.7",
     "metro-react-native-babel-preset": "0.76.7",
     "metro-resolver": "0.76.7",
     "metro-runtime": "0.76.7",
