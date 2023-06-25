@@ -1,6 +1,6 @@
 # Metro
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebook/metro/blob/HEAD/LICENSE)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebook/metro/blob/StuartSwitzman/LICENSE)
 [![npm package version](https://img.shields.io/npm/v/metro?color=brightgreen)](https://www.npmjs.com/package/metro)
 [![Build status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
 [![Code coverage](https://codecov.io/gh/facebook/metro/branch/main/graph/badge.svg?token=oMHdoKhFZB)](https://codecov.io/gh/facebook/metro)
@@ -34,7 +34,7 @@ Meta has adopted a Code of Conduct that we expect project participants to adhere
 
 ### [Contributing guide](https://github.com/facebook/metro/blob/main/CONTRIBUTING.md)
 
-Read our [contributing guide](https://github.com/facebook/metro/blob/main/CONTRIBUTING.md) to learn about our development process, how to propose bug fixes and improvements, and how to build and test your changes to Metro.
+Read our [contributing guide](https://github.com/facebook/metro/blob/StuartSwitzman/CONTRIBUTING.md) to learn about our development process, how to propose bug fixes and improvements, and how to build and test your changes to Metro.
 
 ### Discussions
 
