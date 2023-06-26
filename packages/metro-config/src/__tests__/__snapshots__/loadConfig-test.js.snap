@@ -132,7 +132,6 @@ Object {
       },
       "output": Object {
         "ascii_only": true,
-        "comments": false,
         "quote_style": 3,
         "wrap_iife": true,
       },
@@ -311,7 +310,6 @@ Object {
       },
       "output": Object {
         "ascii_only": true,
-        "comments": false,
         "quote_style": 3,
         "wrap_iife": true,
       },
@@ -490,7 +488,6 @@ Object {
       },
       "output": Object {
         "ascii_only": true,
-        "comments": false,
         "quote_style": 3,
         "wrap_iife": true,
       },
@@ -669,7 +666,6 @@ Object {
       },
       "output": Object {
         "ascii_only": true,
-        "comments": false,
         "quote_style": 3,
         "wrap_iife": true,
       },
