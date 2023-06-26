@@ -34,7 +34,7 @@ type MixedNode = FileNode | DirectoryNode;
 // canonicalPath - a root-relative, normalised, real path (no symlinks in dirname)
 
 export default class TreeFS implements MutableFileSystem {
-  +#cachedNormalSymlinkTarkets: WeakMap<FileNode, Path> = new WeakMap();
+  +#cachedNormalSymlinkTargets: WeakMap<FileNode, Path> = new WeakMap();
   +#rootDir: Path;
   #rootNode: DirectoryNode = new Map();
 
@@ -524,7 +524,7 @@ export default class TreeFS implements MutableFileSystem {
     symlinkNode: FileMetaData,
     canonicalPathOfSymlink: Path,
   ): Path {
-    let normalSymlinkTarget = this.#cachedNormalSymlinkTarkets.get(symlinkNode);
+    let normalSymlinkTarget = this.#cachedNormalSymlinkTargets.get(symlinkNode);
     if (normalSymlinkTarget != null) {
       return normalSymlinkTarget;
     }
@@ -541,7 +541,7 @@ export default class TreeFS implements MutableFileSystem {
         path.join(path.dirname(canonicalPathOfSymlink), literalSymlinkTarget),
       );
     }
-    this.#cachedNormalSymlinkTarkets.set(symlinkNode, normalSymlinkTarget);
+    this.#cachedNormalSymlinkTargets.set(symlinkNode, normalSymlinkTarget);
     return normalSymlinkTarget;
   }
 
