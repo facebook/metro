@@ -14,7 +14,6 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
 
 const ci = require('ci-info');
-const path = require('path');
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
@@ -27,11 +26,7 @@ function getIgnorePattern(config: ConfigT): RegExp {
   }
 
   const combine = (regexes: Array<RegExp>) =>
-    new RegExp(
-      regexes
-        .map(regex => '(' + regex.source.replaceAll('/', path.sep) + ')')
-        .join('|'),
-    );
+    new RegExp(regexes.map(regex => '(' + regex.source + ')').join('|'));
 
   // If ignorePattern is an array, merge it into one
   if (Array.isArray(ignorePattern)) {
