@@ -26,7 +26,24 @@ function getIgnorePattern(config: ConfigT): RegExp {
   }
 
   const combine = (regexes: Array<RegExp>) =>
-    new RegExp(regexes.map(regex => '(' + regex.source + ')').join('|'));
+    new RegExp(
+      regexes
+        .map((regex, index) => {
+          if (regex.flags !== regexes[0].flags) {
+            throw new Error(
+              'Cannot combine blockList patterns, because they have different flags:\n' +
+                ' - Pattern 0: ' +
+                regexes[0].toString() +
+                '\n' +
+                ` - Pattern ${index}: ` +
+                regexes[index].toString(),
+            );
+          }
+          return '(' + regex.source + ')';
+        })
+        .join('|'),
+      regexes[0]?.flags ?? '',
+    );
 
   // If ignorePattern is an array, merge it into one
   if (Array.isArray(ignorePattern)) {
