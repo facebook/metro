@@ -11,6 +11,7 @@ format.bracket_spacing=false
 
 munge_underscores=true
 conditional_type=true
+mapped_type=true
 type_guards=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
