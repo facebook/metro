@@ -133,8 +133,10 @@ Parameters: (*context*, *filePath*, *platform*)
     1. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean) after applying [redirections](#redirectmodulepath-string--string--false). For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
         1. _moduleName_ + `'.android.js'`
         2. _moduleName_ + `'.native.js'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
-        3. _moduleName_ + `'.android.jsx'`
-        4. _moduleName_ + `'.native.jsx'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
+        3. _moduleName_ + `'.js'`
+        4. _moduleName_ + `'.android.jsx'`
+        5. _moduleName_ + `'.native.jsx'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
+        6. _moduleName_ + `'.jsx'`
 
 #### RESOLVE_ASSET
 
@@ -176,7 +178,7 @@ By default this is set to [`resolver.nodeModulesPaths`](./Configuration.md#nodem
 
 #### `preferNativePlatform: boolean`
 
-Whether to prefer `.native.${ext}` over `.${platform}.${ext}` during resolution. Metro sets this to `true`.
+If `true`, try `.native.${ext}` before `.${ext}` and after `.${platform}.${ext}` during resolution. Metro sets this to `true`.
 
 #### `redirectModulePath: string => string | false`
 
