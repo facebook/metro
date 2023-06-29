@@ -301,31 +301,27 @@ function addMapping(
   mapping: MetroSourceMapSegmentTuple,
   carryOver: number,
 ) {
-  const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
   const column = mapping[1];
-  if (n === 2) {
-    generator.addSimpleMapping(line, column);
-  } else if (n === 4) {
-    // $FlowIssue[invalid-tuple-arity] Arity is ensured by conidition on length
-    const sourceMap: SourceMapping = mapping;
-
-    generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
-  } else if (n === 5) {
-    // $FlowIssue[invalid-tuple-arity] Arity is ensured by conidition on length
-    const sourceMap: SourceMappingWithName = mapping;
-
-    generator.addNamedSourceMapping(
-      line,
-      column,
-      sourceMap[2],
-      sourceMap[3],
-      sourceMap[4],
-    );
-  } else {
-    throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
+  switch (mapping.length) {
+    case 2:
+      generator.addSimpleMapping(line, column);
+      return;
+    case 4:
+      generator.addSourceMapping(line, column, mapping[2], mapping[3]);
+      return;
+    case 5:
+      generator.addNamedSourceMapping(
+        line,
+        column,
+        mapping[2],
+        mapping[3],
+        mapping[4],
+      );
+      return;
   }
+  throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
 }
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
