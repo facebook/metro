@@ -9,15 +9,19 @@
  * @oncall react_native
  */
 
-// Note: This is a fork of the fb-specific transform.js
+// This file uses Flow comment syntax so that it may be used from source as a
+// transformer without itself requiring transformation, such as in
+// facebook/react-native's own tests.
 
 'use strict';
 
-import type {BabelCoreOptions, Plugins} from '@babel/core';
+/*::
+import type {BabelCoreOptions, Plugins, TransformResult} from '@babel/core';
 import type {
   BabelTransformer,
   MetroBabelFileMetadata,
 } from 'metro-babel-transformer';
+*/
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
@@ -33,11 +37,11 @@ const cacheKeyParts = [
 ];
 
 // TS detection conditions copied from metro-react-native-babel-preset
-function isTypeScriptSource(fileName: string) {
+function isTypeScriptSource(fileName /*: string */) {
   return !!fileName && fileName.endsWith('.ts');
 }
 
-function isTSXSource(fileName: string) {
+function isTSXSource(fileName /*: string */) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
@@ -47,7 +51,7 @@ function isTSXSource(fileName: string) {
  * default RN babelrc file and uses that.
  */
 const getBabelRC = (function () {
-  let babelRC: ?BabelCoreOptions = null;
+  let babelRC /*: ?BabelCoreOptions */ = null;
 
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
@@ -60,10 +64,10 @@ const getBabelRC = (function () {
       return babelRC;
     }
 
-    babelRC = ({
+    babelRC = {
       plugins: [],
       extends: extendsBabelConfigPath,
-    }: BabelCoreOptions);
+    };
 
     if (extendsBabelConfigPath) {
       return babelRC;
@@ -126,15 +130,15 @@ const getBabelRC = (function () {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(
-  filename: string,
+  filename /*: string */,
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
   options,
-  plugins?: Plugins = [],
-): BabelCoreOptions {
+  plugins /*:: ?: Plugins*/ = [],
+) /*: BabelCoreOptions*/ {
   const babelRC = getBabelRC(options);
 
-  const extraConfig: BabelCoreOptions = {
+  const extraConfig /*: BabelCoreOptions */ = {
     babelrc:
       typeof options.enableBabelRCLookup === 'boolean'
         ? options.enableBabelRCLookup
@@ -145,7 +149,7 @@ function buildBabelConfig(
     highlightCode: true,
   };
 
-  let config: BabelCoreOptions = {
+  let config /*: BabelCoreOptions */ = {
     ...babelRC,
     ...extraConfig,
   };
@@ -184,7 +188,7 @@ function buildBabelConfig(
   };
 }
 
-const transform: BabelTransformer['transform'] = ({
+const transform /*: BabelTransformer['transform'] */ = ({
   filename,
   options,
   src,
@@ -219,11 +223,8 @@ const transform: BabelTransformer['transform'] = ({
             sourceType: babelConfig.sourceType,
           });
 
-    const result = transformFromAstSync<MetroBabelFileMetadata>(
-      sourceAst,
-      src,
-      babelConfig,
-    );
+    const result /*: TransformResult<MetroBabelFileMetadata> */ =
+      transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
@@ -246,7 +247,9 @@ function getCacheKey() {
   return key.digest('hex');
 }
 
-module.exports = ({
+const babelTransformer /*: BabelTransformer */ = {
   transform,
   getCacheKey,
-}: BabelTransformer);
+};
+
+module.exports = babelTransformer;
