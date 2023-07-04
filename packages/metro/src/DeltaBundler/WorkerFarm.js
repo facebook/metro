@@ -39,10 +39,11 @@ class WorkerFarm {
   constructor(config: ConfigT, transformerConfig: TransformerConfig) {
     this._config = config;
     this._transformerConfig = transformerConfig;
+    const absoluteWorkerPath = require.resolve(config.transformer.workerPath);
 
     if (this._config.maxWorkers > 1) {
       const worker = this._makeFarm(
-        this._config.transformer.workerPath,
+        absoluteWorkerPath,
         ['transform'],
         this._config.maxWorkers,
       );
@@ -107,7 +108,7 @@ class WorkerFarm {
   }
 
   _makeFarm(
-    workerPath: string,
+    absoluteWorkerPath: string,
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
   ): any {
@@ -117,7 +118,7 @@ class WorkerFarm {
       FORCE_COLOR: 1,
     };
 
-    return new JestWorker(workerPath, {
+    return new JestWorker(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
         ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           // $FlowFixMe[incompatible-call]
