@@ -364,7 +364,7 @@ export default class FileMap extends EventEmitter {
         this._startupPerfLogger?.point('constructHasteMap_start');
         const hasteOptions = {
           console: this._console,
-          platforms: this._options.platforms,
+          platforms: new Set(this._options.platforms),
           rootDir,
           throwOnModuleCollision: this._options.throwOnModuleCollision,
         };

@@ -8,12 +8,10 @@
  * @flow strict
  */
 
-const SUPPORTED_PLATFORM_EXTS = new Set(['android', 'ios', 'native', 'web']);
-
 // Extract platform extension: index.ios.js -> ios
 export default function getPlatformExtension(
   file: string,
-  platforms?: $ReadOnlyArray<string>,
+  platforms: $ReadOnlySet<string>,
 ): ?string {
   const last = file.lastIndexOf('.');
   const secondToLast = file.lastIndexOf('.', last - 1);
@@ -21,10 +19,5 @@ export default function getPlatformExtension(
     return null;
   }
   const platform = file.substring(secondToLast + 1, last);
-  // If an overriding platform array is passed, check that first
-
-  if (platforms && platforms.indexOf(platform) !== -1) {
-    return platform;
-  }
-  return SUPPORTED_PLATFORM_EXTS.has(platform) ? platform : null;
+  return platforms.has(platform) ? platform : null;
 }

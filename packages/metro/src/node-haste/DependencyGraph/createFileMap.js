@@ -96,7 +96,7 @@ function createFileMap(
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',
-    platforms: config.resolver.platforms,
+    platforms: [...config.resolver.platforms, MetroFileMap.H.NATIVE_PLATFORM],
     retainAllFiles: true,
     resetCache: config.resetCache,
     rootDir: config.projectRoot,

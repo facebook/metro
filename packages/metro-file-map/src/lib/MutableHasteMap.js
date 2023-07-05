@@ -34,7 +34,7 @@ const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
 
 type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
-  platforms: $ReadOnlyArray<string>,
+  platforms: $ReadOnlySet<string>,
   rootDir: Path,
   throwOnModuleCollision: boolean,
 }>;
@@ -46,7 +46,7 @@ export default class MutableHasteMap implements HasteMap {
 
   +#console: ?Console;
   #throwOnModuleCollision: boolean;
-  +#platforms: $ReadOnlyArray<string>;
+  +#platforms: $ReadOnlySet<string>;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
