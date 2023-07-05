@@ -14,7 +14,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {
   ChangeEvent,
   FileSystem,
-  IHasteMap,
+  HasteMap,
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
@@ -57,7 +57,7 @@ class DependencyGraph extends EventEmitter {
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
   _moduleCache: ModuleCache;
-  _hasteMap: IHasteMap;
+  _hasteMap: HasteMap;
   _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
     // Custom resolver options

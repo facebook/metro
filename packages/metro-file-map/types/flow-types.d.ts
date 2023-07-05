@@ -8,7 +8,6 @@
  * @oncall react_native
  */
 
-import type HasteMap from './HasteMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 import type {AbortSignal} from 'node-abort-controller';
 
@@ -192,8 +191,7 @@ export interface FileSystem {
 
 export type Glob = string;
 
-// tslint:disable-next-line interface-name
-export interface IHasteMap {
+export interface HasteMap {
   getModule(
     name: string,
     platform?: string | null,
@@ -260,7 +258,7 @@ export type WorkerMessage = Readonly<{
 export type WorkerMetadata = Readonly<{
   dependencies?: ReadonlyArray<string>;
   id?: string | null;
-  module?: ModuleMetaData | null;
+  module?: HasteMapItemMetaData | null;
   sha1?: string | null;
   symlinkTarget?: string | null;
 }>;

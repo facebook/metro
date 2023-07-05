@@ -11,7 +11,6 @@
 
 'use strict';
 
-import type HasteMap from './HasteMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 import type {AbortSignal} from 'node-abort-controller';
 
@@ -209,7 +208,7 @@ export interface MockMap {
   getMockModule(name: string): ?Path;
 }
 
-export interface IHasteMap {
+export interface HasteMap {
   getModule(
     name: string,
     platform?: ?string,
@@ -245,13 +244,11 @@ export type Path = string;
 export type RawMockMap = Map<string, Path>;
 
 export type RawHasteMap = {
-  rootDir: Path,
   duplicates: DuplicatesIndex,
   map: HasteMapData,
 };
 
 export type ReadOnlyRawHasteMap = $ReadOnly<{
-  rootDir: Path,
   duplicates: $ReadOnlyMap<
     string,
     $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,

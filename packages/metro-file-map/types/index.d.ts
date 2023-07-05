@@ -72,10 +72,9 @@ type HealthCheckOptions = Readonly<{
   filePrefix: string;
 }>;
 
-export {default as HasteMap} from './HasteMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
-export type {IHasteMap} from './flow-types';
+export type {HasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
 export type {
   CacheManager,

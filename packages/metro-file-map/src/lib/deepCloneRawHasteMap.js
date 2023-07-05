@@ -37,6 +37,5 @@ export default function deepCloneRawHasteMap(
         ),
       ),
     ),
-    rootDir: data.rootDir,
   };
 }
