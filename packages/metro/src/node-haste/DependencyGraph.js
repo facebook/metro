@@ -22,7 +22,7 @@ import type MetroFileMap, {
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
 const canonicalize = require('metro-core/src/canonicalize');
-const createHasteMap = require('./DependencyGraph/createHasteMap');
+const createFileMap = require('./DependencyGraph/createFileMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const ModuleCache = require('./ModuleCache');
 const {EventEmitter} = require('events');
@@ -98,30 +98,34 @@ class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const haste = createHasteMap(config, {watch});
+    const fileMap = createFileMap(config, {watch});
 
     // We can have a lot of graphs listening to Haste for changes.
     // Bump this up to silence the max listeners EventEmitter warning.
-    haste.setMaxListeners(1000);
+    fileMap.setMaxListeners(1000);
 
-    this._haste = haste;
+    this._haste = fileMap;
     this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._readyPromise = haste.build().then(({fileSystem, hasteModuleMap}) => {
-      log(createActionEndEntry(initializingMetroLogEntry));
-      config.reporter.update({type: 'dep_graph_loaded'});
+    this._readyPromise = fileMap
+      .build()
+      .then(({fileSystem, hasteModuleMap}) => {
+        log(createActionEndEntry(initializingMetroLogEntry));
+        config.reporter.update({type: 'dep_graph_loaded'});
 
-      this._fileSystem = fileSystem;
-      this._hasteModuleMap = hasteModuleMap;
+        this._fileSystem = fileSystem;
+        this._hasteModuleMap = hasteModuleMap;
 
-      this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
-      this._haste.on('healthCheck', result =>
-        this._onWatcherHealthCheck(result),
-      );
-      this._resolutionCache = new Map();
-      this._moduleCache = this._createModuleCache();
-      this._createModuleResolver();
-    });
+        this._haste.on('change', changeEvent =>
+          this._onHasteChange(changeEvent),
+        );
+        this._haste.on('healthCheck', result =>
+          this._onWatcherHealthCheck(result),
+        );
+        this._resolutionCache = new Map();
+        this._moduleCache = this._createModuleCache();
+        this._createModuleResolver();
+      });
   }
 
   _onWatcherHealthCheck(result: HealthCheckResult) {

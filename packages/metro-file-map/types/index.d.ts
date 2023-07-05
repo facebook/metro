@@ -28,8 +28,8 @@ export type {
   CacheData,
   ChangeEventMetadata,
   FileData,
+  FileMap,
   FileSystem,
-  HasteMap,
   ModuleMapData,
   ModuleMapItem,
 };
@@ -84,8 +84,8 @@ export type {
   WatcherStatus,
 } from './flow-types';
 
-export default class HasteMap extends EventEmitter {
-  static create(options: InputOptions): HasteMap;
+export default class FileMap extends EventEmitter {
+  static create(options: InputOptions): FileMap;
   constructor(options: InputOptions);
   build(): Promise<BuildResult>;
   read(): Promise<CacheData | null>;

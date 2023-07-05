@@ -72,8 +72,8 @@ export type {
   CacheData,
   ChangeEventMetadata,
   FileData,
+  FileMap,
   FileSystem,
-  HasteMap,
   ModuleMapData,
   ModuleMapItem,
 };
@@ -239,7 +239,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *  4. serialize the new `HasteMap` in a cache file.
  *
  */
-export default class HasteMap extends EventEmitter {
+export default class FileMap extends EventEmitter {
   _buildPromise: ?Promise<BuildResult>;
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
@@ -253,8 +253,8 @@ export default class HasteMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
-  static create(options: InputOptions): HasteMap {
-    return new HasteMap(options);
+  static create(options: InputOptions): FileMap {
+    return new FileMap(options);
   }
 
   constructor(options: InputOptions) {

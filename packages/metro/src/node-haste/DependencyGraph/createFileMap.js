@@ -53,7 +53,7 @@ function getIgnorePattern(config: ConfigT): RegExp {
   return ignorePattern;
 }
 
-function createHasteMap(
+function createFileMap(
   config: ConfigT,
   options?: $ReadOnly<{
     extractDependencies?: boolean,
@@ -108,4 +108,4 @@ function createHasteMap(
   });
 }
 
-module.exports = createHasteMap;
+module.exports = createFileMap;
