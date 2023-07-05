@@ -12,24 +12,24 @@
 import type {
   DuplicatesSet,
   HTypeValue,
-  IModuleMap,
-  ModuleMetaData,
+  IHasteMap,
+  HasteMapItemMetaData,
   Path,
-  RawModuleMap,
-  ReadOnlyRawModuleMap,
+  RawHasteMap,
+  ReadOnlyRawHasteMap,
 } from './flow-types';
 
 import H from './constants';
 import {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
 import * as fastPath from './lib/fast_path';
 
-const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
+const EMPTY_OBJ: {[string]: HasteMapItemMetaData} = {};
 const EMPTY_MAP = new Map<'g' | 'native' | string, ?DuplicatesSet>();
 
-export default class ModuleMap implements IModuleMap {
-  +#raw: RawModuleMap;
+export default class HasteMap implements IHasteMap {
+  +#raw: RawHasteMap;
 
-  constructor(raw: RawModuleMap) {
+  constructor(raw: RawHasteMap) {
     this.#raw = raw;
   }
 
@@ -61,7 +61,7 @@ export default class ModuleMap implements IModuleMap {
 
   // FIXME: This is only used by Meta-internal validation and should be
   // removed or replaced with a less leaky API.
-  getRawModuleMap(): ReadOnlyRawModuleMap {
+  getRawHasteMap(): ReadOnlyRawHasteMap {
     return {
       duplicates: this.#raw.duplicates,
       map: this.#raw.map,
@@ -81,7 +81,7 @@ export default class ModuleMap implements IModuleMap {
     name: string,
     platform: ?string,
     supportsNativePlatform: boolean,
-  ): ModuleMetaData | null {
+  ): HasteMapItemMetaData | null {
     const map = this.#raw.map.get(name) || EMPTY_OBJ;
     const dupMap = this.#raw.duplicates.get(name) || EMPTY_MAP;
     if (platform != null) {
@@ -142,8 +142,8 @@ export default class ModuleMap implements IModuleMap {
     );
   }
 
-  static create(rootDir: Path): ModuleMap {
-    return new ModuleMap({
+  static create(rootDir: Path): HasteMap {
+    return new HasteMap({
       duplicates: new Map(),
       map: new Map(),
       rootDir,

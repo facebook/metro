@@ -17,8 +17,8 @@ import type {
   Console,
   FileData,
   FileSystem,
-  ModuleMapData,
-  ModuleMapItem,
+  HasteMapData,
+  HasteMapItem,
   PerfLoggerFactory,
 } from './flow-types';
 import type {EventEmitter} from 'events';
@@ -30,8 +30,8 @@ export type {
   FileData,
   FileMap,
   FileSystem,
-  ModuleMapData,
-  ModuleMapItem,
+  HasteMapData,
+  HasteMapItem,
 };
 
 export type InputOptions = Readonly<{
@@ -72,10 +72,10 @@ type HealthCheckOptions = Readonly<{
   filePrefix: string;
 }>;
 
-export {default as ModuleMap} from './ModuleMap';
+export {default as HasteMap} from './HasteMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
-export type {IModuleMap} from './flow-types';
+export type {IHasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
 export type {
   CacheManager,

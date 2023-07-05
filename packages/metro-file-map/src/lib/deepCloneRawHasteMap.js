@@ -8,7 +8,7 @@
  * @flow strict-local
  */
 
-import type {RawModuleMap, ReadOnlyRawModuleMap} from '../flow-types';
+import type {RawHasteMap, ReadOnlyRawHasteMap} from '../flow-types';
 
 const mapMap = <K, V1, V2>(
   map: $ReadOnlyMap<K, V1>,
@@ -22,9 +22,9 @@ const mapMap = <K, V1, V2>(
 // This direct/manual approach is >2x faster than v8 deserialize(serialize) or
 // a `structuredClone` implementation using worker_threads:
 // https://github.com/nodejs/node/issues/39713#issuecomment-896884958
-export default function deepCloneRawModuleMap(
-  data: ReadOnlyRawModuleMap,
-): RawModuleMap {
+export default function deepCloneRawHasteMap(
+  data: ReadOnlyRawHasteMap,
+): RawHasteMap {
   return {
     duplicates: mapMap(data.duplicates, v =>
       mapMap(v, v2 => new Map(v2.entries())),

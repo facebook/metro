@@ -14,7 +14,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {
   ChangeEvent,
   FileSystem,
-  IModuleMap,
+  IHasteMap,
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
@@ -57,7 +57,7 @@ class DependencyGraph extends EventEmitter {
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
   _moduleCache: ModuleCache;
-  _hasteModuleMap: IModuleMap;
+  _hasteMap: IHasteMap;
   _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
     // Custom resolver options
@@ -107,25 +107,21 @@ class DependencyGraph extends EventEmitter {
     this._haste = fileMap;
     this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._readyPromise = fileMap
-      .build()
-      .then(({fileSystem, hasteModuleMap}) => {
-        log(createActionEndEntry(initializingMetroLogEntry));
-        config.reporter.update({type: 'dep_graph_loaded'});
+    this._readyPromise = fileMap.build().then(({fileSystem, hasteMap}) => {
+      log(createActionEndEntry(initializingMetroLogEntry));
+      config.reporter.update({type: 'dep_graph_loaded'});
 
-        this._fileSystem = fileSystem;
-        this._hasteModuleMap = hasteModuleMap;
+      this._fileSystem = fileSystem;
+      this._hasteMap = hasteMap;
 
-        this._haste.on('change', changeEvent =>
-          this._onHasteChange(changeEvent),
-        );
-        this._haste.on('healthCheck', result =>
-          this._onWatcherHealthCheck(result),
-        );
-        this._resolutionCache = new Map();
-        this._moduleCache = this._createModuleCache();
-        this._createModuleResolver();
-      });
+      this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
+      this._haste.on('healthCheck', result =>
+        this._onWatcherHealthCheck(result),
+      );
+      this._resolutionCache = new Map();
+      this._moduleCache = this._createModuleCache();
+      this._createModuleResolver();
+    });
   }
 
   _onWatcherHealthCheck(result: HealthCheckResult) {
@@ -195,9 +191,9 @@ class DependencyGraph extends EventEmitter {
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
       getHasteModulePath: (name, platform) =>
-        this._hasteModuleMap.getModule(name, platform, true),
+        this._hasteMap.getModule(name, platform, true),
       getHastePackagePath: (name, platform) =>
-        this._hasteModuleMap.getPackage(name, platform, true),
+        this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,

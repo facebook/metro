@@ -26,17 +26,17 @@ import type {
   FileMetaData,
   FileSystem,
   HType,
-  ModuleMapData,
-  ModuleMapItem,
-  ModuleMetaData,
+  HasteMapData,
+  HasteMapItem,
+  HasteMapItemMetaData,
   MutableFileSystem,
   Path,
   PerfLoggerFactory,
   PerfLogger,
   RawMockMap,
-  RawModuleMap,
+  RawHasteMap,
   ReadOnlyRawMockMap,
-  ReadOnlyRawModuleMap,
+  ReadOnlyRawHasteMap,
   WorkerMetadata,
   WatchmanClocks,
 } from './flow-types';
@@ -45,12 +45,12 @@ import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
-import deepCloneRawModuleMap from './lib/deepCloneRawModuleMap';
+import deepCloneRawHasteMap from './lib/deepCloneRawHasteMap';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import TreeFS from './lib/TreeFS';
-import HasteModuleMap from './ModuleMap';
+import HasteMap from './HasteMap';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
 import EventEmitter from 'events';
@@ -74,8 +74,8 @@ export type {
   FileData,
   FileMap,
   FileSystem,
-  ModuleMapData,
-  ModuleMapItem,
+  HasteMapData,
+  HasteMapItem,
 };
 
 export type InputOptions = $ReadOnly<{
@@ -130,10 +130,10 @@ type InternalOptions = {
 type WorkerObj = {worker: typeof worker};
 type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
-export {default as ModuleMap} from './ModuleMap';
+export {default as HasteMap} from './HasteMap';
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
-export type {IModuleMap} from './flow-types';
+export type {IHasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
 export type {
   CacheDelta,
@@ -162,7 +162,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
 ];
 
 /**
- * HasteMap is a JavaScript implementation of Facebook's haste module system.
+ * FileMap includes a JavaScript implementation of Facebook's haste module system.
  *
  * This implementation is inspired by https://github.com/facebook/node-haste
  * and was built with for high-performance in large code repositories with
@@ -181,10 +181,10 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * projects, the number of files will be greater than the number of haste
  * modules one module can refer to many files based on platform extensions.
  *
- * type HasteMap = {
+ * type CacheData = {
  *   clocks: WatchmanClocks,
  *   files: {[filepath: string]: FileMetaData},
- *   map: {[id: string]: ModuleMapItem},
+ *   map: {[id: string]: HasteMapItem},
  *   mocks: {[id: string]: string},
  * }
  *
@@ -204,7 +204,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * // Modules can be targeted to a specific platform based on the file name.
  * // Example: platform.ios.js and Platform.android.js will both map to the same
  * // `Platform` module. The platform should be specified during resolution.
- * type ModuleMapItem = {[platform: string]: ModuleMetaData};
+ * type HasteMapItem = {[platform: string]: ModuleMetaData};
  *
  * //
  * type ModuleMetaData = {
@@ -367,7 +367,7 @@ export default class FileMap extends EventEmitter {
           mocks: new Map(),
           duplicates: new Map(),
         };
-        const rawModuleMap: RawModuleMap = {
+        const rawHasteMap: RawHasteMap = {
           duplicates,
           map,
           rootDir,
@@ -378,12 +378,12 @@ export default class FileMap extends EventEmitter {
           clocks: initialData?.clocks ?? new Map(),
         });
 
-        await this._applyFileDelta(fileSystem, rawModuleMap, mocks, fileDelta);
+        await this._applyFileDelta(fileSystem, rawHasteMap, mocks, fileDelta);
 
         await this._takeSnapshotAndPersist(
           fileSystem,
           fileDelta.clocks ?? new Map(),
-          rawModuleMap,
+          rawHasteMap,
           mocks,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
@@ -394,10 +394,10 @@ export default class FileMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, rawModuleMap, mocks);
+        await this._watch(fileSystem, rawHasteMap, mocks);
         return {
           fileSystem,
-          hasteModuleMap: new HasteModuleMap(rawModuleMap),
+          hasteMap: new HasteMap(rawHasteMap),
           mockMap: new MockMapImpl({rootDir, rawMockMap: mocks}),
         };
       })();
@@ -485,7 +485,7 @@ export default class FileMap extends EventEmitter {
    * 3. parse and extract metadata from changed files.
    */
   _processFile(
-    moduleMap: RawModuleMap,
+    hasteMap: RawHasteMap,
     mockMap: RawMockMap,
     filePath: Path,
     fileMetadata: FileMetaData,
@@ -493,18 +493,18 @@ export default class FileMap extends EventEmitter {
   ): ?Promise<void> {
     const rootDir = this._options.rootDir;
 
-    const setModule = (id: string, module: ModuleMetaData) => {
-      let moduleMapItem = moduleMap.map.get(id);
-      if (!moduleMapItem) {
+    const setModule = (id: string, module: HasteMapItemMetaData) => {
+      let hasteMapItem = hasteMap.map.get(id);
+      if (!hasteMapItem) {
         // $FlowFixMe[unclear-type] - Add type coverage
-        moduleMapItem = (Object.create(null): any);
-        moduleMap.map.set(id, moduleMapItem);
+        hasteMapItem = (Object.create(null): any);
+        hasteMap.map.set(id, hasteMapItem);
       }
       const platform =
         getPlatformExtension(module[H.PATH], this._options.platforms) ||
         H.GENERIC_PLATFORM;
 
-      const existingModule = moduleMapItem[platform];
+      const existingModule = hasteMapItem[platform];
 
       if (existingModule && existingModule[H.PATH] !== module[H.PATH]) {
         const method = this._options.throwOnModuleCollision ? 'error' : 'warn';
@@ -524,16 +524,16 @@ export default class FileMap extends EventEmitter {
         }
 
         // We do NOT want consumers to use a module that is ambiguous.
-        delete moduleMapItem[platform];
+        delete hasteMapItem[platform];
 
-        if (Object.keys(moduleMapItem).length === 0) {
-          moduleMap.map.delete(id);
+        if (Object.keys(hasteMapItem).length === 0) {
+          hasteMap.map.delete(id);
         }
 
-        let dupsByPlatform = moduleMap.duplicates.get(id);
+        let dupsByPlatform = hasteMap.duplicates.get(id);
         if (dupsByPlatform == null) {
           dupsByPlatform = new Map();
-          moduleMap.duplicates.set(id, dupsByPlatform);
+          hasteMap.duplicates.set(id, dupsByPlatform);
         }
 
         const dups = new Map([
@@ -545,7 +545,7 @@ export default class FileMap extends EventEmitter {
         return;
       }
 
-      const dupsByPlatform = moduleMap.duplicates.get(id);
+      const dupsByPlatform = hasteMap.duplicates.get(id);
       if (dupsByPlatform != null) {
         const dups = dupsByPlatform.get(platform);
         if (dups != null) {
@@ -554,7 +554,7 @@ export default class FileMap extends EventEmitter {
         return;
       }
 
-      moduleMapItem[platform] = module;
+      hasteMapItem[platform] = module;
     };
 
     const relativeFilePath = fastPath.relative(rootDir, filePath);
@@ -700,7 +700,7 @@ export default class FileMap extends EventEmitter {
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    moduleMap: RawModuleMap,
+    hasteMap: RawHasteMap,
     mockMap: RawMockMap,
     delta: $ReadOnly<{
       changedFiles: FileData,
@@ -718,7 +718,7 @@ export default class FileMap extends EventEmitter {
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
     for (const relativeFilePath of removedFiles) {
-      this._removeIfExists(fileSystem, moduleMap, mockMap, relativeFilePath);
+      this._removeIfExists(fileSystem, hasteMap, mockMap, relativeFilePath);
     }
     this._startupPerfLogger?.point('applyFileDelta_remove_end');
 
@@ -742,7 +742,7 @@ export default class FileMap extends EventEmitter {
         relativeFilePath,
       );
       const maybePromise = this._processFile(
-        moduleMap,
+        hasteMap,
         mockMap,
         filePath,
         fileData,
@@ -783,7 +783,7 @@ export default class FileMap extends EventEmitter {
       // it if it already exists. We're not emitting events at this point in
       // startup, so there's nothing more to do.
       changedFiles.delete(relativeFilePath);
-      this._removeIfExists(fileSystem, moduleMap, mockMap, relativeFilePath);
+      this._removeIfExists(fileSystem, hasteMap, mockMap, relativeFilePath);
     }
     fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_add_end');
@@ -807,13 +807,13 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    moduleMap: ReadOnlyRawModuleMap,
+    hasteMap: ReadOnlyRawHasteMap,
     mockMap: ReadOnlyRawMockMap,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
     this._startupPerfLogger?.point('persist_start');
-    const {map, duplicates} = deepCloneRawModuleMap(moduleMap);
+    const {map, duplicates} = deepCloneRawHasteMap(hasteMap);
     await this._cacheManager.write(
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
@@ -854,7 +854,7 @@ export default class FileMap extends EventEmitter {
 
   _removeIfExists(
     fileSystem: MutableFileSystem,
-    moduleMap: RawModuleMap,
+    hasteMap: RawHasteMap,
     mockMap: RawMockMap,
     relativeFilePath: Path,
   ) {
@@ -870,13 +870,13 @@ export default class FileMap extends EventEmitter {
       getPlatformExtension(relativeFilePath, this._options.platforms) ||
       H.GENERIC_PLATFORM;
 
-    const moduleMapItem = moduleMap.map.get(moduleName);
-    if (moduleMapItem != null) {
-      delete moduleMapItem[platform];
-      if (Object.keys(moduleMapItem).length === 0) {
-        moduleMap.map.delete(moduleName);
+    const hasteMapItem = hasteMap.map.get(moduleName);
+    if (hasteMapItem != null) {
+      delete hasteMapItem[platform];
+      if (Object.keys(hasteMapItem).length === 0) {
+        hasteMap.map.delete(moduleName);
       } else {
-        moduleMap.map.set(moduleName, moduleMapItem);
+        hasteMap.map.set(moduleName, hasteMapItem);
       }
     }
 
@@ -894,7 +894,7 @@ export default class FileMap extends EventEmitter {
       }
     }
 
-    this._recoverDuplicates(moduleMap, relativeFilePath, moduleName);
+    this._recoverDuplicates(hasteMap, relativeFilePath, moduleName);
   }
 
   /**
@@ -902,7 +902,7 @@ export default class FileMap extends EventEmitter {
    */
   async _watch(
     fileSystem: MutableFileSystem,
-    moduleMap: RawModuleMap,
+    hasteMap: RawHasteMap,
     mockMap: RawMockMap,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
@@ -1034,7 +1034,7 @@ export default class FileMap extends EventEmitter {
           if (linkStats != null) {
             this._removeIfExists(
               fileSystem,
-              moduleMap,
+              hasteMap,
               mockMap,
               relativeFilePath,
             );
@@ -1059,7 +1059,7 @@ export default class FileMap extends EventEmitter {
 
             try {
               await this._processFile(
-                moduleMap,
+                hasteMap,
                 mockMap,
                 absoluteFilePath,
                 fileMetadata,
@@ -1141,11 +1141,11 @@ export default class FileMap extends EventEmitter {
    * correct resolution for its ID, and cleanup the duplicates index.
    */
   _recoverDuplicates(
-    moduleMap: RawModuleMap,
+    hasteMap: RawHasteMap,
     relativeFilePath: string,
     moduleName: string,
   ) {
-    let dupsByPlatform = moduleMap.duplicates.get(moduleName);
+    let dupsByPlatform = hasteMap.duplicates.get(moduleName);
     if (dupsByPlatform == null) {
       return;
     }
@@ -1159,7 +1159,7 @@ export default class FileMap extends EventEmitter {
     }
 
     dupsByPlatform = new Map(dupsByPlatform);
-    moduleMap.duplicates.set(moduleName, dupsByPlatform);
+    hasteMap.duplicates.set(moduleName, dupsByPlatform);
 
     dups = new Map(dups);
     dupsByPlatform.set(platform, dups);
@@ -1175,16 +1175,16 @@ export default class FileMap extends EventEmitter {
       return;
     }
 
-    let dedupMap: ?ModuleMapItem = moduleMap.map.get(moduleName);
+    let dedupMap: ?HasteMapItem = hasteMap.map.get(moduleName);
 
     if (dedupMap == null) {
-      dedupMap = (Object.create(null): ModuleMapItem);
-      moduleMap.map.set(moduleName, dedupMap);
+      dedupMap = (Object.create(null): HasteMapItem);
+      hasteMap.map.set(moduleName, dedupMap);
     }
     dedupMap[platform] = uniqueModule;
     dupsByPlatform.delete(platform);
     if (dupsByPlatform.size === 0) {
-      moduleMap.duplicates.delete(moduleName);
+      hasteMap.duplicates.delete(moduleName);
     }
   }
 

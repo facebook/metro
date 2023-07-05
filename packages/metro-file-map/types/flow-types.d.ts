@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-import type ModuleMap from './ModuleMap';
+import type HasteMap from './HasteMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 import type {AbortSignal} from 'node-abort-controller';
 
@@ -38,14 +38,14 @@ export type BuildParameters = Readonly<{
 
 export interface BuildResult {
   fileSystem: FileSystem;
-  hasteModuleMap: ModuleMap;
+  hasteMap: HasteMap;
 }
 
 export interface CacheData {
   readonly clocks: WatchmanClocks;
-  readonly map: RawModuleMap['map'];
+  readonly map: RawHasteMap['map'];
   readonly mocks: MockData;
-  readonly duplicates: RawModuleMap['duplicates'];
+  readonly duplicates: RawHasteMap['duplicates'];
   readonly files: FileData;
 }
 
@@ -193,7 +193,7 @@ export interface FileSystem {
 export type Glob = string;
 
 // tslint:disable-next-line interface-name
-export interface IModuleMap {
+export interface IHasteMap {
   getModule(
     name: string,
     platform?: string | null,
@@ -207,16 +207,16 @@ export interface IModuleMap {
     _supportsNativePlatform: boolean | null,
   ): Path | null;
 
-  getRawModuleMap(): ReadOnlyRawModuleMap;
+  getRawHasteMap(): ReadOnlyRawHasteMap;
 }
 
 export type MockData = Map<string, Path>;
-export type ModuleMapData = Map<string, ModuleMapItem>;
+export type HasteMapData = Map<string, HasteMapItem>;
 
-export interface ModuleMapItem {
-  [platform: string]: ModuleMetaData;
+export interface HasteMapItem {
+  [platform: string]: HasteMapItemMetaData;
 }
-export type ModuleMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): void;
@@ -226,19 +226,19 @@ export interface MutableFileSystem extends FileSystem {
 
 export type Path = string;
 
-export interface RawModuleMap {
+export interface RawHasteMap {
   rootDir: Path;
   duplicates: DuplicatesIndex;
-  map: ModuleMapData;
+  map: HasteMapData;
 }
 
-export type ReadOnlyRawModuleMap = Readonly<{
+export type ReadOnlyRawHasteMap = Readonly<{
   rootDir: Path;
   duplicates: ReadonlyMap<
     string,
     ReadonlyMap<string, ReadonlyMap<string, number>>
   >;
-  map: ReadonlyMap<string, ModuleMapItem>;
+  map: ReadonlyMap<string, HasteMapItem>;
 }>;
 
 export type WatchmanClockSpec =

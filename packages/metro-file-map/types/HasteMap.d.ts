@@ -10,12 +10,12 @@
 
 import type {
   HTypeValue,
-  IModuleMap,
+  IHasteMap,
   Path,
-  ReadOnlyRawModuleMap,
+  ReadOnlyRawHasteMap,
 } from './flow-types';
 
-export default class ModuleMap implements IModuleMap {
+export default class HasteMap implements IHasteMap {
   getModule(
     name: string,
     platform?: string | null,
@@ -27,6 +27,6 @@ export default class ModuleMap implements IModuleMap {
     platform: string | null,
     _supportsNativePlatform?: boolean | null,
   ): Path | null;
-  getRawModuleMap(): ReadOnlyRawModuleMap;
-  static create(rootDir: Path): ModuleMap;
+  getRawHasteMap(): ReadOnlyRawHasteMap;
+  static create(rootDir: Path): HasteMap;
 }

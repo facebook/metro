@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type ModuleMap from './ModuleMap';
+import type HasteMap from './HasteMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
 import type {AbortSignal} from 'node-abort-controller';
 
@@ -42,15 +42,15 @@ export type BuildParameters = $ReadOnly<{
 
 export type BuildResult = {
   fileSystem: FileSystem,
-  hasteModuleMap: ModuleMap,
+  hasteMap: HasteMap,
   mockMap: MockMap,
 };
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
-  map: RawModuleMap['map'],
+  map: RawHasteMap['map'],
   mocks: RawMockMap,
-  duplicates: RawModuleMap['duplicates'],
+  duplicates: RawHasteMap['duplicates'],
   fileSystemData: mixed,
 }>;
 
@@ -209,7 +209,7 @@ export interface MockMap {
   getMockModule(name: string): ?Path;
 }
 
-export interface IModuleMap {
+export interface IHasteMap {
   getModule(
     name: string,
     platform?: ?string,
@@ -223,16 +223,16 @@ export interface IModuleMap {
     _supportsNativePlatform: ?boolean,
   ): ?Path;
 
-  getRawModuleMap(): ReadOnlyRawModuleMap;
+  getRawHasteMap(): ReadOnlyRawHasteMap;
 }
 
-export type ModuleMapData = Map<string, ModuleMapItem>;
+export type HasteMapData = Map<string, HasteMapItem>;
 
-export type ModuleMapItem = {
-  [platform: string]: ModuleMetaData,
+export type HasteMapItem = {
+  [platform: string]: HasteMapItemMetaData,
   __proto__: null,
 };
-export type ModuleMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): ?FileMetaData;
@@ -244,19 +244,19 @@ export type Path = string;
 
 export type RawMockMap = Map<string, Path>;
 
-export type RawModuleMap = {
+export type RawHasteMap = {
   rootDir: Path,
   duplicates: DuplicatesIndex,
-  map: ModuleMapData,
+  map: HasteMapData,
 };
 
-export type ReadOnlyRawModuleMap = $ReadOnly<{
+export type ReadOnlyRawHasteMap = $ReadOnly<{
   rootDir: Path,
   duplicates: $ReadOnlyMap<
     string,
     $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
   >,
-  map: $ReadOnlyMap<string, ModuleMapItem>,
+  map: $ReadOnlyMap<string, HasteMapItem>,
 }>;
 
 export type ReadOnlyRawMockMap = $ReadOnlyMap<string, Path>;
@@ -280,7 +280,7 @@ export type WorkerMessage = $ReadOnly<{
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
   id?: ?string,
-  module?: ?ModuleMetaData,
+  module?: ?HasteMapItemMetaData,
   sha1?: ?string,
   symlinkTarget?: ?string,
 }>;
