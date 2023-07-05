@@ -41,20 +41,53 @@ type HasteMapOptions = $ReadOnly<{
 
 export default class MutableHasteMap implements HasteMap {
   +#rootDir: Path;
-  +#map: Map<string, HasteMapItem>;
-  +#duplicates: DuplicatesIndex;
+  #map: Map<string, HasteMapItem> = new Map();
+  #duplicates: DuplicatesIndex = new Map();
 
   +#console: ?Console;
   #throwOnModuleCollision: boolean;
   +#platforms: $ReadOnlyArray<string>;
 
-  constructor(data: RawHasteMap, options: HasteMapOptions) {
+  constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
-    this.#map = data.map;
-    this.#duplicates = data.duplicates;
     this.#throwOnModuleCollision = options.throwOnModuleCollision;
+  }
+
+  static fromDeserializedSnapshot(
+    deserializedData: RawHasteMap,
+    options: HasteMapOptions,
+  ): MutableHasteMap {
+    const hasteMap = new MutableHasteMap(options);
+    hasteMap.#map = deserializedData.map;
+    hasteMap.#duplicates = deserializedData.duplicates;
+    return hasteMap;
+  }
+
+  getSerializableSnapshot(): RawHasteMap {
+    const mapMap = <K, V1, V2>(
+      map: $ReadOnlyMap<K, V1>,
+      mapFn: (v: V1) => V2,
+    ): Map<K, V2> => {
+      return new Map(
+        Array.from(map.entries(), ([key, val]): [K, V2] => [key, mapFn(val)]),
+      );
+    };
+
+    return {
+      duplicates: mapMap(this.#duplicates, v =>
+        mapMap(v, v2 => new Map(v2.entries())),
+      ),
+      map: mapMap(this.#map, v =>
+        Object.assign(
+          Object.create(null),
+          Object.fromEntries(
+            Array.from(Object.entries(v), ([key, val]) => [key, [...val]]),
+          ),
+        ),
+      ),
+    };
   }
 
   getModule(

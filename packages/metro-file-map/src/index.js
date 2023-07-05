@@ -42,7 +42,6 @@ import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
-import deepCloneRawHasteMap from './lib/deepCloneRawHasteMap';
 import {DuplicateError} from './lib/DuplicateError';
 import * as fastPath from './lib/fast_path';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
@@ -360,21 +359,24 @@ export default class FileMap extends EventEmitter {
               })
             : new TreeFS({rootDir});
         this._startupPerfLogger?.point('constructFileSystem_end');
-        const {map, mocks, duplicates} = initialData ?? {
-          map: new Map(),
-          mocks: new Map(),
-          duplicates: new Map(),
+        const mocks = initialData?.mocks ?? new Map();
+
+        this._startupPerfLogger?.point('constructHasteMap_start');
+        const hasteOptions = {
+          console: this._console,
+          platforms: this._options.platforms,
+          rootDir,
+          throwOnModuleCollision: this._options.throwOnModuleCollision,
         };
 
-        const hasteMap = new MutableHasteMap(
-          {duplicates, map},
-          {
-            console: this._console,
-            platforms: this._options.platforms,
-            rootDir,
-            throwOnModuleCollision: this._options.throwOnModuleCollision,
-          },
-        );
+        const hasteMap =
+          initialData != null
+            ? MutableHasteMap.fromDeserializedSnapshot(
+                {duplicates: initialData.duplicates, map: initialData.map},
+                hasteOptions,
+              )
+            : new MutableHasteMap(hasteOptions);
+        this._startupPerfLogger?.point('constructHasteMap_end');
 
         const fileDelta = await this._buildFileDelta({
           fileSystem,
@@ -752,7 +754,7 @@ export default class FileMap extends EventEmitter {
     removed: Set<CanonicalPath>,
   ) {
     this._startupPerfLogger?.point('persist_start');
-    const {map, duplicates} = deepCloneRawHasteMap(hasteMap.getRawHasteMap());
+    const {map, duplicates} = hasteMap.getSerializableSnapshot();
     await this._cacheManager.write(
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
