@@ -37,7 +37,6 @@ export default function deepCloneRawModuleMap(
         ),
       ),
     ),
-    mocks: new Map(data.mocks.entries()),
     rootDir: data.rootDir,
   };
 }

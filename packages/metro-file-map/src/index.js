@@ -33,7 +33,9 @@ import type {
   Path,
   PerfLoggerFactory,
   PerfLogger,
+  RawMockMap,
   RawModuleMap,
+  ReadOnlyRawMockMap,
   ReadOnlyRawModuleMap,
   WorkerMetadata,
   WatchmanClocks,
@@ -60,6 +62,7 @@ import * as path from 'path';
 import {AbortController} from 'node-abort-controller';
 import {performance} from 'perf_hooks';
 import nullthrows from 'nullthrows';
+import MockMapImpl from './lib/MockMap';
 
 const debug = require('debug')('Metro:FileMap');
 
@@ -367,7 +370,6 @@ export default class HasteMap extends EventEmitter {
         const rawModuleMap: RawModuleMap = {
           duplicates,
           map,
-          mocks,
           rootDir,
         };
 
@@ -376,12 +378,13 @@ export default class HasteMap extends EventEmitter {
           clocks: initialData?.clocks ?? new Map(),
         });
 
-        await this._applyFileDelta(fileSystem, rawModuleMap, fileDelta);
+        await this._applyFileDelta(fileSystem, rawModuleMap, mocks, fileDelta);
 
         await this._takeSnapshotAndPersist(
           fileSystem,
           fileDelta.clocks ?? new Map(),
           rawModuleMap,
+          mocks,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
@@ -391,10 +394,11 @@ export default class HasteMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, rawModuleMap);
+        await this._watch(fileSystem, rawModuleMap, mocks);
         return {
           fileSystem,
           hasteModuleMap: new HasteModuleMap(rawModuleMap),
+          mockMap: new MockMapImpl({rootDir, rawMockMap: mocks}),
         };
       })();
     }
@@ -482,6 +486,7 @@ export default class HasteMap extends EventEmitter {
    */
   _processFile(
     moduleMap: RawModuleMap,
+    mockMap: RawMockMap,
     filePath: Path,
     fileMetadata: FileMetaData,
     workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
@@ -651,7 +656,7 @@ export default class HasteMap extends EventEmitter {
       this._options.mocksPattern.test(filePath)
     ) {
       const mockPath = getMockName(filePath);
-      const existingMockPath = moduleMap.mocks.get(mockPath);
+      const existingMockPath = mockMap.get(mockPath);
 
       if (existingMockPath != null) {
         const secondMockPath = fastPath.relative(rootDir, filePath);
@@ -676,7 +681,7 @@ export default class HasteMap extends EventEmitter {
         }
       }
 
-      moduleMap.mocks.set(mockPath, relativeFilePath);
+      mockMap.set(mockPath, relativeFilePath);
     }
 
     return this._getWorker(workerOptions)
@@ -696,6 +701,7 @@ export default class HasteMap extends EventEmitter {
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
+    mockMap: RawMockMap,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -712,7 +718,7 @@ export default class HasteMap extends EventEmitter {
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
     for (const relativeFilePath of removedFiles) {
-      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+      this._removeIfExists(fileSystem, moduleMap, mockMap, relativeFilePath);
     }
     this._startupPerfLogger?.point('applyFileDelta_remove_end');
 
@@ -735,9 +741,13 @@ export default class HasteMap extends EventEmitter {
         this._options.rootDir,
         relativeFilePath,
       );
-      const maybePromise = this._processFile(moduleMap, filePath, fileData, {
-        perfLogger: this._startupPerfLogger,
-      });
+      const maybePromise = this._processFile(
+        moduleMap,
+        mockMap,
+        filePath,
+        fileData,
+        {perfLogger: this._startupPerfLogger},
+      );
       if (maybePromise) {
         promises.push(
           maybePromise.catch(e => {
@@ -773,7 +783,7 @@ export default class HasteMap extends EventEmitter {
       // it if it already exists. We're not emitting events at this point in
       // startup, so there's nothing more to do.
       changedFiles.delete(relativeFilePath);
-      this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+      this._removeIfExists(fileSystem, moduleMap, mockMap, relativeFilePath);
     }
     fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_add_end');
@@ -798,18 +808,19 @@ export default class HasteMap extends EventEmitter {
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
     moduleMap: ReadOnlyRawModuleMap,
+    mockMap: ReadOnlyRawMockMap,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
     this._startupPerfLogger?.point('persist_start');
-    const {map, duplicates, mocks} = deepCloneRawModuleMap(moduleMap);
+    const {map, duplicates} = deepCloneRawModuleMap(moduleMap);
     await this._cacheManager.write(
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         map,
         clocks: new Map(clocks),
         duplicates,
-        mocks,
+        mocks: new Map(mockMap),
       },
       {changed, removed},
     );
@@ -844,6 +855,7 @@ export default class HasteMap extends EventEmitter {
   _removeIfExists(
     fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
+    mockMap: RawMockMap,
     relativeFilePath: Path,
   ) {
     const fileMetadata = fileSystem.remove(relativeFilePath);
@@ -878,7 +890,7 @@ export default class HasteMap extends EventEmitter {
         this._options.mocksPattern.test(absoluteFilePath)
       ) {
         const mockName = getMockName(absoluteFilePath);
-        moduleMap.mocks.delete(mockName);
+        mockMap.delete(mockName);
       }
     }
 
@@ -891,6 +903,7 @@ export default class HasteMap extends EventEmitter {
   async _watch(
     fileSystem: MutableFileSystem,
     moduleMap: RawModuleMap,
+    mockMap: RawMockMap,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
@@ -1019,7 +1032,12 @@ export default class HasteMap extends EventEmitter {
 
           // If it's not an addition, delete the file and all its metadata
           if (linkStats != null) {
-            this._removeIfExists(fileSystem, moduleMap, relativeFilePath);
+            this._removeIfExists(
+              fileSystem,
+              moduleMap,
+              mockMap,
+              relativeFilePath,
+            );
           }
 
           // If the file was added or changed,
@@ -1042,6 +1060,7 @@ export default class HasteMap extends EventEmitter {
             try {
               await this._processFile(
                 moduleMap,
+                mockMap,
                 absoluteFilePath,
                 fileMetadata,
                 {forceInBand: true}, // No need to clean up workers

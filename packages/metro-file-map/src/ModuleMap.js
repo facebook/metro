@@ -59,21 +59,12 @@ export default class ModuleMap implements IModuleMap {
     return this.getModule(name, platform, null, H.PACKAGE);
   }
 
-  getMockModule(name: string): ?Path {
-    const mockPath =
-      this.#raw.mocks.get(name) || this.#raw.mocks.get(name + '/index');
-    return mockPath != null
-      ? fastPath.resolve(this.#raw.rootDir, mockPath)
-      : null;
-  }
-
   // FIXME: This is only used by Meta-internal validation and should be
   // removed or replaced with a less leaky API.
   getRawModuleMap(): ReadOnlyRawModuleMap {
     return {
       duplicates: this.#raw.duplicates,
       map: this.#raw.map,
-      mocks: this.#raw.mocks,
       rootDir: this.#raw.rootDir,
     };
   }
@@ -155,7 +146,6 @@ export default class ModuleMap implements IModuleMap {
     return new ModuleMap({
       duplicates: new Map(),
       map: new Map(),
-      mocks: new Map(),
       rootDir,
     });
   }

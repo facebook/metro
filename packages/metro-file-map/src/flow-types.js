@@ -43,12 +43,13 @@ export type BuildParameters = $ReadOnly<{
 export type BuildResult = {
   fileSystem: FileSystem,
   hasteModuleMap: ModuleMap,
+  mockMap: MockMap,
 };
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
   map: RawModuleMap['map'],
-  mocks: RawModuleMap['mocks'],
+  mocks: RawMockMap,
   duplicates: RawModuleMap['duplicates'],
   fileSystemData: mixed,
 }>;
@@ -204,6 +205,10 @@ export interface FileSystem {
 
 export type Glob = string;
 
+export interface MockMap {
+  getMockModule(name: string): ?Path;
+}
+
 export interface IModuleMap {
   getModule(
     name: string,
@@ -218,12 +223,9 @@ export interface IModuleMap {
     _supportsNativePlatform: ?boolean,
   ): ?Path;
 
-  getMockModule(name: string): ?Path;
-
   getRawModuleMap(): ReadOnlyRawModuleMap;
 }
 
-export type MockData = Map<string, Path>;
 export type ModuleMapData = Map<string, ModuleMapItem>;
 
 export type ModuleMapItem = {
@@ -240,11 +242,12 @@ export interface MutableFileSystem extends FileSystem {
 
 export type Path = string;
 
+export type RawMockMap = Map<string, Path>;
+
 export type RawModuleMap = {
   rootDir: Path,
   duplicates: DuplicatesIndex,
   map: ModuleMapData,
-  mocks: MockData,
 };
 
 export type ReadOnlyRawModuleMap = $ReadOnly<{
@@ -254,8 +257,9 @@ export type ReadOnlyRawModuleMap = $ReadOnly<{
     $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
   >,
   map: $ReadOnlyMap<string, ModuleMapItem>,
-  mocks: $ReadOnlyMap<string, Path>,
 }>;
+
+export type ReadOnlyRawMockMap = $ReadOnlyMap<string, Path>;
 
 export type WatchmanClockSpec =
   | string

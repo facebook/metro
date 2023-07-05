@@ -44,7 +44,7 @@ export interface BuildResult {
 export interface CacheData {
   readonly clocks: WatchmanClocks;
   readonly map: RawModuleMap['map'];
-  readonly mocks: RawModuleMap['mocks'];
+  readonly mocks: MockData;
   readonly duplicates: RawModuleMap['duplicates'];
   readonly files: FileData;
 }
@@ -207,8 +207,6 @@ export interface IModuleMap {
     _supportsNativePlatform: boolean | null,
   ): Path | null;
 
-  getMockModule(name: string): Path | null;
-
   getRawModuleMap(): ReadOnlyRawModuleMap;
 }
 
@@ -232,7 +230,6 @@ export interface RawModuleMap {
   rootDir: Path;
   duplicates: DuplicatesIndex;
   map: ModuleMapData;
-  mocks: MockData;
 }
 
 export type ReadOnlyRawModuleMap = Readonly<{
@@ -242,7 +239,6 @@ export type ReadOnlyRawModuleMap = Readonly<{
     ReadonlyMap<string, ReadonlyMap<string, number>>
   >;
   map: ReadonlyMap<string, ModuleMapItem>;
-  mocks: ReadonlyMap<string, Path>;
 }>;
 
 export type WatchmanClockSpec =

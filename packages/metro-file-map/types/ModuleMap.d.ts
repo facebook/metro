@@ -27,7 +27,6 @@ export default class ModuleMap implements IModuleMap {
     platform: string | null,
     _supportsNativePlatform?: boolean | null,
   ): Path | null;
-  getMockModule(name: string): Path | null;
   getRawModuleMap(): ReadOnlyRawModuleMap;
   static create(rootDir: Path): ModuleMap;
 }

@@ -413,7 +413,7 @@ describe('HasteMap', () => {
       mocksPattern: '__mocks__',
     });
 
-    const {fileSystem} = await hasteMap.build();
+    const {fileSystem, mockMap} = await hasteMap.build();
 
     expect(cacheContent.clocks).toEqual(mockClocks);
 
@@ -486,6 +486,10 @@ describe('HasteMap', () => {
           ],
         },
       }),
+    );
+
+    expect(mockMap.getMockModule('Pear')).toEqual(
+      path.resolve(defaultConfig.rootDir, 'fruits', '__mocks__', 'Pear.js'),
     );
 
     expect(cacheContent.mocks).toEqual(
