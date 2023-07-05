@@ -467,7 +467,7 @@ describe('FileMap', () => {
       }),
     );
 
-    expect(cacheContent.map).toEqual(
+    expect(cacheContent.haste.map).toEqual(
       createMap({
         Banana: {
           [H.GENERIC_PLATFORM]: [path.join('fruits', 'Banana.js'), H.MODULE],
@@ -707,7 +707,7 @@ describe('FileMap', () => {
     const {fileSystem} = await fileMap.build();
     const data = cacheContent;
 
-    expect(data.map.get('IRequireAVideo')).toBeDefined();
+    expect(data.haste.map.get('IRequireAVideo')).toBeDefined();
     expect(fileSystem.linkStats(path.join('video', 'video.mp4'))).toEqual({
       fileType: 'f',
       modifiedTime: 32,
@@ -740,7 +740,7 @@ describe('FileMap', () => {
       ),
     ).toEqual({fileType: 'f', modifiedTime: 32});
 
-    expect(cacheContent.map.get('fbjs')).not.toBeDefined();
+    expect(cacheContent.haste.map.get('fbjs')).not.toBeDefined();
 
     // 5 modules - the node_module
     expect(fs.readFileSync.mock.calls.length).toBe(5);
@@ -797,7 +797,7 @@ describe('FileMap', () => {
 
     // Duplicate modules are removed so that it doesn't cause
     // non-determinism later on.
-    expect(cacheContent.map.get('Strawberry')).not.toBeDefined();
+    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
 
     expect(
       console.warn.mock.calls[0][0].replaceAll('\\', '/'),
@@ -884,7 +884,7 @@ describe('FileMap', () => {
       }),
     );
 
-    expect(cacheContent.map).toEqual(
+    expect(cacheContent.haste.map).toEqual(
       createMap({
         Strawberry: {
           [H.GENERIC_PLATFORM]: [
@@ -933,7 +933,7 @@ describe('FileMap', () => {
     expect(serialize(data.fileSystem)).toEqual(
       serialize(initialData.fileSystem),
     );
-    expect(deepNormalize(data.map)).toEqual(initialData.map);
+    expect(deepNormalize(data.haste.map)).toEqual(initialData.haste.map);
   });
 
   it('only does minimal file system access when files change', async () => {
@@ -978,8 +978,8 @@ describe('FileMap', () => {
       fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Kiwi']);
 
-    const map = new Map(initialData.map);
-    expect(deepNormalize(data.map)).toEqual(map);
+    const map = new Map(initialData.haste.map);
+    expect(deepNormalize(data.haste.map)).toEqual(map);
   });
 
   it('correctly handles file deletions', async () => {
@@ -1003,9 +1003,9 @@ describe('FileMap', () => {
 
     expect(fileSystem.exists(path.join('fruits', 'Banana.js'))).toEqual(false);
 
-    const map = new Map(initialData.map);
+    const map = new Map(initialData.haste.map);
     map.delete('Banana');
-    expect(deepNormalize(cacheContent.map)).toEqual(map);
+    expect(deepNormalize(cacheContent.haste.map)).toEqual(map);
   });
 
   it('correctly handles platform-specific file additions', async () => {
@@ -1014,7 +1014,7 @@ describe('FileMap', () => {
       const Banana = require("Banana");
     `;
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
 
@@ -1026,7 +1026,7 @@ describe('FileMap', () => {
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
@@ -1041,7 +1041,7 @@ describe('FileMap', () => {
       const Raspberry = require("Raspberry");
     `;
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
@@ -1052,7 +1052,7 @@ describe('FileMap', () => {
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
 
@@ -1062,7 +1062,7 @@ describe('FileMap', () => {
     });
     mockClocks = createMap({fruits: 'c:fake-clock:4'});
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).not.toBeDefined();
+    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
   });
 
   it('correctly handles platform-specific file renames', async () => {
@@ -1071,7 +1071,7 @@ describe('FileMap', () => {
       const Raspberry = require("Raspberry");
     `;
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
 
@@ -1084,7 +1084,7 @@ describe('FileMap', () => {
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
     await new FileMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
   });
@@ -1102,7 +1102,7 @@ describe('FileMap', () => {
         '//';
 
       await new FileMap(defaultConfig).build();
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(
+      expect(deepNormalize(cacheContent.haste.duplicates)).toEqual(
         createMap({
           Strawberry: createMap({
             g: createMap({
@@ -1118,11 +1118,13 @@ describe('FileMap', () => {
           }),
         }),
       );
-      expect(cacheContent.map.get('Strawberry')).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
 
-      expect(cacheContent.map.get('Banana')).toBeDefined();
-      expect(cacheContent.map.get('Banana')[H.GENERIC_PLATFORM]).toBeDefined();
-      expect(cacheContent.map.get('Banana')['ios']).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Banana')).toBeDefined();
+      expect(
+        cacheContent.haste.map.get('Banana')[H.GENERIC_PLATFORM],
+      ).toBeDefined();
+      expect(cacheContent.haste.map.get('Banana')['ios']).not.toBeDefined();
     });
 
     it('recovers when a duplicate file is deleted', async () => {
@@ -1139,13 +1141,13 @@ describe('FileMap', () => {
 
       await new FileMap(defaultConfig).build();
       expect(
-        deepNormalize(cacheContent.duplicates.get('Strawberry')),
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
       ).not.toBeDefined();
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
       // Make sure the other files are not affected.
-      expect(cacheContent.map.get('Banana')).toEqual({
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
         g: [path.join('fruits', 'Banana.js'), H.MODULE],
       });
     });
@@ -1164,14 +1166,14 @@ describe('FileMap', () => {
 
       await new FileMap(defaultConfig).build();
       expect(
-        deepNormalize(cacheContent.duplicates.get('Banana')),
+        deepNormalize(cacheContent.haste.duplicates.get('Banana')),
       ).not.toBeDefined();
-      expect(cacheContent.map.get('Banana')).toEqual({
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
         g: [path.join('fruits', 'Banana.js'), H.MODULE],
         ios: [path.join('fruits', 'Banana.ios.js'), H.MODULE],
       });
       // Make sure the other files are not affected.
-      expect(cacheContent.map.get('Melon')).toEqual({
+      expect(cacheContent.haste.map.get('Melon')).toEqual({
         g: [path.join('vegetables', 'Melon.js'), H.MODULE],
       });
     });
@@ -1185,7 +1187,9 @@ describe('FileMap', () => {
 
       await new FileMap(defaultConfig).build();
 
-      expect(deepNormalize(cacheContent.duplicates.get('Strawberry'))).toEqual(
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
+      ).toEqual(
         createMap({
           g: createMap({
             [path.join('fruits', 'Strawberry.js')]: H.MODULE,
@@ -1220,9 +1224,9 @@ describe('FileMap', () => {
       await new FileMap(defaultConfig).build();
 
       expect(
-        deepNormalize(cacheContent.duplicates.get('Strawberry')),
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
       ).not.toBeDefined();
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
     });
@@ -1241,16 +1245,16 @@ describe('FileMap', () => {
 
       await new FileMap(defaultConfig).build();
       expect(
-        deepNormalize(cacheContent.duplicates.get('Strawberry')),
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
       ).not.toBeDefined();
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
-      expect(cacheContent.map.get('Pineapple')).toEqual({
+      expect(cacheContent.haste.map.get('Pineapple')).toEqual({
         g: [path.join('fruits', 'another', 'Pineapple.js'), H.MODULE],
       });
       // Make sure the other files are not affected.
-      expect(cacheContent.map.get('Banana')).toEqual({
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
         g: [path.join('fruits', 'Banana.js'), H.MODULE],
       });
     });

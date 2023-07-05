@@ -143,7 +143,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '5';
+const CACHE_BREAKER = '6';
 
 const CHANGE_INTERVAL = 30;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
@@ -372,7 +372,7 @@ export default class FileMap extends EventEmitter {
         const hasteMap =
           initialData != null
             ? MutableHasteMap.fromDeserializedSnapshot(
-                {duplicates: initialData.duplicates, map: initialData.map},
+                initialData.haste,
                 hasteOptions,
               )
             : new MutableHasteMap(hasteOptions);
@@ -754,13 +754,11 @@ export default class FileMap extends EventEmitter {
     removed: Set<CanonicalPath>,
   ) {
     this._startupPerfLogger?.point('persist_start');
-    const {map, duplicates} = hasteMap.getSerializableSnapshot();
     await this._cacheManager.write(
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
-        map,
+        haste: hasteMap.getSerializableSnapshot(),
         clocks: new Map(clocks),
-        duplicates,
         mocks: new Map(mockMap),
       },
       {changed, removed},
