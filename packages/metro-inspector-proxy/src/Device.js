@@ -613,6 +613,7 @@ class Device {
       throw new Error('remote fetches not permitted');
     }
 
+    // $FlowFixMe[incompatible-call] Suppress arvr node-fetch flow error
     const response = await fetch(url);
     const text = await response.text();
     // Restrict the length to well below the 500MB limit for nodejs (leaving
