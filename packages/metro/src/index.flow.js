@@ -262,7 +262,7 @@ exports.runServer = async (
     waitForBundler = false,
     websocketEndpoints = {},
     watch,
-  }: RunServerOptions,
+  }: RunServerOptions = {},
 ): Promise<HttpServer | HttpsServer> => {
   await earlyPortCheck(host, config.server.port);
 

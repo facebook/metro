@@ -21,9 +21,7 @@ title: Bundling API
   ```js
   const config = await Metro.loadConfig();
 
-  await Metro.runServer(config, {
-    port: 8080,
-  });
+  await Metro.runServer(config);
   ```
 
 - Create a Connect middleware and plug it into a server
