@@ -48,7 +48,7 @@ module.exports = (): {
     });
 
     yargs.option('host', {alias: 'h', type: 'string', default: 'localhost'});
-    yargs.option('port', {alias: 'p', type: 'number', default: 8080});
+    yargs.option('port', {alias: 'p', type: 'number', default: 8081});
 
     yargs.option('max-workers', {alias: 'j', type: 'number'});
 
