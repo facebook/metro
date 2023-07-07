@@ -46,8 +46,12 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 }
 
 const explorer = cosmiconfig('metro', {
-  searchPlaces: ['metro.config.js', 'metro.config.json', 'package.json'],
-
+  searchPlaces: [
+    'metro.config.js',
+    'metro.config.cjs',
+    'metro.config.json',
+    'package.json',
+  ],
   loaders: {
     '.json': cosmiconfig.loadJson,
     '.yaml': cosmiconfig.loadYaml,
