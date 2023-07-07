@@ -21,8 +21,7 @@ declare module 'connect' {
     res: http.ServerResponse,
     next: NextFunction,
   ) => void | Promise<void>;
-  declare export type HandleFunction =
-    | NextHandleFunction;
+  declare export type HandleFunction = NextHandleFunction;
 
   declare export interface IncomingMessage extends http.IncomingMessage {
     originalUrl?: http.IncomingMessage['url'];
