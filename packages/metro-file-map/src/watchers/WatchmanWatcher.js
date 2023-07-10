@@ -53,7 +53,7 @@ export default class WatchmanWatcher extends EventEmitter {
     root: string,
   }>;
   watchmanDeferStates: $ReadOnlyArray<string>;
-  #deferringStates: Set<string> = new Set();
+  #deferringStates: ?Set<string> = null;
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
@@ -164,8 +164,8 @@ export default class WatchmanWatcher extends EventEmitter {
 
       handleWarning(resp);
 
-      for (const state of resp['asserted-states']) {
-        this.#deferringStates.add(state);
+      if (resp['asserted-states'] != null) {
+        this.#deferringStates = new Set(resp['asserted-states']);
       }
 
       self.emit('ready');
@@ -207,7 +207,7 @@ export default class WatchmanWatcher extends EventEmitter {
       stateEnter != null &&
       (this.watchmanDeferStates ?? []).includes(stateEnter)
     ) {
-      this.#deferringStates.add(stateEnter);
+      this.#deferringStates?.add(stateEnter);
       debug(
         'Watchman reports "%s" just started. Filesystem notifications are paused.',
         stateEnter,
@@ -217,7 +217,7 @@ export default class WatchmanWatcher extends EventEmitter {
       stateLeave != null &&
       (this.watchmanDeferStates ?? []).includes(stateLeave)
     ) {
-      this.#deferringStates.delete(stateLeave);
+      this.#deferringStates?.delete(stateLeave);
       debug(
         'Watchman reports "%s" ended. Filesystem notifications resumed.',
         stateLeave,
@@ -318,21 +318,21 @@ export default class WatchmanWatcher extends EventEmitter {
   async close() {
     this.client.removeAllListeners();
     this.client.end();
-    this.#deferringStates.clear();
+    this.#deferringStates = null;
   }
 
   getPauseReason(): ?string {
-    if (this.#deferringStates.size) {
-      const states = [...this.#deferringStates];
-      if (states.length === 1) {
-        return `The watch is in the '${states[0]}' state.`;
-      }
-      return `The watch is in the ${states
-        .slice(0, -1)
-        .map(s => `'${s}'`)
-        .join(', ')} and '${states[states.length - 1]}' states.`;
+    if (this.#deferringStates == null || this.#deferringStates.size === 0) {
+      return null;
     }
-    return null;
+    const states = [...this.#deferringStates];
+    if (states.length === 1) {
+      return `The watch is in the '${states[0]}' state.`;
+    }
+    return `The watch is in the ${states
+      .slice(0, -1)
+      .map(s => `'${s}'`)
+      .join(', ')} and '${states[states.length - 1]}' states.`;
   }
 }
 

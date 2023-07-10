@@ -24,7 +24,7 @@ declare module 'fb-watchman' {
     ...WatchmanBaseResponse,
     subscribe: string,
     warning?: string,
-    'asserted-states': $ReadOnlyArray<string>,
+    'asserted-states'?: $ReadOnlyArray<string>,
   }>;
 
   declare type WatchmanWatchResponse = $ReadOnly<{
