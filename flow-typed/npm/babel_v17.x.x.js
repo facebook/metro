@@ -10,8 +10,6 @@
 
 'use strict';
 
-declare type BabelNode_DEPRECATED = any;
-
 type _BabelSourceMap = $ReadOnly<{
   file?: string,
   mappings: string,
@@ -239,14 +237,10 @@ declare module '@babel/parser' {
 declare module '@babel/core' {
   import type {Visitor, Scope, Hub, NodePath} from '@babel/traverse';
   import type {ParserOptions} from '@babel/parser';
-  // eslint-disable-next-line import/no-extraneous-dependencies
   import typeof {tokTypes as TokTypes} from '@babel/parser';
   import type {Options as GeneratorOptions} from '@babel/generator';
-  // eslint-disable-next-line import/no-extraneous-dependencies
   import typeof Template from '@babel/template';
-  // eslint-disable-next-line import/no-extraneous-dependencies
   import typeof Traverse from '@babel/traverse';
-  // eslint-disable-next-line import/no-extraneous-dependencies
   import typeof * as Types from '@babel/types';
 
   declare export var version: string;
@@ -837,7 +831,7 @@ declare module '@babel/core' {
      */
     wrapPluginVisitorMethod?: (
       key: string,
-      nodeType: $PropertyType<BabelNode, 'type'>,
+      nodeType: BabelNode['type'],
       fn: Function,
     ) => Function,
 

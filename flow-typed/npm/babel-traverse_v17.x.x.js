@@ -90,8 +90,6 @@ declare module '@babel/traverse' {
     +hub: HubInterface;
     bindings?: {[name: string]: Binding};
     references?: {[name: string]: boolean};
-    // One globals definition is a static class property and the other is an instance property
-    // eslint-disable-next-line ft-flow/no-dupe-keys
     globals?: {[name: string]: BabelNode};
     uids?: {[name: string]: boolean};
     data?: {[key: string]: any};
@@ -326,7 +324,7 @@ declare module '@babel/traverse' {
 
     parentKey: string;
     scope: Scope;
-    type: null | $PropertyType<BabelNode, 'type'>;
+    type: null | BabelNode['type'];
     inList: boolean;
     typeAnnotation?: BabelNodeTypeAnnotation;
 
@@ -431,7 +429,7 @@ declare module '@babel/traverse' {
      */
     isDescendant(maybeAncestor: NodePath<>): boolean;
 
-    inType(...candidateTypes: Array<$PropertyType<BabelNode, 'type'>>): boolean;
+    inType(...candidateTypes: Array<BabelNode['type']>): boolean;
 
     // _inference
 
@@ -587,7 +585,7 @@ declare module '@babel/traverse' {
      * Check the type against our stored internal type of the node. This is handy when a node has
      * been removed yet we still internally know the type and need it to calculate node replacement.
      */
-    isNodeType(type: $PropertyType<BabelNode, 'type'>): boolean;
+    isNodeType(type: BabelNode['type']): boolean;
 
     /**
      * This checks whether or not we're in one of the following positions:
@@ -735,7 +733,7 @@ declare module '@babel/traverse' {
     get<TKey: $Keys<TNode>>(
       key: TKey,
       context?: boolean | TraversalContext,
-    ): $Call<typeof getNodePathType, $ElementType<TNode, TKey>>;
+    ): $Call<typeof getNodePathType, TNode[TKey]>;
 
     get(
       key: string,
@@ -1863,8 +1861,8 @@ declare module '@babel/traverse' {
 
     +cache: Cache,
     +visitors: Visitors,
-    +verify: $PropertyType<Visitors, 'verify'>,
-    +explode: $PropertyType<Visitors, 'explode'>,
+    +verify: Visitors['verify'],
+    +explode: Visitors['explode'],
 
     cheap<TOptions>(
       node: BabelNode,
@@ -1884,8 +1882,8 @@ declare module '@babel/traverse' {
     removeProperties(tree: BabelNode, opts?: {...}): BabelNode,
     hasType(
       tree: BabelNode,
-      type: $PropertyType<BabelNode, 'type'>,
-      blacklistTypes: Array<$PropertyType<BabelNode, 'type'>>,
+      type: BabelNode['type'],
+      blacklistTypes: Array<BabelNode['type']>,
     ): boolean,
   };
 
