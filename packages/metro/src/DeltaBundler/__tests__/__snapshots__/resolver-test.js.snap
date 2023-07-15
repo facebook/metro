@@ -3,9 +3,8 @@
 exports[`linux assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from /root/index.js: 
 
-None of these files exist:
-  * asset.PNG(.native|.native.js|.js|.native.json|.json)
-  * asset.PNG/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * asset.PNG(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset.PNG';
     |                ^
@@ -15,9 +14,8 @@ None of these files exist:
 exports[`linux assets resolves asset files with resolution suffixes (matching exact) 1`] = `
 "Unable to resolve module ./c@2x.png from /root/index.js: 
 
-None of these files exist:
+No file matched the pattern:
   * c@2x.png
-  * c@2x.png/index(.native|.native.js|.js|.native.json|.json)
   1 | import foo from 'bar';
 > 2 | import a from './c@2x.png';
     |                ^
@@ -27,9 +25,8 @@ None of these files exist:
 exports[`linux assets resolves asset files with resolution suffixes (matching size) 1`] = `
 "Unable to resolve module ./a@1.5x.png from /root/index.js: 
 
-None of these files exist:
+No file matched the pattern:
   * a@1.5x.png
-  * a@1.5x.png/index(.native|.native.js|.js|.native.json|.json)
   1 | import foo from 'bar';
 > 2 | import a from './a@1.5x.png';
     |                ^
@@ -39,9 +36,8 @@ None of these files exist:
 exports[`linux assets resolves custom asset extensions when overriding assetExts 1`] = `
 "Unable to resolve module ./asset2.png from /root/index.js: 
 
-None of these files exist:
-  * asset2.png(.native|.native.js|.js|.native.json|.json)
-  * asset2.png/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * asset2.png(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset2.png';
     |                ^
@@ -84,9 +80,8 @@ exports[`linux hasteImpl config param does not take file name or extension into 
 exports[`linux packages in node_modules/ browser field in package.json resolves mappings from internal calls 1`] = `
 "Unable to resolve module ./foo.js from /root/node_modules/aPackage/index.js: 
 
-None of these files exist:
-  * node_modules/aPackage/foo.js(.native|.native.js|.js|.native.json|.json)
-  * node_modules/aPackage/foo.js/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * node_modules/aPackage/foo.js(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -114,9 +109,8 @@ exports[`linux packages in node_modules/ finds nested packages in node_modules 1
 exports[`linux packages in node_modules/ react-native field in package.json resolves mappings from internal calls 1`] = `
 "Unable to resolve module ./foo.js from /root/node_modules/aPackage/index.js: 
 
-None of these files exist:
-  * node_modules/aPackage/foo.js(.native|.native.js|.js|.native.json|.json)
-  * node_modules/aPackage/foo.js/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * node_modules/aPackage/foo.js(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -144,9 +138,8 @@ exports[`linux packages in node_modules/ uses the folder name and not the name i
 exports[`linux platforms resolves platform-specific files 1`] = `
 "Unable to resolve module ./foo.js from /root/index.js: 
 
-None of these files exist:
-  * foo.js(.native|.ios.js|.native.js|.js|.ios.json|.native.json|.json)
-  * foo.js/index(.native|.ios.js|.native.js|.js|.ios.json|.native.json|.json)
+No file matched the pattern:
+  * foo.js(/index)?(.ios|.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -156,9 +149,8 @@ None of these files exist:
 exports[`linux relative paths fails when trying to implicitly require an extension not listed in sourceExts 1`] = `
 "Unable to resolve module ./a.another from /root/index.js: 
 
-None of these files exist:
-  * a.another(.native|.native.js|.js|.native.json|.json)
-  * a.another/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * a.another(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
@@ -168,9 +160,8 @@ None of these files exist:
 exports[`linux relative paths with additional files included in the file map (watcher.additionalExts) fails when implicitly requiring a file outside sourceExts 1`] = `
 "Unable to resolve module ./a from /root/index.js: 
 
-None of these files exist:
-  * a(.native|.native.js|.js|.native.json|.json)
-  * a/index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * a(/index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './a';
     |                ^
@@ -180,9 +171,8 @@ None of these files exist:
 exports[`win32 assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from C:\\\\root\\\\index.js: 
 
-None of these files exist:
-  * asset.PNG(.native|.native.js|.js|.native.json|.json)
-  * asset.PNG\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * asset.PNG(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset.PNG';
     |                ^
@@ -192,9 +182,8 @@ None of these files exist:
 exports[`win32 assets resolves asset files with resolution suffixes (matching exact) 1`] = `
 "Unable to resolve module ./c@2x.png from C:\\\\root\\\\index.js: 
 
-None of these files exist:
+No file matched the pattern:
   * c@2x.png
-  * c@2x.png\\\\index(.native|.native.js|.js|.native.json|.json)
   1 | import foo from 'bar';
 > 2 | import a from './c@2x.png';
     |                ^
@@ -204,9 +193,8 @@ None of these files exist:
 exports[`win32 assets resolves asset files with resolution suffixes (matching size) 1`] = `
 "Unable to resolve module ./a@1.5x.png from C:\\\\root\\\\index.js: 
 
-None of these files exist:
+No file matched the pattern:
   * a@1.5x.png
-  * a@1.5x.png\\\\index(.native|.native.js|.js|.native.json|.json)
   1 | import foo from 'bar';
 > 2 | import a from './a@1.5x.png';
     |                ^
@@ -216,9 +204,8 @@ None of these files exist:
 exports[`win32 assets resolves custom asset extensions when overriding assetExts 1`] = `
 "Unable to resolve module ./asset2.png from C:\\\\root\\\\index.js: 
 
-None of these files exist:
-  * asset2.png(.native|.native.js|.js|.native.json|.json)
-  * asset2.png\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * asset2.png(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset2.png';
     |                ^
@@ -261,9 +248,8 @@ exports[`win32 hasteImpl config param does not take file name or extension into 
 exports[`win32 packages in node_modules/ browser field in package.json resolves mappings from internal calls 1`] = `
 "Unable to resolve module ./foo.js from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: 
 
-None of these files exist:
-  * node_modules\\\\aPackage\\\\foo.js(.native|.native.js|.js|.native.json|.json)
-  * node_modules\\\\aPackage\\\\foo.js\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -291,9 +277,8 @@ exports[`win32 packages in node_modules/ finds nested packages in node_modules 1
 exports[`win32 packages in node_modules/ react-native field in package.json resolves mappings from internal calls 1`] = `
 "Unable to resolve module ./foo.js from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: 
 
-None of these files exist:
-  * node_modules\\\\aPackage\\\\foo.js(.native|.native.js|.js|.native.json|.json)
-  * node_modules\\\\aPackage\\\\foo.js\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -321,9 +306,8 @@ exports[`win32 packages in node_modules/ uses the folder name and not the name i
 exports[`win32 platforms resolves platform-specific files 1`] = `
 "Unable to resolve module ./foo.js from C:\\\\root\\\\index.js: 
 
-None of these files exist:
-  * foo.js(.native|.ios.js|.native.js|.js|.ios.json|.native.json|.json)
-  * foo.js\\\\index(.native|.ios.js|.native.js|.js|.ios.json|.native.json|.json)
+No file matched the pattern:
+  * foo.js(\\\\index)?(.ios|.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -333,9 +317,8 @@ None of these files exist:
 exports[`win32 relative paths fails when trying to implicitly require an extension not listed in sourceExts 1`] = `
 "Unable to resolve module ./a.another from C:\\\\root\\\\index.js: 
 
-None of these files exist:
-  * a.another(.native|.native.js|.js|.native.json|.json)
-  * a.another\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * a.another(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
@@ -345,9 +328,8 @@ None of these files exist:
 exports[`win32 relative paths with additional files included in the file map (watcher.additionalExts) fails when implicitly requiring a file outside sourceExts 1`] = `
 "Unable to resolve module ./a from C:\\\\root\\\\index.js: 
 
-None of these files exist:
-  * a(.native|.native.js|.js|.native.json|.json)
-  * a\\\\index(.native|.native.js|.js|.native.json|.json)
+No file matched the pattern:
+  * a(\\\\index)?(.native)?.(native|js|json)
   1 | import foo from 'bar';
 > 2 | import a from './a';
     |                ^

@@ -301,10 +301,9 @@ it('throws a descriptive error when a file inside a Haste package cannot be reso
   expect(() => {
     Resolver.resolve(CONTEXT, 'some-package/subdir/does-not-exist', null);
   }).toThrowErrorMatchingInlineSnapshot(`
-    "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
+    "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, no file matched the pattern:
 
-      * \`/haste/some-package/subdir/does-not-exist(.js|.jsx|.json|.ts|.tsx)\`
-      * \`/haste/some-package/subdir/does-not-exist/index(.js|.jsx|.json|.ts|.tsx)\`"
+      * \`/haste/some-package/subdir/does-not-exist(/index)?.(js|jsx|json|ts|tsx)\`"
   `);
 });
 

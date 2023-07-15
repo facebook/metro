@@ -181,12 +181,10 @@ class ModuleResolver<TPackage: Packageish> {
           fromModule.path,
           moduleName,
           [
-            '\n\nNone of these files exist:',
+            '\n\nNo file matched the pattern:',
             `  * ${Resolver.formatFileCandidates(
               this._removeRoot(candidates.file),
-            )}`,
-            `  * ${Resolver.formatFileCandidates(
-              this._removeRoot(candidates.dir),
+              true,
             )}`,
           ].join('\n'),
           {
