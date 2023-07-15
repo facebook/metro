@@ -5,28 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
  * @oncall react_native
  */
 
 'use strict';
 
+/*::
+import type {BabelCoreOptions} from '@babel/core';
+*/
+
 const escapeRegExp = require('escape-string-regexp');
 const fs = require('fs');
 const path = require('path');
 
-let _only = [];
+let _only /*: $ReadOnlyArray<RegExp | string> */ = [];
 
-function register(onlyList) {
-  // This prevents `babel-register` from transforming the code of the
-  // plugins/presets that we are require-ing themselves before setting up the
-  // actual config.
-  require('@babel/register')({
-    babelrc: false,
-    configFile: false,
-    // make sure we don't transpile any npm packages
-    ignore: [/\/node_modules\//],
-    only: [],
-  });
+function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
   require('@babel/register')({
     ...config(onlyList),
     extensions: [
@@ -42,7 +37,12 @@ function register(onlyList) {
   });
 }
 
-function config(onlyList, options) {
+function config(
+  onlyList /*: $ReadOnlyArray<RegExp | string> */,
+  options /*: ?$ReadOnly<{
+    lazy?: boolean,
+  }> */,
+) /*: BabelCoreOptions */ {
   _only = _only.concat(onlyList);
   return {
     babelrc: false,
@@ -51,7 +51,7 @@ function config(onlyList, options) {
     browserslistConfigFile: false,
     // make sure we don't transpile any npm packages
     ignore: [/\/node_modules\//],
-    only: _only,
+    only: [..._only],
     plugins: [
       [require('@babel/plugin-transform-flow-strip-types').default],
       [
@@ -60,9 +60,6 @@ function config(onlyList, options) {
           lazy: options && options.lazy,
         },
       ],
-      [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
-      [require('@babel/plugin-proposal-optional-chaining').default],
-      [require('@babel/plugin-syntax-class-properties').default],
     ],
     presets: [],
     retainLines: true,
@@ -95,7 +92,10 @@ function config(onlyList, options) {
  * example, we would not want to match some deeply nested folder that happens to
  * have the same name as one of `BABEL_ENABLED_PATHS`.
  */
-function buildRegExps(basePath, dirPaths) {
+function buildRegExps(
+  basePath /*: string */,
+  dirPaths /*: $ReadOnlyArray<RegExp | string> */,
+) /*: $ReadOnlyArray<RegExp> */ {
   return dirPaths.map(folderPath =>
     // Babel cares about Windows/Unix paths since v7b44
     // https://github.com/babel/babel/issues/8184
@@ -144,7 +144,8 @@ function registerForMetroMonorepo() {
   isRegisteredForMetroMonorepo = true;
 }
 
+register.config = config;
+register.buildRegExps = buildRegExps;
+register.unstable_registerForMetroMonorepo = registerForMetroMonorepo;
+
 module.exports = register;
-module.exports.config = config;
-module.exports.buildRegExps = buildRegExps;
-module.exports.unstable_registerForMetroMonorepo = registerForMetroMonorepo;

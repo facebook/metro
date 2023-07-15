@@ -10,9 +10,8 @@ references:
   # For stability, Node.js versions we run against in CI are defined explicitly
   # (the "lts" alias may bring in a future version before we support it)
   node_supported_lts_versions: &node_supported_lts_versions
-    - &node_min_supported_version "14.17"
-    - "16.18"
-    - "18.12"
+    - &node_min_supported_version "18.12"
+    - "20.2"
   node_lts_image: &node_lts_image cimg/node:18.12
 
   secure_unset_publish_token: &secure_unset_publish_token
@@ -58,6 +57,7 @@ jobs:
       - checkout
       - yarn_install
       - run: yarn typecheck
+      - run: yarn typecheck-ts
       - run: yarn lint
       - run: yarn test-smoke
 
@@ -76,7 +76,7 @@ jobs:
           name: Upload coverage results
           command: ./codecov -t ${CODECOV_TOKEN} -f ./coverage/coverage-final.json
 
-  test-linux:
+  test:
     <<: *secure_unset_publish_token
     parameters:
       node-version:
@@ -118,7 +118,7 @@ workflows:
     jobs:
       - run-js-checks
       - test-with-coverage
-      - test-linux:
+      - test:
           matrix:
             parameters:
               node-version: *node_supported_lts_versions

@@ -10,25 +10,34 @@
  */
 
 declare module 'fb-watchman' {
-  declare type WatchmanClockResponse = $ReadOnly<{
+  declare type WatchmanBaseResponse = $ReadOnly<{
+    version: string,
     clock: string,
+  }>;
+
+  declare type WatchmanClockResponse = $ReadOnly<{
+    ...WatchmanBaseResponse,
     warning?: string,
-    ...
   }>;
 
   declare type WatchmanSubscribeResponse = $ReadOnly<{
+    ...WatchmanBaseResponse,
     subscribe: string,
     warning?: string,
-    'asserted-states': $ReadOnlyArray<string>,
-    ...
+    'asserted-states'?: $ReadOnlyArray<string>,
   }>;
 
   declare type WatchmanWatchResponse = $ReadOnly<{
+    ...WatchmanBaseResponse,
     watch: string,
     watcher: string,
     relative_path: string,
     warning?: string,
-    ...
+  }>;
+
+  declare type WatchmanWatchListResponse = $ReadOnly<{
+    ...WatchmanBaseResponse,
+    roots: $ReadOnlyArray<string>,
   }>;
 
   declare type WatchmanSubscriptionEvent = {
@@ -103,6 +112,13 @@ declare module 'fb-watchman' {
     'suffix',
     string | $ReadOnlyArray<string>,
   ];
+  declare type WatchmanNameExpression =
+    | ['name' | 'iname', string | $ReadOnlyArray<string>]
+    | [
+        'name' | 'iname',
+        string | $ReadOnlyArray<string>,
+        'basename' | 'wholename',
+      ];
 
   declare type WatchmanTypeExpression = ['type', WatchmanFileType];
 
@@ -116,6 +132,7 @@ declare module 'fb-watchman' {
     | WatchmanDirnameExpression
     | WatchmanMatchExpression
     | WatchmanNotExpression
+    | WatchmanNameExpression
     | WatchmanSuffixExpression
     | WatchmanTypeExpression
     | WatchmanVariadicExpression;
@@ -166,6 +183,10 @@ declare module 'fb-watchman' {
       callback: (error: ?Error, response: WatchmanWatchResponse) => void,
     ): void;
     command(
+      config: ['watch-list'],
+      callback: (error: ?Error, response: WatchmanWatchListResponse) => void,
+    ): void;
+    command(
       config: ['query', string, WatchmanQuery],
       callback: (error: ?Error, response: WatchmanQueryResponse) => void,
     ): void;
@@ -180,6 +201,14 @@ declare module 'fb-watchman' {
     command(
       config: ['subscribe', string, string, WatchmanQuery],
       callback: (error: ?Error, response: WatchmanSubscribeResponse) => void,
+    ): void;
+    command(
+      config: ['state-enter', string, string],
+      callback: (error: ?Error, response: WatchmanBaseResponse) => void,
+    ): void;
+    command(
+      config: ['state-leave', string, string],
+      callback: (error: ?Error, response: WatchmanBaseResponse) => void,
     ): void;
     end(): void;
 

@@ -30,7 +30,7 @@ import {Graph} from '../Graph';
 
 const {objectContaining} = expect;
 
-type DependencyDataInput = $Shape<TransformResultDependency['data']>;
+type DependencyDataInput = Partial<TransformResultDependency['data']>;
 
 let mockedDependencies: Set<string> = new Set();
 let mockedDependencyTree: Map<
@@ -43,7 +43,14 @@ let mockedDependencyTree: Map<
     }>,
   >,
 > = new Map();
-const files = new Set<string>();
+
+/* `files` emulates the changed paths typically aggregated by DeltaCalcutor.
+ * Paths will be added to this set by any addition, deletion or modification,
+ * respecting getModifiedModulesForDeletedPath. Each such operation will
+ * increment the count - we'll intepret count as a file revision number, with
+ * a changed count reflected in a change to the transform output key.
+ */
+const files = new CountingSet<string>();
 let graph: TestGraph;
 let options;
 
@@ -161,11 +168,14 @@ const Actions = {
   },
 };
 
-function deferred(value: {
-  +dependencies: $ReadOnlyArray<TransformResultDependency>,
-  +getSource: () => Buffer,
-  +output: $ReadOnlyArray<MixedOutput>,
-}) {
+function deferred(
+  value: $ReadOnly<{
+    dependencies: $ReadOnlyArray<TransformResultDependency>,
+    getSource: () => Buffer,
+    output: $ReadOnlyArray<MixedOutput>,
+    unstable_transformResultKey?: ?string,
+  }>,
+) {
   let resolve;
   const promise = new Promise(res => (resolve = res));
 
@@ -228,10 +238,7 @@ function computeInverseDependencies(
   }
   for (const module of graph.dependencies.values()) {
     for (const dependency of module.dependencies.values()) {
-      if (
-        options.experimentalImportBundleSupport &&
-        dependency.data.data.asyncType != null
-      ) {
+      if (options.lazy && dependency.data.data.asyncType != null) {
         // Async deps aren't tracked in inverseDependencies
         continue;
       }
@@ -252,7 +259,7 @@ class TestGraph extends Graph<> {
   ): Promise<Result<MixedOutput>> {
     // Get a snapshot of the graph before the traversal.
     const dependenciesBefore = new Set(this.dependencies.keys());
-    const pathsBefore = new Set(paths);
+    const modifiedPaths = new Set(files);
 
     // Mutate the graph and calculate a delta.
     const delta = await super.traverseDependencies(paths, options);
@@ -261,7 +268,7 @@ class TestGraph extends Graph<> {
     const expectedDelta = computeDelta(
       dependenciesBefore,
       this.dependencies,
-      pathsBefore,
+      modifiedPaths,
     );
     expect(getPaths(delta)).toEqual(expectedDelta);
 
@@ -280,6 +287,7 @@ class TestGraph extends Graph<> {
   }
 }
 
+// $FlowFixMe[missing-local-annot]
 function getMatchingContextModules<T>(graph: Graph<T>, filePath: string) {
   const contextPaths = new Set<string>();
   graph.markModifiedContextModules(filePath, contextPaths);
@@ -296,12 +304,25 @@ beforeEach(async () => {
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(async (path: string, context: ?RequireContext) => {
+      const unstable_transformResultKey =
+        path +
+        (context
+          ? // For context modules, the real transformer will hash the
+            // generated template, which varies according to its dependencies.
+            // Approximate that by concatenating dependency paths.
+            (mockedDependencyTree.get(path) ?? [])
+              .map(d => d.path)
+              .sort()
+              .join('|')
+          : ` (revision ${files.count(path)})`);
       return {
         dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
           name: dep.name,
           data: {
             asyncType: null,
+            // $FlowFixMe[missing-empty-array-annot]
             locs: [],
+            // $FlowFixMe[incompatible-call]
             key: dep.data.key,
             ...dep.data,
           },
@@ -318,12 +339,14 @@ beforeEach(async () => {
             type: 'js/module',
           },
         ],
+        unstable_transformResultKey,
       };
     });
 
   options = {
     unstable_allowRequireContext: false,
-    experimentalImportBundleSupport: false,
+    unstable_enablePackageExports: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       const deps = getMockDependency(from);
@@ -332,7 +355,7 @@ beforeEach(async () => {
       if (!mockedDependencies.has(path)) {
         throw new Error(`Dependency not found: ${from} -> ${path}`);
       }
-      return path;
+      return {type: 'sourceFile', filePath: path};
     },
     transform: mockTransform,
     transformOptions: {
@@ -341,7 +364,6 @@ beforeEach(async () => {
       hot: false,
       minify: false,
       platform: null,
-      runtimeBytecodeVersion: null,
       type: 'module',
       unstable_transformProfile: 'default',
     },
@@ -407,7 +429,7 @@ it('should return an empty result when there are no changes', async () => {
     getPaths(await graph.traverseDependencies(['/bundle'], options)),
   ).toEqual({
     added: new Set(),
-    modified: new Set(['/bundle']),
+    modified: new Set([]),
     deleted: new Set(),
   });
 });
@@ -673,6 +695,39 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/foo')).toBe(undefined);
     expect(graph.dependencies.get('/bar')).toBe(undefined);
     expect(graph.dependencies.get('/baz')).toBe(undefined);
+  });
+
+  it('remove a dependency, modify it, and re-add it elsewhere', async () => {
+    await graph.initialTraverseDependencies(options);
+
+    Actions.removeDependency('/foo', '/bar');
+    Actions.modifyFile('/bar');
+    Actions.addDependency('/baz', '/bar');
+
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo', '/bar', '/baz']),
+      deleted: new Set(),
+    });
+  });
+
+  it('Add a dependency, modify it, and remove it', async () => {
+    await graph.initialTraverseDependencies(options);
+
+    Actions.createFile('/quux');
+    Actions.addDependency('/bar', '/quux');
+    Actions.modifyFile('/quux');
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
   });
 
   it('removes a cyclic dependency but should not remove any dependency', async () => {
@@ -1408,7 +1463,7 @@ describe('edge cases', () => {
     beforeEach(() => {
       localOptions = {
         ...options,
-        experimentalImportBundleSupport: true,
+        lazy: true,
       };
     });
 
@@ -1926,6 +1981,7 @@ describe('edge cases', () => {
                           │ /baz │
                           └──────┘
       */
+      mockTransform.mockClear();
       expect(
         getPaths(await graph.traverseDependencies([...files], localOptions)),
       ).toEqual({
@@ -1933,6 +1989,7 @@ describe('edge cases', () => {
         modified: new Set(['/bundle']),
         deleted: new Set([]),
       });
+      expect(mockTransform).toHaveBeenCalledWith('/bundle', undefined);
     });
   });
 

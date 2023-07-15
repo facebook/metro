@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as path from 'path';
+import {serialize} from 'v8';
 
 jest.useRealTimers();
 
@@ -39,26 +40,43 @@ jest.mock('../crawlers/watchman', () =>
   jest.fn(options => {
     const path = require('path');
 
-    const {previousState, ignore, rootDir, roots, computeSha1} = options;
+    const {
+      previousState,
+      ignore,
+      rootDir,
+      roots,
+      computeSha1,
+      includeSymlinks,
+    } = options;
     const list = mockChangedFiles || mockFs;
-    const removedFiles = new Map();
+    const removedFiles = new Set();
     const changedFiles = new Map();
 
     previousState.clocks = mockClocks;
 
     for (const file in list) {
       if (
-        new RegExp(roots.join('|').replace(/\\/g, '\\\\')).test(file) &&
+        new RegExp(roots.join('|').replaceAll('\\', '\\\\')).test(file) &&
         !ignore(file)
       ) {
         const relativeFilePath = path.relative(rootDir, file);
         if (list[file]) {
           const hash = computeSha1 ? mockHashContents(list[file]) : null;
-          changedFiles.set(relativeFilePath, ['', 32, 42, 0, [], hash, 0]);
+          const isSymlink = typeof list[file].link === 'string';
+          if (!isSymlink || includeSymlinks) {
+            changedFiles.set(relativeFilePath, [
+              '',
+              32,
+              42,
+              0,
+              [],
+              hash,
+              isSymlink ? 1 : 0,
+            ]);
+          }
         } else {
-          const fileData = previousState.files.get(relativeFilePath);
-          if (fileData) {
-            removedFiles.set(relativeFilePath, fileData);
+          if (previousState.fileSystem.exists(relativeFilePath)) {
+            removedFiles.add(relativeFilePath);
           }
         }
       }
@@ -86,7 +104,7 @@ jest.mock('../watchers/WatchmanWatcher', () => mockWatcherConstructor);
 let mockChangedFiles;
 let mockFs;
 
-jest.mock('graceful-fs', () => ({
+jest.mock('fs', () => ({
   existsSync: jest.fn(path => {
     // A file change can be triggered by writing into the
     // mockChangedFiles object.
@@ -119,10 +137,30 @@ jest.mock('graceful-fs', () => ({
     expect(options).toBe(require('v8').serialize ? undefined : 'utf8');
     mockFs[path] = data;
   }),
+  promises: {
+    readlink: jest.fn(async path => {
+      const entry = mockFs[path];
+      if (!entry) {
+        const error = new Error(`Cannot read path '${path}'.`);
+        error.code = 'ENOENT';
+        throw error;
+      }
+      if (typeof entry.link !== 'string') {
+        throw new Error(`Not a symlink: '${path}'.`);
+      }
+      return entry.link;
+    }),
+  },
 }));
 
 const object = data => Object.assign(Object.create(null), data);
-const createMap = obj => new Map(Object.keys(obj).map(key => [key, obj[key]]));
+const createMap = obj => new Map(Object.entries(obj));
+const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
+  expect(fileSystem.getDifference(fileData)).toEqual({
+    changedFiles: new Map(),
+    removedFiles: new Set(),
+  });
+};
 
 // Jest toEqual does not match Map instances from different contexts
 // This normalizes them for the uses cases in this test
@@ -148,7 +186,7 @@ let consoleError;
 let defaultConfig;
 let fs;
 let H;
-let HasteMap;
+let FileMap;
 let mockCacheManager;
 let mockClocks;
 let mockEmitters;
@@ -156,7 +194,7 @@ let mockEnd;
 let mockWorker;
 let cacheContent = null;
 
-describe('HasteMap', () => {
+describe('FileMap', () => {
   beforeEach(() => {
     jest.resetModules();
 
@@ -181,6 +219,9 @@ describe('HasteMap', () => {
       [path.join('/', 'project', 'video', 'video.mp4')]: Buffer.from([
         0xfa, 0xce, 0xb0, 0x0c,
       ]).toString(),
+      [path.join('/', 'project', 'fruits', 'LinkToStrawberry.js')]: {
+        link: 'Strawberry.js',
+      },
     });
     mockClocks = createMap({
       fruits: 'c:fake-clock:1',
@@ -198,7 +239,7 @@ describe('HasteMap', () => {
     console.warn = jest.fn();
     console.error = jest.fn();
 
-    HasteMap = require('../').default;
+    FileMap = require('../').default;
     mockCacheManager = {
       read: jest.fn().mockImplementation(async () => cacheContent),
       write: jest.fn().mockImplementation(async dataSnapshot => {
@@ -206,11 +247,12 @@ describe('HasteMap', () => {
       }),
     };
 
-    H = HasteMap.H;
+    H = FileMap.H;
 
     cacheContent = null;
 
     defaultConfig = {
+      enableSymlinks: false,
       extensions: ['js', 'json'],
       hasteImplModulePath: require.resolve('./haste_impl.js'),
       healthCheck: {
@@ -239,25 +281,7 @@ describe('HasteMap', () => {
   });
 
   it('exports constants', () => {
-    expect(HasteMap.H).toBe(require('../constants'));
-  });
-
-  it('matches files against a pattern', async () => {
-    const {fileSystem} = await new HasteMap(defaultConfig).build();
-    expect(
-      fileSystem.matchFiles(
-        process.platform === 'win32' ? /project\\fruits/ : /project\/fruits/,
-      ),
-    ).toEqual([
-      path.join('/', 'project', 'fruits', 'Banana.js'),
-      path.join('/', 'project', 'fruits', 'Pear.js'),
-      path.join('/', 'project', 'fruits', 'Strawberry.js'),
-      path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
-    ]);
-
-    expect(fileSystem.matchFiles(/__mocks__/)).toEqual([
-      path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
-    ]);
+    expect(FileMap.H).toBe(require('../constants'));
   });
 
   it('ignores files given a pattern', async () => {
@@ -265,16 +289,16 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
     `;
-    const {fileSystem} = await new HasteMap(config).build();
-    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
+    const {fileSystem} = await new FileMap(config).build();
+    expect([...fileSystem.matchFiles({filter: /Kiwi/})]).toEqual([]);
   });
 
   it('ignores vcs directories without ignore pattern', async () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {fileSystem} = await new HasteMap(defaultConfig).build();
-    expect(fileSystem.matchFiles('.git')).toEqual([]);
+    const {fileSystem} = await new FileMap(defaultConfig).build();
+    expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
   it('ignores vcs directories with ignore pattern regex', async () => {
@@ -282,23 +306,22 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
     `;
-
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
-    const {fileSystem} = await new HasteMap(config).build();
-    expect(fileSystem.matchFiles(/Kiwi/)).toEqual([]);
-    expect(fileSystem.matchFiles('.git')).toEqual([]);
+    const {fileSystem} = await new FileMap(config).build();
+    expect([...fileSystem.matchFiles({filter: /Kiwi/})]).toEqual([]);
+    expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
-  it('warn on ignore pattern except for regex', async () => {
+  it('throw on ignore pattern except for regex', async () => {
     const config = {ignorePattern: 'Kiwi', ...defaultConfig};
     mockFs['/project/fruits/Kiwi.js'] = `
       // Kiwi!
     `;
 
     try {
-      await new HasteMap(config).build();
+      await new FileMap(config).build();
     } catch (err) {
       expect(err.message).toBe(
         'metro-file-map: the `ignorePattern` option must be a RegExp',
@@ -384,16 +407,17 @@ describe('HasteMap', () => {
       // fbjs2
     `;
 
-    const hasteMap = new HasteMap({
+    const fileMap = new FileMap({
       ...defaultConfig,
       mocksPattern: '__mocks__',
     });
 
-    await hasteMap.build();
+    const {fileSystem, mockMap} = await fileMap.build();
 
     expect(cacheContent.clocks).toEqual(mockClocks);
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',
@@ -443,7 +467,7 @@ describe('HasteMap', () => {
       }),
     );
 
-    expect(cacheContent.map).toEqual(
+    expect(cacheContent.haste.map).toEqual(
       createMap({
         Banana: {
           [H.GENERIC_PLATFORM]: [path.join('fruits', 'Banana.js'), H.MODULE],
@@ -463,6 +487,10 @@ describe('HasteMap', () => {
       }),
     );
 
+    expect(mockMap.getMockModule('Pear')).toEqual(
+      path.resolve(defaultConfig.rootDir, 'fruits', '__mocks__', 'Pear.js'),
+    );
+
     expect(cacheContent.mocks).toEqual(
       createMap({
         Pear: path.join('fruits', '__mocks__', 'Pear.js'),
@@ -471,166 +499,198 @@ describe('HasteMap', () => {
 
     // The cache file must exactly mirror the data structure returned from a
     // read
-    expect(deepNormalize(await hasteMap.read())).toEqual(cacheContent);
+    expect(deepNormalize(await fileMap.read())).toEqual(cacheContent);
   });
 
-  it('throws if both symlinks and watchman is enabled', () => {
-    expect(
-      () => new HasteMap({...defaultConfig, enableSymlinks: true}),
-    ).toThrow(
-      'Set either `enableSymlinks` to false or `useWatchman` to false.',
-    );
-    expect(
-      () =>
-        new HasteMap({
-          ...defaultConfig,
-          enableSymlinks: true,
-          useWatchman: true,
-        }),
-    ).toThrow(
-      'Set either `enableSymlinks` to false or `useWatchman` to false.',
-    );
+  describe('builds a file map on a fresh cache with SHA-1s', () => {
+    it.each([
+      [false, false],
+      [false, true],
+      [true, false],
+      [true, true],
+    ])(
+      'uses watchman: %s, symlinks enabled: %s',
+      async (useWatchman, enableSymlinks) => {
+        const node = require('../crawlers/node');
 
-    expect(
-      () =>
-        new HasteMap({
-          ...defaultConfig,
-          enableSymlinks: false,
-          useWatchman: true,
-        }),
-    ).not.toThrow();
+        node.mockImplementation(options => {
+          // The node crawler returns "null" for the SHA-1.
+          const changedFiles = createMap({
+            [path.join('fruits', 'Banana.js')]: [
+              'Banana',
+              32,
+              42,
+              0,
+              'Strawberry',
+              null,
+              0,
+            ],
+            [path.join('fruits', 'Pear.js')]: [
+              'Pear',
+              32,
+              42,
+              0,
+              'Banana\0Strawberry',
+              null,
+              0,
+            ],
+            [path.join('fruits', 'Strawberry.js')]: [
+              'Strawberry',
+              32,
+              42,
+              0,
+              '',
+              null,
+              0,
+            ],
+            [path.join('fruits', '__mocks__', 'Pear.js')]: [
+              '',
+              32,
+              42,
+              0,
+              'Melon',
+              null,
+              0,
+            ],
+            [path.join('vegetables', 'Melon.js')]: [
+              'Melon',
+              32,
+              42,
+              0,
+              '',
+              null,
+              0,
+            ],
+            ...(enableSymlinks
+              ? {
+                  [path.join('fruits', 'LinkToStrawberry.js')]: [
+                    '',
+                    32,
+                    42,
+                    0,
+                    '',
+                    null,
+                    1,
+                  ],
+                }
+              : null),
+          });
 
-    expect(
-      () =>
-        new HasteMap({
+          return Promise.resolve({
+            changedFiles,
+            removedFiles: new Set(),
+          });
+        });
+
+        const fileMap = new FileMap({
           ...defaultConfig,
-          enableSymlinks: true,
-          useWatchman: false,
-        }),
-    ).not.toThrow();
+          computeSha1: true,
+          maxWorkers: 1,
+          enableSymlinks,
+          useWatchman,
+        });
+
+        await fileMap.build();
+
+        expect(
+          createMap({
+            [path.join('fruits', 'Banana.js')]: [
+              'Banana',
+              32,
+              42,
+              1,
+              'Strawberry',
+              '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
+              0,
+            ],
+            [path.join('fruits', 'Pear.js')]: [
+              'Pear',
+              32,
+              42,
+              1,
+              'Banana\0Strawberry',
+              '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
+              0,
+            ],
+            [path.join('fruits', 'Strawberry.js')]: [
+              'Strawberry',
+              32,
+              42,
+              1,
+              '',
+              'e8aa38e232b3795f062f1d777731d9240c0f8c25',
+              0,
+            ],
+            [path.join('fruits', '__mocks__', 'Pear.js')]: [
+              '',
+              32,
+              42,
+              1,
+              'Melon',
+              '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
+              0,
+            ],
+            [path.join('vegetables', 'Melon.js')]: [
+              'Melon',
+              32,
+              42,
+              1,
+              '',
+              'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
+              0,
+            ],
+            ...(enableSymlinks
+              ? {
+                  [path.join('fruits', 'LinkToStrawberry.js')]: [
+                    '',
+                    32,
+                    42,
+                    1,
+                    '',
+                    null,
+                    'Strawberry.js',
+                  ],
+                }
+              : null),
+          }),
+        );
+
+        expect(deepNormalize(await fileMap.read())).toEqual(cacheContent);
+      },
+    );
   });
 
-  describe('builds a haste map on a fresh cache with SHA-1s', () => {
-    it.each([false, true])('uses watchman: %s', async useWatchman => {
-      const node = require('../crawlers/node');
-
-      node.mockImplementation(options => {
-        // The node crawler returns "null" for the SHA-1.
-        const changedFiles = createMap({
-          [path.join('fruits', 'Banana.js')]: [
-            'Banana',
-            32,
-            42,
-            0,
-            'Strawberry',
-            null,
-            0,
-          ],
-          [path.join('fruits', 'Pear.js')]: [
-            'Pear',
-            32,
-            42,
-            0,
-            'Banana\0Strawberry',
-            null,
-            0,
-          ],
-          [path.join('fruits', 'Strawberry.js')]: [
-            'Strawberry',
-            32,
-            42,
-            0,
-            '',
-            null,
-            0,
-          ],
-          [path.join('fruits', '__mocks__', 'Pear.js')]: [
-            '',
-            32,
-            42,
-            0,
-            'Melon',
-            null,
-            0,
-          ],
-          [path.join('vegetables', 'Melon.js')]: [
-            'Melon',
-            32,
-            42,
-            0,
-            '',
-            null,
-            0,
-          ],
-        });
-
-        return Promise.resolve({
-          changedFiles,
-          removedFiles: new Map(),
-        });
-      });
-
-      const hasteMap = new HasteMap({
-        ...defaultConfig,
-        computeSha1: true,
-        maxWorkers: 1,
-        useWatchman,
-      });
-
-      await hasteMap.build();
-
-      expect(cacheContent.files).toEqual(
-        createMap({
-          [path.join('fruits', 'Banana.js')]: [
-            'Banana',
-            32,
-            42,
-            1,
-            'Strawberry',
-            '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
-            0,
-          ],
-          [path.join('fruits', 'Pear.js')]: [
-            'Pear',
-            32,
-            42,
-            1,
-            'Banana\0Strawberry',
-            '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
-            0,
-          ],
-          [path.join('fruits', 'Strawberry.js')]: [
-            'Strawberry',
-            32,
-            42,
-            1,
-            '',
-            'e8aa38e232b3795f062f1d777731d9240c0f8c25',
-            0,
-          ],
-          [path.join('fruits', '__mocks__', 'Pear.js')]: [
-            '',
-            32,
-            42,
-            1,
-            'Melon',
-            '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
-            0,
-          ],
-          [path.join('vegetables', 'Melon.js')]: [
-            'Melon',
-            32,
-            42,
-            1,
-            '',
-            'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
-            0,
-          ],
-        }),
-      );
-
-      expect(deepNormalize(await hasteMap.read())).toEqual(cacheContent);
+  it('handles a Haste module moving between builds', async () => {
+    mockFs = object({
+      [path.join('/', 'project', 'vegetables', 'Melon.js')]: `
+        // Melon is a fruit!
+      `,
     });
+
+    const originalData = await new FileMap(defaultConfig).build();
+
+    // Haste Melon present in its original location.
+    expect(originalData.hasteMap.getModule('Melon')).toEqual(
+      path.join('/', 'project', 'vegetables', 'Melon.js'),
+    );
+
+    // Haste Melon moved from vegetables to fruits since the cache was built.
+    mockFs = object({
+      [path.join('/', 'project', 'vegetables', 'Melon.js')]: null, // Mock deletion
+      [path.join('/', 'project', 'fruits', 'Melon.js')]: `
+        // Melon is a fruit!
+      `,
+    });
+
+    const newData = await new FileMap(defaultConfig).build();
+
+    expect(console.warn).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+
+    // Haste Melon is in its new location and not duplicated.
+    expect(newData.hasteMap.getModule('Melon')).toEqual(
+      path.join('/', 'project', 'fruits', 'Melon.js'),
+    );
   });
 
   it('does not crawl native files even if requested to do so', async () => {
@@ -638,20 +698,22 @@ describe('HasteMap', () => {
       module.exports = require("./video.mp4");
     `;
 
-    const hasteMap = new HasteMap({
+    const fileMap = new FileMap({
       ...defaultConfig,
       extensions: [...defaultConfig.extensions],
       roots: [...defaultConfig.roots, path.join('/', 'project', 'video')],
     });
 
-    await hasteMap.build();
+    const {fileSystem} = await fileMap.build();
     const data = cacheContent;
 
-    expect(data.map.get('IRequireAVideo')).toBeDefined();
-    expect(data.files.get(path.join('video', 'video.mp4'))).toBeDefined();
-    expect(fs.readFileSync).not.toBeCalledWith(
+    expect(data.haste.map.get('IRequireAVideo')).toBeDefined();
+    expect(fileSystem.linkStats(path.join('video', 'video.mp4'))).toEqual({
+      fileType: 'f',
+      modifiedTime: 32,
+    });
+    expect(fs.readFileSync.mock.calls.map(call => call[0])).not.toContain(
       path.join('video', 'video.mp4'),
-      'utf8',
     );
   });
 
@@ -662,23 +724,23 @@ describe('HasteMap', () => {
       // fbjs!
     `;
 
-    const hasteMap = new HasteMap({
+    const fileMap = new FileMap({
       ...defaultConfig,
       mocksPattern: '__mocks__',
       retainAllFiles: true,
     });
 
-    await hasteMap.build();
+    const {fileSystem} = await fileMap.build();
 
     // Expect the node module to be part of files but make sure it wasn't
     // read.
     expect(
-      cacheContent.files.get(
+      fileSystem.linkStats(
         path.join('fruits', 'node_modules', 'fbjs', 'fbjs.js'),
       ),
-    ).toEqual(['', 32, 42, 0, [], null, 0]);
+    ).toEqual({fileType: 'f', modifiedTime: 32});
 
-    expect(cacheContent.map.get('fbjs')).not.toBeDefined();
+    expect(cacheContent.haste.map.get('fbjs')).not.toBeDefined();
 
     // 5 modules - the node_module
     expect(fs.readFileSync.mock.calls.length).toBe(5);
@@ -714,14 +776,14 @@ describe('HasteMap', () => {
     `;
 
     try {
-      await new HasteMap({
+      await new FileMap({
         mocksPattern: '__mocks__',
         throwOnModuleCollision: true,
         ...defaultConfig,
       }).build();
     } catch {
       expect(
-        console.error.mock.calls[0][0].replace(/\\/g, '/'),
+        console.error.mock.calls[0][0].replaceAll('\\', '/'),
       ).toMatchSnapshot();
     }
   });
@@ -731,15 +793,15 @@ describe('HasteMap', () => {
       const Banana = require("Banana");
     `;
 
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
 
     // Duplicate modules are removed so that it doesn't cause
     // non-determinism later on.
-    expect(
-      cacheContent.map.get('Strawberry')[H.GENERIC_PLATFORM],
-    ).not.toBeDefined();
+    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
 
-    expect(console.warn.mock.calls[0][0].replace(/\\/g, '/')).toMatchSnapshot();
+    expect(
+      console.warn.mock.calls[0][0].replaceAll('\\', '/'),
+    ).toMatchSnapshot();
   });
 
   it('warns on duplicate module ids only once', async () => {
@@ -747,10 +809,10 @@ describe('HasteMap', () => {
       const Banana = require("Banana");
     `;
 
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
     expect(console.warn).toHaveBeenCalledTimes(1);
 
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
     expect(console.warn).toHaveBeenCalledTimes(1);
   });
 
@@ -762,7 +824,7 @@ describe('HasteMap', () => {
     `;
 
     try {
-      await new HasteMap({
+      await new FileMap({
         throwOnModuleCollision: true,
         ...defaultConfig,
       }).build();
@@ -787,9 +849,10 @@ describe('HasteMap', () => {
       const Blackberry = require("Blackberry");
     `;
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new FileMap(defaultConfig).build();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Strawberry.android.js')]: [
           'Strawberry',
@@ -821,7 +884,7 @@ describe('HasteMap', () => {
       }),
     );
 
-    expect(cacheContent.map).toEqual(
+    expect(cacheContent.haste.map).toEqual(
       createMap({
         Strawberry: {
           [H.GENERIC_PLATFORM]: [
@@ -836,7 +899,7 @@ describe('HasteMap', () => {
   });
 
   it('does not access the file system on a warm cache with no changes', async () => {
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
     const initialData = cacheContent;
 
     // First run should attempt to read the cache, but there will be no result
@@ -844,8 +907,8 @@ describe('HasteMap', () => {
     // and it should write a new cache
     expect(mockCacheManager.write).toHaveBeenCalledTimes(1);
 
-    // The first run should access the file system five times for the files in
-    // the system.
+    // The first run should access the file system five times for the regular
+    // files in the system.
     expect(fs.readFileSync.mock.calls.length).toBe(5);
 
     fs.readFileSync.mockClear();
@@ -859,7 +922,7 @@ describe('HasteMap', () => {
       vegetables: 'c:fake-clock:4',
     });
 
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
     const data = cacheContent;
 
     // Expect the cache to have been read again
@@ -867,13 +930,22 @@ describe('HasteMap', () => {
     // Expect no fs reads, because there have been no changes
     expect(fs.readFileSync.mock.calls.length).toBe(0);
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
-    expect(deepNormalize(data.files)).toEqual(initialData.files);
-    expect(deepNormalize(data.map)).toEqual(initialData.map);
+    expect(serialize(data.fileSystem)).toEqual(
+      serialize(initialData.fileSystem),
+    );
+    expect(deepNormalize(data.haste.map)).toEqual(initialData.haste.map);
   });
 
   it('only does minimal file system access when files change', async () => {
     // Run with a cold cache initially
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem: initialFileSystem} = await new FileMap(
+      defaultConfig,
+    ).build();
+
+    expect(
+      initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+    ).toEqual(['Strawberry']);
+
     const initialData = cacheContent;
     fs.readFileSync.mockClear();
     expect(mockCacheManager.read).toHaveBeenCalledTimes(1);
@@ -891,37 +963,27 @@ describe('HasteMap', () => {
       vegetables: 'c:fake-clock:2',
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new FileMap(defaultConfig).build();
     const data = cacheContent;
 
     expect(mockCacheManager.read).toHaveBeenCalledTimes(2);
     expect(fs.readFileSync).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync).toBeCalledWith(
       path.join('/', 'project', 'fruits', 'Banana.js'),
-      'utf8',
     );
 
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
 
-    const files = new Map(initialData.files);
-    files.set(path.join('fruits', 'Banana.js'), [
-      'Banana',
-      32,
-      42,
-      1,
-      'Kiwi',
-      null,
-      0,
-    ]);
+    expect(
+      fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+    ).toEqual(['Kiwi']);
 
-    expect(deepNormalize(data.files)).toEqual(files);
-
-    const map = new Map(initialData.map);
-    expect(deepNormalize(data.map)).toEqual(map);
+    const map = new Map(initialData.haste.map);
+    expect(deepNormalize(data.haste.map)).toEqual(map);
   });
 
   it('correctly handles file deletions', async () => {
-    await new HasteMap(defaultConfig).build();
+    await new FileMap(defaultConfig).build();
     const initialData = cacheContent;
     fs.readFileSync.mockClear();
 
@@ -937,16 +999,13 @@ describe('HasteMap', () => {
       vegetables: 'c:fake-clock:2',
     });
 
-    await new HasteMap(defaultConfig).build();
-    const data = cacheContent;
+    const {fileSystem} = await new FileMap(defaultConfig).build();
 
-    const files = new Map(initialData.files);
-    files.delete(path.join('fruits', 'Banana.js'));
-    expect(deepNormalize(data.files)).toEqual(files);
+    expect(fileSystem.exists(path.join('fruits', 'Banana.js'))).toEqual(false);
 
-    const map = new Map(initialData.map);
+    const map = new Map(initialData.haste.map);
     map.delete('Banana');
-    expect(deepNormalize(data.map)).toEqual(map);
+    expect(deepNormalize(cacheContent.haste.map)).toEqual(map);
   });
 
   it('correctly handles platform-specific file additions', async () => {
@@ -954,8 +1013,8 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
     `;
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
 
@@ -966,8 +1025,8 @@ describe('HasteMap', () => {
       `,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
@@ -981,8 +1040,8 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
     `;
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
@@ -992,10 +1051,18 @@ describe('HasteMap', () => {
       [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: null,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
+
+    delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')];
+    mockChangedFiles = object({
+      [path.join('/', 'project', 'fruits', 'Strawberry.js')]: null,
+    });
+    mockClocks = createMap({fruits: 'c:fake-clock:4'});
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
   });
 
   it('correctly handles platform-specific file renames', async () => {
@@ -1003,8 +1070,8 @@ describe('HasteMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
     `;
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
     });
 
@@ -1016,8 +1083,8 @@ describe('HasteMap', () => {
       `,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.map.get('Strawberry')).toEqual({
+    await new FileMap(defaultConfig).build();
+    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
       g: [path.join('fruits', 'Strawberry.js'), 0],
     });
   });
@@ -1030,8 +1097,12 @@ describe('HasteMap', () => {
         const Blackberry = require("Blackberry");
       `;
 
-      await new HasteMap(defaultConfig).build();
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(
+      mockFs[path.join('/', 'project', 'fruits', 'Banana.ios.js')] = '//';
+      mockFs[path.join('/', 'project', 'fruits', 'another', 'Banana.ios.js')] =
+        '//';
+
+      await new FileMap(defaultConfig).build();
+      expect(deepNormalize(cacheContent.haste.duplicates)).toEqual(
         createMap({
           Strawberry: createMap({
             g: createMap({
@@ -1039,9 +1110,21 @@ describe('HasteMap', () => {
               [path.join('fruits', 'another', 'Strawberry.js')]: H.MODULE,
             }),
           }),
+          Banana: createMap({
+            ios: createMap({
+              [path.join('fruits', 'Banana.ios.js')]: H.MODULE,
+              [path.join('fruits', 'another', 'Banana.ios.js')]: H.MODULE,
+            }),
+          }),
         }),
       );
-      expect(cacheContent.map.get('Strawberry')).toEqual({});
+      expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
+
+      expect(cacheContent.haste.map.get('Banana')).toBeDefined();
+      expect(
+        cacheContent.haste.map.get('Banana')[H.GENERIC_PLATFORM],
+      ).toBeDefined();
+      expect(cacheContent.haste.map.get('Banana')['ios']).not.toBeDefined();
     });
 
     it('recovers when a duplicate file is deleted', async () => {
@@ -1056,14 +1139,42 @@ describe('HasteMap', () => {
         vegetables: 'c:fake-clock:2',
       });
 
-      await new HasteMap(defaultConfig).build();
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(new Map());
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      await new FileMap(defaultConfig).build();
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
+      ).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
       // Make sure the other files are not affected.
-      expect(cacheContent.map.get('Banana')).toEqual({
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
         g: [path.join('fruits', 'Banana.js'), H.MODULE],
+      });
+    });
+
+    it('recovers when a duplicate platform-specific file is deleted', async () => {
+      delete mockFs[
+        path.join('/', 'project', 'fruits', 'another', 'Banana.ios.js')
+      ];
+      mockChangedFiles = object({
+        [path.join('/', 'project', 'fruits', 'another', 'Banana.ios.js')]: null,
+      });
+      mockClocks = createMap({
+        fruits: 'c:fake-clock:3',
+        vegetables: 'c:fake-clock:2',
+      });
+
+      await new FileMap(defaultConfig).build();
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Banana')),
+      ).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
+        g: [path.join('fruits', 'Banana.js'), H.MODULE],
+        ios: [path.join('fruits', 'Banana.ios.js'), H.MODULE],
+      });
+      // Make sure the other files are not affected.
+      expect(cacheContent.haste.map.get('Melon')).toEqual({
+        g: [path.join('vegetables', 'Melon.js'), H.MODULE],
       });
     });
 
@@ -1074,17 +1185,17 @@ describe('HasteMap', () => {
         {"name": "Strawberry"}
       `;
 
-      await new HasteMap(defaultConfig).build();
+      await new FileMap(defaultConfig).build();
 
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
+      ).toEqual(
         createMap({
-          Strawberry: createMap({
-            g: createMap({
-              [path.join('fruits', 'Strawberry.js')]: H.MODULE,
-              [path.join('fruits', 'another', 'Strawberry.js')]: H.MODULE,
-              [path.join('fruits', 'strawberryPackage', 'package.json')]:
-                H.PACKAGE,
-            }),
+          g: createMap({
+            [path.join('fruits', 'Strawberry.js')]: H.MODULE,
+            [path.join('fruits', 'another', 'Strawberry.js')]: H.MODULE,
+            [path.join('fruits', 'strawberryPackage', 'package.json')]:
+              H.PACKAGE,
           }),
         }),
       );
@@ -1110,10 +1221,12 @@ describe('HasteMap', () => {
         fruits: 'c:fake-clock:4',
       });
 
-      await new HasteMap(defaultConfig).build();
+      await new FileMap(defaultConfig).build();
 
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(new Map());
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
+      ).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
     });
@@ -1130,16 +1243,18 @@ describe('HasteMap', () => {
         vegetables: 'c:fake-clock:2',
       });
 
-      await new HasteMap(defaultConfig).build();
-      expect(deepNormalize(cacheContent.duplicates)).toEqual(new Map());
-      expect(cacheContent.map.get('Strawberry')).toEqual({
+      await new FileMap(defaultConfig).build();
+      expect(
+        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
+      ).not.toBeDefined();
+      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
         g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
       });
-      expect(cacheContent.map.get('Pineapple')).toEqual({
+      expect(cacheContent.haste.map.get('Pineapple')).toEqual({
         g: [path.join('fruits', 'another', 'Pineapple.js'), H.MODULE],
       });
       // Make sure the other files are not affected.
-      expect(cacheContent.map.get('Banana')).toEqual({
+      expect(cacheContent.haste.map.get('Banana')).toEqual({
         g: [path.join('fruits', 'Banana.js'), H.MODULE],
       });
     });
@@ -1155,22 +1270,22 @@ describe('HasteMap', () => {
       changedFiles.set(invalidFilePath, ['', 34, 44, 0, [], null, 0]);
       return {
         changedFiles,
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       };
     });
 
-    await new HasteMap(defaultConfig).build();
-    expect(cacheContent.files.size).toBe(5);
+    const {fileSystem} = await new FileMap(defaultConfig).build();
+    expect(fileSystem.getDifference(new Map()).removedFiles.size).toBe(5);
 
     // Ensure this file is not part of the file list.
-    expect(cacheContent.files.get(invalidFilePath)).toBe(undefined);
+    expect(fileSystem.exists(invalidFilePath)).toBe(false);
   });
 
   it('distributes work across workers', async () => {
     const jestWorker = require('jest-worker').Worker;
     const path = require('path');
     const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
-    await new HasteMap({
+    await new FileMap({
       ...defaultConfig,
       dependencyExtractor,
       hasteImplModulePath: undefined,
@@ -1187,8 +1302,10 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1197,8 +1314,10 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1207,8 +1326,10 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1217,8 +1338,10 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1227,8 +1350,10 @@ describe('HasteMap', () => {
           computeDependencies: true,
           computeSha1: false,
           dependencyExtractor,
+          enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
+          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1249,15 +1374,17 @@ describe('HasteMap', () => {
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       });
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new FileMap(defaultConfig).build();
+
     expect(watchman).toBeCalled();
     expect(node).toBeCalled();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',
@@ -1286,16 +1413,17 @@ describe('HasteMap', () => {
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
         }),
-        removedFiles: new Map(),
+        removedFiles: new Set(),
       });
     });
 
-    await new HasteMap(defaultConfig).build();
+    const {fileSystem} = await new FileMap(defaultConfig).build();
 
     expect(watchman).toBeCalled();
     expect(node).toBeCalled();
 
-    expect(cacheContent.files).toEqual(
+    assertFileSystemEqual(
+      fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
           'Banana',
@@ -1324,7 +1452,7 @@ describe('HasteMap', () => {
     );
 
     try {
-      await new HasteMap(defaultConfig).build();
+      await new FileMap(defaultConfig).build();
     } catch (error) {
       expect(error.message).toEqual(
         'Crawler retry failed:\n' +
@@ -1335,9 +1463,9 @@ describe('HasteMap', () => {
   });
 
   describe('file system changes processing', () => {
-    function waitForItToChange(hasteMap) {
+    function waitForItToChange(fileMap) {
       return new Promise(resolve => {
-        hasteMap.once('change', resolve);
+        fileMap.once('change', resolve);
       });
     }
 
@@ -1346,14 +1474,18 @@ describe('HasteMap', () => {
       e.emit('all', 'delete', filePath, dirPath, undefined);
     }
 
-    function hm_it(title, fn, options) {
+    function fm_it(title, fn, options) {
       options = options || {};
       (options.only ? it.only : it)(title, async () => {
         if (options.mockFs) {
           mockFs = options.mockFs;
         }
-        const watchConfig = {...defaultConfig, watch: true};
-        const hm = new HasteMap(watchConfig);
+        const config = {
+          ...defaultConfig,
+          watch: true,
+          ...options.config,
+        };
+        const hm = new FileMap(config);
         await hm.build();
         try {
           await fn(hm);
@@ -1363,24 +1495,31 @@ describe('HasteMap', () => {
       });
     }
 
-    hm_it('build returns a "live" fileSystem and hasteModuleMap', async hm => {
-      const {fileSystem, hasteModuleMap} = await hm.build();
+    fm_it.only = (title, fn, options) =>
+      fm_it(title, fn, {...options, only: true});
+
+    fm_it('build returns a "live" fileSystem and hasteMap', async hm => {
+      const {fileSystem, hasteMap} = await hm.build();
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
       expect(fileSystem.getModuleName(filePath)).toBeDefined();
-      expect(hasteModuleMap.getModule('Banana')).toBe(filePath);
+      expect(hasteMap.getModule('Banana')).toBe(filePath);
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       const {eventsQueue} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
       const deletedBanana = {
         filePath,
-        metadata: undefined,
+        metadata: {
+          modifiedTime: null,
+          size: null,
+          type: 'f',
+        },
         type: 'delete',
       };
       expect(eventsQueue).toEqual([deletedBanana]);
       // Verify that the initial result has been updated
       expect(fileSystem.getModuleName(filePath)).toBeNull();
-      expect(hasteModuleMap.getModule('Banana')).toBeNull();
+      expect(hasteMap.getModule('Banana')).toBeNull();
     });
 
     const MOCK_CHANGE_FILE = {
@@ -1389,14 +1528,32 @@ describe('HasteMap', () => {
       size: 55,
     };
 
+    const MOCK_DELETE_FILE = {
+      type: 'f',
+      modifiedTime: null,
+      size: null,
+    };
+
+    const MOCK_CHANGE_LINK = {
+      type: 'l',
+      modifiedTime: 46,
+      size: 5,
+    };
+
+    const MOCK_DELETE_LINK = {
+      type: 'l',
+      modifiedTime: null,
+      size: null,
+    };
+
     const MOCK_CHANGE_FOLDER = {
       type: 'd',
       modifiedTime: 45,
       size: 55,
     };
 
-    hm_it('handles several change events at once', async hm => {
-      const {fileSystem, hasteModuleMap} = await hm.build();
+    fm_it('handles several change events at once', async hm => {
+      const {fileSystem, hasteMap} = await hm.build();
       mockFs[path.join('/', 'project', 'fruits', 'Tomato.js')] = `
         // Tomato!
       `;
@@ -1436,25 +1593,28 @@ describe('HasteMap', () => {
           path.join('/', 'project', 'fruits', 'Tomato.js'),
         ),
       ).not.toBeNull();
-      expect(hasteModuleMap.getModule('Tomato')).toBeDefined();
-      expect(hasteModuleMap.getModule('Pear')).toBe(
+      expect(hasteMap.getModule('Tomato')).toBeDefined();
+      expect(hasteMap.getModule('Pear')).toBe(
         path.join('/', 'project', 'fruits', 'Pear.js'),
       );
     });
 
-    hm_it('does not emit duplicate change events', async hm => {
+    fm_it('does not emit duplicate change events', async hm => {
       const e = mockEmitters[path.join('/', 'project', 'fruits')];
+      mockFs[path.join('/', 'project', 'fruits', 'Tomato.js')] = `
+        // Tomato!
+      `;
       e.emit(
         'all',
         'change',
-        'tomato.js',
+        'Tomato.js',
         path.join('/', 'project', 'fruits'),
         MOCK_CHANGE_FILE,
       );
       e.emit(
         'all',
         'change',
-        'tomato.js',
+        'Tomato.js',
         path.join('/', 'project', 'fruits'),
         MOCK_CHANGE_FILE,
       );
@@ -1462,7 +1622,75 @@ describe('HasteMap', () => {
       expect(eventsQueue).toHaveLength(1);
     });
 
-    hm_it(
+    fm_it(
+      'suppresses backend symlink events if enableSymlinks: false',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const fruitsRoot = path.join('/', 'project', 'fruits');
+        const e = mockEmitters[fruitsRoot];
+        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
+        // Tomato!
+      `;
+        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
+        e.emit(
+          'all',
+          'change',
+          'LinkToStrawberry.js',
+          fruitsRoot,
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toEqual([
+          {
+            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            metadata: MOCK_CHANGE_FILE,
+            type: 'change',
+          },
+        ]);
+        expect(
+          fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
+        ).toBeNull();
+      },
+    );
+
+    fm_it(
+      'emits symlink events if enableSymlinks: true',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const fruitsRoot = path.join('/', 'project', 'fruits');
+        const e = mockEmitters[fruitsRoot];
+        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
+        // Tomato!
+      `;
+        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
+        e.emit(
+          'all',
+          'change',
+          'LinkToStrawberry.js',
+          fruitsRoot,
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toEqual([
+          {
+            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            metadata: MOCK_CHANGE_FILE,
+            type: 'change',
+          },
+          {
+            filePath: path.join(fruitsRoot, 'LinkToStrawberry.js'),
+            metadata: MOCK_CHANGE_LINK,
+            type: 'change',
+          },
+        ]);
+        expect(
+          fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
+        ).toEqual({fileType: 'l', modifiedTime: 46});
+      },
+      {config: {enableSymlinks: true}},
+    );
+
+    fm_it(
       'emits a change even if a file in node_modules has changed',
       async hm => {
         const {fileSystem} = await hm.build();
@@ -1490,12 +1718,154 @@ describe('HasteMap', () => {
       },
     );
 
-    hm_it(
+    fm_it(
+      'does not emit changes for regular files with unwatched extensions',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
+
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        e.emit(
+          'all',
+          'add',
+          path.join('Banana.js'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_FILE,
+        );
+        e.emit(
+          'all',
+          'add',
+          path.join('Banana.unwatched'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_FILE,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
+        ]);
+        expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      },
+    );
+
+    fm_it('does not emit delete events for unknown files', async hm => {
+      const {fileSystem} = await hm.build();
+      mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
+
+      const e = mockEmitters[path.join('/', 'project', 'fruits')];
+      e.emit(
+        'all',
+        'delete',
+        path.join('Banana.js'),
+        path.join('/', 'project', 'fruits', ''),
+        null,
+      );
+      e.emit(
+        'all',
+        'delete',
+        path.join('Unknown.ext'),
+        path.join('/', 'project', 'fruits', ''),
+        null,
+      );
+      const {eventsQueue} = await waitForItToChange(hm);
+      const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
+      expect(eventsQueue).toHaveLength(1);
+      expect(eventsQueue).toEqual([
+        {filePath, metadata: MOCK_DELETE_FILE, type: 'delete'},
+      ]);
+      expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
+    });
+
+    fm_it(
+      'does emit changes for symlinks with unlisted extensions',
+      async hm => {
+        const {fileSystem} = await hm.build();
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        mockFs[path.join('/', 'project', 'fruits', 'LinkToStrawberry.ext')] = {
+          link: 'Strawberry.js',
+        };
+        e.emit(
+          'all',
+          'add',
+          path.join('LinkToStrawberry.ext'),
+          path.join('/', 'project', 'fruits', ''),
+          MOCK_CHANGE_LINK,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        const filePath = path.join(
+          '/',
+          'project',
+          'fruits',
+          'LinkToStrawberry.ext',
+        );
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath, metadata: MOCK_CHANGE_LINK, type: 'add'},
+        ]);
+        const linkStats = fileSystem.linkStats(filePath);
+        expect(linkStats).toEqual({
+          fileType: 'l',
+          modifiedTime: 46,
+        });
+        // getModuleName traverses the symlink, verifying the link is read.
+        expect(fileSystem.getModuleName(filePath)).toEqual('Strawberry');
+      },
+      {config: {enableSymlinks: true}},
+    );
+
+    fm_it(
+      'symlink deletion is handled without affecting the symlink target',
+      async hm => {
+        const {fileSystem, hasteMap} = await hm.build();
+
+        const symlinkPath = path.join(
+          '/',
+          'project',
+          'fruits',
+          'LinkToStrawberry.js',
+        );
+        const realPath = path.join('/', 'project', 'fruits', 'Strawberry.js');
+
+        expect(fileSystem.getModuleName(symlinkPath)).toEqual('Strawberry');
+        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteMap.getModule('Strawberry', 'g')).toEqual(realPath);
+
+        // Delete the symlink
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        delete mockFs[symlinkPath];
+        e.emit(
+          'all',
+          'delete',
+          'LinkToStrawberry.js',
+          path.join('/', 'project', 'fruits', ''),
+          null,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue).toEqual([
+          {filePath: symlinkPath, metadata: MOCK_DELETE_LINK, type: 'delete'},
+        ]);
+
+        // Symlink is deleted without affecting the Haste module or real file.
+        expect(fileSystem.exists(symlinkPath)).toBe(false);
+        expect(fileSystem.exists(realPath)).toBe(true);
+        expect(fileSystem.getModuleName(symlinkPath)).toEqual(null);
+        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteMap.getModule('Strawberry', 'g')).toEqual(realPath);
+      },
+      {config: {enableSymlinks: true}},
+    );
+
+    fm_it(
       'correctly tracks changes to both platform-specific versions of a single module name',
       async hm => {
-        const {hasteModuleMap, fileSystem} = await hm.build();
-        expect(hasteModuleMap.getModule('Orange', 'ios')).toBeTruthy();
-        expect(hasteModuleMap.getModule('Orange', 'android')).toBeTruthy();
+        const {hasteMap, fileSystem} = await hm.build();
+        expect(hasteMap.getModule('Orange', 'ios')).toBeTruthy();
+        expect(hasteMap.getModule('Orange', 'android')).toBeTruthy();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit(
           'all',
@@ -1535,11 +1905,11 @@ describe('HasteMap', () => {
             path.join('/', 'project', 'fruits', 'Orange.android.js'),
           ),
         ).toBeTruthy();
-        const iosVariant = hasteModuleMap.getModule('Orange', 'ios');
+        const iosVariant = hasteMap.getModule('Orange', 'ios');
         expect(iosVariant).toBe(
           path.join('/', 'project', 'fruits', 'Orange.ios.js'),
         );
-        const androidVariant = hasteModuleMap.getModule('Orange', 'android');
+        const androidVariant = hasteMap.getModule('Orange', 'android');
         expect(androidVariant).toBe(
           path.join('/', 'project', 'fruits', 'Orange.android.js'),
         );
@@ -1556,9 +1926,57 @@ describe('HasteMap', () => {
       },
     );
 
+    fm_it('correctly handles moving a Haste module', async hm => {
+      const oldPath = path.join('/', 'project', 'vegetables', 'Melon.js');
+      const newPath = path.join('/', 'project', 'fruits', 'Melon.js');
+
+      const {hasteMap} = await hm.build();
+      expect(hasteMap.getModule('Melon')).toEqual(oldPath);
+
+      // Move vegetables/Melon.js -> fruits/Melon.js
+      mockFs[newPath] = mockFs[oldPath];
+      mockFs[oldPath] = null;
+
+      mockEmitters[path.join('/', 'project', 'vegetables')].emit(
+        'all',
+        'delete',
+        'Melon.js',
+        path.join('/', 'project', 'vegetables'),
+        null,
+      );
+      mockEmitters[path.join('/', 'project', 'fruits')].emit(
+        'all',
+        'add',
+        'Melon.js',
+        path.join('/', 'project', 'fruits'),
+        MOCK_CHANGE_FILE,
+      );
+
+      const {eventsQueue} = await waitForItToChange(hm);
+
+      // No duplicate warnings or errors should be printed.
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
+
+      expect(eventsQueue).toHaveLength(2);
+      expect(eventsQueue).toEqual([
+        {
+          filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
+          metadata: MOCK_DELETE_FILE,
+          type: 'delete',
+        },
+        {
+          filePath: path.join('/', 'project', 'fruits', 'Melon.js'),
+          metadata: MOCK_CHANGE_FILE,
+          type: 'add',
+        },
+      ]);
+      expect(hasteMap.getModule('Melon')).toEqual(newPath);
+    });
+
     describe('recovery from duplicate module IDs', () => {
       async function setupDuplicates(hm) {
-        const {fileSystem, hasteModuleMap} = await hm.build();
+        const {fileSystem, hasteMap} = await hm.build();
         mockFs[path.join('/', 'project', 'fruits', 'Pear.js')] = `
           // Pear!
         `;
@@ -1587,7 +2005,7 @@ describe('HasteMap', () => {
           ),
         ).toBe(true);
         try {
-          hasteModuleMap.getModule('Pear');
+          hasteMap.getModule('Pear');
           throw new Error('should be unreachable');
         } catch (error) {
           const {
@@ -1604,14 +2022,14 @@ describe('HasteMap', () => {
                 H.MODULE,
             }),
           );
-          expect(error.message.replace(/\\/g, '/')).toMatchSnapshot();
+          expect(error.message.replaceAll('\\', '/')).toMatchSnapshot();
         }
       }
 
-      hm_it(
+      fm_it(
         'recovers when the oldest version of the duplicates is fixed',
         async hm => {
-          const {hasteModuleMap} = await hm.build();
+          const {hasteMap} = await hm.build();
           await setupDuplicates(hm);
           mockFs[path.join('/', 'project', 'fruits', 'Pear.js')] = null;
           mockFs[path.join('/', 'project', 'fruits', 'Pear2.js')] = `
@@ -1633,17 +2051,17 @@ describe('HasteMap', () => {
             MOCK_CHANGE_FILE,
           );
           await waitForItToChange(hm);
-          expect(hasteModuleMap.getModule('Pear')).toBe(
+          expect(hasteMap.getModule('Pear')).toBe(
             path.join('/', 'project', 'fruits', 'another', 'Pear.js'),
           );
-          expect(hasteModuleMap.getModule('Pear2')).toBe(
+          expect(hasteMap.getModule('Pear2')).toBe(
             path.join('/', 'project', 'fruits', 'Pear2.js'),
           );
         },
       );
 
-      hm_it('recovers when the most recent duplicate is fixed', async hm => {
-        const {hasteModuleMap} = await hm.build();
+      fm_it('recovers when the most recent duplicate is fixed', async hm => {
+        const {hasteMap} = await hm.build();
         await setupDuplicates(hm);
         mockFs[path.join('/', 'project', 'fruits', 'another', 'Pear.js')] =
           null;
@@ -1666,16 +2084,19 @@ describe('HasteMap', () => {
           MOCK_CHANGE_FILE,
         );
         await waitForItToChange(hm);
-        expect(hasteModuleMap.getModule('Pear')).toBe(
+        expect(hasteMap.getModule('Pear')).toBe(
           path.join('/', 'project', 'fruits', 'Pear.js'),
         );
-        expect(hasteModuleMap.getModule('Pear2')).toBe(
+        expect(hasteMap.getModule('Pear2')).toBe(
           path.join('/', 'project', 'fruits', 'another', 'Pear2.js'),
         );
       });
 
-      hm_it('ignore directories', async hm => {
+      fm_it('ignore directory events (even with file-ish names)', async hm => {
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        mockFs[path.join('/', 'project', 'fruits', 'tomato.js', 'index.js')] = `
+        // Tomato!
+      `;
         e.emit(
           'all',
           'change',
@@ -1686,8 +2107,8 @@ describe('HasteMap', () => {
         e.emit(
           'all',
           'change',
-          'tomato.js',
-          path.join('/', 'project', 'fruits', 'tomato.js', 'index.js'),
+          path.join('tomato.js', 'index.js'),
+          path.join('/', 'project', 'fruits'),
           MOCK_CHANGE_FILE,
         );
         const {eventsQueue} = await waitForItToChange(hm);

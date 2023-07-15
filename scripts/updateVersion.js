@@ -30,47 +30,12 @@ function updateVersion(version /*: ?string */) {
       .filter(dir => !dir.startsWith('.')),
   );
 
-  const oldVersion = updateVersionInLerna(metroDirPath, version);
-
-  updateAllPackageManifests(
-    metroDirPath,
-    version,
-    oldVersion,
-    subPackageNameSet,
-  );
-}
-
-function updateVersionInLerna(
-  metroDirPath /*: string */,
-  newVersion /*: string */,
-) /*: string */ {
-  let oldVersion = '';
-  const lernaJsonPath = path.join(metroDirPath, 'lerna.json');
-  mutateManifestFile(lernaJsonPath, manifest => {
-    invariant(
-      typeof manifest.version === 'string',
-      'Expected version to be a string',
-    );
-    oldVersion = manifest.version;
-    if (oldVersion == null) {
-      throw new Error(
-        'The Lerna file does not contain a ' +
-          `correct version (\`${lernaJsonPath}\`).`,
-      );
-    }
-    manifest.version = newVersion;
-  });
-
-  if (!oldVersion) {
-    throw new Error('Was unable to get the previous version');
-  }
-  return oldVersion;
+  updateAllPackageManifests(metroDirPath, version, subPackageNameSet);
 }
 
 function updateAllPackageManifests(
   metroDirPath /*: string */,
   newVersion /*: string */,
-  oldVersion /*: string */,
   subPackageNameSet /*: $ReadOnlySet<string> */,
 ) {
   subPackageNameSet.forEach(pkgName => {
@@ -81,12 +46,6 @@ function updateAllPackageManifests(
       'package.json',
     );
     mutateManifestFile(subPackagePackPath, manifest => {
-      if (manifest.version !== oldVersion) {
-        throw new Error(
-          'The Metro package.json file does not contain the ' +
-            `same version as lerna.json (\`${subPackagePackPath}\`).`,
-        );
-      }
       manifest.version = newVersion;
       // update local cross deps with new version as well
       [

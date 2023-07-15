@@ -63,6 +63,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code1',
         path: 'path1',
+        isIgnored: false,
       },
       {
         code: lines(3),
@@ -73,6 +74,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code2',
         path: 'path2',
+        isIgnored: true,
       },
       {
         code: lines(23),
@@ -85,6 +87,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code3',
         path: 'path3',
+        isIgnored: false,
       },
     ];
 
@@ -99,6 +102,7 @@ describe('build map from raw mappings', () => {
         [{names: ['<global>'], mappings: 'AAA'}],
         null,
       ],
+      x_google_ignoreList: [1],
       version: 3,
     });
   });
@@ -129,6 +133,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code1',
         path: 'path1',
+        isIgnored: false,
       },
       {
         code: lines(3),
@@ -139,6 +144,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code2',
         path: 'path2',
+        isIgnored: false,
       },
       {
         code: lines(23),
@@ -151,6 +157,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code3',
         path: 'path3',
+        isIgnored: false,
       },
     ];
 

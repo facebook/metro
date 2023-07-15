@@ -24,12 +24,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -43,12 +42,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -66,12 +64,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -85,12 +82,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -108,12 +104,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -127,12 +122,11 @@ describe('getGraphId', () => {
           hot: true,
           dev: true,
           minify: true,
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -154,12 +148,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -177,12 +170,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: 'web',
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -198,13 +190,12 @@ describe('getGraphId', () => {
       minify: true,
       type: 'module',
       platform: 'web',
-      runtimeBytecodeVersion: null,
       unstable_transformProfile: 'default',
     };
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -215,7 +206,7 @@ describe('getGraphId', () => {
     ).not.toBe(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -234,13 +225,12 @@ describe('getGraphId', () => {
       minify: true,
       type: 'module',
       platform: 'web',
-      runtimeBytecodeVersion: null,
       unstable_transformProfile: 'default',
     };
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -252,7 +242,7 @@ describe('getGraphId', () => {
     ).toBe(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {
           customResolverOptions: {
@@ -276,12 +266,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: null,
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {
             customResolverOptions: undefined,
@@ -297,54 +286,11 @@ describe('getGraphId', () => {
           minify: true,
           type: 'module',
           platform: undefined,
-          runtimeBytecodeVersion: null,
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
-          unstable_allowRequireContext: false,
-          resolverOptions: {},
-        },
-      ),
-    );
-  });
-
-  it('does not ignore the bytecode option', () => {
-    expect(
-      getGraphId(
-        '/root/waddup',
-        {
-          dev: true,
-          hot: true,
-          minify: true,
-          platform: 'web',
-          type: 'module',
-          runtimeBytecodeVersion: 48,
-          unstable_transformProfile: 'default',
-        },
-        {
-          shallow: false,
-          experimentalImportBundleSupport: false,
-          unstable_allowRequireContext: false,
-          resolverOptions: {},
-        },
-      ),
-    ).not.toBe(
-      getGraphId(
-        '/root/waddup',
-        {
-          dev: true,
-          hot: true,
-          minify: true,
-          platform: 'web',
-          type: 'module',
-          runtimeBytecodeVersion: null,
-          unstable_transformProfile: 'default',
-        },
-        {
-          shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },

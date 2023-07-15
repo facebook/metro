@@ -104,6 +104,7 @@ function buckWorker(commands: Commands): any {
 
     if (response.type === 'handshake') {
       if (JS_WORKER_TOOL_CPU_PROFILE) {
+        // $FlowFixMe[unused-promise]
         startProfiling().then(() => writer.write(response));
       } else {
         writer.write(response);
@@ -164,6 +165,7 @@ function buckWorker(commands: Commands): any {
       return;
     }
     ended = true;
+    // $FlowFixMe[unused-promise]
     stopProfilingAndWrite(JS_WORKER_TOOL_NAME).then(() => writer.end());
   }
   reader.on('data', handleHandshake);
@@ -222,6 +224,7 @@ function readArgsAndExecCommand(
     if (commands.hasOwnProperty(commandName)) {
       const command = commands[commandName];
       const commandSpecificConsole = new Console(stdout, stderr);
+      // $FlowFixMe[unused-promise]
       execCommand(
         command,
         commandName,

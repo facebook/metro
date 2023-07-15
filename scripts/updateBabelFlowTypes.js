@@ -6,17 +6,16 @@
  *
  * @format
  * @oncall react_native
+ * @flow
  */
 
 /**
  * This script updates all flow types. Run it every time you upgrade babel
- * @format
- * @flow
  */
 
 import {execSync} from 'child_process';
 import fs from 'fs';
-import prettier from 'prettier';
+import * as prettier from 'prettier';
 
 async function main() {
   const babelTraverseScriptPath = require.resolve('./updateBabelTraverseTypes');

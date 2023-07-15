@@ -8,7 +8,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import {AbortController} from 'node-abort-controller';
+import TreeFS from '../../lib/TreeFS';
 
 jest.useRealTimers();
 
@@ -124,6 +125,8 @@ const createMap = obj =>
   new Map(Object.keys(obj).map(key => [normalize(key), obj[key]]));
 
 const rootDir = '/project';
+const emptyFS = new TreeFS({rootDir, files: new Map()});
+const getFS = (files: FileData) => new TreeFS({rootDir, files});
 let mockResponse;
 let mockSpawnExit;
 let nodeCrawl;
@@ -154,9 +157,7 @@ describe('node crawler', () => {
     ].join('\n');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js', 'json'],
       ignore: pearMatcher,
       rootDir,
@@ -191,7 +192,7 @@ describe('node crawler', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('updates only changed files', async () => {
@@ -205,7 +206,7 @@ describe('node crawler', () => {
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -219,7 +220,7 @@ describe('node crawler', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('returns removed files', async () => {
@@ -234,7 +235,7 @@ describe('node crawler', () => {
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -247,11 +248,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 33, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(
-      createMap({
-        'fruits/previouslyExisted.js': ['', 30, 40, 1, '', null, 0],
-      }),
-    );
+    expect(removedFiles).toEqual(new Set(['fruits/previouslyExisted.js']));
   });
 
   it('uses node fs APIs with incompatible find binary', async () => {
@@ -262,9 +259,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -282,7 +277,7 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses node fs APIs without find binary', async () => {
@@ -293,9 +288,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {
-        files: new Map(),
-      },
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       ignore: pearMatcher,
       rootDir,
@@ -308,16 +301,15 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
     childProcess = require('child_process');
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -332,15 +324,14 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('completes with empty roots', async () => {
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -349,15 +340,14 @@ describe('node crawler', () => {
     });
 
     expect(changedFiles).toEqual(new Map());
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('completes with fs.readdir throwing an error', async () => {
     nodeCrawl = require('../node');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -366,16 +356,15 @@ describe('node crawler', () => {
     });
 
     expect(changedFiles).toEqual(new Map());
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
   });
 
   it('uses the withFileTypes option with readdir', async () => {
     nodeCrawl = require('../node');
     const fs = require('graceful-fs');
 
-    const files = new Map();
     const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {files},
+      previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
@@ -389,10 +378,63 @@ describe('node crawler', () => {
         'fruits/tomato.js': ['', 32, 42, 0, '', null, 0],
       }),
     );
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
     // once for /project/fruits, once for /project/fruits/directory
     expect(fs.readdir).toHaveBeenCalledTimes(2);
     // once for strawberry.js, once for tomato.js
     expect(fs.lstat).toHaveBeenCalledTimes(2);
   });
+
+  it('aborts the crawl on pre-aborted signal', async () => {
+    nodeCrawl = require('../node');
+    const err = new Error('aborted for test');
+    await expect(
+      nodeCrawl({
+        abortSignal: abortSignalWithReason(err),
+        previousState: {fileSystem: emptyFS},
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir,
+        roots: ['/project/fruits', '/project/vegtables'],
+      }),
+    ).rejects.toThrow(err);
+  });
+
+  it('aborts the crawl if signalled after start', async () => {
+    const err = new Error('aborted for test');
+    const abortController = new AbortController();
+
+    // Pass a fake perf logger that will trigger the abort controller
+    const fakePerfLogger = {
+      point(name, opts) {
+        abortController.abort(err);
+      },
+      annotate() {
+        abortController.abort(err);
+      },
+      subSpan() {
+        return fakePerfLogger;
+      },
+    };
+
+    nodeCrawl = require('../node');
+    await expect(
+      nodeCrawl({
+        perfLogger: fakePerfLogger,
+        abortSignal: abortController.signal,
+        previousState: {fileSystem: emptyFS},
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir,
+        roots: ['/project/fruits', '/project/vegtables'],
+      }),
+    ).rejects.toThrow(err);
+  });
 });
+
+function abortSignalWithReason(reason) {
+  // TODO: use AbortSignal.abort when node-abort-controller supports it
+  const controller = new AbortController();
+  controller.abort(reason);
+  return controller.signal;
+}

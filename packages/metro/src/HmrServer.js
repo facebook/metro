@@ -11,6 +11,7 @@
 'use strict';
 
 import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
+import type {GraphOptions} from './shared/types.flow';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   HmrClientMessage,
@@ -48,11 +49,8 @@ type ClientGroup = {
   clientUrl: EntryPointURL,
   revisionId: RevisionId,
   +unlisten: () => void,
+  +graphOptions: GraphOptions,
 };
-
-function getBytecodeVersion() {
-  return require('metro-hermes-compiler').VERSION;
-}
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -106,7 +104,6 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
     );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
@@ -124,12 +121,11 @@ class HmrServer<TClient: Client> {
       (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
         '/.',
       entryFile,
-    );
+    ).filePath;
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       resolverOptions,
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
+      lazy: graphOptions.lazy,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });
@@ -172,6 +168,7 @@ class HmrServer<TClient: Client> {
         clients: new Set([client]),
         clientUrl,
         revisionId: id,
+        graphOptions,
         unlisten: (): void => unlisten(),
       };
 
@@ -361,7 +358,7 @@ class HmrServer<TClient: Client> {
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         clientUrl: group.clientUrl,
         createModuleId: this._createModuleId,
-        includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+        includeAsyncPaths: group.graphOptions.lazy,
         projectRoot: this._config.projectRoot,
         serverRoot:
           this._config.server.unstable_serverRoot ?? this._config.projectRoot,

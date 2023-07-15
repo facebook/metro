@@ -13,6 +13,7 @@ import CountingSet from '../CountingSet';
 
 describe('CountingSet', () => {
   test('basic add/delete', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -27,6 +28,7 @@ describe('CountingSet', () => {
   });
 
   test('multiple add/delete', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -47,6 +49,7 @@ describe('CountingSet', () => {
   });
 
   test('more deletes than adds', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -58,6 +61,7 @@ describe('CountingSet', () => {
   });
 
   test('delete nonexistent value', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.delete('a');
@@ -163,6 +167,7 @@ describe('CountingSet', () => {
   });
 
   test('spread', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -174,6 +179,7 @@ describe('CountingSet', () => {
   });
 
   test('keys()', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -185,6 +191,7 @@ describe('CountingSet', () => {
   });
 
   test('values()', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');
@@ -196,6 +203,7 @@ describe('CountingSet', () => {
   });
 
   test('entries()', () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const set = new CountingSet();
 
     set.add('a');

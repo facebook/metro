@@ -18,12 +18,12 @@ import type {
   WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
+import type {AbortSignal} from 'node-abort-controller';
 
 import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
-// $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
 import NodeWatcher from './watchers/NodeWatcher';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -39,7 +39,7 @@ const MAX_WAIT_TIME = 240000;
 type CrawlResult = {
   changedFiles: FileData,
   clocks?: WatchmanClocks,
-  removedFiles: FileData,
+  removedFiles: Set<Path>,
 };
 
 type WatcherOptions = {
@@ -97,6 +97,9 @@ export class Watcher extends EventEmitter {
       path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
+
+    options.abortSignal.throwIfAborted();
+
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
       computeSha1: options.computeSha1,
@@ -125,6 +128,7 @@ export class Watcher extends EventEmitter {
             '  ' +
             error.toString(),
         );
+        // $FlowFixMe[prop-missing] Found when updating Promise type definition
         return nodeCrawl(crawlerOptions).catch<CrawlResult>(e => {
           throw new Error(
             'Crawler retry failed:\n' +
@@ -151,6 +155,7 @@ export class Watcher extends EventEmitter {
 
     debug('Beginning crawl with "%s".', crawler);
     try {
+      // $FlowFixMe[incompatible-call] Found when updating Promise type definition
       return crawl(crawlerOptions).catch<CrawlResult>(retry).then(logEnd);
     } catch (error) {
       return retry(error).then(logEnd);
@@ -162,7 +167,7 @@ export class Watcher extends EventEmitter {
       type: string,
       filePath: string,
       root: string,
-      metadata: ?ChangeEventMetadata,
+      metadata: ChangeEventMetadata,
     ) => void,
   ) {
     const {extensions, ignorePattern, useWatchman} = this._options;
@@ -214,7 +219,7 @@ export class Watcher extends EventEmitter {
               type: string,
               filePath: string,
               root: string,
-              metadata: ?ChangeEventMetadata,
+              metadata: ChangeEventMetadata,
             ) => {
               const basename = path.basename(filePath);
               if (basename.startsWith(this._options.healthCheckFilePrefix)) {
@@ -315,6 +320,7 @@ export class Watcher extends EventEmitter {
     this._pendingHealthChecks.delete(basename);
     // Chain a deletion to the creation promise (which may not have even settled yet!),
     // don't await it, and swallow errors. This is just best-effort cleanup.
+    // $FlowFixMe[unused-promise]
     creationPromise.then(() =>
       fs.promises.unlink(healthCheckPath).catch(() => {}),
     );

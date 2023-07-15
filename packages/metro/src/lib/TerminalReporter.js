@@ -101,7 +101,7 @@ class TerminalReporter {
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, bundleType, runtimeBytecodeVersion},
+      bundleDetails: {entryFile, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
@@ -109,10 +109,6 @@ class TerminalReporter {
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    if (runtimeBytecodeVersion) {
-      bundleType = 'bytecodebundle';
-    }
-
     if (isPrefetch) {
       bundleType = 'PREBUNDLE';
     }
@@ -259,6 +255,9 @@ class TerminalReporter {
         break;
       case 'global_cache_disabled':
         this._logCacheDisabled(event.reason);
+        break;
+      case 'resolver_warning':
+        this._logWarning(event.message);
         break;
       case 'transform_cache_reset':
         reporting.logWarning(this.terminal, 'the transform cache was reset.');
@@ -435,6 +434,10 @@ class TerminalReporter {
     );
   }
 
+  _logWarning(message: string): void {
+    reporting.logWarning(this.terminal, message);
+  }
+
   _logWatcherHealthCheckResult(result: HealthCheckResult) {
     // Don't be spammy; only report changes in status.
     if (
@@ -512,7 +515,7 @@ class TerminalReporter {
 
   /**
    * Single entry point for reporting events. That allows us to implement the
-   * corresponding JSON reporter easily and have a consistent repor∏ting.
+   * corresponding JSON reporter easily and have a consistent reporting.
    */
   update(event: TerminalReportableEvent): void {
     if (event.type === 'bundle_transform_progressed') {

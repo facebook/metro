@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -19,8 +19,12 @@ const composeSourceMaps = require('./composeSourceMaps');
 const Consumer = require('./Consumer');
 // We need to export this for `metro-symbolicate`
 const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-const {generateFunctionMap} = require('./generateFunctionMap');
+const {
+  functionMapBabelPlugin,
+  generateFunctionMap,
+} = require('./generateFunctionMap');
 const Generator = require('./Generator');
+// $FlowFixMe[untyped-import] - source-map
 const SourceMap = require('source-map');
 
 export type {IConsumer};
@@ -58,6 +62,7 @@ export type BasicSourceMap = {
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: Array<number>,
 };
 
 export type IndexMapSection = {
@@ -81,9 +86,19 @@ export type IndexMap = {
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
+  +x_google_ignoreList?: void,
 };
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
+
+type SourceMapConsumerMapping = {
+  generatedLine: number,
+  generatedColumn: number,
+  originalLine: ?number,
+  originalColumn: ?number,
+  source: ?string,
+  name: ?string,
+};
 
 function fromRawMappingsImpl(
   isBlocking: boolean,
@@ -94,7 +109,8 @@ function fromRawMappingsImpl(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number,
 ): void {
@@ -161,7 +177,8 @@ function fromRawMappings(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Generator {
@@ -187,7 +204,8 @@ async function fromRawMappingsNonBlocking(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Promise<Generator> {
@@ -205,20 +223,33 @@ function toBabelSegments(
 ): Array<BabelSourceMapSegment> {
   const rawMappings: Array<BabelSourceMapSegment> = [];
 
-  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
-    rawMappings.push({
-      generated: {
-        line: map.generatedLine,
-        column: map.generatedColumn,
-      },
-      original: {
-        line: map.originalLine,
-        column: map.originalColumn,
-      },
-      source: map.source,
-      name: map.name,
-    });
-  });
+  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(
+    (map: SourceMapConsumerMapping) => {
+      rawMappings.push(
+        map.originalLine == null || map.originalColumn == null
+          ? {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              source: map.source,
+              name: map.name,
+            }
+          : {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              original: {
+                line: map.originalLine,
+                column: map.originalColumn,
+              },
+              source: map.source,
+              name: map.name,
+            },
+      );
+    },
+  );
 
   return rawMappings;
 }
@@ -249,11 +280,14 @@ function addMappingsForFile(
     +map: ?Array<MetroSourceMapSegmentTuple>,
     +path: string,
     +source: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   },
   carryOver: number,
 ) {
-  generator.startFile(module.path, module.source, module.functionMap);
+  generator.startFile(module.path, module.source, module.functionMap, {
+    addToIgnoreList: module.isIgnored,
+  });
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
     addMapping(generator, mappings[i], carryOver);
@@ -267,29 +301,27 @@ function addMapping(
   mapping: MetroSourceMapSegmentTuple,
   carryOver: number,
 ) {
-  const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
   const column = mapping[1];
-  if (n === 2) {
-    generator.addSimpleMapping(line, column);
-  } else if (n === 4) {
-    const sourceMap: SourceMapping = (mapping: any);
-
-    generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
-  } else if (n === 5) {
-    const sourceMap: SourceMappingWithName = (mapping: any);
-
-    generator.addNamedSourceMapping(
-      line,
-      column,
-      sourceMap[2],
-      sourceMap[3],
-      sourceMap[4],
-    );
-  } else {
-    throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
+  switch (mapping.length) {
+    case 2:
+      generator.addSimpleMapping(line, column);
+      return;
+    case 4:
+      generator.addSourceMapping(line, column, mapping[2], mapping[3]);
+      return;
+    case 5:
+      generator.addNamedSourceMapping(
+        line,
+        column,
+        mapping[2],
+        mapping[3],
+        mapping[4],
+      );
+      return;
   }
+  throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
 }
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
@@ -305,6 +337,7 @@ module.exports = {
   generateFunctionMap,
   fromRawMappings,
   fromRawMappingsNonBlocking,
+  functionMapBabelPlugin,
   normalizeSourcePath,
   toBabelSegments,
   toSegmentTuple,

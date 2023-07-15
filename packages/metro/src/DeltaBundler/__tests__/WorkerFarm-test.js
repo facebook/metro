@@ -24,7 +24,6 @@ describe('Worker Farm', function () {
     jest
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
-      .mock('temp', () => ({path: () => '/arbitrary/path'}))
       .mock('jest-worker', () => ({__esModule: true, Worker: jest.fn()}));
 
     const fs = require('fs');

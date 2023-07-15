@@ -32,7 +32,7 @@ class PackageResolutionError extends Error {
         `\`${perr.packageJsonPath}\` was successfully found. However, ` +
         'this package itself specifies ' +
         'a `main` module field that could not be resolved (' +
-        `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
+        `\`${perr.mainModulePath}\`. Indeed, none of these files exist:\n\n` +
         `  * ${formatFileCandidates(perr.fileCandidates)}\n` +
         `  * ${formatFileCandidates(perr.indexCandidates)}`,
     );

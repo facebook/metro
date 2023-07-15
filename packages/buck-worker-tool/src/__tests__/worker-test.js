@@ -22,11 +22,6 @@ jest
     return {Console};
   })
   .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('temp', () => ({
-    path() {
-      return '/tmp/repro.args';
-    },
-  }))
   .useRealTimers();
 
 const JSONStream = require('../third-party/JSONStream');

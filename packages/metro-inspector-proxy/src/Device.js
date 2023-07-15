@@ -11,6 +11,7 @@
 
 import type {
   DebuggerRequest,
+  ErrorResponse,
   GetScriptSourceRequest,
   GetScriptSourceResponse,
   MessageFromDevice,
@@ -20,8 +21,8 @@ import type {
 } from './types';
 
 import * as fs from 'fs';
-import * as http from 'http';
 import * as path from 'path';
+import fetch from 'node-fetch';
 import WS from 'ws';
 
 const debug = require('debug')('Metro:InspectorProxy');
@@ -60,7 +61,7 @@ const RELOADABLE_PAGE_TITLE_SUFFIX = ' Experimental (Improved Chrome Reloads)';
  */
 class Device {
   // ID of the device.
-  _id: number;
+  _id: string;
 
   // Name of the device.
   _name: string;
@@ -99,7 +100,7 @@ class Device {
   _reloadablePages: Map<string, ReloadablePage> = new Map();
 
   constructor(
-    id: number,
+    id: string,
     name: string,
     app: string,
     socket: typeof WS,
@@ -141,6 +142,10 @@ class Device {
 
   getName(): string {
     return this._name;
+  }
+
+  getApp(): string {
+    return this._app;
   }
 
   getPagesList(): Array<Page> {
@@ -225,6 +230,37 @@ class Device {
     };
   }
 
+  /**
+   * Handles cleaning up a duplicate device connection, by client-side device ID.
+   * 1. Checks if the same device is attempting to reconnect for the same app.
+   * 2. If not, close both the device and debugger socket.
+   * 3. If the debugger connection can be reused, close the device socket only.
+   *
+   * This allows users to reload the app, either as result of a crash, or manually
+   * reloading, without having to restart the debugger.
+   */
+  handleDuplicateDeviceConnection(newDevice: Device) {
+    if (
+      this._app !== newDevice.getApp() ||
+      this._name !== newDevice.getName()
+    ) {
+      this._deviceSocket.close();
+      this._debuggerConnection?.socket.close();
+    }
+
+    const oldDebugger = this._debuggerConnection;
+    this._debuggerConnection = null;
+
+    if (oldDebugger) {
+      oldDebugger.socket.removeAllListeners();
+      this._deviceSocket.close();
+      newDevice.handleDebuggerConnection(
+        oldDebugger.socket,
+        oldDebugger.pageId,
+      );
+    }
+  }
+
   // Handles messages received from device:
   // 1. For getPages responses updates local _pages list.
   // 2. All other messages are forwarded to debugger as wrappedEvent.
@@ -286,11 +322,15 @@ class Device {
 
       if (this._debuggerConnection) {
         // Wrapping just to make flow happy :)
-        this._processMessageFromDevice(parsedPayload, this._debuggerConnection);
+        // $FlowFixMe[unused-promise]
+        this._processMessageFromDevice(
+          parsedPayload,
+          this._debuggerConnection,
+        ).then(() => {
+          const messageToSend = JSON.stringify(parsedPayload);
+          debuggerSocket.send(messageToSend);
+        });
       }
-
-      const messageToSend = JSON.stringify(parsedPayload);
-      debuggerSocket.send(messageToSend);
     }
   }
 
@@ -394,7 +434,7 @@ class Device {
   }
 
   // Allows to make changes in incoming message from device.
-  _processMessageFromDevice(
+  async _processMessageFromDevice(
     payload: {method: string, params: {sourceMapURL: string, url: string}},
     debuggerInfo: DebuggerInfo,
   ) {
@@ -410,6 +450,25 @@ class Device {
               'localhost',
             );
             debuggerInfo.originalSourceURLAddress = address;
+          }
+        }
+
+        const sourceMapURL = this._tryParseHTTPURL(params.sourceMapURL);
+        if (sourceMapURL) {
+          // Some debug clients do not support fetching HTTP URLs. If the
+          // message headed to the debug client identifies the source map with
+          // an HTTP URL, fetch the content here and convert the content to a
+          // Data URL (which is more widely supported) before passing the
+          // message to the debug client.
+          try {
+            const sourceMap = await this._fetchText(sourceMapURL);
+            payload.params.sourceMapURL =
+              'data:application/json;charset=utf-8;base64,' +
+              new Buffer(sourceMap).toString('base64');
+          } catch (exception) {
+            this._sendErrorToDebugger(
+              `Failed to fetch source map ${params.sourceMapURL}: ${exception.message}`,
+            );
           }
         }
       }
@@ -521,56 +580,47 @@ class Device {
     req: GetScriptSourceRequest,
     socket: typeof WS,
   ) {
-    let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
-
-    const sendResponse = () => {
+    const sendSuccessResponse = (scriptSource: string) => {
       const result: GetScriptSourceResponse = {scriptSource};
       socket.send(JSON.stringify({id: req.id, result}));
+    };
+    const sendErrorResponse = (error: string) => {
+      // Tell the client that the request failed
+      const result: ErrorResponse = {error: {message: error}};
+      socket.send(JSON.stringify({id: req.id, result}));
+
+      // Send to the console as well, so the user can see it
+      this._sendErrorToDebugger(error);
     };
 
     const pathToSource = this._scriptIdToSourcePathMapping.get(
       req.params.scriptId,
     );
     if (pathToSource) {
-      let pathIsURL = false;
-      try {
-        pathIsURL = new URL(pathToSource).hostname == 'localhost';
-      } catch {}
-
-      if (pathIsURL) {
-        http
-          // $FlowFixMe[missing-local-annot]
-          .get(pathToSource, httpResponse => {
-            const {statusCode} = httpResponse;
-            if (statusCode == 200) {
-              httpResponse.setEncoding('utf8');
-              scriptSource = '';
-              httpResponse.on('data', (body: string) => {
-                scriptSource += body;
-              });
-              httpResponse.on('end', () => {
-                sendResponse();
-              });
-            } else {
-              scriptSource = `Fetching ${pathToSource} returned status ${statusCode}`;
-              sendResponse();
-              httpResponse.resume();
-            }
-          })
-          .on('error', e => {
-            scriptSource = `Fetching ${pathToSource} failed with error ${e.message}`;
-            sendResponse();
-          });
+      const httpURL = this._tryParseHTTPURL(pathToSource);
+      if (httpURL) {
+        this._fetchText(httpURL).then(
+          text => sendSuccessResponse(text),
+          err =>
+            sendErrorResponse(
+              `Failed to fetch source url ${pathToSource}: ${err.message}`,
+            ),
+        );
       } else {
+        let file;
         try {
-          scriptSource = fs.readFileSync(
+          file = fs.readFileSync(
             path.resolve(this._projectRoot, pathToSource),
             'utf8',
           );
         } catch (err) {
-          scriptSource = err.message;
+          sendErrorResponse(
+            `Failed to fetch source file ${pathToSource}: ${err.message}`,
+          );
         }
-        sendResponse();
+        if (file) {
+          sendSuccessResponse(file);
+        }
       }
     }
   }
@@ -583,6 +633,59 @@ class Device {
       return this._reloadablePages.get(pageId)?._lastConnectedPage.id || '';
     } else {
       return pageId;
+    }
+  }
+
+  _tryParseHTTPURL(url: string): ?URL {
+    let parsedURL: ?URL;
+    try {
+      parsedURL = new URL(url);
+    } catch {}
+
+    const protocol = parsedURL?.protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      parsedURL = undefined;
+    }
+
+    return parsedURL;
+  }
+
+  // Fetch text, raising an exception if the text could not be fetched,
+  // or is too large.
+  async _fetchText(url: URL): Promise<string> {
+    if (url.hostname !== 'localhost') {
+      throw new Error('remote fetches not permitted');
+    }
+
+    // $FlowFixMe[incompatible-call] Suppress arvr node-fetch flow error
+    const response = await fetch(url);
+    const text = await response.text();
+    // Restrict the length to well below the 500MB limit for nodejs (leaving
+    // room some some later manipulation, e.g. base64 or wrapping in JSON)
+    if (text.length > 350000000) {
+      throw new Error('file too large to fetch via HTTP');
+    }
+    return text;
+  }
+
+  _sendErrorToDebugger(message: string) {
+    const debuggerSocket = this._debuggerConnection?.socket;
+    if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
+      debuggerSocket.send(
+        JSON.stringify({
+          method: 'Runtime.consoleAPICalled',
+          params: {
+            args: [
+              {
+                type: 'string',
+                value: message,
+              },
+            ],
+            executionContextId: 0,
+            type: 'error',
+          },
+        }),
+      );
     }
   }
 }

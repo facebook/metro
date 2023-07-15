@@ -9,23 +9,25 @@
  * @oncall react_native
  */
 
-// Note: This is a fork of the fb-specific transform.js
+// This file uses Flow comment syntax so that it may be used from source as a
+// transformer without itself requiring transformation, such as in
+// facebook/react-native's own tests.
 
 'use strict';
 
-import type {BabelCoreOptions, Plugins} from '@babel/core';
+/*::
+import type {BabelCoreOptions, Plugins, TransformResult} from '@babel/core';
 import type {
   BabelTransformer,
-  BabelTransformerArgs,
+  MetroBabelFileMetadata,
 } from 'metro-babel-transformer';
-import type {FBSourceFunctionMap} from 'metro-source-map/src/source-map';
+*/
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const crypto = require('crypto');
 const fs = require('fs');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
-const {generateFunctionMap} = require('metro-source-map');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
@@ -35,11 +37,11 @@ const cacheKeyParts = [
 ];
 
 // TS detection conditions copied from metro-react-native-babel-preset
-function isTypeScriptSource(fileName: string) {
+function isTypeScriptSource(fileName /*: string */) {
   return !!fileName && fileName.endsWith('.ts');
 }
 
-function isTSXSource(fileName: string) {
+function isTSXSource(fileName /*: string */) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
@@ -49,7 +51,7 @@ function isTSXSource(fileName: string) {
  * default RN babelrc file and uses that.
  */
 const getBabelRC = (function () {
-  let babelRC: ?BabelCoreOptions = null;
+  let babelRC /*: ?BabelCoreOptions */ = null;
 
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
@@ -62,10 +64,10 @@ const getBabelRC = (function () {
       return babelRC;
     }
 
-    babelRC = ({
+    babelRC = {
       plugins: [],
       extends: extendsBabelConfigPath,
-    }: BabelCoreOptions);
+    };
 
     if (extendsBabelConfigPath) {
       return babelRC;
@@ -109,9 +111,6 @@ const getBabelRC = (function () {
       babelRC.presets = [
         [
           require('metro-react-native-babel-preset'),
-          /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses
-           * an error found when Flow v0.122.0 was deployed. To see the error,
-           * delete this comment and run Flow. */
           {
             projectRoot,
             ...presetOptions,
@@ -131,25 +130,26 @@ const getBabelRC = (function () {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(
-  filename: string,
+  filename /*: string */,
   /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
    * LTI update could not be added via codemod */
   options,
-  plugins?: Plugins = [],
-): BabelCoreOptions {
+  plugins /*:: ?: Plugins*/ = [],
+) /*: BabelCoreOptions*/ {
   const babelRC = getBabelRC(options);
 
-  const extraConfig: BabelCoreOptions = {
+  const extraConfig /*: BabelCoreOptions */ = {
     babelrc:
       typeof options.enableBabelRCLookup === 'boolean'
         ? options.enableBabelRCLookup
         : true,
     code: false,
+    cwd: options.projectRoot,
     filename,
     highlightCode: true,
   };
 
-  let config: BabelCoreOptions = {
+  let config /*: BabelCoreOptions */ = {
     ...babelRC,
     ...extraConfig,
   };
@@ -188,11 +188,12 @@ function buildBabelConfig(
   };
 }
 
-function transform({filename, options, src, plugins}: BabelTransformerArgs): {
-  ast: BabelNodeFile,
-  functionMap: ?FBSourceFunctionMap,
-  ...
-} {
+const transform /*: BabelTransformer['transform'] */ = ({
+  filename,
+  options,
+  src,
+  plugins,
+}) => {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev
     ? 'development'
@@ -222,23 +223,23 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs): {
             sourceType: babelConfig.sourceType,
           });
 
-    const functionMap = generateFunctionMap(sourceAst, {filename});
-    const result = transformFromAstSync(sourceAst, src, babelConfig);
+    const result /*: TransformResult<MetroBabelFileMetadata> */ =
+      transformFromAstSync(sourceAst, src, babelConfig);
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
       /* $FlowFixMe BabelTransformer specifies that the `ast` can never be null but
        * the function returns here. Discovered when typing `BabelNode`. */
-      return {ast: null, functionMap};
+      return {ast: null};
     }
 
-    return {ast: nullthrows(result.ast), functionMap};
+    return {ast: nullthrows(result.ast), metadata: result.metadata};
   } finally {
     if (OLD_BABEL_ENV) {
       process.env.BABEL_ENV = OLD_BABEL_ENV;
     }
   }
-}
+};
 
 function getCacheKey() {
   var key = crypto.createHash('md5');
@@ -246,7 +247,9 @@ function getCacheKey() {
   return key.digest('hex');
 }
 
-module.exports = ({
+const babelTransformer /*: BabelTransformer */ = {
   transform,
   getCacheKey,
-}: BabelTransformer);
+};
+
+module.exports = babelTransformer;

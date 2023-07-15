@@ -17,6 +17,7 @@ import type {TransformProfile} from 'metro-babel-transformer';
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const parseCustomResolverOptions = require('./parseCustomResolverOptions');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+const jscSafeUrl = require('jsc-safe-url');
 const nullthrows = require('nullthrows');
 const path = require('path');
 const url = require('url');
@@ -30,15 +31,6 @@ const getBoolean = (
     ? defaultValue
     : query[opt] === 'true' || query[opt] === '1';
 
-const getNumber = (
-  query: $ReadOnly<{[opt: string]: string}>,
-  opt: string,
-  defaultValue: null,
-) => {
-  const number = parseInt(query[opt], 10);
-  return Number.isNaN(number) ? defaultValue : number;
-};
-
 const getBundleType = (bundleType: string): 'map' | 'bundle' =>
   bundleType === 'map' ? bundleType : 'bundle';
 
@@ -48,11 +40,10 @@ const getTransformProfile = (transformProfile: string): TransformProfile =>
     : 'default';
 
 module.exports = function parseOptionsFromUrl(
-  requestUrl: string,
+  normalizedRequestUrl: string,
   platforms: Set<string>,
-  bytecodeVersion: number,
 ): BundleOptions {
-  const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
+  const parsedURL = nullthrows(url.parse(normalizedRequestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
     query.bundleEntry ||
@@ -60,16 +51,9 @@ module.exports = function parseOptionsFromUrl(
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
   const bundleType = getBundleType(path.extname(pathname).substr(1));
-  const runtimeBytecodeVersion = getNumber(
-    query,
-    'runtimeBytecodeVersion',
-    null,
-  );
 
   return {
     bundleType,
-    runtimeBytecodeVersion:
-      bytecodeVersion === runtimeBytecodeVersion ? bytecodeVersion : null,
     customResolverOptions: parseCustomResolverOptions(parsedURL),
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
@@ -77,6 +61,7 @@ module.exports = function parseOptionsFromUrl(
     excludeSource: getBoolean(query, 'excludeSource', false),
     hot: true,
     inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
+    lazy: getBoolean(query, 'lazy', false),
     minify: getBoolean(query, 'minify', false),
     modulesOnly: getBoolean(query, 'modulesOnly', false),
     onProgress: null,
@@ -93,7 +78,7 @@ module.exports = function parseOptionsFromUrl(
         platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
-    sourceUrl: requestUrl,
+    sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
     unstable_transformProfile: getTransformProfile(
       query.unstable_transformProfile,
     ),

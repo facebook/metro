@@ -28,7 +28,6 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       hot: options.hot,
       minify: options.minify,
       platform: options.platform,
-      runtimeBytecodeVersion: options.runtimeBytecodeVersion,
       type: 'module',
       unstable_transformProfile: options.unstable_transformProfile,
     },
@@ -42,6 +41,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
     },
     graphOptions: {
       shallow: options.shallow,
+      lazy: options.lazy,
     },
     onProgress: options.onProgress,
   };

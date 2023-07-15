@@ -30,7 +30,8 @@ describe('DeltaBundler', () => {
 
   const options = {
     unstable_allowRequireContext: false,
-    experimentalImportBundleSupport: false,
+    unstable_enablePackageExports: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       throw new Error('Never called');
@@ -45,7 +46,6 @@ describe('DeltaBundler', () => {
       hot: false,
       minify: false,
       platform: null,
-      runtimeBytecodeVersion: null,
       type: 'module',
       unstable_transformProfile: 'default',
     },

@@ -14,16 +14,15 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {
   ChangeEvent,
   FileSystem,
-  IModuleMap,
+  HasteMap,
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
-import type Module from './Module';
 
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
 const canonicalize = require('metro-core/src/canonicalize');
-const createHasteMap = require('./DependencyGraph/createHasteMap');
+const createFileMap = require('./DependencyGraph/createFileMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const ModuleCache = require('./ModuleCache');
 const {EventEmitter} = require('events');
@@ -37,6 +36,7 @@ const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
+import type {BundlerResolution} from '../DeltaBundler/types.flow';
 
 const NULL_PLATFORM = Symbol();
 
@@ -53,13 +53,12 @@ function getOrCreateMap<T>(
 }
 
 class DependencyGraph extends EventEmitter {
-  _assetExtensions: Set<string>;
   _config: ConfigT;
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
   _moduleCache: ModuleCache;
-  _hasteModuleMap: IModuleMap;
-  _moduleResolver: ModuleResolver<Module, Package>;
+  _hasteMap: HasteMap;
+  _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
     // Custom resolver options
     string | symbol,
@@ -72,7 +71,7 @@ class DependencyGraph extends EventEmitter {
         Map<
           // Platform
           string | symbol,
-          string,
+          BundlerResolution,
         >,
       >,
     >,
@@ -89,9 +88,6 @@ class DependencyGraph extends EventEmitter {
     super();
 
     this._config = config;
-    this._assetExtensions = new Set(
-      config.resolver.assetExts.map(asset => '.' + asset),
-    );
 
     const {hasReducedPerformance, watch} = options ?? {};
     const initializingMetroLogEntry = log(
@@ -102,21 +98,21 @@ class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const haste = createHasteMap(config, {watch});
+    const fileMap = createFileMap(config, {watch});
 
     // We can have a lot of graphs listening to Haste for changes.
     // Bump this up to silence the max listeners EventEmitter warning.
-    haste.setMaxListeners(1000);
+    fileMap.setMaxListeners(1000);
 
-    this._haste = haste;
+    this._haste = fileMap;
     this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._readyPromise = haste.build().then(({fileSystem, hasteModuleMap}) => {
+    this._readyPromise = fileMap.build().then(({fileSystem, hasteMap}) => {
       log(createActionEndEntry(initializingMetroLogEntry));
       config.reporter.update({type: 'dep_graph_loaded'});
 
       this._fileSystem = fileSystem;
-      this._hasteModuleMap = hasteModuleMap;
+      this._hasteMap = hasteMap;
 
       this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
       this._haste.on('healthCheck', result =>
@@ -156,8 +152,14 @@ class DependencyGraph extends EventEmitter {
   _getClosestPackage(filePath: string): ?string {
     const parsedPath = path.parse(filePath);
     const root = parsedPath.root;
-    let dir = parsedPath.dir;
+    let dir = path.join(parsedPath.dir, parsedPath.base);
+
     do {
+      // If we've hit a node_modules directory, the closest package was not
+      // found (`filePath` was likely nonexistent).
+      if (path.basename(dir) === 'node_modules') {
+        return null;
+      }
       const candidate = path.join(dir, 'package.json');
       if (this._fileSystem.exists(candidate)) {
         return candidate;
@@ -176,6 +178,7 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleResolver() {
     this._moduleResolver = new ModuleResolver({
+      assetExts: new Set(this._config.resolver.assetExts),
       dirExists: (filePath: string) => {
         try {
           return fs.lstatSync(filePath).isDirectory();
@@ -188,27 +191,46 @@ class DependencyGraph extends EventEmitter {
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
       getHasteModulePath: (name, platform) =>
-        this._hasteModuleMap.getModule(name, platform, true),
+        this._hasteMap.getModule(name, platform, true),
       getHastePackagePath: (name, platform) =>
-        this._hasteModuleMap.getPackage(name, platform, true),
-      isAssetFile: file => this._assetExtensions.has(path.extname(file)),
+        this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
+      reporter: this._config.reporter,
       resolveAsset: (dirPath: string, assetName: string, extension: string) => {
         const basePath = dirPath + path.sep + assetName;
-        const assets = [
+        let assets = [
           basePath + extension,
           ...this._config.resolver.assetResolutions.map(
             resolution => basePath + '@' + resolution + 'x' + extension,
           ),
-        ].filter(candidate => this._fileSystem.exists(candidate));
+        ];
+
+        if (this._config.resolver.unstable_enableSymlinks) {
+          assets = assets
+            .map(candidate => this._fileSystem.getRealPath(candidate))
+            .filter(Boolean);
+        } else {
+          assets = assets.filter(candidate =>
+            this._fileSystem.exists(candidate),
+          );
+        }
+
         return assets.length ? assets : null;
       },
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
+      unstable_conditionNames: this._config.resolver.unstable_conditionNames,
+      unstable_conditionsByPlatform:
+        this._config.resolver.unstable_conditionsByPlatform,
+      unstable_enablePackageExports:
+        this._config.resolver.unstable_enablePackageExports,
+      unstable_getRealPath: this._config.resolver.unstable_enableSymlinks
+        ? path => this._fileSystem.getRealPath(path)
+        : null,
     });
   }
 
@@ -231,14 +253,19 @@ class DependencyGraph extends EventEmitter {
     const containerName =
       splitIndex !== -1 ? filename.slice(0, splitIndex + 4) : filename;
 
-    // TODO Calling realpath allows us to get a hash for a given path even when
+    // Prior to unstable_enableSymlinks:
+    // Calling realpath allows us to get a hash for a given path even when
     // it's a symlink to a file, which prevents Metro from crashing in such a
     // case. However, it doesn't allow Metro to track changes to the target file
     // of the symlink. We should fix this by implementing a symlink map into
     // Metro (or maybe by implementing those "extra transformation sources" we've
     // been talking about for stuff like CSS or WASM).
+    //
+    // This is unnecessary with a symlink-aware fileSystem implementation.
+    const resolvedPath = this._config.resolver.unstable_enableSymlinks
+      ? containerName
+      : fs.realpathSync(containerName);
 
-    const resolvedPath = fs.realpathSync(containerName);
     const sha1 = this._fileSystem.getSha1(resolvedPath);
 
     if (!sha1) {
@@ -258,6 +285,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   end() {
+    // $FlowFixMe[unused-promise]
     this._haste.end();
   }
 
@@ -270,8 +298,14 @@ class DependencyGraph extends EventEmitter {
       /* Filter relative paths against a pattern. */
       filter: RegExp,
     }>,
-  ): string[] {
-    return this._fileSystem.matchFilesWithContext(from, context);
+  ): Iterable<string> {
+    return this._fileSystem.matchFiles({
+      rootDir: from,
+      recursive: context.recursive,
+      filter: context.filter,
+      filterComparePosix: true,
+      follow: true,
+    });
   }
 
   resolveDependency(
@@ -284,7 +318,7 @@ class DependencyGraph extends EventEmitter {
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
-  ): string {
+  ): BundlerResolution {
     const isSensitiveToOriginFolder =
       // Resolution is always relative to the origin folder unless we assume a flat node_modules
       !assumeFlatNodeModules ||
@@ -313,17 +347,17 @@ class DependencyGraph extends EventEmitter {
     );
     const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
     const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
-    let modulePath = mapByPlatform.get(platformKey);
+    let resolution: ?BundlerResolution = mapByPlatform.get(platformKey);
 
-    if (!modulePath) {
+    if (!resolution) {
       try {
-        modulePath = this._moduleResolver.resolveDependency(
+        resolution = this._moduleResolver.resolveDependency(
           this._moduleCache.getModule(from),
           to,
           true,
           platform,
           resolverOptions,
-        ).path;
+        );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(from, error);
@@ -339,8 +373,8 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platformKey, modulePath);
-    return modulePath;
+    mapByPlatform.set(platformKey, resolution);
+    return resolution;
   }
 
   _doesFileExist = (filePath: string): boolean => {

@@ -23,6 +23,7 @@ function isTSXSource(fileName) {
 
 const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
+  [require('babel-plugin-transform-flow-enums')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -90,6 +91,7 @@ const getPreset = (src, options) => {
     ]);
     extraPlugins.push([require('@babel/plugin-transform-function-name')]);
     extraPlugins.push([require('@babel/plugin-transform-literals')]);
+    extraPlugins.push([require('@babel/plugin-proposal-numeric-separator')]);
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
   } else {
     extraPlugins.push([

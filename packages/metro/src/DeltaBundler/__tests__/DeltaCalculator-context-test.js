@@ -38,7 +38,8 @@ describe('DeltaCalculator + require.context', () => {
 
   const options = {
     unstable_allowRequireContext: true,
-    experimentalImportBundleSupport: false,
+    unstable_enablePackageExports: false,
+    lazy: false,
     onProgress: null,
     resolve: (from: string, to: string) => {
       throw new Error('Never called');
@@ -53,7 +54,6 @@ describe('DeltaCalculator + require.context', () => {
       hot: false,
       minify: false,
       platform: null,
-      runtimeBytecodeVersion: null,
       type: 'module',
       unstable_transformProfile: 'default',
     },
@@ -142,6 +142,7 @@ describe('DeltaCalculator + require.context', () => {
       }),
     );
 
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(
       new Set(['/bundle']),
       fileWatcher,
@@ -161,7 +162,9 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/ctx/foo'}],
+      eventsQueue: [
+        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -186,7 +189,9 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -208,7 +213,9 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/ctx/foo'}],
+      eventsQueue: [
+        {type: 'change', filePath: '/ctx/foo', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -230,7 +237,9 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'change', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -247,11 +256,15 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'change', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -273,11 +286,15 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/ctx/foo2'}],
+      eventsQueue: [
+        {type: 'delete', filePath: '/ctx/foo2', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build
@@ -294,11 +311,13 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/ctx/foo'}],
+      eventsQueue: [
+        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
+      ],
     });
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/ctx/foo'}],
+      eventsQueue: [{type: 'add', filePath: '/ctx/foo', metadata: {type: 'f'}}],
     });
 
     // Incremental build
@@ -318,11 +337,15 @@ describe('DeltaCalculator + require.context', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'change', filePath: '/ctx/foo'}],
+      eventsQueue: [
+        {type: 'change', filePath: '/ctx/foo', metadata: {type: 'f'}},
+      ],
     });
 
     fileWatcher.emit('change', {
-      eventsQueue: [{type: 'delete', filePath: '/ctx/foo'}],
+      eventsQueue: [
+        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
+      ],
     });
 
     // Incremental build

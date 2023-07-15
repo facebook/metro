@@ -92,9 +92,7 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 ```js
 const config = await Metro.loadConfig();
 
-await Metro.runServer(config, {
-  port: 8080,
-});
+await Metro.runServer(config);
 ```
 
 ```js
@@ -103,7 +101,6 @@ const fs = require('fs');
 const config = await Metro.loadConfig();
 
 await Metro.runServer(config, {
-  port: 8080,
   secureServerOptions: {
     ca: fs.readFileSync('path/to/ca'),
     cert: fs.readFileSync('path/to/cert'),

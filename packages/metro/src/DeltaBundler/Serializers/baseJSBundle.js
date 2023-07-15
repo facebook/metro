@@ -39,6 +39,7 @@ function baseJSBundle(
     includeAsyncPaths: options.includeAsyncPaths,
     projectRoot: options.projectRoot,
     serverRoot: options.serverRoot,
+    sourceUrl: options.sourceUrl,
   };
 
   // Do not prepend polyfills or the require runtime when only modules are requested
@@ -63,6 +64,7 @@ function baseJSBundle(
       inlineSourceMap: options.inlineSourceMap,
       runBeforeMainModule: options.runBeforeMainModule,
       runModule: options.runModule,
+      shouldAddToIgnoreList: options.shouldAddToIgnoreList,
       sourceMapUrl: options.sourceMapUrl,
       sourceUrl: options.sourceUrl,
     }),

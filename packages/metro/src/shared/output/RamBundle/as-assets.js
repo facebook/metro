@@ -62,6 +62,7 @@ function saveAsAssets(
         writeMagicFlagFile(modulesDir),
       ]),
   );
+  // $FlowFixMe[unused-promise]
   writeUnbundle.then(() => log('Done writing unbundle output'));
 
   if (sourcemapOutput) {

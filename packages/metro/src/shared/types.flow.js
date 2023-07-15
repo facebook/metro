@@ -50,18 +50,17 @@ export type BundleOptions = {
   +excludeSource: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
+  +lazy: boolean,
   minify: boolean,
   +modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
-  runtimeBytecodeVersion: ?number,
   +shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
   +unstable_transformProfile: TransformProfile,
-  ...
 };
 
 export type ResolverInputOptions = $ReadOnly<{
@@ -78,6 +77,7 @@ export type SerializerOptions = {
 };
 
 export type GraphOptions = {
+  +lazy: boolean,
   +shallow: boolean,
 };
 
@@ -139,6 +139,8 @@ export type RequestOptions = {
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  +customResolverOptions?: CustomResolverOptions,
+  +customTransformOptions?: CustomTransformOptions,
 };
 
 export type {MinifierOptions};

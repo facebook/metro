@@ -23,7 +23,7 @@ export type MixedOutput = {
   +type: string,
 };
 
-export type AsyncDependencyType = 'async' | 'prefetch';
+export type AsyncDependencyType = 'async' | 'prefetch' | 'weak';
 
 export type TransformResultDependency = {
   /**
@@ -45,12 +45,6 @@ export type TransformResultDependency = {
      */
     +asyncType: AsyncDependencyType | null,
     /**
-     * The condition for splitting on this dependency edge.
-     */
-    +splitCondition?: {
-      +mobileConfigName: string,
-    },
-    /**
      * The dependency is enclosed in a try/catch block.
      */
     +isOptional?: boolean,
@@ -67,13 +61,14 @@ export type Dependency = {
   +data: TransformResultDependency,
 };
 
-export type Module<T = MixedOutput> = {
-  +dependencies: Map<string, Dependency>,
-  +inverseDependencies: CountingSet<string>,
-  +output: $ReadOnlyArray<T>,
-  +path: string,
-  +getSource: () => Buffer,
-};
+export type Module<T = MixedOutput> = $ReadOnly<{
+  dependencies: Map<string, Dependency>,
+  inverseDependencies: CountingSet<string>,
+  output: $ReadOnlyArray<T>,
+  path: string,
+  getSource: () => Buffer,
+  unstable_transformResultKey?: ?string,
+}>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
@@ -108,6 +103,7 @@ export type {Graph};
 export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
+  unstable_transformResultKey?: ?string,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
@@ -126,13 +122,19 @@ export type AllowOptionalDependencies =
   | boolean
   | AllowOptionalDependenciesWithOptions;
 
+export type BundlerResolution = $ReadOnly<{
+  type: 'sourceFile',
+  filePath: string,
+}>;
+
 export type Options<T = MixedOutput> = {
-  +resolve: (from: string, to: string) => string,
+  +resolve: (from: string, to: string) => BundlerResolution,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
-  +experimentalImportBundleSupport: boolean,
+  +lazy: boolean,
   +unstable_allowRequireContext: boolean,
+  +unstable_enablePackageExports: boolean,
   +shallow: boolean,
 };
 
@@ -156,6 +158,7 @@ export type SerializerOptions = $ReadOnly<{
   runBeforeMainModule: $ReadOnlyArray<string>,
   runModule: boolean,
   serverRoot: string,
+  shouldAddToIgnoreList: (Module<>) => boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
 }>;

@@ -9,10 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
+import parseKeyValueParamArray from '../cli/parseKeyValueParamArray';
 
+import type {CustomTransformOptions} from 'metro-babel-transformer';
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {RunBuildOptions} from '../index';
-import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
 
@@ -23,6 +24,24 @@ const {Terminal} = require('metro-core');
 
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
+
+type Args = $ReadOnly<{
+  config?: string,
+  dev?: boolean,
+  entry: string,
+  legacyBundler?: boolean,
+  maxWorkers?: number,
+  minify?: boolean,
+  out: string,
+  outputType?: string,
+  platform?: string,
+  projectRoots?: $ReadOnlyArray<string>,
+  resetCache?: boolean,
+  sourceMap?: boolean,
+  sourceMapUrl?: string,
+  transformOption: CustomTransformOptions,
+  resolverOption: CustomResolverOptions,
+}>;
 
 module.exports = (): {
   ...ModuleObject,
@@ -54,14 +73,40 @@ module.exports = (): {
 
     yargs.option('config', {alias: 'c', type: 'string'});
 
+    yargs.option('transform-option', {
+      type: 'string',
+      array: true,
+      alias: 'transformer-option',
+      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      describe:
+        'Custom transform options of the form key=value. URL-encoded. May be specified multiple times.',
+    });
+
+    yargs.option('resolver-option', {
+      type: 'string',
+      array: true,
+      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      describe:
+        'Custom resolver options of the form key=value. URL-encoded. May be specified multiple times.',
+    });
+
     // Deprecated
     yargs.option('reset-cache', {type: 'boolean'});
   },
 
-  handler: makeAsyncCommand(async (argv: YargArguments) => {
+  handler: makeAsyncCommand(async (argv: Args) => {
     const config = await loadConfig(argv);
-    // $FlowExpectedError YargArguments and RunBuildOptions are used interchangeable but their types are not yet compatible
-    const options = (argv: RunBuildOptions);
+    const options: RunBuildOptions = {
+      entry: argv.entry,
+      dev: argv.dev,
+      out: argv.out,
+      minify: argv.minify,
+      platform: argv.platform,
+      sourceMap: argv.sourceMap,
+      sourceMapUrl: argv.sourceMapUrl,
+      customResolverOptions: argv.resolverOption,
+      customTransformOptions: argv.transformOption,
+    };
 
     // Inline require() to avoid circular dependency with ../index
     const MetroApi = require('../index');
@@ -78,9 +123,6 @@ module.exports = (): {
             entryFile: options.entry,
             minify: !!options.minify,
             platform: options.platform,
-            // Bytecode bundles in Metro are not meant for production use. Instead,
-            // the Hermes Bytecode Compiler should be invoked on the resulting JS bundle from Metro.
-            runtimeBytecodeVersion: null,
           },
         });
       },

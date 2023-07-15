@@ -10,11 +10,8 @@
 
 'use strict';
 
-// $FlowIssue[bigint-unsupported]
 // $FlowFixMe[signature-verification-failure]
 var a = 2n;
-// $FlowIssue[bigint-unsupported]
 // $FlowFixMe[signature-verification-failure]
 var b = 3n;
-// $FlowFixMe[unsafe-addition]
 module.exports = a ** b;

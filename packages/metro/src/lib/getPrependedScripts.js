@@ -67,8 +67,9 @@ async function getPrependedScripts(
         config.transformer.unstable_allowRequireContext,
       transformOptions,
       onProgress: null,
-      experimentalImportBundleSupport:
-        config.server.experimentalImportBundleSupport,
+      lazy: false,
+      unstable_enablePackageExports:
+        config.resolver.unstable_enablePackageExports,
       shallow: false,
     },
   );
@@ -93,8 +94,6 @@ function _getPrelude({
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
-  const {compile} = require('metro-hermes-compiler');
-
   const code = getPreludeCode({
     isDev: dev,
     globalPrefix,
@@ -114,13 +113,6 @@ function _getPrelude({
           code,
           lineCount: countLines(code),
           map: [],
-        },
-      },
-      {
-        type: 'bytecode/script/virtual',
-        data: {
-          bytecode: compile(code, {sourceURL: '__prelude__.virtual.js'})
-            .bytecode,
         },
       },
     ],

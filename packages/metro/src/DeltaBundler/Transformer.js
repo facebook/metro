@@ -82,7 +82,6 @@ class Transformer {
       minify,
       nonInlinedRequires,
       platform,
-      runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
       unstable_transformProfile,
@@ -116,7 +115,6 @@ class Transformer {
       minify,
       nonInlinedRequires,
       platform,
-      runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
       unstable_transformProfile,
@@ -157,6 +155,7 @@ class Transformer {
 
     return {
       ...data.result,
+      unstable_transformResultKey: fullKey.toString(),
       getSource(): Buffer {
         if (fileBuffer) {
           return fileBuffer;
@@ -167,6 +166,7 @@ class Transformer {
   }
 
   end(): void {
+    // $FlowFixMe[unused-promise]
     this._workerFarm.kill();
   }
 }

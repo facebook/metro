@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import TreeFS from '../../lib/TreeFS';
 import nodeCrawl from '../node';
 import watchmanCrawl from '../watchman';
 import {execSync} from 'child_process';
@@ -103,14 +104,16 @@ describe.each(Object.keys(CRAWLERS))(
     const crawl = CRAWLERS[crawlerName];
     const maybeTest = crawl ? test : test.skip;
 
-    // $FlowFixMe[prop-missing]: Add each to to test.skip
     maybeTest.each(CASES)(
       'Finds the expected files (includeSymlinks: %s)',
       async (includeSymlinks, expectedChangedFiles) => {
         invariant(crawl, 'crawl should not be null within maybeTest');
         const result = await crawl({
           previousState: {
-            files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+            fileSystem: new TreeFS({
+              rootDir: FIXTURES_DIR,
+              files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+            }),
             clocks: new Map(),
           },
           includeSymlinks,
@@ -127,9 +130,7 @@ describe.each(Object.keys(CRAWLERS))(
         // Map comparison is unordered, which is what we want
         expect(result).toMatchObject({
           changedFiles: expectedChangedFiles,
-          removedFiles: new Map([
-            ['removed.js', ['', 123, 234, 0, '', null, 0]],
-          ]),
+          removedFiles: new Set(['removed.js']),
         });
         if (crawlerName === 'watchman') {
           expect(result.clocks).toBeInstanceOf(Map);

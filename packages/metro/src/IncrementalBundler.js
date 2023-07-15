@@ -38,6 +38,7 @@ export type OutputGraph = Graph<>;
 type OtherOptions = $ReadOnly<{
   onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
   shallow: boolean,
+  lazy: boolean,
 }>;
 
 export type GraphRevision = {
@@ -80,6 +81,7 @@ class IncrementalBundler {
 
   end(): void {
     this._deltaBundler.end();
+    // $FlowFixMe[unused-promise]
     this._bundler.end();
   }
 
@@ -106,6 +108,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
+      lazy: false,
     },
   ): Promise<OutputGraph> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
@@ -126,10 +129,11 @@ class IncrementalBundler {
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
+      lazy: otherOptions.lazy,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
+      unstable_enablePackageExports:
+        this._config.resolver.unstable_enablePackageExports,
       shallow: otherOptions.shallow,
     });
 
@@ -150,6 +154,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
+      lazy: false,
     },
   ): Promise<ReadOnlyDependencies<>> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
@@ -172,10 +177,11 @@ class IncrementalBundler {
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
-        experimentalImportBundleSupport:
-          this._config.server.experimentalImportBundleSupport,
+        lazy: otherOptions.lazy,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
+        unstable_enablePackageExports:
+          this._config.resolver.unstable_enablePackageExports,
         shallow: otherOptions.shallow,
       },
     );
@@ -190,6 +196,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
+      lazy: false,
     },
   ): Promise<{+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>}> {
     const graph = await this.buildGraphForEntries(
@@ -224,6 +231,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
       shallow: false,
+      lazy: false,
     },
   ): Promise<{
     delta: DeltaResult<>,
@@ -233,8 +241,7 @@ class IncrementalBundler {
     const graphId = getGraphId(entryFile, transformOptions, {
       resolverOptions,
       shallow: otherOptions.shallow,
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
+      lazy: otherOptions.lazy,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
     });

@@ -8,32 +8,45 @@
  * @oncall react_native
  */
 
-'use strict';
+import {AbortController} from 'node-abort-controller';
+import TreeFS from '../../lib/TreeFS';
 
 const path = require('path');
 
 jest.mock('fb-watchman', () => {
-  const normalizePathSep = require('../../lib/normalizePathSep').default;
+  const normalizePathSeparatorsToSystem =
+    require('../../lib/normalizePathSeparatorsToSystem').default;
   const Client = jest.fn();
-  Client.prototype.command = jest.fn((args, callback) =>
+  const endedClients = new WeakSet();
+  Client.prototype.command = jest.fn(function (args, callback) {
+    const self = this;
     setImmediate(() => {
-      const path = args[1] ? normalizePathSep(args[1]) : undefined;
+      if (endedClients.has(self)) {
+        callback(new Error('Client has ended'));
+        return;
+      }
+      const path = args[1]
+        ? normalizePathSeparatorsToSystem(args[1])
+        : undefined;
       const response = mockResponse[args[0]][path];
       callback(null, response.next ? response.next().value : response);
-    }),
-  );
+    });
+  });
   Client.prototype.on = jest.fn();
-  Client.prototype.end = jest.fn();
+  Client.prototype.end = jest.fn(function () {
+    endedClients.add(this);
+  });
   return {Client};
 });
 
-const forcePOSIXPaths = path => path.replace(/\\/g, '/');
+const forcePOSIXPaths = path => path.replaceAll('\\', '/');
 const pearMatcher = path => /pear/.test(path);
 
 let watchman;
 let watchmanCrawl;
 let mockResponse;
 let mockFiles;
+const getFS = files => new TreeFS({files, rootDir: ROOT_MOCK});
 
 const ROOT_MOCK = path.sep === '/' ? '/root-mock' : 'M:\\root-mock';
 const FRUITS_RELATIVE = 'fruits';
@@ -118,7 +131,7 @@ describe('watchman watch', () => {
     const {changedFiles, clocks, removedFiles} = await watchmanCrawl({
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -157,7 +170,7 @@ describe('watchman watch', () => {
 
     expect(changedFiles).toEqual(mockFiles);
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
 
     expect(client.end).toBeCalled();
   });
@@ -193,7 +206,7 @@ describe('watchman watch', () => {
         clocks: createMap({
           '': 'c:fake-clock:1',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -213,11 +226,7 @@ describe('watchman watch', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(
-      createMap({
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
-      }),
-    );
+    expect(removedFiles).toEqual(new Set([TOMATO_RELATIVE]));
   });
 
   test('resets the file map and tracks removedFiles when watchman is fresh', async () => {
@@ -265,7 +274,7 @@ describe('watchman watch', () => {
         clocks: createMap({
           '': 'c:fake-clock:1',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -295,10 +304,7 @@ describe('watchman watch', () => {
     expect(changedFiles.get(TOMATO_RELATIVE)).not.toBe(mockTomatoMetadata);
 
     expect(removedFiles).toEqual(
-      createMap({
-        [MELON_RELATIVE]: ['', 33, 43, 0, '', null, 0],
-        [STRAWBERRY_RELATIVE]: ['', 30, 40, 0, '', null, 0],
-      }),
+      new Set([MELON_RELATIVE, STRAWBERRY_RELATIVE]),
     );
   });
 
@@ -348,7 +354,7 @@ describe('watchman watch', () => {
           [FRUITS_RELATIVE]: 'c:fake-clock:1',
           [VEGETABLES_RELATIVE]: 'c:fake-clock:2',
         }),
-        files: mockFiles,
+        fileSystem: getFS(mockFiles),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -371,10 +377,7 @@ describe('watchman watch', () => {
     );
 
     expect(removedFiles).toEqual(
-      createMap({
-        [STRAWBERRY_RELATIVE]: ['', 30, 40, 0, '', null, 0],
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
-      }),
+      new Set([STRAWBERRY_RELATIVE, TOMATO_RELATIVE]),
     );
   });
 
@@ -406,7 +409,7 @@ describe('watchman watch', () => {
     const {changedFiles, clocks, removedFiles} = await watchmanCrawl({
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       ignore: pearMatcher,
@@ -443,7 +446,7 @@ describe('watchman watch', () => {
 
     expect(changedFiles).toEqual(new Map());
 
-    expect(removedFiles).toEqual(new Map());
+    expect(removedFiles).toEqual(new Set());
 
     expect(client.end).toBeCalled();
   });
@@ -469,7 +472,7 @@ describe('watchman watch', () => {
       computeSha1: true,
       previousState: {
         clocks: new Map(),
-        files: new Map(),
+        fileSystem: getFS(new Map()),
       },
       extensions: ['js', 'json'],
       rootDir: ROOT_MOCK,
@@ -542,10 +545,63 @@ describe('watchman watch', () => {
       }),
     );
 
-    expect(removedFiles).toEqual(
-      createMap({
-        [TOMATO_RELATIVE]: ['', 31, 41, 0, '', null, 0],
+    expect(removedFiles).toEqual(new Set([TOMATO_RELATIVE]));
+  });
+
+  it('aborts the crawl on pre-aborted signal', async () => {
+    const err = new Error('aborted for test');
+    await expect(
+      watchmanCrawl({
+        abortSignal: abortSignalWithReason(err),
+        previousState: {
+          clocks: new Map(),
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir: ROOT_MOCK,
+        roots: ROOTS,
       }),
-    );
+    ).rejects.toThrow(err);
+  });
+
+  it('aborts the crawl if signalled after start', async () => {
+    const err = new Error('aborted for test');
+    const abortController = new AbortController();
+
+    // Pass a fake perf logger that will trigger the abort controller
+    const fakePerfLogger = {
+      point(name, opts) {
+        abortController.abort(err);
+      },
+      annotate() {
+        abortController.abort(err);
+      },
+      subSpan() {
+        return fakePerfLogger;
+      },
+    };
+
+    await expect(
+      watchmanCrawl({
+        perfLogger: fakePerfLogger,
+        abortSignal: abortController.signal,
+        previousState: {
+          clocks: new Map(),
+          files: new Map(),
+        },
+        extensions: ['js', 'json'],
+        ignore: pearMatcher,
+        rootDir: ROOT_MOCK,
+        roots: ROOTS,
+      }),
+    ).rejects.toThrow(err);
   });
 });
+
+function abortSignalWithReason(reason) {
+  // TODO: use AbortSignal.abort when node-abort-controller supports it
+  const controller = new AbortController();
+  controller.abort(reason);
+  return controller.signal;
+}

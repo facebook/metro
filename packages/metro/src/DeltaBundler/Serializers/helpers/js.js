@@ -15,6 +15,7 @@ import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
 
 const invariant = require('invariant');
+const jscSafeUrl = require('jsc-safe-url');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 const path = require('path');
 
@@ -24,6 +25,7 @@ export type Options = $ReadOnly<{
   includeAsyncPaths: boolean,
   projectRoot: string,
   serverRoot: string,
+  sourceUrl: ?string,
   ...
 }>;
 
@@ -48,16 +50,35 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;
+        invariant(
+          options.sourceUrl != null,
+          'sourceUrl is required when includeAsyncPaths is true',
+        );
+
+        // TODO: Only include path if the target is not in the bundle
+
+        // Construct a server-relative URL for the split bundle, propagating
+        // most parameters from the main bundle's URL.
+
+        const {searchParams} = new URL(
+          jscSafeUrl.toNormalUrl(options.sourceUrl),
+        );
+        searchParams.set('modulesOnly', 'true');
+        searchParams.set('runModule', 'false');
+
         const bundlePath = path.relative(
           options.serverRoot,
           dependency.absolutePath,
         );
-        // TODO: Eventually this slicing should be asyncRequire's responsibility
-        // Strip the file extension
-        paths[id] = path.join(
-          path.dirname(bundlePath),
-          path.basename(bundlePath, path.extname(bundlePath)),
-        );
+        paths[id] =
+          '/' +
+          path.join(
+            path.dirname(bundlePath),
+            // Strip the file extension
+            path.basename(bundlePath, path.extname(bundlePath)),
+          ) +
+          '.bundle?' +
+          searchParams.toString();
       }
       return id;
     },

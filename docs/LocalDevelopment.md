@@ -22,9 +22,9 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
     From inside our `metro` clone, `yarn link` is responsible for registering local package folders to be linked to elsewhere.
 
-    We recommend using `lerna` to register all packages in the `metro` repo — these can be individually linked into the target project later.
+    We recommend using `npm exec --workspaces` to register all packages in the `metro` repo — these can be individually linked into the target project later.
 
-        yarn lerna exec -- yarn link
+        npm exec --workspaces -- yarn link
 
 2. **Use `yarn link` to replace Metro packages in your target project**
 
@@ -35,20 +35,21 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
     yarn link metro metro-config metro-runtime
     ```
 
+    Note: At mininum, the `metro` and `metro-runtime` packages need to be linked.
+
 3. **Configure Metro `watchFolders` to work with our linked packages**
 
     Because `yarn link` has included files outside of the immediate React Native project folder, we need to inform Metro that this set of files exists (as it will not automatically follow the symlinks). Add the following to your `metro.config.js`:
 
     ```diff
-    + const os = require('os');
     + const path = require('path');
 
       module.exports = {
     +   watchFolders: [
     +     path.resolve(__dirname, './node_modules'),
     +     // Include necessary file paths for `yarn link`ed modules
-    +     path.resolve(os.homedir(), 'fbsource/xplat/js/node_modules'),
-    +     path.resolve(os.homedir(), 'fbsource/xplat/js/tools/metro'),
+    +     path.resolve(__dirname, '../metro/packages'),
+    +     path.resolve(__dirname, '../metro/node_modules'),
     +   ],
         ...
       };

@@ -73,6 +73,17 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -82,13 +93,13 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "unstable_serverRoot": null,
@@ -98,6 +109,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -135,7 +147,6 @@ Object {
       "default": Object {},
     },
     "unstable_allowRequireContext": false,
-    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
@@ -143,6 +154,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -239,6 +251,17 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -248,13 +271,13 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "unstable_serverRoot": null,
@@ -264,6 +287,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -301,7 +325,6 @@ Object {
       "default": Object {},
     },
     "unstable_allowRequireContext": false,
-    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
@@ -309,6 +332,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -405,6 +429,17 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -414,13 +449,13 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "unstable_serverRoot": null,
@@ -430,6 +465,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -467,7 +503,6 @@ Object {
       "default": Object {},
     },
     "unstable_allowRequireContext": false,
-    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
@@ -475,6 +510,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
@@ -571,6 +607,17 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -580,13 +627,13 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "experimentalImportBundleSupport": false,
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "unstable_serverRoot": null,
@@ -596,6 +643,7 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -633,7 +681,6 @@ Object {
       "default": Object {},
     },
     "unstable_allowRequireContext": false,
-    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
@@ -641,6 +688,7 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],

@@ -11,8 +11,8 @@
 
 'use strict';
 
-import type ModuleMap from './ModuleMap';
 import type {PerfLoggerFactory, RootPerfLogger, PerfLogger} from 'metro-config';
+import type {AbortSignal} from 'node-abort-controller';
 
 export type {PerfLoggerFactory, PerfLogger};
 
@@ -41,20 +41,36 @@ export type BuildParameters = $ReadOnly<{
 
 export type BuildResult = {
   fileSystem: FileSystem,
-  hasteModuleMap: ModuleMap,
+  hasteMap: HasteMap,
+  mockMap: MockMap,
 };
 
+export type CacheData = $ReadOnly<{
+  clocks: WatchmanClocks,
+  haste: RawHasteMap,
+  mocks: RawMockMap,
+  fileSystemData: mixed,
+}>;
+
+export type CacheDelta = $ReadOnly<{
+  changed: $ReadOnlyMap<CanonicalPath, FileMetaData>,
+  removed: $ReadOnlySet<CanonicalPath>,
+}>;
+
 export interface CacheManager {
-  read(): Promise<?InternalData>;
-  write(
-    dataSnapshot: InternalData,
-    delta: $ReadOnly<{changed: FileData, removed: FileData}>,
-  ): Promise<void>;
+  read(): Promise<?CacheData>;
+  write(dataSnapshot: CacheData, delta: CacheDelta): Promise<void>;
 }
 
 export type CacheManagerFactory = (
   buildParameters: BuildParameters,
 ) => CacheManager;
+
+// A path that is
+//  - Relative to the contextual `rootDir`
+//  - Normalised (no extraneous '.' or '..')
+//  - Real (no symlinks in path, though the path itself may be a symlink)
+export type CanonicalPath = string;
 
 export type ChangeEvent = {
   logger: ?RootPerfLogger,
@@ -62,8 +78,8 @@ export type ChangeEvent = {
 };
 
 export type ChangeEventMetadata = {
-  modifiedTime: number, // Epoch ms
-  size: number, // Bytes
+  modifiedTime: ?number, // Epoch ms
+  size: ?number, // Bytes
   type: 'f' | 'd' | 'l', // Regular file / Directory / Symlink
 };
 
@@ -78,8 +94,8 @@ export type CrawlerOptions = {
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
   previousState: $ReadOnly<{
-    clocks: $ReadOnlyMap<Path, WatchmanClockSpec>,
-    files: $ReadOnlyMap<Path, FileMetaData>,
+    clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
+    fileSystem: FileSystem,
   }>,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -133,19 +149,11 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type InternalData = {
-  clocks: WatchmanClocks,
-  duplicates: DuplicatesIndex,
-  files: FileData,
-  map: ModuleMapData,
-  mocks: MockData,
-};
-
-export type FileData = Map<Path, FileMetaData>;
+export type FileData = Map<CanonicalPath, FileMetaData>;
 
 export type FileMetaData = [
   /* id */ string,
-  /* mtime */ number,
+  /* mtime */ ?number,
   /* size */ number,
   /* visited */ 0 | 1,
   /* dependencies */ string,
@@ -153,34 +161,53 @@ export type FileMetaData = [
   /* symlink */ 0 | 1 | string, // string specifies target, if known
 ];
 
+export type FileStats = $ReadOnly<{
+  fileType: 'f' | 'l',
+  modifiedTime: ?number,
+}>;
+
 export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
   getDependencies(file: Path): ?Array<string>;
+  getDifference(files: FileData): {
+    changedFiles: FileData,
+    removedFiles: Set<string>,
+  };
   getModuleName(file: Path): ?string;
+  getRealPath(file: Path): ?string;
+  getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
 
-  matchFiles(pattern: RegExp | string): Array<Path>;
-
   /**
-   * Given a search context, return a list of file paths matching the query.
-   * The query matches against normalized paths which start with `./`,
-   * for example: `a/b.js` -> `./a/b.js`
+   * Analogous to posix lstat. If the file at `file` is a symlink, return
+   * information about the symlink without following it.
    */
-  matchFilesWithContext(
-    root: Path,
-    context: $ReadOnly<{
-      /* Should search for files recursively. */
-      recursive: boolean,
-      /* Filter relative paths against a pattern. */
-      filter: RegExp,
-    }>,
-  ): Array<Path>;
+  linkStats(file: Path): ?FileStats;
+
+  matchFiles(opts: {
+    /* Filter relative paths against a pattern. */
+    filter?: RegExp | null,
+    /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
+    filterCompareAbsolute?: boolean,
+    /* `filter` is applied against posix-delimited paths, even on Windows. (default: false) */
+    filterComparePosix?: boolean,
+    /* Follow symlinks when enumerating paths. (default: false) */
+    follow?: boolean,
+    /* Should search for files recursively. (default: true) */
+    recursive?: boolean,
+    /* Match files under a given root, or null for all files */
+    rootDir?: Path | null,
+  }): Iterable<Path>;
 }
 
 export type Glob = string;
 
-export interface IModuleMap {
+export interface MockMap {
+  getMockModule(name: string): ?Path;
+}
+
+export interface HasteMap {
   getModule(
     name: string,
     platform?: ?string,
@@ -194,38 +221,41 @@ export interface IModuleMap {
     _supportsNativePlatform: ?boolean,
   ): ?Path;
 
-  getMockModule(name: string): ?Path;
-
-  getRawModuleMap(): ReadOnlyRawModuleMap;
+  getRawHasteMap(): ReadOnlyRawHasteMap;
 }
 
-export type MockData = Map<string, Path>;
-export type ModuleMapData = Map<string, ModuleMapItem>;
+export type HasteMapData = Map<string, HasteMapItem>;
 
-export type ModuleMapItem = {
-  [platform: string]: ModuleMetaData,
+export type HasteMapItem = {
+  [platform: string]: HasteMapItemMetaData,
   __proto__: null,
 };
-export type ModuleMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
+
+export interface MutableFileSystem extends FileSystem {
+  remove(filePath: Path): ?FileMetaData;
+  addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
+  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
+}
 
 export type Path = string;
 
-export type RawModuleMap = {
-  rootDir: Path,
+export type RawMockMap = Map<string, Path>;
+
+export type RawHasteMap = {
   duplicates: DuplicatesIndex,
-  map: ModuleMapData,
-  mocks: MockData,
+  map: HasteMapData,
 };
 
-export type ReadOnlyRawModuleMap = $ReadOnly<{
-  rootDir: Path,
+export type ReadOnlyRawHasteMap = $ReadOnly<{
   duplicates: $ReadOnlyMap<
     string,
     $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
   >,
-  map: $ReadOnlyMap<string, ModuleMapItem>,
-  mocks: $ReadOnlyMap<string, Path>,
+  map: $ReadOnlyMap<string, HasteMapItem>,
 }>;
+
+export type ReadOnlyRawMockMap = $ReadOnlyMap<string, Path>;
 
 export type WatchmanClockSpec =
   | string
@@ -236,6 +266,8 @@ export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
+  enableHastePackages: boolean,
+  readLink: boolean,
   rootDir: string,
   filePath: string,
   hasteImplModulePath?: ?string,
@@ -244,6 +276,7 @@ export type WorkerMessage = $ReadOnly<{
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
   id?: ?string,
-  module?: ?ModuleMetaData,
+  module?: ?HasteMapItemMetaData,
   sha1?: ?string,
+  symlinkTarget?: ?string,
 }>;

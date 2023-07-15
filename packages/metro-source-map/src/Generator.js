@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -18,6 +18,10 @@ import type {
 } from './source-map';
 
 const B64Builder = require('./B64Builder');
+
+type FileFlags = $ReadOnly<{
+  addToIgnoreList?: boolean,
+}>;
 
 /**
  * Generates a source map from raw mappings.
@@ -45,6 +49,8 @@ class Generator {
   sources: Array<string>;
   sourcesContent: Array<?string>;
   x_facebook_sources: Array<?FBSourceMetadata>;
+  // https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension
+  x_google_ignoreList: Array<number>;
 
   constructor() {
     this.builder = new B64Builder();
@@ -61,15 +67,26 @@ class Generator {
     this.sources = [];
     this.sourcesContent = [];
     this.x_facebook_sources = [];
+    this.x_google_ignoreList = [];
   }
 
   /**
    * Mark the beginning of a new source file.
    */
-  startFile(file: string, code: string, functionMap: ?FBSourceFunctionMap) {
-    this.source = this.sources.push(file) - 1;
+  startFile(
+    file: string,
+    code: string,
+    functionMap: ?FBSourceFunctionMap,
+    flags?: FileFlags,
+  ) {
+    const {addToIgnoreList = false} = flags ?? {};
+    const sourceIndex = this.sources.push(file) - 1;
+    this.source = sourceIndex;
     this.sourcesContent.push(code);
     this.x_facebook_sources.push(functionMap ? [functionMap] : null);
+    if (addToIgnoreList) {
+      this.x_google_ignoreList.push(sourceIndex);
+    }
   }
 
   /**
@@ -159,35 +176,41 @@ class Generator {
     file?: string,
     options?: {excludeSource?: boolean, ...},
   ): BasicSourceMap {
-    let content, sourcesMetadata;
+    const content: {
+      sourcesContent?: Array<?string>,
+    } =
+      options && options.excludeSource === true
+        ? {}
+        : {sourcesContent: this.sourcesContent.slice()};
 
-    if (options && options.excludeSource) {
-      content = {};
-    } else {
-      content = {sourcesContent: this.sourcesContent.slice()};
-    }
+    const sourcesMetadata: {
+      x_facebook_sources?: Array<FBSourceMetadata>,
+    } = this.hasSourcesMetadata()
+      ? {
+          x_facebook_sources: JSON.parse(
+            JSON.stringify(this.x_facebook_sources),
+          ),
+        }
+      : {};
 
-    if (this.hasSourcesMetadata()) {
-      sourcesMetadata = {
-        x_facebook_sources: JSON.parse(JSON.stringify(this.x_facebook_sources)),
-      };
-    } else {
-      sourcesMetadata = {};
-    }
+    const ignoreList: {
+      x_google_ignoreList?: Array<number>,
+    } = this.x_google_ignoreList.length
+      ? {
+          x_google_ignoreList: this.x_google_ignoreList,
+        }
+      : {};
 
-    return {
+    return ({
       version: 3,
       file,
       sources: this.sources.slice(),
-      // $FlowFixMe[exponential-spread]
       ...content,
-      /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.111 was deployed. To see the error, delete
-       * this comment and run Flow. */
       ...sourcesMetadata,
+      ...ignoreList,
       names: this.names.items(),
       mappings: this.builder.toString(),
-    };
+    }: BasicSourceMap);
   }
 
   /**
@@ -196,14 +219,14 @@ class Generator {
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
   toString(file?: string, options?: {excludeSource?: boolean, ...}): string {
-    let content, sourcesMetadata;
-
-    if (options && options.excludeSource) {
+    let content;
+    if (options && options.excludeSource === true) {
       content = '';
     } else {
       content = `"sourcesContent":${JSON.stringify(this.sourcesContent)},`;
     }
 
+    let sourcesMetadata;
     if (this.hasSourcesMetadata()) {
       sourcesMetadata = `"x_facebook_sources":${JSON.stringify(
         this.x_facebook_sources,
@@ -212,13 +235,23 @@ class Generator {
       sourcesMetadata = '';
     }
 
+    let ignoreList;
+    if (this.x_google_ignoreList.length) {
+      ignoreList = `"x_google_ignoreList":${JSON.stringify(
+        this.x_google_ignoreList,
+      )},`;
+    } else {
+      ignoreList = '';
+    }
+
     return (
       '{' +
       '"version":3,' +
-      (file ? `"file":${JSON.stringify(file)},` : '') +
+      (file != null ? `"file":${JSON.stringify(file)},` : '') +
       `"sources":${JSON.stringify(this.sources)},` +
       content +
       sourcesMetadata +
+      ignoreList +
       `"names":${JSON.stringify(this.names.items())},` +
       `"mappings":"${this.builder.toString()}"` +
       '}'

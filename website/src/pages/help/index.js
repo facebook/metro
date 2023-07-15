@@ -68,7 +68,11 @@ const supportLinks = [
           Twitter.
         </li>
         <li>
-          Subscribe to the <a href="/metro/blog/">Metro blog</a>.
+          Browse our{' '}
+          <a href="https://github.com/facebook/metro/releases">
+            latest releases on GitHub
+          </a>
+          .
         </li>
       </ul>
     ),

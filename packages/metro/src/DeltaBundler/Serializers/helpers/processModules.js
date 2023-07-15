@@ -24,6 +24,7 @@ function processModules(
     includeAsyncPaths,
     projectRoot,
     serverRoot,
+    sourceUrl,
   }: $ReadOnly<{
     filter?: (module: Module<>) => boolean,
     createModuleId: string => number,
@@ -31,6 +32,7 @@ function processModules(
     includeAsyncPaths: boolean,
     projectRoot: string,
     serverRoot: string,
+    sourceUrl: ?string,
   }>,
 ): $ReadOnlyArray<[Module<>, string]> {
   return [...modules]
@@ -44,6 +46,7 @@ function processModules(
         includeAsyncPaths,
         projectRoot,
         serverRoot,
+        sourceUrl,
       }),
     ]);
 }

@@ -10,13 +10,15 @@
 
 'use strict';
 
-import type {IncomingMessage, ServerResponse} from 'http';
+import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
+import type MetroServer from 'metro/src/Server';
+
 import type {
   DeltaResult,
   Module,
@@ -24,7 +26,7 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type Server from 'metro/src/Server';
+import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true, ...} | false,
@@ -48,15 +50,11 @@ export type GetTransformOptions = (
   entryPoints: $ReadOnlyArray<string>,
   options: GetTransformOptionsOpts,
   getDependenciesOf: (string) => Promise<Array<string>>,
-) => Promise<ExtraTransformOptions>;
+) => Promise<Partial<ExtraTransformOptions>>;
 
-export type Middleware = (
-  IncomingMessage,
-  ServerResponse,
-  ((e: ?Error) => mixed),
-) => mixed;
+export type Middleware = HandleFunction;
 
-type PerfAnnotations = $Shape<{
+type PerfAnnotations = Partial<{
   string: {[key: string]: string},
   int: {[key: string]: number},
   double: {[key: string]: number},
@@ -68,6 +66,7 @@ type PerfAnnotations = $Shape<{
 }>;
 
 type PerfLoggerPointOptions = $ReadOnly<{
+  // The time this event point occurred, if it differs from the time the point was logged.
   timestamp?: number,
 }>;
 
@@ -90,7 +89,7 @@ export type PerfLoggerFactoryOptions = $ReadOnly<{
 }>;
 
 export type PerfLoggerFactory = (
-  type?: 'BUNDLING_REQUEST' | 'HMR',
+  type: 'START_UP' | 'BUNDLING_REQUEST' | 'HMR',
   opts?: PerfLoggerFactoryOptions,
 ) => RootPerfLogger;
 
@@ -102,6 +101,7 @@ type ResolverConfigT = {
   disableHierarchicalLookup: boolean,
   dependencyExtractor: ?string,
   emptyModulePath: string,
+  unstable_enableSymlinks: boolean,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,
@@ -109,6 +109,11 @@ type ResolverConfigT = {
   resolveRequest: ?CustomResolver,
   resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
+  unstable_conditionNames: $ReadOnlyArray<string>,
+  unstable_conditionsByPlatform: $ReadOnly<{
+    [platform: string]: $ReadOnlyArray<string>,
+  }>,
+  unstable_enablePackageExports: boolean,
   useWatchman: boolean,
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
 };
@@ -130,6 +135,7 @@ type SerializerConfigT = {
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
+  isThirdPartyModule: (module: $ReadOnly<{path: string, ...}>) => boolean,
 };
 
 type TransformerConfigT = {
@@ -148,7 +154,7 @@ type MetalConfigT = {
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
-  unstable_perfLogger?: ?PerfLoggerFactory,
+  unstable_perfLoggerFactory?: ?PerfLoggerFactory,
   projectRoot: string,
   stickyWorkers: boolean,
   transformerPath: string,
@@ -158,8 +164,8 @@ type MetalConfigT = {
 };
 
 type ServerConfigT = {
-  enhanceMiddleware: (Middleware, Server) => Middleware,
-  experimentalImportBundleSupport: boolean,
+  /** @deprecated */
+  enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
   port: number,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
@@ -176,38 +182,46 @@ type SymbolicatorConfigT = {
     +methodName: ?string,
     ...
   }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
+  customizeStack: (
+    Array<IntermediateStackFrame>,
+    mixed,
+  ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>,
 };
 
 type WatcherConfigT = {
   additionalExts: $ReadOnlyArray<string>,
-  watchman: {
-    deferStates: $ReadOnlyArray<string>,
-  },
   healthCheck: {
     enabled: boolean,
     interval: number,
     timeout: number,
     filePrefix: string,
   },
+  watchman: {
+    deferStates: $ReadOnlyArray<string>,
+  },
 };
 
-export type InputConfigT = $Shape<{
+export type InputConfigT = Partial<{
   ...MetalConfigT,
   ...$ReadOnly<{
     cacheStores:
       | $ReadOnlyArray<CacheStore<TransformResult<>>>
       | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
-    resolver: $Shape<ResolverConfigT>,
-    server: $Shape<ServerConfigT>,
-    serializer: $Shape<SerializerConfigT>,
-    symbolicator: $Shape<SymbolicatorConfigT>,
-    transformer: $Shape<TransformerConfigT>,
-    watcher: $Shape<{
-      ...WatcherConfigT,
-      healthCheck?: $Shape<WatcherConfigT['healthCheck']>,
-    }>,
+    resolver: $ReadOnly<Partial<ResolverConfigT>>,
+    server: $ReadOnly<Partial<ServerConfigT>>,
+    serializer: $ReadOnly<Partial<SerializerConfigT>>,
+    symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
+    transformer: $ReadOnly<Partial<TransformerConfigT>>,
+    watcher: $ReadOnly<
+      Partial<{
+        ...WatcherConfigT,
+        healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
+      }>,
+    >,
   }>,
 }>;
+
+export type MetroConfig = InputConfigT;
 
 export type IntermediateConfigT = {
   ...MetalConfigT,
@@ -233,7 +247,7 @@ export type ConfigT = $ReadOnly<{
   }>,
 }>;
 
-export type YargArguments = {
+export type YargArguments = $ReadOnly<{
   config?: string,
   cwd?: string,
   port?: string | number,
@@ -251,4 +265,4 @@ export type YargArguments = {
   runInspectorProxy?: boolean,
   verbose?: boolean,
   ...
-};
+}>;

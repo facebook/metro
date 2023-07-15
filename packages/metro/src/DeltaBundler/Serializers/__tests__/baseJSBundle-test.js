@@ -4,17 +4,27 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 'use strict';
 
+import type {Module, TransformInputOptions} from '../../types.flow';
+
+import CountingSet from '../../../lib/CountingSet';
+
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const baseJSBundle = require('../baseJSBundle');
 const path = require('path');
 
-const polyfill = {
+const {objectContaining} = expect;
+
+const polyfill: Module<> = {
+  path: '/polyfill',
+  dependencies: new Map(),
+  inverseDependencies: new CountingSet(),
   output: [
     {
       type: 'js/script',
@@ -24,9 +34,18 @@ const polyfill = {
   getSource: () => Buffer.from('polyfill-source'),
 };
 
-const fooModule = {
+const fooModule: Module<> = {
   path: '/root/foo',
-  dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
+  dependencies: new Map([
+    [
+      './bar',
+      {
+        absolutePath: '/root/bar',
+        data: {data: {asyncType: null, locs: [], key: './bar'}, name: './bar'},
+      },
+    ],
+  ]),
+  inverseDependencies: new CountingSet(),
   output: [
     {
       type: 'js/module',
@@ -40,9 +59,10 @@ const fooModule = {
   getSource: () => Buffer.from('foo-source'),
 };
 
-const barModule = {
+const barModule: Module<> = {
   path: '/root/bar',
   dependencies: new Map(),
+  inverseDependencies: new CountingSet(['/root/foo']),
   output: [
     {
       type: 'js/module',
@@ -56,8 +76,18 @@ const barModule = {
   getSource: () => Buffer.from('bar-source'),
 };
 
-const getRunModuleStatement = moduleId =>
+const getRunModuleStatement = (moduleId: number | string) =>
   `require(${JSON.stringify(moduleId)});`;
+
+const transformOptions: TransformInputOptions = {
+  customTransformOptions: {},
+  dev: true,
+  hot: true,
+  minify: true,
+  platform: 'web',
+  type: 'module',
+  unstable_transformProfile: 'default',
+};
 
 it('should generate a very simple bundle', () => {
   expect(
@@ -69,17 +99,26 @@ it('should generate a very simple bundle', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['foo'],
+        entryPoints: new Set(['/root/foo']),
+        transformOptions,
       },
       {
-        processModuleFilter: () => true,
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
         projectRoot: '/root',
         runBeforeMainModule: [],
         runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
+        sourceUrl: null,
       },
     ),
   ).toMatchInlineSnapshot(`
@@ -111,17 +150,26 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['/root/foo'],
+        entryPoints: new Set(['/root/foo']),
+        transformOptions,
       },
       {
-        processModuleFilter: () => true,
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
         projectRoot: '/root',
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
+        sourceUrl: null,
       },
     ).post,
   ).toMatchInlineSnapshot(`
@@ -141,17 +189,25 @@ it('should handle numeric module ids', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['/root/foo'],
+        entryPoints: new Set(['/root/foo']),
+        transformOptions,
       },
       {
-        processModuleFilter: () => true,
+        asyncRequireModulePath: '',
         createModuleId: createModuleIdFactory(),
         dev: true,
         getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
         projectRoot: '/root',
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
+        sourceUrl: null,
       },
     ).modules,
   ).toMatchInlineSnapshot(`
@@ -178,17 +234,27 @@ it('outputs custom runModule statements', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['/root/foo'],
+        entryPoints: new Set(['/root/foo']),
+        transformOptions,
       },
       {
-        processModuleFilter: () => true,
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement: moduleId =>
           `export default require(${JSON.stringify(moduleId)}).default;`,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
         projectRoot: '/root',
         runBeforeMainModule: ['/root/bar'],
         runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
+        sourceMapUrl: null,
+        sourceUrl: null,
       },
     ).post,
   ).toMatchInlineSnapshot(`
@@ -206,17 +272,26 @@ it('should add an inline source map to a very simple bundle', () => {
         ['/root/foo', fooModule],
         ['/root/bar', barModule],
       ]),
-      entryPoints: ['foo'],
+      entryPoints: new Set(['/root/foo']),
+      transformOptions,
     },
     {
-      processModuleFilter: () => true,
+      asyncRequireModulePath: '',
+      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
+      includeAsyncPaths: false,
+      inlineSourceMap: true,
+      modulesOnly: false,
+      processModuleFilter: () => true,
       projectRoot: '/root',
       runBeforeMainModule: [],
       runModule: true,
-      inlineSourceMap: true,
+      serverRoot: '/root',
+      shouldAddToIgnoreList: () => false,
+      sourceMapUrl: null,
+      sourceUrl: null,
     },
   );
   expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
@@ -238,6 +313,55 @@ it('should add an inline source map to a very simple bundle', () => {
   });
 });
 
+it('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
+  const bundle = baseJSBundle(
+    '/root/foo',
+    [polyfill],
+    {
+      dependencies: new Map([
+        ['/root/foo', fooModule],
+        ['/root/bar', barModule],
+      ]),
+      entryPoints: new Set(['/root/foo']),
+      transformOptions,
+    },
+    {
+      asyncRequireModulePath: '',
+      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+      createModuleId: filePath => path.basename(filePath),
+      dev: true,
+      getRunModuleStatement,
+      includeAsyncPaths: false,
+      inlineSourceMap: true,
+      modulesOnly: false,
+      processModuleFilter: () => true,
+      projectRoot: '/root',
+      runBeforeMainModule: [],
+      runModule: true,
+      serverRoot: '/root',
+      shouldAddToIgnoreList: () => true,
+      sourceMapUrl: null,
+      sourceUrl: null,
+    },
+  );
+  expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
+    'require("foo");\n//# sourceMappingURL=data:application/json;charset=utf-8;',
+  );
+  expect(
+    JSON.parse(
+      Buffer.from(
+        bundle.post.slice(bundle.post.lastIndexOf('base64') + 7),
+        'base64',
+      ).toString(),
+    ),
+  ).toEqual(
+    objectContaining({
+      sources: ['/root/foo', '/root/bar'],
+      x_google_ignoreList: [0, 1],
+    }),
+  );
+});
+
 it('does not add polyfills when `modulesOnly` is used', () => {
   expect(
     baseJSBundle(
@@ -248,18 +372,26 @@ it('does not add polyfills when `modulesOnly` is used', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['foo'],
+        entryPoints: new Set(['/root/foo']),
+        transformOptions,
       },
       {
-        processModuleFilter: () => true,
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
         modulesOnly: true,
+        processModuleFilter: () => true,
         projectRoot: '/root',
         runBeforeMainModule: [],
         runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
+        sourceUrl: null,
       },
     ),
   ).toMatchInlineSnapshot(`

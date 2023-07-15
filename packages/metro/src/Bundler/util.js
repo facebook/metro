@@ -18,31 +18,6 @@ import type {File} from '@babel/types';
 const babylon = require('@babel/parser');
 const template = require('@babel/template').default;
 const babelTypes = require('@babel/types');
-const nullthrows = require('nullthrows');
-
-// Structure of the object: dir.name.scale = asset
-export type RemoteFileMap = {
-  [string]: {
-    [string]: {
-      [number]: {
-        handle: string,
-        hash: string,
-        ...
-      },
-      ...
-    },
-    ...
-  },
-  __proto__: null,
-  ...
-};
-
-// Structure of the object: platform.dir.name.scale = asset
-export type PlatformRemoteFileMap = {
-  [string]: RemoteFileMap,
-  __proto__: null,
-  ...
-};
 
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,
@@ -78,77 +53,6 @@ function generateAssetCodeFileAst(
         DESCRIPTOR_AST: descriptorAst,
       }),
     ]),
-  );
-}
-
-/**
- * Generates the code involved in requiring an asset, but to be loaded remotely.
- * If the asset cannot be found within the map, then it falls back to the
- * standard asset.
- */
-function generateRemoteAssetCodeFileAst(
-  assetUtilsPath: string,
-  assetDescriptor: AssetDataWithoutFiles,
-  remoteServer: string,
-  remoteFileMap: RemoteFileMap,
-): ?File {
-  const t = babelTypes;
-
-  const file = remoteFileMap[assetDescriptor.fileSystemLocation];
-  const descriptor = file && file[assetDescriptor.name];
-  const data: {[number]: string} = {};
-
-  if (!descriptor) {
-    return null;
-  }
-
-  for (const scale in descriptor) {
-    data[+scale] = descriptor[+scale].handle;
-  }
-
-  // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
-  const astData = babylon.parseExpression(JSON.stringify(data));
-
-  // URI to remote server
-  const URI = t.stringLiteral(remoteServer);
-
-  // Size numbers.
-  const WIDTH = t.numericLiteral(nullthrows(assetDescriptor.width));
-  const HEIGHT = t.numericLiteral(nullthrows(assetDescriptor.height));
-
-  const buildRequire = template.program(`
-    const {pickScale, getUrlCacheBreaker}= require(ASSET_UTILS_PATH);
-    module.exports = {
-      "width": WIDTH,
-      "height": HEIGHT,
-      "uri": URI + OBJECT_AST[pickScale(SCALE_ARRAY)] + getUrlCacheBreaker()
-    };
-  `);
-
-  return t.file(
-    buildRequire({
-      WIDTH,
-      HEIGHT,
-      URI,
-      OBJECT_AST: astData,
-      ASSET_UTILS_PATH: t.stringLiteral(assetUtilsPath),
-      SCALE_ARRAY: t.arrayExpression(
-        Object.keys(descriptor)
-          .map(Number)
-          .sort((a: number, b: number) => a - b)
-          .map((scale: number) => t.numericLiteral(scale)),
-      ),
-    }),
-  );
-}
-
-// Test extension against all types supported by image-size module.
-// If it's not one of these, we won't treat it as an image.
-function isAssetTypeAnImage(type: string): boolean {
-  return (
-    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(
-      type,
-    ) !== -1
   );
 }
 
@@ -246,6 +150,4 @@ class ArrayMap<K, V> extends Map<K, Array<V>> {
 module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
-  generateRemoteAssetCodeFileAst,
-  isAssetTypeAnImage,
 };

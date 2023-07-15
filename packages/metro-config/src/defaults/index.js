@@ -21,6 +21,7 @@ const {
   defaultCreateModuleIdFactory,
   platforms,
   sourceExts,
+  noopPerfLoggerFactory,
 } = require('./defaults');
 const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
@@ -39,6 +40,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     blockList: exclusionList(),
     dependencyExtractor: undefined,
     disableHierarchicalLookup: false,
+    unstable_enableSymlinks: false,
     emptyModulePath: require.resolve(
       'metro-runtime/src/modules/empty-module.js',
     ),
@@ -47,6 +49,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    unstable_conditionNames: ['require', 'import'],
+    unstable_conditionsByPlatform: {
+      web: ['browser'],
+    },
+    unstable_enablePackageExports: false,
     useWatchman: true,
     requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
@@ -61,12 +68,13 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
     customSerializer: null,
+    isThirdPartyModule: module =>
+      /(?:^|[/\\])node_modules[/\\]/.test(module.path),
   },
 
   server: {
-    enhanceMiddleware: middleware => middleware,
-    experimentalImportBundleSupport: false,
-    port: 8080,
+    enhanceMiddleware: (middleware, _) => middleware,
+    port: 8081,
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
     unstable_serverRoot: null,
@@ -76,6 +84,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
 
   symbolicator: {
     customizeFrame: () => {},
+    customizeStack: async (stack, _) => stack,
   },
 
   transformer: {
@@ -122,8 +131,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     publicPath: '/assets',
     allowOptionalDependencies: false,
     unstable_allowRequireContext: false,
-    unstable_collectDependenciesPath:
-      'metro/src/ModuleGraph/worker/collectDependencies.js',
     unstable_dependencyMapReservedName: null,
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
@@ -131,14 +138,14 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   },
   watcher: {
     additionalExts,
-    watchman: {
-      deferStates: ['hg.update'],
-    },
     healthCheck: {
       enabled: false,
       filePrefix: '.metro-health-check',
       interval: 30000,
       timeout: 5000,
+    },
+    watchman: {
+      deferStates: ['hg.update'],
     },
   },
   cacheStores: [
@@ -156,6 +163,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  unstable_perfLoggerFactory: noopPerfLoggerFactory,
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

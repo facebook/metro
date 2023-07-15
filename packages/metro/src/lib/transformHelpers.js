@@ -13,15 +13,18 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {
+  BundlerResolution,
+  TransformInputOptions,
+} from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
 import type {RequireContext} from './contextModule';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
+import isAssetFile from 'metro-resolver/src/utils/isAssetFile';
 
-const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
@@ -49,7 +52,6 @@ async function calcTransformerOptions(
     inlinePlatform: true,
     minify: options.minify,
     platform: options.platform,
-    runtimeBytecodeVersion: options.runtimeBytecodeVersion,
     unstable_transformProfile: options.unstable_transformProfile,
   };
 
@@ -83,10 +85,11 @@ async function calcTransformerOptions(
       ),
       transformOptions: options,
       onProgress: null,
-      experimentalImportBundleSupport:
-        config.server.experimentalImportBundleSupport,
+      lazy: false,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
+      unstable_enablePackageExports:
+        config.resolver.unstable_enablePackageExports,
       shallow: false,
     });
 
@@ -138,6 +141,7 @@ async function getTransformFn(
     options,
     resolverOptions,
   );
+  const assetExts = new Set(config.resolver.assetExts);
 
   return async (modulePath: string, requireContext: ?RequireContext) => {
     let templateBuffer: Buffer;
@@ -148,12 +152,13 @@ async function getTransformFn(
       // TODO: Check delta changes to avoid having to look over all files each time
       // this is a massive performance boost.
 
-      // Search against all files, this is very expensive.
-      // TODO: Maybe we could let the user specify which root to check against.
-      const files = graph.matchFilesWithContext(requireContext.from, {
-        filter: requireContext.filter,
-        recursive: requireContext.recursive,
-      });
+      // Search against all files in a subtree.
+      const files = Array.from(
+        graph.matchFilesWithContext(requireContext.from, {
+          filter: requireContext.filter,
+          recursive: requireContext.recursive,
+        }),
+      );
 
       const template = getContextModuleTemplate(
         requireContext.mode,
@@ -168,11 +173,7 @@ async function getTransformFn(
       modulePath,
       {
         ...transformOptions,
-        type: getType(
-          transformOptions.type,
-          modulePath,
-          config.resolver.assetExts,
-        ),
+        type: getType(transformOptions.type, modulePath, assetExts),
         inlineRequires: removeInlineRequiresBlockListFromOptions(
           modulePath,
           inlineRequires,
@@ -186,13 +187,13 @@ async function getTransformFn(
 function getType(
   type: string,
   filePath: string,
-  assetExts: $ReadOnlyArray<string>,
+  assetExts: $ReadOnlySet<string>,
 ): Type {
   if (type === 'script') {
     return type;
   }
 
-  if (assetExts.indexOf(path.extname(filePath).slice(1)) !== -1) {
+  if (isAssetFile(filePath, assetExts)) {
     return 'asset';
   }
 
@@ -203,7 +204,7 @@ async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
-): Promise<(from: string, to: string) => string> {
+): Promise<(from: string, to: string) => BundlerResolution> {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>

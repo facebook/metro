@@ -12,18 +12,11 @@
 'use strict';
 
 export type ModuleMap = $ReadOnlyArray<[number, string]>;
-export type BytecodeModuleMap = $ReadOnlyArray<[number, Array<Buffer>]>;
 
 export type Bundle = {
   +modules: ModuleMap,
   +post: string,
   +pre: string,
-};
-
-export type BytecodeBundle = {
-  +modules: BytecodeModuleMap,
-  +post: Array<Buffer>,
-  +pre: Array<Buffer>,
 };
 
 export type DeltaBundle = {

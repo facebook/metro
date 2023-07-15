@@ -48,7 +48,6 @@ module.exports = class NodeWatcher extends EventEmitter {
   doIgnore: string => boolean;
   dot: boolean;
   globs: $ReadOnlyArray<string>;
-  hasIgnore: boolean;
   ignored: ?(boolean | RegExp);
   root: string;
   watched: {[key: string]: FSWatcher, __proto__: null};
@@ -107,7 +106,7 @@ module.exports = class NodeWatcher extends EventEmitter {
     const relativePath = path.relative(this.root, filepath);
     if (
       type === 'f' &&
-      !common.isFileIncluded(this.globs, this.dot, this.doIgnore, relativePath)
+      !common.isIncluded('f', this.globs, this.dot, this.doIgnore, relativePath)
     ) {
       return false;
     }
@@ -279,53 +278,49 @@ module.exports = class NodeWatcher extends EventEmitter {
         }
 
         if (
-          stat &&
-          common.isFileIncluded(
+          !common.isIncluded(
+            'd',
             this.globs,
             this.dot,
             this.doIgnore,
             relativePath,
           )
         ) {
-          common.recReaddir(
-            path.resolve(this.root, relativePath),
-            (dir, stats) => {
-              if (this._watchdir(dir)) {
-                this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
-                  modifiedTime: stats.mtime.getTime(),
-                  size: stats.size,
-                  type: 'd',
-                });
-              }
-            },
-            (file, stats) => {
-              if (this._register(file, 'f')) {
-                this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
-                  modifiedTime: stats.mtime.getTime(),
-                  size: stats.size,
-                  type: 'f',
-                });
-              }
-            },
-            (symlink, stats) => {
-              if (this._register(symlink, 'l')) {
-                this._rawEmitEvent(
-                  ADD_EVENT,
-                  path.relative(this.root, symlink),
-                  {
-                    modifiedTime: stats.mtime.getTime(),
-                    size: stats.size,
-                    type: 'l',
-                  },
-                );
-              }
-            },
-            function endCallback() {},
-            this._checkedEmitError,
-            this.ignored,
-          );
+          return;
         }
-        return;
+        common.recReaddir(
+          path.resolve(this.root, relativePath),
+          (dir, stats) => {
+            if (this._watchdir(dir)) {
+              this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
+                modifiedTime: stats.mtime.getTime(),
+                size: stats.size,
+                type: 'd',
+              });
+            }
+          },
+          (file, stats) => {
+            if (this._register(file, 'f')) {
+              this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
+                modifiedTime: stats.mtime.getTime(),
+                size: stats.size,
+                type: 'f',
+              });
+            }
+          },
+          (symlink, stats) => {
+            if (this._register(symlink, 'l')) {
+              this._rawEmitEvent(ADD_EVENT, path.relative(this.root, symlink), {
+                modifiedTime: stats.mtime.getTime(),
+                size: stats.size,
+                type: 'l',
+              });
+            }
+          },
+          function endCallback() {},
+          this._checkedEmitError,
+          this.ignored,
+        );
       } else {
         const type = common.typeFromStat(stat);
         if (type == null) {
@@ -345,7 +340,7 @@ module.exports = class NodeWatcher extends EventEmitter {
         }
       }
     } catch (error) {
-      if (error?.code !== 'ENOENT') {
+      if (!isIgnorableFileError(error)) {
         this.emit('error', error);
         return;
       }
@@ -408,7 +403,11 @@ module.exports = class NodeWatcher extends EventEmitter {
 function isIgnorableFileError(error: Error | {code: string}) {
   return (
     error.code === 'ENOENT' ||
-    // Workaround Windows EPERM on watched folder deletion.
+    // Workaround Windows EPERM on watched folder deletion, and when
+    // reading locked files (pending further writes or pending deletion).
+    // In such cases, we'll receive a subsequent event when the file is
+    // deleted or ready to read.
+    // https://github.com/facebook/metro/issues/1001
     // https://github.com/nodejs/node-v0.x-archive/issues/4337
     (error.code === 'EPERM' && platform === 'win32')
   );

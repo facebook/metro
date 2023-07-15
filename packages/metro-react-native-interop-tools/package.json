@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-interop-tools",
-  "version": "0.73.6",
+  "version": "0.77.0",
   "description": "Interop tools for React Native applications",
   "main": "src/index.js",
   "repository": {
@@ -14,8 +14,11 @@
   "dependencies": {
     "@babel/core": "^7.20.0",
     "@babel/types": "^7.20.0",
-    "hermes-parser": "0.8.0",
+    "hermes-parser": "0.14.0",
     "nullthrows": "^1.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }

@@ -22,8 +22,10 @@ const getGraphId = require('../lib/getGraphId');
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest.mock('../lib/transformHelpers', () => ({
-  getResolveDependencyFn: () => (from, to) =>
-    `${require('path').resolve(from, to)}.js`,
+  getResolveDependencyFn: () => (from, to) => ({
+    type: 'sourceFile',
+    filePath: `${require('path').resolve(from, to)}.js`,
+  }),
 }));
 
 jest.mock('../IncrementalBundler');
@@ -67,7 +69,7 @@ describe('HmrServer', () => {
 
   async function emitChangeEvent() {
     // TODO: Can we achieve this with less mocking / special-casing?
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers({legacyFakeTimers: true});
     changeEventSource.emit('change');
     jest.runAllTimers();
     jest.useRealTimers();
@@ -124,7 +126,6 @@ describe('HmrServer', () => {
       },
       resolver: {platforms: []},
       server: {
-        experimentalImportBundleSupport: false,
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
             /__REMOVE_THIS_WHEN_REWRITING__/g,
@@ -157,6 +158,7 @@ describe('HmrServer', () => {
 
     id = config.serializer.createModuleIdFactory();
 
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     hmrServer = new HmrServer(incrementalBundlerMock, id, config);
 
     connect = async (relativeUrl: string, sendFn?: string => void) => {
@@ -201,13 +203,12 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -229,13 +230,12 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -257,13 +257,12 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
           unstable_allowRequireContext: false,
           resolverOptions: {},
         },
@@ -285,13 +284,12 @@ describe('HmrServer', () => {
         hot: true,
         minify: false,
         platform: 'ios',
-        runtimeBytecodeVersion: null,
         type: 'module',
         unstable_transformProfile: 'default',
       },
       {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
         unstable_allowRequireContext: false,
         resolverOptions: {},
       },
@@ -341,12 +339,12 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -425,11 +423,11 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
 
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
@@ -484,10 +482,10 @@ describe('HmrServer', () => {
                   id('/root/hi') +
                   ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -538,7 +536,7 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],
@@ -589,7 +587,7 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: [id('/root/bye')],

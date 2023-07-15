@@ -34,6 +34,7 @@ const path = require('path');
 const prettier = require('prettier');
 
 const SRC_DIR = 'src';
+const TYPES_DIR = 'types';
 const BUILD_DIR = 'build';
 const JS_FILES_PATTERN = '**/*.js';
 const IGNORE_PATTERN = '**/__tests__/**';
@@ -68,12 +69,19 @@ function getBuildPath(file /*: string */, buildFolder /*: string */) {
 
 function buildPackage(p /*: string */) {
   const srcDir = path.resolve(p, SRC_DIR);
+  const typesDir = path.resolve(p, TYPES_DIR);
+  const buildDir = path.resolve(p, BUILD_DIR);
   const pattern = path.resolve(srcDir, '**/*');
   const files = glob.sync(pattern, {nodir: true});
+  const typescriptDefs = glob.sync(path.join(typesDir, '**/*.d.ts'));
 
   process.stdout.write(fixedWidth(`${path.basename(p)}\n`));
 
   files.forEach(file => buildFile(file, true));
+  typescriptDefs.forEach(
+    file => fs.copyFileSync(file, file.replace(typesDir, buildDir))
+  );
+
   process.stdout.write(`[  ${chalk.green('OK')}  ]\n`);
 }
 

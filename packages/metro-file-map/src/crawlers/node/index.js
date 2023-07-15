@@ -9,37 +9,33 @@
  * @oncall react_native
  */
 
-import type {Path, FileMetaData} from '../../flow-types';
-import type {CrawlerOptions, FileData, IgnoreMatcher} from '../../flow-types';
+import type {
+  CanonicalPath,
+  CrawlerOptions,
+  FileData,
+  IgnoreMatcher,
+} from '../../flow-types';
 
 import hasNativeFindSupport from './hasNativeFindSupport';
-import H from '../../constants';
 import * as fastPath from '../../lib/fast_path';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
+import {platform} from 'os';
 import * as path from 'path';
 
 const debug = require('debug')('Metro:NodeCrawler');
 
-type Result = Array<
-  [
-    string, // id
-    number, // mtime
-    number, // size
-    0 | 1, // symlink
-  ],
->;
-
-type Callback = (result: Result) => void;
+type Callback = (result: FileData) => void;
 
 function find(
   roots: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
+  rootDir: string,
   callback: Callback,
 ): void {
-  const result: Result = [];
+  const result: FileData = new Map();
   let activeCalls = 0;
 
   function search(directory: string): void {
@@ -75,10 +71,13 @@ function find(
           if (!err && stat) {
             const ext = path.extname(file).substr(1);
             if (stat.isSymbolicLink() || extensions.includes(ext)) {
-              result.push([
-                file,
+              result.set(fastPath.relative(rootDir, file), [
+                '',
                 stat.mtime.getTime(),
                 stat.size,
+                0,
+                '',
+                null,
                 stat.isSymbolicLink() ? 1 : 0,
               ]);
             }
@@ -108,6 +107,7 @@ function findNative(
   extensions: $ReadOnlyArray<string>,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
+  rootDir: string,
   callback: Callback,
 ): void {
   // Examples:
@@ -137,18 +137,21 @@ function findNative(
       .trim()
       .split('\n')
       .filter(x => !ignore(x));
-    const result: Result = [];
+    const result: FileData = new Map();
     let count = lines.length;
     if (!count) {
-      callback([]);
+      callback(new Map());
     } else {
       lines.forEach(path => {
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
-            result.push([
-              path,
+            result.set(fastPath.relative(rootDir, path), [
+              '',
               stat.mtime.getTime(),
               stat.size,
+              0,
+              '',
+              null,
               stat.isSymbolicLink() ? 1 : 0,
             ]);
           }
@@ -162,7 +165,7 @@ function findNative(
 }
 
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
-  removedFiles: FileData,
+  removedFiles: Set<CanonicalPath>,
   changedFiles: FileData,
 }> {
   const {
@@ -174,47 +177,38 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     includeSymlinks,
     perfLogger,
     roots,
+    abortSignal,
   } = options;
+
+  abortSignal?.throwIfAborted();
+
   perfLogger?.point('nodeCrawl_start');
   const useNativeFind =
-    !forceNodeFilesystemAPI && (await hasNativeFindSupport());
+    !forceNodeFilesystemAPI &&
+    platform() !== 'win32' &&
+    (await hasNativeFindSupport());
 
   debug('Using system find: %s', useNativeFind);
 
-  return new Promise(resolve => {
-    const callback = (list: Result) => {
-      const changedFiles = new Map<Path, FileMetaData>();
-      const removedFiles = new Map(previousState.files);
-      for (const fileData of list) {
-        const [filePath, mtime, size, symlink] = fileData;
-        const relativeFilePath = fastPath.relative(rootDir, filePath);
-        const existingFile = previousState.files.get(relativeFilePath);
-        removedFiles.delete(relativeFilePath);
-        if (existingFile == null || existingFile[H.MTIME] !== mtime) {
-          // See ../constants.js; SHA-1 will always be null and fulfilled later.
-          changedFiles.set(relativeFilePath, [
-            '',
-            mtime,
-            size,
-            0,
-            '',
-            null,
-            symlink,
-          ]);
-        }
-      }
+  return new Promise((resolve, reject) => {
+    const callback = (fileData: FileData) => {
+      const difference = previousState.fileSystem.getDifference(fileData);
 
       perfLogger?.point('nodeCrawl_end');
-      resolve({
-        changedFiles,
-        removedFiles,
-      });
+
+      try {
+        // TODO: Use AbortSignal.reason directly when Flow supports it
+        abortSignal?.throwIfAborted();
+      } catch (e) {
+        reject(e);
+      }
+      resolve(difference);
     };
 
     if (useNativeFind) {
-      findNative(roots, extensions, ignore, includeSymlinks, callback);
+      findNative(roots, extensions, ignore, includeSymlinks, rootDir, callback);
     } else {
-      find(roots, extensions, ignore, includeSymlinks, callback);
+      find(roots, extensions, ignore, includeSymlinks, rootDir, callback);
     }
   });
 };

@@ -31,10 +31,9 @@ These Metro-specific features include:
 * **Asset extensions and image resolutions**: Used by [React Native](https://reactnative.dev/docs/images#static-image-resources) to automatically select the best version of an image asset based on the device's screen density at runtime.
 * **Custom resolvers**: Metro integrators can provide their own resolver implementations to override almost everything about how modules are resolved.
 
-
 ## Resolution algorithm
 
-Given a [resolution context](#resolution-context) _context_, a module name _moduleName_, and an optional platform identifier _platform_, Metro's resolver either returns one of the [resolution types](#resolution-types), or throws an error.
+Given a [resolution context](#resolution-context) _context_, a module name _moduleName_, and an optional platform identifier _platform_, Metro's resolver performs [**RESOLVE**](#resolve)(_context_, _moduleName_, _platform_), which either returns one of the [resolution types](#resolution-types), or throws an error.
 
 ### Resolution types
 
@@ -58,79 +57,118 @@ These are the rules that Metro's default resolver follows. Refer to [`metro-reso
 
 :::
 
-1. If a [custom resolver](#resolverequest-customresolver) is defined, call it and return the result.
+#### RESOLVE
 
-2. Otherwise, try to resolve _moduleName_ as a relative or absolute path:
-    1. If the path is relative, convert it to an absolute path by prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)).
-    2. If the path refers to an [asset](#isassetfile-string--boolean):
+Parameters: (*context*, *moduleName*, *platform*)
 
-        1. Use [`context.resolveAsset`](#resolveasset-dirpath-string-assetname-string-extension-string--readonlyarraystring) to collect all asset variants.
-        2. Return an [asset resolution](#asset-files) containing the collected asset paths.
+1. If a [custom resolver](#resolverequest-customresolver) is defined, then
+    1. Return the result of the custom resolver.
+2. Otherwise, attempt to resolve *moduleName* as a path
+    1. Let *absoluteModuleName* be the result of prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) with *moduleName*.
+    2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *absoluteModuleName*, *platform*), or continue.
+3. Apply [redirections](#redirectmodulepath-string--string--false) to *moduleName*. If this results in an [empty module](#empty-module), then
+    1. Return the empty module.
+4. If [Haste resolutions are allowed](#allowhaste-boolean), then
+    1. Get the result of [**RESOLVE_HASTE**](#resolve_haste)(*context*, *moduleName*, *platform*).
+    2. If resolved as a Haste package path, then
+        1. Perform the algorithm for resolving a path (step 2 above). Throw an error if this resolution fails.
+            For example, if the Haste package path for `'a/b'` is `foo/package.json`, perform step 2 as if _moduleName_ was `foo/c`.
+5. If [`context.disableHierarchicalLookup`](#disableHierarchicalLookup-boolean) is not `true`, then
+    1. Try resolving _moduleName_ under `node_modules` from the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) up to the root directory.
+    2. Perform [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*) for each candidate path.
+6. For each element _nodeModulesPath_ of [`context.nodeModulesPaths`](#nodemodulespaths-readonlyarraystring):
+    1. Try resolving _moduleName_ under _nodeModulesPath_ as if the latter was another `node_modules` directory (similar to step 5 above).
+    2. Perform [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*) for each candidate path.
+7. If [`context.extraNodeModules`](#extranodemodules-string-string) is set:
+    1. Split _moduleName_ into a package name (including an optional [scope](https://docs.npmjs.com/cli/v8/using-npm/scope)) and relative path.
+    2. Look up the package name in [`context.extraNodeModules`](#extranodemodules-string-string). If found, then
+        1. Construct a path _modulePath_ by replacing the package name part of _moduleName_ with the value found in [`context.extraNodeModules`](#extranodemodules-string-string)
+        2. Return the result of [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*).
+8. If no valid resolution has been found, throw a resolution failure error.
 
-    3. If the path refers to a file that [exists](#doesfileexist-string--boolean) after applying [redirections](#redirectmodulepath-string--string--false), return it as a [source file resolution](#source-file).
-    4. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean) after applying [redirections](#redirectmodulepath-string--string--false).
-       For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
+#### RESOLVE_MODULE
 
+Parameters: (*context*, *moduleName*, *platform*)
+
+1. Let *filePath* be the result of applying [redirections](#redirectmodulepath-string--string--false) to *moduleName*. This may locate a replacement subpath from a containing `package.json` file based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec).
+2. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *filePath*, *platform*), or continue.
+3. Otherwise, let *dirPath* be the directory path of *filePath*.
+4. If a file *dirPath* + `'package.json'` exists, resolve based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec):
+    1. Let *mainModulePath* be the result of reading the package's entry path using [`context.mainFields`](#mainfields-readonlyarraystring).
+    2. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *mainModulePath*, *platform*), or continue.
+    3. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *mainModulePath* + `'/index'`, *platform*).
+    4. Throw an error if no resolution could be found.
+
+#### RESOLVE_PACKAGE
+
+Parameters: (*context*, *moduleName*, *platform*)
+
+1. If `context.enablePackageExports` is enabled, and a containing `package.json` file contains the field `"exports"`, get result of [**RESOLVE_PACKAGE_EXPORTS**](#resolve_package-exports)(*context*, *packagePath*, *filePath*, *exportsField*, *platform*).
+    1. If resolved path exists, return result.
+    2. Else, log either a package configuration or package encapsulation warning.
+2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *filePath*, *platform*).
+
+#### RESOLVE_PACKAGE_EXPORTS
+
+Parameters: (*context*, *packagePath*, *filePath*, *exportsField*, *platform*)
+
+> Resolves a package subpath based on the [Package Entry Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points) (the `"exports"` field), when [`resolver.unstable_enablePackageExports`](./configuration#unstable_enablepackageexports-experimental) is enabled.
+
+1. Let *subpath* be the relative path from *packagePath* to *filePath*, or `'.'`.
+2. If *exportsField* contains an invalid configuration or values, raise an `InvalidPackageConfigurationError`.
+3. If *subpath* is not defined by *exportsField*, raise a `PackagePathNotExportedError`.
+4. Let *target* be the result of matching *subpath* in *exportsField* after applying any [conditional exports](https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports) and/or substituting a [subpath pattern match](https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns).
+    1. Condition names will be asserted from the union of `context.unstable_conditionNames` and `context.unstable_conditionNamesByPlatform` for *platform*, in the order defined by *exportsField*.
+5. If *target* refers to an [asset](#assetexts-readonlysetstring), then
+    1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *target*, *platform*).
+6. Return *target* as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
+
+#### RESOLVE_FILE
+
+Parameters: (*context*, *filePath*, *platform*)
+
+1. If the path refers to an [asset](#assetexts-readonlysetstring), then
+    1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *filePath*, *platform*).
+2. Otherwise, if the path [exists](#doesfileexist-string--boolean), then
+    1. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean) after applying [redirections](#redirectmodulepath-string--string--false). For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
         1. _moduleName_ + `'.android.js'`
         2. _moduleName_ + `'.native.js'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
-        3. _moduleName_ + `'.android.jsx'`
-        4. _moduleName_ + `'.native.jsx'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
+        3. _moduleName_ + `'.js'`
+        4. _moduleName_ + `'.android.jsx'`
+        5. _moduleName_ + `'.native.jsx'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
+        6. _moduleName_ + `'.jsx'`
 
-    5. If a file named _moduleName_ + `'/package.json'` [exists](#doesfileexist-string--boolean):
+#### RESOLVE_ASSET
 
-        1. [Get the package's entry path](#getpackagemainpath-string--string).
-        2. Try to resolve the entry path as a file, after applying [redirections](#redirectmodulepath-string--string--false) and trying all platform and extension variants as described above.
-        3. Try to resolve the entry path + `'/index'` as a file, after applying [redirections](#redirectmodulepath-string--string--false) and trying all platform and extension variants as described above.
-        4. Throw an error if no resolution could be found.
+Parameters: (*context*, *filePath*, *platform*)
 
-    6. Try to resolve _moduleName_ + `'/index'` as a file, after applying [redirections](#redirectmodulepath-string--string--false) and trying all platform and extension variants as described above.
+1. Use [`context.resolveAsset`](#resolveasset-dirpath-string-assetname-string-extension-string--readonlyarraystring) to collect all asset variants.
+2. Return an [asset resolution](#asset-files) containing the collected asset paths.
 
+#### RESOLVE_HASTE
 
-3. Apply [redirections](#redirectmodulepath-string--string--false) to _moduleName_. Skip the rest of this algorithm if this results in an [empty module](#empty-module).
+Parameters: (*context*, *moduleName*, *platform*)
 
-4. If [Haste resolutions are allowed](#allowhaste-boolean):
-
-    1. Try resolving _moduleName_ as a [Haste module](#resolvehastemodule-string--string).
-       If found, return it as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
-    2. Try resolving _moduleName_ as a [Haste package](#resolvehastepackage-string--string), or a path *relative* to a Haste package.
-       For example, if _moduleName_ is `'a/b/c'`, try the following potential Haste package names:
-
-       1. `'a/b/c'`, relative path `''`
-       2. `'a/b'`, relative path `'./c'`
-       3. `'a'`, with relative path `'./b/c'`
-    4. If resolved as a Haste package path, perform the algorithm for resolving a path (step 2 above). Throw an error if this resolution fails.
-       For example, if the Haste package path for `'a/b'` is `foo/package.json`, perform step 2 as if _moduleName_ was `foo/c`.
-
-5. If [`context.disableHierarchicalLookup`](#disableHierarchicalLookup-boolean) is not `true`:
-
-    1. Try resolving _moduleName_ under `node_modules` from the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) up to the root directory.
-    2. Perform the algorithm for resolving a path (step 2 above) for each candidate path.
-
-6. For each element _nodeModulesPath_ of [`context.nodeModulesPaths`](#nodemodulespaths-readonlyarraystring):
-
-    1. Try resolving _moduleName_ under _nodeModulesPath_ as if the latter was another `node_modules` directory (similar to step 5 above).
-    2. Perform the algorithm for resolving a path (step 2 above) for each candidate path.
-
-5. If [`context.extraNodeModules`](#extranodemodules-string-string) is set:
-
-    1. Split _moduleName_ into a package name (including an optional [scope](https://docs.npmjs.com/cli/v8/using-npm/scope)) and relative path.
-    2. Look up the package name in [`context.extraNodeModules`](#extranodemodules-string-string). If found, construct a path by replacing the package name part of _moduleName_ with the value found in [`context.extraNodeModules`](#extranodemodules-string-string), and perform the algorithm for resolving a path (step 2 above).
-
-6. If no valid resolution has been found, throw a resolution failure error.
+1. Try resolving _moduleName_ as a [Haste module](#resolvehastemodule-string--string).
+   If found, then
+   1. Return result as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
+2. Try resolving _moduleName_ as a [Haste package](#resolvehastepackage-string--string), or a path *relative* to a Haste package.
+   For example, if _moduleName_ is `'a/b/c'`, try the following potential Haste package names:
+   1. `'a/b/c'`, relative path `''`
+   2. `'a/b'`, relative path `'./c'`
+   3. `'a'`, with relative path `'./b/c'`
 
 ### Resolution context
+
+#### `assetExts: $ReadOnlySet<string>`
+
+The set of file extensions used to identify asset files. Defaults to [`resolver.assetExts`](./Configuration.md#assetexts).
 
 #### `doesFileExist: string => boolean`
 
 Returns `true` if the file with the given path exists, or `false` otherwise.
 
 By default, Metro implements this by consulting an in-memory map of the filesystem that has been prepared in advance. This approach avoids disk I/O during module resolution.
-
-#### `isAssetFile: string => boolean`
-
-Returns `true` if the given path represents an asset file, or `false` otherwise.
-
-By default, Metro implements this by checking the file's extension against [`resolver.assetExts`](./Configuration.md#assetexts).
 
 #### `nodeModulesPaths: $ReadOnlyArray<string>`
 
@@ -140,7 +178,7 @@ By default this is set to [`resolver.nodeModulesPaths`](./Configuration.md#nodem
 
 #### `preferNativePlatform: boolean`
 
-Whether to prefer `.native.${ext}` over `.${platform}.${ext}` during resolution. Metro sets this to `true`.
+If `true`, try `.native.${ext}` before `.${ext}` and after `.${platform}.${ext}` during resolution. Metro sets this to `true`.
 
 #### `redirectModulePath: string => string | false`
 
@@ -160,11 +198,17 @@ See also [Static Image Resources](https://reactnative.dev/docs/images#static-ima
 
 The list of file extensions to try, in order, when resolving a module path that does not exist on disk. Defaults to [`resolver.sourceExts`](./Configuration.md#sourceexts).
 
-#### `getPackageMainPath: string => string`
+#### `mainFields: $ReadOnlyArray<string>`
 
-Given the path to a `package.json` file, returns the contents of the `main` field, or the appropriate alternative field describing the entry point (e.g. `browser`).
+The ordered list of fields in `package.json` that should be read to resolve a package's main entry point (and any subpath file replacements) per the ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec). Defaults to [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
 
-The default implementation of this function respects [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
+#### `getPackage: string => PackageJson`
+
+Given the path to a `package.json` file, returns the parsed file contents.
+
+#### `getPackageForModule: (modulePath: string) => ?PackageInfo` <div class="label deprecated">Deprecated</div>
+
+Given a module path that may exist under an npm package, locates and returns the package root path and parsed `package.json` contents.
 
 #### `resolveHasteModule: string => ?string`
 

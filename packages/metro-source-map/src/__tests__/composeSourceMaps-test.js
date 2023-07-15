@@ -18,7 +18,9 @@ const fs = require('fs');
 const invariant = require('invariant');
 const {add0, add1} = require('ob1');
 const path = require('path');
-const uglifyEs = require('uglify-es');
+const terser = require('terser');
+
+const {objectContaining} = expect;
 
 /* eslint-disable no-multi-str */
 
@@ -83,9 +85,9 @@ describe('composeSourceMaps', () => {
     }
   });
 
-  it('verifies merged source maps work the same as applying them separately', () => {
+  it('verifies merged source maps work the same as applying them separately', async () => {
     // Apply two tranformations: compression, then mangling.
-    const stage1 = uglifyEs.minify(
+    const stage1 = await terser.minify(
       {'test1.js': TestScript1, 'test2.js': TestScript2},
       {
         compress: true,
@@ -98,7 +100,7 @@ describe('composeSourceMaps', () => {
       'Minification error in stage1',
     );
     const {code: code1, map: map1} = stage1;
-    const stage2 = uglifyEs.minify(
+    const stage2 = await terser.minify(
       {'intermediate.js': code1},
       {compress: true, mangle: true, sourceMap: true},
     );
@@ -163,6 +165,91 @@ describe('composeSourceMaps', () => {
     expect(mergedMap.x_facebook_sources).toEqual([
       [{mappings: 'AAA', names: ['<global>']}],
     ]);
+  });
+
+  it('preserves and reindexes x_google_ignoreList', () => {
+    const map1 = {
+      version: 3,
+      sections: [
+        {
+          offset: {line: 0, column: 0},
+          map: {
+            version: 3,
+            sources: ['unused.js', 'src.js'],
+            x_google_ignoreList: [1],
+            names: ['global'],
+            mappings: ';CCCCA',
+          },
+        },
+      ],
+    };
+
+    const map2 = {
+      version: 3,
+      sources: ['src-transformed.js'],
+      names: ['gLoBAl'],
+      mappings: ';CACCA',
+    };
+
+    const mergedMap = composeSourceMaps([map1, map2]);
+
+    expect(mergedMap).toEqual(
+      objectContaining({
+        sources: ['src.js'],
+        x_google_ignoreList: [0],
+      }),
+    );
+  });
+
+  it('x_google_ignoreList: a source with inconsistent ignore status is considered to be ignored', () => {
+    const map1 = {
+      version: 3,
+      sections: [
+        {
+          offset: {line: 0, column: 0},
+          map: {
+            version: 3,
+            sources: ['unused.js', 'src.js'],
+            x_google_ignoreList: [1],
+            names: ['global'],
+            // First line of src-transformed.js maps to src.js (source #1 here)
+            mappings: 'ACAAA',
+          },
+        },
+        {
+          offset: {line: 1, column: 0},
+          map: {
+            version: 3,
+            sources: ['src.js', 'other.js'],
+            x_google_ignoreList: ([]: Array<number>),
+            names: ['global'],
+
+            mappings:
+              // Second line of src-transformed.js maps to src.js (source #0 here)
+              'AAAAA' +
+              // Third line of src-transformed.js maps to other.js (source #1 here)
+              ';ACAAA',
+          },
+        },
+      ],
+    };
+
+    const map2 = {
+      version: 3,
+      sources: ['src-transformed.js'],
+      names: ['gLoBAl'],
+      // Map each line to itself
+      mappings: 'AAAAA;AACAA;AACAA',
+    };
+
+    const mergedMap = composeSourceMaps([map1, map2]);
+
+    expect(mergedMap).toEqual(
+      objectContaining({
+        sources: ['src.js', 'other.js'],
+        x_google_ignoreList: [0],
+      }),
+    );
   });
 
   it('preserves sourcesContent', () => {

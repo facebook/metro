@@ -26,7 +26,6 @@ export type BundleDetails = {
   entryFile: string,
   minify: boolean,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   ...
 };
 
@@ -126,6 +125,10 @@ export type ReportableEvent =
       data: Array<mixed>,
       mode: 'BRIDGE' | 'NOBRIDGE',
       ...
+    }
+  | {
+      type: 'resolver_warning',
+      message: string,
     }
   | {
       type: 'transformer_load_started',

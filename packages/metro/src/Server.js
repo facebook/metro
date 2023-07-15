@@ -31,7 +31,8 @@ import type {
   ResolverInputOptions,
   SplitBundleOptions,
 } from './shared/types.flow';
-import type {IncomingMessage, ServerResponse} from 'http';
+import type {IncomingMessage} from 'connect';
+import type {ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
 import type {
@@ -43,7 +44,6 @@ import type {CustomResolverOptions} from 'metro-resolver/src/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const {getAsset} = require('./Assets');
-const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
@@ -54,7 +54,6 @@ const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const IncrementalBundler = require('./IncrementalBundler');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const bundleToBytecode = require('./lib/bundleToBytecode');
 const bundleToString = require('./lib/bundleToString');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
@@ -67,6 +66,8 @@ const {codeFrameColumns} = require('@babel/code-frame');
 const MultipartResponse = require('./Server/MultipartResponse');
 const debug = require('debug')('Metro:Server');
 const fs = require('graceful-fs');
+const invariant = require('invariant');
+const jscSafeUrl = require('jsc-safe-url');
 const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
@@ -127,10 +128,6 @@ export type ServerOptions = $ReadOnly<{
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
-
-function getBytecodeVersion() {
-  return require('metro-hermes-compiler').VERSION;
-}
 
 class Server {
   _bundler: IncrementalBundler;
@@ -207,6 +204,7 @@ class Server {
       {
         onProgress,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       },
     );
 
@@ -225,7 +223,7 @@ class Server {
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule:
@@ -238,6 +236,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -265,6 +265,7 @@ class Server {
         {
           excludeSource: serializerOptions.excludeSource,
           processModuleFilter: this._config.serializer.processModuleFilter,
+          shouldAddToIgnoreList: bundleOptions.shouldAddToIgnoreList,
         },
       );
     }
@@ -288,7 +289,11 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: graphOptions.shallow},
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
+      },
     );
 
     const entryPoint = this._getEntryPointAbsolutePath(entryFile);
@@ -308,7 +313,7 @@ class Server {
       excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
-      includeAsyncPaths: this._config.server.experimentalImportBundleSupport,
+      includeAsyncPaths: graphOptions.lazy,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
@@ -322,6 +327,8 @@ class Server {
       inlineSourceMap: serializerOptions.inlineSourceMap,
       serverRoot:
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+      shouldAddToIgnoreList: (module: Module<>) =>
+        this._shouldAddModuleToIgnoreList(module),
     });
   }
 
@@ -333,7 +340,7 @@ class Server {
       [entryFile],
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     return await getAssets(dependencies, {
@@ -349,7 +356,7 @@ class Server {
     +dev: boolean,
     +entryFile: string,
     +minify: boolean,
-    +platform: string,
+    +platform: ?string,
     ...
   }): Promise<Array<string>> {
     const {
@@ -370,7 +377,7 @@ class Server {
       entryFile,
       transformOptions,
       resolverOptions,
-      {onProgress, shallow: false},
+      {onProgress, shallow: false, lazy: false},
     );
 
     const platform =
@@ -402,11 +409,12 @@ class Server {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize.toString(),
         'Content-Range': `bytes ${dataStart}-${dataEnd}/${data.length}`,
-        'Content-Type': mime.lookup(path.basename(assetPath)),
       });
 
       return data.slice(dataStart, dataEnd + 1);
     }
+
+    res.setHeader('Content-Length', String(Buffer.byteLength(data)));
 
     return data;
   }
@@ -456,6 +464,7 @@ class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
+      res.setHeader('Content-Type', mime.lookup(path.basename(assetPath)));
       res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
@@ -470,31 +479,32 @@ class Server {
   processRequest: (
     IncomingMessage,
     ServerResponse,
-    ((e: ?Error) => mixed),
+    ((e: ?Error) => void),
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
-    next: (?Error) => mixed,
+    next: (?Error) => void,
   ) => {
     this._processRequest(req, res, next).catch(next);
   };
 
   _parseOptions(url: string): BundleOptions {
-    return parseOptionsFromUrl(
-      url,
-      new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
+    return parseOptionsFromUrl(url, new Set(this._config.resolver.platforms));
+  }
+
+  _rewriteAndNormalizeUrl(requestUrl: string): string {
+    return jscSafeUrl.toNormalUrl(
+      this._config.server.rewriteRequestUrl(jscSafeUrl.toNormalUrl(requestUrl)),
     );
   }
 
   async _processRequest(
     req: IncomingMessage,
     res: ServerResponse,
-    next: (?Error) => mixed,
+    next: (?Error) => void,
   ) {
     const originalUrl = req.url;
-    req.url = this._config.server.rewriteRequestUrl(req.url);
-
+    req.url = this._rewriteAndNormalizeUrl(req.url);
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(
@@ -510,20 +520,13 @@ class Server {
     const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
-      if (options.runtimeBytecodeVersion) {
-        await this._processBytecodeBundleRequest(req, res, options, {
-          buildNumber,
-          bundlePerfLogger: noopLogger,
-        });
-      } else {
-        await this._processBundleRequest(req, res, options, {
-          buildNumber,
-          bundlePerfLogger:
-            this._config.unstable_perfLogger?.('BUNDLING_REQUEST', {
-              key: buildNumber,
-            }) ?? noopLogger,
-        });
-      }
+      await this._processBundleRequest(req, res, options, {
+        buildNumber,
+        bundlePerfLogger:
+          this._config.unstable_perfLoggerFactory?.('BUNDLING_REQUEST', {
+            key: buildNumber,
+          }) ?? noopLogger,
+      });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
         this._serverOptions.onBundleBuilt(pathname);
@@ -611,12 +614,11 @@ class Server {
         transformOptions,
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        experimentalImportBundleSupport:
-          this._config.server.experimentalImportBundleSupport,
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
         resolverOptions,
         shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -697,7 +699,6 @@ class Server {
           entryFile: resolvedEntryFilePath,
           minify: transformOptions.minify,
           platform: transformOptions.platform,
-          runtimeBytecodeVersion: transformOptions.runtimeBytecodeVersion,
         },
         isPrefetch: req.method === 'HEAD',
         type: 'bundle_build_started',
@@ -832,6 +833,11 @@ class Server {
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       bundlePerfLogger.point('resolvingAndTransformingDependencies_start');
+      bundlePerfLogger.annotate({
+        bool: {
+          initial_build: revPromise == null,
+        },
+      });
       const {delta, revision} = await (revPromise != null
         ? this._bundler.updateGraph(await revPromise, false)
         : this._bundler.initializeGraph(
@@ -841,6 +847,7 @@ class Server {
             {
               onProgress,
               shallow: graphOptions.shallow,
+              lazy: graphOptions.lazy,
             },
           ));
       bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
@@ -867,8 +874,7 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          includeAsyncPaths:
-            this._config.server.experimentalImportBundleSupport,
+          includeAsyncPaths: graphOptions.lazy,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
@@ -882,6 +888,8 @@ class Server {
           inlineSourceMap: serializerOptions.inlineSourceMap,
           serverRoot:
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+          shouldAddToIgnoreList: (module: Module<>) =>
+            this._shouldAddModuleToIgnoreList(module),
         },
       );
       bundlePerfLogger.point('serializingBundle_end');
@@ -899,7 +907,7 @@ class Server {
         bundle: bundleCode,
       };
     },
-    finish({req, mres, result}) {
+    finish({req, mres, serializerOptions, result}) {
       if (
         // We avoid parsing the dates since the client should never send a more
         // recent date than the one returned by the Delta Bundler (if that's the
@@ -916,6 +924,9 @@ class Server {
           String(result.numModifiedFiles),
         );
         mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
+        if (serializerOptions?.sourceUrl != null) {
+          mres.setHeader('Content-Location', serializerOptions.sourceUrl);
+        }
         mres.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
         mres.setHeader(
@@ -929,129 +940,6 @@ class Server {
       await this._bundler.endGraph(graphId);
       res.statusCode = 204;
       res.end();
-    },
-  });
-
-  _processBytecodeBundleRequest: (
-    req: IncomingMessage,
-    res: ServerResponse,
-    bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
-      buildNumber: number,
-      bundlePerfLogger: RootPerfLogger,
-    }>,
-  ) => Promise<void> = this._createRequestProcessor({
-    createStartEntry(context: ProcessStartContext) {
-      return {
-        action_name: 'Requesting bundle',
-        bundle_url: context.req.url,
-        entry_point: context.entryFile,
-        bundler: 'delta',
-        build_id: getBuildID(context.buildNumber),
-        bundle_options: context.bundleOptions,
-        bundle_hash: context.graphId,
-      };
-    },
-    createEndEntry(
-      context: ProcessEndContext<{
-        bytecode: Buffer,
-        lastModifiedDate: Date,
-        nextRevId: RevisionId,
-        numModifiedFiles: number,
-      }>,
-    ) {
-      return {
-        outdated_modules: context.result.numModifiedFiles,
-      };
-    },
-    build: async ({
-      entryFile,
-      graphId,
-      graphOptions,
-      onProgress,
-      resolverOptions,
-      serializerOptions,
-      transformOptions,
-    }) => {
-      const revPromise = this._bundler.getRevisionByGraphId(graphId);
-
-      const {delta, revision} = await (revPromise != null
-        ? this._bundler.updateGraph(await revPromise, false)
-        : this._bundler.initializeGraph(
-            entryFile,
-            transformOptions,
-            resolverOptions,
-            {
-              onProgress,
-              shallow: graphOptions.shallow,
-            },
-          ));
-
-      const bundle = bundleToBytecode(
-        baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
-          asyncRequireModulePath: await this._resolveRelativePath(
-            this._config.transformer.asyncRequireModulePath,
-            {
-              relativeTo: 'project',
-              resolverOptions,
-              transformOptions,
-            },
-          ),
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          includeAsyncPaths:
-            this._config.server.experimentalImportBundleSupport,
-          dev: transformOptions.dev,
-          projectRoot: this._config.projectRoot,
-          modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule:
-            this._config.serializer.getModulesRunBeforeMainModule(
-              path.relative(this._config.projectRoot, entryFile),
-            ),
-          runModule: serializerOptions.runModule,
-          sourceMapUrl: serializerOptions.sourceMapUrl,
-          sourceUrl: serializerOptions.sourceUrl,
-          inlineSourceMap: serializerOptions.inlineSourceMap,
-          serverRoot:
-            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
-        }),
-      );
-
-      return {
-        numModifiedFiles: delta.reset
-          ? delta.added.size + revision.prepend.length
-          : delta.added.size + delta.modified.size + delta.deleted.size,
-        lastModifiedDate: revision.date,
-        nextRevId: revision.id,
-        bytecode: bundle.bytecode,
-      };
-    },
-    finish({req, mres, result}) {
-      if (
-        // We avoid parsing the dates since the client should never send a more
-        // recent date than the one returned by the Delta Bundler (if that's the
-        // case it's fine to return the whole bundle).
-        req.headers['if-modified-since'] ===
-        result.lastModifiedDate.toUTCString()
-      ) {
-        debug('Responding with 304');
-        mres.writeHead(304);
-        mres.end();
-      } else {
-        mres.setHeader(
-          FILES_CHANGED_COUNT_HEADER,
-          String(result.numModifiedFiles),
-        );
-        mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
-        mres.setHeader('Content-Type', 'application/x-metro-bytecode-bundle');
-        mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
-        mres.setHeader(
-          'Content-Length',
-          String(Buffer.byteLength(result.bytecode)),
-        );
-        mres.end(result.bytecode);
-      }
     },
   });
 
@@ -1108,7 +996,11 @@ class Server {
           entryFile,
           transformOptions,
           resolverOptions,
-          {onProgress, shallow: graphOptions.shallow},
+          {
+            onProgress,
+            shallow: graphOptions.shallow,
+            lazy: graphOptions.lazy,
+          },
         ));
       } else {
         ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -1122,6 +1014,8 @@ class Server {
       return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
+        shouldAddToIgnoreList: (module: Module<>) =>
+          this._shouldAddModuleToIgnoreList(module),
       });
     },
     finish({mres, result}) {
@@ -1162,7 +1056,7 @@ class Server {
         [entryFile],
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: false},
+        {onProgress, shallow: false, lazy: false},
       );
 
       return await getAssets(dependencies, {
@@ -1228,19 +1122,34 @@ class Server {
       debug('Start symbolication');
       /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
       const body = await req.rawBody;
-      const stack = JSON.parse(body).stack.map(frame => {
-        if (frame.file && frame.file.includes('://')) {
+      const parsedBody = JSON.parse(body);
+
+      const rewriteAndNormalizeStackFrame = <T>(
+        frame: T,
+        lineNumber: number,
+      ): T => {
+        invariant(
+          frame != null && typeof frame === 'object',
+          'Bad stack frame at line %d, expected object, received: %s',
+          lineNumber,
+          typeof frame,
+        );
+        const frameFile = frame.file;
+        if (typeof frameFile === 'string' && frameFile.includes('://')) {
           return {
             ...frame,
-            file: this._config.server.rewriteRequestUrl(frame.file),
+            file: this._rewriteAndNormalizeUrl(frameFile),
           };
         }
         return frame;
-      });
+      };
+
+      const stack = parsedBody.stack.map(rewriteAndNormalizeStackFrame);
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
       const urls = new Set<string>();
 
       stack.forEach(frame => {
+        // These urls have been rewritten and normalized above.
         const sourceUrl = frame.file;
         // Skip `/debuggerWorker.js` which does not need symbolication.
         if (
@@ -1255,15 +1164,19 @@ class Server {
 
       debug('Getting source maps for symbolication');
       const sourceMaps = await Promise.all(
-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-        Array.from(urls.values()).map(this._explodedSourceMapForURL, this),
+        Array.from(urls.values()).map(normalizedUrl =>
+          this._explodedSourceMapForBundleOptions(
+            this._parseOptions(normalizedUrl),
+          ),
+        ),
       );
 
       debug('Performing fast symbolication');
-      const symbolicatedStack = await await symbolicate(
+      const symbolicatedStack = await symbolicate(
         stack,
         zip(urls.values(), sourceMaps),
         this._config,
+        parsedBody.extraData ?? {},
       );
 
       debug('Symbolication done');
@@ -1283,13 +1196,9 @@ class Server {
     }
   }
 
-  async _explodedSourceMapForURL(reqUrl: string): Promise<ExplodedSourceMap> {
-    const options = parseOptionsFromUrl(
-      reqUrl,
-      new Set(this._config.resolver.platforms),
-      getBytecodeVersion(),
-    );
-
+  async _explodedSourceMapForBundleOptions(
+    bundleOptions: BundleOptions,
+  ): Promise<ExplodedSourceMap> {
     const {
       entryFile,
       graphOptions,
@@ -1297,7 +1206,7 @@ class Server {
       resolverOptions,
       serializerOptions,
       transformOptions,
-    } = splitBundleOptions(options);
+    } = splitBundleOptions(bundleOptions);
 
     /**
      * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -1310,12 +1219,11 @@ class Server {
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-      experimentalImportBundleSupport:
-        this._config.server.experimentalImportBundleSupport,
       unstable_allowRequireContext:
         this._config.transformer.unstable_allowRequireContext,
       resolverOptions,
       shallow: graphOptions.shallow,
+      lazy: graphOptions.lazy,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1324,7 +1232,11 @@ class Server {
         resolvedEntryFilePath,
         transformOptions,
         resolverOptions,
-        {onProgress, shallow: graphOptions.shallow},
+        {
+          onProgress,
+          shallow: graphOptions.shallow,
+          lazy: graphOptions.lazy,
+        },
       ));
     } else {
       ({revision} = await this._bundler.updateGraph(await revPromise, false));
@@ -1364,7 +1276,7 @@ class Server {
       relativeTo === 'server'
         ? this._getServerRootDir()
         : this._config.projectRoot;
-    return resolutionFn(`${rootDir}/.`, filePath);
+    return resolutionFn(`${rootDir}/.`, filePath).filePath;
   }
 
   getNewBuildNumber(): number {
@@ -1385,7 +1297,6 @@ class Server {
     dev: boolean,
     hot: boolean,
     minify: boolean,
-    runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
   }> = {
     customResolverOptions: Object.create(null),
@@ -1393,7 +1304,6 @@ class Server {
     dev: true,
     hot: false,
     minify: false,
-    runtimeBytecodeVersion: null,
     unstable_transformProfile: 'default',
   };
 
@@ -1401,6 +1311,7 @@ class Server {
     ...typeof Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,
@@ -1411,6 +1322,7 @@ class Server {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    lazy: false,
     modulesOnly: false,
     onProgress: null,
     runModule: true,
@@ -1430,6 +1342,18 @@ class Server {
   // Wait for the server to finish initializing.
   async ready(): Promise<void> {
     await this._bundler.ready();
+  }
+
+  _shouldAddModuleToIgnoreList(module: Module<>): boolean {
+    // TODO: Add flag to Module signifying whether it represents generated code
+    // and clean up these heuristics.
+    return (
+      // Prelude code, see getPrependedScripts.js
+      module.path === '__prelude__' ||
+      // Generated require.context() module, see contextModule.js
+      module.path.includes('?ctx=') ||
+      this._config.serializer.isThirdPartyModule(module)
+    );
   }
 }
 

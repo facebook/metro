@@ -11,17 +11,13 @@
 
 'use strict';
 
-import type {PluginEntry} from '@babel/core';
+import type {PluginEntry, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
   CustomTransformOptions,
   TransformProfile,
 } from 'metro-babel-transformer';
-import type {
-  HermesCompilerResult,
-  Options as HermesCompilerOptions,
-} from 'metro-hermes-compiler';
 import type {
   BasicSourceMap,
   FBSourceFunctionMap,
@@ -33,7 +29,6 @@ import type {
   DependencyTransformer,
   DynamicRequiresBehavior,
 } from 'metro/src/ModuleGraph/worker/collectDependencies';
-import typeof CollectDependenciesFn from 'metro/src/ModuleGraph/worker/collectDependencies';
 
 const getMinifier = require('./utils/getMinifier');
 const {transformFromAstSync} = require('@babel/core');
@@ -44,6 +39,7 @@ const {stableHash} = require('metro-cache');
 const getCacheKey = require('metro-cache-key');
 const {
   fromRawMappings,
+  functionMapBabelPlugin,
   toBabelSegments,
   toSegmentTuple,
 } = require('metro-source-map');
@@ -52,6 +48,7 @@ const countLines = require('metro/src/lib/countLines');
 const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
 } = require('metro/src/ModuleGraph/worker/collectDependencies');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 const nullthrows = require('nullthrows');
@@ -94,7 +91,6 @@ export type JsTransformerConfig = $ReadOnly<{
   optimizationSizeLimit: number,
   publicPath: string,
   allowOptionalDependencies: AllowOptionalDependencies,
-  unstable_collectDependenciesPath: string,
   unstable_dependencyMapReservedName: ?string,
   unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
@@ -115,16 +111,10 @@ export type JsTransformOptions = $ReadOnly<{
   minify: boolean,
   nonInlinedRequires?: $ReadOnlyArray<string>,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_transformProfile: TransformProfile,
 }>;
-
-export type BytecodeFileType =
-  | 'bytecode/module'
-  | 'bytecode/module/asset'
-  | 'bytecode/script';
 
 opaque type Path = string;
 
@@ -169,19 +159,9 @@ export type JsOutput = $ReadOnly<{
   type: JSFileType,
 }>;
 
-export type BytecodeOutput = $ReadOnly<{
-  data: HermesCompilerResult,
-  type: BytecodeFileType,
-}>;
-
-type DependencySplitCondition = $PropertyType<
-  $PropertyType<TransformResultDependency, 'data'>,
-  'splitCondition',
->;
-
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<JsOutput | BytecodeOutput>,
+  output: $ReadOnlyArray<JsOutput>,
 }>;
 
 function getDynamicDepsBehavior(
@@ -216,7 +196,16 @@ const minifyCode = async (
   ...
 }> => {
   const sourceMap = fromRawMappings([
-    {code, source, map, functionMap: null, path: filename},
+    {
+      code,
+      source,
+      map,
+      // functionMap is overridden by the serializer
+      functionMap: null,
+      path: filename,
+      // isIgnored is overriden by the serializer
+      isIgnored: false,
+    },
   ]).toMap(undefined, {});
 
   const minify = getMinifier(config.minifierPath);
@@ -247,27 +236,9 @@ const minifyCode = async (
   }
 };
 
-const compileToBytecode = (
-  rawCode: string,
-  type: string,
-  options: HermesCompilerOptions,
-): HermesCompilerResult => {
-  let code = rawCode;
-  if (type.startsWith('js/module')) {
-    const index = code.lastIndexOf(')');
-    code =
-      code.slice(0, index) +
-      ',$$METRO_D[0],$$METRO_D[1],$$METRO_D[2]' +
-      code.slice(index);
-  }
-  const HermesCompiler = require('metro-hermes-compiler');
-  return HermesCompiler.compile(code, options);
-};
-
-const disabledDependencyTransformer: DependencyTransformer<mixed> = {
+const disabledDependencyTransformer: DependencyTransformer = {
   transformSyncRequire: () => void 0,
   transformImportCall: () => void 0,
-  transformJSResource: () => void 0,
   transformPrefetch: () => void 0,
   transformIllegalDynamicRequire: () => void 0,
 };
@@ -338,7 +309,7 @@ async function transformJS(
       babelrc: false,
       code: false,
       configFile: false,
-      comments: false,
+      comments: true,
       filename: file.filename,
       plugins,
       sourceMaps: false,
@@ -361,7 +332,7 @@ async function transformJS(
         babelrc: false,
         code: false,
         configFile: false,
-        comments: false,
+        comments: true,
         filename: file.filename,
         plugins: [
           [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
@@ -401,8 +372,6 @@ async function transformJS(
         dependencyMapName: config.unstable_dependencyMapReservedName,
         unstable_allowRequireContext: config.unstable_allowRequireContext,
       };
-      // $FlowFixMe[unsupported-syntax] dynamic require
-      const collectDependencies: CollectDependenciesFn<DependencySplitCondition> = require(config.unstable_collectDependenciesPath);
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
       if (error instanceof InternalInvalidRequireCallError) {
@@ -448,7 +417,7 @@ async function transformJS(
   const result = generate(
     wrappedAst,
     {
-      comments: false,
+      comments: true,
       compact: config.unstable_compactOutput,
       filename: file.filename,
       retainLines: false,
@@ -473,7 +442,7 @@ async function transformJS(
     ));
   }
 
-  const output: Array<JsOutput | BytecodeOutput> = [
+  const output: Array<JsOutput> = [
     {
       data: {
         code,
@@ -484,24 +453,6 @@ async function transformJS(
       type: file.type,
     },
   ];
-
-  if (options.runtimeBytecodeVersion != null) {
-    output.push({
-      data: (compileToBytecode(code, file.type, {
-        sourceURL: file.filename,
-        sourceMap: fromRawMappings([
-          {
-            code,
-            source: file.code,
-            map,
-            functionMap: null,
-            path: file.filename,
-          },
-        ]).toString(),
-      }): HermesCompilerResult),
-      type: getBytecodeFileType(file.type),
-    });
-  }
 
   return {
     dependencies,
@@ -548,13 +499,18 @@ async function transformJSWithBabel(
   const transformer: BabelTransformer = require(babelTransformerPath);
 
   const transformResult = await transformer.transform(
-    getBabelTransformArgs(file, context),
+    // functionMapBabelPlugin populates metadata.metro.functionMap
+    getBabelTransformArgs(file, context, [functionMapBabelPlugin]),
   );
 
   const jsFile: JSFile = {
     ...file,
     ast: transformResult.ast,
-    functionMap: transformResult.functionMap ?? null,
+    functionMap:
+      transformResult.metadata?.metro?.functionMap ??
+      // Fallback to deprecated explicitly-generated `functionMap`
+      transformResult.functionMap ??
+      null,
   };
 
   return await transformJS(jsFile, context);
@@ -597,30 +553,12 @@ async function transformJSON(
     jsType = 'js/module';
   }
 
-  const output: Array<JsOutput | BytecodeOutput> = [
+  const output: Array<JsOutput> = [
     {
       data: {code, lineCount: countLines(code), map, functionMap: null},
       type: jsType,
     },
   ];
-
-  if (options.runtimeBytecodeVersion != null) {
-    output.push({
-      data: (compileToBytecode(code, jsType, {
-        sourceURL: file.filename,
-        sourceMap: fromRawMappings([
-          {
-            code,
-            source: file.code,
-            map,
-            functionMap: null,
-            path: file.filename,
-          },
-        ]).toString(),
-      }): HermesCompilerResult),
-      type: getBytecodeFileType(jsType),
-    });
-  }
 
   return {
     dependencies: [],
@@ -628,24 +566,10 @@ async function transformJSON(
   };
 }
 
-/**
- * Returns the bytecode type for a file type
- */
-function getBytecodeFileType(type: JSFileType): BytecodeFileType {
-  switch (type) {
-    case 'js/module/asset':
-      return 'bytecode/module/asset';
-    case 'js/script':
-      return 'bytecode/script';
-    default:
-      (type: 'js/module');
-      return 'bytecode/module';
-  }
-}
-
 function getBabelTransformArgs(
   file: $ReadOnly<{filename: Path, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
+  plugins?: Plugins = [],
 ): BabelTransformerArgs {
   return {
     filename: file.filename,
@@ -663,7 +587,7 @@ function getBabelTransformArgs(
       projectRoot,
       publicPath: config.publicPath,
     },
-    plugins: [],
+    plugins,
     src: file.code,
   };
 }
@@ -730,19 +654,13 @@ module.exports = {
   },
 
   getCacheKey: (config: JsTransformerConfig): string => {
-    const {
-      babelTransformerPath,
-      minifierPath,
-      unstable_collectDependenciesPath,
-      ...remainingConfig
-    } = config;
+    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
     const filesKey = getCacheKey([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),
       require.resolve('./utils/assetTransformer'),
-      require.resolve(unstable_collectDependenciesPath),
       require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
       require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),

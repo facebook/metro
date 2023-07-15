@@ -16,6 +16,7 @@ import type {
   RamModuleTransport,
 } from '../../shared/types.flow';
 import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
+import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
@@ -28,7 +29,7 @@ const path = require('path');
 
 type Options = $ReadOnly<{
   ...SerializerOptions,
-  excludeSource: boolean,
+  ...SourceMapGeneratorOptions,
   getTransformOptions: ?GetTransformOptions,
   platform: ?string,
 }>;
@@ -63,6 +64,7 @@ async function getRamBundleInfo(
       map: sourceMapObject([module], {
         excludeSource: options.excludeSource,
         processModuleFilter: options.processModuleFilter,
+        shouldAddToIgnoreList: options.shouldAddToIgnoreList,
       }),
       name: path.basename(module.path),
       sourcePath: module.path,

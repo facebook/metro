@@ -12,24 +12,24 @@
 'use strict';
 
 import type {
-  DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,
-  FileContext,
-  FileOrDirContext,
-  HasteContext,
-  ModulePathContext,
   Resolution,
   ResolutionContext,
   Result,
 } from './types';
 
-const FailedToResolveNameError = require('./FailedToResolveNameError');
-const FailedToResolvePathError = require('./FailedToResolvePathError');
-const formatFileCandidates = require('./formatFileCandidates');
-const InvalidPackageError = require('./InvalidPackageError');
-const isAbsolutePath = require('absolute-path');
-const path = require('path');
+import path from 'path';
+import FailedToResolveNameError from './errors/FailedToResolveNameError';
+import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
+import InvalidPackageError from './errors/InvalidPackageError';
+import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
+import formatFileCandidates from './errors/formatFileCandidates';
+import {getPackageEntryPoint} from './PackageResolve';
+import {resolvePackageTargetFromExports} from './PackageExportsResolve';
+import resolveAsset from './resolveAsset';
+import isAssetFile from './utils/isAssetFile';
 
 function resolve(
   context: ResolutionContext,
@@ -49,8 +49,12 @@ function resolve(
     );
   }
 
-  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
-    return resolveModulePath(context, moduleName, platform);
+  if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
+    const result = resolveModulePath(context, moduleName, platform);
+    if (result.type === 'failed') {
+      throw new FailedToResolvePathError(result.candidates);
+    }
+    return result.resolution;
   }
 
   const realModuleName = context.redirectModulePath(moduleName);
@@ -63,7 +67,7 @@ function resolve(
   const {originModulePath} = context;
 
   const isDirectImport =
-    isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
+    isRelativeImport(realModuleName) || path.isAbsolute(realModuleName);
 
   if (isDirectImport) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
@@ -74,7 +78,11 @@ function resolve(
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
     const absPath = path.join(originModuleDir, realModuleName);
-    return resolveModulePath(context, absPath, platform);
+    const result = resolveModulePath(context, absPath, platform);
+    if (result.type === 'failed') {
+      throw new FailedToResolvePathError(result.candidates);
+    }
+    return result.resolution;
   }
 
   if (context.allowHaste && !isDirectImport) {
@@ -125,8 +133,12 @@ function resolve(
     .concat(extraPaths);
   for (let i = 0; i < allDirPaths.length; ++i) {
     const candidate = context.redirectModulePath(allDirPaths[i]);
-    // $FlowFixMe[incompatible-call]
-    const result = resolveFileOrDir(context, candidate, platform);
+
+    if (candidate === false) {
+      return {type: 'empty'};
+    }
+
+    const result = resolvePackage(context, candidate, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
@@ -143,22 +155,29 @@ function resolve(
  * `/smth/lib/foobar/index.ios.js`.
  */
 function resolveModulePath(
-  context: ModulePathContext,
+  context: ResolutionContext,
   toModuleName: string,
   platform: string | null,
-): Resolution {
-  const modulePath = isAbsolutePath(toModuleName)
+): Result<Resolution, FileAndDirCandidates> {
+  const modulePath = path.isAbsolute(toModuleName)
     ? resolveWindowsPath(toModuleName)
     : path.join(path.dirname(context.originModulePath), toModuleName);
   const redirectedPath = context.redirectModulePath(modulePath);
   if (redirectedPath === false) {
-    return {type: 'empty'};
+    return resolvedAs({type: 'empty'});
   }
-  const result = resolveFileOrDir(context, redirectedPath, platform);
-  if (result.type === 'resolved') {
-    return result.resolution;
+
+  const dirPath = path.dirname(redirectedPath);
+  const fileName = path.basename(redirectedPath);
+  const fileResult = resolveFile(context, dirPath, fileName, platform);
+  if (fileResult.type === 'resolved') {
+    return fileResult;
   }
-  throw new FailedToResolvePathError(result.candidates);
+  const dirResult = resolvePackageEntryPoint(context, redirectedPath, platform);
+  if (dirResult.type === 'resolved') {
+    return dirResult;
+  }
+  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
 }
 
 /**
@@ -167,7 +186,7 @@ function resolveModulePath(
  * a Haste package, it could be `/smth/Foo/index.js`.
  */
 function resolveHasteName(
-  context: HasteContext,
+  context: ResolutionContext,
   moduleName: string,
   platform: string | null,
 ): Result<Resolution, void> {
@@ -187,7 +206,7 @@ function resolveHasteName(
   const packageDirPath = path.dirname(packageJsonPath);
   const pathInModule = moduleName.substring(packageName.length + 1);
   const potentialModulePath = path.join(packageDirPath, pathInModule);
-  const result = resolveFileOrDir(context, potentialModulePath, platform);
+  const result = resolveModulePath(context, potentialModulePath, platform);
   if (result.type === 'resolved') {
     return result;
   }
@@ -221,81 +240,127 @@ class MissingFileInHastePackageError extends Error {
 }
 
 /**
- * In the NodeJS-style module resolution scheme we want to check potential
- * paths both as directories and as files. For example, `/foo/bar` may resolve
- * to `/foo/bar.js` (preferred), but it might also be `/foo/bar/index.js`, or
- * even a package directory.
+ * Resolve a package entry point or subpath target.
+ *
+ * This should be used when resolving a bare import specifier prefixed with the
+ * package name. Use `resolveModulePath` instead to scope to legacy "browser"
+ * spec behaviour, which is also applicable to relative and absolute imports.
  */
-function resolveFileOrDir(
-  context: FileOrDirContext,
-  potentialModulePath: string,
+function resolvePackage(
+  context: ResolutionContext,
+  /**
+   * The absolute path to a file or directory that may be contained within an
+   * npm package, e.g. from being joined with `context.extraNodeModules`.
+   */
+  modulePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
-  const dirPath = path.dirname(potentialModulePath);
-  const fileNameHint = path.basename(potentialModulePath);
-  const fileResult = resolveFile(context, dirPath, fileNameHint, platform);
+  if (context.unstable_enablePackageExports) {
+    const pkg = context.getPackageForModule(modulePath);
+    const exportsField = pkg?.packageJson.exports;
+
+    if (pkg != null && exportsField != null) {
+      let conditionNamesOverride = context.unstable_conditionNames;
+
+      // HACK!: Do not assert the "import" condition for `@babel/runtime`. This
+      // is a workaround for ESM <-> CJS interop, as we need the CJS versions of
+      // `@babel/runtime` helpers.
+      // TODO(T154157178): Remove with better "require"/"import" solution
+      if (pkg.packageJson.name === '@babel/runtime') {
+        conditionNamesOverride = context.unstable_conditionNames.filter(
+          condition => condition !== 'import',
+        );
+      }
+
+      try {
+        const packageExportsResult = resolvePackageTargetFromExports(
+          {...context, unstable_conditionNames: conditionNamesOverride},
+          pkg.rootPath,
+          modulePath,
+          exportsField,
+          platform,
+        );
+
+        if (packageExportsResult != null) {
+          return resolvedAs(packageExportsResult);
+        }
+      } catch (e) {
+        if (e instanceof PackagePathNotExportedError) {
+          context.unstable_logWarning(
+            e.message +
+              ' Falling back to file-based resolution. Consider updating the ' +
+              'call site or asking the package maintainer(s) to expose this API.',
+          );
+        } else if (e instanceof InvalidPackageConfigurationError) {
+          context.unstable_logWarning(
+            e.message + ' Falling back to file-based resolution.',
+          );
+        } else {
+          throw e;
+        }
+      }
+    }
+  }
+
+  return resolveModulePath(context, modulePath, platform);
+}
+
+/**
+ * Attempt to resolve a module path as an npm package entry point, or resolve as
+ * a file if no `package.json` file is present.
+ *
+ * Implements legacy (non-exports) package resolution behaviour based on the
+ * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec):
+ * - Looks for a "main" entry point based on `context.mainFields`.
+ * - Considers any "main" subpaths after expending source and platform-specific
+ *     extensions, e.g. `./lib/index` -> `./lib/index.ios.js`.
+ * - Falls back to a child `index.js` file, e.g. `./lib` -> `./lib/index.js`.
+ */
+function resolvePackageEntryPoint(
+  context: ResolutionContext,
+  packagePath: string,
+  platform: string | null,
+): Result<Resolution, FileCandidates> {
+  const packageJsonPath = path.join(packagePath, 'package.json');
+
+  if (!context.doesFileExist(packageJsonPath)) {
+    return resolveFile(context, packagePath, 'index', platform);
+  }
+
+  const packageInfo = {
+    rootPath: path.dirname(packageJsonPath),
+    packageJson: context.getPackage(packageJsonPath) ?? {},
+  };
+
+  const mainModulePath = path.join(
+    packageInfo.rootPath,
+    getPackageEntryPoint(context, packageInfo, platform),
+  );
+
+  const fileResult = resolveFile(
+    context,
+    path.dirname(mainModulePath),
+    path.basename(mainModulePath),
+    platform,
+  );
+
   if (fileResult.type === 'resolved') {
     return fileResult;
   }
-  const dirResult = resolveDir(context, potentialModulePath, platform);
-  if (dirResult.type === 'resolved') {
-    return dirResult;
-  }
-  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
-}
 
-/**
- * Try to resolve a potential path as if it was a directory-based module.
- * Either this is a directory that contains a package, or that the directory
- * contains an index file. If it fails to resolve these options, it returns
- * `null` and fills the array of `candidates` that were tried.
- *
- * For example we could try to resolve `/foo/bar`, that would eventually
- * resolve to `/foo/bar/lib/index.ios.js` if we're on platform iOS and that
- * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
- */
-function resolveDir(
-  context: FileOrDirContext,
-  potentialDirPath: string,
-  platform: string | null,
-): Result<Resolution, FileCandidates> {
-  const packageJsonPath = path.join(potentialDirPath, 'package.json');
-  if (context.doesFileExist(packageJsonPath)) {
-    const resolution = resolvePackage(context, packageJsonPath, platform);
-    return {resolution, type: 'resolved'};
-  }
-  return resolveFile(context, potentialDirPath, 'index', platform);
-}
+  // Fallback: Attempt to resolve any file at <subpath>/index.js
+  const indexResult = resolveFile(context, mainModulePath, 'index', platform);
 
-/**
- * Resolve the main module of a package that we know exist. The resolution
- * itself cannot fail because we already resolved the path to the package.
- * If the `main` of the package is invalid, this is not a resolution failure,
- * this means the package is invalid, and should purposefully stop the
- * resolution process altogether.
- */
-function resolvePackage(
-  context: FileOrDirContext,
-  packageJsonPath: string,
-  platform: string | null,
-): Resolution {
-  const mainPrefixPath = context.getPackageMainPath(packageJsonPath);
-  const dirPath = path.dirname(mainPrefixPath);
-  const prefixName = path.basename(mainPrefixPath);
-  const fileResult = resolveFile(context, dirPath, prefixName, platform);
-  if (fileResult.type === 'resolved') {
-    return fileResult.resolution;
+  if (indexResult.type !== 'resolved') {
+    throw new InvalidPackageError({
+      packageJsonPath,
+      mainModulePath,
+      fileCandidates: fileResult.candidates,
+      indexCandidates: indexResult.candidates,
+    });
   }
-  const indexResult = resolveFile(context, mainPrefixPath, 'index', platform);
-  if (indexResult.type === 'resolved') {
-    return indexResult.resolution;
-  }
-  throw new InvalidPackageError({
-    packageJsonPath,
-    mainPrefixPath,
-    indexCandidates: indexResult.candidates,
-    fileCandidates: fileResult.candidates,
-  });
+
+  return indexResult;
 }
 
 /**
@@ -308,32 +373,24 @@ function resolvePackage(
  * `/js/boop/index.js` (see `_loadAsDir` for that).
  */
 function resolveFile(
-  context: FileContext,
+  context: ResolutionContext,
   dirPath: string,
   fileName: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  const {isAssetFile, resolveAsset} = context;
-  if (isAssetFile(fileName)) {
-    const extension = path.extname(fileName);
-    const basename = path.basename(fileName, extension);
-    if (!/@\d+(?:\.\d+)?x$/.test(basename)) {
-      try {
-        const assets = resolveAsset(dirPath, basename, extension);
-        if (assets != null) {
-          return mapResult(resolvedAs(assets), filePaths => ({
-            type: 'assetFiles',
-            filePaths,
-          }));
-        }
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          return failedFor({type: 'asset', name: fileName});
-        }
-      }
+  if (isAssetFile(fileName, context.assetExts)) {
+    const assetResolutions = resolveAsset(
+      context,
+      path.join(dirPath, fileName),
+    );
+
+    if (assetResolutions == null) {
+      return failedFor({type: 'asset', name: fileName});
     }
-    return failedFor({type: 'asset', name: fileName});
+
+    return resolvedAs(assetResolutions);
   }
+
   const candidateExts: Array<string> = [];
   const filePathPrefix = path.join(dirPath, fileName);
   const sfContext = {...context, candidateExts, filePathPrefix};
@@ -347,10 +404,11 @@ function resolveFile(
   return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
 
-type SourceFileContext = SourceFileForAllExtsContext & {
-  +sourceExts: $ReadOnlyArray<string>,
-  ...
-};
+type SourceFileContext = $ReadOnly<{
+  ...ResolutionContext,
+  candidateExts: Array<string>,
+  filePathPrefix: string,
+}>;
 
 // Either a full path, or a restricted subset of Resolution.
 type SourceFileResolution = ?string | $ReadOnly<{type: 'empty'}>;
@@ -384,11 +442,6 @@ function resolveSourceFile(
   return null;
 }
 
-type SourceFileForAllExtsContext = SourceFileForExtContext & {
-  +preferNativePlatform: boolean,
-  ...
-};
-
 /**
  * For a particular extension, ex. `js`, we want to try a few possibilities,
  * such as `foo.ios.js`, `foo.native.js`, and of course `foo.js`. Return the
@@ -396,7 +449,7 @@ type SourceFileForAllExtsContext = SourceFileForExtContext & {
  * `{type: 'empty'}` if redirected to an empty module.
  */
 function resolveSourceFileForAllExts(
-  context: SourceFileForAllExtsContext,
+  context: SourceFileContext,
   sourceExt: string,
   platform: ?string,
 ): SourceFileResolution {
@@ -417,20 +470,12 @@ function resolveSourceFileForAllExts(
   return filePath;
 }
 
-type SourceFileForExtContext = {
-  +candidateExts: Array<string>,
-  +doesFileExist: DoesFileExist,
-  +filePathPrefix: string,
-  +redirectModulePath: (modulePath: string) => string | false,
-  ...
-};
-
 /**
  * We try to resolve a single possible extension. If it doesn't exist, then
  * we make sure to add the extension to a list of candidates for reporting.
  */
 function resolveSourceFileForExt(
-  context: SourceFileForExtContext,
+  context: SourceFileContext,
   extension: string,
 ): SourceFileResolution {
   const filePath = `${context.filePathPrefix}${extension}`;
@@ -440,7 +485,12 @@ function resolveSourceFileForExt(
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
-  if (context.doesFileExist(redirectedPath)) {
+  if (context.unstable_getRealPath) {
+    const maybeRealPath = context.unstable_getRealPath(redirectedPath);
+    if (maybeRealPath != null) {
+      return maybeRealPath;
+    }
+  } else if (context.doesFileExist(redirectedPath)) {
     return redirectedPath;
   }
   context.candidateExts.push(extension);
@@ -481,16 +531,6 @@ function failedFor<TResolution, TCandidates>(
   candidates: TCandidates,
 ): Result<TResolution, TCandidates> {
   return {type: 'failed', candidates};
-}
-
-function mapResult<TResolution, TNewResolution, TCandidates>(
-  result: Result<TResolution, TCandidates>,
-  mapper: TResolution => TNewResolution,
-): Result<TNewResolution, TCandidates> {
-  if (result.type === 'failed') {
-    return result;
-  }
-  return {type: 'resolved', resolution: mapper(result.resolution)};
 }
 
 module.exports = resolve;

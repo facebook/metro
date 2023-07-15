@@ -20,10 +20,7 @@ import {promises as fsPromises} from 'fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
-import {typeFromStat} from './common';
-
-// $FlowFixMe[untyped-import] - micromatch
-const micromatch = require('micromatch');
+import {isIncluded, typeFromStat} from './common';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
 
@@ -57,7 +54,6 @@ export default class FSEventsWatcher extends EventEmitter {
   +ignored: ?Matcher;
   +glob: $ReadOnlyArray<string>;
   +dot: boolean;
-  +hasIgnore: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
   _tracked: Set<string>;
@@ -68,7 +64,6 @@ export default class FSEventsWatcher extends EventEmitter {
 
   static _normalizeProxy(
     callback: (normalizedPath: string, stats: Stats) => void,
-    // $FlowFixMe[cannot-resolve-name]
   ): (filepath: string, stats: Stats) => void {
     return (filepath: string, stats: Stats): void =>
       callback(path.normalize(filepath), stats);
@@ -106,7 +101,6 @@ export default class FSEventsWatcher extends EventEmitter {
       dot: boolean,
       ...
     }>,
-    // $FlowFixMe[missing-local-annot]
   ) {
     if (!fsevents) {
       throw new Error(
@@ -119,9 +113,6 @@ export default class FSEventsWatcher extends EventEmitter {
     this.dot = opts.dot || false;
     this.ignored = opts.ignored;
     this.glob = Array.isArray(opts.glob) ? opts.glob : [opts.glob];
-
-    this.hasIgnore =
-      Boolean(opts.ignored) && !(Array.isArray(opts) && opts.length > 0);
     this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
 
     this.root = path.resolve(dir);
@@ -163,20 +154,8 @@ export default class FSEventsWatcher extends EventEmitter {
     }
   }
 
-  _isFileIncluded(relativePath: string): boolean {
-    if (this.doIgnore(relativePath)) {
-      return false;
-    }
-    return this.glob.length
-      ? micromatch([relativePath], this.glob, {dot: this.dot}).length > 0
-      : this.dot || micromatch([relativePath], '**/*').length > 0;
-  }
-
   async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
-    if (!this._isFileIncluded(relativePath)) {
-      return;
-    }
 
     try {
       const stat = await fsPromises.lstat(filepath);
@@ -186,6 +165,11 @@ export default class FSEventsWatcher extends EventEmitter {
       if (!type) {
         return;
       }
+
+      if (!isIncluded(type, this.glob, this.dot, this.doIgnore, relativePath)) {
+        return;
+      }
+
       const metadata: ChangeEventMetadata = {
         type,
         modifiedTime: stat.mtime.getTime(),

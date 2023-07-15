@@ -42,6 +42,7 @@ beforeEach(() => {
       ],
     ]),
     getSource: () => Buffer.from(''),
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     inverseDependencies: new CountingSet(),
     output: [
       {
@@ -67,6 +68,7 @@ describe('wrapModule()', () => {
           includeAsyncPaths: false,
           projectRoot: '/root',
           serverRoot: '/root',
+          sourceUrl: null,
         }),
       ),
     ).toMatchInlineSnapshot(`__d(function() { console.log("foo") },0,[1,2]);`);
@@ -81,6 +83,7 @@ describe('wrapModule()', () => {
           includeAsyncPaths: false,
           projectRoot: '/root',
           serverRoot: '/root',
+          sourceUrl: null,
         }),
       ),
     ).toMatchInlineSnapshot(
@@ -99,6 +102,7 @@ describe('wrapModule()', () => {
           includeAsyncPaths: false,
           projectRoot: '/root',
           serverRoot: '/root',
+          sourceUrl: null,
         }),
       ),
     ).toMatchInlineSnapshot(`__d(function() { console.log("foo") });`);
@@ -114,6 +118,7 @@ describe('wrapModule()', () => {
           includeAsyncPaths: false,
           projectRoot: '/root',
           serverRoot: '/root',
+          sourceUrl: null,
         }),
       ),
     ).toMatchInlineSnapshot(
@@ -135,10 +140,11 @@ describe('wrapModule()', () => {
           includeAsyncPaths: true,
           projectRoot: '/root',
           serverRoot: '/root',
+          sourceUrl: 'http://localhost/Main.bundle?param1=true&param2=1234',
         }),
       ),
     ).toMatchInlineSnapshot(
-      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"../bar"}});`,
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/../bar.bundle?param1=true&param2=1234&modulesOnly=true&runModule=false"}});`,
     );
   });
 
@@ -156,10 +162,34 @@ describe('wrapModule()', () => {
           includeAsyncPaths: true,
           projectRoot: '/root',
           serverRoot: '/',
+          sourceUrl: 'http://localhost/Main.bundle?param1=true&param2=1234',
         }),
       ),
     ).toMatchInlineSnapshot(
-      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"bar"}});`,
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/bar.bundle?param1=true&param2=1234&modulesOnly=true&runModule=false"}});`,
+    );
+  });
+
+  it('async bundle paths override modulesOnly and runModule', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: '/root',
+          serverRoot: '/root',
+          sourceUrl:
+            'http://localhost/Main.bundle?modulesOnly=false&runModule=true',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/../bar.bundle?modulesOnly=true&runModule=false"}});`,
     );
   });
 });

@@ -7,6 +7,5 @@ docs/
 examples/react-native
 flow-typed/**
 packages/*/build/**
-types/**
 website/
 **/third-party/**

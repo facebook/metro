@@ -19,7 +19,7 @@ describe('AutoCleanFileStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers('legacy') // Legacy fake timers are reset by `resetAllMocks()`
+      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
       .mock('fs', () => new (require('metro-memory-fs'))());
 
     AutoCleanFileStore = require('../AutoCleanFileStore');
@@ -28,6 +28,7 @@ describe('AutoCleanFileStore', () => {
   });
 
   it('sets and writes into the cache', async () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const fileStore = new AutoCleanFileStore({
       root: '/root',
       intervalMs: 49,
@@ -52,6 +53,7 @@ describe('AutoCleanFileStore', () => {
   });
 
   it('returns null when reading a non-existing file', async () => {
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const fileStore = new AutoCleanFileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 

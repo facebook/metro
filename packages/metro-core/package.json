@@ -1,6 +1,6 @@
 {
   "name": "metro-core",
-  "version": "0.73.6",
+  "version": "0.77.0",
   "description": "🚇 Metro's core package.",
   "main": "src/index.js",
   "repository": {
@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.73.6"
+    "metro-resolver": "0.77.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }

@@ -59,7 +59,6 @@ it('builds a bundle with BigInt and exponentiation syntax', async () => {
     entry: 'TestBigInt.js',
   });
 
-  // $FlowIssue[cannot-resolve-name] Flow is missing BigInt support
   const BI = BigInt;
   expect(execBundle(result.code)).toBe(BI(8));
 });

@@ -11,7 +11,8 @@
 'use strict';
 
 const getPackages = require('../_getPackages');
-const METRO_VERSION = require('../../lerna.json').version;
+const METRO_VERSION = require('../../packages/metro/package.json').version;
+const ENGINES = require('../../package.json').engines;
 const fs = require('fs');
 const path = require('path');
 
@@ -43,6 +44,12 @@ it('forces all package names to match their folder name', () => {
 it('forces all packages to use the main metro version', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).version).toEqual(METRO_VERSION);
+  });
+});
+
+it('forces all packages to use the root "engines" spec', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    expect(readPackageJson(packagePath).engines).toEqual(ENGINES);
   });
 });
 
@@ -89,10 +96,11 @@ it('forces all packages to have an .npmignore with expected entries', () => {
     const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
     expect(lines).toEqual(
       expect.arrayContaining([
-        '**/__mocks__/**',
-        '**/__tests__/**',
-        'build',
-        'src.real',
+        '**/__mocks__/',
+        '**/__tests__/',
+        '/build/',
+        '/src.real/',
+        '/types/',
         'yarn.lock',
       ]),
     );

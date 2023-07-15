@@ -14,7 +14,7 @@ You can also give a custom file to the configuration by specifying `--config <pa
 :::note
 
 When Metro is started via the React Native CLI, some defaults are different from those mentioned below.
-See the [React Native repository](https://github.com/react-native-community/cli/blob/master/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
+See the [React Native repository](https://github.com/react-native-community/cli/blob/main/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
 
 :::
 
@@ -155,6 +155,49 @@ Type: `string`
 
 Alias of [`fileMapCacheDirectory`](#filemapcachedirectory)
 
+#### `unstable_perfLoggerFactory`
+
+Type: `PerfLoggerFactory`
+
+A logger factory function that can be used to get insights about Metro performance timings and metadata for events including startup, bundling and HMR. Metro expects `unstable_perfLoggerFactory` to have the following signature:
+
+```flow
+function unstable_perfLoggerFactory(
+  type: string,
+  opts: $ReadOnly<{
+    key?: string
+  }>,
+): RootPerfLogger {
+  // ...
+};
+```
+
+* **`type`** Type of event being logged, e.g. `'STARTUP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js) for a full list of event types.
+* **`opts`**
+  * **`key`**: An opaque identifier to distinguish between instances of an event type (e.g. multiple, possibly concurrent, HMR requests).
+
+`unstable_perfLoggerFactory` should return an object implementing the [RootPerfLogger](https://github.com/facebook/metro/blob/main/packages/metro-config/src/configTypes.flow.js) interface. For example, a factory function returning a no-op RootPerfLogger could be implemented as follows:
+
+
+```javascript
+const unstable_perfLoggerFactory = (type, factoryOpts) => {
+  const getLogger = subSpanLabel => {
+    const logger = {
+      start(opts) {},
+      end(status, opts) {},
+      subSpan(label) {
+        return getLogger(`${subSpanLabel ?? ''}/${label}`);
+      },
+      point(name, opts) {},
+      annotate(annotations) {},
+    };
+    return logger;
+  };
+
+  return getLogger();
+};
+```
+
 ---
 ### Resolver Options
 
@@ -184,7 +227,7 @@ Metro's default resolver processes each of these fields according to the [`brows
 
 :::note
 
-When Metro is started via the React Native CLI, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
+When using React Native, `resolverMainFields` defaults to `['react-native', 'browser', 'main']`.
 
 :::
 
@@ -271,7 +314,7 @@ Type: `Array<string>`
 
 Additional platforms to resolve. Defaults to `['ios', 'android', 'windows', 'web']`.
 
-For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
+For more information, see [Module Resolution](./Resolution.md) and [React Native's documentation for platform-specific extensions](https://reactnative.dev/docs/platform-specific-code#platform-specific-extensions).
 
 #### `requireCycleIgnorePatterns`
 
@@ -283,10 +326,71 @@ Note that if you specify your own value for this config option it will replace (
 
 Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
 
+#### `unstable_conditionNames` <div class="label experimental">Experimental</div>
+
+Type: `Array<string>`
+
+:::note
+
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+
+:::
+
+The set of [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to assert globally when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
+
+Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors. The `default` condition is always matched.
+
+Defaults to `['require']`.
+
+:::note
+
+When using React Native, `unstable_conditionNames` defaults to `['require', 'react-native']`.
+
+:::
+
+#### `unstable_conditionsByPlatform` <div class="label experimental">Experimental</div>
+
+Type: `{[platform: string]: Array<string>}`
+
+:::note
+
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+
+:::
+
+The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to dynamically assert by platform (see [`platforms`](#platforms)) when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
+
+Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['require'])` otherwise. Again, these are resolved in the order specified by each package.
+
+Defaults to `‌{ web: ['browser'] }`.
+
+#### `unstable_enablePackageExports` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Enable experimental [Package Exports](https://nodejs.org/docs/latest-v18.x/api/packages.html#package-entry-points) support. Under this mode, Metro will read the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in `package.json` files when present and use it to resolve package entry points.
+
+When no match is found in `"exports"`, Metro will log a warning and fall back to resolving modules without considering `"exports"`. This makes this mode largely backwards-compatible, with the following exceptions:
+
+- If a module is matched in `"exports"`, [`sourceExts`](#sourceexts) and [`platforms`](#platforms) will not be considered (i.e. platform-specific extensions will not be used). This is done for compatibility with Node.
+- If a module exists at a file path that is also listed in `"exports"`, and the `"exports"` entry maps to a different file, the `"exports"` entry will be preferred.
+
+Defaults to `false`.
+
+:::note
+
+In a future release of Metro, this option will become `true` by default.
+
+:::
+
 ---
+
 ### Transformer Options
 
-#### `asyncRequireModulePath`
+<!-- Keep old links to `asyncRequireModulePath` working -->
+<a name="asyncrequiremodulepath"></a>
+
+#### `asyncRequireModulePath` <div class="label deprecated">Deprecated</div>
 
 Type: `string`
 
@@ -297,19 +401,7 @@ The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) rela
 :::
 
 :::info
-Although Metro doesn't perform bundle splitting out of the box, a custom `asyncRequire` implementation can be used as part of a bundle splitting solution:
-
-```flow
-// Get a reference to the dynamic `require` function provided by Metro.
-const dynamicRequire = (require: {importAll: mixed => mixed});
-
-module.exports = async function asyncRequire(moduleID: mixed): Promise<mixed> {
-  // 1. Do any work necessary (not detailed here) to fetch and evaluate the
-  //    module's code, as transformed by Metro.
-  // 2. Require the module from Metro's module registry using `dynamicRequire`.
-  return dynamicRequire.importAll(moduleID);
-};
-```
+In older versions of Metro, a custom `asyncRequireModulePath` could be used as part of a bundle splitting solution. This usage is now deprecated in favor of the [`__loadBundleAsync`](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0605-lazy-bundling.md#__loadbundleasync-in-metro) API.
 :::
 
 #### `dynamicDepsInPackages`
@@ -484,6 +576,18 @@ Type: `(module: Array<Module>) => boolean`
 
 A filter function to discard specific modules from the output.
 
+#### `isThirdPartyModule`
+
+Type: `(module: {path: string, ...}) => boolean`
+
+A function that determines which modules are added to the [`x_google_ignoreList`](https://developer.chrome.com/articles/x-google-ignore-list/) field of the source map. This supports ["Just My Code"](https://developer.chrome.com/blog/devtools-modern-web-debugging/#just-my-code) debugging in Chrome DevTools and other compatible debuggers.
+
+Defaults to returning `true` for modules with a path component named `node_modules`.
+
+:::note
+In addition to modules marked as ignored by `isThirdPartyModule`, Metro will also automatically add modules generated by the bundler itself to the ignore list.
+:::
+
 ---
 ### Server Options
 
@@ -501,17 +605,31 @@ Type: `boolean`
 
 Whether we should enable CMD+R hotkey for refreshing the bundle.
 
-#### `enhanceMiddleware`
+#### `enhanceMiddleware` <div class="label deprecated">Deprecated</div>
 
-Type: `(Middleware, Server) => Middleware`
+Type: `(Middleware, MetroServer) => Middleware`
 
-The possibility to add custom middleware to the server response chain.
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. For example:
+
+:::tip
+You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a utility to extend the base `metroMiddleware` and to mount additional middleware handlers.
+:::
+
+```ts
+enhanceMiddleware: (metroMiddleware: Middleware, metroServer: MetroServer) => {
+  return connect()
+    .use(metroMiddleware)
+    .use('/custom-endpoint', customEndpointMiddleware());
+},
+```
+
+The `Middleware` type is an alias for [`connect.HandleFunction`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/876b9ec96ba02d0c84b1e49af5890c8f5aa2dfe3/types/connect/index.d.ts#L29).
 
 #### `rewriteRequestUrl`
 
 Type: `string => string`
 
-A function that will be called every time Metro processes a URL. Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
+A function that will be called every time Metro processes a URL, after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
 
 #### `runInspectorProxy`
 
