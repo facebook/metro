@@ -38,7 +38,7 @@ function formatFileCandidates(
     const groups = exts.map(ext => ext.split('.').filter(Boolean).reverse());
 
     const splits = groups
-      .reduce((acc, group) => {
+      .reduce((acc: Array<string>, group) => {
         group.forEach((ext, i) => {
           if (!acc[i]) {
             acc[i] = [];
