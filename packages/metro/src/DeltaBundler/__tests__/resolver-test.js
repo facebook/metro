@@ -1540,6 +1540,60 @@ type MockFSDirContents = $ReadOnly<{
         ).toThrowErrorMatchingSnapshot();
       });
 
+      it('asserts missing file with enterprise-extension', async () => {
+        setMockFileSystem({
+          'index.js': mockFileImport("import './missing';"),
+        });
+
+        resolver = await createResolver({
+          resolver: {
+            sourceExts: ['.fb.js', 'js', '.fb.json', 'json'],
+          },
+        });
+
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), './missing'),
+        ).toThrowErrorMatchingSnapshot();
+      });
+
+      it('asserts missing file with multiple platform-extensions and enterprise-extensions', async () => {
+        setMockFileSystem({
+          'index.js': mockFileImport("import './missing';"),
+        });
+
+        resolver = await createResolver(
+          {
+            resolver: {
+              sourceExts: ['.fb.js', 'js', '.fb.json', 'json'],
+            },
+          },
+          'ios',
+        );
+
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), './missing'),
+        ).toThrowErrorMatchingSnapshot();
+      });
+
+      it('asserts missing file with multiple platform-extensions', async () => {
+        setMockFileSystem({
+          'index.js': mockFileImport("import './missing';"),
+        });
+
+        resolver = await createResolver(
+          {
+            resolver: {
+              sourceExts: ['js', 'json'],
+            },
+          },
+          'ios',
+        );
+
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), './missing'),
+        ).toThrowErrorMatchingSnapshot();
+      });
+
       it('resolves custom asset extensions when overriding assetExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import a from './asset2.png';"),

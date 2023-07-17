@@ -1,5 +1,38 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`linux assets asserts missing file with enterprise-extension 1`] = `
+"Unable to resolve module ./missing from /root/index.js: 
+
+No file matched the pattern:
+  * missing(/index)?(.native)?(.fb)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
+  3 | import bar from 'foo';"
+`;
+
+exports[`linux assets asserts missing file with multiple platform-extensions 1`] = `
+"Unable to resolve module ./missing from /root/index.js: 
+
+No file matched the pattern:
+  * missing(/index)?(.ios|.native)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
+  3 | import bar from 'foo';"
+`;
+
+exports[`linux assets asserts missing file with multiple platform-extensions and enterprise-extensions 1`] = `
+"Unable to resolve module ./missing from /root/index.js: 
+
+No file matched the pattern:
+  * missing(/index)?(.ios|.native)?(.fb)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
+  3 | import bar from 'foo';"
+`;
+
 exports[`linux assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from /root/index.js: 
 
@@ -165,6 +198,39 @@ No file matched the pattern:
   1 | import foo from 'bar';
 > 2 | import a from './a';
     |                ^
+  3 | import bar from 'foo';"
+`;
+
+exports[`win32 assets asserts missing file with enterprise-extension 1`] = `
+"Unable to resolve module ./missing from C:\\\\root\\\\index.js: 
+
+No file matched the pattern:
+  * missing(\\\\index)?(.native)?(.fb)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
+  3 | import bar from 'foo';"
+`;
+
+exports[`win32 assets asserts missing file with multiple platform-extensions 1`] = `
+"Unable to resolve module ./missing from C:\\\\root\\\\index.js: 
+
+No file matched the pattern:
+  * missing(\\\\index)?(.ios|.native)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
+  3 | import bar from 'foo';"
+`;
+
+exports[`win32 assets asserts missing file with multiple platform-extensions and enterprise-extensions 1`] = `
+"Unable to resolve module ./missing from C:\\\\root\\\\index.js: 
+
+No file matched the pattern:
+  * missing(\\\\index)?(.ios|.native)?(.fb)?.(js|json)
+  1 | import foo from 'bar';
+> 2 | import './missing';
+    |         ^
   3 | import bar from 'foo';"
 `;
 
