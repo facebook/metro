@@ -4,7 +4,7 @@ exports[`linux assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from /root/index.js: 
 
 No file matched the pattern:
-  * asset.PNG(/index)?(.native)?.(native|js|json)
+  * asset.PNG(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset.PNG';
     |                ^
@@ -37,7 +37,7 @@ exports[`linux assets resolves custom asset extensions when overriding assetExts
 "Unable to resolve module ./asset2.png from /root/index.js: 
 
 No file matched the pattern:
-  * asset2.png(/index)?(.native)?.(native|js|json)
+  * asset2.png(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset2.png';
     |                ^
@@ -81,7 +81,7 @@ exports[`linux packages in node_modules/ browser field in package.json resolves 
 "Unable to resolve module ./foo.js from /root/node_modules/aPackage/index.js: 
 
 No file matched the pattern:
-  * node_modules/aPackage/foo.js(/index)?(.native)?.(native|js|json)
+  * node_modules/aPackage/foo.js(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -110,7 +110,7 @@ exports[`linux packages in node_modules/ react-native field in package.json reso
 "Unable to resolve module ./foo.js from /root/node_modules/aPackage/index.js: 
 
 No file matched the pattern:
-  * node_modules/aPackage/foo.js(/index)?(.native)?.(native|js|json)
+  * node_modules/aPackage/foo.js(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -139,7 +139,7 @@ exports[`linux platforms resolves platform-specific files 1`] = `
 "Unable to resolve module ./foo.js from /root/index.js: 
 
 No file matched the pattern:
-  * foo.js(/index)?(.ios|.native)?.(native|js|json)
+  * foo.js(/index)?(.ios|.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -150,7 +150,7 @@ exports[`linux relative paths fails when trying to implicitly require an extensi
 "Unable to resolve module ./a.another from /root/index.js: 
 
 No file matched the pattern:
-  * a.another(/index)?(.native)?.(native|js|json)
+  * a.another(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
@@ -161,7 +161,7 @@ exports[`linux relative paths with additional files included in the file map (wa
 "Unable to resolve module ./a from /root/index.js: 
 
 No file matched the pattern:
-  * a(/index)?(.native)?.(native|js|json)
+  * a(/index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './a';
     |                ^
@@ -172,7 +172,7 @@ exports[`win32 assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from C:\\\\root\\\\index.js: 
 
 No file matched the pattern:
-  * asset.PNG(\\\\index)?(.native)?.(native|js|json)
+  * asset.PNG(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset.PNG';
     |                ^
@@ -205,7 +205,7 @@ exports[`win32 assets resolves custom asset extensions when overriding assetExts
 "Unable to resolve module ./asset2.png from C:\\\\root\\\\index.js: 
 
 No file matched the pattern:
-  * asset2.png(\\\\index)?(.native)?.(native|js|json)
+  * asset2.png(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './asset2.png';
     |                ^
@@ -249,7 +249,7 @@ exports[`win32 packages in node_modules/ browser field in package.json resolves 
 "Unable to resolve module ./foo.js from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: 
 
 No file matched the pattern:
-  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(native|js|json)
+  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -278,7 +278,7 @@ exports[`win32 packages in node_modules/ react-native field in package.json reso
 "Unable to resolve module ./foo.js from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: 
 
 No file matched the pattern:
-  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(native|js|json)
+  * node_modules\\\\aPackage\\\\foo.js(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -307,7 +307,7 @@ exports[`win32 platforms resolves platform-specific files 1`] = `
 "Unable to resolve module ./foo.js from C:\\\\root\\\\index.js: 
 
 No file matched the pattern:
-  * foo.js(\\\\index)?(.ios|.native)?.(native|js|json)
+  * foo.js(\\\\index)?(.ios|.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import f from './foo.js';
     |                ^
@@ -318,7 +318,7 @@ exports[`win32 relative paths fails when trying to implicitly require an extensi
 "Unable to resolve module ./a.another from C:\\\\root\\\\index.js: 
 
 No file matched the pattern:
-  * a.another(\\\\index)?(.native)?.(native|js|json)
+  * a.another(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
@@ -329,7 +329,7 @@ exports[`win32 relative paths with additional files included in the file map (wa
 "Unable to resolve module ./a from C:\\\\root\\\\index.js: 
 
 No file matched the pattern:
-  * a(\\\\index)?(.native)?.(native|js|json)
+  * a(\\\\index)?(.native)?.(js|json)
   1 | import foo from 'bar';
 > 2 | import a from './a';
     |                ^
