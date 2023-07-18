@@ -64,6 +64,7 @@ const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const symbolicate = require('./Server/symbolicate');
 const {codeFrameColumns} = require('@babel/code-frame');
 const MultipartResponse = require('./Server/MultipartResponse');
+const {performance} = require('perf_hooks');
 const debug = require('debug')('Metro:Server');
 const fs = require('graceful-fs');
 const invariant = require('invariant');
@@ -106,6 +107,7 @@ type ProcessStartContext = {
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
   +bundlePerfLogger: RootPerfLogger,
+  +requestStartTimestamp: number,
   ...SplitBundleOptions,
 };
 
@@ -595,6 +597,7 @@ class Server {
         bundlePerfLogger: RootPerfLogger,
       }>,
     ): Promise<void> {
+      const requestStartTimestamp = performance.timeOrigin + performance.now();
       const {buildNumber} = buildContext;
       const {
         entryFile,
@@ -717,6 +720,7 @@ class Server {
         serializerOptions,
         transformOptions,
         bundlePerfLogger: buildContext.bundlePerfLogger,
+        requestStartTimestamp,
       };
       const logEntry = log(
         createActionStartEntry(createStartEntry(startContext)),
@@ -823,8 +827,11 @@ class Server {
       serializerOptions,
       transformOptions,
       bundlePerfLogger,
+      requestStartTimestamp,
     }) => {
-      bundlePerfLogger.start();
+      bundlePerfLogger.start({
+        timestamp: requestStartTimestamp,
+      });
       bundlePerfLogger.annotate({
         string: {
           bundle_url: entryFile,
@@ -850,6 +857,13 @@ class Server {
               lazy: graphOptions.lazy,
             },
           ));
+
+      bundlePerfLogger.annotate({
+        int: {
+          graph_node_count: revision.graph.dependencies.size,
+        },
+      });
+
       bundlePerfLogger.point('resolvingAndTransformingDependencies_end');
       bundlePerfLogger.point('serializingBundle_start');
       const serializer =
@@ -896,8 +910,6 @@ class Server {
 
       const bundleCode = typeof bundle === 'string' ? bundle : bundle.code;
 
-      bundlePerfLogger.end('SUCCESS');
-
       return {
         numModifiedFiles: delta.reset
           ? delta.added.size + revision.prepend.length
@@ -907,7 +919,19 @@ class Server {
         bundle: bundleCode,
       };
     },
-    finish({req, mres, serializerOptions, result}) {
+    finish({req, mres, serializerOptions, result, bundlePerfLogger}) {
+      bundlePerfLogger.annotate({
+        int: {
+          bundle_length: result.bundle.length,
+          bundle_byte_length: Buffer.byteLength(result.bundle),
+        },
+      });
+      mres.once('error', () => {
+        bundlePerfLogger.end('FAIL');
+      });
+      mres.once('finish', () => {
+        bundlePerfLogger.end('SUCCESS');
+      });
       if (
         // We avoid parsing the dates since the client should never send a more
         // recent date than the one returned by the Delta Bundler (if that's the
@@ -915,10 +939,20 @@ class Server {
         req.headers['if-modified-since'] ===
         result.lastModifiedDate.toUTCString()
       ) {
+        bundlePerfLogger.annotate({
+          string: {
+            http_status: '304',
+          },
+        });
         debug('Responding with 304');
         mres.writeHead(304);
         mres.end();
       } else {
+        bundlePerfLogger.annotate({
+          string: {
+            http_status: '200',
+          },
+        });
         mres.setHeader(
           FILES_CHANGED_COUNT_HEADER,
           String(result.numModifiedFiles),

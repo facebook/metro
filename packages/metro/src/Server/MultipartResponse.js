@@ -93,6 +93,11 @@ class MultipartResponse {
     this.writeChunk(this.headers, data, true);
     this.res.end();
   }
+
+  once(name: string, fn: () => mixed): this {
+    this.res.once(name, fn);
+    return this;
+  }
 }
 
 module.exports = MultipartResponse;
