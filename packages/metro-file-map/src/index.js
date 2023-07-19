@@ -784,6 +784,12 @@ export default class FileMap extends EventEmitter {
           exposedMethods: ['worker'],
           maxRetries: 3,
           numWorkers: this._options.maxWorkers,
+          forkOptions: {
+            // Don't pass Node arguments down to workers. In particular, avoid
+            // unnecessarily registering Babel when we're running Metro from
+            // source (our worker is plain CommonJS).
+            execArgv: [],
+          },
         });
         perfLogger?.point('initWorkers_end');
       }
