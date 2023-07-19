@@ -47,9 +47,8 @@ class InvalidPackageError extends Error {
     super(
       `The package \`${opts.packageJsonPath}\` is invalid because it ` +
         'specifies a `main` module field that could not be resolved (' +
-        `\`${opts.mainModulePath}\`. None of these files exist:\n\n` +
-        `  * ${formatFileCandidates(opts.fileCandidates)}\n` +
-        `  * ${formatFileCandidates(opts.indexCandidates)}`,
+        `\`${opts.mainModulePath}\`. No file matched the pattern:\n\n` +
+        `  * ${formatFileCandidates(opts.fileCandidates, true)}`,
     );
     Object.assign(this, opts);
   }
