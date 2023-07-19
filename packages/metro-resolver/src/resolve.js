@@ -460,7 +460,7 @@ function resolveSourceFileForAllExts(
       return filePath;
     }
   }
-  if (context.preferNativePlatform) {
+  if (context.preferNativePlatform && sourceExt !== '') {
     const filePath = resolveSourceFileForExt(context, `.native${sourceExt}`);
     if (filePath) {
       return filePath;
