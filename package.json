@@ -55,6 +55,7 @@
     "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
     "typecheck": "flow check",
     "typecheck-ts": "tsc --project tsconfig.json",
+    "update-babel-flow-lib-defs": "node -r @babel/register ./scripts/updateBabelFlowLibraryDefinitions",
     "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [

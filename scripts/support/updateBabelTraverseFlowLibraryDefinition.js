@@ -13,47 +13,30 @@
 const virtualTypes = require('@babel/traverse/lib/path/lib/virtual-types');
 const t = require('@babel/types');
 const fs = require('fs');
-const process = require('process');
 
 const NODE_PREFIX = 'BabelNode';
 const VISITOR_METHODS_MARKER_NAME = 'VISITOR METHODS';
 const NODE_PATH_METHOD_MARKER_NAME = 'NODE PATH METHODS';
 
-const declarationFileName = process.argv[2];
-
-if (declarationFileName == null) {
-  throw new Error(
-    'Expected the path to the babel-traverse.js library definition as an argument.',
+function main(filePath: string): string {
+  const inputContent = fs.readFileSync(filePath, 'utf8');
+  const intermediateContent = replaceGeneratedBlock(
+    inputContent,
+    VISITOR_METHODS_MARKER_NAME,
+    generateVisitorMethods(),
+  );
+  return replaceGeneratedBlock(
+    intermediateContent,
+    NODE_PATH_METHOD_MARKER_NAME,
+    generateNodePathMethods(),
   );
 }
-
-if (!fs.existsSync(declarationFileName)) {
-  throw new Error(`The file ${declarationFileName} does not exist.`);
-}
-
-if (!fs.statSync(declarationFileName).isFile()) {
-  throw new Error(`${declarationFileName} is a directory, expected a file.`);
-}
-
-let content = fs.readFileSync(declarationFileName).toString('utf-8');
-
-content = replaceGeneratedBlock(
-  content,
-  VISITOR_METHODS_MARKER_NAME,
-  generateVisitorMethods(),
-);
-content = replaceGeneratedBlock(
-  content,
-  NODE_PATH_METHOD_MARKER_NAME,
-  generateNodePathMethods(),
-);
-
-fs.writeFileSync(declarationFileName, content);
 
 function generateVisitorMethods() {
   const uniqueTypes = new Set([
     ...t.TYPES,
     ...Object.keys(t.FLIPPED_ALIAS_KEYS),
+    ...Object.keys(virtualTypes),
   ]);
   const types = [...uniqueTypes].filter(type => {
     if (type === 'File') {
@@ -84,9 +67,9 @@ function generateNodePathMethods() {
     ]),
   ].sort();
   const is = isTypes.map(type => `    is${type}(opts?: Opts): boolean;`);
-  const asserts = t.TYPES.map(
-    type => `    assert${type}(opts?: Opts): void;`,
-  ).sort();
+  const asserts = isTypes
+    .map(type => `    assert${type}(opts?: Opts): void;`)
+    .sort();
 
   return `${is.join('\n')}\n${asserts.join('\n')}`;
 }
@@ -119,3 +102,5 @@ function getGeneratedCodeInsertPosition(content, markerName) {
     end: content.lastIndexOf('\n', endIndex),
   };
 }
+
+module.exports = main;
