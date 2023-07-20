@@ -184,6 +184,7 @@ const deepNormalize = value => {
 let consoleWarn;
 let consoleError;
 let defaultConfig;
+let DuplicateHasteCandidatesError;
 let fs;
 let H;
 let FileMap;
@@ -239,7 +240,8 @@ describe('FileMap', () => {
     console.warn = jest.fn();
     console.error = jest.fn();
 
-    FileMap = require('../').default;
+    ({default: FileMap, DuplicateHasteCandidatesError} = require('../'));
+
     mockCacheManager = {
       read: jest.fn().mockImplementation(async () => cacheContent),
       write: jest.fn().mockImplementation(async dataSnapshot => {
@@ -412,7 +414,7 @@ describe('FileMap', () => {
       mocksPattern: '__mocks__',
     });
 
-    const {fileSystem, mockMap} = await fileMap.build();
+    const {fileSystem, hasteMap, mockMap} = await fileMap.build();
 
     expect(cacheContent.clocks).toEqual(mockClocks);
 
@@ -467,24 +469,17 @@ describe('FileMap', () => {
       }),
     );
 
-    expect(cacheContent.haste.map).toEqual(
-      createMap({
-        Banana: {
-          [H.GENERIC_PLATFORM]: [path.join('fruits', 'Banana.js'), H.MODULE],
-        },
-        Melon: {
-          [H.GENERIC_PLATFORM]: [path.join('vegetables', 'Melon.js'), H.MODULE],
-        },
-        Pear: {
-          [H.GENERIC_PLATFORM]: [path.join('fruits', 'Pear.js'), H.MODULE],
-        },
-        Strawberry: {
-          [H.GENERIC_PLATFORM]: [
-            path.join('fruits', 'Strawberry.js'),
-            H.MODULE,
-          ],
-        },
-      }),
+    expect(hasteMap.getModule('Banana')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Banana.js'),
+    );
+    expect(hasteMap.getModule('Melon')).toEqual(
+      path.join(defaultConfig.rootDir, 'vegetables', 'Melon.js'),
+    );
+    expect(hasteMap.getModule('Pear')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Pear.js'),
+    );
+    expect(hasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
     );
 
     expect(mockMap.getMockModule('Pear')).toEqual(
@@ -704,10 +699,11 @@ describe('FileMap', () => {
       roots: [...defaultConfig.roots, path.join('/', 'project', 'video')],
     });
 
-    const {fileSystem} = await fileMap.build();
-    const data = cacheContent;
+    const {fileSystem, hasteMap} = await fileMap.build();
 
-    expect(data.haste.map.get('IRequireAVideo')).toBeDefined();
+    expect(hasteMap.getModule('IRequireAVideo')).toEqual(
+      path.join(defaultConfig.rootDir, 'video', 'IRequireAVideo.js'),
+    );
     expect(fileSystem.linkStats(path.join('video', 'video.mp4'))).toEqual({
       fileType: 'f',
       modifiedTime: 32,
@@ -730,7 +726,7 @@ describe('FileMap', () => {
       retainAllFiles: true,
     });
 
-    const {fileSystem} = await fileMap.build();
+    const {fileSystem, hasteMap} = await fileMap.build();
 
     // Expect the node module to be part of files but make sure it wasn't
     // read.
@@ -740,7 +736,7 @@ describe('FileMap', () => {
       ),
     ).toEqual({fileType: 'f', modifiedTime: 32});
 
-    expect(cacheContent.haste.map.get('fbjs')).not.toBeDefined();
+    expect(hasteMap.getModule('fbjs')).toBeNull();
 
     // 5 modules - the node_module
     expect(fs.readFileSync.mock.calls.length).toBe(5);
@@ -793,11 +789,11 @@ describe('FileMap', () => {
       const Banana = require("Banana");
     `;
 
-    await new FileMap(defaultConfig).build();
+    const {hasteMap} = await new FileMap(defaultConfig).build();
 
-    // Duplicate modules are removed so that it doesn't cause
-    // non-determinism later on.
-    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
+    expect(() => hasteMap.getModule('Strawberry')).toThrow(
+      DuplicateHasteCandidatesError,
+    );
 
     expect(
       console.warn.mock.calls[0][0].replaceAll('\\', '/'),
@@ -849,7 +845,7 @@ describe('FileMap', () => {
       const Blackberry = require("Blackberry");
     `;
 
-    const {fileSystem} = await new FileMap(defaultConfig).build();
+    const {fileSystem, hasteMap} = await new FileMap(defaultConfig).build();
 
     assertFileSystemEqual(
       fileSystem,
@@ -884,17 +880,16 @@ describe('FileMap', () => {
       }),
     );
 
-    expect(cacheContent.haste.map).toEqual(
-      createMap({
-        Strawberry: {
-          [H.GENERIC_PLATFORM]: [
-            path.join('fruits', 'Strawberry.js'),
-            H.MODULE,
-          ],
-          android: [path.join('fruits', 'Strawberry.android.js'), H.MODULE],
-          ios: [path.join('fruits', 'Strawberry.ios.js'), H.MODULE],
-        },
-      }),
+    expect(hasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+
+    expect(hasteMap.getModule('Strawberry', 'android')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.android.js'),
+    );
+
+    expect(hasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.ios.js'),
     );
   });
 
@@ -984,7 +979,6 @@ describe('FileMap', () => {
 
   it('correctly handles file deletions', async () => {
     await new FileMap(defaultConfig).build();
-    const initialData = cacheContent;
     fs.readFileSync.mockClear();
 
     // Let's assume one JS file was removed.
@@ -998,71 +992,88 @@ describe('FileMap', () => {
       fruits: 'c:fake-clock:3',
       vegetables: 'c:fake-clock:2',
     });
-
-    const {fileSystem} = await new FileMap(defaultConfig).build();
+    const {fileSystem, hasteMap} = await new FileMap(defaultConfig).build();
 
     expect(fileSystem.exists(path.join('fruits', 'Banana.js'))).toEqual(false);
-
-    const map = new Map(initialData.haste.map);
-    map.delete('Banana');
-    expect(deepNormalize(cacheContent.haste.map)).toEqual(map);
+    expect(hasteMap.getModule('Banana')).toBeNull();
   });
 
   it('correctly handles platform-specific file additions', async () => {
     mockFs = Object.create(null);
+    // Begin with only a generic implementation.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
     `;
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      g: [path.join('fruits', 'Strawberry.js'), 0],
-    });
+    const {hasteMap: firstHasteMap} = await new FileMap(defaultConfig).build();
+    // Generic and ios return the generic implementation.
+    expect(firstHasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+    expect(firstHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
 
-    delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')];
+    // Add an ios implementation
     mockChangedFiles = object({
       [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: `
         const Raspberry = require("Raspberry");
       `,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      g: [path.join('fruits', 'Strawberry.js'), 0],
-      ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
-    });
+    const {hasteMap: secondHasteMap} = await new FileMap(defaultConfig).build();
+    expect(secondHasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+    // ios now has a specific implementation.
+    expect(secondHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.ios.js'),
+    );
   });
 
   it('correctly handles platform-specific file deletions', async () => {
     mockFs = Object.create(null);
+    // Begin with generic and ios implementations.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
     `;
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
     `;
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      g: [path.join('fruits', 'Strawberry.js'), 0],
-      ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
-    });
+    const {hasteMap: firstHasteMap} = await new FileMap(defaultConfig).build();
+    expect(firstHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.ios.js'),
+    );
+    expect(firstHasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
 
+    // Delete the ios implementation.
     delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')];
     mockChangedFiles = object({
       [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: null,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      g: [path.join('fruits', 'Strawberry.js'), 0],
-    });
+    const {hasteMap: secondHasteMap} = await new FileMap(defaultConfig).build();
 
+    // Expect both ios and generic return generic.
+    expect(secondHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+    expect(secondHasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+
+    // Delete the generic implementation.
     delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')];
     mockChangedFiles = object({
       [path.join('/', 'project', 'fruits', 'Strawberry.js')]: null,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:4'});
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
+    const {hasteMap: thirdHasteMap} = await new FileMap(defaultConfig).build();
+
+    // No implementation of Strawberry remains.
+    expect(thirdHasteMap.getModule('Strawberry', 'ios')).toBeNull();
+    expect(thirdHasteMap.getModule('Strawberry')).toBeNull();
   });
 
   it('correctly handles platform-specific file renames', async () => {
@@ -1070,11 +1081,13 @@ describe('FileMap', () => {
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
     `;
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      ios: [path.join('fruits', 'Strawberry.ios.js'), 0],
-    });
+    const {hasteMap: firstHasteMap} = await new FileMap(defaultConfig).build();
+    expect(firstHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.ios.js'),
+    );
+    expect(firstHasteMap.getModule('Strawberry')).toBeNull();
 
+    // Rename Strawberry.ios.js -> Strawberry.js to make it generic
     delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')];
     mockChangedFiles = object({
       [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: null,
@@ -1083,10 +1096,14 @@ describe('FileMap', () => {
       `,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
-    await new FileMap(defaultConfig).build();
-    expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-      g: [path.join('fruits', 'Strawberry.js'), 0],
-    });
+    const {hasteMap: secondHasteMap} = await new FileMap(defaultConfig).build();
+    expect(secondHasteMap.getModule('Strawberry')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
+    // Fall back to generic implementation
+    expect(secondHasteMap.getModule('Strawberry', 'ios')).toEqual(
+      path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+    );
   });
 
   describe('duplicate modules', () => {
@@ -1101,30 +1118,52 @@ describe('FileMap', () => {
       mockFs[path.join('/', 'project', 'fruits', 'another', 'Banana.ios.js')] =
         '//';
 
-      await new FileMap(defaultConfig).build();
-      expect(deepNormalize(cacheContent.haste.duplicates)).toEqual(
-        createMap({
-          Strawberry: createMap({
-            g: createMap({
-              [path.join('fruits', 'Strawberry.js')]: H.MODULE,
-              [path.join('fruits', 'another', 'Strawberry.js')]: H.MODULE,
-            }),
-          }),
-          Banana: createMap({
-            ios: createMap({
-              [path.join('fruits', 'Banana.ios.js')]: H.MODULE,
-              [path.join('fruits', 'another', 'Banana.ios.js')]: H.MODULE,
-            }),
-          }),
-        }),
+      const {hasteMap} = await new FileMap(defaultConfig).build();
+      expect(() => hasteMap.getModule('Strawberry')).toThrow(
+        new DuplicateHasteCandidatesError(
+          'Strawberry',
+          H.GENERIC_PLATFORM,
+          false,
+          new Set([
+            [
+              path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+              H.MODULE,
+            ],
+            [
+              path.join(
+                defaultConfig.rootDir,
+                'fruits',
+                'another',
+                'Strawberry.js',
+              ),
+              H.MODULE,
+            ],
+          ]),
+        ),
       );
-      expect(cacheContent.haste.map.get('Strawberry')).not.toBeDefined();
-
-      expect(cacheContent.haste.map.get('Banana')).toBeDefined();
-      expect(
-        cacheContent.haste.map.get('Banana')[H.GENERIC_PLATFORM],
-      ).toBeDefined();
-      expect(cacheContent.haste.map.get('Banana')['ios']).not.toBeDefined();
+      expect(hasteMap.getModule('Banana')).toBeDefined();
+      expect(() => hasteMap.getModule('Banana', 'ios')).toThrow(
+        new DuplicateHasteCandidatesError(
+          'Banana',
+          'ios',
+          false,
+          new Set([
+            [
+              path.join(defaultConfig.rootDir, 'fruits', 'Banana.ios.js'),
+              H.MODULE,
+            ],
+            [
+              path.join(
+                defaultConfig.rootDir,
+                'fruits',
+                'another',
+                'Banana.ios.js',
+              ),
+              H.MODULE,
+            ],
+          ]),
+        ),
+      );
     });
 
     it('recovers when a duplicate file is deleted', async () => {
@@ -1139,17 +1178,15 @@ describe('FileMap', () => {
         vegetables: 'c:fake-clock:2',
       });
 
-      await new FileMap(defaultConfig).build();
-      expect(
-        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
-      ).not.toBeDefined();
-      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-        g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
-      });
-      // Make sure the other files are not affected.
-      expect(cacheContent.haste.map.get('Banana')).toEqual({
-        g: [path.join('fruits', 'Banana.js'), H.MODULE],
-      });
+      const {hasteMap} = await new FileMap(defaultConfig).build();
+
+      expect(hasteMap.getModule('Strawberry')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+      );
+
+      expect(hasteMap.getModule('Banana')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Banana.js'),
+      );
     });
 
     it('recovers when a duplicate platform-specific file is deleted', async () => {
@@ -1164,18 +1201,16 @@ describe('FileMap', () => {
         vegetables: 'c:fake-clock:2',
       });
 
-      await new FileMap(defaultConfig).build();
-      expect(
-        deepNormalize(cacheContent.haste.duplicates.get('Banana')),
-      ).not.toBeDefined();
-      expect(cacheContent.haste.map.get('Banana')).toEqual({
-        g: [path.join('fruits', 'Banana.js'), H.MODULE],
-        ios: [path.join('fruits', 'Banana.ios.js'), H.MODULE],
-      });
-      // Make sure the other files are not affected.
-      expect(cacheContent.haste.map.get('Melon')).toEqual({
-        g: [path.join('vegetables', 'Melon.js'), H.MODULE],
-      });
+      const {hasteMap} = await new FileMap(defaultConfig).build();
+      expect(hasteMap.getModule('Banana')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Banana.js'),
+      );
+      expect(hasteMap.getModule('Banana', 'ios')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Banana.ios.js'),
+      );
+      expect(hasteMap.getModule('Melon')).toEqual(
+        path.join(defaultConfig.rootDir, 'vegetables', 'Melon.js'),
+      );
     });
 
     it('recovers with the correct type when a duplicate file is deleted', async () => {
@@ -1185,19 +1220,45 @@ describe('FileMap', () => {
         {"name": "Strawberry"}
       `;
 
-      await new FileMap(defaultConfig).build();
+      const {hasteMap: initialHasteMap} = await new FileMap(
+        defaultConfig,
+      ).build();
 
-      expect(
-        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
-      ).toEqual(
-        createMap({
-          g: createMap({
-            [path.join('fruits', 'Strawberry.js')]: H.MODULE,
-            [path.join('fruits', 'another', 'Strawberry.js')]: H.MODULE,
-            [path.join('fruits', 'strawberryPackage', 'package.json')]:
-              H.PACKAGE,
-          }),
-        }),
+      let initialStrawberryError;
+      try {
+        initialHasteMap.getModule('Strawberry');
+      } catch (e) {
+        initialStrawberryError = e;
+      }
+
+      expect(initialStrawberryError).toBeInstanceOf(
+        DuplicateHasteCandidatesError,
+      );
+      expect(initialStrawberryError.duplicatesSet).toEqual(
+        new Map([
+          [
+            path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+            H.MODULE,
+          ],
+          [
+            path.join(
+              defaultConfig.rootDir,
+              'fruits',
+              'another',
+              'Strawberry.js',
+            ),
+            H.MODULE,
+          ],
+          [
+            path.join(
+              defaultConfig.rootDir,
+              'fruits',
+              'strawberryPackage',
+              'package.json',
+            ),
+            H.PACKAGE,
+          ],
+        ]),
       );
 
       delete mockFs[
@@ -1221,14 +1282,11 @@ describe('FileMap', () => {
         fruits: 'c:fake-clock:4',
       });
 
-      await new FileMap(defaultConfig).build();
+      const {hasteMap: newHasteMap} = await new FileMap(defaultConfig).build();
 
-      expect(
-        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
-      ).not.toBeDefined();
-      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-        g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
-      });
+      expect(newHasteMap.getModule('Strawberry')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+      );
     });
 
     it('recovers when a duplicate module is renamed', async () => {
@@ -1243,20 +1301,16 @@ describe('FileMap', () => {
         vegetables: 'c:fake-clock:2',
       });
 
-      await new FileMap(defaultConfig).build();
-      expect(
-        deepNormalize(cacheContent.haste.duplicates.get('Strawberry')),
-      ).not.toBeDefined();
-      expect(cacheContent.haste.map.get('Strawberry')).toEqual({
-        g: [path.join('fruits', 'Strawberry.js'), H.MODULE],
-      });
-      expect(cacheContent.haste.map.get('Pineapple')).toEqual({
-        g: [path.join('fruits', 'another', 'Pineapple.js'), H.MODULE],
-      });
-      // Make sure the other files are not affected.
-      expect(cacheContent.haste.map.get('Banana')).toEqual({
-        g: [path.join('fruits', 'Banana.js'), H.MODULE],
-      });
+      const {hasteMap} = await new FileMap(defaultConfig).build();
+      expect(hasteMap.getModule('Strawberry')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
+      );
+      expect(hasteMap.getModule('Pineapple')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'another', 'Pineapple.js'),
+      );
+      expect(hasteMap.getModule('Banana')).toEqual(
+        path.join(defaultConfig.rootDir, 'fruits', 'Banana.js'),
+      );
     });
   });
 
@@ -2008,9 +2062,6 @@ describe('FileMap', () => {
           hasteMap.getModule('Pear');
           throw new Error('should be unreachable');
         } catch (error) {
-          const {
-            DuplicateHasteCandidatesError,
-          } = require('../lib/DuplicateHasteCandidatesError');
           expect(error).toBeInstanceOf(DuplicateHasteCandidatesError);
           expect(error.hasteName).toBe('Pear');
           expect(error.platform).toBe('g');
