@@ -39,7 +39,7 @@ describe('require', () => {
       babelrc: false,
       cwd: '/',
       filename: 'test.js',
-      presets: [require.resolve('metro-react-native-babel-preset')],
+      presets: [require.resolve('@react-native/babel-preset')],
       retainLines: true,
       sourceMaps: 'inline',
       sourceType: 'module',
