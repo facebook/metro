@@ -36,8 +36,9 @@ const {Buffer} = require('buffer');
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
-  'metro-react-native-babel-transformer',
+  '@react-native/metro-babel-transformer',
 );
+
 const transformerContents = (() =>
   require('fs').readFileSync(babelTransformerPath))();
 

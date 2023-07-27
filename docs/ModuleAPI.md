@@ -41,7 +41,7 @@ Similar to [`module.exports`](https://nodejs.org/api/modules.html#moduleexports)
 We currently recommend the use of [`@babel/plugin-transform-modules-commonjs`](https://babeljs.io/docs/babel-plugin-transform-modules-commonjs) in Metro projects to support `import` and `export`.
 
 :::note
-In React Native projects that use `metro-react-native-babel-preset`, `import` and `export` are supported out of the box.
+In React Native projects that use `@react-native/babel-preset`, `import` and `export` are supported out of the box.
 :::
 
 ## `import()` (dynamic import)

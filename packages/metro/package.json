@@ -62,14 +62,14 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.20.0",
+    "@react-native/babel-preset": "0.73.15",
+    "@react-native/metro-babel-transformer": "0.73.11",
     "babel-jest": "^29.2.1",
     "dedent": "^0.7.0",
     "jest-snapshot": "^26.5.2",
     "jest-snapshot-serializer-raw": "^1.2.0",
     "metro-babel-register": "0.77.0",
     "metro-memory-fs": "0.77.0",
-    "metro-react-native-babel-preset": "0.77.0",
-    "metro-react-native-babel-transformer": "0.77.0",
     "mock-req": "^0.2.0",
     "mock-res": "^0.6.0",
     "stack-trace": "^0.0.10"
