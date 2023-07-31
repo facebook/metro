@@ -47,7 +47,6 @@ export type BuildResult = {
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
-  haste: RawHasteMap,
   mocks: RawMockMap,
   fileSystemData: mixed,
 }>;

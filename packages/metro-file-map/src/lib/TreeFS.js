@@ -89,11 +89,11 @@ export default class TreeFS implements MutableFileSystem {
   } {
     const changedFiles: FileData = new Map(files);
     const removedFiles: Set<string> = new Set();
-    for (const {normalPath, metadata} of this._metadataIterator(
-      this.#rootNode,
-      {includeSymlinks: true},
-    )) {
-      const newMetadata = files.get(normalPath);
+    for (const {canonicalPath, metadata} of this.metadataIterator({
+      includeSymlinks: true,
+      includeNodeModules: true,
+    })) {
+      const newMetadata = files.get(canonicalPath);
       if (newMetadata) {
         if ((newMetadata[H.SYMLINK] === 0) !== (metadata[H.SYMLINK] === 0)) {
           // Types differ, file has changed
@@ -106,7 +106,7 @@ export default class TreeFS implements MutableFileSystem {
           newMetadata[H.MTIME] === metadata[H.MTIME]
         ) {
           // Types and modified time match - not changed.
-          changedFiles.delete(normalPath);
+          changedFiles.delete(canonicalPath);
         } else if (
           newMetadata[H.SHA1] != null &&
           newMetadata[H.SHA1] === metadata[H.SHA1] &&
@@ -115,10 +115,10 @@ export default class TreeFS implements MutableFileSystem {
           // Content matches - update modified time but don't revisit
           const updatedMetadata = [...metadata];
           updatedMetadata[H.MTIME] = newMetadata[H.MTIME];
-          changedFiles.set(normalPath, updatedMetadata);
+          changedFiles.set(canonicalPath, updatedMetadata);
         }
       } else {
-        removedFiles.add(normalPath);
+        removedFiles.add(canonicalPath);
       }
     }
     return {
@@ -140,8 +140,11 @@ export default class TreeFS implements MutableFileSystem {
   getAllFiles(): Array<Path> {
     const rootDir = this.#rootDir;
     return Array.from(
-      this._metadataIterator(this.#rootNode, {includeSymlinks: false}),
-      ({normalPath}) => fastPath.resolve(rootDir, normalPath),
+      this.metadataIterator({
+        includeSymlinks: false,
+        includeNodeModules: true,
+      }),
+      ({canonicalPath}) => fastPath.resolve(rootDir, canonicalPath),
     );
   }
 
@@ -419,17 +422,39 @@ export default class TreeFS implements MutableFileSystem {
     };
   }
 
+  *metadataIterator(opts: {
+    includeSymlinks: boolean,
+    includeNodeModules: boolean,
+  }): Iterable<{
+    baseName: string,
+    canonicalPath: string,
+    metadata: FileMetaData,
+  }> {
+    yield* this._metadataIterator(this.#rootNode, opts);
+  }
+
   *_metadataIterator(
     rootNode: DirectoryNode,
-    opts: {includeSymlinks: boolean},
+    opts: {includeSymlinks: boolean, includeNodeModules: boolean},
     prefix: string = '',
-  ): Iterable<{normalPath: string, metadata: FileMetaData}> {
+  ): Iterable<{
+    baseName: string,
+    canonicalPath: string,
+    metadata: FileMetaData,
+  }> {
     for (const [name, node] of rootNode) {
+      if (
+        !opts.includeNodeModules &&
+        node instanceof Map &&
+        name === 'node_modules'
+      ) {
+        continue;
+      }
       const prefixedName = prefix === '' ? name : prefix + path.sep + name;
       if (node instanceof Map) {
         yield* this._metadataIterator(node, opts, prefixedName);
       } else if (node[H.SYMLINK] === 0 || opts.includeSymlinks) {
-        yield {normalPath: prefixedName, metadata: node};
+        yield {canonicalPath: prefixedName, metadata: node, baseName: name};
       }
     }
   }

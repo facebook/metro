@@ -800,18 +800,6 @@ describe('FileMap', () => {
     ).toMatchSnapshot();
   });
 
-  it('warns on duplicate module ids only once', async () => {
-    mockFs[path.join('/', 'project', 'fruits', 'other', 'Strawberry.js')] = `
-      const Banana = require("Banana");
-    `;
-
-    await new FileMap(defaultConfig).build();
-    expect(console.warn).toHaveBeenCalledTimes(1);
-
-    await new FileMap(defaultConfig).build();
-    expect(console.warn).toHaveBeenCalledTimes(1);
-  });
-
   it('throws on duplicate module ids if "throwOnModuleCollision" is set to true', async () => {
     expect.assertions(1);
     // Raspberry thinks it is a Strawberry
@@ -928,7 +916,6 @@ describe('FileMap', () => {
     expect(serialize(data.fileSystem)).toEqual(
       serialize(initialData.fileSystem),
     );
-    expect(deepNormalize(data.haste.map)).toEqual(initialData.haste.map);
   });
 
   it('only does minimal file system access when files change', async () => {
@@ -941,7 +928,6 @@ describe('FileMap', () => {
       initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Strawberry']);
 
-    const initialData = cacheContent;
     fs.readFileSync.mockClear();
     expect(mockCacheManager.read).toHaveBeenCalledTimes(1);
 
@@ -972,9 +958,6 @@ describe('FileMap', () => {
     expect(
       fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Kiwi']);
-
-    const map = new Map(initialData.haste.map);
-    expect(deepNormalize(data.haste.map)).toEqual(map);
   });
 
   it('correctly handles file deletions', async () => {

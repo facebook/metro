@@ -143,7 +143,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '6';
+const CACHE_BREAKER = '7';
 
 const CHANGE_INTERVAL = 30;
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
@@ -362,20 +362,7 @@ export default class FileMap extends EventEmitter {
         const mocks = initialData?.mocks ?? new Map();
 
         this._startupPerfLogger?.point('constructHasteMap_start');
-        const hasteOptions = {
-          console: this._console,
-          platforms: new Set(this._options.platforms),
-          rootDir,
-          throwOnModuleCollision: this._options.throwOnModuleCollision,
-        };
-
-        const hasteMap =
-          initialData != null
-            ? MutableHasteMap.fromDeserializedSnapshot(
-                initialData.haste,
-                hasteOptions,
-              )
-            : new MutableHasteMap(hasteOptions);
+        const hasteMap = this._constructHasteMap(fileSystem);
         this._startupPerfLogger?.point('constructHasteMap_end');
 
         const fileDelta = await this._buildFileDelta({
@@ -411,6 +398,32 @@ export default class FileMap extends EventEmitter {
       this._startupPerfLogger?.point('build_end');
       return result;
     });
+  }
+
+  _constructHasteMap(fileSystem: TreeFS): MutableHasteMap {
+    const hasteMap = new MutableHasteMap({
+      console: this._console,
+      platforms: new Set(this._options.platforms),
+      rootDir: this._options.rootDir,
+      throwOnModuleCollision: this._options.throwOnModuleCollision,
+    });
+    for (const {
+      baseName,
+      canonicalPath,
+      metadata,
+    } of fileSystem.metadataIterator({
+      // Symlinks and node_modules are never Haste modules or packages.
+      includeNodeModules: false,
+      includeSymlinks: false,
+    })) {
+      if (metadata[H.ID]) {
+        hasteMap.setModule(metadata[H.ID], [
+          canonicalPath,
+          baseName === 'package.json' ? H.PACKAGE : H.MODULE,
+        ]);
+      }
+    }
+    return hasteMap;
   }
 
   /**
@@ -757,7 +770,6 @@ export default class FileMap extends EventEmitter {
     await this._cacheManager.write(
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
-        haste: hasteMap.getSerializableSnapshot(),
         clocks: new Map(clocks),
         mocks: new Map(mockMap),
       },

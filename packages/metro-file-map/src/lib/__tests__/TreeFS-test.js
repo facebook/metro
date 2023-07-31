@@ -31,12 +31,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     tfs = new TreeFS({
       rootDir: p('/project'),
       files: new Map([
-        [p('foo/another.js'), ['', 123, 0, 0, '', '', 0]],
+        [p('foo/another.js'), ['another', 123, 0, 0, '', '', 0]],
         [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
         [p('foo/link-to-bar.js'), ['', 0, 0, 0, '', '', p('../bar.js')]],
         [p('foo/link-to-another.js'), ['', 0, 0, 0, '', '', p('another.js')]],
         [p('../outside/external.js'), ['', 0, 0, 0, '', '', 0]],
-        [p('bar.js'), ['', 234, 0, 0, '', '', 0]],
+        [p('bar.js'), ['bar', 234, 0, 0, '', '', 0]],
         [p('link-to-foo'), ['', 456, 0, 0, '', '', p('././abnormal/../foo')]],
         [p('abs-link-out'), ['', 456, 0, 0, '', '', p('/outside/./baz/..')]],
         [p('root'), ['', 0, 0, 0, '', '', '..']],
@@ -44,6 +44,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('link-to-self'), ['', 123, 0, 0, '', '', p('./link-to-self')]],
         [p('link-cycle-1'), ['', 123, 0, 0, '', '', p('./link-cycle-2')]],
         [p('link-cycle-2'), ['', 123, 0, 0, '', '', p('./link-cycle-1')]],
+        [p('node_modules/pkg/a.js'), ['a', 123, 0, 0, '', '', 0]],
+        [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
       ]),
     });
   });
@@ -53,6 +55,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       p('/outside/external.js'),
       p('/project/bar.js'),
       p('/project/foo/another.js'),
+      p('/project/node_modules/pkg/a.js'),
+      p('/project/node_modules/pkg/package.json'),
     ]);
   });
 
@@ -123,6 +127,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         // Was a symlink, now a regular file
         [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
         [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
+        [p('node_modules/pkg/a.js'), ['a', 123, 0, 0, '', '', 0]],
+        [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
       ]);
       expect(tfs.getDifference(newFiles)).toEqual({
         changedFiles: new Map([
@@ -220,6 +226,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         p('/project/link-to-foo/link-to-another.js'),
         p('/project/abs-link-out/external.js'),
         p('/project/root/outside/external.js'),
+        p('/project/node_modules/pkg/a.js'),
+        p('/project/node_modules/pkg/package.json'),
       ]);
     });
 
@@ -238,6 +246,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         p('/project/foo/link-to-bar.js'),
         p('/project/foo/link-to-another.js'),
         p('/project/bar.js'),
+        p('/project/node_modules/pkg/a.js'),
+        p('/project/node_modules/pkg/package.json'),
       ]);
     });
 
@@ -303,6 +313,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       p('/project/foo/link-to-bar.js'),
       p('/project/foo/link-to-another.js'),
       p('/project/bar.js'),
+      p('/project/node_modules/pkg/a.js'),
+      p('/project/node_modules/pkg/package.json'),
     ]);
   });
 
@@ -317,6 +329,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           p('/project/fileatroot.js'),
           p('/project/foo/another.js'),
           p('/project/foo/new.js'),
+          p('/project/node_modules/pkg/a.js'),
+          p('/project/node_modules/pkg/package.json'),
         ]);
         expect(tfs.getSize(p('/project/link-to-foo/new.js'))).toEqual(1);
         expect(tfs.getSize(p('/project/fileatroot.js'))).toEqual(2);
@@ -341,6 +355,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           p('/project/bar.js'),
           p('/project/foo/another.js'),
           p('/project/foo/baz.js'),
+          p('/project/node_modules/pkg/a.js'),
+          p('/project/node_modules/pkg/package.json'),
         ]);
 
         expect(
@@ -377,6 +393,67 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       test('returns null for a non-existent file', () => {
         expect(tfs.remove('notexists.js')).toBeNull();
       });
+    });
+  });
+
+  describe('metadataIterator', () => {
+    test('iterates over all files with Haste names, skipping node_modules', () => {
+      expect([
+        ...tfs.metadataIterator({
+          includeSymlinks: false,
+          includeNodeModules: false,
+        }),
+      ]).toEqual([
+        {
+          baseName: 'another.js',
+          canonicalPath: p('foo/another.js'),
+          metadata: ['another', 123, 0, 0, '', '', 0],
+        },
+        {
+          baseName: 'external.js',
+          canonicalPath: p('../outside/external.js'),
+          metadata: ['', 0, 0, 0, '', '', 0],
+        },
+        {
+          baseName: 'bar.js',
+          canonicalPath: p('bar.js'),
+          metadata: ['bar', 234, 0, 0, '', '', 0],
+        },
+      ]);
+    });
+
+    test('iterates over all files with Haste names, skipping node_modules', () => {
+      expect([
+        ...tfs.metadataIterator({
+          includeSymlinks: false,
+          includeNodeModules: true,
+        }),
+      ]).toEqual(
+        expect.arrayContaining([
+          {
+            baseName: 'a.js',
+            canonicalPath: p('node_modules/pkg/a.js'),
+            metadata: ['a', 123, 0, 0, '', '', 0],
+          },
+        ]),
+      );
+    });
+
+    test('iterates over all files with Haste names, skipping node_modules', () => {
+      expect([
+        ...tfs.metadataIterator({
+          includeSymlinks: true,
+          includeNodeModules: false,
+        }),
+      ]).toEqual(
+        expect.arrayContaining([
+          {
+            baseName: 'link-to-bar.js',
+            canonicalPath: p('foo/link-to-bar.js'),
+            metadata: ['', 0, 0, 0, '', '', p('../bar.js')],
+          },
+        ]),
+      );
     });
   });
 });

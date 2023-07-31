@@ -42,9 +42,7 @@ export interface BuildResult {
 
 export interface CacheData {
   readonly clocks: WatchmanClocks;
-  readonly map: RawHasteMap['map'];
   readonly mocks: MockData;
-  readonly duplicates: RawHasteMap['duplicates'];
   readonly files: FileData;
 }
 
