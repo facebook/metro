@@ -21,6 +21,7 @@ import type {
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
 import * as fastPath from '../../lib/fast_path';
+import normalizePathSeparatorsToPosix from '../../lib/normalizePathSeparatorsToPosix';
 import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
 import {planQuery} from './planQuery';
 import invariant from 'invariant';
@@ -188,7 +189,7 @@ module.exports = async function watchmanCrawl({
           // By using scm queries, we can create the haste map on a different
           // system and import it, transforming the clock into a local clock.
           const since = previousState.clocks.get(
-            fastPath.relative(rootDir, root),
+            normalizePathSeparatorsToPosix(fastPath.relative(rootDir, root)),
           );
 
           perfLogger?.annotate({
@@ -289,7 +290,7 @@ module.exports = async function watchmanCrawl({
     const fsRoot = normalizePathSeparatorsToSystem(watchRoot);
     const relativeFsRoot = fastPath.relative(rootDir, fsRoot);
     newClocks.set(
-      relativeFsRoot,
+      normalizePathSeparatorsToPosix(relativeFsRoot),
       // Ensure we persist only the local clock.
       typeof response.clock === 'string'
         ? response.clock
