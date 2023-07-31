@@ -143,9 +143,13 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '7';
+const CACHE_BREAKER = '6';
 
 const CHANGE_INTERVAL = 30;
+// Periodically yield to the event loop to allow parallel I/O, etc.
+// Based on 200k files taking up to 800ms => max 40ms between yields.
+const YIELD_EVERY_NUM_HASTE_FILES = 10000;
+
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const PACKAGE_JSON = path.sep + 'package.json';
 const VCS_DIRECTORIES = ['.git', '.hg']
@@ -361,15 +365,18 @@ export default class FileMap extends EventEmitter {
         this._startupPerfLogger?.point('constructFileSystem_end');
         const mocks = initialData?.mocks ?? new Map();
 
-        this._startupPerfLogger?.point('constructHasteMap_start');
-        const hasteMap = this._constructHasteMap(fileSystem);
-        this._startupPerfLogger?.point('constructHasteMap_end');
+        // Construct the Haste map from the cached file system state while
+        // crawling to build a diff of current state vs cached. `fileSystem`
+        // is not mutated during either operation.
+        const [fileDelta, hasteMap] = await Promise.all([
+          this._buildFileDelta({
+            fileSystem,
+            clocks: initialData?.clocks ?? new Map(),
+          }),
+          this._constructHasteMap(fileSystem),
+        ]);
 
-        const fileDelta = await this._buildFileDelta({
-          fileSystem,
-          clocks: initialData?.clocks ?? new Map(),
-        });
-
+        // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
         await this._applyFileDelta(fileSystem, hasteMap, mocks, fileDelta);
 
         await this._takeSnapshotAndPersist(
@@ -400,13 +407,15 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  _constructHasteMap(fileSystem: TreeFS): MutableHasteMap {
+  async _constructHasteMap(fileSystem: TreeFS): Promise<MutableHasteMap> {
+    this._startupPerfLogger?.point('constructHasteMap_start');
     const hasteMap = new MutableHasteMap({
       console: this._console,
       platforms: new Set(this._options.platforms),
       rootDir: this._options.rootDir,
       throwOnModuleCollision: this._options.throwOnModuleCollision,
     });
+    let hasteFiles = 0;
     for (const {
       baseName,
       canonicalPath,
@@ -421,8 +430,13 @@ export default class FileMap extends EventEmitter {
           canonicalPath,
           baseName === 'package.json' ? H.PACKAGE : H.MODULE,
         ]);
+        if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
+          await new Promise(setImmediate);
+        }
       }
     }
+    this._startupPerfLogger?.annotate({int: {hasteFiles}});
+    this._startupPerfLogger?.point('constructHasteMap_end');
     return hasteMap;
   }
 
