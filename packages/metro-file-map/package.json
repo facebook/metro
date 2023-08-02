@@ -18,7 +18,6 @@
     "fb-watchman": "^2.0.0",
     "graceful-fs": "^4.2.4",
     "invariant": "^2.2.4",
-    "jest-regex-util": "^27.0.6",
     "jest-util": "^27.2.0",
     "jest-worker": "^27.2.0",
     "micromatch": "^4.0.4",

@@ -51,8 +51,6 @@ import {Watcher} from './Watcher';
 import {worker} from './worker';
 import EventEmitter from 'events';
 import invariant from 'invariant';
-// $FlowFixMe[untyped-import] - jest-regex-util
-import {escapePathForRegex} from 'jest-regex-util';
 import {Worker} from 'jest-worker';
 import * as path from 'path';
 import {AbortController} from 'node-abort-controller';
@@ -152,9 +150,7 @@ const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const PACKAGE_JSON = path.sep + 'package.json';
-const VCS_DIRECTORIES = ['.git', '.hg']
-  .map(vcs => escapePathForRegex(path.sep + vcs + path.sep))
-  .join('|');
+const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 const WATCHMAN_REQUIRED_CAPABILITIES = [
   'field-content.sha1hex',
   'relative_root',
