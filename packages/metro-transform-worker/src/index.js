@@ -292,8 +292,7 @@ async function transformJS(
 
   if (options.inlineRequires) {
     plugins.push([
-      // $FlowFixMe[untyped-import] untyped module
-      require('babel-preset-fbjs/plugins/inline-requires'),
+      metroTransformPlugins.inlineRequiresPlugin,
       {
         ...babelPluginOpts,
         ignoredRequires: options.nonInlinedRequires,

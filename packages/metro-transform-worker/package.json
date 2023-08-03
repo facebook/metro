@@ -17,7 +17,6 @@
     "@babel/generator": "^7.20.0",
     "@babel/parser": "^7.20.0",
     "@babel/types": "^7.20.0",
-    "babel-preset-fbjs": "^3.4.0",
     "metro": "0.77.0",
     "metro-babel-transformer": "0.77.0",
     "metro-cache": "0.77.0",
