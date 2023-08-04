@@ -20,12 +20,14 @@ import EventEmitter from 'events';
 const HmrServer = require('../HmrServer');
 const getGraphId = require('../lib/getGraphId');
 const {getDefaultValues} = require('metro-config/src/defaults');
+import type {TransformResultDependency} from '../DeltaBundler/types.flow';
 
 jest.mock('../lib/transformHelpers', () => ({
-  getResolveDependencyFn: () => (from, to) => ({
-    type: 'sourceFile',
-    filePath: `${require('path').resolve(from, to)}.js`,
-  }),
+  getResolveDependencyFn:
+    () => (from: string, to: TransformResultDependency) => ({
+      type: 'sourceFile',
+      filePath: `${require('path').resolve(from, to.name)}.js`,
+    }),
 }));
 
 jest.mock('../IncrementalBundler');

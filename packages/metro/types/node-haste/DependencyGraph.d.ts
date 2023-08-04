@@ -11,7 +11,10 @@
 import {EventEmitter} from 'events';
 import {ConfigT} from 'metro-config';
 import {ResolverInputOptions} from '../shared/types';
-import {BundlerResolution} from '../DeltaBundler/types';
+import {
+  BundlerResolution,
+  TransformResultDependency,
+} from '../DeltaBundler/types';
 
 export default class DependencyGraph extends EventEmitter {
   constructor(
@@ -48,7 +51,7 @@ export default class DependencyGraph extends EventEmitter {
 
   resolveDependency(
     from: string,
-    to: string,
+    to: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
     options: {assumeFlatNodeModules: boolean},

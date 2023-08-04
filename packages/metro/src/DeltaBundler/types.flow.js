@@ -128,7 +128,10 @@ export type BundlerResolution = $ReadOnly<{
 }>;
 
 export type Options<T = MixedOutput> = {
-  +resolve: (from: string, to: string) => BundlerResolution,
+  +resolve: (
+    from: string,
+    dependency: TransformResultDependency,
+  ) => BundlerResolution,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,

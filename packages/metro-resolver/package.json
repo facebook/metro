@@ -14,5 +14,8 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "metro": "0.77.0"
   }
 }

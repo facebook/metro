@@ -56,13 +56,14 @@ type DependencyData = $ReadOnly<{
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
-  locs: Array<BabelSourceLocation>,
+  locs: $ReadOnlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
 }>;
 
 export type MutableInternalDependency = {
   ...DependencyData,
+  locs: Array<BabelSourceLocation>,
   index: number,
   name: string,
 };

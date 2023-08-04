@@ -120,7 +120,14 @@ class HmrServer<TClient: Client> {
     const resolvedEntryFilePath = resolutionFn(
       (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
         '/.',
-      entryFile,
+      {
+        name: entryFile,
+        data: {
+          key: entryFile,
+          asyncType: null,
+          locs: [],
+        },
+      },
     ).filePath;
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       resolverOptions,

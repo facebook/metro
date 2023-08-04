@@ -36,7 +36,10 @@ const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
 import type {ResolverInputOptions} from '../shared/types.flow';
-import type {BundlerResolution} from '../DeltaBundler/types.flow';
+import type {
+  BundlerResolution,
+  TransformResultDependency,
+} from '../DeltaBundler/types.flow';
 
 const NULL_PLATFORM = Symbol();
 
@@ -310,7 +313,7 @@ class DependencyGraph extends EventEmitter {
 
   resolveDependency(
     from: string,
-    to: string,
+    dependency: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
 
@@ -319,6 +322,7 @@ class DependencyGraph extends EventEmitter {
       assumeFlatNodeModules: false,
     },
   ): BundlerResolution {
+    const to = dependency.name;
     const isSensitiveToOriginFolder =
       // Resolution is always relative to the origin folder unless we assume a flat node_modules
       !assumeFlatNodeModules ||
@@ -353,7 +357,7 @@ class DependencyGraph extends EventEmitter {
       try {
         resolution = this._moduleResolver.resolveDependency(
           this._moduleCache.getModule(from),
-          to,
+          dependency,
           true,
           platform,
           resolverOptions,

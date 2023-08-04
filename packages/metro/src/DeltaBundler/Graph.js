@@ -574,7 +574,7 @@ export class Graph<T = MixedOutput> {
       } else {
         try {
           resolvedDep = {
-            absolutePath: options.resolve(parentPath, dep.name).filePath,
+            absolutePath: options.resolve(parentPath, dep).filePath,
             data: dep,
           };
 

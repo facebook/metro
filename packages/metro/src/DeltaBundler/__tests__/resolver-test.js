@@ -12,6 +12,7 @@
 'use strict';
 
 import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {TransformResultDependency} from '../types.flow';
 import type {InputConfigT} from 'metro-config/src/configTypes.flow';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
@@ -40,6 +41,17 @@ let resolver;
 type MockFSDirContents = $ReadOnly<{
   [name: string]: string | MockFSDirContents,
 }>;
+
+function dep(name: string): TransformResultDependency {
+  return {
+    name,
+    data: {
+      asyncType: null,
+      key: name,
+      locs: [],
+    },
+  };
+}
 
 ['linux', 'win32'].forEach(osPlatform => {
   function setMockFileSystem(object: MockFSDirContents) {
@@ -103,13 +115,13 @@ type MockFSDirContents = $ReadOnly<{
     return {
       resolve: (
         from: string,
-        to: string,
+        dependency: TransformResultDependency,
         resolverOptions?: ResolverInputOptions = {},
         options: void | {assumeFlatNodeModules: boolean},
       ) =>
         dependencyGraph.resolveDependency(
           from,
-          to,
+          dependency,
           platform ?? null,
           resolverOptions,
           options,
@@ -191,7 +203,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a.js')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./a.js'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a.js'),
         });
@@ -205,7 +217,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./a'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a.js'),
         });
@@ -220,7 +232,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./a'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a.js'),
         });
@@ -243,12 +255,12 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver();
 
         expect(
-          resolver.resolve(p('/root/folderA/folderB/foo.js'), '..'),
+          resolver.resolve(p('/root/folderA/folderB/foo.js'), dep('..')),
         ).toEqual({type: 'sourceFile', filePath: p('/root/folderA/index.js')});
         expect(
-          resolver.resolve(p('/root/folderA/folderB/index.js'), '..'),
+          resolver.resolve(p('/root/folderA/folderB/index.js'), dep('..')),
         ).toEqual({type: 'sourceFile', filePath: p('/root/folderA/index.js')});
-        expect(resolver.resolve(p('/root/folderA/foo.js'), '..')).toEqual({
+        expect(resolver.resolve(p('/root/folderA/foo.js'), dep('..'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/index.js'),
         });
@@ -262,7 +274,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/foo.js'), '.')).toEqual({
+        expect(resolver.resolve(p('/root/foo.js'), dep('.'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/index.js'),
         });
@@ -280,11 +292,11 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/foo.js'), '.')).toEqual({
+        expect(resolver.resolve(p('/root/foo.js'), dep('.'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/index.js'),
         });
-        expect(resolver.resolve(p('/root/folderA/foo.js'), '.')).toEqual({
+        expect(resolver.resolve(p('/root/folderA/foo.js'), dep('.'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/folderA/index.js'),
         });
@@ -300,7 +312,7 @@ type MockFSDirContents = $ReadOnly<{
         const {resolve, end} = await createResolver({
           resolver: {sourceExts: ['another', 'js']},
         });
-        expect(resolve(p('/root/index.js'), './a')).toEqual({
+        expect(resolve(p('/root/index.js'), dep('./a'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a.another'),
         });
@@ -309,7 +321,7 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver({
           resolver: {sourceExts: ['js', 'another']},
         });
-        expect(resolver.resolve(p('/root/index.js'), './a')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./a'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a.js'),
         });
@@ -323,7 +335,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './a.another'),
+          resolver.resolve(p('/root/index.js'), dep('./a.another')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -337,18 +349,22 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './folder/foo')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./folder/foo')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/folder/foo.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), './folder')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./folder'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/folder/index.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), './folder/')).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/folder/index.js'),
-        });
+        expect(resolver.resolve(p('/root/index.js'), dep('./folder/'))).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: p('/root/folder/index.js'),
+          },
+        );
       });
 
       it('resolves files when there is a folder with the same name', async () => {
@@ -361,11 +377,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './folder')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./folder'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/folder.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), './folder.js')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./folder.js')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/folder.js'),
         });
@@ -386,10 +404,12 @@ type MockFSDirContents = $ReadOnly<{
               additionalExts: ['cjs'],
             },
           });
-          expect(resolver.resolve(p('/root/index.js'), './a.cjs')).toEqual({
-            type: 'sourceFile',
-            filePath: p('/root/a.cjs'),
-          });
+          expect(resolver.resolve(p('/root/index.js'), dep('./a.cjs'))).toEqual(
+            {
+              type: 'sourceFile',
+              filePath: p('/root/a.cjs'),
+            },
+          );
         });
 
         it('fails when implicitly requiring a file outside sourceExts', async () => {
@@ -407,7 +427,7 @@ type MockFSDirContents = $ReadOnly<{
             },
           });
           expect(() =>
-            resolver.resolve(p('/root/index.js'), './a'),
+            resolver.resolve(p('/root/index.js'), dep('./a')),
           ).toThrowErrorMatchingSnapshot();
         });
       });
@@ -424,7 +444,10 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/index.js'), p('/root/folder/index.js')),
+          resolver.resolve(
+            p('/root/index.js'),
+            dep(p('/root/folder/index.js')),
+          ),
         ).toEqual({type: 'sourceFile', filePath: p('/root/folder/index.js')});
       });
     });
@@ -437,9 +460,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './package.json')).toEqual(
-          {type: 'sourceFile', filePath: p('/root/package.json')},
-        );
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./package.json')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/package.json')});
       });
 
       it('finds nested packages in node_modules', async () => {
@@ -472,21 +495,21 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'bar')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('bar'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/bar/index.js'),
         });
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'qux'),
+          resolver.resolve(p('/root/index.js'), dep('qux')),
         ).toThrowErrorMatchingSnapshot();
         expect(
-          resolver.resolve(p('/root/node_modules/foo/index.js'), 'bar'),
+          resolver.resolve(p('/root/node_modules/foo/index.js'), dep('bar')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/node_modules/bar/index.js'),
         });
         expect(
-          resolver.resolve(p('/root/node_modules/foo/index.js'), 'baz'),
+          resolver.resolve(p('/root/node_modules/foo/index.js'), dep('baz')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/baz/index.js'),
@@ -506,11 +529,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'foo/lib/foo')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('foo/lib/foo')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/lib/foo.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), 'foo/lib')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo/lib'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/lib/index.js'),
         });
@@ -539,14 +564,14 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/lib/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/lib/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/index.js'),
         });
         expect(
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
-            'foo',
+            dep('foo'),
           ),
         ).toEqual({
           type: 'sourceFile',
@@ -578,7 +603,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/lib/index.js'), 'foo', undefined, {
+          resolver.resolve(p('/root/lib/index.js'), dep('foo'), undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toEqual({
@@ -588,7 +613,7 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/lib/subfolder/anotherSubfolder/index.js'),
-            'foo',
+            dep('foo'),
             undefined,
             {assumeFlatNodeModules: true},
           ),
@@ -610,7 +635,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'sha.js')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('sha.js'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/sha.js/index.js'),
         });
@@ -628,7 +653,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'Y')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('Y'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/Y/index.js'),
         });
@@ -650,12 +675,12 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver();
 
         // TODO: Should we fail here?
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/index.js'),
         });
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'invalidName'),
+          resolver.resolve(p('/root/index.js'), dep('invalidName')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -672,7 +697,7 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver();
 
         // TODO: Is this behaviour correct?
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/index.js'),
         });
@@ -690,7 +715,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/index.js'),
         });
@@ -713,7 +738,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/lib/index.js'),
         });
@@ -738,7 +763,7 @@ type MockFSDirContents = $ReadOnly<{
             additionalExts: ['cjs'],
           },
         });
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/main.cjs'),
         });
@@ -760,11 +785,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('leftpad.js')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/leftpad.js/index.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('x.y.z'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/x.y.z/index.js'),
         });
@@ -786,7 +813,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/index.js'), './node_modules/aPackage'),
+          resolver.resolve(p('/root/index.js'), dep('./node_modules/aPackage')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/main.js'),
@@ -808,7 +835,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/index.js'), 'aPackage/lib/foo/bar'),
+          resolver.resolve(p('/root/index.js'), dep('aPackage/lib/foo/bar')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/lib/foo/bar.js'),
@@ -832,7 +859,9 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
             });
@@ -854,7 +883,9 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
             });
@@ -875,7 +906,9 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
             });
@@ -898,13 +931,15 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
             });
             // TODO: Is this behaviour correct?
             expect(
-              resolver.resolve(p('/root/index.js'), 'aPackage/main.js'),
+              resolver.resolve(p('/root/index.js'), dep('aPackage/main.js')),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/main.js'),
@@ -928,12 +963,14 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
             });
             expect(
-              resolver.resolve(p('/root/index.js'), 'aPackage/main'),
+              resolver.resolve(p('/root/index.js'), dep('aPackage/main')),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/node_modules/aPackage/client.js'),
@@ -971,7 +1008,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './main.js',
+                dep('./main.js'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -981,13 +1018,13 @@ type MockFSDirContents = $ReadOnly<{
             expect(() =>
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './foo.js',
+                dep('./foo.js'),
               ),
             ).toThrowErrorMatchingSnapshot();
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './dir/file',
+                dep('./dir/file'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -996,7 +1033,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './dir',
+                dep('./dir'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1006,7 +1043,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './dir/index',
+                dep('./dir/index'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1015,7 +1052,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/dir/index.js'),
-                '../main',
+                dep('../main'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1053,7 +1090,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad',
+                dep('left-pad'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1063,7 +1100,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(() =>
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad/main',
+                dep('left-pad/main'),
               ),
             ).toThrowErrorMatchingSnapshot();
           });
@@ -1089,7 +1126,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad',
+                dep('left-pad'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1128,7 +1165,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad',
+                dep('left-pad'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1139,7 +1176,7 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                'left-pad/foo',
+                dep('left-pad/foo'),
               ),
             ).toEqual({
               type: 'sourceFile',
@@ -1171,20 +1208,20 @@ type MockFSDirContents = $ReadOnly<{
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
-                './foo',
+                dep('./foo'),
               ),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
             });
             expect(
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
+              resolver.resolve(p('/root/index.js'), dep('aPackage/foo')),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
             });
             expect(
-              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
+              resolver.resolve(p('/root/index.js'), dep('aPackage/foo.js')),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/emptyModule.js'),
@@ -1213,7 +1250,7 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/node_modules/aPackage/index.js'),
-            'left-pad',
+            dep('left-pad'),
           ),
         ).toEqual({
           type: 'sourceFile',
@@ -1243,7 +1280,7 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/node_modules/aPackage/index.js'),
-            'left-pad',
+            dep('left-pad'),
           ),
         ).toEqual({
           type: 'sourceFile',
@@ -1274,14 +1311,17 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/node_modules/aPackage/index.js'),
-            'left-pad',
+            dep('left-pad'),
           ),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/left-pad-custom.js'),
         });
         expect(
-          resolver.resolve(p('/root/node_modules/aPackage/index.js'), 'jest'),
+          resolver.resolve(
+            p('/root/node_modules/aPackage/index.js'),
+            dep('jest'),
+          ),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/jest-browser.js'),
@@ -1306,7 +1346,7 @@ type MockFSDirContents = $ReadOnly<{
           resolver: {resolverMainFields: ['custom-field']},
         });
         expect(
-          resolver.resolve(p('/root/node_modules/index.js'), 'aPackage'),
+          resolver.resolve(p('/root/node_modules/index.js'), dep('aPackage')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/aPackage/main-custom.js'),
@@ -1323,15 +1363,17 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({}, 'ios');
 
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.ios.js'),
         });
         // TODO: Is this behaviour expected?
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './foo.js'),
+          resolver.resolve(p('/root/index.js'), dep('./foo.js')),
         ).toThrowErrorMatchingSnapshot();
-        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./foo.ios.js')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.ios.js'),
         });
@@ -1346,16 +1388,18 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({}, 'ios');
 
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.ios.js'),
         });
         // TODO: Is this behaviour expected?
-        expect(resolver.resolve(p('/root/index.js'), './foo.js')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./foo.js'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./foo.ios.js')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.ios.js'),
         });
@@ -1370,11 +1414,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver({}, 'ios');
-        expect(resolver.resolve(p('/root/index.js'), './dir/index')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./dir/index')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/dir/index.ios.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), './dir')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./dir'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/dir/index.ios.js'),
         });
@@ -1395,7 +1441,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver({}, 'ios');
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/main.ios.js'),
         });
@@ -1418,7 +1464,9 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver({}, 'ios');
 
         // TODO: Is this behaviour expected?
-        expect(() => resolver.resolve(p('/root/index.js'), 'foo')).toThrow();
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('foo')),
+        ).toThrow();
       });
 
       it('does not resolve when the browser mappings of node_modules packages', async () => {
@@ -1441,7 +1489,7 @@ type MockFSDirContents = $ReadOnly<{
 
         // TODO: Is this behaviour expected?
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'foo/bar'),
+          resolver.resolve(p('/root/index.js'), dep('foo/bar')),
         ).toThrow();
       });
 
@@ -1456,7 +1504,7 @@ type MockFSDirContents = $ReadOnly<{
           {resolver: {platforms: ['playstation']}},
           'playstation',
         );
-        expect(resolve(p('/root/index.js'), './foo')).toEqual({
+        expect(resolve(p('/root/index.js'), dep('./foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.playstation.js'),
         });
@@ -1467,7 +1515,7 @@ type MockFSDirContents = $ReadOnly<{
           'xbox',
         );
         // TODO: Is this behaviour expected?
-        expect(resolver.resolve(p('/root/index.js'), './foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo.xbox.js'),
         });
@@ -1482,7 +1530,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './asset.png')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./asset.png')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/asset.png'),
         });
@@ -1498,12 +1548,12 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './a.png')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./a.png'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/a@1.5x.png'),
         });
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './a@1.5x.png'),
+          resolver.resolve(p('/root/index.js'), dep('./a@1.5x.png')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -1517,12 +1567,12 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
 
-        expect(resolver.resolve(p('/root/index.js'), './c.png')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('./c.png'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/c.png'),
         });
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './c@2x.png'),
+          resolver.resolve(p('/root/index.js'), dep('./c@2x.png')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -1536,7 +1586,7 @@ type MockFSDirContents = $ReadOnly<{
 
         // TODO: Is this behaviour correct?
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './asset.PNG'),
+          resolver.resolve(p('/root/index.js'), dep('./asset.PNG')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -1549,12 +1599,14 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({resolver: {assetExts: ['ast']}});
 
-        expect(resolver.resolve(p('/root/index.js'), './asset1.ast')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./asset1.ast')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/asset1.ast'),
         });
         expect(() =>
-          resolver.resolve(p('/root/index.js'), './asset2.png'),
+          resolver.resolve(p('/root/index.js'), dep('./asset2.png')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -1572,7 +1624,7 @@ type MockFSDirContents = $ReadOnly<{
         resolver = await createResolver();
 
         expect(
-          resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
+          resolver.resolve(p('/root/folder/index.js'), dep('foo/asset.png')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/asset.png'),
@@ -1595,17 +1647,19 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/main.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage/')).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/main.js'),
-        });
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage/other')).toEqual(
-          {type: 'sourceFile', filePath: p('/root/aPackage/other.js')},
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage/'))).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/main.js'),
+          },
         );
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('aPackage/other')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/aPackage/other.js')});
       });
 
       it('resolves main package module to index.js by default', async () => {
@@ -1618,7 +1672,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/index.js'),
         });
@@ -1639,9 +1693,9 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'aPackage'),
+          resolver.resolve(p('/root/index.js'), dep('aPackage')),
         ).toThrowErrorMatchingSnapshot();
-        expect(resolver.resolve(p('/root/index.js'), 'bPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('bPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/randomFolderName/index.js'),
         });
@@ -1659,7 +1713,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/lib/index.js'),
         });
@@ -1679,11 +1733,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'leftpad.js')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('leftpad.js')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/leftpad.js/index.js'),
         });
-        expect(resolver.resolve(p('/root/index.js'), 'x.y.z')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('x.y.z'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/x.y.z/index.js'),
         });
@@ -1703,12 +1759,17 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), './aPackage')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./aPackage')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/main.js'),
         });
         expect(
-          resolver.resolve(p('/root/aPackage/index.js'), '../anotherPackage'),
+          resolver.resolve(
+            p('/root/aPackage/index.js'),
+            dep('../anotherPackage'),
+          ),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/anotherPackage/main.js'),
@@ -1790,7 +1851,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), 'foo')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo/index.js'),
         });
@@ -1809,7 +1870,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver();
         expect(
-          resolver.resolve(p('/root/index.js'), 'aPackage/lib/foo/bar'),
+          resolver.resolve(p('/root/index.js'), dep('aPackage/lib/foo/bar')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/lib/foo/bar.js'),
@@ -1831,7 +1892,9 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/aPackage/client.js'),
             });
@@ -1852,12 +1915,14 @@ type MockFSDirContents = $ReadOnly<{
             });
 
             resolver = await createResolver();
-            expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+            expect(
+              resolver.resolve(p('/root/index.js'), dep('aPackage')),
+            ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/aPackage/client.js'),
             });
             expect(
-              resolver.resolve(p('/root/index.js'), 'aPackage/main'),
+              resolver.resolve(p('/root/index.js'), dep('aPackage/main')),
             ).toEqual({
               type: 'sourceFile',
               filePath: p('/root/aPackage/client.js'),
@@ -1884,7 +1949,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         expect(
-          resolver.resolve(p('/root/aPackage/index.js'), 'left-pad'),
+          resolver.resolve(p('/root/aPackage/index.js'), dep('left-pad')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/left-pad-custom.js'),
@@ -1913,7 +1978,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.js'),
         });
@@ -1929,10 +1996,10 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver(config);
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'hasteModule.js'),
+          resolver.resolve(p('/root/index.js'), dep('hasteModule.js')),
         ).toThrowErrorMatchingSnapshot();
         expect(() =>
-          resolver.resolve(p('/root/lib.js'), 'invalidName'),
+          resolver.resolve(p('/root/lib.js'), dep('invalidName')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -1943,7 +2010,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/dir/subdir/hasteModule.js'),
         });
@@ -1983,7 +2052,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.js'),
         });
@@ -2023,14 +2094,16 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         const {resolve, end} = await createResolver(config, 'ios');
-        expect(resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(resolve(p('/root/index.js'), dep('hasteModule'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.ios.js'),
         });
         end();
 
         resolver = await createResolver(config, 'android');
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/aPackage/index.js'),
         });
@@ -2044,14 +2117,16 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         const {resolve, end} = await createResolver(config, 'ios');
-        expect(resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(resolve(p('/root/index.js'), dep('hasteModule'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.ios.js'),
         });
         end();
 
         resolver = await createResolver(config, 'android');
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.js'),
         });
@@ -2091,7 +2166,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver(config);
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'hasteModule'),
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
         ).toThrowErrorMatchingSnapshot();
       });
 
@@ -2108,7 +2183,9 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         resolver = await createResolver(config);
-        expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toEqual({
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/hasteModule.js'),
         });
@@ -2139,7 +2216,7 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/node_modules/aPackage/index.js'),
-            'hastePackage',
+            dep('hastePackage'),
           ),
         ).toEqual({
           type: 'sourceFile',
@@ -2169,7 +2246,7 @@ type MockFSDirContents = $ReadOnly<{
         expect(
           resolver.resolve(
             p('/root/node_modules/aPackage/index.js'),
-            'hasteModule',
+            dep('hasteModule'),
           ),
         ).toEqual({
           type: 'sourceFile',
@@ -2200,11 +2277,15 @@ type MockFSDirContents = $ReadOnly<{
           },
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+        expect(
+          resolver.resolve(p('/root/folder/index.js'), dep('foo')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesFoo/lib/bar.js'),
         });
-        expect(resolver.resolve(p('/root/folder/index.js'), 'bar')).toEqual({
+        expect(
+          resolver.resolve(p('/root/folder/index.js'), dep('bar')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesBar/index.js'),
         });
@@ -2228,12 +2309,14 @@ type MockFSDirContents = $ReadOnly<{
           resolver: {extraNodeModules: {foo: p('/root/providesFoo')}},
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+        expect(
+          resolver.resolve(p('/root/folder/index.js'), dep('foo')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/foo/index.js'),
         });
         expect(
-          resolver.resolve(p('/root/folder/index.js'), 'foo/lib/bar'),
+          resolver.resolve(p('/root/folder/index.js'), dep('foo/lib/bar')),
         ).toEqual({type: 'sourceFile', filePath: p('/root/foo/lib/bar.js')});
       });
 
@@ -2252,13 +2335,13 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         expect(
-          resolver.resolve(p('/root/folder/index.js'), '@foo/bar'),
+          resolver.resolve(p('/root/folder/index.js'), dep('@foo/bar')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesFoo/index.js'),
         });
         expect(
-          resolver.resolve(p('/root/folder/index.js'), '@foo/bar/lib/bar'),
+          resolver.resolve(p('/root/folder/index.js'), dep('@foo/bar/lib/bar')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesFoo/lib/bar.js'),
@@ -2281,7 +2364,9 @@ type MockFSDirContents = $ReadOnly<{
           resolver: {extraNodeModules: {foo: p('/root/providesFoo')}},
         });
 
-        expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toEqual({
+        expect(
+          resolver.resolve(p('/root/folder/index.js'), dep('foo')),
+        ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesFoo/index-client.js'),
         });
@@ -2298,7 +2383,7 @@ type MockFSDirContents = $ReadOnly<{
         });
 
         expect(
-          resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
+          resolver.resolve(p('/root/folder/index.js'), dep('foo/asset.png')),
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/providesFoo/asset.png'),
@@ -2325,13 +2410,15 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), './myFolder/foo')).toEqual(
-          {type: 'sourceFile', filePath: p('/root/overriden.js')},
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./myFolder/foo')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/overriden.js')});
+        expect(resolver.resolve(p('/root/index.js'), dep('./invalid'))).toEqual(
+          {
+            type: 'sourceFile',
+            filePath: p('/root/overriden.js'),
+          },
         );
-        expect(resolver.resolve(p('/root/index.js'), './invalid')).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/overriden.js'),
-        });
       });
 
       it('overrides node_modules package resolutions', async () => {
@@ -2348,7 +2435,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/overriden.js'),
         });
@@ -2366,7 +2453,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/overriden.js'),
         });
@@ -2389,7 +2476,7 @@ type MockFSDirContents = $ReadOnly<{
           },
         });
 
-        expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toEqual({
+        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
           filePath: p('/root/overriden.js'),
         });
@@ -2404,7 +2491,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolver = await createResolver({resolver: {resolveRequest}}, 'ios');
 
-        resolver.resolve(p('/root/index.js'), './foo');
+        resolver.resolve(p('/root/index.js'), dep('./foo'));
 
         const [context, request, platform] = resolveRequest.mock.calls[0];
 
@@ -2436,16 +2523,16 @@ type MockFSDirContents = $ReadOnly<{
           type: 'sourceFile',
           filePath: p('/target1.js'),
         });
-        expect(resolver.resolve(p('/root1/dir/a.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root1/dir/a.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target1.js'),
         });
-        expect(resolver.resolve(p('/root1/dir/b.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root1/dir/b.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target1.js'),
         });
         expect(resolveRequest).toHaveBeenCalledTimes(1);
-        expect(resolver.resolve(p('/root1/fake.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root1/fake.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target1.js'),
         });
@@ -2455,16 +2542,16 @@ type MockFSDirContents = $ReadOnly<{
           type: 'sourceFile',
           filePath: p('/target2.js'),
         });
-        expect(resolver.resolve(p('/root2/dir/a.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root2/dir/a.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target2.js'),
         });
-        expect(resolver.resolve(p('/root2/dir/b.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root2/dir/b.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target2.js'),
         });
         expect(resolveRequest).toHaveBeenCalledTimes(3);
-        expect(resolver.resolve(p('/root2/fake.js'), 'target')).toEqual({
+        expect(resolver.resolve(p('/root2/fake.js'), dep('target'))).toEqual({
           type: 'sourceFile',
           filePath: p('/target2.js'),
         });
@@ -2495,12 +2582,12 @@ type MockFSDirContents = $ReadOnly<{
           filePath: p('/target-always.js'),
         });
         expect(
-          resolver.resolve(p('/root1/dir/a.js'), 'target', undefined, {
+          resolver.resolve(p('/root1/dir/a.js'), dep('target'), undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', undefined, {
+          resolver.resolve(p('/root1/dir/b.js'), dep('target'), undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
@@ -2510,12 +2597,12 @@ type MockFSDirContents = $ReadOnly<{
           filePath: p('/target-never.js'),
         });
         expect(
-          resolver.resolve(p('/root2/dir/a.js'), 'target', undefined, {
+          resolver.resolve(p('/root2/dir/a.js'), dep('target'), undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
         expect(
-          resolver.resolve(p('/root2/dir/b.js'), 'target', undefined, {
+          resolver.resolve(p('/root2/dir/b.js'), dep('target'), undefined, {
             assumeFlatNodeModules: true,
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target-always.js')});
@@ -2547,7 +2634,7 @@ type MockFSDirContents = $ReadOnly<{
           filePath: p('/target1.js'),
         });
         expect(
-          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+          resolver.resolve(p('/root1/dir/a.js'), dep('target'), {
             customResolverOptions: {
               foo: 'bar',
               key: 'value',
@@ -2555,7 +2642,7 @@ type MockFSDirContents = $ReadOnly<{
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
             customResolverOptions: {
               // NOTE: reverse order from what we passed above
               key: 'value',
@@ -2567,7 +2654,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolveRequest.mockClear();
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
             customResolverOptions: {
               // NOTE: only a subset of the options passed above
               foo: 'bar',
@@ -2578,7 +2665,7 @@ type MockFSDirContents = $ReadOnly<{
 
         resolveRequest.mockClear();
         expect(
-          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+          resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
             customResolverOptions: {
               something: 'else',
             },

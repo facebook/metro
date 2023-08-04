@@ -8,6 +8,8 @@
  * @oncall react_native
  */
 
+import {TransformResultDependency} from 'metro';
+
 export type Result<TResolution, TCandidates> =
   | {readonly type: 'resolved'; readonly resolution: TResolution}
   | {readonly type: 'failed'; readonly candidates: TCandidates};
@@ -103,6 +105,13 @@ export interface ResolutionContext {
   readonly getPackageForModule: (modulePath: string) => PackageInfo | null;
 
   /**
+   * The dependency descriptor, within the origin module, corresponding to the
+   * current resolution request. This is provided for diagnostic purposes ONLY
+   * and may not be used for resolution purposes.
+   */
+  readonly dependency?: TransformResultDependency;
+
+  /**
    * The ordered list of fields to read in `package.json` to resolve a main
    * entry point based on the "browser" field spec.
    */
@@ -110,7 +119,8 @@ export interface ResolutionContext {
 
   /**
    * Full path of the module that is requiring or importing the module to be
-   * resolved.
+   * resolved. This may not be the only place this dependency was found,
+   * as resolutions can be cached.
    */
   readonly originModulePath: string;
 

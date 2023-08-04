@@ -348,9 +348,9 @@ beforeEach(async () => {
     unstable_enablePackageExports: false,
     lazy: false,
     onProgress: null,
-    resolve: (from: string, to: string) => {
+    resolve: (from: string, to: TransformResultDependency) => {
       const deps = getMockDependency(from);
-      const {path} = deps.filter(dep => dep.name === to)[0];
+      const {path} = deps.filter(dep => dep.name === to.name)[0];
 
       if (!mockedDependencies.has(path)) {
         throw new Error(`Dependency not found: ${from} -> ${path}`);

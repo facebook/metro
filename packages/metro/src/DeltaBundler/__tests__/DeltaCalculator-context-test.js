@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Options} from '../types.flow';
+import type {Options, TransformResultDependency} from '../types.flow';
 import type {Result} from '../Graph';
 import CountingSet from '../../lib/CountingSet';
 import {Graph} from '../Graph';
@@ -41,7 +41,7 @@ describe('DeltaCalculator + require.context', () => {
     unstable_enablePackageExports: false,
     lazy: false,
     onProgress: null,
-    resolve: (from: string, to: string) => {
+    resolve: (from: string, to: TransformResultDependency) => {
       throw new Error('Never called');
     },
     shallow: false,

@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {TransformResultDependency} from '../types.flow';
+
 jest.mock('../DeltaCalculator');
 
 const DeltaBundler = require('../../DeltaBundler');
@@ -33,7 +35,7 @@ describe('DeltaBundler', () => {
     unstable_enablePackageExports: false,
     lazy: false,
     onProgress: null,
-    resolve: (from: string, to: string) => {
+    resolve: (from: string, dependency: TransformResultDependency) => {
       throw new Error('Never called');
     },
     shallow: false,

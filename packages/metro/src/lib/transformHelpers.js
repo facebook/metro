@@ -16,6 +16,7 @@ import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   BundlerResolution,
   TransformInputOptions,
+  TransformResultDependency,
 } from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
@@ -204,13 +205,15 @@ async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
-): Promise<(from: string, to: string) => BundlerResolution> {
+): Promise<
+  (from: string, dependency: TransformResultDependency) => BundlerResolution,
+> {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
-  return (from: string, to: string) =>
+  return (from: string, dependency: TransformResultDependency) =>
     dependencyGraph.resolveDependency(
       from,
-      to,
+      dependency,
       platform ?? null,
       resolverOptions,
     );

@@ -4,12 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 'use strict';
+
+import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
 
 export type Result<+TResolution, +TCandidates> =
   | {+type: 'resolved', +resolution: TResolution}
@@ -124,6 +126,13 @@ export type ResolutionContext = $ReadOnly<{
   getPackageForModule: (modulePath: string) => ?PackageInfo,
 
   /**
+   * The dependency descriptor, within the origin module, corresponding to the
+   * current resolution request. This is provided for diagnostic purposes ONLY
+   * and may not be used for resolution purposes.
+   */
+  dependency?: TransformResultDependency,
+
+  /**
    * The ordered list of fields to read in `package.json` to resolve a main
    * entry point based on the "browser" field spec.
    */
@@ -131,7 +140,8 @@ export type ResolutionContext = $ReadOnly<{
 
   /**
    * Full path of the module that is requiring or importing the module to be
-   * resolved.
+   * resolved. This may not be the only place this dependency was found,
+   * as resolutions can be cached.
    */
   originModulePath: string,
 

@@ -19,7 +19,7 @@ export interface MixedOutput {
   readonly type: string;
 }
 
-export type AsyncDependencyType = 'async' | 'prefetch';
+export type AsyncDependencyType = 'async' | 'prefetch' | 'weak';
 
 export interface TransformResultDependency {
   /**
@@ -41,13 +41,6 @@ export interface TransformResultDependency {
      * If not null, this dependency is due to a dynamic `import()` or `__prefetchImport()` call.
      */
     readonly asyncType: AsyncDependencyType | null;
-
-    /**
-     * The condition for splitting on this dependency edge.
-     */
-    readonly splitCondition?: {
-      readonly mobileConfigName: string;
-    };
 
     /**
      * The dependency is enclosed in a try/catch block.
@@ -133,7 +126,7 @@ export interface BundlerResolution {
 }
 
 export interface Options<T = MixedOutput> {
-  readonly resolve: (from: string, to: string) => string;
+  readonly resolve: (from: string, to: TransformResultDependency) => string;
   readonly transform: TransformFn<T>;
   readonly transformOptions: TransformInputOptions;
   readonly onProgress:

@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
 import type {ResolutionContext} from './types';
 
 import {redirectModulePath} from './PackageResolve';
@@ -23,10 +24,14 @@ type PartialContext = $ReadOnly<{
  * As context values can be overridden by callers, this occurs externally to
  * `resolve.js`.
  */
-function createDefaultContext(context: PartialContext): ResolutionContext {
+function createDefaultContext(
+  context: PartialContext,
+  dependency: TransformResultDependency,
+): ResolutionContext {
   return {
     redirectModulePath: (modulePath: string) =>
       redirectModulePath(context, modulePath),
+    dependency,
     ...context,
   };
 }

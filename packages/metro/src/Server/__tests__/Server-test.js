@@ -15,6 +15,7 @@ import type {
   Module,
   Options,
   ReadOnlyGraph,
+  TransformResultDependency,
 } from '../../DeltaBundler/types.flow';
 
 // $FlowFixMe[untyped-import]
@@ -310,10 +311,12 @@ describe('processRequest', () => {
     server = new Server(config);
 
     getTransformFn.mockReturnValue(() => {});
-    getResolveDependencyFn.mockReturnValue((a, b) => ({
-      type: 'sourceFile',
-      filePath: path.resolve(a, `${b}.js`),
-    }));
+    getResolveDependencyFn.mockReturnValue(
+      (a: string, b: TransformResultDependency) => ({
+        type: 'sourceFile',
+        filePath: path.resolve(a, `${b.name}.js`),
+      }),
+    );
 
     // $FlowFixMe[cannot-write]
     fs.realpath = jest.fn((file, cb) => cb?.(null, '/root/foo.js'));

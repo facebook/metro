@@ -29,7 +29,10 @@ const Resolver = require('metro-resolver');
 const createDefaultContext = require('metro-resolver/src/createDefaultContext');
 const path = require('path');
 const util = require('util');
-import type {BundlerResolution} from '../../DeltaBundler/types.flow';
+import type {
+  BundlerResolution,
+  TransformResultDependency,
+} from '../../DeltaBundler/types.flow';
 import type {Reporter} from '../../lib/reporting';
 
 export type DirExistsFn = (filePath: string) => boolean;
@@ -107,7 +110,14 @@ class ModuleResolver<TPackage: Packageish> {
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
         this._projectRootFakeModule,
-        this._options.emptyModulePath,
+        {
+          name: this._options.emptyModulePath,
+          data: {
+            key: this._options.emptyModulePath,
+            asyncType: null,
+            locs: [],
+          },
+        },
         false,
         null,
         /* resolverOptions */ {},
@@ -119,7 +129,7 @@ class ModuleResolver<TPackage: Packageish> {
 
   resolveDependency(
     fromModule: Moduleish,
-    moduleName: string,
+    dependency: TransformResultDependency,
     allowHaste: boolean,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
@@ -143,34 +153,37 @@ class ModuleResolver<TPackage: Packageish> {
 
     try {
       const result = Resolver.resolve(
-        createDefaultContext({
-          allowHaste,
-          assetExts,
-          disableHierarchicalLookup,
-          doesFileExist,
-          extraNodeModules,
-          mainFields,
-          nodeModulesPaths,
-          preferNativePlatform,
-          resolveAsset,
-          resolveRequest,
-          sourceExts,
-          unstable_conditionNames,
-          unstable_conditionsByPlatform,
-          unstable_enablePackageExports,
-          unstable_getRealPath,
-          unstable_logWarning: this._logWarning,
-          customResolverOptions: resolverOptions.customResolverOptions ?? {},
-          originModulePath: fromModule.path,
-          resolveHasteModule: (name: string) =>
-            this._options.getHasteModulePath(name, platform),
-          resolveHastePackage: (name: string) =>
-            this._options.getHastePackagePath(name, platform),
-          getPackage: this._getPackage,
-          getPackageForModule: (modulePath: string) =>
-            this._getPackageForModule(fromModule, modulePath),
-        }),
-        moduleName,
+        createDefaultContext(
+          {
+            allowHaste,
+            assetExts,
+            disableHierarchicalLookup,
+            doesFileExist,
+            extraNodeModules,
+            mainFields,
+            nodeModulesPaths,
+            preferNativePlatform,
+            resolveAsset,
+            resolveRequest,
+            sourceExts,
+            unstable_conditionNames,
+            unstable_conditionsByPlatform,
+            unstable_enablePackageExports,
+            unstable_getRealPath,
+            unstable_logWarning: this._logWarning,
+            customResolverOptions: resolverOptions.customResolverOptions ?? {},
+            originModulePath: fromModule.path,
+            resolveHasteModule: (name: string) =>
+              this._options.getHasteModulePath(name, platform),
+            resolveHastePackage: (name: string) =>
+              this._options.getHastePackagePath(name, platform),
+            getPackage: this._getPackage,
+            getPackageForModule: (modulePath: string) =>
+              this._getPackageForModule(fromModule, modulePath),
+          },
+          dependency,
+        ),
+        dependency.name,
         platform,
       );
       return this._getFileResolvedModule(result);
@@ -179,7 +192,7 @@ class ModuleResolver<TPackage: Packageish> {
         const {candidates} = error;
         throw new UnableToResolveError(
           fromModule.path,
-          moduleName,
+          dependency.name,
           [
             '\n\nNone of these files exist:',
             `  * ${Resolver.formatFileCandidates(
@@ -206,9 +219,11 @@ class ModuleResolver<TPackage: Packageish> {
 
         throw new UnableToResolveError(
           fromModule.path,
-          moduleName,
+          dependency.name,
           [
-            `${moduleName} could not be found within the project${hint || '.'}`,
+            `${dependency.name} could not be found within the project${
+              hint || '.'
+            }`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
           ].join('\n'),
           {

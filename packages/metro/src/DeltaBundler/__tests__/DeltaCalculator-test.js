@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {Module, Options, Dependency} from '../types.flow';
+import type {
+  Module,
+  Options,
+  Dependency,
+  TransformResultDependency,
+} from '../types.flow';
 import type {Graph as GraphType, Result} from '../Graph';
 
 import path from 'path';
@@ -34,7 +39,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     unstable_enablePackageExports: true,
     lazy: false,
     onProgress: null,
-    resolve: (from: string, to: string) => {
+    resolve: (from: string, to: TransformResultDependency) => {
       throw new Error('Never called');
     },
     shallow: false,
