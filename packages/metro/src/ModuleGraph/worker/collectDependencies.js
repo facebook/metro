@@ -494,10 +494,18 @@ function processRequireCall(
 
 function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
   let current: ?(NodePath<> | NodePath<BabelNode>) = path;
-  while (current && !current.node.loc) {
+  while (
+    current &&
+    !current.node.loc &&
+    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    !current.node.METRO_INLINE_REQUIRES_INIT_LOC
+  ) {
     current = current.parentPath;
   }
-  return current?.node.loc;
+  return (
+    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    current?.node.METRO_INLINE_REQUIRES_INIT_LOC ?? current?.node.loc
+  );
 }
 
 export type ImportQualifier = $ReadOnly<{

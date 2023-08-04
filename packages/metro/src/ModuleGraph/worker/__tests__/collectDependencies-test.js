@@ -24,6 +24,7 @@ const {codeFromAst, comparableCode} = require('../../test-helpers');
 const collectDependencies = require('../collectDependencies');
 const {codeFrameColumns} = require('@babel/code-frame');
 const babylon = require('@babel/parser');
+const {transformFromAstSync} = require('@babel/core');
 const t = require('@babel/types');
 const dedent = require('dedent');
 const nullthrows = require('nullthrows');
@@ -1178,6 +1179,97 @@ it('records locations of dependencies', () => {
         |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6 (baz)
     > 9 | interopRequireDefault(require('quux')); // Simulated Babel output
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #7 (quux)"
+  `);
+});
+
+test('integration: records locations of inlined dependencies (Metro ESM)', () => {
+  const code = dedent`
+    import a from 'a';
+    import {b as b1} from 'b';
+    import * as c from 'c';
+    const d = require('d');
+
+    console.log([a, b1, c, d]);
+  `;
+  const ast = astFromCode(code);
+
+  const importDefault = 'importDefault';
+  const importAll = 'importAll';
+
+  const inlineableCalls = [importDefault, importAll];
+
+  const {ast: transformedAst} = transformFromAstSync(ast, code, {
+    ast: true,
+    plugins: [
+      [
+        require('metro-transform-plugins').importExportPlugin,
+        {
+          importDefault,
+          importAll,
+        },
+      ],
+      [
+        require('metro-transform-plugins').inlineRequiresPlugin,
+        {inlineableCalls},
+      ],
+    ],
+    babelrc: false,
+    configFile: false,
+  });
+
+  const {dependencies} = collectDependencies(nullthrows(transformedAst), {
+    ...opts,
+    inlineableCalls,
+  });
+  expect(formatDependencyLocs(dependencies, code)).toMatchInlineSnapshot(`
+    "
+    > 1 | import a from 'a';
+        | ^^^^^^^^^^^^^^^^^^ dep #0 (a)
+    > 2 | import {b as b1} from 'b';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (b)
+    > 3 | import * as c from 'c';
+        | ^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (c)
+    > 4 | const d = require('d');
+        |           ^^^^^^^^^^^^ dep #3 (d)"
+  `);
+
+  // Verify that dependencies have been inlined into the console.log call.
+  expect(codeFromAst(transformedAst)).toMatch(/^console\.log/);
+});
+
+test('integration: records locations of inlined dependencies (Babel ESM)', () => {
+  const code = dedent`
+    import a from 'a';
+    import {b as b1} from 'b';
+    import * as c from 'c';
+
+    console.log([a, b1, c]);
+  `;
+  const ast = astFromCode(code);
+
+  const {ast: transformedAst} = transformFromAstSync(ast, code, {
+    ast: true,
+    plugins: [
+      [
+        require('@babel/plugin-transform-modules-commonjs'),
+        {
+          lazy: true,
+        },
+      ],
+    ],
+    babelrc: false,
+    configFile: false,
+  });
+
+  const {dependencies} = collectDependencies(nullthrows(transformedAst), opts);
+  expect(formatDependencyLocs(dependencies, code)).toMatchInlineSnapshot(`
+    "
+    > 1 | import a from 'a';
+        | ^^^^^^^^^^^^^^^^^^ dep #0 (a)
+    > 2 | import {b as b1} from 'b';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (b)
+    > 3 | import * as c from 'c';
+        | ^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (c)"
   `);
 });
 

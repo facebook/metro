@@ -81,6 +81,10 @@ module.exports = babel => ({
                 return;
               }
 
+              const initLoc = getNearestLocFromPath(
+                declarationPath.get('init'),
+              );
+
               deleteLocation(init);
               babel.traverse(init, {
                 noScope: true,
@@ -92,7 +96,9 @@ module.exports = babel => ({
                 excludeMemberAssignment(moduleName, referencePath, state);
                 try {
                   referencePath.scope.rename(requireFnName);
-                  referencePath.replaceWith(t.cloneDeep(init));
+                  const refExpr = t.cloneDeep(init);
+                  refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
+                  referencePath.replaceWith(refExpr);
                 } catch (error) {
                   thrown = true;
                 }
@@ -255,4 +261,12 @@ function getInlineableModule(path, state) {
     isRequireInScope
     ? null
     : {moduleName, requireFnName: fnName};
+}
+
+function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
+  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
+  while (current && !current.node.loc) {
+    current = current.parentPath;
+  }
+  return current?.node.loc;
 }
