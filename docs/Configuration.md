@@ -631,12 +631,6 @@ Type: `string => string`
 
 A function that will be called every time Metro processes a URL, after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
 
-#### `runInspectorProxy`
-
-Type: `boolean` (default: `true`)
-
-Run Inspector Proxy server inside Metro to be able to inspect React Native code.
-
 ---
 
 ### Watcher Options
