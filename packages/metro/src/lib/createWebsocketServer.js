@@ -19,7 +19,7 @@ type WebsocketServiceInterface<T> = interface {
   +onClientError?: (client: T, e: ErrorEvent) => mixed,
   +onClientMessage?: (
     client: T,
-    message: string,
+    message: string | Buffer | ArrayBuffer | Array<Buffer>,
     sendFn: (data: string) => void,
   ) => mixed,
 };
@@ -42,7 +42,7 @@ type HMROptions<TClient> = {
 
 module.exports = function createWebsocketServer<TClient: Object>({
   websocketServer,
-}: HMROptions<TClient>): typeof ws.Server {
+}: HMROptions<TClient>): ws.Server {
   const wss = new ws.Server({
     noServer: true,
   });
@@ -53,6 +53,7 @@ module.exports = function createWebsocketServer<TClient: Object>({
 
     const sendFn = (...args: Array<string>) => {
       if (connected) {
+        // $FlowFixMe[incompatible-call]
         ws.send(...args);
       }
     };
@@ -65,6 +66,7 @@ module.exports = function createWebsocketServer<TClient: Object>({
     }
 
     ws.on('error', e => {
+      // $FlowFixMe[incompatible-call]
       websocketServer.onClientError && websocketServer.onClientError(client, e);
     });
 
@@ -79,5 +81,6 @@ module.exports = function createWebsocketServer<TClient: Object>({
         websocketServer.onClientMessage(client, message, sendFn);
     });
   });
+
   return wss;
 };

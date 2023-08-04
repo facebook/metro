@@ -38,7 +38,7 @@ const FILE_PREFIX = 'file://';
 
 type DebuggerInfo = {
   // Debugger web socket connection
-  socket: typeof WS,
+  socket: WS,
   // If we replaced address (like '10.0.2.2') to localhost we need to store original
   // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
   originalSourceURLAddress?: string,
@@ -64,7 +64,7 @@ class Device {
   _app: string;
 
   // Stores socket connection between Inspector Proxy and device.
-  _deviceSocket: typeof WS;
+  _deviceSocket: WS;
 
   // Stores last list of device's pages.
   _pages: Array<Page>;
@@ -93,7 +93,7 @@ class Device {
     id: string,
     name: string,
     app: string,
-    socket: typeof WS,
+    socket: WS,
     projectRoot: string,
   ) {
     this._id = id;
@@ -103,6 +103,7 @@ class Device {
     this._deviceSocket = socket;
     this._projectRoot = projectRoot;
 
+    // $FlowFixMe[incompatible-call]
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
       if (parsedMessage.event === 'getPages') {
@@ -156,7 +157,7 @@ class Device {
   // 1. Sends connect event to device
   // 2. Forwards all messages from the debugger to device as wrappedEvent
   // 3. Sends disconnect event to device when debugger connection socket closes.
-  handleDebuggerConnection(socket: typeof WS, pageId: string) {
+  handleDebuggerConnection(socket: WS, pageId: string) {
     // Disconnect current debugger if we already have debugger connected.
     if (this._debuggerConnection) {
       this._debuggerConnection.socket.close();
@@ -179,6 +180,7 @@ class Device {
       },
     });
 
+    // $FlowFixMe[incompatible-call]
     socket.on('message', (message: string) => {
       debug('(Debugger) -> (Proxy)    (Device): ' + message);
       const debuggerRequest = JSON.parse(message);
@@ -209,7 +211,9 @@ class Device {
       this._debuggerConnection = null;
     });
 
+    // $FlowFixMe[method-unbinding]
     const sendFunc = socket.send;
+    // $FlowFixMe[cannot-write]
     socket.send = function (message: string) {
       debug('(Debugger) <- (Proxy)    (Device): ' + message);
       return sendFunc.call(socket, message);
@@ -489,7 +493,7 @@ class Device {
   _interceptMessageFromDebugger(
     req: DebuggerRequest,
     debuggerInfo: DebuggerInfo,
-    socket: typeof WS,
+    socket: WS,
   ): boolean {
     if (req.method === 'Debugger.setBreakpointByUrl') {
       this._processDebuggerSetBreakpointByUrl(req, debuggerInfo);
@@ -532,10 +536,7 @@ class Device {
     }
   }
 
-  _processDebuggerGetScriptSource(
-    req: GetScriptSourceRequest,
-    socket: typeof WS,
-  ) {
+  _processDebuggerGetScriptSource(req: GetScriptSourceRequest, socket: WS) {
     const sendSuccessResponse = (scriptSource: string) => {
       const result: GetScriptSourceResponse = {scriptSource};
       socket.send(JSON.stringify({id: req.id, result}));

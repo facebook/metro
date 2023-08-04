@@ -199,12 +199,12 @@ class HmrServer<TClient: Client> {
 
   onClientMessage: (
     client: TClient,
-    message: string,
+    message: string | Buffer | ArrayBuffer | Array<Buffer>,
     sendFn: (data: string) => void,
   ) => Promise<void> = async (client, message, sendFn) => {
     let data: HmrClientMessage;
     try {
-      data = JSON.parse(message);
+      data = JSON.parse(String(message));
     } catch (error) {
       send([sendFn], {
         type: 'error',
