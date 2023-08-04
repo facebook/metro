@@ -267,6 +267,32 @@ When calling the default resolver with a non-null `resolveRequest` function, it 
 
 Inside a custom resolver, `resolveRequest` is set to the default resolver function, for easy chaining and customization.
 
+#### `dependency: ?Dependency`
+
+A dependency descriptor corresponding to the current resolution request. This is provided for diagnostic purposes *only* and may not be used for semantic purposes. See the [Caching](#caching) section for more information.
+
+```flow
+type Dependency = {
+  // The literal name provided to a require or import call. For example 'foo' in
+  // case of `require('foo')`.
+  name: string,
+
+  data: {
+    // A locally unique key for this dependency within the origin module.
+    key: string,
+
+    // Source locations from the Babel AST, relative to the origin module, where
+    // this dependency was encountered. This may be an empty array.
+    locs: $ReadOnlyArray<BabelSourceLocation>,
+
+    asyncType: 'async' | 'prefetch' | 'weak' | null,
+
+    // Other properties are considered internal and may change in the future.
+    ...
+  },
+};
+```
+
 ## Caching
 
 Resolver results may be cached under the following conditions:
