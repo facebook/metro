@@ -1,6 +1,6 @@
 {
   "name": "metro-symbolicate",
-  "version": "0.76.7",
+  "version": "0.76.8",
   "description": "🚇 A tool to find the source location from JS bundles and stack traces.",
   "license": "MIT",
   "main": "./src/index.js",
@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "invariant": "^2.2.4",
-    "metro-source-map": "0.76.7",
+    "metro-source-map": "0.76.8",
     "nullthrows": "^1.1.1",
     "source-map": "^0.5.6",
     "through2": "^2.0.1",
