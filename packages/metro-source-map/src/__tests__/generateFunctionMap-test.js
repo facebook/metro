@@ -663,6 +663,151 @@ function parent2() {
     `);
   });
 
+  it('method with null computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [null]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._null.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._null.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with regex literals computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [/A-Z/ig]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._AZ_ig.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._AZ_ig.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with template literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [\`obj${0}${'_'}Prop\`]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj.obj0_Prop.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj.obj0_Prop.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with string literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        ['objProp']: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj.objProp.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj.objProp.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with numeric literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        1: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._.m",
+        ],
+      }
+    `);
+  });
+
   it('setter method of object with inferred name', () => {
     const ast = getAst(`
       var obj = {
