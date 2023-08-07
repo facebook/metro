@@ -204,6 +204,7 @@ class ModuleResolver<TPackage: Packageish> {
           ].join('\n'),
           {
             cause: error,
+            dependency,
           },
         );
       }
@@ -228,6 +229,7 @@ class ModuleResolver<TPackage: Packageish> {
           ].join('\n'),
           {
             cause: error,
+            dependency,
           },
         );
       }
@@ -339,13 +341,14 @@ class UnableToResolveError extends Error {
     targetModuleName: string,
     message: string,
     options?: $ReadOnly<{
+      dependency?: ?TransformResultDependency,
       cause?: Error,
     }>,
   ) {
     super();
     this.originModulePath = originModulePath;
     this.targetModuleName = targetModuleName;
-    const codeFrameMessage = this.buildCodeFrameMessage();
+    const codeFrameMessage = this.buildCodeFrameMessage(options?.dependency);
     this.message =
       util.format(
         'Unable to resolve module %s from %s: %s',
@@ -357,7 +360,7 @@ class UnableToResolveError extends Error {
     this.cause = options?.cause;
   }
 
-  buildCodeFrameMessage(): ?string {
+  buildCodeFrameMessage(dependency: ?TransformResultDependency): ?string {
     let file;
     try {
       file = fs.readFileSync(this.originModulePath, 'utf8');
@@ -372,26 +375,109 @@ class UnableToResolveError extends Error {
       throw error;
     }
 
-    const lines = file.split('\n');
-    let lineNumber = 0;
-    let column = -1;
-    for (let line = 0; line < lines.length; line++) {
-      const columnLocation = lines[line].lastIndexOf(this.targetModuleName);
-      if (columnLocation >= 0) {
-        lineNumber = line;
-        column = columnLocation;
-        break;
-      }
-    }
-
+    const location = dependency?.data.locs.length
+      ? refineDependencyLocation(
+          dependency.data.locs[0],
+          file,
+          this.targetModuleName,
+        )
+      : // TODO: Ultimately we shouldn't ever have to guess the location.
+        guessDependencyLocation(file, this.targetModuleName);
     return codeFrameColumns(
       fs.readFileSync(this.originModulePath, 'utf8'),
-      {
-        start: {column: column + 1, line: lineNumber + 1},
-      },
+      location,
       {forceColor: process.env.NODE_ENV !== 'test'},
     );
   }
+}
+
+// Given a source location for an import declaration or `require()` call (etc),
+// return a location for use with @babel/code-frame in the resolution error.
+function refineDependencyLocation(
+  loc: BabelSourceLocation,
+  fileContents: string,
+  targetSpecifier: string,
+): {
+  start: {column: number, line: number},
+  end?: {column: number, line: number},
+} {
+  const lines = fileContents.split('\n');
+  // If we can find the module name in range of the given loc, surrounded by
+  // matching quotes, that's likely our specifier. Point to the first column of
+  // the *last* valid occurrence.
+  // Note that module names may not always be found in the source code verbatim,
+  // whether because of escaping or because of exotic dependency APIs.
+  for (let line = loc.end.line - 1; line >= loc.start.line - 1; line--) {
+    const maxColumn =
+      line === loc.end.line ? loc.end.column + 2 : lines[line].length;
+    const minColumn = line === loc.start.line ? loc.start.column - 1 : 0;
+    const lineStr = lines[line];
+    const lineSlice = lineStr.slice(minColumn, maxColumn);
+    for (
+      let offset = lineSlice.lastIndexOf(targetSpecifier);
+      offset !== -1 && // leave room for quotes
+      offset > 0 &&
+      offset < lineSlice.length - 1;
+      offset = lineSlice.lastIndexOf(targetSpecifier, offset - 1)
+    ) {
+      const maybeQuoteBefore = lineSlice[minColumn + offset - 1];
+      const maybeQuoteAfter =
+        lineStr[minColumn + offset + targetSpecifier.length];
+      if (isQuote(maybeQuoteBefore) && maybeQuoteBefore === maybeQuoteAfter) {
+        return {
+          start: {
+            line: line + 1,
+            column: minColumn + offset + 1,
+          },
+        };
+      }
+    }
+  }
+  // Otherwise, if this is a single-line loc, return it exactly, as a range.
+  if (loc.start.line === loc.end.line) {
+    return {
+      start: {
+        line: loc.start.line,
+        column: loc.start.column + 1,
+      },
+      end: {
+        line: loc.end.line,
+        column: loc.end.column + 1,
+      },
+    };
+  }
+  // Otherwise, point to the first column of the loc, to avoid including too
+  // much unnecessary context.
+  return {
+    start: {
+      line: loc.start.line,
+      column: loc.start.column + 1,
+    },
+  };
+}
+
+function guessDependencyLocation(
+  fileContents: string,
+  targetSpecifier: string,
+) {
+  const lines = fileContents.split('\n');
+  let lineNumber = 0;
+  let column = -1;
+  for (let line = 0; line < lines.length; line++) {
+    const columnLocation = lines[line].lastIndexOf(targetSpecifier);
+    if (columnLocation >= 0) {
+      lineNumber = line;
+      column = columnLocation;
+      break;
+    }
+  }
+  return {
+    start: {column: column + 1, line: lineNumber + 1},
+  };
+}
+
+function isQuote(str: ?string): boolean {
+  return str === '"' || str === "'" || str === '`';
 }
 
 module.exports = {

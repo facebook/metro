@@ -1,0 +1,121 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`APIs/semantics reports resolution errors with CJS + non-inlined requires 1`] = `
+Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-require.js: 
+
+None of these files exist:
+  * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  13 |
+  14 | // $FlowExpectedError[cannot-resolve-module]
+> 15 | const DoesNotExist = require('./does-not-exist');
+     |                               ^
+  16 |
+  17 | global.x = (DoesNotExist: DoesNotExistT);
+  18 |
+`;
+
+exports[`APIs/semantics reports resolution errors with ESM + non-inlined requires 1`] = `
+Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-import.js: 
+
+None of these files exist:
+  * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  13 |
+  14 | // $FlowExpectedError[cannot-resolve-module]
+> 15 | import DoesNotExist from './does-not-exist';
+     |                           ^
+  16 |
+  17 | global.x = (DoesNotExist: DoesNotExistT);
+  18 |
+`;
+
+exports[`APIs/semantics reports resolution errors with inline requires + CJS 1`] = `
+Unable to resolve module ./does-not-exist from <dir>/inline-requires-cannot-resolve-require.js: 
+
+None of these files exist:
+  * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  13 |
+  14 | // $FlowExpectedError[cannot-resolve-module]
+> 15 | const DoesNotExist = require('./does-not-exist');
+     |                               ^
+  16 |
+  17 | global.x = (DoesNotExist: DoesNotExistT);
+  18 |
+`;
+
+exports[`APIs/semantics reports resolution errors with inline requires + ESM 1`] = `
+Unable to resolve module ./does-not-exist from <dir>/inline-requires-cannot-resolve-import.js: 
+
+None of these files exist:
+  * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  13 |
+  14 | // $FlowExpectedError[cannot-resolve-module]
+> 15 | import DoesNotExist from './does-not-exist';
+     |                           ^
+  16 |
+  17 | global.x = (DoesNotExist: DoesNotExistT);
+  18 |
+`;
+
+exports[`formatting edge cases reports resolution errors with a multi-line loc + specifier containing an escape sequence 1`] = `
+Unable to resolve module ./does-not'"-exist from <dir>/cannot-resolve-multi-line-import-with-escapes.js: 
+
+None of these files exist:
+  * build-errors/does-not'"-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not'"-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  14 | import type DoesNotExistT from './does-not/'"-exist';
+  15 |
+> 16 | import {
+     | ^
+  17 |   aaaaaaaaaa,
+  18 |   bbbbbbbbbb,
+  19 |   cccccccccc,
+`;
+
+exports[`formatting edge cases reports resolution errors with a specifier containing an escape sequence 1`] = `
+Unable to resolve module ./does-not'"-exist from <dir>/cannot-resolve-specifier-with-escapes.js: 
+
+None of these files exist:
+  * build-errors/does-not'"-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not'"-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  15 |
+  16 | // $FlowExpectedError[cannot-resolve-module]
+> 17 | import {DoesNotExist} from './does-not/'"-exist';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 |
+  19 | global.x = (DoesNotExist: DoesNotExistT);
+  20 |
+`;
+
+exports[`formatting edge cases reports resolution errors with embedded comment after the specifier 1`] = `
+Unable to resolve module ./foo from <dir>/cannot-resolve-require-with-embedded-comment.js: 
+
+None of these files exist:
+  * build-errors/foo(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/foo/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  13 |
+  14 | // $FlowExpectedError[cannot-resolve-module]
+> 15 | const DoesNotExist = require('./foo' /* ./foo */);
+     |                               ^
+  16 |
+  17 | global.x = (DoesNotExist: DoesNotExistT);
+  18 |
+`;
+
+exports[`formatting edge cases reports resolution errors with multi-line locs 1`] = `
+Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-multi-line-import.js: 
+
+None of these files exist:
+  * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  25 |   iiiiiiiiii,
+  26 |   // $FlowExpectedError[cannot-resolve-module]
+> 27 | } from './does-not-exist';
+     |         ^
+  28 |
+  29 | global.x = (aaaaaaaaaa: DoesNotExistT);
+  30 |
+`;
