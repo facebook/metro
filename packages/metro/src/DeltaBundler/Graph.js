@@ -41,12 +41,14 @@ import type {
   TransformInputOptions,
   TransformResultDependency,
 } from './types.flow';
+import type {DependencyStackNode} from './diagnostics';
 
 import CountingSet from '../lib/CountingSet';
 import {
   deriveAbsolutePathFromContext,
   fileMatchesContext,
 } from '../lib/contextModule';
+import {addImportStackToError} from './diagnostics';
 
 import * as path from 'path';
 const invariant = require('invariant');
@@ -186,6 +188,11 @@ export class Graph<T = MixedOutput> {
       }
     }
 
+    const singleEntryPointForDiagnostics =
+      this.entryPoints.size === 1
+        ? this.entryPoints.values().next().value
+        : null;
+
     for (const [path] of originalModules) {
       // Traverse over modules that are part of the dependency graph.
       //
@@ -198,6 +205,13 @@ export class Graph<T = MixedOutput> {
           path,
           delta,
           internalOptions,
+          this.entryPoints.has(path)
+            ? null
+            : {
+                absolutePath: singleEntryPointForDiagnostics ?? null,
+                dependency: null,
+                parent: null,
+              },
         );
       }
     }
@@ -282,7 +296,12 @@ export class Graph<T = MixedOutput> {
 
     await Promise.all(
       [...this.entryPoints].map((path: string) =>
-        this._traverseDependenciesForSingleFile(path, delta, internalOptions),
+        this._traverseDependenciesForSingleFile(
+          path,
+          delta,
+          internalOptions,
+          null,
+        ),
       ),
     );
 
@@ -301,10 +320,11 @@ export class Graph<T = MixedOutput> {
     path: string,
     delta: Delta,
     options: InternalOptions<T>,
+    dependencyStack: DependencyStackNode | null,
   ): Promise<void> {
     options.onDependencyAdd();
 
-    await this._processModule(path, delta, options);
+    await this._processModule(path, delta, options, dependencyStack);
 
     options.onDependencyAdded();
   }
@@ -313,6 +333,7 @@ export class Graph<T = MixedOutput> {
     path: string,
     delta: Delta,
     options: InternalOptions<T>,
+    dependencyStack: DependencyStackNode | null,
   ): Promise<Module<T>> {
     const resolvedContext = this.#resolvedContexts.get(path);
 
@@ -325,7 +346,9 @@ export class Graph<T = MixedOutput> {
     const currentDependencies = this._resolveDependencies(
       path,
       result.dependencies,
+      delta,
       options,
+      dependencyStack,
     );
 
     const previousModule = this.dependencies.get(path);
@@ -369,7 +392,14 @@ export class Graph<T = MixedOutput> {
         !dependenciesEqual(prevDependency, curDependency, options)
       ) {
         addDependencyPromises.push(
-          this._addDependency(nextModule, key, curDependency, delta, options),
+          this._addDependency(
+            nextModule,
+            key,
+            curDependency,
+            delta,
+            options,
+            dependencyStack,
+          ),
         );
       }
     }
@@ -394,7 +424,7 @@ export class Graph<T = MixedOutput> {
     // the above promises have resolved, this will be the same map but without
     // the added nondeterminism of promise resolution order. Because this
     // assignment does not add or remove edges, it does NOT invalidate any of the
-    // garbage collection state.
+    // garbage collection delta.
 
     // Catch obvious errors with a cheap assertion.
     invariant(
@@ -413,6 +443,7 @@ export class Graph<T = MixedOutput> {
     dependency: Dependency,
     delta: Delta,
     options: InternalOptions<T>,
+    dependencyStack: DependencyStackNode | null,
   ): Promise<void> {
     const path = dependency.absolutePath;
 
@@ -449,7 +480,11 @@ export class Graph<T = MixedOutput> {
           delta.earlyInverseDependencies.set(path, new CountingSet());
 
           options.onDependencyAdd();
-          module = await this._processModule(path, delta, options);
+          module = await this._processModule(path, delta, options, {
+            absolutePath: parentModule.path,
+            dependency: dependency.data,
+            parent: dependencyStack,
+          });
           options.onDependencyAdded();
 
           this.dependencies.set(module.path, module);
@@ -538,7 +573,9 @@ export class Graph<T = MixedOutput> {
   _resolveDependencies(
     parentPath: string,
     dependencies: $ReadOnlyArray<TransformResultDependency>,
+    delta: Delta,
     options: InternalOptions<T>,
+    dependencyStack: DependencyStackNode | null,
   ): Map<string, Dependency> {
     const maybeResolvedDeps = new Map<
       string,
@@ -582,6 +619,17 @@ export class Graph<T = MixedOutput> {
           // clean it up.
           this.#resolvedContexts.delete(resolvedDep.absolutePath);
         } catch (error) {
+          if (error instanceof Error) {
+            addImportStackToError(
+              {
+                absolutePath: parentPath,
+                dependency: dep,
+                parent: dependencyStack,
+              },
+              error,
+            );
+          }
+
           // Ignore unavailable optional dependencies. They are guarded
           // with a try-catch block and will be handled during runtime.
           if (dep.data.isOptional !== true) {
