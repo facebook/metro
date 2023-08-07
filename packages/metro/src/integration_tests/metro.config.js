@@ -34,8 +34,13 @@ module.exports = {
     ),
     enableBabelRCLookup: false,
     enableBabelRuntime: false,
-    getTransformOptions: async () => ({
-      transform: {experimentalImportSupport: true, inlineRequires: false},
+    getTransformOptions: async entryFiles => ({
+      transform: {
+        experimentalImportSupport: true,
+        inlineRequires: entryFiles.some(filePath =>
+          filePath.includes('inline-requires'),
+        ),
+      },
       preloadedModules: false,
       ramGroups: [],
     }),
