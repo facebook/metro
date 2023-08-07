@@ -23,8 +23,6 @@ export interface BabelTransformerOptions {
   readonly experimentalImportSupport?: boolean;
   readonly hermesParser?: boolean;
   readonly hot: boolean;
-  readonly inlineRequires: boolean;
-  readonly nonInlinedRequires?: ReadonlyArray<string>;
   readonly minify: boolean;
   readonly unstable_disableES6Transforms?: boolean;
   readonly platform: string | null;

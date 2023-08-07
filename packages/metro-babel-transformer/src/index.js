@@ -33,8 +33,6 @@ type BabelTransformerOptions = $ReadOnly<{
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
   hot: boolean,
-  inlineRequires: boolean,
-  nonInlinedRequires?: $ReadOnlyArray<string>,
   minify: boolean,
   unstable_disableES6Transforms?: boolean,
   platform: ?string,
@@ -42,6 +40,7 @@ type BabelTransformerOptions = $ReadOnly<{
   publicPath: string,
   unstable_transformProfile?: TransformProfile,
   globalPrefix: string,
+  inlineRequires?: void,
   ...
 }>;
 

@@ -570,19 +570,15 @@ function getBabelTransformArgs(
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {
+  const {inlineRequires: _, ...babelTransformerOptions} = options;
   return {
     filename: file.filename,
     options: {
-      ...options,
+      ...babelTransformerOptions,
       enableBabelRCLookup: config.enableBabelRCLookup,
       enableBabelRuntime: config.enableBabelRuntime,
       globalPrefix: config.globalPrefix,
       hermesParser: config.hermesParser,
-      // Inline requires are now performed at a secondary step. We cannot
-      // unfortunately remove it from the internal transformer, since this one
-      // is used by other tooling, and this would affect it.
-      inlineRequires: false,
-      nonInlinedRequires: [],
       projectRoot,
       publicPath: config.publicPath,
     },
