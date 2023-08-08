@@ -13,6 +13,8 @@
 
 const debounceAsyncQueue = require('../debounceAsyncQueue');
 
+jest.useFakeTimers();
+
 describe('debounceAsyncQueue', () => {
   it('debounces calls', async () => {
     const fn = jest.fn();

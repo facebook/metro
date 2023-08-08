@@ -71,7 +71,7 @@ describe('HmrServer', () => {
 
   async function emitChangeEvent() {
     // TODO: Can we achieve this with less mocking / special-casing?
-    jest.useFakeTimers({legacyFakeTimers: true});
+    jest.useFakeTimers();
     changeEventSource.emit('change');
     jest.runAllTimers();
     jest.useRealTimers();
@@ -602,7 +602,6 @@ describe('HmrServer', () => {
   });
 
   it('should return error messages when there is a transform error', async () => {
-    jest.useRealTimers();
     const sendMessage = jest.fn();
 
     await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);

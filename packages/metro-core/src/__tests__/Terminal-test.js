@@ -10,6 +10,8 @@
 
 'use strict';
 
+jest.useFakeTimers();
+
 jest.mock('readline', () => ({
   moveCursor: (stream, dx, dy) => {
     const {cursor, columns} = stream;

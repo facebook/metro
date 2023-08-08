@@ -72,10 +72,6 @@
     },
     "testEnvironment": "node",
     "testRegex": "/__tests__/.*-test\\.js$",
-    "fakeTimers": {
-      "enableGlobally": true,
-      "legacyFakeTimers": true
-    },
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
     },

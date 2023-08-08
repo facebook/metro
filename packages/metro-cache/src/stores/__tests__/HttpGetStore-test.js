@@ -13,6 +13,8 @@
 const {PassThrough} = require('stream');
 const zlib = require('zlib');
 
+jest.useFakeTimers();
+
 describe('HttpGetStore', () => {
   let HttpGetStore;
   let httpPassThrough;
@@ -38,11 +40,7 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest
-      .resetModules()
-      .resetAllMocks()
-      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
-      .mock('http');
+    jest.resetModules().resetAllMocks().mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);

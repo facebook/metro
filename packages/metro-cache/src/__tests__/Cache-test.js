@@ -77,7 +77,7 @@ describe('Cache', () => {
     expect(store3.get).not.toHaveBeenCalled();
   });
 
-  it('skips all cache stores when a hit is produced, based on the same key', () => {
+  it('skips all cache stores when a hit is produced, based on the same key', async () => {
     const store1 = createStore();
     const store2 = createStore();
     const store3 = createStore();
@@ -87,9 +87,7 @@ describe('Cache', () => {
     store2.get.mockImplementation(() => 'hit!');
 
     // Get and set. Set should only affect store 1, not 2 (hit) and 3 (after).
-    // $FlowFixMe[unused-promise]
-    cache.get(key);
-    cache.set(key);
+    await Promise.all([cache.get(key), cache.set(key)]);
 
     expect(store1.set).toHaveBeenCalledTimes(1);
     expect(store2.set).not.toHaveBeenCalled();
@@ -132,8 +130,7 @@ describe('Cache', () => {
     store2.set.mockImplementation(() => Promise.reject(new RangeError('foo')));
 
     try {
-      cache.set(Buffer.from('foo'), 'arg');
-      jest.runAllTimers();
+      await cache.set(Buffer.from('foo'), 'arg');
     } catch (err) {
       error = err;
     }

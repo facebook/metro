@@ -762,10 +762,6 @@ describe('processRequest', () => {
   });
 
   describe('/assets endpoint', () => {
-    beforeEach(() => {
-      jest.useRealTimers();
-    });
-
     it('should serve simple case', async () => {
       getAsset.mockResolvedValue(Promise.resolve('i am image'));
 

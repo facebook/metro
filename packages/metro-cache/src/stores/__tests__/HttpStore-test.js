@@ -49,12 +49,7 @@ describe('HttpStore', () => {
   }
 
   beforeEach(() => {
-    jest
-      .resetModules()
-      .resetAllMocks()
-      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
-      .mock('http')
-      .mock('https');
+    jest.resetModules().resetAllMocks().mock('http').mock('https');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);
@@ -71,7 +66,7 @@ describe('HttpStore', () => {
     expect(require('http').request).toHaveBeenCalledTimes(1);
     expect(require('https').request).not.toHaveBeenCalled();
 
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     httpsStore.get(Buffer.from('foo'));
     expect(require('http').request).not.toHaveBeenCalled();
@@ -89,7 +84,7 @@ describe('HttpStore', () => {
     expect(opts.timeout).toEqual(5000);
 
     callback(responseHttpOk(JSON.stringify({foo: 42})));
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     expect(await promise).toEqual({foo: 42});
   });
@@ -102,7 +97,7 @@ describe('HttpStore', () => {
     expect(opts.method).toEqual('GET');
 
     callback(responseHttpError(503));
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(HttpStore.HttpError);
@@ -120,7 +115,7 @@ describe('HttpStore', () => {
     expect(opts.method).toEqual('GET');
 
     callback(responseHttpOk('{"foo": 4')); // Intentionally unterminated JSON.
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(SyntaxError);
@@ -136,7 +131,7 @@ describe('HttpStore', () => {
     expect(opts.method).toEqual('GET');
 
     callback(responseError(new Error('ENOTFOUND')));
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(Error);
@@ -178,7 +173,7 @@ describe('HttpStore', () => {
     expect(opts.method).toEqual('PUT');
 
     callback(responseError(new Error('ENOTFOUND')));
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(Error);
@@ -195,7 +190,7 @@ describe('HttpStore', () => {
     expect(opts.method).toEqual('PUT');
 
     callback(responseHttpError(403));
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(HttpStore.HttpError);

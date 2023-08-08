@@ -11,6 +11,8 @@
 
 import {Runtime} from './MetroFastRefreshMockRuntime';
 
+jest.useFakeTimers();
+
 describe('Fast Refresh integration with require()', () => {
   test('preserves state in a single-module bundle', async () => {
     const {renderer, define, metroRequire, React, events} = new Runtime();

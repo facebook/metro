@@ -12,6 +12,8 @@
 
 'use strict';
 
+jest.useFakeTimers();
+
 jest.mock('chalk', () => {
   const bold = _ => _;
   return {

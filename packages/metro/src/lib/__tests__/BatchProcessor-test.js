@@ -11,8 +11,6 @@
 
 'use strict';
 
-jest.useRealTimers();
-
 const BatchProcessor = require('../BatchProcessor');
 
 describe('BatchProcessor', () => {

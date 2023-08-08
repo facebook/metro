@@ -12,8 +12,6 @@ import crypto from 'crypto';
 import * as path from 'path';
 import {serialize} from 'v8';
 
-jest.useRealTimers();
-
 function mockHashContents(contents) {
   return crypto.createHash('sha1').update(contents).digest('hex');
 }

@@ -19,18 +19,13 @@ jest.mock('fb-watchman', () => {
   const Client = jest.fn();
   const endedClients = new WeakSet();
   Client.prototype.command = jest.fn(function (args, callback) {
-    const self = this;
-    setImmediate(() => {
-      if (endedClients.has(self)) {
-        callback(new Error('Client has ended'));
-        return;
-      }
-      const path = args[1]
-        ? normalizePathSeparatorsToSystem(args[1])
-        : undefined;
-      const response = mockResponse[args[0]][path];
-      callback(null, response.next ? response.next().value : response);
-    });
+    if (endedClients.has(this)) {
+      callback(new Error('Client has ended'));
+      return;
+    }
+    const path = args[1] ? normalizePathSeparatorsToSystem(args[1]) : undefined;
+    const response = mockResponse[args[0]][path];
+    callback(null, response.next ? response.next().value : response);
   });
   Client.prototype.on = jest.fn();
   Client.prototype.end = jest.fn(function () {

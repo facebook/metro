@@ -10,6 +10,8 @@
 
 'use strict';
 
+jest.useFakeTimers();
+
 describe('FileStore', () => {
   let FileStore;
   let fs;
@@ -18,7 +20,6 @@ describe('FileStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
       .mock('fs', () => new (require('metro-memory-fs'))());
 
     FileStore = require('../FileStore');

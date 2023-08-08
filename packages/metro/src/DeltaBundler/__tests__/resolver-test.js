@@ -19,7 +19,6 @@ const {getDefaultConfig, mergeConfig} = require('metro-config');
 const path = require('path');
 const mockPlatform = process.platform;
 
-jest.useRealTimers();
 jest
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))

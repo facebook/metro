@@ -21,8 +21,6 @@ import {join} from 'path';
 import os from 'os';
 import invariant from 'invariant';
 
-jest.useRealTimers();
-
 const {mkdtemp, writeFile} = fsPromises;
 
 // At runtime we use a more sophisticated + robust Watchman capability check,

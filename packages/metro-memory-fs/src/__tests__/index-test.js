@@ -13,8 +13,6 @@
 
 /* eslint-disable no-bitwise */
 
-jest.useRealTimers();
-
 const MemoryFs = require('../index');
 const path = require('path');
 

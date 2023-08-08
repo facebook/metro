@@ -11,6 +11,8 @@
 
 'use strict';
 
+jest.useFakeTimers();
+
 describe('AutoCleanFileStore', () => {
   let AutoCleanFileStore;
   let fs;
@@ -19,7 +21,6 @@ describe('AutoCleanFileStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
       .mock('fs', () => new (require('metro-memory-fs'))());
 
     AutoCleanFileStore = require('../AutoCleanFileStore');

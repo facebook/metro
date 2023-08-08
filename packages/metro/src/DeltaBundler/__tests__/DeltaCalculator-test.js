@@ -22,6 +22,8 @@ import CountingSet from '../../lib/CountingSet';
 
 jest.mock('../../Bundler');
 
+jest.useFakeTimers();
+
 describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let entryModule: Module<$FlowFixMe>;
   let fooModule: Module<$FlowFixMe>;

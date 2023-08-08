@@ -11,8 +11,6 @@
 import {AbortController} from 'node-abort-controller';
 import TreeFS from '../../lib/TreeFS';
 
-jest.useRealTimers();
-
 jest.mock('child_process', () => ({
   spawn: jest.fn((cmd, args) => {
     let closeCallback;

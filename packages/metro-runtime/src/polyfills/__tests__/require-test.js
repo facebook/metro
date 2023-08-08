@@ -13,6 +13,8 @@
 const {transformSync} = require('@babel/core');
 const fs = require('fs');
 
+jest.useFakeTimers();
+
 function createModule(
   moduleSystem,
   moduleId,
