@@ -76,6 +76,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     enhanceMiddleware: (middleware, _) => middleware,
     port: 8081,
     rewriteRequestUrl: url => url,
+    runInspectorProxy: true,
     unstable_serverRoot: null,
     useGlobalHotkey: true,
     verifyConnections: false,

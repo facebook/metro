@@ -234,6 +234,12 @@ function overrideConfigWithArguments(
     output.server.port = Number(argv.port);
   }
 
+  if (argv.runInspectorProxy != null) {
+    // $FlowFixMe[incompatible-use]
+    // $FlowFixMe[cannot-write]
+    output.server.runInspectorProxy = Boolean(argv.runInspectorProxy);
+  }
+
   if (argv.projectRoot != null) {
     output.projectRoot = argv.projectRoot;
   }

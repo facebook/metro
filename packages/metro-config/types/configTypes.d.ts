@@ -166,6 +166,7 @@ export interface ServerConfigT {
   ) => Middleware | Server;
   port: number;
   rewriteRequestUrl: (url: string) => string;
+  runInspectorProxy: boolean;
   unstable_serverRoot: string | null;
   useGlobalHotkey: boolean;
   verifyConnections: boolean;
@@ -250,5 +251,6 @@ export interface YargArguments {
   transformer?: string;
   'reset-cache'?: boolean;
   resetCache?: boolean;
+  runInspectorProxy?: boolean;
   verbose?: boolean;
 }

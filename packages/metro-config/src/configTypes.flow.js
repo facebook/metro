@@ -168,6 +168,7 @@ type ServerConfigT = {
   enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
   port: number,
   rewriteRequestUrl: string => string,
+  runInspectorProxy: boolean,
   unstable_serverRoot: ?string,
   useGlobalHotkey: boolean,
   verifyConnections: boolean,
@@ -261,6 +262,7 @@ export type YargArguments = $ReadOnly<{
   transformer?: string,
   'reset-cache'?: boolean,
   resetCache?: boolean,
+  runInspectorProxy?: boolean,
   verbose?: boolean,
   ...
 }>;
