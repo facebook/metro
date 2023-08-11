@@ -15,6 +15,9 @@ const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
 const {PassThrough} = require('stream');
+
+jest.useRealTimers();
+
 const resolve = (fileName: string) =>
   path.resolve(__dirname, '__fixtures__', fileName);
 const read = (fileName: string) => fs.readFileSync(resolve(fileName), 'utf8');

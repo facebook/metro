@@ -12,6 +12,8 @@
 import HasteMap from '../index';
 import path from 'path';
 
+jest.useRealTimers();
+
 const rootDir = path.join(__dirname, './test_dotfiles_root');
 
 const commonOptions = {

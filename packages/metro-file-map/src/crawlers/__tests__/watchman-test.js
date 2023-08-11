@@ -13,6 +13,8 @@ import TreeFS from '../../lib/TreeFS';
 
 const path = require('path');
 
+jest.useRealTimers();
+
 jest.mock('fb-watchman', () => {
   const normalizePathSeparatorsToSystem =
     require('../../lib/normalizePathSeparatorsToSystem').default;

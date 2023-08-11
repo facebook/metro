@@ -13,6 +13,8 @@
 jest.mock('fs', () => new (require('metro-memory-fs'))());
 jest.mock('image-size');
 
+jest.useRealTimers();
+
 const {getAsset, getAssetData} = require('../Assets');
 const crypto = require('crypto');
 const fs = require('fs');

@@ -13,6 +13,8 @@
 const {PassThrough} = require('stream');
 const zlib = require('zlib');
 
+jest.useRealTimers();
+
 describe('HttpGetStore', () => {
   let HttpGetStore;
   let httpPassThrough;
@@ -38,11 +40,7 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest
-      .resetModules()
-      .resetAllMocks()
-      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
-      .mock('http');
+    jest.resetModules().resetAllMocks().mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);
@@ -69,7 +67,6 @@ describe('HttpGetStore', () => {
     expect(opts.timeout).toEqual(5000);
 
     callback(responseHttpOk(JSON.stringify({foo: 42})));
-    jest.runAllTimers();
 
     expect(await promise).toEqual({foo: 42});
     expect(warningMessages.length).toBe(0);

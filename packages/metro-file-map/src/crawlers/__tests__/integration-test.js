@@ -17,6 +17,8 @@ import invariant from 'invariant';
 import os from 'os';
 import {join} from 'path';
 
+jest.useRealTimers();
+
 // At runtime we use a more sophisticated + robust Watchman capability check,
 // but this simple heuristic is fast to check, synchronous (we can't
 // asynchronously skip tests: https://github.com/facebook/jest/issues/8604),

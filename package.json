@@ -73,7 +73,7 @@
     "testRegex": "/__tests__/.*-test\\.js$",
     "fakeTimers": {
       "enableGlobally": true,
-      "legacyFakeTimers": true
+      "legacyFakeTimers": false
     },
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
