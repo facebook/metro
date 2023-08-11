@@ -78,7 +78,7 @@ class Cache<T> {
     return null;
   }
 
-  set(key: Buffer, value: T): void {
+  async set(key: Buffer, value: T): Promise<void> {
     const stores = this._stores;
     const stop = this._hits.get(key);
     const length = stores.length;
@@ -98,11 +98,7 @@ class Cache<T> {
       promises.push(stores[i].set(key, value));
     }
 
-    Promise.all(promises).catch(err => {
-      process.nextTick(() => {
-        throw err;
-      });
-    });
+    await Promise.all(promises);
   }
 
   // Returns true if the current configuration disables the cache, such that

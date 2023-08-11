@@ -20,6 +20,6 @@ import {CacheStore} from './types';
 export default class Cache<T> {
   constructor(stores: ReadonlyArray<CacheStore<T>>);
   get(key: Buffer): Promise<T | null>;
-  set(key: Buffer, value: T): void;
+  set(key: Buffer, value: T): Promise<void>;
   get isDisabled(): boolean;
 }

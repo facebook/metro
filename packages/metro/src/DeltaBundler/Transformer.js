@@ -151,7 +151,8 @@ class Transformer {
       fullKey = Buffer.concat([partialKey, Buffer.from(data.sha1, 'hex')]);
     }
 
-    cache.set(fullKey, data.result);
+    // Fire-and-forget cache set promise.
+    void cache.set(fullKey, data.result);
 
     return {
       ...data.result,
