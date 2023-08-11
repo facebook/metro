@@ -71,7 +71,7 @@ describe('HttpStore', () => {
     expect(require('http').request).toHaveBeenCalledTimes(1);
     expect(require('https').request).not.toHaveBeenCalled();
 
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     httpsStore.get(Buffer.from('foo'));
     expect(require('http').request).not.toHaveBeenCalled();

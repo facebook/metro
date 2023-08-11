@@ -330,7 +330,7 @@ describe('Buck worker:', () => {
         }),
       );
 
-      await end(1);
+      await end(2);
       expect(commands.transform).toBeCalledWith(
         args.split(/\s+/),
         null,
@@ -353,7 +353,7 @@ describe('Buck worker:', () => {
         }),
       );
 
-      await end(1);
+      await end(2);
       expect(commands.transform).toBeCalledWith([], args, anything());
     });
 
@@ -373,7 +373,7 @@ describe('Buck worker:', () => {
         }),
       );
 
-      return end().then(() => {
+      return end(2).then(() => {
         const streams = last(Console.mock.calls);
         expect(streams[0].path).toEqual('/stdio/out');
         expect(streams[1].path).toEqual('/stdio/err');
