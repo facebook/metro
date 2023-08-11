@@ -15,7 +15,6 @@ import type {Writable} from 'stream';
 
 const {startProfiling, stopProfilingAndWrite} = require('./profiling');
 const JSONStream = require('./third-party/JSONStream');
-const each = require('async/each');
 const {Console} = require('console');
 const duplexer = require('duplexer');
 const fs = require('fs');
@@ -146,16 +145,13 @@ function buckWorker(commands: Commands): any {
       invariant(!responded, `Already responded to message id ${id}.`);
       responded = true;
 
-      each(
-        [stdout, stderr].filter(Boolean),
-        (stream, cb) => stream.end(cb),
-        error => {
-          if (error) {
-            throw error;
-          }
-          writer.write(response);
-        },
-      );
+      void Promise.all(
+        [stdout, stderr]
+          .filter(Boolean)
+          .map(stream => new Promise(resolve => stream.end(resolve))),
+      ).then(() => {
+        writer.write(response);
+      });
     }
   }
 
