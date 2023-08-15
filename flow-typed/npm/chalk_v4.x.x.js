@@ -32,7 +32,7 @@ declare module 'chalk' {
     has16m: boolean,
   };
 
-  declare interface Chalk {
+  declare type Chalk = {
     (...text: string[]): string,
     (text: TemplateStringsArray, ...placeholders: string[]): string,
     Instance(options?: ChalkOptions): Chalk,
@@ -98,7 +98,7 @@ declare module 'chalk' {
     +bgWhiteBrigh: Chalk,
 
     supportsColor: ColorSupport,
-  }
+  };
 
   declare module.exports: Chalk;
 }
