@@ -40,7 +40,6 @@
     "metro-config": "0.78.0",
     "metro-core": "0.78.0",
     "metro-file-map": "0.78.0",
-    "metro-inspector-proxy": "0.78.0",
     "metro-minify-terser": "0.78.0",
     "metro-resolver": "0.78.0",
     "metro-runtime": "0.78.0",

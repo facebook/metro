@@ -47,7 +47,6 @@ const {
   resolveConfig,
 } = require('metro-config');
 const {Terminal} = require('metro-core');
-const {InspectorProxy} = require('metro-inspector-proxy');
 const net = require('net');
 const {parse} = require('url');
 
@@ -68,7 +67,6 @@ export type RunServerOptions = $ReadOnly<{
   host?: string,
   onError?: (Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
-  runInspectorProxy?: boolean,
   secureServerOptions?: Object,
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
@@ -281,11 +279,6 @@ exports.runServer = async (
     serverApp.use(handler);
   }
 
-  let inspectorProxy: ?InspectorProxy = null;
-  if (config.server.runInspectorProxy) {
-    inspectorProxy = new InspectorProxy(config.projectRoot);
-  }
-
   let httpServer;
 
   if (secure || secureServerOptions != null) {
@@ -322,9 +315,6 @@ exports.runServer = async (
 
         websocketEndpoints = {
           ...websocketEndpoints,
-          ...(inspectorProxy
-            ? {...inspectorProxy.createWebSocketListeners(httpServer)}
-            : {}),
           '/hot': createWebsocketServer({
             websocketServer: new MetroHmrServer(
               metroServer.getBundler(),
@@ -349,14 +339,6 @@ exports.runServer = async (
             socket.destroy();
           }
         });
-
-        if (inspectorProxy) {
-          // TODO(hypuk): Refactor inspectorProxy.processRequest into separate request handlers
-          // so that we could provide routes (/json/list and /json/version) here.
-          // Currently this causes Metro to give warning about T31407894.
-          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-          serverApp.use(inspectorProxy.processRequest.bind(inspectorProxy));
-        }
 
         resolve(httpServer);
       });

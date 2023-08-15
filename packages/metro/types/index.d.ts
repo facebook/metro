@@ -62,7 +62,6 @@ export interface RunServerOptions {
   host?: string;
   onError?: (error: Error & {code?: string}) => void;
   onReady?: (server: HttpServer | HttpsServer) => void;
-  runInspectorProxy?: boolean;
   secureServerOptions?: Record<string, unknown>;
 
   /** @deprecated since version 0.61 */
