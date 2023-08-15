@@ -49,7 +49,7 @@ class InspectorProxy {
   // We store server's address with port (like '127.0.0.1:8081') to be able to build URLs
   // (devtoolsFrontendUrl and webSocketDebuggerUrl) for page descriptions. These URLs are used
   // by debugger to know where to connect.
-  _serverAddressWithPort: string = '';
+  _serverBaseUrl: string = '';
 
   constructor(projectRoot: string) {
     this._projectRoot = projectRoot;
@@ -93,15 +93,24 @@ class InspectorProxy {
   }
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
-  createWebSocketListeners(server: HttpServer | HttpsServer): {
+  createWebSocketListeners(
+    serverOrBaseUrl: HttpServer | HttpsServer | string,
+  ): {
     [path: string]: WS.Server,
   } {
-    const {port} = server.address();
-    if (server.address().family === 'IPv6') {
-      this._serverAddressWithPort = `[::1]:${port}`;
+    if (typeof serverOrBaseUrl === 'string') {
+      this._serverBaseUrl = serverOrBaseUrl;
     } else {
-      this._serverAddressWithPort = `localhost:${port}`;
+      const address = serverOrBaseUrl.address();
+      const port = address.port;
+
+      if (address.family === 'IPv6') {
+        this._serverBaseUrl = `[::1]:${port}`;
+      } else {
+        this._serverBaseUrl = `localhost:${port}`;
+      }
     }
+
     return {
       [WS_DEVICE_URL]: this._createDeviceConnectionWSServer(),
       [WS_DEBUGGER_URL]: this._createDebuggerConnectionWSServer(),
@@ -115,7 +124,7 @@ class InspectorProxy {
     device: Device,
     page: Page,
   ): PageDescription {
-    const debuggerUrl = `${this._serverAddressWithPort}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
+    const debuggerUrl = `${this._serverBaseUrl}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
     const webSocketDebuggerUrl = 'ws://' + debuggerUrl;
     const devtoolsFrontendUrl =
       'devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=' +
