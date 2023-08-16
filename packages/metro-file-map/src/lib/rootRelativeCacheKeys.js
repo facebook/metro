@@ -54,6 +54,7 @@ export default function rootRelativeCacheKeys(
         case 'extensions':
         case 'computeDependencies':
         case 'computeSha1':
+        case 'enableHastePackages':
         case 'enableSymlinks':
         case 'forceNodeFilesystemAPI':
         case 'platforms':

@@ -19,6 +19,7 @@ const buildParameters: BuildParameters = {
   computeDependencies: true,
   computeSha1: true,
   dependencyExtractor: null,
+  enableHastePackages: true,
   enableSymlinks: false,
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,

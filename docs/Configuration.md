@@ -243,6 +243,16 @@ Type: `string`
 
 What module to use as the canonical "empty" module when one is needed. Defaults to using the one included in `metro-runtime`. You only need to change this if Metro is installed outside of your project.
 
+#### `enableGlobalPackages`
+
+Type: `boolean`.
+
+Whether to automatically resolve references first-party packages (e.g. workspaces) in your project. Any `package.json` file with a valid `name` property within `projectRoot` or `watchFolders` (but outside of `node_modules`) counts as a package for this purpose. Defaults to `true`.
+
+:::note
+The default value of this option may change in a future version of Metro. If your project relies on it, it's recommended that you set it explicitly in your config file.
+:::
+
 #### `extraNodeModules`
 
 Type: `{[string]: string}`

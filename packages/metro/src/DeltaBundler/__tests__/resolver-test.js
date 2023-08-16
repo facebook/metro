@@ -1633,326 +1633,409 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('global packages', () => {
-      it('treats any folder with a package.json as a global package', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({
-              name: 'aPackage',
-              main: 'main.js',
-            }),
-            'main.js': '',
-            'other.js': '',
-          },
-        });
-
-        resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/main.js'),
-        });
-        expect(resolver.resolve(p('/root/index.js'), dep('aPackage/'))).toEqual(
-          {
-            type: 'sourceFile',
-            filePath: p('/root/aPackage/main.js'),
-          },
-        );
-        expect(
-          resolver.resolve(p('/root/index.js'), dep('aPackage/other')),
-        ).toEqual({type: 'sourceFile', filePath: p('/root/aPackage/other.js')});
-      });
-
-      it('resolves main package module to index.js by default', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({name: 'aPackage'}),
-            'index.js': '',
-          },
-        });
-
-        resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/index.js'),
-        });
-      });
-
-      it('uses the name in the package.json as the package name', async () => {
-        setMockFileSystem({
-          'index.js': mockFileImport("import a from 'aPackage';"),
-          aPackage: {
-            'package.json': JSON.stringify({}),
-            'index.js': '',
-          },
-          randomFolderName: {
-            'package.json': JSON.stringify({name: 'bPackage'}),
-            'index.js': '',
-          },
-        });
-
-        resolver = await createResolver();
-        expect(() =>
-          resolver.resolve(p('/root/index.js'), dep('aPackage')),
-        ).toThrowErrorMatchingSnapshot();
-        expect(resolver.resolve(p('/root/index.js'), dep('bPackage'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/randomFolderName/index.js'),
-        });
-      });
-
-      it('uses main field from the package.json', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({name: 'aPackage', main: 'lib/'}),
-            lib: {
-              'index.js': '',
+      describe.each([
+        {name: 'default config', config: {}},
+        {
+          name: 'explicitly enabled',
+          config: {
+            resolver: {
+              enableGlobalPackages: true,
             },
           },
-        });
-
-        resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/lib/index.js'),
-        });
-      });
-
-      it('supports package names with dots', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          'leftpad.js': {
-            'package.json': JSON.stringify({name: 'leftpad.js'}),
+        },
+      ])('$name', ({config}) => {
+        it('treats any folder with a package.json as a global package', async () => {
+          setMockFileSystem({
             'index.js': '',
-          },
-          'x.y.z': {
-            'package.json': JSON.stringify({name: 'x.y.z'}),
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                main: 'main.js',
+              }),
+              'main.js': '',
+              'other.js': '',
+            },
+          });
+
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/main.js'),
+          });
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage/')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/main.js'),
+          });
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage/other')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/other.js'),
+          });
+        });
+
+        it('resolves main package module to index.js by default', async () => {
+          setMockFileSystem({
             'index.js': '',
-          },
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+          });
+
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/index.js'),
+          });
         });
 
-        resolver = await createResolver();
-        expect(
-          resolver.resolve(p('/root/index.js'), dep('leftpad.js')),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/leftpad.js/index.js'),
-        });
-        expect(resolver.resolve(p('/root/index.js'), dep('x.y.z'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/x.y.z/index.js'),
-        });
-      });
+        it('uses the name in the package.json as the package name', async () => {
+          setMockFileSystem({
+            'index.js': mockFileImport("import a from 'aPackage';"),
+            aPackage: {
+              'package.json': JSON.stringify({}),
+              'index.js': '',
+            },
+            randomFolderName: {
+              'package.json': JSON.stringify({name: 'bPackage'}),
+              'index.js': '',
+            },
+          });
 
-      it('allows relative requires against packages', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({name: 'aPackage', main: 'main'}),
-            'main.js': '',
-          },
-          anotherPackage: {
-            'package.json': JSON.stringify({name: 'bPackage', main: 'main'}),
-            'main.js': '',
-          },
-        });
-
-        resolver = await createResolver();
-        expect(
-          resolver.resolve(p('/root/index.js'), dep('./aPackage')),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/main.js'),
-        });
-        expect(
-          resolver.resolve(
-            p('/root/aPackage/index.js'),
-            dep('../anotherPackage'),
-          ),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/anotherPackage/main.js'),
-        });
-      });
-
-      it('fatals on multiple packages with the same name', async () => {
-        // $FlowFixMe[cannot-write]
-        console.warn = jest.fn();
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({name: 'aPackage'}),
-          },
-          anotherPackage: {
-            'package.json': JSON.stringify({name: 'aPackage', main: 'main'}),
-            'main.js': '',
-          },
+          resolver = await createResolver(config);
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toThrowErrorMatchingSnapshot();
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('bPackage')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/randomFolderName/index.js'),
+          });
         });
 
-        await expect(createResolver()).rejects.toThrow(
-          'Duplicated files or mocks. Please check the console for more info',
-        );
-        expect(console.error).toHaveBeenCalledWith(
-          [
-            'metro-file-map: Haste module naming collision: aPackage',
-            '  The following files share their name; please adjust your hasteImpl:',
-            `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
-            `    * ${joinPath('<rootDir>', 'anotherPackage', 'package.json')}`,
-            '',
-          ].join('\n'),
-        );
-      });
-
-      it('does not support multiple global packages for different platforms', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          'aPackage.android.js': {
-            'package.json': JSON.stringify({name: 'aPackage'}),
+        it('uses main field from the package.json', async () => {
+          setMockFileSystem({
             'index.js': '',
-          },
-          'aPackage.ios.js': {
-            'package.json': JSON.stringify({name: 'aPackage'}),
-            'index.js': '',
-          },
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage', main: 'lib/'}),
+              lib: {
+                'index.js': '',
+              },
+            },
+          });
+
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/lib/index.js'),
+          });
         });
 
-        await expect(createResolver()).rejects.toThrow(
-          'Duplicated files or mocks. Please check the console for more info',
-        );
-        expect(console.error).toHaveBeenCalledWith(
-          [
-            'metro-file-map: Haste module naming collision: aPackage',
-            '  The following files share their name; please adjust your hasteImpl:',
-            `    * ${joinPath(
-              '<rootDir>',
-              'aPackage.android.js',
-              'package.json',
-            )}`,
-            `    * ${joinPath('<rootDir>', 'aPackage.ios.js', 'package.json')}`,
-            '',
-          ].join('\n'),
-        );
-      });
+        it('supports package names with dots', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'leftpad.js': {
+              'package.json': JSON.stringify({name: 'leftpad.js'}),
+              'index.js': '',
+            },
+            'x.y.z': {
+              'package.json': JSON.stringify({name: 'x.y.z'}),
+              'index.js': '',
+            },
+          });
 
-      it('resolves global packages before node_modules packages', async () => {
-        setMockFileSystem({
-          'index.js': '',
-          node_modules: {
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('leftpad.js')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/leftpad.js/index.js'),
+          });
+          expect(resolver.resolve(p('/root/index.js'), dep('x.y.z'))).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/x.y.z/index.js'),
+          });
+        });
+
+        it('allows relative requires against packages', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage', main: 'main'}),
+              'main.js': '',
+            },
+            anotherPackage: {
+              'package.json': JSON.stringify({name: 'bPackage', main: 'main'}),
+              'main.js': '',
+            },
+          });
+
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('./aPackage')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/main.js'),
+          });
+          expect(
+            resolver.resolve(
+              p('/root/aPackage/index.js'),
+              dep('../anotherPackage'),
+            ),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/anotherPackage/main.js'),
+          });
+        });
+
+        it('fatals on multiple packages with the same name', async () => {
+          // $FlowFixMe[cannot-write]
+          console.warn = jest.fn();
+          setMockFileSystem({
+            'index.js': '',
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+            },
+            anotherPackage: {
+              'package.json': JSON.stringify({name: 'aPackage', main: 'main'}),
+              'main.js': '',
+            },
+          });
+
+          await expect(createResolver(config)).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
+            [
+              'metro-file-map: Haste module naming collision: aPackage',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
+              `    * ${joinPath(
+                '<rootDir>',
+                'anotherPackage',
+                'package.json',
+              )}`,
+              '',
+            ].join('\n'),
+          );
+        });
+
+        it('does not support multiple global packages for different platforms', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'aPackage.android.js': {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+            'aPackage.ios.js': {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+          });
+
+          await expect(createResolver()).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
+            [
+              'metro-file-map: Haste module naming collision: aPackage',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath(
+                '<rootDir>',
+                'aPackage.android.js',
+                'package.json',
+              )}`,
+              `    * ${joinPath(
+                '<rootDir>',
+                'aPackage.ios.js',
+                'package.json',
+              )}`,
+              '',
+            ].join('\n'),
+          );
+        });
+
+        it('resolves global packages before node_modules packages', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            node_modules: {
+              foo: {
+                'package.json': JSON.stringify({name: 'foo'}),
+                'index.js': '',
+              },
+            },
             foo: {
               'package.json': JSON.stringify({name: 'foo'}),
               'index.js': '',
             },
-          },
-          foo: {
-            'package.json': JSON.stringify({name: 'foo'}),
+          });
+
+          resolver = await createResolver(config);
+          expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/foo/index.js'),
+          });
+        });
+
+        it('allows to require global package sub-dirs', async () => {
+          // $FlowFixMe[cannot-write]
+          console.warn = jest.fn();
+          setMockFileSystem({
             'index.js': '',
-          },
-        });
-
-        resolver = await createResolver();
-        expect(resolver.resolve(p('/root/index.js'), dep('foo'))).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/foo/index.js'),
-        });
-      });
-
-      it('allows to require global package sub-dirs', async () => {
-        // $FlowFixMe[cannot-write]
-        console.warn = jest.fn();
-        setMockFileSystem({
-          'index.js': '',
-          aPackage: {
-            'package.json': JSON.stringify({name: 'aPackage'}),
-            lib: {foo: {'bar.js': ''}},
-          },
-        });
-
-        resolver = await createResolver();
-        expect(
-          resolver.resolve(p('/root/index.js'), dep('aPackage/lib/foo/bar')),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/lib/foo/bar.js'),
-        });
-      });
-
-      ['browser', 'react-native'].forEach(browserField => {
-        describe(`${browserField} field in global packages`, () => {
-          it('supports simple field', async () => {
-            setMockFileSystem({
-              'index.js': '',
-              aPackage: {
-                'package.json': JSON.stringify({
-                  name: 'aPackage',
-                  [(browserField: string)]: 'client.js',
-                }),
-                'client.js': '',
-              },
-            });
-
-            resolver = await createResolver();
-            expect(
-              resolver.resolve(p('/root/index.js'), dep('aPackage')),
-            ).toEqual({
-              type: 'sourceFile',
-              filePath: p('/root/aPackage/client.js'),
-            });
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              lib: {foo: {'bar.js': ''}},
+            },
           });
 
-          it('resolves mappings without extensions', async () => {
-            setMockFileSystem({
-              'index.js': '',
-              aPackage: {
-                'package.json': JSON.stringify({
-                  name: 'aPackage',
-                  main: 'main.js',
-                  [(browserField: string)]: {'./main': './client'},
-                }),
-                'client.js': '',
-                'main.js': '',
-              },
+          resolver = await createResolver(config);
+          expect(
+            resolver.resolve(p('/root/index.js'), dep('aPackage/lib/foo/bar')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/lib/foo/bar.js'),
+          });
+        });
+
+        ['browser', 'react-native'].forEach(browserField => {
+          describe(`${browserField} field in global packages`, () => {
+            it('supports simple field', async () => {
+              setMockFileSystem({
+                'index.js': '',
+                aPackage: {
+                  'package.json': JSON.stringify({
+                    name: 'aPackage',
+                    [(browserField: string)]: 'client.js',
+                  }),
+                  'client.js': '',
+                },
+              });
+
+              resolver = await createResolver(config);
+              expect(
+                resolver.resolve(p('/root/index.js'), dep('aPackage')),
+              ).toEqual({
+                type: 'sourceFile',
+                filePath: p('/root/aPackage/client.js'),
+              });
             });
 
-            resolver = await createResolver();
-            expect(
-              resolver.resolve(p('/root/index.js'), dep('aPackage')),
-            ).toEqual({
-              type: 'sourceFile',
-              filePath: p('/root/aPackage/client.js'),
-            });
-            expect(
-              resolver.resolve(p('/root/index.js'), dep('aPackage/main')),
-            ).toEqual({
-              type: 'sourceFile',
-              filePath: p('/root/aPackage/client.js'),
+            it('resolves mappings without extensions', async () => {
+              setMockFileSystem({
+                'index.js': '',
+                aPackage: {
+                  'package.json': JSON.stringify({
+                    name: 'aPackage',
+                    main: 'main.js',
+                    [(browserField: string)]: {'./main': './client'},
+                  }),
+                  'client.js': '',
+                  'main.js': '',
+                },
+              });
+
+              resolver = await createResolver(config);
+              expect(
+                resolver.resolve(p('/root/index.js'), dep('aPackage')),
+              ).toEqual({
+                type: 'sourceFile',
+                filePath: p('/root/aPackage/client.js'),
+              });
+              expect(
+                resolver.resolve(p('/root/index.js'), dep('aPackage/main')),
+              ).toEqual({
+                type: 'sourceFile',
+                filePath: p('/root/aPackage/client.js'),
+              });
             });
           });
         });
-      });
 
-      it('works with custom main fields', async () => {
-        setMockFileSystem({
-          aPackage: {
-            'package.json': JSON.stringify({
-              name: 'aPackage',
-              'custom-field': {'left-pad': './left-pad-custom'},
-              browser: {'left-pad': './left-pad-browser'},
+        it('works with custom main fields', async () => {
+          setMockFileSystem({
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                'custom-field': {'left-pad': './left-pad-custom'},
+                browser: {'left-pad': './left-pad-browser'},
+              }),
+              'index.js': '',
+              './left-pad-custom.js': '',
+            },
+          });
+
+          resolver = await createResolver(
+            mergeConfig(defaultConfig, config, {
+              resolver: {resolverMainFields: ['custom-field', 'browser']},
             }),
-            'index.js': '',
-            './left-pad-custom.js': '',
+          );
+
+          expect(
+            resolver.resolve(p('/root/aPackage/index.js'), dep('left-pad')),
+          ).toEqual({
+            type: 'sourceFile',
+            filePath: p('/root/aPackage/left-pad-custom.js'),
+          });
+        });
+      });
+
+      describe('explicitly disabled', () => {
+        const config = {
+          resolver: {
+            enableGlobalPackages: false,
           },
+        };
+
+        test('does not resolve global packages', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                main: 'main.js',
+              }),
+              'main.js': '',
+              'other.js': '',
+            },
+          });
+
+          resolver = await createResolver(config);
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toThrowErrorMatchingSnapshot();
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage/')),
+          ).toThrowErrorMatchingSnapshot();
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage/other')),
+          ).toThrowErrorMatchingSnapshot();
         });
 
-        resolver = await createResolver({
-          resolver: {resolverMainFields: ['custom-field', 'browser']},
-        });
+        test('does not report duplicates', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'aPackage.android.js': {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+            'aPackage.ios.js': {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+          });
 
-        expect(
-          resolver.resolve(p('/root/aPackage/index.js'), dep('left-pad')),
-        ).toEqual({
-          type: 'sourceFile',
-          filePath: p('/root/aPackage/left-pad-custom.js'),
+          await expect(createResolver(config)).resolves;
+          expect(console.error).not.toHaveBeenCalled();
         });
       });
     });

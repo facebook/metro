@@ -21,6 +21,7 @@ export type {PerfLoggerFactory, PerfLogger};
 export type BuildParameters = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
+  enableHastePackages: boolean,
   enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,

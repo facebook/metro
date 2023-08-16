@@ -101,6 +101,7 @@ type ResolverConfigT = {
   disableHierarchicalLookup: boolean,
   dependencyExtractor: ?string,
   emptyModulePath: string,
+  enableGlobalPackages: boolean,
   unstable_enableSymlinks: boolean,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,

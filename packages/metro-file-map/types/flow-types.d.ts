@@ -20,6 +20,7 @@ export type {PerfLoggerFactory, PerfLogger};
 export type BuildParameters = Readonly<{
   computeDependencies: boolean;
   computeSha1: boolean;
+  enableHastePackages: boolean;
   enableSymlinks: boolean;
   extensions: ReadonlyArray<string>;
   forceNodeFilesystemAPI: boolean;

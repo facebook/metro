@@ -44,6 +44,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     emptyModulePath: require.resolve(
       'metro-runtime/src/modules/empty-module.js',
     ),
+    enableGlobalPackages: true,
     extraNodeModules: {},
     hasteImplModulePath: undefined,
     nodeModulesPaths: [],

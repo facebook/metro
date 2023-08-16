@@ -97,6 +97,7 @@ export interface ResolverConfigT {
   disableHierarchicalLookup: boolean;
   extraNodeModules: {[name: string]: string};
   emptyModulePath: string;
+  enableGlobalPackages: boolean;
   hasteImplModulePath?: string;
   nodeModulesPaths: ReadonlyArray<string>;
   platforms: ReadonlyArray<string>;

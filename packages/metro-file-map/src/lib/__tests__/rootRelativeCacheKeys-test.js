@@ -18,6 +18,7 @@ const buildParameters: BuildParameters = {
   computeDependencies: false,
   computeSha1: false,
   dependencyExtractor: null,
+  enableHastePackages: true,
   enableSymlinks: false,
   extensions: ['a'],
   forceNodeFilesystemAPI: false,
@@ -82,6 +83,7 @@ it('returns a distinct cache key for any change', () => {
       // Boolean
       case 'computeDependencies':
       case 'computeSha1':
+      case 'enableHastePackages':
       case 'enableSymlinks':
       case 'forceNodeFilesystemAPI':
       case 'retainAllFiles':
