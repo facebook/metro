@@ -702,6 +702,8 @@ class Server {
           entryFile: resolvedEntryFilePath,
           minify: transformOptions.minify,
           platform: transformOptions.platform,
+          customTransformOptions: bundleOptions.customTransformOptions,
+          customResolverOptions: bundleOptions.customResolverOptions,
         },
         isPrefetch: req.method === 'HEAD',
         type: 'bundle_build_started',

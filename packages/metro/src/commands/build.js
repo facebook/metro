@@ -123,6 +123,8 @@ module.exports = (): {
             entryFile: options.entry,
             minify: !!options.minify,
             platform: options.platform,
+            customTransformOptions: options.customTransformOptions,
+            customResolverOptions: options.customResolverOptions,
           },
         });
       },

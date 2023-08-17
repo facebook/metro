@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {CustomResolverOptions} from 'metro-resolver';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {Terminal} from 'metro-core';
 
@@ -26,6 +28,8 @@ export type BundleDetails = {
   entryFile: string,
   minify: boolean,
   platform: ?string,
+  customTransformOptions: CustomTransformOptions,
+  customResolverOptions: CustomResolverOptions,
   ...
 };
 
