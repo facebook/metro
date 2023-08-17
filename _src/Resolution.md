@@ -152,7 +152,7 @@ Parameters: (*context*, *moduleName*, *platform*)
 1. Try resolving _moduleName_ as a [Haste module](#resolvehastemodule-string--string).
    If found, then
    1. Return result as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
-2. Try resolving _moduleName_ as a [Haste package](#resolvehastepackage-string--string), or a path *relative* to a Haste package.
+2. Try resolving _moduleName_ as a [Haste (global) package](#resolvehastepackage-string--string), or a path *relative* to a Haste package.
    For example, if _moduleName_ is `'a/b/c'`, try the following potential Haste package names:
    1. `'a/b/c'`, relative path `''`
    2. `'a/b'`, relative path `'./c'`
@@ -218,9 +218,9 @@ The default implementation of this function uses [metro-file-map](https://www.np
 
 #### `resolveHastePackage: string => ?string`
 
-Resolves a Haste package name to an absolute `package.json` path. Returns `null` if no such package exists.
+Resolves a Haste (global) package name to an absolute `package.json` path. Returns `null` if no such package exists.
 
-The default implementation of this function uses [metro-file-map](https://www.npmjs.com/package/metro-file-map)'s `getPackage` method.
+The default implementation of this function uses [metro-file-map](https://www.npmjs.com/package/metro-file-map)'s `getPackage` method and can be turned on or off using [`resolver.enableGlobalPackages`](./Configuration.md#enableglobalpackages).
 
 #### `allowHaste: boolean`
 
