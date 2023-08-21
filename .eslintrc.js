@@ -21,6 +21,10 @@ module.exports = {
       },
     },
     {
+      files: ['package.json'],
+      parser: 'jsonc-eslint-parser',
+    },
+    {
       files: ['packages/*/types/**/*.d.ts'],
       extends: './scripts/eslint/typescript',
     },
