@@ -36,7 +36,8 @@ const siteConfig = {
         staticDocsProject: 'metro',
         enableEditor: true,
         gtag: {
-          trackingID: 'UA-44373548-17',
+          trackingID: 'G-Q1FRRC47Y6',
+          anonymizeIP: true,
         },
       },
     ],
