@@ -119,6 +119,8 @@ module.exports = (): {
           type: 'bundle_build_started',
           bundleDetails: {
             bundleType: 'Bundle',
+            customResolverOptions: options.customResolverOptions ?? {},
+            customTransformOptions: options.customTransformOptions ?? {},
             dev: !!options.dev,
             entryFile: options.entry,
             minify: !!options.minify,

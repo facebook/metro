@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {CustomResolverOptions} from 'metro-resolver';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {Terminal} from 'metro-core';
 
@@ -22,6 +24,8 @@ export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
 export type BundleDetails = {
   bundleType: string,
+  customResolverOptions: CustomResolverOptions,
+  customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
   minify: boolean,

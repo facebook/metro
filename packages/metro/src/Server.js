@@ -698,6 +698,8 @@ class Server {
         buildID: getBuildID(buildNumber),
         bundleDetails: {
           bundleType: bundleOptions.bundleType,
+          customResolverOptions: bundleOptions.customResolverOptions,
+          customTransformOptions: bundleOptions.customTransformOptions,
           dev: transformOptions.dev,
           entryFile: resolvedEntryFilePath,
           minify: transformOptions.minify,
