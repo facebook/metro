@@ -15,7 +15,7 @@
   "dependencies": {
     "connect": "^3.6.5",
     "cosmiconfig": "^5.0.5",
-    "jest-validate": "^29.2.1",
+    "jest-validate": "^29.6.3",
     "metro": "0.78.1",
     "metro-cache": "0.78.1",
     "metro-core": "0.78.1",
