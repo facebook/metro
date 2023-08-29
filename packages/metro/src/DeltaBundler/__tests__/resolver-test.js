@@ -2034,7 +2034,7 @@ function dep(name: string): TransformResultDependency {
             },
           });
 
-          await expect(createResolver(config)).resolves;
+          resolver = await createResolver(config);
           expect(console.error).not.toHaveBeenCalled();
         });
       });
