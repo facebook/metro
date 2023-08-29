@@ -14,7 +14,15 @@ let resolvedConfig = {};
 let loadHasBeenCalled = false;
 let returnNull = false;
 
-const cosmiconfig = jest.fn(() => ({
+const cosmiconfig = {
+  cosmiconfig: jest.fn(),
+  setResolvedConfig: jest.fn(),
+  setReturnNull: jest.fn(),
+  reset: jest.fn(),
+  hasLoadBeenCalled: jest.fn(),
+};
+
+cosmiconfig.cosmiconfig = jest.fn(() => ({
   search: async () =>
     returnNull
       ? null
