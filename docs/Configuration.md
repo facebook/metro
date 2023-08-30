@@ -395,6 +395,30 @@ In a future release of Metro, this option will become `true` by default.
 
 ---
 
+#### `unstable_enableSymlinks` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Enable experimental support for projects containing symbolic links (symlinks).
+
+When enabled, Metro traverses symlinks during module and asset [resolution](./Resolution.md), instead of ignoring symlinks. Note that, as with any other file Metro needs to resolve, the symlink target *must be within configured [watched folders](#watchfolders)* and not otherwise excluded.
+
+Defaults to `false`.
+
+:::info
+
+For example, if you have a Metro project within a [Yarn workspace](https://classic.yarnpkg.com/lang/en/docs/workspaces/) (a subdirectory of a Yarn workspace root), it's likely you'll want to include your workspace *root* path in your configured [`watchFolders`](#watchfolders) so that Metro can resolve other workspaces or hoisted `node_modules`. Similarly, to use [linked packages](https://classic.yarnpkg.com/lang/en/docs/cli/link/), you'll need to list those package source locations (or a containing directory) in [`watchFolders`](#watchfolders).
+
+:::
+
+:::note
+
+In a future release of Metro, this option will become `true` by default.
+
+:::
+
+---
+
 ### Transformer Options
 
 <!-- Keep old links to `asyncRequireModulePath` working -->
