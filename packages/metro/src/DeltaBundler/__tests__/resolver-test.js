@@ -1633,17 +1633,12 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('global packages', () => {
-      describe.each([
-        {name: 'default config', config: {}},
-        {
-          name: 'explicitly enabled',
-          config: {
-            resolver: {
-              enableGlobalPackages: true,
-            },
+      describe('explicitly enabled', () => {
+        const config = {
+          resolver: {
+            enableGlobalPackages: true,
           },
-        },
-      ])('$name', ({config}) => {
+        };
         it('treats any folder with a package.json as a global package', async () => {
           setMockFileSystem({
             'index.js': '',
@@ -1843,7 +1838,7 @@ function dep(name: string): TransformResultDependency {
             },
           });
 
-          await expect(createResolver()).rejects.toThrow(
+          await expect(createResolver(config)).rejects.toThrow(
             'Duplicated files or mocks. Please check the console for more info',
           );
           expect(console.error).toHaveBeenCalledWith(
@@ -1989,13 +1984,17 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      describe('explicitly disabled', () => {
-        const config = {
-          resolver: {
-            enableGlobalPackages: false,
+      describe.each([
+        {name: 'default config', config: {}},
+        {
+          name: 'explicitly disabled',
+          config: {
+            resolver: {
+              enableGlobalPackages: false,
+            },
           },
-        };
-
+        },
+      ])('$name', ({config}) => {
         test('does not resolve global packages', async () => {
           setMockFileSystem({
             'index.js': '',
@@ -2050,6 +2049,7 @@ function dep(name: string): TransformResultDependency {
               __dirname,
               '../__fixtures__/hasteImpl.js',
             ),
+            enableGlobalPackages: true,
           },
         };
       });
@@ -2381,10 +2381,12 @@ function dep(name: string): TransformResultDependency {
             'package.json': '{}',
             'index.js': '',
           },
-          foo: {
-            'package.json': JSON.stringify({name: 'foo'}),
-            lib: {'bar.js': ''},
-            'index.js': '',
+          node_modules: {
+            foo: {
+              'package.json': JSON.stringify({name: 'foo'}),
+              lib: {'bar.js': ''},
+              'index.js': '',
+            },
           },
         });
 
@@ -2396,11 +2398,14 @@ function dep(name: string): TransformResultDependency {
           resolver.resolve(p('/root/folder/index.js'), dep('foo')),
         ).toEqual({
           type: 'sourceFile',
-          filePath: p('/root/foo/index.js'),
+          filePath: p('/root/node_modules/foo/index.js'),
         });
         expect(
           resolver.resolve(p('/root/folder/index.js'), dep('foo/lib/bar')),
-        ).toEqual({type: 'sourceFile', filePath: p('/root/foo/lib/bar.js')});
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/foo/lib/bar.js'),
+        });
       });
 
       it('supports scoped `extraNodeModules`', async () => {

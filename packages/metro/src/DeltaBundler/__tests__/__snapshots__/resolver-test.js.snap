@@ -48,12 +48,19 @@ None of these files exist:
   3 | import bar from 'foo';"
 `;
 
-exports[`linux global packages default config uses the name in the package.json as the package name 1`] = `
+exports[`linux global packages default config does not resolve global packages 1`] = `
 "Unable to resolve module aPackage from /root/index.js: aPackage could not be found within the project.
-  1 | import foo from 'bar';
-> 2 | import a from 'aPackage';
-    |                ^
-  3 | import bar from 'foo';"
+> 1 |"
+`;
+
+exports[`linux global packages default config does not resolve global packages 2`] = `
+"Unable to resolve module aPackage/ from /root/index.js: aPackage/ could not be found within the project.
+> 1 |"
+`;
+
+exports[`linux global packages default config does not resolve global packages 3`] = `
+"Unable to resolve module aPackage/other from /root/index.js: aPackage/other could not be found within the project.
+> 1 |"
 `;
 
 exports[`linux global packages explicitly disabled does not resolve global packages 1`] = `
@@ -248,12 +255,19 @@ None of these files exist:
   3 | import bar from 'foo';"
 `;
 
-exports[`win32 global packages default config uses the name in the package.json as the package name 1`] = `
+exports[`win32 global packages default config does not resolve global packages 1`] = `
 "Unable to resolve module aPackage from C:\\\\root\\\\index.js: aPackage could not be found within the project.
-  1 | import foo from 'bar';
-> 2 | import a from 'aPackage';
-    |                ^
-  3 | import bar from 'foo';"
+> 1 |"
+`;
+
+exports[`win32 global packages default config does not resolve global packages 2`] = `
+"Unable to resolve module aPackage/ from C:\\\\root\\\\index.js: aPackage/ could not be found within the project.
+> 1 |"
+`;
+
+exports[`win32 global packages default config does not resolve global packages 3`] = `
+"Unable to resolve module aPackage/other from C:\\\\root\\\\index.js: aPackage/other could not be found within the project.
+> 1 |"
 `;
 
 exports[`win32 global packages explicitly disabled does not resolve global packages 1`] = `
