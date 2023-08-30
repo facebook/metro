@@ -247,11 +247,7 @@ What module to use as the canonical "empty" module when one is needed. Defaults 
 
 Type: `boolean`.
 
-Whether to automatically resolve references first-party packages (e.g. workspaces) in your project. Any `package.json` file with a valid `name` property within `projectRoot` or `watchFolders` (but outside of `node_modules`) counts as a package for this purpose. Defaults to `true`.
-
-:::note
-The default value of this option may change in a future version of Metro. If your project relies on it, it's recommended that you set it explicitly in your config file.
-:::
+Whether to automatically resolve references to first-party packages (e.g. workspaces) in your project. Any `package.json` file with a valid `name` property within `projectRoot` or `watchFolders` (but outside of `node_modules`) counts as a package for this purpose. Defaults to `false`.
 
 #### `extraNodeModules`
 
@@ -390,6 +386,30 @@ Defaults to `false`.
 :::note
 
 In a future release of Metro, this option will become `true` by default.
+
+:::
+
+---
+
+#### `unstable_enableSymlinks` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Enable experimental support for projects containing symbolic links (symlinks).
+
+When enabled, Metro traverses symlinks during module and asset [resolution](./Resolution.md), instead of ignoring symlinks. Note that, as with any other file Metro needs to resolve, the symlink target *must be within configured [watched folders](#watchfolders)* and not otherwise excluded.
+
+Defaults to `true` since Metro v0.79.0.
+
+:::info
+
+For example, if you have a Metro project within a [Yarn workspace](https://classic.yarnpkg.com/lang/en/docs/workspaces/) (a subdirectory of a Yarn workspace root), it's likely you'll want to include your workspace *root* path in your configured [`watchFolders`](#watchfolders) so that Metro can resolve other workspaces or hoisted `node_modules`. Similarly, to use [linked packages](https://classic.yarnpkg.com/lang/en/docs/cli/link/), you'll need to list those package source locations (or a containing directory) in [`watchFolders`](#watchfolders).
+
+:::
+
+:::note
+
+In a future release of Metro, this option will be removed (symlink support will be always-on).
 
 :::
 
