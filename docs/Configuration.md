@@ -403,7 +403,7 @@ Enable experimental support for projects containing symbolic links (symlinks).
 
 When enabled, Metro traverses symlinks during module and asset [resolution](./Resolution.md), instead of ignoring symlinks. Note that, as with any other file Metro needs to resolve, the symlink target *must be within configured [watched folders](#watchfolders)* and not otherwise excluded.
 
-Defaults to `false`.
+Defaults to `true` since Metro v0.79.0.
 
 :::info
 
@@ -413,7 +413,7 @@ For example, if you have a Metro project within a [Yarn workspace](https://class
 
 :::note
 
-In a future release of Metro, this option will become `true` by default.
+In a future release of Metro, this option will be removed (symlink support will be always-on).
 
 :::
 
