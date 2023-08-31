@@ -273,11 +273,11 @@ exports.runServer = async (
     watch,
   });
 
-  serverApp.use(middleware);
-
   for (const handler of unstable_extraMiddleware ?? []) {
     serverApp.use(handler);
   }
+
+  serverApp.use(middleware);
 
   let httpServer;
 
