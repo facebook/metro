@@ -137,7 +137,7 @@ type SerializerConfigT = {
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({
     platform: ?string,
-    customTransformOptions: CustomTransformOptions,
+    customTransformOptions: ?CustomTransformOptions,
     ...
   }) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
