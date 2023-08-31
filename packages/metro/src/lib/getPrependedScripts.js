@@ -39,6 +39,7 @@ async function getPrependedScripts(
   const polyfillModuleNames = config.serializer
     .getPolyfills({
       platform: options.platform,
+      customTransformOptions: options.customTransformOptions,
     })
     .concat(config.serializer.polyfillModuleNames);
 
