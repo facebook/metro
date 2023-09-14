@@ -904,33 +904,39 @@ export default class HasteMap extends EventEmitter {
     const rootDir = this._options.rootDir;
 
     let changeQueue: Promise<null | void> = Promise.resolve();
-    let eventsQueue: EventsQueue = [];
-    let eventStartTimestamp = null;
+    let nextEmit: ?{
+      eventsQueue: EventsQueue,
+      firstEventTimestamp: number,
+      firstEnqueuedTimestamp: number,
+    } = null;
 
     const emitChange = () => {
-      if (eventsQueue.length) {
-        const hmrPerfLogger = this._options.perfLoggerFactory?.('HMR', {
-          key: this._getNextChangeID(),
-        });
-        if (hmrPerfLogger != null) {
-          hmrPerfLogger.start({timestamp: nullthrows(eventStartTimestamp)});
-          hmrPerfLogger.point('waitingForChangeInterval_start', {
-            timestamp: nullthrows(eventStartTimestamp),
-          });
-          hmrPerfLogger.point('waitingForChangeInterval_end');
-          hmrPerfLogger.annotate({
-            int: {eventsQueueLength: eventsQueue.length},
-          });
-          hmrPerfLogger.point('fileChange_start');
-        }
-        const changeEvent: ChangeEvent = {
-          logger: hmrPerfLogger,
-          eventsQueue,
-        };
-        this.emit('change', changeEvent);
-        eventsQueue = [];
-        eventStartTimestamp = null;
+      if (nextEmit == null || nextEmit.eventsQueue.length === 0) {
+        // Nothing to emit
+        return;
       }
+      const {eventsQueue, firstEventTimestamp, firstEnqueuedTimestamp} =
+        nextEmit;
+      const hmrPerfLogger = this._options.perfLoggerFactory?.('HMR', {
+        key: this._getNextChangeID(),
+      });
+      if (hmrPerfLogger != null) {
+        hmrPerfLogger.start({timestamp: firstEventTimestamp});
+        hmrPerfLogger.point('waitingForChangeInterval_start', {
+          timestamp: firstEnqueuedTimestamp,
+        });
+        hmrPerfLogger.point('waitingForChangeInterval_end');
+        hmrPerfLogger.annotate({
+          int: {eventsQueueLength: eventsQueue.length},
+        });
+        hmrPerfLogger.point('fileChange_start');
+      }
+      const changeEvent: ChangeEvent = {
+        logger: hmrPerfLogger,
+        eventsQueue,
+      };
+      this.emit('change', changeEvent);
+      nextEmit = null;
     };
 
     const onChange = (
@@ -975,15 +981,14 @@ export default class HasteMap extends EventEmitter {
         return;
       }
 
-      if (eventStartTimestamp == null) {
-        eventStartTimestamp = performance.timeOrigin + performance.now();
-      }
+      const onChangeStartTime = performance.timeOrigin + performance.now();
 
       changeQueue = changeQueue
         .then(async () => {
           // If we get duplicate events for the same file, ignore them.
           if (
-            eventsQueue.find(
+            nextEmit != null &&
+            nextEmit.eventsQueue.find(
               event =>
                 event.type === type &&
                 event.filePath === absoluteFilePath &&
@@ -1001,11 +1006,21 @@ export default class HasteMap extends EventEmitter {
           const linkStats = fileSystem.linkStats(relativeFilePath);
 
           const enqueueEvent = (metadata: ChangeEventMetadata) => {
-            eventsQueue.push({
+            const event = {
               filePath: absoluteFilePath,
               metadata,
               type,
-            });
+            };
+            if (nextEmit == null) {
+              nextEmit = {
+                eventsQueue: [event],
+                firstEventTimestamp: onChangeStartTime,
+                firstEnqueuedTimestamp:
+                  performance.timeOrigin + performance.now(),
+              };
+            } else {
+              nextEmit.eventsQueue.push(event);
+            }
             return null;
           };
 
