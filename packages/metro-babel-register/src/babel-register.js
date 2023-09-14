@@ -22,7 +22,18 @@ const path = require('path');
 let _only /*: $ReadOnlyArray<RegExp | string> */ = [];
 
 function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
-  require('@babel/register')({
+  // NB: `require('@babel/register')` registers Babel as a side-effect, and
+  // also returns a register function that overrides the first registration
+  // when called.
+  //
+  // If `require` is used between the two registrations, Babel will behave in
+  // its default mode, searching for a config file and loading whatever
+  // plugins/presets are specified within, to compile whatever is `require`d.
+  //
+  // Since our `config()` uses `require` to load plugins, and we don't want
+  // these plugins to be compiled with an arbitrary Babel config, we must
+  // prepare the config object before calling `require('@babel/register')`.
+  const registerConfig = {
     ...config(onlyList),
     extensions: [
       '.ts',
@@ -34,7 +45,9 @@ function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
       '.js',
       '.mjs',
     ],
-  });
+  };
+
+  require('@babel/register')(registerConfig);
 }
 
 function config(
