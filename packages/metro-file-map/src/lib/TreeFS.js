@@ -559,13 +559,13 @@ export default class TreeFS implements MutableFileSystem {
       typeof literalSymlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
-    if (path.isAbsolute(literalSymlinkTarget)) {
-      normalSymlinkTarget = path.relative(this.#rootDir, literalSymlinkTarget);
-    } else {
-      normalSymlinkTarget = path.normalize(
-        path.join(path.dirname(canonicalPathOfSymlink), literalSymlinkTarget),
-      );
-    }
+    const absoluteSymlinkTarget = path.resolve(
+      this.#rootDir,
+      canonicalPathOfSymlink,
+      '..', // Symlink target is relative to its containing directory.
+      literalSymlinkTarget, // May be absolute, in which case the above are ignored
+    );
+    normalSymlinkTarget = path.relative(this.#rootDir, absoluteSymlinkTarget);
     this.#cachedNormalSymlinkTargets.set(symlinkNode, normalSymlinkTarget);
     return normalSymlinkTarget;
   }
