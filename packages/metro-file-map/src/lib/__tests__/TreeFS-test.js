@@ -37,7 +37,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('foo/link-to-another.js'), ['', 0, 0, 0, '', '', p('another.js')]],
         [p('../outside/external.js'), ['', 0, 0, 0, '', '', 0]],
         [p('bar.js'), ['bar', 234, 0, 0, '', '', 0]],
-        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('././abnormal/../foo')]],
+        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./../project/foo')]],
         [p('abs-link-out'), ['', 456, 0, 0, '', '', p('/outside/./baz/..')]],
         [p('root'), ['', 0, 0, 0, '', '', '..']],
         [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
