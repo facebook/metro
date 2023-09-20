@@ -110,7 +110,9 @@ jobs:
       - checkout
       - yarn_install
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      - run: npm run publish
+      - run:
+          name: Infer dist-tag and run npm run publish
+          command: ./.circleci/scripts/publish.sh
       - run: rm ~/.npmrc
 
 workflows:
@@ -134,4 +136,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /v[0-9]+(\.[0-9]+)*/
+              only: /v\d+(\.\d+){2}(-.*)?/
