@@ -110,10 +110,6 @@ jobs:
       - checkout
       - yarn_install
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-    steps:
-      - checkout
-      - yarn_install
-      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
       - run:
           name: NPM publish, tagged with either "latest" or release branch name
           command: |
@@ -133,7 +129,6 @@ jobs:
               [ "$TAG_ON_RELEASE_BRANCH" -eq 1 ] && NPM_TAG=$RELEASE_BRANCH
               echo "Publishing with --tag="$NPM_TAG"
               npm run publish --tag="$NPM_TAG"
-      - run: rm ~/.npmrc
       - run: rm ~/.npmrc
 
 workflows:
@@ -157,4 +152,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /v[0-9]+(\.[0-9]+)*/
+              only: /v\d+(\.\d+){2}(-.*)?/
