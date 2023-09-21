@@ -10,4 +10,6 @@
 
 'use strict';
 
-module.exports = (): (() => void) => () => {};
+module.exports =
+  (namespace: string): ((...Array<mixed>) => void) =>
+  () => {};
