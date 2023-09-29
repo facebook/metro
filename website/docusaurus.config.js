@@ -12,6 +12,7 @@
 
 const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 
+/** @type {import('@docusaurus/types').Config} */
 const siteConfig = {
   presets: [
     [
