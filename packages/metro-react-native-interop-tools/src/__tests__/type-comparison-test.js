@@ -23,7 +23,7 @@ function getTypeFromAlias(body: Statement): FlowType {
 }
 
 function getTypeFromCode(stringType: string): AnyTypeAnnotation {
-  const ast = parse('type T =' + stringType, {
+  const ast: $FlowFixMe = parse('type T =' + stringType, {
     babel: true,
     sourceType: 'module',
     sourceFilename: 'NativeDeviceManager.js',

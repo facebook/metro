@@ -26,7 +26,7 @@
     "eslint-plugin-relay": "^1.8.3",
     "flow-bin": "^0.217.2",
     "glob": "^7.1.1",
-    "hermes-eslint": "0.15.0",
+    "hermes-eslint": "0.16.0",
     "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
@@ -37,7 +37,7 @@
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
     "prettier": "2.8.8",
-    "prettier-plugin-hermes-parser": "0.14.0",
+    "prettier-plugin-hermes-parser": "0.16.0",
     "progress": "^2.0.0",
     "typescript": "5.0.4"
   },

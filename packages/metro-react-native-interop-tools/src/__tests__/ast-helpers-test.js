@@ -381,6 +381,7 @@ test('getNameFromID, testing BabelNodeStringLiteral', () => {
 });
 
 test('getNodeLoc, testing basic loc', () => {
+  // $FlowFixMe[incompatible-exact]
   const ast: BabelNodeFile = parse('test', {
     babel: true,
     sourceType: 'module',
@@ -443,6 +444,7 @@ test('getBoundarySchemaFromAST, integration test', () => {
         },
       };
     }`;
+  // $FlowFixMe[incompatible-exact]
   const ast: BabelNodeFile = parse(code, {
     babel: true,
     sourceType: 'module',
