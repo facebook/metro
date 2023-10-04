@@ -102,9 +102,8 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       // You get this behavior by default when using Babel's `transform` method directly.
       cloneInputAst: false,
     };
-    const sourceAst: BabelNodeFile = options.hermesParser
-      ? // $FlowFixMe[incompatible-exact]
-        require('hermes-parser').parse(src, {
+    const sourceAst = options.hermesParser
+      ? require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
         })
