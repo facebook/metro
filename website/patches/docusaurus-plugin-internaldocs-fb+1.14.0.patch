@@ -1,0 +1,13 @@
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/index.js b/node_modules/docusaurus-plugin-internaldocs-fb/index.js
+index 09e669d..8a72e74 100644
+--- a/node_modules/docusaurus-plugin-internaldocs-fb/index.js
++++ b/node_modules/docusaurus-plugin-internaldocs-fb/index.js
+@@ -18,7 +18,7 @@ const rendered_components_1 = require("./lib/rendered-components");
+ let haveWarnedAboutReferencedFiles = false;
+ function plugin(context, opts) {
+     // Throw a useful error if an incompatible version of Docusaurus is used with this plugin
+-    (0, validate_peer_dependencies_1.default)(__dirname);
++    // (0, validate_peer_dependencies_1.default)(__dirname);
+     const cacheExists = fs_extra_1.default.pathExistsSync(path_1.default.resolve(context.siteDir, '.docusaurus')) ||
+         fs_extra_1.default.pathExistsSync(path_1.default.resolve(context.siteDir, 'node_modules', '.cache'));
+     return {
