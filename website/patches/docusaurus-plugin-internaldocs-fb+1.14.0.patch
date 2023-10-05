@@ -6,7 +6,7 @@ index d85567a..524e56e 100644
      result.themes.push([require.resolve('.'), opts]);
      if (!((_d = (_c = context.siteConfig) === null || _c === void 0 ? void 0 : _c.themeConfig) === null || _d === void 0 ? void 0 : _d.algolia)) {
          result.plugins.push(require.resolve('docusaurus-lunr-search'));
-+        result.plugins.push(function() {
++        result.themes.push(function() {
 +          return {
 +            name: 'docusaurus-fb-search-theme',
 +            getThemePath: () => {
