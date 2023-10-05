@@ -1,3 +1,22 @@
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/docusaurus-preset.js b/node_modules/docusaurus-plugin-internaldocs-fb/docusaurus-preset.js
+index d85567a..524e56e 100644
+--- a/node_modules/docusaurus-plugin-internaldocs-fb/docusaurus-preset.js
++++ b/node_modules/docusaurus-plugin-internaldocs-fb/docusaurus-preset.js
+@@ -91,6 +91,14 @@ function preset(context, opts = { docs: {} }) {
+     result.themes.push([require.resolve('.'), opts]);
+     if (!((_d = (_c = context.siteConfig) === null || _c === void 0 ? void 0 : _c.themeConfig) === null || _d === void 0 ? void 0 : _d.algolia)) {
+         result.plugins.push(require.resolve('docusaurus-lunr-search'));
++        result.plugins.push(function() {
++          return {
++            name: 'docusaurus-fb-search-theme',
++            getThemePath: () => {
++              return path_1.default.resolve(__dirname, './theme-search');
++            },
++          };
++        });
+     }
+     return result;
+ }
 diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/index.js b/node_modules/docusaurus-plugin-internaldocs-fb/index.js
 index 09e669d..8a72e74 100644
 --- a/node_modules/docusaurus-plugin-internaldocs-fb/index.js
@@ -11,3 +30,51 @@ index 09e669d..8a72e74 100644
      const cacheExists = fs_extra_1.default.pathExistsSync(path_1.default.resolve(context.siteDir, '.docusaurus')) ||
          fs_extra_1.default.pathExistsSync(path_1.default.resolve(context.siteDir, 'node_modules', '.cache'));
      return {
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/DocSearch.d.ts b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/DocSearch.d.ts
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/DocSearch.d.ts
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/DocSearch.d.ts
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/DocSearch.js b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/DocSearch.js
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/DocSearch.js
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/DocSearch.js
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/algolia.css b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/algolia.css
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/algolia.css
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/algolia.css
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/index.d.ts b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/index.d.ts
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/index.d.ts
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/index.d.ts
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/index.js b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/index.js
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/index.js
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/index.js
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/lunar-search.d.ts b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/lunar-search.d.ts
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/lunar-search.d.ts
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/lunar-search.d.ts
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/lunar-search.js b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/lunar-search.js
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/lunar-search.js
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/lunar-search.js
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/styles.css b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/styles.css
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/styles.css
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/styles.css
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/templates.d.ts b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/templates.d.ts
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/templates.d.ts
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/templates.d.ts
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/templates.js b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/templates.js
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/templates.js
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/templates.js
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/utils.d.ts b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/utils.d.ts
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/utils.d.ts
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/utils.d.ts
+diff --git a/node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/utils.js b/node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/utils.js
+similarity index 100%
+rename from node_modules/docusaurus-plugin-internaldocs-fb/theme/SearchBar/utils.js
+rename to node_modules/docusaurus-plugin-internaldocs-fb/theme-search/SearchBar/utils.js
