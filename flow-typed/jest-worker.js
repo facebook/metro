@@ -118,6 +118,7 @@ declare module 'jest-worker' {
 
   declare export type IJestWorker<TExposed: {...} = {}> = $ReadOnly<{
     // dynamically exposed methods from the worker
+    // $FlowFixMe[incompatible-exact]
     ...TExposed,
 
     getStderr: () => stream$Readable,
