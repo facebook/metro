@@ -24,14 +24,16 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
     We recommend using `npm exec --workspaces` to register all packages in the `metro` repo — these can be individually linked into the target project later.
 
-        npm exec --workspaces -- yarn link
+    ```bash
+    npm exec --workspaces -- yarn link
+    ```
 
 2. **Use `yarn link` to replace Metro packages in your target project**
 
     From inside our target project folder, `yarn link <package-name>` can be used to apply our registered `metro` packages for that project only.
 
     ```sh
-    # Links 3 packages
+    # Links 3 packages  
     yarn link metro metro-config metro-runtime
     ```
 
@@ -59,7 +61,9 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
     Now we should be able to run Metro within our target project. Remember to restart this command after any code changes you make to `metro` or to the target project's `metro.config.js` file.
 
-        yarn react-native start
+    ```bash
+    yarn react-native start
+    ```
 
 4. **(Optional) Clean up with `yarn unlink`**
 
@@ -71,6 +75,8 @@ Metro uses the [debug](https://www.npmjs.com/package/debug) package to write log
 
 The snippet below provides a pattern matching all Metro-defined messages.
 
-    DEBUG='Metro:*' yarn metro serve
+```bash
+DEBUG='Metro:*' yarn metro serve
+```
 
 [1]: https://classic.yarnpkg.com/en/docs/cli/link
