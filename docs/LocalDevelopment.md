@@ -24,7 +24,7 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
     We recommend using `npm exec --workspaces` to register all packages in the `metro` repo — these can be individually linked into the target project later.
 
-    ```bash
+    ```sh
     npm exec --workspaces -- yarn link
     ```
 
@@ -33,7 +33,7 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
     From inside our target project folder, `yarn link <package-name>` can be used to apply our registered `metro` packages for that project only.
 
     ```sh
-    # Links 3 packages  
+    # Links 3 packages
     yarn link metro metro-config metro-runtime
     ```
 
@@ -75,7 +75,7 @@ Metro uses the [debug](https://www.npmjs.com/package/debug) package to write log
 
 The snippet below provides a pattern matching all Metro-defined messages.
 
-```bash
+```sh
 DEBUG='Metro:*' yarn metro serve
 ```
 
