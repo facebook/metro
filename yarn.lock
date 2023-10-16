@@ -319,7 +319,7 @@
   resolved "https://registry.yarnpkg.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.20.2.tgz#d1b9000752b18d0877cff85a5c376ce5c3121629"
   integrity sha512-8RvlJG2mj4huQ4pZ+rU9lqKi9ZKiRmuvGuM2HlWmkmgOhbs6zEAw6IEiJ5cQqGbDzGZOhwuOQNtZMi/ENLjZoQ==
 
-"@babel/helper-plugin-utils@^7.22.5":
+"@babel/helper-plugin-utils@^7.22.5", "@babel/helper-plugin-utils@^7.8.3":
   version "7.22.5"
   resolved "https://registry.yarnpkg.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.22.5.tgz#dd7ee3735e8a313b9f7b05a773d892e88e6d7295"
   integrity sha512-uLls06UVKgFG9QD4OeFYLEGteMIAa5kpTPcFL28yuCIIzsf6ZyKZMllKVOCZFhiZ5ptnwX4mtKdWCBE/uT4amg==
@@ -513,6 +513,14 @@
     "@babel/helper-plugin-utils" "^7.18.9"
     "@babel/plugin-syntax-export-default-from" "^7.18.6"
 
+"@babel/plugin-proposal-export-namespace-from@^7.18.9":
+  version "7.18.9"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-export-namespace-from/-/plugin-proposal-export-namespace-from-7.18.9.tgz#5f7313ab348cdb19d590145f9247540e94761203"
+  integrity sha512-k1NtHyOMvlDDFeb9G5PhUXuGj8m/wiwojgQVEhJ/fsVsMCpLyOP4h0uGEjYJKrRI+EVPlb5Jk+Gt9P97lOGwtA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.18.9"
+    "@babel/plugin-syntax-export-namespace-from" "^7.8.3"
+
 "@babel/plugin-proposal-nullish-coalescing-operator@^7.13.8", "@babel/plugin-proposal-nullish-coalescing-operator@^7.18.0":
   version "7.18.6"
   resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-nullish-coalescing-operator/-/plugin-proposal-nullish-coalescing-operator-7.18.6.tgz#fdd940a99a740e577d6c753ab6fbb43fdb9467e1"
@@ -602,6 +610,13 @@
   integrity sha512-Kr//z3ujSVNx6E9z9ih5xXXMqK07VVTuqPmqGe6Mss/zW5XPeLZeSDZoP9ab/hT4wPKqAgjl2PnhPrcpk8Seew==
   dependencies:
     "@babel/helper-plugin-utils" "^7.18.6"
+
+"@babel/plugin-syntax-export-namespace-from@^7.8.3":
+  version "7.8.3"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-export-namespace-from/-/plugin-syntax-export-namespace-from-7.8.3.tgz#028964a9ba80dbc094c915c487ad7c4e7a66465a"
+  integrity sha512-MXf5laXo6c1IbEbegDmzGPwGNTsHZmEy6QGznu5Sh2UCWvueywb2ee+CCE4zQiZstxU9BMoQO9i6zUFSY0Kj0Q==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.8.3"
 
 "@babel/plugin-syntax-flow@^7.0.0", "@babel/plugin-syntax-flow@^7.12.1", "@babel/plugin-syntax-flow@^7.18.0", "@babel/plugin-syntax-flow@^7.18.6":
   version "7.18.6"
@@ -2245,6 +2260,13 @@ babel-plugin-replace-ts-export-assignment@^0.0.2:
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/babel-plugin-replace-ts-export-assignment/-/babel-plugin-replace-ts-export-assignment-0.0.2.tgz#927a30ba303fcf271108980a8d4f80a693e1d53f"
   integrity sha512-BiTEG2Ro+O1spuheL5nB289y37FFmz0ISE6GjpNCG2JuA/WNcuEHSYw01+vN8quGf208sID3FnZFDwVyqX18YQ==
+
+babel-plugin-syntax-hermes-parser@0.16.0:
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-syntax-hermes-parser/-/babel-plugin-syntax-hermes-parser-0.16.0.tgz#6edc0c7bf9519c382917884aa6bc6c50ed808da6"
+  integrity sha512-ilLrICG3FSbruZ4RmM6vPxpuocsStsZE7UPgCQim/oYv0XxSTJesywxt7JYaJiJoP3e4KZdnKVF3egcFnr5qaA==
+  dependencies:
+    hermes-parser "0.16.0"
 
 babel-plugin-syntax-trailing-function-commas@^7.0.0-beta.0:
   version "7.0.0-beta.0"

@@ -66,7 +66,7 @@ function config(
     ignore: [/\/node_modules\//],
     only: [..._only],
     plugins: [
-      [require('@babel/plugin-transform-flow-strip-types').default],
+      [require('@babel/plugin-proposal-export-namespace-from').default],
       [
         require('@babel/plugin-transform-modules-commonjs').default,
         {
@@ -78,6 +78,14 @@ function config(
     retainLines: true,
     sourceMaps: 'inline',
     overrides: [
+      {
+        test: /\.js$/,
+        plugins: [
+          [require('babel-plugin-syntax-hermes-parser').default],
+          [require('babel-plugin-transform-flow-enums')],
+          [require('@babel/plugin-transform-flow-strip-types').default],
+        ],
+      },
       {
         test: /\.tsx?$/,
         plugins: [
