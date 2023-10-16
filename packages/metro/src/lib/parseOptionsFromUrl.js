@@ -74,8 +74,9 @@ module.exports = function parseOptionsFromUrl(
       // protocol is blob:http. This breaks loading source maps through
       // protocol-relative URLs, which is why we must force the HTTP protocol
       // when loading the bundle for either Android or iOS.
+      // TODO(T167298674): Remove when remote debugging is not needed in React Native
       protocol:
-        platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
+        platform != null && platform.match(/^(android|ios|vr)$/) ? 'http' : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
     sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
