@@ -103,9 +103,10 @@ const Actions = {
       name?: string,
       data?: DependencyDataInput,
     } = {},
-  ) {
-    Actions.addInferredDependency(path, dependencyPath, options);
+  ): string {
+    const key = Actions.addInferredDependency(path, dependencyPath, options);
     files.add(path);
+    return key;
   },
 
   addInferredDependency(
@@ -120,7 +121,7 @@ const Actions = {
       name?: string,
       data?: DependencyDataInput,
     } = {},
-  ): void {
+  ): string {
     if (!mockedDependencies.has(path)) {
       Actions.createFile(path);
     }
@@ -128,7 +129,7 @@ const Actions = {
     const depName = name ?? dependencyPath.replace('/', '');
     const key = require('crypto')
       .createHash('sha1')
-      .update(depName)
+      .update([depName, data?.asyncType ?? '(null)'].join('\0'))
       .digest('base64');
     const dep = {
       name: depName,
@@ -149,11 +150,16 @@ const Actions = {
 
     mockedDependencyTree.set(path, deps);
     mockedDependencies.add(dependencyPath);
+    return key;
   },
 
   removeDependency(path: string, dependencyPath: string) {
     Actions.removeInferredDependency(path, dependencyPath);
+    files.add(path);
+  },
 
+  removeDependencyByKey(path: string, key: string) {
+    Actions.removeInferredDependencyByKey(path, key);
     files.add(path);
   },
 
@@ -161,6 +167,15 @@ const Actions = {
     const deps = nullthrows(mockedDependencyTree.get(path));
 
     const index = deps.findIndex(({path}) => path === dependencyPath);
+    if (index !== -1) {
+      deps.splice(index, 1);
+      mockedDependencyTree.set(path, deps);
+    }
+  },
+
+  removeInferredDependencyByKey(path: string, key: string) {
+    const deps = nullthrows(mockedDependencyTree.get(path));
+    const index = deps.findIndex(({data}) => data.key === key);
     if (index !== -1) {
       deps.splice(index, 1);
       mockedDependencyTree.set(path, deps);
@@ -1535,6 +1550,48 @@ describe('edge cases', () => {
       ┌─────────┐          ┌──────┐
       │  /quux  │          │ /baz │
       └─────────┘          └──────┘
+      */
+      expect(
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set([]),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('removing an async dependency preserves existing sync dependency', async () => {
+      const asyncDependencyKey = Actions.addDependency('/bundle', '/foo', {
+        data: {
+          asyncType: 'async',
+        },
+      });
+      /*
+      ┌─────────┐ ───▶ ┌──────┐     ┌──────┐
+      │ /bundle │      │ /foo │ ──▶ │ /bar │
+      └─────────┘ ···▶ └──────┘     └──────┘
+                          │
+                          │
+                          ▼
+                       ┌──────┐
+                       │ /baz │
+                       └──────┘
+      */
+      await graph.initialTraverseDependencies(localOptions);
+      files.clear();
+      Actions.removeDependencyByKey('/bundle', asyncDependencyKey);
+
+      // The synchronous dependency remains, /foo should not be removed.
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
       */
       expect(
         getPaths(await graph.traverseDependencies([...files], localOptions)),
