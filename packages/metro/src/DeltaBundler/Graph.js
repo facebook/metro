@@ -485,16 +485,19 @@ export class Graph<T = MixedOutput> {
       return;
     }
 
+    const module = this.dependencies.get(absolutePath);
+
     if (options.lazy && dependency.data.data.asyncType != null) {
       this._decrementImportBundleReference(dependency, parentModule);
+    } else if (module) {
+      // Decrement inverseDependencies only if the dependency is not async,
+      // mirroring the increment conditions in _addDependency.
+      module.inverseDependencies.delete(parentModule.path);
     }
-
-    const module = this.dependencies.get(absolutePath);
 
     if (!module) {
       return;
     }
-    module.inverseDependencies.delete(parentModule.path);
     if (
       module.inverseDependencies.size > 0 ||
       this.entryPoints.has(absolutePath)
