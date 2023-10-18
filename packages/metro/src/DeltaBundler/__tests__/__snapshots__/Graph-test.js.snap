@@ -5,12 +5,12 @@ TestGraph {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
-        "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
+        "LB7P4TKrvfdUdViBXGaVopqz7Os=" => Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
               "asyncType": null,
-              "key": "C+7Hteo/D9vJXQ3UfzxbwnXaijM=",
+              "key": "LB7P4TKrvfdUdViBXGaVopqz7Os=",
               "locs": Array [],
             },
             "name": "foo",
@@ -34,23 +34,23 @@ TestGraph {
     },
     "/foo" => Object {
       "dependencies": Map {
-        "Ys23Ag/5IOWqZCw9QGaVDdHwH00=" => Object {
+        "W+de6an7x9bzpev84O0W/hS4K8U=" => Object {
           "absolutePath": "/bar",
           "data": Object {
             "data": Object {
               "asyncType": null,
-              "key": "Ys23Ag/5IOWqZCw9QGaVDdHwH00=",
+              "key": "W+de6an7x9bzpev84O0W/hS4K8U=",
               "locs": Array [],
             },
             "name": "bar",
           },
         },
-        "u+lgol6jEdIdQGaek98gA7qbkKI=" => Object {
+        "x6e9Oz1JO0QPfIBBjUad2qqGFjI=" => Object {
           "absolutePath": "/baz",
           "data": Object {
             "data": Object {
               "asyncType": null,
-              "key": "u+lgol6jEdIdQGaek98gA7qbkKI=",
+              "key": "x6e9Oz1JO0QPfIBBjUad2qqGFjI=",
               "locs": Array [],
             },
             "name": "baz",
@@ -132,12 +132,12 @@ TestGraph {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
-        "C+7Hteo/D9vJXQ3UfzxbwnXaijM=" => Object {
+        "LB7P4TKrvfdUdViBXGaVopqz7Os=" => Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
               "asyncType": null,
-              "key": "C+7Hteo/D9vJXQ3UfzxbwnXaijM=",
+              "key": "LB7P4TKrvfdUdViBXGaVopqz7Os=",
               "locs": Array [],
             },
             "name": "foo",
