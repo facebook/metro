@@ -44,6 +44,7 @@ class Transformer {
       getTransformOptions: _getTransformOptions,
       transformVariants: _transformVariants,
       workerPath: _workerPath,
+      unstable_workerThreads: _workerThreads,
       ...transformerConfig
     } = this._config.transformer;
 

@@ -135,6 +135,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
+    unstable_workerThreads: false,
   },
   watcher: {
     additionalExts,
@@ -144,6 +145,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       interval: 30000,
       timeout: 5000,
     },
+    unstable_workerThreads: false,
     watchman: {
       deferStates: ['hg.update'],
     },

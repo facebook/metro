@@ -77,6 +77,7 @@ export type InputOptions = $ReadOnly<{
   computeSha1?: ?boolean,
   enableHastePackages?: boolean,
   enableSymlinks?: ?boolean,
+  enableWorkerThreads?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
@@ -112,6 +113,7 @@ type HealthCheckOptions = $ReadOnly<{
 
 type InternalOptions = {
   ...BuildParameters,
+  enableWorkerThreads: boolean,
   healthCheck: HealthCheckOptions,
   perfLoggerFactory: ?PerfLoggerFactory,
   resetCache: ?boolean,
@@ -309,6 +311,7 @@ export default class FileMap extends EventEmitter {
 
     this._options = {
       ...buildParameters,
+      enableWorkerThreads: options.enableWorkerThreads ?? false,
       healthCheck: options.healthCheck,
       maxWorkers: options.maxWorkers,
       perfLoggerFactory: options.perfLoggerFactory,
@@ -808,6 +811,7 @@ export default class FileMap extends EventEmitter {
           exposedMethods: ['worker'],
           maxRetries: 3,
           numWorkers: this._options.maxWorkers,
+          enableWorkerThreads: this._options.enableWorkerThreads,
           forkOptions: {
             // Don't pass Node arguments down to workers. In particular, avoid
             // unnecessarily registering Babel when we're running Metro from

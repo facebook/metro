@@ -151,6 +151,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -169,6 +170,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -329,6 +331,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -347,6 +350,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -507,6 +511,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -525,6 +530,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",
@@ -685,6 +691,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -703,6 +710,7 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
         "hg.update",

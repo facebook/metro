@@ -84,6 +84,7 @@ function createFileMap(
     dependencyExtractor: config.resolver.dependencyExtractor,
     enableHastePackages: config?.resolver.enableGlobalPackages,
     enableSymlinks: config.resolver.unstable_enableSymlinks,
+    enableWorkerThreads: config.watcher.unstable_workerThreads,
     extensions: Array.from(
       new Set([
         ...config.resolver.sourceExts,

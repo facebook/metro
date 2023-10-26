@@ -146,6 +146,7 @@ type TransformerConfigT = {
   transformVariants: {+[name: string]: {...}},
   workerPath: string,
   publicPath: string,
+  unstable_workerThreads: boolean,
 };
 
 type MetalConfigT = {
@@ -196,6 +197,7 @@ type WatcherConfigT = {
     timeout: number,
     filePrefix: string,
   },
+  unstable_workerThreads: boolean,
   watchman: {
     deferStates: $ReadOnlyArray<string>,
   },
