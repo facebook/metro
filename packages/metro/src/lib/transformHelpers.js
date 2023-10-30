@@ -35,7 +35,13 @@ type TransformOptionsWithRawInlines = {
   +inlineRequires: InlineRequiresRaw,
 };
 
-const baseIgnoredInlineRequires = ['React', 'react', 'react-native'];
+const baseIgnoredInlineRequires = [
+  'React',
+  'react',
+  'react/jsx-dev-runtime',
+  'react/jsx-runtime',
+  'react-native',
+];
 
 async function calcTransformerOptions(
   entryFiles: $ReadOnlyArray<string>,
