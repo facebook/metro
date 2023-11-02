@@ -43,7 +43,7 @@ const transformerContents = (() =>
   require('fs').readFileSync(babelTransformerPath))();
 
 const HEADER_DEV =
-  '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
+  '__d(function local_file_js__module_factory__(global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
 const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 
 let fs: FSType;
