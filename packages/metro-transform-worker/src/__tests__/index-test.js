@@ -572,3 +572,22 @@ it('allows outputting comments when `minify: true`', async () => {
     });"
   `);
 });
+
+it('omits invalid characters from module factory name', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/!@£% weird name.js',
+    Buffer.from('arbitrary(code)', 'utf8'),
+    baseTransformOptions,
+  );
+
+  expect(result.output[0].type).toBe('js/module');
+  expect(result.output[0].data.code).toBe(
+    [
+      getExpectedHeaderDev('local______weird_name_js'),
+      '  arbitrary(code);',
+      '});',
+    ].join('\n'),
+  );
+});
