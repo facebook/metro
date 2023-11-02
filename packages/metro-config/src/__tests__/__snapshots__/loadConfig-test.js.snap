@@ -140,7 +140,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-terser",
+    "minifierPath": "/~/packages/metro-minify-terser/src/index.js",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -320,7 +320,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-terser",
+    "minifierPath": "/~/packages/metro-minify-terser/src/index.js",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -500,7 +500,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-terser",
+    "minifierPath": "/~/packages/metro-minify-terser/src/index.js",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
@@ -680,7 +680,7 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-terser",
+    "minifierPath": "/~/packages/metro-minify-terser/src/index.js",
     "optimizationSizeLimit": 153600,
     "publicPath": "/assets",
     "transformVariants": Object {
