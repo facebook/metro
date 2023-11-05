@@ -71,7 +71,7 @@ type ModuleList = Map<ModuleID, ModuleDefinition>;
 export type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 export type DefineFn = (
   factory: FactoryFn,
-  moduleId: number,
+  moduleId: ModuleID,
   dependencyMap?: DependencyMap,
   verboseName?: string,
   inverseDependencies?: InverseDependencyMap,
@@ -108,17 +108,13 @@ function clear(): ModuleList {
 }
 
 if (__DEV__) {
-  var verboseNamesToModuleIds: {
-    [key: string]: number,
-    __proto__: null,
-    ...
-  } = Object.create(null);
-  var initializingModuleIds: Array<number> = [];
+  var verboseNamesToModuleIds = new Map<ModuleID, ModuleID>();
+  var initializingModuleIds: Array<ModuleID> = [];
 }
 
 function define(
   factory: FactoryFn,
-  moduleId: number,
+  moduleId: ModuleID,
   dependencyMap?: DependencyMap,
 ): void {
   if (modules.has(moduleId)) {
@@ -161,7 +157,7 @@ function define(
     const verboseName: string | void = arguments[3];
     if (verboseName) {
       mod.verboseName = verboseName;
-      verboseNamesToModuleIds[verboseName] = moduleId;
+      verboseNamesToModuleIds.set(verboseName, moduleId);
     }
   }
 }
@@ -169,7 +165,7 @@ function define(
 function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
+    moduleId = verboseNamesToModuleIds.get(verboseName);
     if (moduleId == null) {
       throw new Error(`Unknown named module: "${verboseName}"`);
     } else {
@@ -180,17 +176,12 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     }
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
-  const moduleIdReallyIsNumber: number = moduleId;
-
   if (__DEV__) {
-    const initializingIndex = initializingModuleIds.indexOf(
-      moduleIdReallyIsNumber,
-    );
+    const initializingIndex = initializingModuleIds.indexOf(moduleId);
     if (initializingIndex !== -1) {
       const cycle = initializingModuleIds
         .slice(initializingIndex)
-        .map((id: number | string) =>
+        .map((id: ModuleID) =>
           modules.has(id) ? modules.get(id).verboseName : '[unknown]',
         );
 
@@ -205,11 +196,11 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     }
   }
 
-  const module = modules.get(moduleIdReallyIsNumber);
+  const module = modules.get(moduleId);
 
   return module && module.isInitialized
     ? module.publicModule.exports
-    : guardedLoadModule(moduleIdReallyIsNumber, module);
+    : guardedLoadModule(moduleId, module);
 }
 
 // We print require cycles unless they match a pattern in the
@@ -233,48 +224,38 @@ function metroImportDefault(
 ): any | Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
+    moduleId = verboseNamesToModuleIds.get(verboseName);
   }
-
-  //$FlowFixMe: at this point we know that moduleId is a number
-  const moduleIdReallyIsNumber: number = moduleId;
 
   if (
-    modules.has(moduleIdReallyIsNumber) &&
-    modules.get(moduleIdReallyIsNumber).importedDefault !== EMPTY
+    modules.has(moduleId) &&
+    modules.get(moduleId).importedDefault !== EMPTY
   ) {
-    return modules.get(moduleIdReallyIsNumber).importedDefault;
+    return modules.get(moduleId).importedDefault;
   }
 
-  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  const exports: Exports = metroRequire(moduleId);
   const importedDefault: any | Exports =
     exports && exports.__esModule ? exports.default : exports;
 
   // $FlowFixMe The metroRequire call above will throw if modules.get(id) is null
-  return (modules.get(moduleIdReallyIsNumber).importedDefault =
-    importedDefault);
+  return (modules.get(moduleId).importedDefault = importedDefault);
 }
 metroRequire.importDefault = metroImportDefault;
 
 function metroImportAll(
-  moduleId: ModuleID | VerboseModuleNameForDev | number,
+  moduleId: ModuleID | VerboseModuleNameForDev,
 ): any | Exports | {[string]: any} {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
+    moduleId = verboseNamesToModuleIds.get(verboseName);
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
-  const moduleIdReallyIsNumber: number = moduleId;
-
-  if (
-    modules.has(moduleIdReallyIsNumber) &&
-    modules.get(moduleIdReallyIsNumber).importedAll !== EMPTY
-  ) {
-    return modules.get(moduleIdReallyIsNumber).importedAll;
+  if (modules.has(moduleId) && modules.get(moduleId).importedAll !== EMPTY) {
+    return modules.get(moduleId).importedAll;
   }
 
-  const exports: Exports = metroRequire(moduleIdReallyIsNumber);
+  const exports: Exports = metroRequire(moduleId);
   let importedAll: Exports | {[string]: any};
 
   if (exports && exports.__esModule) {
@@ -295,7 +276,7 @@ function metroImportAll(
   }
 
   // $FlowFixMe The metroRequire call above will throw if modules.get(id) is null
-  return (modules.get(moduleIdReallyIsNumber).importedAll = importedAll);
+  return (modules.get(moduleId).importedAll = importedAll);
 }
 metroRequire.importAll = metroImportAll;
 
