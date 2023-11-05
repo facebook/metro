@@ -120,7 +120,7 @@ type ResolverConfigT = {
 };
 
 type SerializerConfigT = {
-  createModuleIdFactory: () => (path: string) => number,
+  createModuleIdFactory: () => (path: string) => number | string,
   customSerializer: ?(
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,

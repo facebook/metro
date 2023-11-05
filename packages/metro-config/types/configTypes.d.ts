@@ -115,7 +115,7 @@ export interface ResolverConfigT {
 }
 
 export interface SerializerConfigT {
-  createModuleIdFactory: () => (path: string) => number;
+  createModuleIdFactory: () => (path: string) => number | string;
   customSerializer:
     | ((
         entryPoint: string,
