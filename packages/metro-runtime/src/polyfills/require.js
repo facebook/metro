@@ -108,7 +108,6 @@ function clear(): ModuleList {
 }
 
 if (__DEV__) {
-  var verboseNamesToModuleIds = new Map<ModuleID, ModuleID>();
   var initializingModuleIds: Array<ModuleID> = [];
 }
 
@@ -157,25 +156,11 @@ function define(
     const verboseName: string | void = arguments[3];
     if (verboseName) {
       mod.verboseName = verboseName;
-      verboseNamesToModuleIds.set(verboseName, moduleId);
     }
   }
 }
 
 function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
-  if (__DEV__ && typeof moduleId === 'string') {
-    const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds.get(verboseName);
-    if (moduleId == null) {
-      throw new Error(`Unknown named module: "${verboseName}"`);
-    } else {
-      console.warn(
-        `Requiring module "${verboseName}" by name is only supported for ` +
-          'debugging purposes and will BREAK IN PRODUCTION!',
-      );
-    }
-  }
-
   if (__DEV__) {
     const initializingIndex = initializingModuleIds.indexOf(moduleId);
     if (initializingIndex !== -1) {
@@ -222,11 +207,6 @@ function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
 function metroImportDefault(
   moduleId: ModuleID | VerboseModuleNameForDev,
 ): any | Exports {
-  if (__DEV__ && typeof moduleId === 'string') {
-    const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds.get(verboseName);
-  }
-
   if (
     modules.has(moduleId) &&
     modules.get(moduleId).importedDefault !== EMPTY
@@ -246,11 +226,6 @@ metroRequire.importDefault = metroImportDefault;
 function metroImportAll(
   moduleId: ModuleID | VerboseModuleNameForDev,
 ): any | Exports | {[string]: any} {
-  if (__DEV__ && typeof moduleId === 'string') {
-    const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds.get(verboseName);
-  }
-
   if (modules.has(moduleId) && modules.get(moduleId).importedAll !== EMPTY) {
     return modules.get(moduleId).importedAll;
   }
