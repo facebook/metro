@@ -26,6 +26,14 @@ type DirectoryNode = Map<string, MixedNode>;
 type FileNode = FileMetaData;
 type MixedNode = FileNode | DirectoryNode;
 
+type LookupResult =
+  | {
+      exists: false,
+    }
+  | {
+      exists: true,
+    };
+
 // Terminology:
 //
 // mixedPath - a root-relative or absolute path
@@ -37,11 +45,38 @@ export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTargets: WeakMap<FileNode, Path> = new WeakMap();
   +#rootDir: Path;
   #rootNode: DirectoryNode = new Map();
+  #watchedRootPaths: $ReadOnlyArray<string>;
+  #watchedRootNodes: WeakSet<DirectoryNode> = new WeakSet();
+  +#throwOutsideRoots: boolean = false;
 
-  constructor({rootDir, files}: {rootDir: Path, files?: FileData}) {
+  constructor({
+    rootDir,
+    files,
+    roots,
+    throwOutsideRoots = false,
+  }: {
+    rootDir: Path,
+    roots: $ReadOnlyArray<Path>,
+    files?: FileData,
+    throwOutsideRoots: boolean,
+  }) {
     this.#rootDir = rootDir;
+    this.#throwOutsideRoots = throwOutsideRoots;
     if (files != null) {
       this.bulkAddOrModify(files);
+    }
+    this.#watchedRootPaths = roots;
+    for (const rootPath of roots) {
+      const rootLookup = this._lookupByNormalPath(
+        this._normalizePath(rootPath),
+        {
+          followLeaf: false,
+          makeDirectories: false,
+        },
+      );
+      if (rootLookup?.node instanceof Map) {
+        this.#watchedRootNodes.add(rootLookup.node);
+      }
     }
   }
 
@@ -133,8 +168,20 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   exists(mixedPath: Path): boolean {
-    const result = this._getFileData(mixedPath);
-    return result != null;
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {
+      followLeaf: true,
+    });
+
+    if (result && result.exists !== false && !(result.node instanceof Map)) {
+      return true;
+    }
+
+    if (result.isUnderWatch === false && this.#throwOutsideRoots) {
+      throw new Error(`${mixedPath} is not watched`);
+    }
+
+    return false;
   }
 
   getAllFiles(): Array<Path> {
@@ -159,6 +206,18 @@ export default class TreeFS implements MutableFileSystem {
       fileType,
       modifiedTime,
     };
+  }
+
+  lookup(mixedPath: Path): LookupResult {
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
+    if (result.node instanceof Map) {
+      return {
+        exists: true,
+        fileType: 'd',
+      };
+    }
+    return fastPath.resolve(this.#rootDir, result.canonicalPath);
   }
 
   /**
@@ -189,7 +248,7 @@ export default class TreeFS implements MutableFileSystem {
   }>): Iterable<Path> {
     const normalRoot = rootDir == null ? '' : this._normalizePath(rootDir);
     const contextRootResult = this._lookupByNormalPath(normalRoot);
-    if (!contextRootResult) {
+    if (contextRootResult.exists === false) {
       return;
     }
     const {canonicalPath: rootRealPath, node: contextRoot} = contextRootResult;
@@ -242,7 +301,7 @@ export default class TreeFS implements MutableFileSystem {
   getRealPath(mixedPath: Path): ?string {
     const normalPath = this._normalizePath(mixedPath);
     const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
-    if (!result || result.node instanceof Map) {
+    if (!result || result.exists === false || result.node instanceof Map) {
       return null;
     }
     return fastPath.resolve(this.#rootDir, result.canonicalPath);
@@ -255,7 +314,7 @@ export default class TreeFS implements MutableFileSystem {
     const parentDirNode = this._lookupByNormalPath(path.dirname(normalPath), {
       makeDirectories: true,
     });
-    if (!parentDirNode) {
+    if (parentDirNode.exists === false) {
       throw new Error(
         `TreeFS: Failed to make parent directory entry for ${mixedPath}`,
       );
@@ -301,7 +360,7 @@ export default class TreeFS implements MutableFileSystem {
   remove(mixedPath: Path): ?FileMetaData {
     const normalPath = this._normalizePath(mixedPath);
     const result = this._lookupByNormalPath(normalPath, {followLeaf: false});
-    if (!result) {
+    if (result.exists === false) {
       return null;
     }
     const {parentNode, canonicalPath, node} = result;
@@ -329,10 +388,10 @@ export default class TreeFS implements MutableFileSystem {
       followLeaf?: boolean,
       makeDirectories?: boolean,
     } = {followLeaf: true, makeDirectories: false},
-  ): ?(
+  ):
     | {canonicalPath: string, node: MixedNode, parentNode: DirectoryNode}
     | {canonicalPath: string, node: DirectoryNode, parentNode: null}
-  ) {
+    | {exists: false, isUnderWatch?: boolean} {
     // We'll update the target if we hit a symlink.
     let targetNormalPath = requestedNormalPath;
     // Lazy-initialised set of seen target paths, to detect symlink cycles.
@@ -343,7 +402,12 @@ export default class TreeFS implements MutableFileSystem {
     // The parent of the current segment
     let parentNode = this.#rootNode;
 
+    let hasTraversedWatchRoot = false;
+
     while (targetNormalPath.length > fromIdx) {
+      if (!hasTraversedWatchRoot && this.#watchedRootNodes.has(parentNode)) {
+        hasTraversedWatchRoot = true;
+      }
       const nextSepIdx = targetNormalPath.indexOf(path.sep, fromIdx);
       const isLastSegment = nextSepIdx === -1;
       const segmentName = isLastSegment
@@ -358,7 +422,10 @@ export default class TreeFS implements MutableFileSystem {
       let segmentNode = parentNode.get(segmentName);
       if (segmentNode == null) {
         if (opts.makeDirectories !== true) {
-          return null;
+          return {
+            exists: false,
+            isUnderWatch: hasTraversedWatchRoot,
+          };
         }
         segmentNode = new Map();
         parentNode.set(segmentName, segmentNode);
@@ -381,38 +448,46 @@ export default class TreeFS implements MutableFileSystem {
 
       // If the next node is a directory, go into it
       if (segmentNode instanceof Map) {
+        if (hasTraversedWatchRoot && segmentName === '..') {
+          hasTraversedWatchRoot = false;
+        }
         parentNode = segmentNode;
-      } else {
-        if (segmentNode[H.SYMLINK] === 0) {
-          // Regular file in a directory path
-          return null;
-        }
-
-        // Symlink in a directory path
-        const normalSymlinkTarget = this._resolveSymlinkTargetToNormalPath(
-          segmentNode,
-          isLastSegment
-            ? targetNormalPath
-            : targetNormalPath.slice(0, fromIdx - 1),
-        );
-
-        // Append any subsequent path segments to the symlink target, and reset
-        // with our new target.
-        targetNormalPath = isLastSegment
-          ? normalSymlinkTarget
-          : normalSymlinkTarget + path.sep + targetNormalPath.slice(fromIdx);
-        if (seen == null) {
-          // Optimisation: set this lazily only when we've encountered a symlink
-          seen = new Set([requestedNormalPath]);
-        }
-        if (seen.has(targetNormalPath)) {
-          // TODO: Warn `Symlink cycle detected: ${[...seen, node].join(' -> ')}`
-          return null;
-        }
-        seen.add(targetNormalPath);
-        fromIdx = 0;
-        parentNode = this.#rootNode;
+        continue;
       }
+
+      if (segmentNode[H.SYMLINK] === 0) {
+        // Regular file in a directory path
+        return {
+          exists: false,
+        };
+      }
+
+      // Symlink in a directory path
+      const normalSymlinkTarget = this._resolveSymlinkTargetToNormalPath(
+        segmentNode,
+        isLastSegment
+          ? targetNormalPath
+          : targetNormalPath.slice(0, fromIdx - 1),
+      );
+
+      // Append any subsequent path segments to the symlink target, and reset
+      // with our new target.
+      targetNormalPath = isLastSegment
+        ? normalSymlinkTarget
+        : normalSymlinkTarget + path.sep + targetNormalPath.slice(fromIdx);
+      if (seen == null) {
+        // Optimisation: set this lazily only when we've encountered a symlink
+        seen = new Set([requestedNormalPath]);
+      }
+      if (seen.has(targetNormalPath)) {
+        // TODO: Warn `Symlink cycle detected: ${[...seen, node].join(' -> ')}`
+        return {
+          exists: false,
+        };
+      }
+      seen.add(targetNormalPath);
+      fromIdx = 0;
+      parentNode = this.#rootNode;
     }
     invariant(parentNode === this.#rootNode, 'Unexpectedly escaped traversal');
     return {
@@ -516,7 +591,7 @@ export default class TreeFS implements MutableFileSystem {
           const resolved = this._lookupByNormalPath(normalPathOfSymlink, {
             followLeaf: true,
           });
-          if (resolved == null) {
+          if (resolved.exists === false) {
             // Symlink goes nowhere, nothing to report.
             continue;
           }
@@ -578,7 +653,7 @@ export default class TreeFS implements MutableFileSystem {
     const result = this._lookupByNormalPath(normalPath, {
       followLeaf: opts.followLeaf,
     });
-    if (result == null || result.node instanceof Map) {
+    if (result.exists === false || result.node instanceof Map) {
       return null;
     }
     return result.node;

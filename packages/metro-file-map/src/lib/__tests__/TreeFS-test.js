@@ -30,6 +30,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     const TreeFS = require('../TreeFS').default;
     tfs = new TreeFS({
       rootDir: p('/project'),
+      roots: [p('/project'), p('../outside')],
+      throwOutsideRoots: true,
       files: new Map([
         [p('foo/another.js'), ['another', 123, 0, 0, '', '', 0]],
         [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
@@ -76,6 +78,28 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     expect(tfs.exists(p('/project/foo'))).toBe(false);
     expect(tfs.exists(p('/project/link-to-foo'))).toBe(false);
     expect(tfs.exists(p('/project/link-to-nowhere'))).toBe(false);
+  });
+
+  test.each([p('/foo'), p('/opt/var'), p('/project/../outside/../not-exists')])(
+    'throws "not watched" for %s"',
+    pathOutsideRoot => {
+      expect(() => tfs.exists(pathOutsideRoot)).toThrow(/not watched/);
+    },
+  );
+
+  test.only('throws "not watched" for %s"', pathOutsideRoot => {
+    expect(() => tfs.exists(p('/project/../outside/../not-exists'))).toThrow(
+      /not watched/,
+    );
+  });
+
+  test.each([
+    p('/project'),
+    p('/project/not-exists'),
+    p('/outside/not-exists'),
+    p('/not-exists/../project/not-exists'),
+  ])('does not throw ', pathOutsideRoot => {
+    expect(() => tfs.exists(pathOutsideRoot)).not.toThrow();
   });
 
   test('implements linkStats()', () => {
