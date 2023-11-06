@@ -1,35 +1,36 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {isJsModule, getJsOutput} = require('./helpers/js');
-
 import type {Module} from '../types.flow';
 import type {
-  MetroSourceMapSegmentTuple,
   FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-export type ExplodedSourceMap = $ReadOnlyArray<{|
+const {getJsOutput, isJsModule} = require('./helpers/js');
+
+export type ExplodedSourceMap = $ReadOnlyArray<{
   +map: Array<MetroSourceMapSegmentTuple>,
   +firstLine1Based: number,
   +functionMap: ?FBSourceFunctionMap,
   +path: string,
-|}>;
+}>;
 
 function getExplodedSourceMap(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): ExplodedSourceMap {
   const modulesToProcess = modules
     .filter(isJsModule)

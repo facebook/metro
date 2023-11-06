@@ -1,34 +1,35 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {Module, ReadOnlyGraph} from '../types.flow';
+
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-import type {Graph, Module} from '../types.flow';
-
-type Options = {|
+type Options = {
   platform: ?string,
   +processModuleFilter: (module: Module<>) => boolean,
-|};
+};
 
 async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<$ReadOnlyArray<string>> {
   const modules = graph.dependencies;
   const {processModuleFilter} = options;
 
-  const promises = [];
+  const promises: Array<Promise<Array<string>> | Array<string>> = [];
 
   for (const module of pre) {
     if (processModuleFilter(module)) {
@@ -49,7 +50,7 @@ async function getAllFiles(
   }
 
   const dependencies = await Promise.all(promises);
-  const output = [];
+  const output: Array<string> = [];
 
   for (const dependencyArray of dependencies) {
     output.push(...dependencyArray);

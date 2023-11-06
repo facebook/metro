@@ -1,47 +1,23 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-
-const babelTypes = require('@babel/types');
-const babylon = require('@babel/parser');
-const nullthrows = require('nullthrows');
-const template = require('@babel/template').default;
 
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type {File} from '@babel/types';
 
-// Structure of the object: dir.name.scale = asset
-export type RemoteFileMap = {
-  [string]: {
-    [string]: {
-      [number]: {
-        handle: string,
-        hash: string,
-        ...
-      },
-      ...,
-    },
-    ...,
-  },
-  __proto__: null,
-  ...
-};
-
-// Structure of the object: platform.dir.name.scale = asset
-export type PlatformRemoteFileMap = {
-  [string]: RemoteFileMap,
-  __proto__: null,
-  ...
-};
+const babylon = require('@babel/parser');
+const template = require('@babel/template').default;
+const babelTypes = require('@babel/types');
 
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,
@@ -80,83 +56,13 @@ function generateAssetCodeFileAst(
   );
 }
 
-/**
- * Generates the code involved in requiring an asset, but to be loaded remotely.
- * If the asset cannot be found within the map, then it falls back to the
- * standard asset.
- */
-function generateRemoteAssetCodeFileAst(
-  assetUtilsPath: string,
-  assetDescriptor: AssetDataWithoutFiles,
-  remoteServer: string,
-  remoteFileMap: RemoteFileMap,
-): ?File {
-  const t = babelTypes;
-
-  const file = remoteFileMap[assetDescriptor.fileSystemLocation];
-  const descriptor = file && file[assetDescriptor.name];
-  const data = {};
-
-  if (!descriptor) {
-    return null;
-  }
-
-  for (const scale in descriptor) {
-    data[+scale] = descriptor[+scale].handle;
-  }
-
-  // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
-  const astData = babylon.parseExpression(JSON.stringify(data));
-
-  // URI to remote server
-  const URI = t.stringLiteral(remoteServer);
-
-  // Size numbers.
-  const WIDTH = t.numericLiteral(nullthrows(assetDescriptor.width));
-  const HEIGHT = t.numericLiteral(nullthrows(assetDescriptor.height));
-
-  const buildRequire = template.program(`
-    const {pickScale, getUrlCacheBreaker}= require(ASSET_UTILS_PATH);
-    module.exports = {
-      "width": WIDTH,
-      "height": HEIGHT,
-      "uri": URI + OBJECT_AST[pickScale(SCALE_ARRAY)] + getUrlCacheBreaker()
-    };
-  `);
-
-  return t.file(
-    buildRequire({
-      WIDTH,
-      HEIGHT,
-      URI,
-      OBJECT_AST: astData,
-      ASSET_UTILS_PATH: t.stringLiteral(assetUtilsPath),
-      SCALE_ARRAY: t.arrayExpression(
-        Object.keys(descriptor)
-          .map(Number)
-          .sort((a: number, b: number) => a - b)
-          .map((scale: number) => t.numericLiteral(scale)),
-      ),
-    }),
-  );
-}
-
-// Test extension against all types supported by image-size module.
-// If it's not one of these, we won't treat it as an image.
-function isAssetTypeAnImage(type: string): boolean {
-  return (
-    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(
-      type,
-    ) !== -1
-  );
-}
-
 function filterObject(
   object: AssetDataWithoutFiles,
   blockList: Set<string>,
 ): AssetDataFiltered {
-  const copied = Object.assign({}, object);
+  const copied = {...object};
   for (const key of blockList) {
+    // $FlowFixMe[prop-missing]
     delete copied[key];
   }
   return copied;
@@ -193,7 +99,7 @@ function createRamBundleGroups<T: ModuleTransportLike>(
 
   if (ramGroups.length > 1) {
     // build a map of all grouped module IDs to an array of group root IDs
-    const all = new ArrayMap();
+    const all = new ArrayMap<number, number>();
     for (const [parent, children] of result) {
       for (const module of children) {
         all.get(module).push(parent);
@@ -203,11 +109,13 @@ function createRamBundleGroups<T: ModuleTransportLike>(
     // find all module IDs that are part of more than one group
     const doubles = filter(all, ([, parents]) => parents.length > 1);
     for (const [moduleId, parents] of doubles) {
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       const parentNames = parents.map(byId.get, byId);
       const lastName = parentNames.pop();
       throw new Error(
-        `Module ${byId.get(moduleId) ||
-          moduleId} belongs to groups ${parentNames.join(', ')}, and ${String(
+        `Module ${
+          byId.get(moduleId) || moduleId
+        } belongs to groups ${parentNames.join(', ')}, and ${String(
           lastName,
         )}. Ensure that each module is only part of one group.`,
       );
@@ -242,6 +150,4 @@ class ArrayMap<K, V> extends Map<K, Array<V>> {
 module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
-  generateRemoteAssetCodeFileAst,
-  isAssetTypeAnImage,
 };

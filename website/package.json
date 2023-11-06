@@ -3,21 +3,35 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy"
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.61",
-    "@docusaurus/preset-classic":"2.0.0-alpha.61",
+    "@docusaurus/core": "2.4.3",
+    "@docusaurus/preset-classic": "2.4.3",
     "classnames": "2.2.6",
-    "react": "16.13.0",
-    "react-dom": "16.13.0",
+    "docusaurus-plugin-internaldocs-fb": "1.16.2",
+    "docusaurus-plugin-sass": "^0.2.1",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
     "react-github-btn": "1.1.1",
-    "react-markdown":"4.3.1"
+    "sass": "^1.46.0"
   },
   "devDependencies": {
-    "prettier": "1.19.1"
+    "@docusaurus/module-type-aliases": "2.4.3",
+    "prettier": "2.8.8"
+  },
+  "resolutions": {
+    "@sideway/formula": "^3.0.1",
+    "got": "^11.8.5",
+    "http-cache-semantics": "^4.1.1",
+    "node-fetch": "^2.0.0",
+    "terser": "^5.14.2",
+    "trim": "^0.0.3"
   }
 }

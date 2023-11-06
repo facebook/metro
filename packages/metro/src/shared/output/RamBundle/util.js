@@ -1,29 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const invariant = require('invariant');
-
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {
+  BasicSourceMap,
   IndexMap,
   IndexMapSection,
   MixedSourceMap,
-  BasicSourceMap,
 } from 'metro-source-map';
 
-const newline = /\r\n?|\n|\u2028|\u2029/g;
-// fastest implementation
-const countLines = (string: string): number =>
-  (string.match(newline) || []).length + 1;
+import countLines from '../../../lib/countLines';
+
+const invariant = require('invariant');
 
 function lineToLineSourceMap(
   source: string,
@@ -69,7 +67,7 @@ function combineSourceMapsAddingOffsets(
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
 ): IndexMap {
-  const x_facebook_offsets = [];
+  const x_facebook_offsets: Array<number> = [];
   const sections = combineMaps(
     modules,
     x_facebook_offsets,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,49 +10,47 @@
 
 'use strict';
 
-const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
-const IncrementalBundler = require('./IncrementalBundler');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
+import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
+import type {GraphOptions} from './shared/types.flow';
+import type {ConfigT, RootPerfLogger} from 'metro-config';
+import type {
+  HmrClientMessage,
+  HmrErrorMessage,
+  HmrMessage,
+  HmrUpdateMessage,
+} from 'metro-runtime/src/modules/types.flow';
+import type {UrlWithParsedQuery} from 'url';
 
+const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
+const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
-const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
-const url = require('url');
-
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
+const nullthrows = require('nullthrows');
+const url = require('url');
 
-import type {RevisionId} from './IncrementalBundler';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type {
-  HmrMessage,
-  HmrClientMessage,
-  HmrUpdateMessage,
-  HmrErrorMessage,
-} from 'metro-runtime/src/modules/types.flow';
+export type EntryPointURL = UrlWithParsedQuery;
 
-type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
-export type EntryPointURL = $ReturnType<typeof url.parse>;
-
-type Client = {|
+export type Client = {
   optedIntoHMR: boolean,
   revisionIds: Array<RevisionId>,
   +sendFn: string => void,
-|};
+};
 
-type ClientGroup = {|
+type ClientGroup = {
   +clients: Set<Client>,
   clientUrl: EntryPointURL,
   revisionId: RevisionId,
   +unlisten: () => void,
-|};
+  +graphOptions: GraphOptions,
+};
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -85,16 +83,16 @@ class HmrServer<TClient: Client> {
     this._clientGroups = new Map();
   }
 
-  async onClientConnect(
+  onClientConnect: (
     requestUrl: string,
     sendFn: (data: string) => void,
-  ): Promise<Client> {
+  ) => Promise<Client> = async (requestUrl, sendFn) => {
     return {
       sendFn,
       revisionIds: [],
       optedIntoHMR: false,
     };
-  }
+  };
 
   async _registerEntryPoint(
     client: Client,
@@ -106,11 +104,9 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
-      BYTECODE_VERSION,
     );
-    const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, resolverOptions, transformOptions, graphOptions} =
+      splitBundleOptions(options);
 
     /**
      * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -119,15 +115,26 @@ class HmrServer<TClient: Client> {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
+      resolverOptions,
     );
     const resolvedEntryFilePath = resolutionFn(
-      this._config.projectRoot + '/.',
-      entryFile,
-    );
+      (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
+        '/.',
+      {
+        name: entryFile,
+        data: {
+          key: entryFile,
+          asyncType: null,
+          locs: [],
+        },
+      },
+    ).filePath;
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+      resolverOptions,
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      lazy: graphOptions.lazy,
+      unstable_allowRequireContext:
+        this._config.transformer.unstable_allowRequireContext,
     });
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (!revPromise) {
@@ -141,15 +148,19 @@ class HmrServer<TClient: Client> {
     const {graph, id} = await revPromise;
     client.revisionIds.push(id);
 
-    let clientGroup = this._clientGroups.get(id);
+    let clientGroup: ?ClientGroup = this._clientGroups.get(id);
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {dev, minify, runModule, bundleEntry: _bundleEntry, ...query} =
-        clientUrl.query || {};
-      // $FlowFixMe[incompatible-type]
+      const {
+        dev,
+        minify,
+        runModule,
+        bundleEntry: _bundleEntry,
+        ...query
+      } = clientUrl.query || {};
       clientUrl.query = {
         ...query,
         dev: dev || 'true',
@@ -164,34 +175,43 @@ class HmrServer<TClient: Client> {
         clients: new Set([client]),
         clientUrl,
         revisionId: id,
+        graphOptions,
         unlisten: (): void => unlisten(),
       };
 
       this._clientGroups.set(id, clientGroup);
 
-      const unlisten = this._bundler.getDeltaBundler().listen(
-        graph,
-        debounceAsyncQueue(
-          this._handleFileChange.bind(this, clientGroup, {
-            isInitialUpdate: false,
-          }),
-          50,
-        ),
-      );
+      let latestEventArgs: Array<any> = [];
+
+      const debounceCallHandleFileChange = debounceAsyncQueue(async () => {
+        await this._handleFileChange(
+          nullthrows(clientGroup),
+          {isInitialUpdate: false},
+          ...latestEventArgs,
+        );
+      }, 50);
+
+      const unlisten = this._bundler
+        .getDeltaBundler()
+        // $FlowFixMe[missing-local-annot]
+        .listen(graph, async (...args) => {
+          latestEventArgs = args;
+          await debounceCallHandleFileChange();
+        });
     }
 
     await this._handleFileChange(clientGroup, {isInitialUpdate: true});
     send([sendFn], {type: 'bundle-registered'});
   }
 
-  async onClientMessage(
+  onClientMessage: (
     client: TClient,
-    message: string,
+    message: string | Buffer | ArrayBuffer | Array<Buffer>,
     sendFn: (data: string) => void,
-  ): Promise<void> {
+  ) => Promise<void> = async (client, message, sendFn) => {
     let data: HmrClientMessage;
     try {
-      data = JSON.parse(message);
+      data = JSON.parse(String(message));
     } catch (error) {
       send([sendFn], {
         type: 'error',
@@ -212,6 +232,7 @@ class HmrServer<TClient: Client> {
             type: 'client_log',
             level: data.level,
             data: data.data,
+            mode: data.mode,
           });
           break;
         case 'log-opt-in':
@@ -222,17 +243,17 @@ class HmrServer<TClient: Client> {
       }
     }
     return Promise.resolve();
-  }
+  };
 
-  onClientError(client: TClient, e: Error): void {
+  onClientError: (client: TClient, e: ErrorEvent) => void = (client, e) => {
     this._config.reporter.update({
       type: 'hmr_client_error',
-      error: e,
+      error: e.error,
     });
     this.onClientDisconnect(client);
-  }
+  };
 
-  onClientDisconnect(client: TClient): void {
+  onClientDisconnect: (client: TClient) => void = client => {
     client.revisionIds.forEach(revisionId => {
       const group = this._clientGroups.get(revisionId);
       if (group != null) {
@@ -244,12 +265,21 @@ class HmrServer<TClient: Client> {
         }
       }
     });
-  }
+  };
 
   async _handleFileChange(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
+    changeEvent: ?{
+      logger: ?RootPerfLogger,
+    },
   ): Promise<void> {
+    const logger = !options.isInitialUpdate ? changeEvent?.logger : null;
+    if (logger) {
+      logger.point('fileChange_end');
+      logger.point('hmrPrepareAndSendMessage_start');
+    }
+
     const optedIntoHMR = [...group.clients].some(
       (client: Client) => client.optedIntoHMR,
     );
@@ -273,7 +303,8 @@ class HmrServer<TClient: Client> {
       type: 'update-start',
       body: options,
     });
-    const message = await this._prepareMessage(group, options);
+
+    const message = await this._prepareMessage(group, options, changeEvent);
     send(sendFns, message);
     send(sendFns, {type: 'update-done'});
 
@@ -284,12 +315,21 @@ class HmrServer<TClient: Client> {
           ? message.body.added.length + message.body.modified.length
           : undefined,
     });
+
+    if (logger) {
+      logger.point('hmrPrepareAndSendMessage_end');
+      logger.end('SUCCESS');
+    }
   }
 
   async _prepareMessage(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
+    changeEvent: ?{
+      logger: ?RootPerfLogger,
+    },
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
+    const logger = !options.isInitialUpdate ? changeEvent?.logger : null;
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);
       if (!revPromise) {
@@ -301,10 +341,14 @@ class HmrServer<TClient: Client> {
         };
       }
 
+      logger?.point('updateGraph_start');
+
       const {revision, delta} = await this._bundler.updateGraph(
         await revPromise,
         false,
       );
+
+      logger?.point('updateGraph_end');
 
       this._clientGroups.delete(group.revisionId);
       group.revisionId = revision.id;
@@ -316,11 +360,18 @@ class HmrServer<TClient: Client> {
       }
       this._clientGroups.set(group.revisionId, group);
 
+      logger?.point('serialize_start');
+
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        createModuleId: this._createModuleId,
-        projectRoot: this._config.projectRoot,
         clientUrl: group.clientUrl,
+        createModuleId: this._createModuleId,
+        includeAsyncPaths: group.graphOptions.lazy,
+        projectRoot: this._config.projectRoot,
+        serverRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
       });
+
+      logger?.point('serialize_end');
 
       return {
         type: 'update',

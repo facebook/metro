@@ -1,20 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_foundation
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
-const importExportPlugin = require('../import-export-plugin');
-
 const {compare, transformToAst} = require('../__mocks__/test-helpers');
+const importExportPlugin = require('../import-export-plugin');
 const {codeFrameColumns} = require('@babel/code-frame');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',
@@ -57,35 +56,49 @@ it('correctly transforms and extracts "import" statements', () => {
 
 it('correctly transforms complex patterns', () => {
   const code = `
-    import a, * as b from 'foo';
-    import c, {d as e, f} from 'bar';
-    import {g} from 'baz';
+    import 'first-with-side-effect';
+    import a, * as b from 'second';
+    import c, {d as e, f} from 'third';
+    import {g, h} from 'third';
+    import 'fourth-with-side-effect';
+    import {i} from 'fifth';
   `;
 
   const expected = `
-    var _bar = require('bar'),
-      e = _bar.d,
-      f = _bar.f;
-    var a = _$$_IMPORT_DEFAULT('foo');
-    var b = _$$_IMPORT_ALL('foo');
-    var c = _$$_IMPORT_DEFAULT('bar');
-    var g = require('baz').g;
+    require('first-with-side-effect');
+    var a = _$$_IMPORT_DEFAULT('second');
+    var b = _$$_IMPORT_ALL('second');
+    var _third = require('third'),
+        e = _third.d,
+        f = _third.f;
+    var c = _$$_IMPORT_DEFAULT('third');
+    var _third2 = require('third'),
+        g = _third2.g,
+        h = _third2.h;
+    require('fourth-with-side-effect');
+    var i = require('fifth').i;
   `;
 
   compare([importExportPlugin], code, expected, opts);
 
   expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
     "
-    > 3 |     import c, {d as e, f} from 'bar';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
-    > 3 |     import c, {d as e, f} from 'bar';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
-    > 2 |     import a, * as b from 'foo';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (foo)
-    > 2 |     import a, * as b from 'foo';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (foo)
-    > 4 |     import {g} from 'baz';
-        |     ^^^^^^^^^^^^^^^^^^^^^^ dep #2 (baz)"
+    > 2 |     import 'first-with-side-effect';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (first-with-side-effect)
+    > 3 |     import a, * as b from 'second';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (second)
+    > 3 |     import a, * as b from 'second';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (second)
+    > 4 |     import c, {d as e, f} from 'third';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (third)
+    > 4 |     import c, {d as e, f} from 'third';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (third)
+    > 5 |     import {g, h} from 'third';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (third)
+    > 6 |     import 'fourth-with-side-effect';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (fourth-with-side-effect)
+    > 7 |     import {i} from 'fifth';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (fifth)"
   `);
 });
 

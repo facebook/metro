@@ -1,20 +1,20 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 jest.mock('cosmiconfig');
 
-const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
+const {loadConfig} = require('../loadConfig');
 const cosmiconfig = require('cosmiconfig');
 const path = require('path');
 const prettyFormat = require('pretty-format');
@@ -26,11 +26,14 @@ describe('loadConfig', () => {
   });
 
   it('can load config objects', async () => {
-    const config = {
+    const config: any = {
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);
@@ -42,7 +45,7 @@ describe('loadConfig', () => {
   });
 
   it('can load config from function', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       cacheStores: [],
       reporter: null,
@@ -72,13 +75,16 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -90,8 +96,8 @@ describe('loadConfig', () => {
     const relativizedResult = {
       ...result,
       transformer: {
-        ...result.transformer,
         // Remove absolute paths from the result.
+        ...result.transformer,
         babelTransformerPath: path.relative(
           path.join(
             require.resolve('metro-babel-transformer'),
@@ -108,13 +114,16 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path pointing to a directory', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -159,7 +168,7 @@ describe('loadConfig', () => {
 
   it('validates config for server', async () => {
     expect.assertions(1);
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       server: {
         useGlobalHotkey: 'test',
@@ -177,7 +186,7 @@ describe('loadConfig', () => {
 
   it('validates config for projectRoot', async () => {
     expect.assertions(1);
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       projectRoot: ['test'],
     });
@@ -197,6 +206,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: jest.fn(() => []),
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);

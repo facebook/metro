@@ -1,29 +1,28 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
-
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const mkdirp = require('mkdirp');
-const path = require('path');
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const writeFile = require('../writeFile');
-const writeSourceMap = require('./write-sourcemap');
-
-const {joinModules} = require('./util');
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {ModuleTransportLike} from '../../../shared/types.flow';
 import type {OutputOptions} from '../../types.flow';
+
+const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
+const writeFile = require('../writeFile');
+const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
+const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
+const {joinModules} = require('./util');
+const writeSourceMap = require('./write-sourcemap');
+const fsPromises = require('fs').promises;
+const path = require('path');
 // must not start with a dot, as that won't go into the apk
 const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
 const MODULES_DIR = 'js-modules';
@@ -63,14 +62,21 @@ function saveAsAssets(
         writeMagicFlagFile(modulesDir),
       ]),
   );
+  // $FlowFixMe[unused-promise]
   writeUnbundle.then(() => log('Done writing unbundle output'));
 
   if (sourcemapOutput) {
     const sourceMap = buildSourcemapWithMetadata({
       fixWrapperOffset: true,
-      lazyModules: lazyModules.concat(),
+      lazyModules: lazyModules.concat<
+        ModuleTransportLike,
+        ModuleTransportLike,
+      >(),
       moduleGroups: null,
-      startupModules: startupModules.concat(),
+      startupModules: startupModules.concat<
+        ModuleTransportLike,
+        ModuleTransportLike,
+      >(),
     });
     if (sourcemapSourcesRoot !== undefined) {
       relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
@@ -87,10 +93,8 @@ function saveAsAssets(
   }
 }
 
-function createDir(dirName: string): Promise<empty> {
-  return new Promise((resolve: void => void, reject: mixed => mixed) =>
-    mkdirp(dirName, error => (error ? reject(error) : resolve())),
-  );
+function createDir(dirName: string): Promise<void> {
+  return fsPromises.mkdir(dirName, {recursive: true});
 }
 
 function writeModuleFile(

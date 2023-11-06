@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,25 +10,24 @@
 
 'use strict';
 
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
 const HttpError = require('./HttpError');
 const NetworkError = require('./NetworkError');
-
 const http = require('http');
 const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
-import type {Agent as HttpAgent} from 'http';
-import type {Agent as HttpsAgent} from 'https';
-
-export type Options = {|
+export type Options = {
   endpoint: string,
   family?: 4 | 6,
   timeout?: number,
   key?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   cert?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-|};
+};
 
 const ZLIB_OPTIONS = {
   level: 9,

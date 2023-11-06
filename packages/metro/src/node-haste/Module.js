@@ -1,19 +1,20 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const isAbsolutePath = require('absolute-path');
-
 import type ModuleCache from './ModuleCache';
 import type Package from './Package';
+
+import path from 'path';
 
 class Module {
   path: string;
@@ -22,7 +23,7 @@ class Module {
   _sourceCode: ?string;
 
   constructor(file: string, moduleCache: ModuleCache) {
-    if (!isAbsolutePath(file)) {
+    if (!path.isAbsolute(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);
     }
 

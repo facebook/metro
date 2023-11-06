@@ -1,25 +1,31 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow
+ * @flow strict-local
  */
 
 /* eslint-disable no-console */
 
 'use strict';
 
-const chalk = require('chalk');
-
 import type {Terminal} from 'metro-core';
+
+const chalk = require('chalk');
+const util = require('util');
 
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
+module.exports = (
+  terminal: Terminal,
+  level: string,
+  mode: 'BRIDGE' | 'NOBRIDGE',
+  ...data: Array<mixed>
+) => {
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
     level === 'error'
@@ -58,10 +64,17 @@ module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
     if (typeof lastItem === 'string') {
       data[data.length - 1] = lastItem.trimEnd();
     }
+
+    const modePrefix =
+      !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${logFunction.toUpperCase()} `) +
+      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
-      ...data,
+      // `util.format` actually accepts any arguments.
+      // If the first argument is a string, it tries to format it.
+      // Otherwise, it just concatenates all arguments.
+      // $FlowIssue[incompatible-call] util.format expected the first argument to be a string
+      util.format(...data),
     );
   }
 };

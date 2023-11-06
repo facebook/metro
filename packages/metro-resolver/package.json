@@ -1,6 +1,6 @@
 {
   "name": "metro-resolver",
-  "version": "0.65.0",
+  "version": "0.80.0",
   "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src",
   "repository": {
@@ -11,8 +11,11 @@
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
-  "dependencies": {
-    "absolute-path": "^0.0.0"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
   },
-  "license": "MIT"
+  "devDependencies": {
+    "metro": "0.80.0"
+  }
 }

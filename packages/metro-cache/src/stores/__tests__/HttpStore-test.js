@@ -1,18 +1,17 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const zlib = require('zlib');
-
 const {PassThrough} = require('stream');
+const zlib = require('zlib');
 
 describe('HttpStore', () => {
   let HttpStore;
@@ -53,7 +52,7 @@ describe('HttpStore', () => {
     jest
       .resetModules()
       .resetAllMocks()
-      .useFakeTimers()
+      .useFakeTimers({legacyFakeTimers: true}) // Legacy fake timers are reset by `resetAllMocks()`
       .mock('http')
       .mock('https');
 
@@ -72,7 +71,7 @@ describe('HttpStore', () => {
     expect(require('http').request).toHaveBeenCalledTimes(1);
     expect(require('https').request).not.toHaveBeenCalled();
 
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     httpsStore.get(Buffer.from('foo'));
     expect(require('http').request).not.toHaveBeenCalled();

@@ -1,17 +1,18 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const readline = require('readline');
 const throttle = require('lodash.throttle');
+const readline = require('readline');
 const tty = require('tty');
 const util = require('util');
 
@@ -100,6 +101,7 @@ class Terminal {
   constructor(stream: UnderlyingStream) {
     this._logLines = [];
     this._nextStatusStr = '';
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     this._scheduleUpdate = throttle(this._update, 33);
     this._statusStr = '';
     this._stream = stream;

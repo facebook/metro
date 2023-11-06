@@ -1,37 +1,35 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
+import type {AssetPath} from './node-haste/lib/AssetPaths';
 
+const AssetPaths = require('./node-haste/lib/AssetPaths');
 const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
-const imageSize = require('image-size');
+const getImageSize = require('image-size');
 const path = require('path');
-
-const {isAssetTypeAnImage} = require('./Bundler/util');
 
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
-import type {AssetPath} from './node-haste/lib/AssetPaths';
-
-export type AssetInfo = {|
+export type AssetInfo = {
   +files: Array<string>,
   +hash: string,
   +name: string,
   +scales: Array<number>,
   +type: string,
-|};
+};
 
 export type AssetDataWithoutFiles = {
   +__packager_asset: boolean,
@@ -56,6 +54,40 @@ export type AssetDataFiltered = {
   +width: ?number,
   ...
 };
+
+// Test extension against all types supported by image-size module.
+// If it's not one of these, we won't treat it as an image.
+function isAssetTypeAnImage(type: string): boolean {
+  return (
+    [
+      'png',
+      'jpg',
+      'jpeg',
+      'bmp',
+      'gif',
+      'webp',
+      'psd',
+      'svg',
+      'tiff',
+      'ktx',
+    ].indexOf(type) !== -1
+  );
+}
+
+function getAssetSize(
+  type: string,
+  content: Buffer,
+  filePath: string,
+): ?{+width: number, +height: number} {
+  if (!isAssetTypeAnImage(type)) {
+    return null;
+  }
+  if (content.length === 0) {
+    throw new Error(`Image asset \`${filePath}\` cannot be an empty file.`);
+  }
+  const {width, height} = getImageSize(content);
+  return {width, height};
+}
 
 export type AssetData = AssetDataWithoutFiles & {+files: Array<string>, ...};
 
@@ -86,13 +118,13 @@ function buildAssetMap(
   dir: string,
   files: $ReadOnlyArray<string>,
   platform: ?string,
-): Map<string, {|files: Array<string>, scales: Array<number>|}> {
+): Map<string, {files: Array<string>, scales: Array<number>}> {
   const platforms = new Set(platform != null ? [platform] : []);
   const assets = files.map((file: string) =>
     AssetPaths.tryParse(file, platforms),
   );
-  const map = new Map();
-  assets.forEach(function(asset: ?AssetPath, i: number) {
+  const map = new Map<string, {files: Array<string>, scales: Array<number>}>();
+  assets.forEach(function (asset: ?AssetPath, i: number) {
     if (asset == null) {
       return;
     }
@@ -133,7 +165,7 @@ function getAssetKey(assetName: string, platform: ?string): string {
 async function getAbsoluteAssetRecord(
   assetPath: string,
   platform: ?string = null,
-): Promise<{|files: Array<string>, scales: Array<number>|}> {
+): Promise<{files: Array<string>, scales: Array<number>}> {
   const filename = path.basename(assetPath);
   const dir = path.dirname(assetPath);
   const files = await readDir(dir);
@@ -156,8 +188,9 @@ async function getAbsoluteAssetRecord(
 
   if (!record) {
     throw new Error(
-      /* $FlowFixMe: platform can be null */
-      `Asset not found: ${assetPath} for platform: ${platform}`,
+      `Asset not found: ${assetPath} for platform: ${
+        platform ?? '(unspecified)'
+      }`,
     );
   }
 
@@ -200,7 +233,7 @@ async function getAssetData(
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   if (path.sep === '\\') {
-    assetUrlPath = assetUrlPath.replace(/\\/g, '/');
+    assetUrlPath = assetUrlPath.replaceAll('\\', '/');
   }
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
@@ -209,7 +242,7 @@ async function getAssetData(
   const isImageInput = assetInfo.files[0].includes('.zip/')
     ? fs.readFileSync(assetInfo.files[0])
     : assetInfo.files[0];
-  const dimensions = isImage ? imageSize(isImageInput) : null;
+  const dimensions = isImage ? getImageSize(isImageInput) : null;
   const scale = assetInfo.scales[0];
 
   const assetData = {
@@ -317,6 +350,8 @@ function pathBelongsToRoots(
 
 module.exports = {
   getAsset,
+  getAssetSize,
   getAssetData,
   getAssetFiles,
+  isAssetTypeAnImage,
 };

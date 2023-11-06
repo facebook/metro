@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 // Symbolicates a JavaScript stack trace using a source map.
@@ -18,16 +19,38 @@
 
 'use strict';
 
+const Symbolication = require('./Symbolication.js');
+const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
-const Symbolication = require('./Symbolication.js');
-
-const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const through2 = require('through2');
 
+function printHelp() {
+  const usages = [
+    'Usage: ' + __filename + ' <source-map-file>',
+    '       ' + __filename + ' <source-map-file> <line> [column]',
+    '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
+    '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
+    '       ' +
+      __filename +
+      ' <source-map-file> --attribution < in.jsonl > out.jsonl',
+    '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
+    ' Optional flags:',
+    '  --no-function-names',
+    '  --hermes-crash (mutually exclusive with --hermes-coverage)',
+    '  --hermes-coverage (mutually exclusive with --hermes-crash)',
+    '  --input-line-start <line> (default: 1)',
+    '  --input-column-start <column> (default: 0)',
+    '  --output-line-start <line> (default: 1)',
+    '  --output-column-start <column> (default: 0)',
+  ];
+  console.error(usages.join('\n'));
+}
+
 async function main(
   argvInput: Array<string> = process.argv.slice(2),
+  // prettier-ignore
   {
     stdin,
     stderr,
@@ -37,11 +60,12 @@ async function main(
     stderr: stream$Writable,
     stdout: stream$Writable,
     ...
+    // $FlowFixMe[class-object-subtyping]
   } = process,
 ): Promise<number> {
   const argv = argvInput.slice();
-  function checkAndRemoveArg(arg, valuesPerArg = 0) {
-    let values = null;
+  function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {
+    let values: null | Array<Array<string>> = null;
     for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
       argv.splice(idx, 1);
       values = values || [];
@@ -50,13 +74,14 @@ async function main(
     return values;
   }
 
-  function checkAndRemoveArgWithValue(arg) {
+  function checkAndRemoveArgWithValue(arg: string) {
     const values = checkAndRemoveArg(arg, 1);
     return values ? values[0][0] : null;
   }
   try {
     const noFunctionNames = checkAndRemoveArg('--no-function-names');
     const isHermesCrash = checkAndRemoveArg('--hermes-crash');
+    const isCoverage = checkAndRemoveArg('--hermes-coverage');
     const inputLineStart = Number.parseInt(
       checkAndRemoveArgWithValue('--input-line-start') || '1',
       10,
@@ -76,27 +101,15 @@ async function main(
 
     if (argv.length < 1 || argv.length > 4) {
       /* eslint no-path-concat: "off" */
+      printHelp();
+      return 1;
+    }
 
-      const usages = [
-        'Usage: ' + __filename + ' <source-map-file>',
-        '       ' + __filename + ' <source-map-file> <line> [column]',
-        '       ' +
-          __filename +
-          ' <source-map-file> <moduleId>.js <line> [column]',
-        '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
-        '       ' +
-          __filename +
-          ' <source-map-file> --attribution < in.jsonl > out.jsonl',
-        '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
-        ' Optional flags:',
-        '  --no-function-names',
-        '  --hermes-crash',
-        '  --input-line-start <line> (default: 1)',
-        '  --input-column-start <column> (default: 0)',
-        '  --output-line-start <line> (default: 1)',
-        '  --output-column-start <column> (default: 0)',
-      ];
-      console.error(usages.join('\n'));
+    if (isHermesCrash && isCoverage) {
+      console.error(
+        'Pass either --hermes-crash or --hermes-coverage, not both',
+      );
+      printHelp();
       return 1;
     }
 
@@ -128,9 +141,13 @@ async function main(
       const stackTrace = await readAll(stdin);
       if (isHermesCrash) {
         const stackTraceJSON = JSON.parse(stackTrace);
-        const symbolicatedTrace = context.symbolicateHermesMinidumpTrace(
-          stackTraceJSON,
-        );
+        const symbolicatedTrace =
+          context.symbolicateHermesMinidumpTrace(stackTraceJSON);
+        stdout.write(JSON.stringify(symbolicatedTrace));
+      } else if (isCoverage) {
+        const stackTraceJSON = JSON.parse(stackTrace);
+        const symbolicatedTrace =
+          context.symbolicateHermesCoverageTrace(stackTraceJSON);
         stdout.write(JSON.stringify(symbolicatedTrace));
       } else {
         stdout.write(context.symbolicate(stackTrace));
@@ -151,7 +168,9 @@ async function main(
       await waitForStream(
         stdin
           .pipe(
-            through2(function(data, enc, callback) {
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
+            through2(function (data, enc, callback) {
               // Take arbitrary strings, output single lines
               buffer += data;
               const lines = buffer.split('\n');
@@ -163,7 +182,9 @@ async function main(
             }),
           )
           .pipe(
-            through2.obj(function(data, enc, callback) {
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
+            through2.obj(function (data, enc, callback) {
               // This is JSONL, so each line is a separate JSON object
               const obj = JSON.parse(data);
               context.symbolicateAttribution(obj);
@@ -208,8 +229,8 @@ async function main(
   return 0;
 }
 
-function readAll(stream) {
-  return new Promise(resolve => {
+function readAll(stream: stream$Readable | tty$ReadStream) {
+  return new Promise<string>(resolve => {
     let data = '';
     if (stream.isTTY === true) {
       resolve(data);
@@ -230,7 +251,7 @@ function readAll(stream) {
   });
 }
 
-function waitForStream(stream) {
+function waitForStream(stream: $FlowFixMe) {
   return new Promise(resolve => {
     stream.on('finish', resolve);
   });

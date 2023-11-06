@@ -1,14 +1,18 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 const {
   combineSourceMaps,
@@ -16,15 +20,12 @@ const {
   joinModules,
 } = require('./util');
 
-import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
-import type {IndexMap} from 'metro-source-map';
-
-type Params = {|
+type Params = {
   fixWrapperOffset: boolean,
   lazyModules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ?ModuleGroups,
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
-|};
+};
 
 module.exports = (({
   fixWrapperOffset,

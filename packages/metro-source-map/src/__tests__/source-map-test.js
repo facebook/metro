@@ -1,29 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const Generator = require('../Generator');
-
 const {
-  toSegmentTuple,
   fromRawMappings,
   toBabelSegments,
+  toSegmentTuple,
 } = require('../source-map');
 
 describe('flattening mappings / compacting', () => {
   it('flattens simple mappings', () => {
     expect(toSegmentTuple({generated: {line: 12, column: 34}})).toEqual([
-      12,
-      34,
+      12, 34,
     ]);
   });
 
@@ -65,6 +63,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code1',
         path: 'path1',
+        isIgnored: false,
       },
       {
         code: lines(3),
@@ -75,6 +74,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code2',
         path: 'path2',
+        isIgnored: true,
       },
       {
         code: lines(23),
@@ -87,6 +87,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code3',
         path: 'path3',
+        isIgnored: false,
       },
     ];
 
@@ -101,6 +102,7 @@ describe('build map from raw mappings', () => {
         [{names: ['<global>'], mappings: 'AAA'}],
         null,
       ],
+      x_google_ignoreList: [1],
       version: 3,
     });
   });
@@ -131,6 +133,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code1',
         path: 'path1',
+        isIgnored: false,
       },
       {
         code: lines(3),
@@ -141,6 +144,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code2',
         path: 'path2',
+        isIgnored: false,
       },
       {
         code: lines(23),
@@ -153,6 +157,7 @@ describe('build map from raw mappings', () => {
         ],
         source: 'code3',
         path: 'path3',
+        isIgnored: false,
       },
     ];
 
@@ -167,4 +172,4 @@ describe('build map from raw mappings', () => {
   });
 });
 
-const lines = n => Array(n).join('\n');
+const lines = (n: number) => Array(n).join('\n');

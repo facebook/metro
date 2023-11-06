@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -71,7 +72,7 @@ class ChromeHeapSnapshotProcessor {
       this._snapshotData.snapshot.meta.trace_function_info_fields,
       {name: 'string', script_name: 'string'},
       this._globalStringTable,
-      0,
+      undefined /* start position */,
     );
   }
 
@@ -83,7 +84,7 @@ class ChromeHeapSnapshotProcessor {
       this._snapshotData.snapshot.meta.location_fields,
       null,
       this._globalStringTable,
-      0,
+      undefined /* start position */,
     );
   }
 
@@ -95,7 +96,7 @@ class ChromeHeapSnapshotProcessor {
       this._snapshotData.snapshot.meta.node_fields,
       this._snapshotData.snapshot.meta.node_types,
       this._globalStringTable,
-      0,
+      undefined /* start position */,
     );
   }
 
@@ -107,7 +108,7 @@ class ChromeHeapSnapshotProcessor {
       this._snapshotData.snapshot.meta.edge_fields,
       this._snapshotData.snapshot.meta.edge_types,
       this._globalStringTable,
-      0,
+      undefined /* start position */,
     );
   }
 
@@ -117,7 +118,7 @@ class ChromeHeapSnapshotProcessor {
       this._snapshotData.snapshot.meta.trace_node_fields,
       {children: CHILDREN_FIELD_TYPE},
       this._globalStringTable,
-      0,
+      undefined /* start position */,
     );
   }
 }
@@ -185,6 +186,11 @@ type ChromeHeapSnapshotFieldType =
   // type name
   | string;
 
+// The input type to functions that accept record objects.
+type DenormalizedRecordInput = $ReadOnly<{
+  [field: string]: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+}>;
+
 // A cursor pointing to a record-aligned position in a 1D array of N records
 // each with K fields in a fixed order. Supports encoding/decoding field values
 // in the raw array according to a schema passed to the constructor.
@@ -241,16 +247,17 @@ class ChromeHeapSnapshotRecordAccessor {
     } else {
       this._recordSize = recordFields.length;
       this._fieldToOffset = new Map(
+        // $FlowFixMe[not-an-object]
         Object.entries(recordFields).map(([offsetStr, name]) => [
           String(name),
           Number(offsetStr),
         ]),
       );
       if (Array.isArray(recordTypes)) {
-        this._fieldToType = new Map(
+        this._fieldToType = new Map<string, ChromeHeapSnapshotFieldType>(
+          // $FlowFixMe[not-an-object]
           Object.entries(recordTypes).map(([offsetStr, type]) => [
             recordFields[Number(offsetStr)],
-            // $FlowIssue[incompatible-call] Object.entries is incompletely typed
             type,
           ]),
         );
@@ -315,7 +322,7 @@ class ChromeHeapSnapshotRecordAccessor {
       [], // recordFields ignored when there's a parent
       null, // recordTypes ignored when there's a parent
       this._globalStringTable,
-      0,
+      -this._fieldToOffset.size /* start position */,
       this,
     );
   }
@@ -352,15 +359,181 @@ class ChromeHeapSnapshotRecordAccessor {
     this._moveToPosition(recordIndex * this._recordSize);
   }
 
+  // Appends a new record at the end of the buffer.
+  //
+  // Returns the index of the appended record. All fields must be specified and
+  // have values of the correct types. The cursor may move while writing, but
+  // is guaranteed to return to its initial position when this function returns
+  // (or throws).
+  append(record: DenormalizedRecordInput): number {
+    const savedPosition = this._position;
+    try {
+      return this.moveAndInsert(this._buffer.length / this._recordSize, record);
+    } finally {
+      this._position = savedPosition;
+    }
+  }
+
+  // Moves the cursor to a given index in the buffer (expressed in # of
+  // records, NOT fields) and inserts a record.
+  //
+  // Returns the index of the inserted record. All fields must be specified and
+  // have values of the correct types. The given index may be the end of the
+  // buffer; otherwise existing records starting at the given index will be
+  // shifted to the right to accommodate the new record.
+  //
+  // NOTE: Inserting is a risky, low-level operation. Care must be taken not to
+  // desync buffers that implicitly or explicitly depend on one another (e.g.
+  // edge.to_node -> node position, cumulative node.edge_count -> edge indices).
+  moveAndInsert(recordIndex: number, record: DenormalizedRecordInput): number {
+    this._moveToPosition(recordIndex * this._recordSize, /* allowEnd */ true);
+    let didResizeBuffer = false;
+    try {
+      for (const field of this._fieldToOffset.keys()) {
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+        if (!Object.prototype.hasOwnProperty.call(record, field)) {
+          throw new Error('Missing value for field: ' + field);
+        }
+      }
+      this._buffer.splice(
+        this._position,
+        0,
+        ...new Array<number | RawBuffer>(this._recordSize),
+      );
+      didResizeBuffer = true;
+      for (const field of Object.keys(record)) {
+        this._set(field, record[field]);
+      }
+      return this._position / this._recordSize;
+    } catch (e) {
+      if (didResizeBuffer) {
+        // Roll back the write
+        this._buffer.splice(this._position, this._recordSize);
+      }
+      throw e;
+    }
+  }
+
   /** "Protected" methods (please don't use) */
+
+  // Return true if we can advance the position by one record (including from
+  // the last record to the "end" position).
+  protectedHasNext(): boolean {
+    if (this._position < 0) {
+      // We haven't started iterating yet, so this might _be_ the end position.
+      return this._buffer.length > 0;
+    }
+    return this._position < this._buffer.length;
+  }
+
+  // Move to the next record (or the end) if we're not already at the end.
+  protectedTryMoveNext(): void {
+    if (this.protectedHasNext()) {
+      this._moveToPosition(
+        this._position + this._recordSize,
+        /* allowEnd */ true,
+      );
+    }
+  }
+
+  /** Private methods */
+
+  // Reads the raw numeric value of a field.
+  _getRaw(field: string): number | RawBuffer {
+    this._validatePosition();
+    const offset = this._fieldToOffset.get(field);
+    if (offset == null) {
+      throw new Error('Unknown field: ' + field);
+    }
+    return this._buffer[this._position + offset];
+  }
+
+  // Decodes a scalar (string or number) field.
+  _getScalar(field: string): string | number {
+    const rawValue = this._getRaw(field);
+    if (Array.isArray(rawValue)) {
+      throw new Error('Not a scalar field: ' + field);
+    }
+    const fieldType = this._fieldToType.get(field);
+    if (Array.isArray(fieldType)) {
+      invariant(
+        rawValue >= 0 && rawValue < fieldType.length,
+        'raw value does not match field enum type',
+      );
+      return fieldType[rawValue];
+    }
+    if (fieldType === 'string') {
+      return this._globalStringTable.get(rawValue);
+    }
+    return rawValue;
+  }
+
+  // Writes the raw value of a field.
+  _setRaw(field: string, rawValue: number | RawBuffer): void {
+    this._validatePosition();
+    const offset = this._fieldToOffset.get(field);
+    if (offset == null) {
+      throw new Error('Unknown field: ' + field);
+    }
+    this._buffer[this._position + offset] = rawValue;
+  }
+
+  // Writes a scalar or children value to `field`, inferring the intended type
+  // based on the runtime type of `value`.
+  _set(
+    field: string,
+    value: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+  ): void {
+    if (typeof value === 'string') {
+      this.setString(field, value);
+    } else if (typeof value === 'number') {
+      this.setNumber(field, value);
+    } else if (Array.isArray(value)) {
+      this._setChildren(field, value);
+    } else {
+      throw new Error('Unsupported value for field: ' + field);
+    }
+  }
+
+  // Writes a children array to `field` by appending each element of `value` to
+  // a new buffer using `append()`s semantics.
+  _setChildren(
+    field: string,
+    value: $ReadOnlyArray<DenormalizedRecordInput>,
+  ): void {
+    const fieldType = this._fieldToType.get(field);
+    if (fieldType !== CHILDREN_FIELD_TYPE) {
+      throw new Error('Not a children field: ' + field);
+    }
+    this._setRaw(field, []);
+    const childIt = this.getChildren(field);
+    for (const child of value) {
+      childIt.append(child);
+    }
+  }
+
+  // Encodes a string value according to its field schema.
+  // The global string table may be updated as a side effect.
+  _encodeString(field: string, value: string): number {
+    const fieldType = this._fieldToType.get(field);
+    if (Array.isArray(fieldType)) {
+      const index = fieldType.indexOf(value);
+      invariant(index >= 0, 'Cannot define new values in enum field');
+      return index;
+    }
+    if (fieldType === 'string') {
+      return this._globalStringTable.add(value);
+    }
+    throw new Error('Not a string or enum field: ' + field);
+  }
 
   // Asserts that the given position (default: the current position) is either
   // a valid position for reading a record, or (if allowEnd is true) the end of
   // the buffer.
-  protectedValidatePosition(
+  _validatePosition(
     allowEnd?: boolean = false,
     position?: number = this._position,
-  ) {
+  ): void {
     if (!Number.isInteger(position)) {
       throw new Error(`Position ${position} is not an integer`);
     }
@@ -389,93 +562,18 @@ class ChromeHeapSnapshotRecordAccessor {
     }
   }
 
-  // Return true if we can advance the position by one record (including from
-  // the last record to the "end" position).
-  protectedHasNext(): boolean {
-    return this._position < this._buffer.length;
-  }
-
-  // Move to the next record (or the end) if we're not already at the end.
-  protectedTryMoveNext(): void {
-    if (this._position < this._buffer.length) {
-      this._moveToPosition(
-        this._position + this._recordSize,
-        /* allowEnd */ true,
-      );
-    }
-  }
-
-  /** Private methods */
-
-  // Reads the raw numeric value of a field.
-  _getRaw(field: string): number | RawBuffer {
-    this.protectedValidatePosition();
-    const offset = this._fieldToOffset.get(field);
-    if (offset == null) {
-      throw new Error('Unknown field: ' + field);
-    }
-    return this._buffer[this._position + offset];
-  }
-
-  // Decodes a scalar (string or number) field.
-  _getScalar(field: string): string | number {
-    const rawValue = this._getRaw(field);
-    if (Array.isArray(rawValue)) {
-      throw new Error('Not a scalar field: ' + field);
-    }
-    const fieldType = this._fieldToType.get(field);
-    if (Array.isArray(fieldType)) {
-      invariant(
-        rawValue >= 0 && rawValue < fieldType.length,
-        'raw value does not match field enum type',
-      );
-      return fieldType[rawValue];
-    }
-    if (fieldType === 'string') {
-      return this._globalStringTable.get(rawValue);
-    }
-    return rawValue;
-  }
-
-  // Writes the raw numeric value of a field.
-  _setRaw(field: string, rawValue: number) {
-    this.protectedValidatePosition();
-    const offset = this._fieldToOffset.get(field);
-    if (offset == null) {
-      throw new Error('Unknown field: ' + field);
-    }
-    this._buffer[this._position + offset] = rawValue;
-  }
-
-  // Encodes a string value according to its field schema.
-  // The global string table may be updated as a side effect.
-  _encodeString(field: string, value: string) {
-    const fieldType = this._fieldToType.get(field);
-    if (Array.isArray(fieldType)) {
-      const index = fieldType.indexOf(value);
-      invariant(index >= 0, 'Cannot define new values in enum field');
-      return index;
-    }
-    if (fieldType === 'string') {
-      return this._globalStringTable.add(value);
-    }
-    throw new Error('Not a string or enum field: ' + field);
-  }
-
   // Move to the given position or throw an error if it is invalid.
   _moveToPosition(nextPosition: number, allowEnd: boolean = false) {
-    this.protectedValidatePosition(allowEnd, nextPosition);
+    this._validatePosition(allowEnd, nextPosition);
     this._position = nextPosition;
   }
 }
 
 // $FlowIssue[prop-missing] Flow doesn't see that we implement the iteration protocol
-class ChromeHeapSnapshotRecordIterator extends ChromeHeapSnapshotRecordAccessor
-  implements Iterable<ChromeHeapSnapshotRecordAccessor> {
-  // If true, the iterator is not pointing to any record and the next call to
-  // `next()` should move it to the first record ( = the one at _position).
-  _isBeforeFirstIteration: boolean;
-
+class ChromeHeapSnapshotRecordIterator
+  extends ChromeHeapSnapshotRecordAccessor
+  implements Iterable<ChromeHeapSnapshotRecordAccessor>
+{
   constructor(
     buffer: RawBuffer,
     recordFields: Array<string>,
@@ -486,7 +584,11 @@ class ChromeHeapSnapshotRecordIterator extends ChromeHeapSnapshotRecordAccessor
         }>
       | null,
     globalStringTable: ChromeHeapSnapshotStringTable,
-    position: number = 0,
+    // Initialise to "before the first iteration".
+    // The Accessor constructor intentionally checks only alignment, not range,
+    // so this works as long as we don't try to read/write (at which point
+    // validation will kick in).
+    position: number = -recordFields.length,
     parent?: ChromeHeapSnapshotRecordAccessor,
   ) {
     super(
@@ -497,36 +599,6 @@ class ChromeHeapSnapshotRecordIterator extends ChromeHeapSnapshotRecordAccessor
       position,
       parent,
     );
-    this._isBeforeFirstIteration = true;
-  }
-
-  // Overriding some position management methods to account for the "before
-  // first iteration" state.
-
-  protectedValidatePosition(allowEnd?: boolean, position?: number) {
-    if (position == null) {
-      // We're validating the current position.
-      invariant(
-        !this._isBeforeFirstIteration,
-        'Iterator not started with next() yet',
-      );
-    }
-
-    super.protectedValidatePosition(allowEnd, position);
-  }
-
-  protectedTryMoveNext(): void {
-    if (this._isBeforeFirstIteration) {
-      this._isBeforeFirstIteration = false;
-      this.protectedValidatePosition(/* allowEnd */ true);
-    } else {
-      super.protectedTryMoveNext();
-    }
-  }
-
-  moveToRecord(recordIndex: number) {
-    this._isBeforeFirstIteration = false;
-    super.moveToRecord(recordIndex);
   }
 
   // JS Iterator protocol

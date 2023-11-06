@@ -1,12 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -16,7 +16,7 @@ describe('Cache', () => {
   let Logger;
   let log;
 
-  function createStore(name = '') {
+  function createStore(name: string = '') {
     // eslint-disable-next-line no-eval
     const TempClass = eval(`(class ${name} {})`);
 
@@ -38,7 +38,9 @@ describe('Cache', () => {
       });
     });
 
-    log = [];
+    log = ([]: Array<
+      $FlowFixMe | {a: void | string, l: string, p: void | string},
+    >);
   });
 
   afterEach(() => {
@@ -75,7 +77,7 @@ describe('Cache', () => {
     expect(store3.get).not.toHaveBeenCalled();
   });
 
-  it('skips all cache stores when a hit is produced, based on the same key', () => {
+  it('skips all cache stores when a hit is produced, based on the same key', async () => {
     const store1 = createStore();
     const store2 = createStore();
     const store3 = createStore();
@@ -85,8 +87,7 @@ describe('Cache', () => {
     store2.get.mockImplementation(() => 'hit!');
 
     // Get and set. Set should only affect store 1, not 2 (hit) and 3 (after).
-    cache.get(key);
-    cache.set(key);
+    await Promise.all([cache.get(key), cache.set(key)]);
 
     expect(store1.set).toHaveBeenCalledTimes(1);
     expect(store2.set).not.toHaveBeenCalled();
@@ -120,8 +121,6 @@ describe('Cache', () => {
   });
 
   it('throws on a buggy store set', async () => {
-    jest.useFakeTimers();
-
     const store1 = createStore();
     const store2 = createStore();
     const cache = new Cache([store1, store2]);
@@ -131,8 +130,7 @@ describe('Cache', () => {
     store2.set.mockImplementation(() => Promise.reject(new RangeError('foo')));
 
     try {
-      cache.set(Buffer.from('foo'), 'arg');
-      jest.runAllTimers();
+      await cache.set(Buffer.from('foo'), 'arg');
     } catch (err) {
       error = err;
     }
@@ -213,5 +211,36 @@ describe('Cache', () => {
       {a: 'Cache set', l: 'Local::666f6f', p: undefined},
       {a: 'Cache set', l: 'Network::666f6f', p: undefined},
     ]);
+  });
+
+  describe('disabled cache', () => {
+    it('returns null for reads', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
+      const cache = new Cache([]);
+
+      const result = await cache.get(Buffer.from('foo'));
+
+      expect(result).toBe(null);
+    });
+
+    it('ignores writes', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
+      const cache = new Cache([]);
+
+      await cache.set(Buffer.from('foo'), 'value');
+      const result = await cache.get(Buffer.from('foo'));
+
+      expect(result).toBe(null);
+    });
+
+    it('logs nothing', async () => {
+      // $FlowFixMe[missing-empty-array-annot]
+      const cache = new Cache([]);
+
+      await cache.set(Buffer.from('foo'), 'value');
+      await cache.get(Buffer.from('foo'));
+
+      expect(log).toEqual([]);
+    });
   });
 });

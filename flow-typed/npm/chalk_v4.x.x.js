@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 declare module 'chalk' {
@@ -19,19 +20,19 @@ declare module 'chalk' {
     ...
   }>;
 
-  declare type ChalkOptions = {|
+  declare type ChalkOptions = {
     enabled?: boolean,
     level?: Level,
-  |};
+  };
 
-  declare type ColorSupport = {|
+  declare type ColorSupport = {
     level: Level,
     hasBasic: boolean,
     has256: boolean,
     has16m: boolean,
-  |};
+  };
 
-  declare interface Chalk {
+  declare type Chalk = {
     (...text: string[]): string,
     (text: TemplateStringsArray, ...placeholders: string[]): string,
     Instance(options?: ChalkOptions): Chalk,
@@ -97,7 +98,7 @@ declare module 'chalk' {
     +bgWhiteBrigh: Chalk,
 
     supportsColor: ColorSupport,
-  }
+  };
 
   declare module.exports: Chalk;
 }

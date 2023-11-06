@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,35 +15,34 @@
 
 // $FlowFixMe: not defined by Flow
 const constants = require('constants');
+const {EventEmitter} = require('events');
 const stream = require('stream');
 
-const {EventEmitter} = require('events');
-
-type NodeBase = {|
+type NodeBase = {
   gid: number,
   id: number,
   mode: number,
   uid: number,
   watchers: Array<NodeWatcher>,
-|};
+};
 
-type DirectoryNode = {|
+type DirectoryNode = {
   ...NodeBase,
   type: 'directory',
   entries: Map<string, EntityNode>,
-|};
+};
 
-type FileNode = {|
+type FileNode = {
   ...NodeBase,
   type: 'file',
   content: Buffer,
-|};
+};
 
-type SymbolicLinkNode = {|
+type SymbolicLinkNode = {
   ...NodeBase,
   type: 'symbolicLink',
   target: string,
-|};
+};
 
 type EntityNode = DirectoryNode | FileNode | SymbolicLinkNode;
 
@@ -63,22 +63,22 @@ type Encoding =
   | 'utf16le'
   | 'utf8';
 
-type Resolution = {|
+type Resolution = {
   +basename: string,
   +dirNode: DirectoryNode,
   +dirPath: Array<[string, EntityNode]>,
   +drive: string,
   +node: ?EntityNode,
   +realpath: string,
-|};
+};
 
-type Descriptor = {|
+type Descriptor = {
   +nodePath: Array<[string, EntityNode]>,
   +node: FileNode,
   +readable: boolean,
   +writable: boolean,
   position: number,
-|};
+};
 
 type FilePath = string | Buffer;
 
@@ -95,7 +95,7 @@ const FLAGS_SPECS: {
     writable?: true,
     ...
   },
-  ...,
+  ...
 } = {
   r: {mustExist: true, readable: true},
   'r+': {mustExist: true, readable: true, writable: true},
@@ -196,7 +196,7 @@ class MemoryFs {
   _pathSep: string;
   _cwd: ?() => string;
   constants: any = constants;
-  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
+  promises: {[funcName: string]: (...args: Array<any>) => Promise<any>, ...};
   Dirent: typeof Dirent = Dirent;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
@@ -268,7 +268,7 @@ class MemoryFs {
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
-      (this: $FlowFixMe)[funcName] = function(...args) {
+      (this: $FlowFixMe)[funcName] = function (...args) {
         const callback = args.pop();
         process.nextTick(() => {
           let retval;
@@ -289,19 +289,22 @@ class MemoryFs {
     this.promises = PROMISE_FUNC_NAMES.filter(
       // $FlowFixMe: No indexer
       funcName => typeof this[`${funcName}Sync`] === 'function',
-    ).reduce((promises, funcName) => {
-      promises[funcName] = (...args) =>
-        new Promise((resolve, reject) => {
-          try {
-            // $FlowFixMe: No indexer
-            resolve(this[`${funcName}Sync`](...args));
-          } catch (error) {
-            reject(error);
-          }
-        });
+    ).reduce<{[string]: (...args: Array<any>) => Promise<any>}>(
+      (promises, funcName) => {
+        promises[funcName] = (...args) =>
+          new Promise((resolve, reject) => {
+            try {
+              // $FlowFixMe: No indexer
+              resolve(this[`${funcName}Sync`](...args));
+            } catch (error) {
+              reject(error);
+            }
+          });
 
-      return promises;
-    }, {});
+        return promises;
+      },
+      {},
+    );
   }
 
   reset() {
@@ -676,19 +679,57 @@ class MemoryFs {
     }
   };
 
-  mkdirSync: (dirPath: string | Buffer, mode?: number) => void = (
+  mkdirSync: (
     dirPath: string | Buffer,
-    mode?: number,
+    options?: number | {recursive?: boolean, mode?: number},
+  ) => void = (
+    dirPath: string | Buffer,
+    options?: number | {recursive?: boolean, mode?: number},
   ): void => {
-    if (mode == null) {
-      mode = 0o777;
-    }
+    const recursive = typeof options != 'number' && options?.recursive;
+    const mode =
+      (typeof options == 'number' ? options : options?.mode) ?? 0o777;
+
     dirPath = pathStr(dirPath);
-    const {dirNode, node, basename} = this._resolve(dirPath);
-    if (node != null) {
-      throw makeError('EEXIST', dirPath, 'directory or file already exists');
+    if (recursive) {
+      const {drive, entNames} = this._parsePathWithCwd(dirPath);
+      const root = this._getRoot(drive, dirPath);
+      const context = {
+        drive,
+        node: root,
+        nodePath: [['', root]],
+        entNames,
+        symlinkCount: 0,
+        keepFinalSymlink: false,
+      };
+
+      while (context.entNames.length > 0) {
+        const entName = context.entNames.shift();
+        this._resolveEnt(context, dirPath, entName);
+        if (context.node == null) {
+          const [_parentName, parentNode] =
+            context.nodePath[context.nodePath.length - 2];
+          const childPair = context.nodePath[context.nodePath.length - 1];
+          if (parentNode && parentNode.type === 'directory') {
+            context.node = this._makeDir(mode);
+            parentNode.entries.set(entName, context.node);
+            childPair[1] = context.node;
+          } else {
+            throw makeError(
+              'EEXIST',
+              dirPath,
+              'directory or file already exists',
+            );
+          }
+        }
+      }
+    } else {
+      const {dirNode, node, basename} = this._resolve(dirPath);
+      if (node != null) {
+        throw makeError('EEXIST', dirPath, 'directory or file already exists');
+      }
+      dirNode.entries.set(basename, this._makeDir(mode));
     }
-    dirNode.entries.set(basename, this._makeDir(mode));
   };
 
   mkdtempSync: (
@@ -1058,6 +1099,7 @@ class MemoryFs {
     const ffd = fd;
     const ropt = {
       fd,
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       writeSync: this._write.bind(this),
       filePath,
       start,
@@ -1138,7 +1180,7 @@ class MemoryFs {
     };
   }
 
-  _getId() {
+  _getId(): number {
     return ++this._nextId;
   }
 
@@ -1191,12 +1233,10 @@ class MemoryFs {
     });
   }
 
-  _parsePath(
-    filePath: string,
-  ): {|
+  _parsePath(filePath: string): {
     +drive: ?string,
     +entNames: Array<string>,
-  |} {
+  } {
     let drive;
     const sep = this._platform === 'win32' ? /[\\/]/ : /\//;
     if (this._platform === 'win32' && filePath.match(/^[a-zA-Z]:[\\/]/)) {
@@ -1218,21 +1258,10 @@ class MemoryFs {
     return {entNames: filePath.split(sep), drive};
   }
 
-  /**
-   * Implemented according with
-   * http://man7.org/linux/man-pages/man7/path_resolution.7.html
-   */
-  _resolve(
-    filePath: string,
-    options?: {keepFinalSymlink: boolean, ...},
-  ): Resolution {
-    let keepFinalSymlink = false;
-    if (options != null) {
-      ({keepFinalSymlink} = options);
-    }
-    if (filePath === '') {
-      throw makeError('ENOENT', filePath, 'no such file or directory');
-    }
+  _parsePathWithCwd(filePath: string): {
+    +drive: string,
+    +entNames: Array<string>,
+  } {
     let {drive, entNames} = this._parsePath(filePath);
     if (drive == null) {
       const {_cwd} = this;
@@ -1254,6 +1283,25 @@ class MemoryFs {
       }
       entNames = cwPath.entNames.concat(entNames);
     }
+    return {drive, entNames};
+  }
+
+  /**
+   * Implemented according with
+   * http://man7.org/linux/man-pages/man7/path_resolution.7.html
+   */
+  _resolve(
+    filePath: string,
+    options?: {keepFinalSymlink: boolean, ...},
+  ): Resolution {
+    let keepFinalSymlink = false;
+    if (options != null) {
+      ({keepFinalSymlink} = options);
+    }
+    if (filePath === '') {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    const {drive, entNames} = this._parsePathWithCwd(filePath);
     checkPathLength(entNames, filePath);
     const root = this._getRoot(drive, filePath);
     const context = {
@@ -1290,7 +1338,9 @@ class MemoryFs {
     };
   }
 
-  _resolveEnt(context, filePath, entName) {
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
+  _resolveEnt(context, filePath: string, entName: any | string): void {
     const {node} = context;
     if (node == null) {
       throw makeError('ENOENT', filePath, 'no such file or directory');
@@ -1534,7 +1584,7 @@ class ReadFileSteam extends stream.Readable {
     }
   }
 
-  _read(size) {
+  _read(size: any) {
     let bytesRead;
     const {_buffer} = this;
     do {
@@ -1548,7 +1598,7 @@ class ReadFileSteam extends stream.Readable {
     } while (this.push(bytesRead > 0 ? _buffer.slice(0, bytesRead) : null));
   }
 
-  _getLengthToRead() {
+  _getLengthToRead(): number {
     const {_positions, _buffer} = this;
     if (_positions == null) {
       return _buffer.length;
@@ -1590,7 +1640,9 @@ class WriteFileStream extends stream.Writable {
     }
   }
 
-  _write(buffer, encoding, callback) {
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
+  _write(buffer, encoding: any, callback) {
     try {
       const bytesWritten = this._writeSync(this._fd, buffer, 0, buffer.length);
       this.bytesWritten += bytesWritten;
@@ -1635,7 +1687,7 @@ class FSWatcher extends EventEmitter {
     clearInterval(this._persistIntervalId);
   }
 
-  _listener = (eventType, filePath: string) => {
+  _listener = (eventType: 'change' | 'rename', filePath: string) => {
     const encFilePath =
       this._encoding === 'buffer' ? Buffer.from(filePath, 'utf8') : filePath;
     try {
@@ -1688,7 +1740,10 @@ class Dirent {
   }
 }
 
-function checkPathLength(entNames, filePath) {
+function checkPathLength(
+  entNames: Array<string> | Array<any | string>,
+  filePath: string,
+) {
   if (entNames.length > 32) {
     throw makeError(
       'ENAMETOOLONG',

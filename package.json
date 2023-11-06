@@ -1,74 +1,95 @@
 {
   "private": true,
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+    "@babel/core": "^7.20.0",
     "@babel/plugin-syntax-class-properties": "^7.0.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
-    "acorn": "^5.1.2",
-    "babel-eslint": "^10.1.0",
-    "babel-jest": "^26.5.2",
+    "@tsconfig/node18": "1.0.1",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "acorn": "^8.7.1",
+    "babel-jest": "^29.6.3",
     "chalk": "^4.0.0",
-    "codecov": "^3.6.5",
     "debug": "^2.2.0",
-    "eslint": "7.12.0",
-    "eslint-config-fb-strict": "^24.9.0",
-    "eslint-plugin-babel": "^5.3.0",
-    "eslint-plugin-flowtype": "2.50.3",
-    "eslint-plugin-import": "^2.9.0",
-    "eslint-plugin-jest": "22.4.1",
-    "eslint-plugin-jsx-a11y": "6.2.1",
-    "eslint-plugin-lint": "1.0.0",
-    "eslint-plugin-prettier": "2.6.2",
-    "eslint-plugin-react": "7.21.5",
-    "eslint-plugin-relay": "1.8.1",
-    "flow-bin": "^0.143.1",
+    "eslint": "^8.23.1",
+    "eslint-config-fb-strict": "^27.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-babel": "^5.3.1",
+    "eslint-plugin-ft-flow": "^2.0.1",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.5.3",
+    "eslint-plugin-jsx-a11y": "^6.6.0",
+    "eslint-plugin-lint": "^1.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.30.1",
+    "eslint-plugin-relay": "^1.8.3",
+    "flow-bin": "^0.220.1",
     "glob": "^7.1.1",
+    "hermes-eslint": "0.17.0",
+    "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
-    "jest": "^26.5.2",
-    "lerna": "2.4.0",
-    "micromatch": "^4.0.2",
-    "mkdirp": "^0.5.1",
-    "prettier": "1.19.1",
+    "jest": "^29.6.3",
+    "jest-junit": "^10.0.0",
+    "jest-watch-typeahead": "^2.2.0",
+    "jsonc-eslint-parser": "^2.3.0",
+    "metro-babel-register": "*",
+    "micromatch": "^4.0.4",
+    "prettier": "2.8.8",
+    "prettier-plugin-hermes-parser": "0.17.0",
     "progress": "^2.0.0",
-    "promise": "^8.0.3",
-    "temp": "^0.8.3"
+    "typescript": "5.0.4"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
     "build": "node ./scripts/build.js",
     "clean-all": "rm -rf ./node_modules && rm -rf ./packages/*/node_modules && yarn run build-clean",
-    "jest-coverage": "yarn run jest --coverage",
-    "lint": "eslint . --cache",
     "lint-fix": "eslint . --fix --cache",
-    "postinstall": "node ./scripts/build.js",
-    "preinstall": "node ./scripts/preinstall.js",
-    "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna exec -- npm publish",
-    "postpublish": "lerna run cleanup-release",
-    "test-ci": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest-coverage -i && node scripts/mapCoverage.js && codecov",
+    "lint": "eslint . --cache",
+    "postpublish": "yarn workspaces run cleanup-release",
+    "publish": "yarn run build-clean && yarn run build && yarn workspaces run prepare-release && npm publish --workspaces",
+    "start": "node packages/metro/src/cli",
     "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
-    "typecheck": "flow check"
+    "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
+    "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
+    "typecheck": "flow check",
+    "typecheck-ts": "tsc --project tsconfig.json",
+    "update-babel-flow-lib-defs": "node -r @babel/register ./scripts/updateBabelFlowLibraryDefinitions",
+    "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [
     "packages/*"
   ],
   "jest": {
     "modulePathIgnorePatterns": [
+      "/node_modules/",
       "packages/[^/]+/build/"
     ],
+    "snapshotFormat": {
+      "escapeString": true,
+      "printBasicPrototype": true
+    },
     "testEnvironment": "node",
     "testRegex": "/__tests__/.*-test\\.js$",
-    "timers": "fake",
+    "fakeTimers": {
+      "enableGlobally": true,
+      "legacyFakeTimers": false
+    },
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
     },
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
+    ],
+    "watchPlugins": [
+      "jest-watch-typeahead/filename",
+      "jest-watch-typeahead/testname"
     ]
   },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
 }

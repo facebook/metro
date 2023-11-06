@@ -1,19 +1,18 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_symbolication
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const Consumer = require('../Consumer');
-
-const {add1, add0} = require('ob1');
+const {add0, add1} = require('ob1');
 
 const {objectContaining} = expect;
 
@@ -35,6 +34,29 @@ describe('basic maps', () => {
           "source": null,
         }
       `);
+    });
+
+    test('empty position is a mutable object', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: [],
+      });
+      const empty1 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      const empty2 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      expect(empty1).not.toBe(empty2);
+      expect(() => {
+        empty1.name = 'foo';
+        // $FlowIgnore[prop-missing]
+        empty1.someProp = 'bar';
+      }).not.toThrow();
     });
 
     test('single full mapping', () => {
@@ -259,6 +281,27 @@ describe('indexed (sectioned) maps', () => {
       `);
     });
 
+    test('empty position is a mutable object', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [],
+      });
+      const empty1 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      const empty2 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      expect(empty1).not.toBe(empty2);
+      expect(() => {
+        empty1.name = 'foo';
+        // $FlowIgnore[prop-missing]
+        empty1.someProp = 'bar';
+      }).not.toThrow();
+    });
+
     test('section per column', () => {
       const consumer = new Consumer({
         version: 3,
@@ -317,6 +360,68 @@ describe('indexed (sectioned) maps', () => {
           "line": 3,
           "name": "section2_name0",
           "source": "section2_source0",
+        }
+      `);
+    });
+
+    test('column offset only applies to first line of section', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 5, column: 1000},
+            map: {
+              version: 3,
+              names: ['section0_name0', 'section0_name1'],
+              sources: ['section0_source0', 'section0_source1'],
+              mappings: 'AAEEA,G;ECAAC,C;C',
+            },
+          },
+        ],
+      });
+      expect(consumer.originalPositionFor({line: add1(5), column: add0(1002)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name0",
+          "source": "section0_source0",
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(5), column: add0(1003)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(2)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name1",
+          "source": "section0_source1",
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(3)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(1002)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
         }
       `);
     });
@@ -560,8 +665,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: [],
-            sources: [],
+            names: ([]: Array<string>),
+            sources: ([]: Array<string>),
             mappings: 'A',
           },
         },
@@ -592,7 +697,7 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: [],
+            names: ([]: Array<string>),
             sources: ['foo.js'],
             mappings: 'AAAA',
           },
@@ -701,8 +806,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 2},
           map: {
             version: 3,
-            names: [],
-            sources: [],
+            names: ([]: Array<string>),
+            sources: ([]: Array<string>),
             mappings: '',
           },
         },

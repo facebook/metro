@@ -1,35 +1,37 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const chalk = require('chalk');
-const logToConsole = require('./logToConsole');
-const path = require('path');
-const reporting = require('./reporting');
-const throttle = require('lodash.throttle');
-
-const {AmbiguousModuleResolutionError} = require('metro-core');
-
 import type {
   BundleDetails,
-  ReportableEvent,
   GlobalCacheDisabledReason,
+  ReportableEvent,
 } from './reporting';
 import type {Terminal} from 'metro-core';
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
+
+const logToConsole = require('./logToConsole');
+const reporting = require('./reporting');
+const chalk = require('chalk');
+const throttle = require('lodash.throttle');
+const {AmbiguousModuleResolutionError} = require('metro-core');
+const path = require('path');
 
 type BundleProgress = {
   bundleDetails: BundleDetails,
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
+  isPrefetch?: boolean,
   ...
 };
 
@@ -45,11 +47,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
-type SnippetError = ErrnoError & {
-  filename?: string,
-  snippet?: string,
-  ...
-};
+type SnippetError = ErrnoError &
+  interface {
+    filename?: string,
+    snippet?: string,
+  };
 
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
@@ -79,6 +81,7 @@ class TerminalReporter {
     }): void,
     cancel(): void,
   };
+  _prevHealthCheckResult: ?HealthCheckResult;
 
   +terminal: Terminal;
 
@@ -98,15 +101,16 @@ class TerminalReporter {
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, bundleType, runtimeBytecodeVersion},
+      bundleDetails: {entryFile, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
+      isPrefetch,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    if (runtimeBytecodeVersion) {
-      bundleType = 'bytecodebundle';
+    if (isPrefetch) {
+      bundleType = 'PREBUNDLE';
     }
 
     const localPath = path.relative('.', entryFile);
@@ -183,28 +187,21 @@ class TerminalReporter {
 
   _logInitializing(port: number, hasReducedPerformance: boolean): void {
     const logo = [
-      '                                                      ',
-      '                        #######                       ',
-      '                   ################                   ',
-      '                #########     #########               ',
-      '            #########             ##########          ',
-      '        #########        ######        #########      ',
-      '       ##########################################     ',
-      '      #####      #####################       #####    ',
-      '      #####          ##############          #####    ',
-      '      #####    ###       ######       ###    #####    ',
-      '      #####    #######            #######    #####    ',
-      '      #####    ###########    ###########    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####    ##########################    #####    ',
-      '      #####      ######################     ######    ',
-      '       ######        #############        #######     ',
-      '         #########        ####       #########        ',
-      '              #########          #########            ',
-      '                  ######### #########                 ',
-      '                       #########                      ',
-      '                                                      ',
-      '                                                      ',
+      '',
+      '                        ▒▒▓▓▓▓▒▒',
+      '                     ▒▓▓▓▒▒░░▒▒▓▓▓▒',
+      '                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒',
+      '                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓',
+      '                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓',
+      '                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓',
+      '                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓',
+      '                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓',
+      '                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒',
+      '                     ▒▓▓▓▒░░░░▒▓▓▓▒',
+      '                        ▒▒▓▓▓▓▒▒',
+      '',
+      '',
     ];
 
     const color = hasReducedPerformance ? chalk.red : chalk.blue;
@@ -259,6 +256,9 @@ class TerminalReporter {
       case 'global_cache_disabled':
         this._logCacheDisabled(event.reason);
         break;
+      case 'resolver_warning':
+        this._logWarning(event.message);
+        break;
       case 'transform_cache_reset':
         reporting.logWarning(this.terminal, 'the transform cache was reset.');
         break;
@@ -272,13 +272,16 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logToConsole(this.terminal, event.level, ...event.data);
+        logToConsole(this.terminal, event.level, event.mode, ...event.data);
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
+        const version = 'v' + require('../../package.json').version;
         this.terminal.log(
-          color.bold('                    Welcome to Metro!\n') +
-            chalk.dim('              Fast - Scalable - Integrated\n\n'),
+          color.bold(
+            ' '.repeat(19 - version.length / 2),
+            'Welcome to Metro ' + chalk.white(version) + '\n',
+          ) + chalk.dim('              Fast - Scalable - Integrated\n\n'),
         );
 
         if (event.hasReducedPerformance) {
@@ -290,6 +293,12 @@ class TerminalReporter {
           );
         }
 
+        break;
+      case 'watcher_health_check_result':
+        this._logWatcherHealthCheckResult(event.result);
+        break;
+      case 'watcher_status':
+        this._logWatcherStatus(event.status);
         break;
     }
   }
@@ -326,6 +335,7 @@ class TerminalReporter {
     }
 
     if (error.filename && !message.includes(error.filename)) {
+      // $FlowFixMe[incompatible-type]
       message += ` [${error.filename}]`;
     }
 
@@ -390,6 +400,7 @@ class TerminalReporter {
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
+          isPrefetch: event.isPrefetch,
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;
@@ -423,9 +434,88 @@ class TerminalReporter {
     );
   }
 
+  _logWarning(message: string): void {
+    reporting.logWarning(this.terminal, message);
+  }
+
+  _logWatcherHealthCheckResult(result: HealthCheckResult) {
+    // Don't be spammy; only report changes in status.
+    if (
+      !this._prevHealthCheckResult ||
+      result.type !== this._prevHealthCheckResult.type ||
+      (result.type === 'timeout' &&
+        this._prevHealthCheckResult.type === 'timeout' &&
+        (result.pauseReason ?? null) !==
+          (this._prevHealthCheckResult.pauseReason ?? null))
+    ) {
+      const watcherName = "'" + (result.watcher ?? 'unknown') + "'";
+      switch (result.type) {
+        case 'success':
+          // Only report success after a prior failure.
+          if (this._prevHealthCheckResult) {
+            this.terminal.log(
+              chalk.green(`Watcher ${watcherName} is now healthy.`),
+            );
+          }
+          break;
+        case 'error':
+          reporting.logWarning(
+            this.terminal,
+            'Failed to perform watcher health check. Check whether the project root is writable.',
+          );
+          break;
+        case 'timeout':
+          const why =
+            result.pauseReason != null
+              ? ` This may be because: ${result.pauseReason}`
+              : '';
+          reporting.logWarning(
+            this.terminal,
+            `Watcher ${watcherName} failed to detect a file change within ${result.timeout}ms.` +
+              why,
+          );
+          break;
+      }
+    }
+    this._prevHealthCheckResult = result;
+  }
+
+  _logWatcherStatus(status: WatcherStatus) {
+    switch (status.type) {
+      case 'watchman_warning':
+        const warning =
+          typeof status.warning === 'string'
+            ? status.warning
+            : `unknown warning (type: ${typeof status.warning})`;
+        reporting.logWarning(
+          this.terminal,
+          `Watchman \`${status.command}\` returned a warning: ${warning}`,
+        );
+        break;
+      case 'watchman_slow_command':
+        this.terminal.log(
+          chalk.dim(
+            `Waiting for Watchman \`${status.command}\` (${Math.round(
+              status.timeElapsed / 1000,
+            )}s)...`,
+          ),
+        );
+        break;
+      case 'watchman_slow_command_complete':
+        this.terminal.log(
+          chalk.green(
+            `Watchman \`${status.command}\` finished after ${(
+              status.timeElapsed / 1000
+            ).toFixed(1)}s.`,
+          ),
+        );
+        break;
+    }
+  }
+
   /**
    * Single entry point for reporting events. That allows us to implement the
-   * corresponding JSON reporter easily and have a consistent repor∏ting.
+   * corresponding JSON reporter easily and have a consistent reporting.
    */
   update(event: TerminalReportableEvent): void {
     if (event.type === 'bundle_transform_progressed') {

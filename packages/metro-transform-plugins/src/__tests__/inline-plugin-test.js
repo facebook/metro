@@ -1,20 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_foundation
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+const {compare} = require('../__mocks__/test-helpers');
 const inlinePlugin = require('../inline-plugin');
 const stripFlow = require('@babel/plugin-transform-flow-strip-types');
-
-const {compare} = require('../__mocks__/test-helpers');
 
 describe('inline constants', () => {
   it('replaces __DEV__ in the code', () => {

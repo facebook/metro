@@ -1,12 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_symbolication
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -100,7 +100,9 @@ describe('full map generation', () => {
     generator.addSimpleMapping(1, 2);
     generator.addNamedSourceMapping(3, 4, 5, 6, 'plums');
     generator.endFile();
-    generator.startFile('lemons', 'oranges');
+    generator.startFile('lemons', 'oranges', undefined, {
+      addToIgnoreList: true,
+    });
     generator.addNamedSourceMapping(7, 8, 9, 10, 'tangerines');
     generator.addNamedSourceMapping(11, 12, 13, 14, 'tangerines');
     generator.addSimpleMapping(15, 16);
@@ -113,6 +115,7 @@ describe('full map generation', () => {
       sources: ['apples', 'lemons'],
       sourcesContent: ['pears', 'oranges'],
       names: ['plums', 'tangerines'],
+      x_google_ignoreList: [1],
     });
   });
 
@@ -131,5 +134,40 @@ describe('full map generation', () => {
   it('supports direct JSON serialization with a file name', () => {
     const file = 'arbitrary/file';
     expect(JSON.parse(generator.toString(file))).toEqual(generator.toMap(file));
+  });
+});
+
+describe('x_google_ignoreList', () => {
+  it('add files to ignore list', () => {
+    const file1 = 'just/a/file';
+    const file2 = 'another/file';
+    const file3 = 'file3';
+    const source1 = 'var a = 1;';
+    const source2 = 'var a = 2;';
+
+    generator.startFile(file1, source1, undefined, {addToIgnoreList: true});
+    generator.startFile(file2, source2, undefined, {addToIgnoreList: false});
+    generator.startFile(file3, source2, undefined, {addToIgnoreList: true});
+
+    expect(generator.toMap()).toEqual(
+      objectContaining({
+        sources: [file1, file2, file3],
+        x_google_ignoreList: [0, 2],
+      }),
+    );
+  });
+
+  it('not emitted if no files are ignored', () => {
+    const file1 = 'just/a/file';
+    const file2 = 'another/file';
+    const file3 = 'file3';
+    const source1 = 'var a = 1;';
+    const source2 = 'var a = 2;';
+
+    generator.startFile(file1, source1);
+    generator.startFile(file2, source2, undefined, {addToIgnoreList: false});
+    generator.startFile(file3, source2, undefined, {addToIgnoreList: false});
+
+    expect(generator.toMap()).not.toHaveProperty('x_google_ignoreList');
   });
 });

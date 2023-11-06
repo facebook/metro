@@ -1,50 +1,37 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const path = require('path');
-
-require('eslint-plugin-lint').load(path.join(__dirname, 'eslint-rules'));
-
 module.exports = {
-  env: {
-    node: true,
-  },
-  extends: 'eslint-config-fb-strict',
-  plugins: ['babel', 'flowtype', 'import', 'lint', 'prettier'],
-  parser: 'babel-eslint',
-  rules: {
-    'babel/quotes': ['error', 'single', 'avoid-escape'],
-    'consistent-return': 'error',
-    'import/no-extraneous-dependencies': 'error',
-    'lint/extra-arrow-initializer': 'off',
-    'lint/strictly-null': 'warn',
-    'max-len': 'off',
-    'no-alert': 'error',
-    'no-console': 'error',
-    'no-unused-vars': 'error',
-    'no-var': 'off',
-    'prefer-arrow-callback': 'off',
-    'prefer-const': ['warn', {destructuring: 'all'}],
-    'prettier/prettier': ['error', 'fb', '@format'],
-    'sort-keys': 'off',
-    'flowtype/object-type-delimiter': 'off',
-  },
+  extends: './scripts/eslint/base',
   overrides: [
+    {
+      files: ['flow-typed/**/*.js'],
+      rules: {
+        'babel/quotes': 'off',
+        'lint/flow-function-shape': 'off',
+      },
+    },
+    {
+      files: ['package.json'],
+      parser: 'jsonc-eslint-parser',
+    },
+    {
+      files: ['packages/*/types/**/*.d.ts'],
+      extends: './scripts/eslint/typescript',
+    },
     {
       files: ['packages/metro-source-map/**/*.js'],
       rules: {
         'operator-assignment': ['error', 'never'],
-      },
-      env: {
-        node: true,
       },
     },
     {

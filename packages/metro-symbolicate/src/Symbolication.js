@@ -1,28 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
-'use strict';
+import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
+import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 
+// flowlint-next-line untyped-type-import:off
+import {typeof SourceMapConsumer} from 'source-map';
+
+const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+const GoogleIgnoreListConsumer = require('./GoogleIgnoreListConsumer');
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
-
 const fs = require('fs');
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const path = require('path');
-
-const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
-
-import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
-import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
-// flowlint-next-line untyped-type-import:off
-import {typeof SourceMapConsumer} from 'source-map';
 
 type SingleMapModuleIds = {
   segmentId: number,
@@ -70,7 +69,7 @@ type HermesMinidumpCrashInfo = {
   ...
 };
 
-type HermesMinidumpStackFrame = $ReadOnly<{|
+type HermesMinidumpStackFrame = $ReadOnly<{
   ByteCodeOffset: number,
   FunctionID: number,
   // NOTE: CJSModuleOffset has been renamed to SegmentID. Support both formats for now.
@@ -79,24 +78,35 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   SourceURL: string,
   StackFrameRegOffs: string,
   SourceLocation?: string,
-|}>;
+}>;
 
-type NativeCodeStackFrame = $ReadOnly<{|
+type HermesCoverageInfo = {
+  +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
+};
+
+type HermesCoverageStackFrame = $ReadOnly<{
+  line: number, // SegmentID or zero-based line,
+  column: number, // VirtualOffset or zero-based column,
+  SourceURL: ?string,
+}>;
+
+type NativeCodeStackFrame = $ReadOnly<{
   NativeCode: true,
   StackFrameRegOffs: string,
-|}>;
+}>;
 
 type SymbolicatedStackTrace = $ReadOnlyArray<
   SymbolicatedStackFrame | NativeCodeStackFrame,
 >;
 
-type SymbolicatedStackFrame = $ReadOnly<{|
+type SymbolicatedStackFrame = $ReadOnly<{
   line: ?number,
   column: ?number,
   source: ?string,
   functionName: ?string,
   name: ?string,
-|}>;
+  isIgnored: boolean,
+}>;
 
 const UNKNOWN_MODULE_IDS: SingleMapModuleIds = {
   segmentId: 0,
@@ -133,6 +143,7 @@ class SymbolicationContext<ModuleIdsT> {
         }
       }
       if (options.nameSource != null) {
+        // $FlowFixMe[cannot-write]
         this.options.nameSource = options.nameSource;
       }
     }
@@ -354,12 +365,12 @@ class SymbolicationContext<ModuleIdsT> {
     lineNumber: ?number,
     columnNumber: ?number,
     moduleIds: ?ModuleIdsT,
-  ): {|
+  ): {
     line: ?number,
     column: ?number,
     source: ?string,
     name: ?string,
-  |} {
+  } {
     const position = this.getOriginalPositionDetailsFor(
       lineNumber,
       columnNumber,
@@ -440,6 +451,31 @@ class SymbolicationContext<ModuleIdsT> {
   }
 
   /*
+   * Symbolicates the JavaScript stack trace extracted from the coverage information
+   * produced by HermesRuntime::getExecutedFunctions.
+   */
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
+      }
+    }
+    return symbolicatedTrace;
+  }
+  /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
    * source of the name.
@@ -459,16 +495,17 @@ class SymbolicationContext<ModuleIdsT> {
 
 class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModuleIds> {
   +_segments: {
-    +[id: string]: {|
+    +[id: string]: {
       // $FlowFixMe[value-as-type]
       +consumer: SourceMapConsumer,
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
-    |},
-    ...,
+      +googleIgnoreListConsumer: GoogleIgnoreListConsumer,
+    },
+    ...
   };
-  +_hasLegacySegments: boolean;
+  +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
@@ -489,30 +526,47 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     };
     if (sourceMapJson.x_facebook_segments) {
       for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
+        // $FlowFixMe[incompatible-use]
         const map = sourceMapJson.x_facebook_segments[key];
+        // $FlowFixMe[prop-missing]
         segments[key] = this._initSegment(map);
       }
     }
-    this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
+    this._legacyFormat =
+      sourceMapJson.x_facebook_segments != null ||
+      sourceMapJson.x_facebook_offsets != null;
     this._segments = segments;
   }
 
-  _initSegment(map) {
+  // $FlowFixMe[missing-local-annot]
+  _initSegment(map: MixedSourceMap) {
     const useFunctionNames = this.options.nameSource === 'function_names';
     const {_SourceMapConsumer: SourceMapConsumer} = this;
     return {
       get consumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'consumer', {
           value: new SourceMapConsumer(map),
         });
+        // $FlowFixMe[object-this-reference]
         return this.consumer;
       },
       moduleOffsets: map.x_facebook_offsets || [],
       get sourceFunctionsConsumer() {
+        // $FlowFixMe[object-this-reference]
         Object.defineProperty(this, 'sourceFunctionsConsumer', {
           value: useFunctionNames ? new SourceMetadataMapConsumer(map) : null,
         });
+        // $FlowFixMe[object-this-reference]
         return this.sourceFunctionsConsumer;
+      },
+      get googleIgnoreListConsumer() {
+        // $FlowFixMe[object-this-reference]
+        Object.defineProperty(this, 'googleIgnoreListConsumer', {
+          value: new GoogleIgnoreListConsumer(map),
+        });
+        // $FlowFixMe[object-this-reference]
+        return this.googleIgnoreListConsumer;
       },
       hermesOffsets: map.x_hermes_function_offsets,
     };
@@ -539,14 +593,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             CJSModuleOffset ?? SegmentID,
             'Either CJSModuleOffset or SegmentID must be specified in the Hermes stack frame',
           );
-          const moduleInformation = this._hasLegacySegments
-            ? this.parseFileName(SourceURL)
-            : UNKNOWN_MODULE_IDS;
+          const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
-          const segment = this._segments[
-            moduleInformation.segmentId.toString()
-          ];
+          const segment =
+            this._segments[moduleInformation.segmentId.toString()];
           const hermesOffsets = segment?.hermesOffsets;
           if (!hermesOffsets) {
             symbolicatedTrace.push({
@@ -555,6 +606,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
               source: null,
               functionName: null,
               name: null,
+              isIgnored: false,
             });
           } else {
             const segmentOffsets =
@@ -571,6 +623,28 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             symbolicatedTrace.push(originalPosition);
           }
         }
+      }
+    }
+    return symbolicatedTrace;
+  }
+
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
       }
     }
     return symbolicatedTrace;
@@ -626,6 +700,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     } else {
       original.functionName = null;
     }
+    original.isIgnored = metadata.googleIgnoreListConsumer.isIgnored(original);
     return {
       ...original,
       line:
@@ -640,7 +715,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
   }
 
   parseFileName(str: string): SingleMapModuleIds {
-    return parseSingleMapFileName(str);
+    if (this._legacyFormat) {
+      return parseSingleMapFileName(str);
+    }
+
+    return UNKNOWN_MODULE_IDS;
   }
 }
 
@@ -723,6 +802,7 @@ class DirectorySymbolicationContext extends SymbolicationContext<string> {
         source: filename,
         name: null,
         functionName: null,
+        isIgnored: false,
       };
     }
     return this._loadMap(mapFilename).getOriginalPositionDetailsFor(
@@ -788,12 +868,12 @@ function getOriginalPositionFor<ModuleIdsT>(
   columnNumber: ?number,
   moduleIds: ?ModuleIdsT,
   context: SymbolicationContext<ModuleIdsT>,
-): {|
+): {
   line: ?number,
   column: ?number,
   source: ?string,
   name: ?string,
-|} {
+} {
   return context.getOriginalPositionFor(lineNumber, columnNumber, moduleIds);
 }
 

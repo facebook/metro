@@ -1,58 +1,57 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-
-const getAppendScripts = require('../../lib/getAppendScripts');
-const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
-const nullthrows = require('nullthrows');
-const path = require('path');
-
-const {createRamBundleGroups} = require('../../Bundler/util');
-const {isJsModule, wrapModule} = require('./helpers/js');
-const {sourceMapObject} = require('./sourceMapObject');
 
 import type {
   ModuleTransportLike,
   RamModuleTransport,
 } from '../../shared/types.flow';
-import type {Graph, Module, SerializerOptions} from '../types.flow';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
+import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
-type Options = {|
-  ...SerializerOptions,
-  +excludeSource: boolean,
-  +getTransformOptions: ?GetTransformOptions,
-  +platform: ?string,
-|};
+const {createRamBundleGroups} = require('../../Bundler/util');
+const getAppendScripts = require('../../lib/getAppendScripts');
+const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
+const {isJsModule, wrapModule} = require('./helpers/js');
+const {sourceMapObject} = require('./sourceMapObject');
+const nullthrows = require('nullthrows');
+const path = require('path');
 
-export type RamBundleInfo = {|
+type Options = $ReadOnly<{
+  ...SerializerOptions,
+  ...SourceMapGeneratorOptions,
+  getTransformOptions: ?GetTransformOptions,
+  platform: ?string,
+}>;
+
+export type RamBundleInfo = {
   getDependencies: string => Set<string>,
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
   lazyModules: $ReadOnlyArray<ModuleTransportLike>,
   groups: Map<number, Set<number>>,
-|};
+};
 
 async function getRamBundleInfo(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
   let modules: $ReadOnlyArray<Module<>> = [
     ...pre,
     ...graph.dependencies.values(),
   ];
-  modules = modules.concat(
-    getAppendScripts(entryPoint, modules, graph.importBundleNames, options),
-  );
+  modules = modules.concat(getAppendScripts(entryPoint, modules, options));
 
   modules.forEach((module: Module<>) => options.createModuleId(module.path));
 
@@ -65,6 +64,7 @@ async function getRamBundleInfo(
       map: sourceMapObject([module], {
         excludeSource: options.excludeSource,
         processModuleFilter: options.processModuleFilter,
+        shouldAddToIgnoreList: options.shouldAddToIgnoreList,
       }),
       name: path.basename(module.path),
       sourcePath: module.path,
@@ -110,7 +110,7 @@ async function getRamBundleInfo(
       dependenciesByPath: Map<string, ModuleTransportLike>,
     ): Set<number> => {
       const deps = getTransitiveDependencies(module.sourcePath, graph);
-      const output = new Set();
+      const output = new Set<number>();
 
       for (const dependency of deps) {
         const module = dependenciesByPath.get(dependency);
@@ -145,10 +145,10 @@ async function _getRamOptions(
   },
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
-): Promise<{|
+): Promise<{
   +preloadedModules: {[string]: true, ...},
   +ramGroups: Array<string>,
-|}> {
+}> {
   if (getTransformOptions == null) {
     return {
       preloadedModules: {},

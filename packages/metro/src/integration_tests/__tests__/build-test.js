@@ -1,20 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const Metro = require('../../..');
-const MetroConfig = require('metro-config');
-
 const execBundle = require('../execBundle');
+const MetroConfig = require('metro-config');
 const path = require('path');
 
 jest.unmock('cosmiconfig');
@@ -49,4 +48,17 @@ it('build a simple bundle with polyfills', async () => {
     entry: 'TestPolyfill.js',
   });
   expect(execBundle(result.code)).toBe('POLYFILL_IS_INJECTED');
+});
+
+it('builds a bundle with BigInt and exponentiation syntax', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+
+  const result = await Metro.runBuild(config, {
+    entry: 'TestBigInt.js',
+  });
+
+  const BI = BigInt;
+  expect(execBundle(result.code)).toBe(BI(8));
 });

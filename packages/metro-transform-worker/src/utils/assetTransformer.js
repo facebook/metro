@@ -1,22 +1,22 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const path = require('path');
+import type {File} from '@babel/types';
+import type {BabelTransformerArgs} from 'metro-babel-transformer';
 
 const {getAssetData} = require('metro/src/Assets');
 const {generateAssetCodeFileAst} = require('metro/src/Bundler/util');
-
-import type {File} from '@babel/types';
-import type {BabelTransformerArgs} from 'metro-babel-transformer';
+const path = require('path');
 
 async function transform(
   {filename, options, src}: BabelTransformerArgs,

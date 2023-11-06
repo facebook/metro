@@ -1,22 +1,38 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
-
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-function normalizePseudoglobals(ast: BabelNode): $ReadOnlyArray<string> {
+const traverse = require('@babel/traverse').default;
+const nullthrows = require('nullthrows');
+
+export type Options = {
+  reservedNames: $ReadOnlyArray<string>,
+};
+
+function normalizePseudoglobals(
+  ast: BabelNode,
+  options?: Options,
+): $ReadOnlyArray<string> {
+  const reservedNames = new Set<
+    | void
+    | string
+    | BabelNodeIdentifier
+    | BabelNodeJSXIdentifier
+    | BabelNodeJSXMemberExpression
+    | BabelNodeJSXNamespacedName,
+  >(options?.reservedNames ?? []);
   const renamedParamNames = [];
   traverse(ast, {
     Program(path: NodePath<Program>): void {
@@ -28,8 +44,10 @@ function normalizePseudoglobals(ast: BabelNode): $ReadOnlyArray<string> {
         return;
       }
 
-      // $FlowFixMe Flow error uncovered by typing Babel more strictly
-      const pseudoglobals: Array<string> = params.map(path => path.node.name);
+      const pseudoglobals: Array<string> = params
+        .map(path => path.node.name)
+        // $FlowFixMe[incompatible-call] Flow error uncovered by typing Babel more strictly
+        .filter(name => !reservedNames.has(name));
 
       const usedShortNames = new Set<string>();
       const namePairs: Array<[string, string]> = pseudoglobals.map(fullName => [
@@ -38,6 +56,14 @@ function normalizePseudoglobals(ast: BabelNode): $ReadOnlyArray<string> {
       ]);
 
       for (const [fullName, shortName] of namePairs) {
+        if (reservedNames.has(shortName)) {
+          throw new ReferenceError(
+            'Could not reserve the identifier ' +
+              shortName +
+              ' because it is the short name for ' +
+              fullName,
+          );
+        }
         renamedParamNames.push(rename(fullName, shortName, body.scope));
       }
 

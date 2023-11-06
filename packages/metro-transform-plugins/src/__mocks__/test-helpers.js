@@ -1,17 +1,18 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_foundation
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const generate = require('@babel/generator').default;
 const {transformSync} = require('@babel/core');
+const generate = require('@babel/generator').default;
+const t = require('@babel/types');
 
 opaque type Code = string;
 opaque type Plugin = () => {};
@@ -21,6 +22,7 @@ function makeTransformOptions(plugins, options) {
   return {
     ast: true,
     babelrc: false,
+    browserslistConfigFile: false,
     code: false,
     compact: true,
     configFile: false,
@@ -31,12 +33,29 @@ function makeTransformOptions(plugins, options) {
   };
 }
 
+function validateOutputAst(ast) {
+  const seenNodes = new Set();
+  t.traverseFast(ast, function enter(node) {
+    if (seenNodes.has(node)) {
+      throw new Error(
+        'Found a duplicate ' +
+          node.type +
+          ' node in the output, which can cause' +
+          ' undefined behavior in Babel.',
+      );
+    }
+    seenNodes.add(node);
+  });
+}
+
 function transformToAst(
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   options: Options = {},
 ) {
-  return transformSync(code, makeTransformOptions(plugins, options)).ast;
+  const ast = transformSync(code, makeTransformOptions(plugins, options)).ast;
+  validateOutputAst(ast);
+  return ast;
 }
 
 function transform(
@@ -47,7 +66,7 @@ function transform(
   return generate(transformToAst(plugins, code, options)).code;
 }
 
-exports.compare = function(
+exports.compare = function (
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   expected: Code,

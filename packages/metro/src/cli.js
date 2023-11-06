@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-// flowlint-next-line untyped-import:off
-const yargs = require('yargs');
+try {
+  // $FlowFixMe[untyped-import]
+  require('metro-babel-register').unstable_registerForMetroMonorepo();
+} catch {}
 
 const {attachMetroCli} = require('./index');
+const yargs = require('yargs');
 
+// $FlowFixMe[unused-promise]
 attachMetroCli(yargs.demandCommand(1)).argv;

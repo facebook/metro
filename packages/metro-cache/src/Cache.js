@@ -1,18 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {Logger} = require('metro-core');
-
 import type {CacheStore} from 'metro-cache';
+
+const {Logger} = require('metro-core');
 
 /**
  * Main cache class. Receives an array of cache instances, and sequentially
@@ -50,6 +51,7 @@ class Cache<T> {
       try {
         const valueOrPromise = store.get(key);
 
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         if (valueOrPromise && typeof valueOrPromise.then === 'function') {
           value = await valueOrPromise;
         } else {
@@ -76,7 +78,7 @@ class Cache<T> {
     return null;
   }
 
-  set(key: Buffer, value: T): void {
+  async set(key: Buffer, value: T): Promise<void> {
     const stores = this._stores;
     const stop = this._hits.get(key);
     const length = stores.length;
@@ -96,11 +98,14 @@ class Cache<T> {
       promises.push(stores[i].set(key, value));
     }
 
-    Promise.all(promises).catch(err => {
-      process.nextTick(() => {
-        throw err;
-      });
-    });
+    await Promise.all(promises);
+  }
+
+  // Returns true if the current configuration disables the cache, such that
+  // writing to the cache is a no-op and reading from the cache will always
+  // return null.
+  get isDisabled(): boolean {
+    return this._stores.length === 0;
   }
 }
 

@@ -1,26 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
-
-import type Bundler from './Bundler';
 import type {
   DeltaResult,
   Graph,
-  Dependencies,
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
+  ReadOnlyGraph,
 } from './DeltaBundler/types.flow';
+import type EventEmitter from 'events';
+
+const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 export type {
   DeltaResult,
@@ -28,6 +29,7 @@ export type {
   Dependencies,
   MixedOutput,
   Module,
+  ReadOnlyGraph,
   TransformFn,
   TransformResult,
   TransformResultDependency,
@@ -41,11 +43,11 @@ export type {
  * `clientId` param (which maps a client to a specific delta transformer).
  */
 class DeltaBundler<T = MixedOutput> {
-  _bundler: Bundler;
+  _changeEventSource: EventEmitter;
   _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
 
-  constructor(bundler: Bundler) {
-    this._bundler = bundler;
+  constructor(changeEventSource: EventEmitter) {
+    this._changeEventSource = changeEventSource;
   }
 
   end(): void {
@@ -58,10 +60,12 @@ class DeltaBundler<T = MixedOutput> {
   async getDependencies(
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
-  ): Promise<Dependencies<T>> {
-    const depGraph = await this._bundler.getDependencyGraph();
-
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+  ): Promise<ReadOnlyGraph<T>['dependencies']> {
+    const deltaCalculator = new DeltaCalculator(
+      new Set(entryPoints),
+      this._changeEventSource,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
@@ -77,9 +81,11 @@ class DeltaBundler<T = MixedOutput> {
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
   ): Promise<Graph<T>> {
-    const depGraph = await this._bundler.getDependencyGraph();
-
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+    const deltaCalculator = new DeltaCalculator(
+      new Set(entryPoints),
+      this._changeEventSource,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
@@ -108,7 +114,7 @@ class DeltaBundler<T = MixedOutput> {
     return await deltaCalculator.getDelta({reset, shallow});
   }
 
-  listen(graph: Graph<T>, callback: () => mixed): () => void {
+  listen(graph: Graph<T>, callback: () => Promise<void>): () => void {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {

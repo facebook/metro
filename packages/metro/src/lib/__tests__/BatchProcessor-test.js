@@ -1,12 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
- * @emails oncall+js_foundation
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -31,6 +31,7 @@ describe('BatchProcessor', () => {
     const bp = new BatchProcessor<number, number>(
       options,
       (items: Array<number>) =>
+        // $FlowFixMe[incompatible-call] Found when updating Promise type definition
         new Promise((resolve: (result?: Array<number>) => void) => {
           ++concurrency;
           expect(concurrency).toBeLessThanOrEqual(options.concurrency);
@@ -68,7 +69,7 @@ describe('BatchProcessor', () => {
     const bp = new BatchProcessor(
       options,
       (items: Array<string>) =>
-        new Promise((_, reject) => {
+        new Promise<Array<string>>((_, reject) => {
           setTimeout(reject.bind(null, error), 0);
         }),
     );

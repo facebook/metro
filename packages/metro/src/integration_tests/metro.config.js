@@ -1,11 +1,11 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -30,14 +30,24 @@ module.exports = {
       'metro-runtime/src/modules/asyncRequire',
     ),
     babelTransformerPath: require.resolve(
-      'metro-react-native-babel-transformer',
+      '@react-native/metro-babel-transformer',
     ),
     enableBabelRCLookup: false,
     enableBabelRuntime: false,
-    getTransformOptions: async () => ({
-      transform: {experimentalImportSupport: true, inlineRequires: false},
+    getTransformOptions: async entryFiles => ({
+      transform: {
+        experimentalImportSupport: true,
+        inlineRequires: entryFiles.some(filePath =>
+          filePath.includes('inline-requires'),
+        ),
+      },
       preloadedModules: false,
       ramGroups: [],
     }),
+  },
+  serializer: {
+    getPolyfills: () => [
+      require.resolve('./basic_bundle/loadBundleAsyncForTest'),
+    ],
   },
 };

@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,13 +19,15 @@ import type {BundleOptions, SplitBundleOptions} from '../shared/types.flow';
 function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
   return {
     entryFile: options.entryFile,
+    resolverOptions: {
+      customResolverOptions: options.customResolverOptions,
+    },
     transformOptions: {
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,
       minify: options.minify,
       platform: options.platform,
-      runtimeBytecodeVersion: options.runtimeBytecodeVersion,
       type: 'module',
       unstable_transformProfile: options.unstable_transformProfile,
     },
@@ -38,6 +41,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
     },
     graphOptions: {
       shallow: options.shallow,
+      lazy: options.lazy,
     },
     onProgress: options.onProgress,
   };

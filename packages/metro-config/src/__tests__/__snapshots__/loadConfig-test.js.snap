@@ -47,6 +47,9 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "disableHierarchicalLookup": false,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
+    "enableGlobalPackages": false,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -56,6 +59,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -63,10 +69,22 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -76,21 +94,22 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
-    "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -101,9 +120,9 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -121,19 +140,43 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
+    "unstable_workerThreads": false,
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -184,6 +227,9 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "disableHierarchicalLookup": false,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
+    "enableGlobalPackages": false,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -193,6 +239,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -200,10 +249,22 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -213,21 +274,22 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
-    "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -238,9 +300,9 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -258,19 +320,43 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
+    "unstable_workerThreads": false,
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -321,6 +407,9 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "disableHierarchicalLookup": false,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
+    "enableGlobalPackages": false,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -330,6 +419,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -337,10 +429,22 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -350,21 +454,22 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
-    "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -375,9 +480,9 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -395,19 +500,43 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
+    "unstable_workerThreads": false,
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -458,6 +587,9 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "disableHierarchicalLookup": false,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
+    "enableGlobalPackages": false,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -467,6 +599,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -474,10 +609,22 @@ Object {
     ],
     "sourceExts": Array [
       "js",
+      "jsx",
       "json",
       "ts",
       "tsx",
     ],
+    "unstable_conditionNames": Array [
+      "require",
+      "import",
+    ],
+    "unstable_conditionsByPlatform": Object {
+      "web": Array [
+        "browser",
+      ],
+    },
+    "unstable_enablePackageExports": false,
+    "unstable_enableSymlinks": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -487,21 +634,22 @@ Object {
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
+    "isThirdPartyModule": [Function],
     "polyfillModuleNames": Array [],
-    "postProcessBundleSourcemap": [Function],
     "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
-    "port": 8080,
+    "port": 8081,
     "rewriteRequestUrl": [Function],
-    "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
+    "customizeStack": [Function],
   },
   "transformer": Object {
     "allowOptionalDependencies": false,
@@ -512,9 +660,9 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
-    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -532,19 +680,43 @@ Object {
       },
       "toplevel": false,
     },
-    "minifierPath": "metro-minify-uglify",
+    "minifierPath": "metro-minify-terser",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
+    "unstable_workerThreads": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "unstable_perfLoggerFactory": [Function],
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "additionalExts": Array [
+      "cjs",
+      "mjs",
+    ],
+    "healthCheck": Object {
+      "enabled": false,
+      "filePrefix": ".metro-health-check",
+      "interval": 30000,
+      "timeout": 5000,
+    },
+    "unstable_workerThreads": false,
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 

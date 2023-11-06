@@ -1,0 +1,175 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should do the initial traversal correctly 1`] = `
+TestGraph {
+  "dependencies": Map {
+    "/bundle" => Object {
+      "dependencies": Map {
+        "LB7P4TKrvfdUdViBXGaVopqz7Os=" => Object {
+          "absolutePath": "/foo",
+          "data": Object {
+            "data": Object {
+              "asyncType": null,
+              "key": "LB7P4TKrvfdUdViBXGaVopqz7Os=",
+              "locs": Array [],
+            },
+            "name": "foo",
+          },
+        },
+      },
+      "getSource": [Function],
+      "inverseDependencies": Array [],
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "lineCount": 1,
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/bundle",
+      "unstable_transformResultKey": "/bundle (revision 0)",
+    },
+    "/foo" => Object {
+      "dependencies": Map {
+        "W+de6an7x9bzpev84O0W/hS4K8U=" => Object {
+          "absolutePath": "/bar",
+          "data": Object {
+            "data": Object {
+              "asyncType": null,
+              "key": "W+de6an7x9bzpev84O0W/hS4K8U=",
+              "locs": Array [],
+            },
+            "name": "bar",
+          },
+        },
+        "x6e9Oz1JO0QPfIBBjUad2qqGFjI=" => Object {
+          "absolutePath": "/baz",
+          "data": Object {
+            "data": Object {
+              "asyncType": null,
+              "key": "x6e9Oz1JO0QPfIBBjUad2qqGFjI=",
+              "locs": Array [],
+            },
+            "name": "baz",
+          },
+        },
+      },
+      "getSource": [Function],
+      "inverseDependencies": Array [
+        "/bundle",
+      ],
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "lineCount": 1,
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/foo",
+      "unstable_transformResultKey": "/foo (revision 0)",
+    },
+    "/bar" => Object {
+      "dependencies": Map {},
+      "getSource": [Function],
+      "inverseDependencies": Array [
+        "/foo",
+      ],
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "lineCount": 1,
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/bar",
+      "unstable_transformResultKey": "/bar (revision 0)",
+    },
+    "/baz" => Object {
+      "dependencies": Map {},
+      "getSource": [Function],
+      "inverseDependencies": Array [
+        "/foo",
+      ],
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "lineCount": 1,
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/baz",
+      "unstable_transformResultKey": "/baz (revision 0)",
+    },
+  },
+  "entryPoints": Set {
+    "/bundle",
+  },
+  "transformOptions": Object {
+    "dev": false,
+    "hot": false,
+    "minify": false,
+    "platform": null,
+    "type": "module",
+    "unstable_transformProfile": "default",
+  },
+}
+`;
+
+exports[`should not traverse past the initial module if \`shallow\` is passed 1`] = `
+TestGraph {
+  "dependencies": Map {
+    "/bundle" => Object {
+      "dependencies": Map {
+        "LB7P4TKrvfdUdViBXGaVopqz7Os=" => Object {
+          "absolutePath": "/foo",
+          "data": Object {
+            "data": Object {
+              "asyncType": null,
+              "key": "LB7P4TKrvfdUdViBXGaVopqz7Os=",
+              "locs": Array [],
+            },
+            "name": "foo",
+          },
+        },
+      },
+      "getSource": [Function],
+      "inverseDependencies": Array [],
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "lineCount": 1,
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/bundle",
+      "unstable_transformResultKey": "/bundle (revision 0)",
+    },
+  },
+  "entryPoints": Set {
+    "/bundle",
+  },
+  "transformOptions": Object {
+    "dev": false,
+    "hot": false,
+    "minify": false,
+    "platform": null,
+    "type": "module",
+    "unstable_transformProfile": "default",
+  },
+}
+`;

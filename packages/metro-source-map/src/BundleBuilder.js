@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,8 +15,8 @@ import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
   version: 3,
-  sources: [],
-  names: [],
+  sources: ([]: Array<string>),
+  names: ([]: Array<string>),
   mappings: 'A',
 };
 
@@ -98,9 +99,10 @@ class BundleBuilder {
 
 const reLineBreak = /\r\n|\r|\n/g;
 
-function measureString(
-  str: string,
-): {|lineBreaks: number, lastLineColumns: number|} {
+function measureString(str: string): {
+  lineBreaks: number,
+  lastLineColumns: number,
+} {
   let lineBreaks = 0;
   let match;
   let lastLineStart = 0;

@@ -1,12 +1,16 @@
 [ignore]
 <PROJECT_ROOT>/packages/.*/build/.*
+# this transient dep bundles tests with their package, which flow attempts to parse
+# and crashes out as the test includes purposely malformed json
+<PROJECT_ROOT>\(/.*\)?/node_modules/resolve/test/.*
 
 [options]
 emoji=true
 
-exact_by_default=true
+format.bracket_spacing=false
 
 munge_underscores=true
+experimental.global_find_ref=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
 
@@ -15,8 +19,7 @@ suppress_type=$FlowFixMe
 suppress_type=$FlowFixMeProps
 suppress_type=$FlowFixMeState
 suppress_type=$FlowFixMeEmpty
-
-experimental.abstract_locations=true
+suppress_type=$FlowExpectedError
 
 [lints]
 sketchy-null-number=warn
@@ -24,10 +27,10 @@ sketchy-null-mixed=warn
 sketchy-number=warn
 untyped-type-import=warn
 nonstrict-import=warn
-deprecated-type=warn
+deprecated-type=error
 unsafe-getters-setters=warn
 unnecessary-invariant=warn
-signature-verification-failure=warn
+unused-promise=error
 
 [strict]
 deprecated-type
@@ -39,4 +42,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.143.1
+^0.220.1

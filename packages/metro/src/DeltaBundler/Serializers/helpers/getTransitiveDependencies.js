@@ -1,20 +1,21 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-import type {Graph} from '../../types.flow';
+import type {ReadOnlyGraph} from '../../types.flow';
 
 function getTransitiveDependencies<T>(
   path: string,
-  graph: Graph<T>,
+  graph: ReadOnlyGraph<T>,
 ): Set<string> {
   const dependencies = _getDeps(path, graph, new Set());
 
@@ -27,7 +28,7 @@ function getTransitiveDependencies<T>(
 
 function _getDeps<T>(
   path: string,
-  graph: Graph<T>,
+  graph: ReadOnlyGraph<T>,
   deps: Set<string>,
 ): Set<string> {
   if (deps.has(path)) {

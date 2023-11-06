@@ -1,41 +1,53 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
- * @emails oncall+js_foundation
+ * @oncall react_native
  */
 
-'use strict';
+import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
+import type {Client} from '../HmrServer';
+import {mergeConfig} from 'metro-config';
+
+import DeltaBundler from '../DeltaBundler';
+import IncrementalBundler from '../IncrementalBundler';
+import EventEmitter from 'events';
 
 const HmrServer = require('../HmrServer');
-
 const getGraphId = require('../lib/getGraphId');
-
 const {getDefaultValues} = require('metro-config/src/defaults');
+import type {TransformResultDependency} from '../DeltaBundler/types.flow';
 
 jest.mock('../lib/transformHelpers', () => ({
-  getResolveDependencyFn: () => (from, to) =>
-    `${require('path').resolve(from, to)}.js`,
+  getResolveDependencyFn:
+    () => (from: string, to: TransformResultDependency) => ({
+      type: 'sourceFile',
+      filePath: `${require('path').resolve(from, to.name)}.js`,
+    }),
 }));
+
+jest.mock('../IncrementalBundler');
 
 describe('HmrServer', () => {
   let hmrServer;
   let incrementalBundlerMock;
-  let getRevisionMock;
-  let getRevisionByGraphIdMock;
-  let createModuleIdMock;
+  const getRevisionMock = jest.fn();
+  const getRevisionByGraphIdMock = jest.fn();
+  let changeEventSource;
   let deltaBundlerMock;
-  let callbacks;
   let mockedGraph;
   let connect;
   let message;
+  let id;
+  const updateGraphMock = jest.fn();
 
   const hiModule = {
-    dependencies: new Map(),
-    inverseDependencies: new Set(),
+    dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
+    inverseDependencies: new Set<$FlowFixMe>(),
     path: '/root/hi',
     getSource: () => "alert('hi');",
     output: [
@@ -50,92 +62,129 @@ describe('HmrServer', () => {
     ],
   };
 
+  const changeHandlerPromises = new Set<$FlowFixMe>();
+  async function waitForAllChangeHandlers() {
+    const promisesArray = [...changeHandlerPromises];
+    changeHandlerPromises.clear();
+    await Promise.all(promisesArray);
+  }
+
+  async function emitChangeEvent() {
+    // TODO: Can we achieve this with less mocking / special-casing?
+    jest.useFakeTimers();
+    changeEventSource.emit('change');
+    jest.runAllTimers();
+    jest.useRealTimers();
+    await waitForAllChangeHandlers();
+  }
+
   beforeEach(() => {
     mockedGraph = {
-      dependencies: new Map(),
+      dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
       entryPoint: '/root/EntryPoint.js',
     };
+    changeHandlerPromises.clear();
 
-    callbacks = new Map();
+    changeEventSource = new EventEmitter();
+    deltaBundlerMock = new DeltaBundler(changeEventSource);
 
-    deltaBundlerMock = {
-      listen: (graph, cb) => {
-        let graphCallbacks = callbacks.get(graph);
-        if (graphCallbacks == null) {
-          graphCallbacks = [cb];
-          callbacks.set(graph, graphCallbacks);
-        } else {
-          graphCallbacks.push(cb);
-        }
-        return () => graphCallbacks.splice(graphCallbacks.indexOf(cb), 1);
-      },
-    };
-    getRevisionMock = jest
-      .fn()
-      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'rev0'}));
-    getRevisionByGraphIdMock = jest
-      .fn()
-      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'rev0'}));
-    incrementalBundlerMock = {
-      getDeltaBundler() {
-        return deltaBundlerMock;
-      },
-      getRevision: getRevisionMock,
-      getRevisionByGraphId: getRevisionByGraphIdMock,
-      updateGraph: jest.fn().mockResolvedValue({
-        revision: {
-          id: 'rev0',
-          graph: mockedGraph,
-        },
-        delta: {
-          added: new Map(),
-          modified: new Map(),
-          deleted: new Set(),
-        },
-      }),
-      getBundler() {},
-    };
-    createModuleIdMock = path => {
-      return path + '-id';
-    };
+    jest
+      .spyOn(deltaBundlerMock, 'listen')
+      .mockImplementation((graph, callback) => {
+        changeEventSource.on('change', (...args) => {
+          const promise = callback(...args);
+          changeHandlerPromises.add(promise);
+          return promise;
+        });
 
-    const options = getDefaultValues('/root');
-    options.serializer.experimentalSerializerHook = () => {};
-    options.reporter.update = jest.fn();
-    options.transformer.experimentalImportBundleSupport = false;
-    options.resolver.platforms = [];
-    options.server.rewriteRequestUrl = function(requrl) {
-      const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
-      if (rewritten !== requrl) {
-        return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
-      }
-      return requrl;
-    };
+        return () => {
+          changeEventSource.removeListener('change', callback);
+        };
+      });
 
-    hmrServer = new HmrServer(
-      incrementalBundlerMock,
-      createModuleIdMock,
-      options,
+    getRevisionMock.mockReturnValue(
+      Promise.resolve({graph: mockedGraph, id: 'rev0'}),
     );
+    getRevisionByGraphIdMock.mockReturnValue(
+      Promise.resolve({graph: mockedGraph, id: 'rev0'}),
+    );
+    updateGraphMock.mockResolvedValue({
+      revision: {
+        id: 'rev0',
+        graph: mockedGraph,
+      },
+      delta: {
+        added: new Map(),
+        modified: new Map(),
+        deleted: new Set(),
+      },
+    });
 
-    connect = async (relativeUrl, sendFn) => {
-      relativeUrl = 'ws://localhost/' + relativeUrl;
+    const config = mergeConfig(getDefaultValues('/root'), {
+      serializer: {experimentalSerializerHook: () => {}},
+      reporter: {update: jest.fn()},
+      transformer: {
+        unstable_allowRequireContext: false,
+      },
+      resolver: {platforms: []},
+      server: {
+        rewriteRequestUrl(requrl) {
+          const rewritten = requrl.replace(
+            /__REMOVE_THIS_WHEN_REWRITING__/g,
+            '',
+          );
+          if (rewritten !== requrl) {
+            return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
+          }
+          return requrl;
+        },
+      },
+    });
+
+    incrementalBundlerMock = new IncrementalBundler(config);
+    jest
+      .spyOn(incrementalBundlerMock, 'getDeltaBundler')
+      .mockImplementation(() => deltaBundlerMock);
+    jest
+      .spyOn(incrementalBundlerMock, 'getRevision')
+      .mockImplementation(getRevisionMock);
+    jest
+      .spyOn(incrementalBundlerMock, 'getRevisionByGraphId')
+      .mockImplementation(getRevisionByGraphIdMock);
+    jest
+      .spyOn(incrementalBundlerMock, 'updateGraph')
+      .mockImplementation(updateGraphMock);
+    jest
+      .spyOn(incrementalBundlerMock, 'getBundler')
+      .mockImplementation(() => {});
+
+    id = config.serializer.createModuleIdFactory();
+
+    // $FlowFixMe[underconstrained-implicit-instantiation]
+    hmrServer = new HmrServer(incrementalBundlerMock, id, config);
+
+    connect = async (relativeUrl: string, sendFn?: string => void) => {
+      const absoluteUrl = 'ws://localhost/' + relativeUrl;
       const client = await hmrServer.onClientConnect(
-        relativeUrl,
+        absoluteUrl,
         sendFn || jest.fn(),
       );
       await message(
         client,
         {
           type: 'register-entrypoints',
-          entryPoints: [relativeUrl],
+          entryPoints: [absoluteUrl],
         },
         sendFn,
       );
       return client;
     };
 
-    message = async (client, message, sendFn) => {
+    message = async (
+      client: Client,
+      message: HmrClientMessage,
+      sendFn?: string => void,
+    ) => {
       await hmrServer.onClientMessage(
         client,
         JSON.stringify(message),
@@ -156,12 +205,14 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
+          unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -181,12 +232,14 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
+          unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -206,12 +259,14 @@ describe('HmrServer', () => {
           hot: true,
           minify: false,
           platform: 'ios',
-          runtimeBytecodeVersion: null,
           type: 'module',
+          unstable_transformProfile: 'default',
         },
         {
           shallow: false,
-          experimentalImportBundleSupport: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {},
         },
       ),
     );
@@ -231,12 +286,14 @@ describe('HmrServer', () => {
         hot: true,
         minify: false,
         platform: 'ios',
-        runtimeBytecodeVersion: null,
         type: 'module',
+        unstable_transformProfile: 'default',
       },
       {
         shallow: false,
-        experimentalImportBundleSupport: false,
+        lazy: false,
+        unstable_allowRequireContext: false,
+        resolverOptions: {},
       },
     )}\` was not found.`;
 
@@ -252,7 +309,7 @@ describe('HmrServer', () => {
   it('should send an initial update when a client connects', async () => {
     const sendMessage = jest.fn();
 
-    incrementalBundlerMock.updateGraph.mockResolvedValue({
+    updateGraphMock.mockResolvedValue({
       revision: {
         id: 'rev0',
         graph: mockedGraph,
@@ -279,18 +336,20 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                '/root/hi-id',
-                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                id('/root/hi'),
+                '__d(function() { alert("hi"); },' +
+                  id('/root/hi') +
+                  ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: ['/root/bye-id'],
+          deleted: [id('/root/bye')],
         },
       },
       {
@@ -333,7 +392,7 @@ describe('HmrServer', () => {
     sendMessage1.mockReset();
     sendMessage2.mockReset();
 
-    incrementalBundlerMock.updateGraph.mockResolvedValue({
+    updateGraphMock.mockResolvedValue({
       revision: {
         id: 'rev0',
         graph: mockedGraph,
@@ -344,10 +403,7 @@ describe('HmrServer', () => {
         deleted: new Set(['/root/bye']),
       },
     });
-
-    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
-    jest.runAllTimers();
-    await promise;
+    await emitChangeEvent();
 
     const messages1 = sendMessage1.mock.calls.map(call => JSON.parse(call[0]));
     const messages2 = sendMessage2.mock.calls.map(call => JSON.parse(call[0]));
@@ -364,19 +420,21 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                '/root/hi-id',
-                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                id('/root/hi'),
+                '__d(function() { alert("hi"); },' +
+                  id('/root/hi') +
+                  ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
 
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
               sourceMappingURL:
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: ['/root/bye-id'],
+          deleted: [id('/root/bye')],
         },
       },
       {
@@ -393,7 +451,7 @@ describe('HmrServer', () => {
 
     sendMessage.mockReset();
 
-    incrementalBundlerMock.updateGraph.mockResolvedValue({
+    updateGraphMock.mockResolvedValue({
       revision: {
         id: 'rev1',
         graph: mockedGraph,
@@ -405,9 +463,7 @@ describe('HmrServer', () => {
       },
     });
 
-    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
-    jest.runAllTimers();
-    await promise;
+    await emitChangeEvent();
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
 
@@ -423,16 +479,18 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                '/root/hi-id',
-                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                id('/root/hi'),
+                '__d(function() { alert("hi"); },' +
+                  id('/root/hi') +
+                  ',[],"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+                  '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: ['/root/bye-id'],
+          deleted: [id('/root/bye')],
         },
       },
       {
@@ -451,7 +509,7 @@ describe('HmrServer', () => {
 
     sendMessage.mockReset();
 
-    incrementalBundlerMock.updateGraph.mockResolvedValue({
+    updateGraphMock.mockResolvedValue({
       revision: {
         id: 'rev1',
         graph: mockedGraph,
@@ -463,9 +521,7 @@ describe('HmrServer', () => {
       },
     });
 
-    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
-    jest.runAllTimers();
-    await promise;
+    await emitChangeEvent();
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
 
@@ -482,10 +538,10 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: ['/root/bye-id'],
+          deleted: [id('/root/bye')],
         },
       },
       {
@@ -504,7 +560,7 @@ describe('HmrServer', () => {
 
     sendMessage.mockReset();
 
-    incrementalBundlerMock.updateGraph.mockResolvedValue({
+    updateGraphMock.mockResolvedValue({
       revision: {
         id: 'rev1',
         graph: mockedGraph,
@@ -516,9 +572,7 @@ describe('HmrServer', () => {
       },
     });
 
-    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
-    jest.runAllTimers();
-    await promise;
+    await emitChangeEvent();
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
 
@@ -535,10 +589,10 @@ describe('HmrServer', () => {
             {
               module: expect.any(Array),
               sourceURL:
-                'http://localhost/hi.bundle?platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+                'http://localhost/hi.bundle//&platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: ['/root/bye-id'],
+          deleted: [id('/root/bye')],
         },
       },
       {
@@ -555,15 +609,14 @@ describe('HmrServer', () => {
 
     sendMessage.mockReset();
 
-    incrementalBundlerMock.updateGraph.mockImplementation(() => {
-      const transformError = new SyntaxError('test syntax error');
-      transformError.type = 'TransformError';
+    updateGraphMock.mockImplementation(() => {
+      const transformError = new TransformError('test syntax error');
       transformError.filename = 'EntryPoint.js';
       transformError.lineNumber = 123;
       throw transformError;
     });
 
-    await Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
+    await emitChangeEvent();
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
 
@@ -591,3 +644,8 @@ describe('HmrServer', () => {
     ]);
   });
 });
+
+class TransformError extends SyntaxError {
+  +type: string = 'TransformError';
+  filename: string;
+}

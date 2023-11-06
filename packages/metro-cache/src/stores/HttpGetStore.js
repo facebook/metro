@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,11 +10,12 @@
 
 'use strict';
 
-const HttpStore = require('./HttpStore');
-
-const {Logger} = require('metro-core');
-
 import type {HttpOptions} from 'metro-cache';
+import type HttpError from './HttpError';
+import type NetworkError from './NetworkError';
+
+const HttpStore = require('./HttpStore');
+const {Logger} = require('metro-core');
 
 class HttpGetStore<T> extends HttpStore<T> {
   _warned: boolean;
@@ -46,7 +47,7 @@ class HttpGetStore<T> extends HttpStore<T> {
     return Promise.resolve(undefined);
   }
 
-  _warn(err) {
+  _warn(err: HttpError | NetworkError) {
     if (!this._warned) {
       process.emitWarning(
         [

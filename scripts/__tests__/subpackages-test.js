@@ -1,20 +1,20 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const fs = require('fs');
 const getPackages = require('../_getPackages');
+const METRO_VERSION = require('../../packages/metro/package.json').version;
+const ENGINES = require('../../package.json').engines;
+const fs = require('fs');
 const path = require('path');
-
-const METRO_VERSION = require('../../lerna.json').version;
 
 function readPackageJson(packagePath) {
   return require(path.join(packagePath, 'package.json'));
@@ -44,6 +44,12 @@ it('forces all package names to match their folder name', () => {
 it('forces all packages to use the main metro version', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).version).toEqual(METRO_VERSION);
+  });
+});
+
+it('forces all packages to use the root "engines" spec', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    expect(readPackageJson(packagePath).engines).toEqual(ENGINES);
   });
 });
 
@@ -79,6 +85,24 @@ it('forces all packages to have a src/ folder', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(fs.lstatSync(path.join(packagePath, 'src')).isDirectory()).toBe(
       true,
+    );
+  });
+});
+
+it('forces all packages to have an .npmignore with expected entries', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    const npmIgnorePath = path.join(packagePath, '.npmignore');
+    expect(fs.existsSync(npmIgnorePath)).toBe(true);
+    const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        '**/__mocks__/',
+        '**/__tests__/',
+        '/build/',
+        '/src.real/',
+        '/types/',
+        'yarn.lock',
+      ]),
     );
   });
 });

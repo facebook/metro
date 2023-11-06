@@ -1,18 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {isJsModule, wrapModule} = require('./js');
-
 import type {Module} from '../../types.flow';
+
+const {isJsModule, wrapModule} = require('./js');
 
 function processModules(
   modules: $ReadOnlyArray<Module<>>,
@@ -20,13 +21,19 @@ function processModules(
     filter = () => true,
     createModuleId,
     dev,
+    includeAsyncPaths,
     projectRoot,
-  }: {|
-    +filter?: (module: Module<>) => boolean,
-    +createModuleId: string => number,
-    +dev: boolean,
-    +projectRoot: string,
-  |},
+    serverRoot,
+    sourceUrl,
+  }: $ReadOnly<{
+    filter?: (module: Module<>) => boolean,
+    createModuleId: string => number,
+    dev: boolean,
+    includeAsyncPaths: boolean,
+    projectRoot: string,
+    serverRoot: string,
+    sourceUrl: ?string,
+  }>,
 ): $ReadOnlyArray<[Module<>, string]> {
   return [...modules]
     .filter(isJsModule)
@@ -36,7 +43,10 @@ function processModules(
       wrapModule(module, {
         createModuleId,
         dev,
+        includeAsyncPaths,
         projectRoot,
+        serverRoot,
+        sourceUrl,
       }),
     ]);
 }

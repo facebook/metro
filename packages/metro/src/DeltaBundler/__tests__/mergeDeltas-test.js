@@ -1,18 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const mergeDeltas = require('../mergeDeltas');
 
-function sortById([id1]: [number, mixed], [id2]: [number, mixed]): number {
+function sortById<T>([id1]: [number, T], [id2]: [number, T]): number {
   return id1 - id2;
 }
 

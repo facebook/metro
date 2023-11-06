@@ -1,30 +1,33 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const Consumer = require('./Consumer');
-const Generator = require('./Generator');
-const SourceMap = require('source-map');
-
 import type {IConsumer} from './Consumer/types.flow';
-export type {IConsumer};
+import type {BabelSourceMapSegment} from '@babel/generator';
 
+const {BundleBuilder, createIndexMap} = require('./BundleBuilder');
+const composeSourceMaps = require('./composeSourceMaps');
+const Consumer = require('./Consumer');
 // We need to export this for `metro-symbolicate`
 const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
+const {
+  functionMapBabelPlugin,
+  generateFunctionMap,
+} = require('./generateFunctionMap');
+const Generator = require('./Generator');
+// $FlowFixMe[untyped-import] - source-map
+const SourceMap = require('source-map');
 
-const composeSourceMaps = require('./composeSourceMaps');
-const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
-const {generateFunctionMap} = require('./generateFunctionMap');
-
-import type {BabelSourceMapSegment} from '@babel/generator';
+export type {IConsumer};
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
@@ -39,14 +42,14 @@ export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>, ...};
 
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
-export type FBSourceFunctionMap = {|
+export type FBSourceFunctionMap = {
   +names: $ReadOnlyArray<string>,
   +mappings: string,
-|};
+};
 
 export type FBSegmentMap = {[id: string]: MixedSourceMap, ...};
 
-export type BasicSourceMap = {|
+export type BasicSourceMap = {
   +file?: string,
   +mappings: string,
   +names: Array<string>,
@@ -59,7 +62,8 @@ export type BasicSourceMap = {|
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+  +x_google_ignoreList?: Array<number>,
+};
 
 export type IndexMapSection = {
   map: IndexMap | BasicSourceMap,
@@ -71,7 +75,7 @@ export type IndexMapSection = {
   ...
 };
 
-export type IndexMap = {|
+export type IndexMap = {
   +file?: string,
   +mappings?: void, // avoids SourceMap being a disjoint union
   +sourcesContent?: void,
@@ -82,9 +86,19 @@ export type IndexMap = {|
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+  +x_google_ignoreList?: void,
+};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
+
+type SourceMapConsumerMapping = {
+  generatedLine: number,
+  generatedColumn: number,
+  originalLine: ?number,
+  originalColumn: ?number,
+  source: ?string,
+  name: ?string,
+};
 
 function fromRawMappingsImpl(
   isBlocking: boolean,
@@ -95,7 +109,8 @@ function fromRawMappingsImpl(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number,
 ): void {
@@ -162,7 +177,8 @@ function fromRawMappings(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Generator {
@@ -188,7 +204,8 @@ async function fromRawMappingsNonBlocking(
     +path: string,
     +source: string,
     +code: string,
-    ...
+    +isIgnored: boolean,
+    +lineCount?: number,
   }>,
   offsetLines: number = 0,
 ): Promise<Generator> {
@@ -204,22 +221,35 @@ async function fromRawMappingsNonBlocking(
 function toBabelSegments(
   sourceMap: BasicSourceMap,
 ): Array<BabelSourceMapSegment> {
-  const rawMappings = [];
+  const rawMappings: Array<BabelSourceMapSegment> = [];
 
-  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
-    rawMappings.push({
-      generated: {
-        line: map.generatedLine,
-        column: map.generatedColumn,
-      },
-      original: {
-        line: map.originalLine,
-        column: map.originalColumn,
-      },
-      source: map.source,
-      name: map.name,
-    });
-  });
+  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(
+    (map: SourceMapConsumerMapping) => {
+      rawMappings.push(
+        map.originalLine == null || map.originalColumn == null
+          ? {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              source: map.source,
+              name: map.name,
+            }
+          : {
+              generated: {
+                line: map.generatedLine,
+                column: map.generatedColumn,
+              },
+              original: {
+                line: map.originalLine,
+                column: map.originalColumn,
+              },
+              source: map.source,
+              name: map.name,
+            },
+      );
+    },
+  );
 
   return rawMappings;
 }
@@ -241,8 +271,23 @@ function toSegmentTuple(
   return [line, column, original.line, original.column, name];
 }
 
-function addMappingsForFile(generator, mappings, module, carryOver) {
-  generator.startFile(module.path, module.source, module.functionMap);
+function addMappingsForFile(
+  generator: Generator,
+  mappings: Array<MetroSourceMapSegmentTuple>,
+  module: {
+    +code: string,
+    +functionMap: ?FBSourceFunctionMap,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +path: string,
+    +source: string,
+    +isIgnored: boolean,
+    +lineCount?: number,
+  },
+  carryOver: number,
+) {
+  generator.startFile(module.path, module.source, module.functionMap, {
+    addToIgnoreList: module.isIgnored,
+  });
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
     addMapping(generator, mappings[i], carryOver);
@@ -251,35 +296,38 @@ function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver) {
-  const n = mapping.length;
+function addMapping(
+  generator: Generator,
+  mapping: MetroSourceMapSegmentTuple,
+  carryOver: number,
+) {
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
   const column = mapping[1];
-  if (n === 2) {
-    generator.addSimpleMapping(line, column);
-  } else if (n === 4) {
-    const sourceMap: SourceMapping = (mapping: any);
-
-    generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
-  } else if (n === 5) {
-    const sourceMap: SourceMappingWithName = (mapping: any);
-
-    generator.addNamedSourceMapping(
-      line,
-      column,
-      sourceMap[2],
-      sourceMap[3],
-      sourceMap[4],
-    );
-  } else {
-    throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
+  switch (mapping.length) {
+    case 2:
+      generator.addSimpleMapping(line, column);
+      return;
+    case 4:
+      generator.addSourceMapping(line, column, mapping[2], mapping[3]);
+      return;
+    case 5:
+      generator.addNamedSourceMapping(
+        line,
+        column,
+        mapping[2],
+        mapping[3],
+        mapping[4],
+      );
+      return;
   }
+  throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
 }
 
-function countLines(string) {
-  return string.split('\n').length;
-}
+const newline = /\r\n?|\n|\u2028|\u2029/g;
+
+const countLines = (string: string): number =>
+  (string.match(newline) || []).length + 1;
 
 module.exports = {
   BundleBuilder,
@@ -289,6 +337,7 @@ module.exports = {
   generateFunctionMap,
   fromRawMappings,
   fromRawMappingsNonBlocking,
+  functionMapBabelPlugin,
   normalizeSourcePath,
   toBabelSegments,
   toSegmentTuple,

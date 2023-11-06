@@ -1,21 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
- * @emails oncall+js_foundation
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const HMRClient = require('../HMRClient');
-
 import type {HmrUpdate} from '../types.flow';
 
-let mockSocket = null;
+const HMRClient = require('../HMRClient');
+
+let mockSocket: ?{
+  onclose: () => void,
+  onmessage: ({data: string}) => void,
+  onerror: ({data: string}) => void,
+  close: () => void,
+  mockEmit: (string, {data: string}) => void,
+} = null;
 let evaledCode = '';
 
 beforeEach(() => {
@@ -23,6 +29,7 @@ beforeEach(() => {
   global.globalEvalWithSourceUrl = (code, sourceURL) => {
     evaledCode += '\n/* ' + sourceURL + ' */\n  ' + code;
   };
+  // $FlowFixMe[cannot-write]
   global.WebSocket = jest.fn(() => {
     mockSocket = {
       onerror: jest.fn(),
@@ -33,7 +40,7 @@ beforeEach(() => {
           mockSocket.onclose();
         }
       }),
-      mockEmit: (type: string, data) => {
+      mockEmit: (type: string, data: {data: string}) => {
         if (mockSocket) {
           if (type === 'error') {
             mockSocket.onerror(data);
@@ -48,6 +55,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // $FlowFixMe[cannot-write]
   delete global.WebSocket;
   delete global.globalEvalWithSourceUrl;
 });
@@ -63,12 +71,14 @@ function sendUpdate(update: HmrUpdate) {
       body: {isInitialUpdate: false},
     }),
   });
+  // $FlowFixMe[incompatible-use]
   mockSocket.mockEmit('message', {
     data: JSON.stringify({
       type: 'update',
       body: update,
     }),
   });
+  // $FlowFixMe[incompatible-use]
   mockSocket.mockEmit('message', {
     data: JSON.stringify({
       type: 'update-end',

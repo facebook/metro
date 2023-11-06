@@ -1,26 +1,28 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const countLines = require('./countLines');
-const defaults = require('metro-config/src/defaults/defaults');
-const getPreludeCode = require('./getPreludeCode');
-const transformHelpers = require('./transformHelpers');
-
-const {compile} = require('metro-hermes-compiler');
-
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
-import type {TransformInputOptions} from '../lib/transformHelpers';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {ResolverInputOptions} from '../shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
+import CountingSet from './CountingSet';
+
+const countLines = require('./countLines');
+const getPreludeCode = require('./getPreludeCode');
+const transformHelpers = require('./transformHelpers');
+const defaults = require('metro-config/src/defaults/defaults');
 
 async function getPrependedScripts(
   config: ConfigT,
@@ -28,6 +30,7 @@ async function getPrependedScripts(
     TransformInputOptions,
     {type: $PropertyType<TransformInputOptions, 'type'>, ...},
   >,
+  resolverOptions: ResolverInputOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
 ): Promise<$ReadOnlyArray<Module<>>> {
@@ -50,6 +53,7 @@ async function getPrependedScripts(
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,
         options.platform,
+        resolverOptions,
       ),
       transform: await transformHelpers.getTransformFn(
         [defaults.moduleSystem, ...polyfillModuleNames],
@@ -57,10 +61,15 @@ async function getPrependedScripts(
         deltaBundler,
         config,
         transformOptions,
+        resolverOptions,
       ),
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
+      transformOptions,
       onProgress: null,
-      experimentalImportBundleSupport:
-        config.transformer.experimentalImportBundleSupport,
+      lazy: false,
+      unstable_enablePackageExports:
+        config.resolver.unstable_enablePackageExports,
       shallow: false,
     },
   );
@@ -69,6 +78,7 @@ async function getPrependedScripts(
     _getPrelude({
       dev: options.dev,
       globalPrefix: config.transformer.globalPrefix,
+      requireCycleIgnorePatterns: config.resolver.requireCycleIgnorePatterns,
     }),
     ...dependencies.values(),
   ];
@@ -77,18 +87,24 @@ async function getPrependedScripts(
 function _getPrelude({
   dev,
   globalPrefix,
+  requireCycleIgnorePatterns,
 }: {
   dev: boolean,
   globalPrefix: string,
+  requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
-  const code = getPreludeCode({isDev: dev, globalPrefix});
+  const code = getPreludeCode({
+    isDev: dev,
+    globalPrefix,
+    requireCycleIgnorePatterns,
+  });
   const name = '__prelude__';
 
   return {
     dependencies: new Map(),
     getSource: (): Buffer => Buffer.from(code),
-    inverseDependencies: new Set(),
+    inverseDependencies: new CountingSet(),
     path: name,
     output: [
       {
@@ -97,13 +113,6 @@ function _getPrelude({
           code,
           lineCount: countLines(code),
           map: [],
-        },
-      },
-      {
-        type: 'bytecode/script/virtual',
-        data: {
-          bytecode: compile(code, {sourceURL: '__prelude__.virtual.js'})
-            .bytecode,
         },
       },
     ],

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,34 +10,32 @@
 
 'use strict';
 
-const ErrorStackParser = require('error-stack-parser');
+import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
+
 const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
 const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
 const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundError');
-
-const fs = require('fs');
-const serializeError = require('serialize-error');
-
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
 const {codeFrameColumns} = require('@babel/code-frame');
+const ErrorStackParser = require('error-stack-parser');
+const fs = require('fs');
 const {AmbiguousModuleResolutionError} = require('metro-core');
+const serializeError = require('serialize-error');
 
-import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
-
-export type CustomError = Error & {
-  type?: string,
-  filename?: string,
-  lineNumber?: number,
-  errors?: Array<{
-    description: string,
-    filename: string,
-    lineNumber: number,
-    ...
-  }>,
-  ...
-};
+export type CustomError = Error &
+  interface {
+    type?: string,
+    filename?: string,
+    lineNumber?: number,
+    errors?: Array<{
+      description: string,
+      filename: string,
+      lineNumber: number,
+      ...
+    }>,
+  };
 
 function formatBundlingError(error: CustomError): FormattedError {
   if (error instanceof AmbiguousModuleResolutionError) {
@@ -76,18 +74,21 @@ function formatBundlingError(error: CustomError): FormattedError {
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof GraphNotFoundError) {
     return {
       type: 'GraphNotFoundError',
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof RevisionNotFoundError) {
     return {
       type: 'RevisionNotFoundError',
+      // $FlowFixMe[incompatible-return]
       errors: [],
       message: error.message,
     };

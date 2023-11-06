@@ -1,27 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const WorkerFarm = require('./WorkerFarm');
+import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
+import type {TransformerConfig, TransformOptions} from './Worker';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import crypto from 'crypto';
 
+const getTransformCacheKey = require('./getTransformCacheKey');
+const WorkerFarm = require('./WorkerFarm');
 const assert = require('assert');
 const fs = require('fs');
-const getTransformCacheKey = require('./getTransformCacheKey');
-const path = require('path');
-
 const {Cache, stableHash} = require('metro-cache');
-
-import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
-import type {TransformOptions, TransformerConfig} from './Worker';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+const path = require('path');
 
 class Transformer {
   _config: ConfigT;
@@ -42,9 +42,9 @@ class Transformer {
     // can treat the transformer config params as opaque.
     const {
       getTransformOptions: _getTransformOptions,
-      postMinifyProcess: _postMinifyProcess,
       transformVariants: _transformVariants,
       workerPath: _workerPath,
+      unstable_workerThreads: _workerThreads,
       ...transformerConfig
     } = this._config.transformer;
 
@@ -55,11 +55,13 @@ class Transformer {
 
     this._workerFarm = new WorkerFarm(config, transformerOptions);
 
-    const globalCacheKey = getTransformCacheKey({
-      cacheVersion: this._config.cacheVersion,
-      projectRoot: this._config.projectRoot,
-      transformerConfig: transformerOptions,
-    });
+    const globalCacheKey = this._cache.isDisabled
+      ? ''
+      : getTransformCacheKey({
+          cacheVersion: this._config.cacheVersion,
+          projectRoot: this._config.projectRoot,
+          transformerConfig: transformerOptions,
+        });
 
     this._baseHash = stableHash([globalCacheKey]).toString('binary');
   }
@@ -67,6 +69,7 @@ class Transformer {
   async transformFile(
     filePath: string,
     transformerOptions: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
@@ -80,7 +83,6 @@ class Transformer {
       minify,
       nonInlinedRequires,
       platform,
-      runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
       unstable_transformProfile,
@@ -88,6 +90,7 @@ class Transformer {
     } = transformerOptions;
 
     for (const key in extra) {
+      // $FlowFixMe[cannot-resolve-name]
       if (hasOwnProperty.call(extra, key)) {
         throw new Error(
           'Extra keys detected: ' + Object.keys(extra).join(', '),
@@ -113,21 +116,34 @@ class Transformer {
       minify,
       nonInlinedRequires,
       platform,
-      runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
       unstable_transformProfile,
     ]);
 
-    const sha1 = this._getSha1(filePath);
+    let sha1: string;
+    if (fileBuffer) {
+      // Shortcut for virtual modules which provide the contents with the filename.
+      sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+    } else {
+      sha1 = this._getSha1(filePath);
+    }
+
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
     const result = await cache.get(fullKey);
 
     // A valid result from the cache is used directly; otherwise we call into
     // the transformer to computed the corresponding result.
-    const data = result
+    const data: $ReadOnly<{
+      result: TransformResult<>,
+      sha1: string,
+    }> = result
       ? {result, sha1}
-      : await this._workerFarm.transform(localPath, transformerOptions);
+      : await this._workerFarm.transform(
+          localPath,
+          transformerOptions,
+          fileBuffer,
+        );
 
     // Only re-compute the full key if the SHA-1 changed. This is because
     // references are used by the cache implementation in a weak map to keep
@@ -136,17 +152,23 @@ class Transformer {
       fullKey = Buffer.concat([partialKey, Buffer.from(data.sha1, 'hex')]);
     }
 
-    cache.set(fullKey, data.result);
+    // Fire-and-forget cache set promise.
+    void cache.set(fullKey, data.result);
 
     return {
       ...data.result,
+      unstable_transformResultKey: fullKey.toString(),
       getSource(): Buffer {
+        if (fileBuffer) {
+          return fileBuffer;
+        }
         return fs.readFileSync(filePath);
       },
     };
   }
 
   end(): void {
+    // $FlowFixMe[unused-promise]
     this._workerFarm.kill();
   }
 }

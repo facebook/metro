@@ -3,26 +3,33 @@ name: Deploy
 on:
   push:
     branches:
-      - "master"
+      - "main"
     paths:
+      - "docs/**"
       - "website/**"
+      - ".github/workflows/deploy-website.yml"
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
+    permissions:
+      contents: write # to deploy
     runs-on: ubuntu-latest
 
     if: github.repository == 'facebook/metro'
 
     env:
       working-directory: website
-      node-version: 12.x
+      node-version: 16.x
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.0.0
+        uses: actions/checkout@v4.1.0
 
       - name: Use Node.js ${{ env.node-version }}
-        uses: actions/setup-node@v1.4.0
+        uses: actions/setup-node@v3.8.1
         with:
           node-version: ${{ env.node-version }}
 
@@ -31,7 +38,7 @@ jobs:
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - name: Restore yarn cache
-        uses: actions/cache@v1.1.2
+        uses: actions/cache@v3.3.2
         with:
           path: ${{ steps.yarn.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/website/yarn.lock')) }}

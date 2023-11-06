@@ -1,15 +1,19 @@
 /**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * @emails oncall+react_native
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+const {PassThrough} = require('stream');
 const zlib = require('zlib');
 
-const {PassThrough} = require('stream');
+jest.useRealTimers();
 
 describe('HttpGetStore', () => {
   let HttpGetStore;
@@ -36,11 +40,7 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest
-      .resetModules()
-      .resetAllMocks()
-      .useFakeTimers()
-      .mock('http');
+    jest.resetModules().resetAllMocks().mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);
@@ -67,7 +67,6 @@ describe('HttpGetStore', () => {
     expect(opts.timeout).toEqual(5000);
 
     callback(responseHttpOk(JSON.stringify({foo: 42})));
-    jest.runAllTimers();
 
     expect(await promise).toEqual({foo: 42});
     expect(warningMessages.length).toBe(0);

@@ -1,33 +1,40 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
+import type {Context} from '../generateFunctionMap';
+
 const {
+  functionMapBabelPlugin,
   generateFunctionMap,
   generateFunctionMappingsArray,
 } = require('../generateFunctionMap');
+const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/src/Symbolication');
 
-function getAst(source) {
+function getAst(source: string) {
   return parse(source, {
     plugins: ['classProperties', 'dynamicImport', 'jsx', 'flow'],
+    sourceType: 'unambiguous',
   });
 }
 
 // A test helper for compact, readable snapshots
-function generateCompactRawMappings(ast, context) {
+function generateCompactRawMappings(ast: BabelNodeFile, context?: Context) {
   const mappings = generateFunctionMappingsArray(ast, context);
   return (
     '\n' +
@@ -656,6 +663,151 @@ function parent2() {
     `);
   });
 
+  it('method with null computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [null]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._null.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._null.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with regex literals computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [/A-Z/ig]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._AZ_ig.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._AZ_ig.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with template literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        [\`obj${0}${'_'}Prop\`]: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj.obj0_Prop.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj.obj0_Prop.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with string literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        ['objProp']: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj.objProp.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj.objProp.m",
+        ],
+      }
+    `);
+  });
+
+  it('method with numeric literal computed name', () => {
+    const ast = getAst(`
+      const obj = {
+        1: {
+          m() {
+            ++x;
+          }
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      obj._.m from 4:10
+      <global> from 6:11
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj._.m",
+        ],
+      }
+    `);
+  });
+
   it('setter method of object with inferred name', () => {
     const ast = getAst(`
       var obj = {
@@ -884,6 +1036,52 @@ function parent2() {
         "names": Array [
           "<global>",
           "import.then$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('callback of optional method', () => {
+    const ast = getAst(`
+      object?.method(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      object.method$argument_0 from 2:21
+      <global> from 2:29
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;qBCC,QD",
+        "names": Array [
+          "<global>",
+          "object.method$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('optional call', () => {
+    const ast = getAst(`
+      func?.(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      func$argument_0 from 2:13
+      <global> from 2:21
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;aCC,QD",
+        "names": Array [
+          "<global>",
+          "func$argument_0",
         ],
       }
     `);
@@ -1235,7 +1433,7 @@ function parent2() {
     const sourceMap = {
       version: 3,
       sources: ['input.js'],
-      names: [],
+      names: ([]: Array<string>),
       mappings: '',
       x_facebook_sources: [[encoded]],
     };
@@ -1301,5 +1499,375 @@ function parent2() {
         ],
       }
     `);
+  });
+
+  it('infers a name for the default export', () => {
+    const ast = getAst('export default function() {}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      default from 1:15
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC",
+        "names": Array [
+          "<global>",
+          "default",
+        ],
+      }
+    `);
+  });
+
+  it('infers a name for methods of the default export', () => {
+    const ast = getAst('export default class {foo() {}}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      default from 1:15
+      default#foo from 1:22
+      default from 1:30
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC,OC,QD",
+        "names": Array [
+          "<global>",
+          "default",
+          "default#foo",
+        ],
+      }
+    `);
+  });
+
+  it("prefers the default export's name where available", () => {
+    const ast = getAst('export default class Foo {bar() {}}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      Foo from 1:15
+      Foo#bar from 1:26
+      Foo from 1:34
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC,WC,QD",
+        "names": Array [
+          "<global>",
+          "Foo",
+          "Foo#bar",
+        ],
+      }
+    `);
+  });
+
+  it('method of generic class', () => {
+    const ast = getAst(`
+      class C<T> {
+        m() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic method of class', () => {
+    const ast = getAst(`
+      class C {
+        m<T>() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic function', () => {
+    const ast = getAst('function a<T>(){}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      a from 1:0
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA",
+        "names": Array [
+          "a",
+        ],
+      }
+    `);
+  });
+
+  describe('React hooks', () => {
+    it('useCallback', () => {
+      const ast = getAst('const cb = useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('useCallback with deps', () => {
+      const ast = getAst('const cb = useCallback(() => {}, [dep1, dep2])');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('React.useCallback', () => {
+      const ast = getAst('const cb = React.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:29
+        <global> from 1:37
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,6BC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('treats SomeOtherNamespace.useCallback like any other function', () => {
+      const ast = getAst('const cb = SomeOtherNamespace.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        SomeOtherNamespace.useCallback$argument_0 from 1:42
+        <global> from 1:50
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,0CC,QD",
+          "names": Array [
+            "<global>",
+            "SomeOtherNamespace.useCallback$argument_0",
+          ],
+        }
+      `);
+    });
+
+    it('named callback takes precedence', () => {
+      const ast = getAst('const cb = useCallback(function inner() {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        inner from 1:23
+        <global> from 1:42
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,mBD",
+          "names": Array [
+            "<global>",
+            "inner",
+          ],
+        }
+      `);
+    });
+  });
+
+  describe('functionMapBabelPlugin', () => {
+    it('exports a Babel plugin to be used during transformation', () => {
+      const code = 'export default function foo(bar){}';
+      const result = transformFromAstSync<MetroBabelFileMetadata>(
+        getAst(code),
+        code,
+        {
+          filename: 'file.js',
+          cwd: '/my/root',
+          plugins: [functionMapBabelPlugin],
+        },
+      );
+      expect(result.metadata.metro?.functionMap).toEqual({
+        mappings: 'AAA,eC',
+        names: ['<global>', 'foo'],
+      });
+    });
+
+    it('omits parent class name when it matches filename', () => {
+      const ast = getAst('class FooBar { baz() {} }');
+      expect(
+        transformFromAstSync<MetroBabelFileMetadata>(ast, '', {
+          plugins: [functionMapBabelPlugin],
+          filename: 'FooBar.ios.js',
+        }).metadata.metro?.functionMap,
+      ).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,eC,QD",
+          "names": Array [
+            "FooBar",
+            "baz",
+          ],
+        }
+      `);
+    });
+  });
+
+  describe('@babel/traverse path cache workaround (babel#6437)', () => {
+    /* These tests exist due to the need to work around a Babel issue:
+       https://github.com/babel/babel/issues/6437
+       In short, using `@babel/traverse` outside of a transform context
+       pollutes the cache in such a way as to break subsequent transformation
+       of the same AST.
+
+       This commonly manifests as: "Cannot read properties of undefined
+       (reading 'addHelper')", and is due to a missing `hub` property normally
+       provided by `@babel/core` but not populated when using `traverse` alone.
+
+       We need to work around this by not mutating the cache on traversal.
+
+       Note though that we must also must be careful to preserve any existing
+       cache, because others (Fast Refresh, Jest) rely on cached properties set
+       on paths. */
+
+    // A minimal(?) Babel transformation that requires a `hub`, modelled on
+    // `@babel/plugin-transform-modules-commonjs` and the `wrapInterop` call in
+    // `@babel/helper-module-transforms`
+    const transformRequiringHub = (ast: BabelNodeFile) =>
+      transformFromAstSync(ast, '', {
+        plugins: [
+          () => ({
+            visitor: {
+              Program: {
+                enter: path => {
+                  expect(path.hub).toBeDefined();
+                },
+              },
+            },
+          }),
+        ],
+        babelrc: false,
+        cloneInputAst: false,
+      });
+
+    let ast;
+
+    beforeEach(() => {
+      ast = getAst('arbitrary(code)');
+      traverse.cache.clearPath();
+    });
+
+    it('requires a workaround for traverse cache pollution', () => {
+      /* If this test fails, it likely means either:
+         1. There are multiple copies of `@babel/traverse` in node_modules, and
+            the one used by `@babel/core` is not the one used by this test.
+            This masks the issue, and probably means you should deduplicate
+            yarn.lock.
+         2. https://github.com/babel/babel/issues/6437 has been fixed upstream,
+            In that case, we should be able to remove cache-related hacks
+            around `traverse` from generateFunctionMap, and these tests. */
+
+      // Perform a trivial traversal.
+      traverse(ast, {});
+
+      // Expect that the path cache is polluted with entries lacking `hub`.
+      expect(() => transformRequiringHub(ast)).toThrow();
+    });
+
+    it('successfully works around traverse cache pollution', () => {
+      generateFunctionMap(ast);
+
+      // Check that the `hub` property is present on paths when transforming.
+      transformRequiringHub(ast);
+    });
+
+    it('does not reset the path cache', () => {
+      const dummyCache: Map<mixed, mixed> = new Map();
+      // $FlowIgnore[prop-missing] - Writing to readonly map for test purposes.
+      traverse.cache.path.set(ast, dummyCache);
+
+      generateFunctionMap(ast);
+
+      // Check that we're not working around the issue by clearing the cache -
+      // that causes problems elsewhere.
+      expect(traverse.cache.path.get(ast)).toBe(dummyCache);
+      expect(dummyCache.size).toBe(0);
+    });
   });
 });

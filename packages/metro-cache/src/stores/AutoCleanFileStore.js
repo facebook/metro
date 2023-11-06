@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,12 +10,11 @@
 
 'use strict';
 
-const FileStore = require('./FileStore');
+import type {Options} from './FileStore';
 
+const FileStore = require('./FileStore');
 const fs = require('fs');
 const path = require('path');
-
-import type {Options} from './FileStore';
 
 type CleanOptions = {
   ...Options,
@@ -31,13 +30,13 @@ type FileList = {
 };
 
 // List all files in a directory in Node.js recursively in a synchronous fashion
-const walkSync = function(
+const walkSync = function (
   dir: string,
   filelist: Array<FileList>,
 ): Array<FileList> {
   const files = fs.readdirSync(dir);
   filelist = filelist || [];
-  files.forEach(function(file) {
+  files.forEach(function (file) {
     const fullPath = path.join(dir, file);
     const stats = fs.statSync(fullPath);
     if (stats.isDirectory()) {
@@ -78,6 +77,7 @@ class AutoCleanFileStore<T> extends FileStore<T> {
   }
 
   _scheduleCleanup() {
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     setTimeout(this._doCleanup.bind(this), this._intervalMs);
   }
 

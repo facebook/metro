@@ -1,24 +1,24 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {
-  initialTraverseDependencies,
-  reorderGraph,
-  traverseDependencies,
-} = require('./traverseDependencies');
-const {EventEmitter} = require('events');
+import path from 'path';
+import {Graph} from './Graph';
+import type {DeltaResult, Options} from './types.flow';
+import type {RootPerfLogger} from 'metro-config';
+import type {ChangeEventMetadata} from 'metro-file-map';
 
-import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {DeltaResult, Graph, Options} from './types.flow';
+const debug = require('debug')('Metro:DeltaCalculator');
+const {EventEmitter} = require('events');
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -27,54 +27,54 @@ import type {DeltaResult, Graph, Options} from './types.flow';
  * traverse the whole dependency tree for trivial small changes.
  */
 class DeltaCalculator<T> extends EventEmitter {
-  _dependencyGraph: DependencyGraph;
+  _changeEventSource: EventEmitter;
   _options: Options<T>;
 
   _currentBuildPromise: ?Promise<DeltaResult<T>>;
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
+  _addedFiles: Set<string> = new Set();
+  _requiresReset = false;
 
   _graph: Graph<T>;
 
   constructor(
-    entryPoints: $ReadOnlyArray<string>,
-    dependencyGraph: DependencyGraph,
+    entryPoints: $ReadOnlySet<string>,
+    changeEventSource: EventEmitter,
     options: Options<T>,
   ) {
     super();
 
     this._options = options;
-    this._dependencyGraph = dependencyGraph;
+    this._changeEventSource = changeEventSource;
 
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = new Graph({
       entryPoints,
-      importBundleNames: new Set(),
-    };
+      transformOptions: this._options.transformOptions,
+    });
 
-    this._dependencyGraph
-      .getWatcher()
-      .on('change', this._handleMultipleFileChanges);
+    this._changeEventSource.on('change', this._handleMultipleFileChanges);
   }
 
   /**
    * Stops listening for file changes and clears all the caches.
    */
   end(): void {
-    this._dependencyGraph
-      .getWatcher()
-      .removeListener('change', this._handleMultipleFileChanges);
+    this._changeEventSource.removeListener(
+      'change',
+      this._handleMultipleFileChanges,
+    );
 
     this.removeAllListeners();
 
     // Clean up all the cache data structures to deallocate memory.
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = new Graph({
       entryPoints: this._graph.entryPoints,
-      importBundleNames: new Set(),
-    };
+      transformOptions: this._options.transformOptions,
+    });
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
+    this._addedFiles = new Set();
   }
 
   /**
@@ -89,6 +89,7 @@ class DeltaCalculator<T> extends EventEmitter {
     shallow: boolean,
     ...
   }): Promise<DeltaResult<T>> {
+    debug('Calculating delta (reset: %s, shallow: %s)', reset, shallow);
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -102,6 +103,23 @@ class DeltaCalculator<T> extends EventEmitter {
     this._modifiedFiles = new Set();
     const deletedFiles = this._deletedFiles;
     this._deletedFiles = new Set();
+    const addedFiles = this._addedFiles;
+    this._addedFiles = new Set();
+    const requiresReset = this._requiresReset;
+    this._requiresReset = false;
+
+    // Revisit all files if changes require a graph reset - resolutions may be
+    // invalidated but we don't yet know which. This should be optimized in the
+    // future.
+    if (requiresReset) {
+      const markModified = (file: string) => {
+        if (!addedFiles.has(file) && !deletedFiles.has(file)) {
+          modifiedFiles.add(file);
+        }
+      };
+      this._graph.dependencies.forEach((_, key) => markModified(key));
+      this._graph.entryPoints.forEach(markModified);
+    }
 
     // Concurrent requests should reuse the same bundling process. To do so,
     // this method stores the promise as an instance variable, and then it's
@@ -109,6 +127,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._currentBuildPromise = this._getChangedDependencies(
       modifiedFiles,
       deletedFiles,
+      addedFiles,
     );
 
     let result;
@@ -124,12 +143,13 @@ class DeltaCalculator<T> extends EventEmitter {
       // which is not correct.
       modifiedFiles.forEach((file: string) => this._modifiedFiles.add(file));
       deletedFiles.forEach((file: string) => this._deletedFiles.add(file));
+      addedFiles.forEach((file: string) => this._addedFiles.add(file));
 
       // If after an error the number of modules has changed, we could be in
       // a weird state. As a safe net we clean the dependency modules to force
       // a clean traversal of the graph next time.
       if (this._graph.dependencies.size !== numDependencies) {
-        this._graph.dependencies = new Map();
+        this._graph.dependencies.clear();
       }
 
       throw error;
@@ -139,7 +159,7 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // Return all the modules if the client requested a reset delta.
     if (reset) {
-      reorderGraph(this._graph, {shallow});
+      this._graph.reorderGraph({shallow});
 
       return {
         added: this._graph.dependencies,
@@ -161,8 +181,12 @@ class DeltaCalculator<T> extends EventEmitter {
     return this._graph;
   }
 
-  _handleMultipleFileChanges = ({eventsQueue}) => {
-    eventsQueue.forEach(this._handleFileChange);
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
+  _handleMultipleFileChanges = changeEvent => {
+    changeEvent.eventsQueue.forEach(eventInfo => {
+      this._handleFileChange(eventInfo, changeEvent.logger);
+    });
   };
 
   /**
@@ -170,34 +194,83 @@ class DeltaCalculator<T> extends EventEmitter {
    * the listener only stores the modified file, which will then be used later
    * when the delta needs to be calculated.
    */
-  _handleFileChange = ({
-    type,
-    filePath,
-  }: {
-    type: string,
-    filePath: string,
-    ...
-  }): mixed => {
+  _handleFileChange = (
+    {
+      type,
+      filePath,
+      metadata,
+    }: {
+      type: string,
+      filePath: string,
+      metadata: ChangeEventMetadata,
+      ...
+    },
+    logger: ?RootPerfLogger,
+  ): mixed => {
+    debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
+    if (
+      metadata.type === 'l' ||
+      (this._options.unstable_enablePackageExports &&
+        filePath.endsWith(path.sep + 'package.json'))
+    ) {
+      this._requiresReset = true;
+      this.emit('change', {logger});
+    }
+    let state: void | 'deleted' | 'modified' | 'added';
+    if (this._deletedFiles.has(filePath)) {
+      state = 'deleted';
+    } else if (this._modifiedFiles.has(filePath)) {
+      state = 'modified';
+    } else if (this._addedFiles.has(filePath)) {
+      state = 'added';
+    }
+
+    let nextState: 'deleted' | 'modified' | 'added';
     if (type === 'delete') {
-      this._deletedFiles.add(filePath);
-      this._modifiedFiles.delete(filePath);
+      nextState = 'deleted';
+    } else if (type === 'add') {
+      // A deleted+added file is modified
+      nextState = state === 'deleted' ? 'modified' : 'added';
     } else {
-      this._deletedFiles.delete(filePath);
-      this._modifiedFiles.add(filePath);
+      // type === 'change'
+      // An added+modified file is added
+      nextState = state === 'added' ? 'added' : 'modified';
+    }
+
+    switch (nextState) {
+      case 'deleted':
+        this._deletedFiles.add(filePath);
+        this._modifiedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      case 'added':
+        this._addedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._modifiedFiles.delete(filePath);
+        break;
+      case 'modified':
+        this._modifiedFiles.add(filePath);
+        this._deletedFiles.delete(filePath);
+        this._addedFiles.delete(filePath);
+        break;
+      default:
+        (nextState: empty);
     }
 
     // Notify users that there is a change in some of the bundle files. This
     // way the client can choose to refetch the bundle.
-    this.emit('change');
+    this.emit('change', {
+      logger,
+    });
   };
 
   async _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
+    addedFiles: Set<string>,
   ): Promise<DeltaResult<T>> {
     if (!this._graph.dependencies.size) {
-      const {added} = await initialTraverseDependencies(
-        this._graph,
+      const {added} = await this._graph.initialTraverseDependencies(
         this._options,
       );
 
@@ -212,23 +285,33 @@ class DeltaCalculator<T> extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach((filePath: string) => {
-      const module = this._graph.dependencies.get(filePath);
-
-      if (module) {
-        module.inverseDependencies.forEach((path: string) => {
-          // Only mark the inverse dependency as modified if it's not already
-          // marked as deleted (in that case we can just ignore it).
-          if (!deletedFiles.has(path)) {
-            modifiedFiles.add(path);
-          }
-        });
+      for (const modifiedModulePath of this._graph.getModifiedModulesForDeletedPath(
+        filePath,
+      )) {
+        // Only mark the inverse dependency as modified if it's not already
+        // marked as deleted (in that case we can just ignore it).
+        if (!deletedFiles.has(modifiedModulePath)) {
+          modifiedFiles.add(modifiedModulePath);
+        }
       }
     });
 
+    // NOTE(EvanBacon): This check adds extra complexity so we feature gate it
+    // to enable users to opt out.
+    if (this._options.unstable_allowRequireContext) {
+      // Check if any added or removed files are matched in a context module.
+      // We only need to do this for added files because (1) deleted files will have a context
+      // module as an inverse dependency, (2) modified files don't invalidate the contents
+      // of the context module.
+      addedFiles.forEach(filePath => {
+        this._graph.markModifiedContextModules(filePath, modifiedFiles);
+      });
+    }
+
     // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(
-      modifiedFiles,
-    ).filter((filePath: string) => this._graph.dependencies.has(filePath));
+    const modifiedDependencies = Array.from(modifiedFiles).filter(
+      (filePath: string) => this._graph.dependencies.has(filePath),
+    );
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {
@@ -240,10 +323,16 @@ class DeltaCalculator<T> extends EventEmitter {
       };
     }
 
-    const {added, modified, deleted} = await traverseDependencies(
+    debug('Traversing dependencies for %s paths', modifiedDependencies.length);
+    const {added, modified, deleted} = await this._graph.traverseDependencies(
       modifiedDependencies,
-      this._graph,
       this._options,
+    );
+    debug(
+      'Calculated graph delta {added: %s, modified: %d, deleted: %d}',
+      added.size,
+      modified.size,
+      deleted.size,
     );
 
     return {

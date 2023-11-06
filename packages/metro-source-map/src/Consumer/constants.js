@@ -1,18 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {add0, add1} = require('ob1');
-
 import type {Number0, Number1} from 'ob1';
+
+const {add0, add1} = require('ob1');
 const FIRST_COLUMN: Number0 = add0(0);
 const FIRST_LINE: Number1 = add1(0);
 

@@ -1,34 +1,35 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const {Logger} = require('metro-core');
-const JestWorker = require('jest-worker').default;
-
-import type {Readable} from 'stream';
 import type {TransformResult} from '../DeltaBundler';
-import type {TransformOptions, TransformerConfig, Worker} from './Worker';
+import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {Readable} from 'stream';
 
-type WorkerInterface = {|
+const {Worker: JestWorker} = require('jest-worker');
+const {Logger} = require('metro-core');
+
+type WorkerInterface = {
   getStdout(): Readable,
   getStderr(): Readable,
   end(): void,
   ...Worker,
-|};
+};
 
-type TransformerResult = $ReadOnly<{|
+type TransformerResult = $ReadOnly<{
   result: TransformResult<>,
   sha1: string,
-|}>;
+}>;
 
 class WorkerFarm {
   _config: ConfigT;
@@ -38,10 +39,11 @@ class WorkerFarm {
   constructor(config: ConfigT, transformerConfig: TransformerConfig) {
     this._config = config;
     this._transformerConfig = transformerConfig;
+    const absoluteWorkerPath = require.resolve(config.transformer.workerPath);
 
     if (this._config.maxWorkers > 1) {
       const worker = this._makeFarm(
-        this._config.transformer.workerPath,
+        absoluteWorkerPath,
         ['transform'],
         this._config.maxWorkers,
       );
@@ -78,6 +80,7 @@ class WorkerFarm {
   async transform(
     filename: string,
     options: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -85,6 +88,7 @@ class WorkerFarm {
         options,
         this._config.projectRoot,
         this._transformerConfig,
+        fileBuffer,
       );
 
       Logger.log(data.transformFileStartLogEntry);
@@ -104,21 +108,24 @@ class WorkerFarm {
   }
 
   _makeFarm(
-    workerPath: string,
+    absoluteWorkerPath: string,
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
-  ) {
+  ): any {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
       FORCE_COLOR: 1,
     };
 
-    return new JestWorker(workerPath, {
+    return new JestWorker(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
-        ? this._computeWorkerKey
+        ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+          // $FlowFixMe[incompatible-call]
+          this._computeWorkerKey
         : undefined,
       exposedMethods,
+      enableWorkerThreads: this._config.transformer.unstable_workerThreads,
       forkOptions: {env},
       numWorkers,
     });
@@ -135,19 +142,16 @@ class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err, filename: string): TransformError {
+  _formatGenericError(err: any, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
-      stack: (err.stack || '')
-        .split('\n')
-        .slice(0, -1)
-        .join('\n'),
+      stack: (err.stack || '').split('\n').slice(0, -1).join('\n'),
       lineNumber: 0,
     });
   }
 
-  _formatBabelError(err, filename: string): TransformError {
+  _formatBabelError(err: any, filename: string): TransformError {
     const error = new TransformError(
       `${err.type || 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename

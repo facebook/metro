@@ -1,19 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
- * @emails oncall+metro_bundler
+ * @oncall react_native
  */
 
 'use strict';
 
-const {add, get0, get1, add1, sub1, sub, neg, add0, inc} = require('../ob1');
-
 import type {Number0, Number1} from '../ob1';
+
+const {add, add0, add1, get0, get1, inc, neg, sub, sub1} = require('../ob1');
 const FORTY_TWO_0 = add0(42);
 const FORTY_TWO_1 = add1(42);
 

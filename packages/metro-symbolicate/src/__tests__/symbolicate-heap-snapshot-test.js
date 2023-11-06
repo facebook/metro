@@ -1,24 +1,24 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
 
+const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
+const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
-const symbolicate = require('../symbolicate');
-
-const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
 const {PassThrough} = require('stream');
-const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
-const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');
+const resolve = (fileName: string) =>
+  path.resolve(__dirname, '__fixtures__', fileName);
+const read = (fileName: string) => fs.readFileSync(resolve(fileName), 'utf8');
 
 const execute = async (
   args: Array<string>,
@@ -53,7 +53,7 @@ const execute = async (
 
 describe('heap snapshots/timelines', () => {
   test('symbolicating allocation stacks', async () => {
-    function findKnownAllocationStack(heapSnapshotStr) {
+    function findKnownAllocationStack(heapSnapshotStr: string) {
       const rawData = JSON.parse(heapSnapshotStr);
       const data = new ChromeHeapSnapshotProcessor(rawData);
       const node = findObjectByInboundProperty('RETAIN_ME', data, rawData);
@@ -78,7 +78,11 @@ describe('heap snapshots/timelines', () => {
 
 // Returns a node in the heap snapshot that has an incoming property edge with
 // the name passed as `propertyName`.
-function findObjectByInboundProperty(propertyName, data, rawData) {
+function findObjectByInboundProperty(
+  propertyName: string,
+  data: ChromeHeapSnapshotProcessor,
+  rawData: $FlowFixMe,
+) {
   const sigilStrIndex = rawData.strings.indexOf(propertyName);
   for (const edge of data.edges()) {
     if (
@@ -99,11 +103,13 @@ function findObjectByInboundProperty(propertyName, data, rawData) {
 
 // Find a given trace node in the trace tree and record the path from the root
 // (reversed and translated into readable stack frames).
-function getStackTrace(traceNodeId, data) {
+function getStackTrace(traceNodeId: number, data: ChromeHeapSnapshotProcessor) {
   const functionInfoStack = [];
   const FOUND = Symbol('FOUND');
 
-  function visit(traceNode) {
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
+  function visit(traceNode): void {
     functionInfoStack.push(traceNode.getNumber('function_info_index'));
     if (traceNode.getNumber('id') === traceNodeId) {
       throw FOUND;

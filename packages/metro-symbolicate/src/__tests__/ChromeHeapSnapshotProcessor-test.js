@@ -1,15 +1,17 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+js_symbolication
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+import type {ChromeHeapSnapshot} from '../ChromeHeapSnapshot';
 
 const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
 
@@ -89,7 +91,7 @@ const SNAPSHOT_COMMON = {
 
 describe('ChromeHeapSnapshotProcessor', () => {
   describe('empty buffers', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
@@ -115,7 +117,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
       const it = processor.edges();
       expect(() => {
         it.getString('type');
-      }).toThrowError('Iterator not started with next() yet');
+      }).toThrowError('Position -3 is out of range');
     });
 
     test('accessing data after end', () => {
@@ -124,7 +126,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
       expect(it.next().done).toBe(true);
       expect(() => {
         it.getString('type');
-      }).toThrowError('Position 0 is out of range');
+      }).toThrowError('Position -3 is out of range');
     });
 
     test('using the iterator protocol', () => {
@@ -135,37 +137,78 @@ describe('ChromeHeapSnapshotProcessor', () => {
       }
       expect(neverCalled).not.toBeCalled();
     });
+
+    test('appending', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      const index = it.append({
+        type: 'synthetic',
+        name: 'Node #0',
+        id: 1,
+        self_size: 0,
+        edge_count: 0,
+        trace_node_id: 0,
+        detachedness: 0,
+      });
+      expect(index).toBe(0);
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('type')).toBe('synthetic');
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.getNumber('id')).toBe(1);
+      expect(it.getNumber('self_size')).toBe(0);
+      expect(it.getNumber('edge_count')).toBe(0);
+      expect(it.getNumber('trace_node_id')).toBe(0);
+      expect(it.getNumber('detachedness')).toBe(0);
+
+      expect(it.next().done).toBe(true);
+    });
+
+    test('inserting', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      const index = it.moveAndInsert(0, {
+        type: 'synthetic',
+        name: 'Node #0',
+        id: 1,
+        self_size: 0,
+        edge_count: 0,
+        trace_node_id: 0,
+        detachedness: 0,
+      });
+      expect(index).toBe(0);
+
+      expect(it.getString('type')).toBe('synthetic');
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.getNumber('id')).toBe(1);
+      expect(it.getNumber('self_size')).toBe(0);
+      expect(it.getNumber('edge_count')).toBe(0);
+      expect(it.getNumber('trace_node_id')).toBe(0);
+      expect(it.getNumber('detachedness')).toBe(0);
+
+      expect(it.next().done).toBe(true);
+    });
   });
 
   describe('accessing data', () => {
-    let data;
+    let data: ChromeHeapSnapshot;
     beforeEach(() => {
       data = {
         ...SNAPSHOT_COMMON,
-        locations: [],
+        locations: ([]: Array<number>),
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 1,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 1, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ 1,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ 1, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         edges: [
           // -- Edge #0 --
-          /* type (element) */ 1,
-          /* name_or_index */ 1,
+          /* type (element) */ 1, /* name_or_index */ 1,
           /* to_node (Node #1) */ 7,
         ],
         samples: [],
@@ -177,12 +220,8 @@ describe('ChromeHeapSnapshotProcessor', () => {
         ],
         trace_function_infos: [
           // -- Trace function info #0 --
-          /* function_id */ 0,
-          /* name */ 2,
-          /* script_name */ 3,
-          /* script_id */ 0,
-          /* line */ 10,
-          /* column */ 20,
+          /* function_id */ 0, /* name */ 2, /* script_name */ 3,
+          /* script_id */ 0, /* line */ 10, /* column */ 20,
         ],
         trace_tree: [
           /* id */ 1,
@@ -418,88 +457,323 @@ describe('ChromeHeapSnapshotProcessor', () => {
       // Iteration ends correctly
       expect(it.next().done).toBe(true);
     });
+
+    test('inserting a node', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+
+      const index = it.moveAndInsert(1, {
+        type: 'synthetic',
+        name: 'Node #0.5',
+        id: 1000,
+        self_size: 0,
+        edge_count: 0,
+        trace_node_id: 0,
+        detachedness: 0,
+      });
+      expect(index).toBe(1);
+      expect(it.getString('name')).toBe('Node #0.5');
+
+      it.moveToRecord(0);
+      expect(it.getString('name')).toBe('Node #0');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #0.5');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #1');
+
+      expect(it.next().done).toBe(true);
+    });
+
+    test('appending a node', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+
+      const index = it.append({
+        type: 'synthetic',
+        name: 'Node #2',
+        id: 1000,
+        self_size: 0,
+        edge_count: 0,
+        trace_node_id: 0,
+        detachedness: 0,
+      });
+      expect(index).toBe(2);
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #0');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #1');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #2');
+
+      expect(it.next().done).toBe(true);
+    });
+
+    test('appending a subtree to trace_tree', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.traceTree();
+      let childIt;
+
+      const index = it.append({
+        id: 100,
+        function_info_index: 0,
+        count: 100,
+        size: 100,
+        children: [
+          {
+            id: 101,
+            function_info_index: 0,
+            count: 50,
+            size: 50,
+            children: [],
+          },
+        ],
+      });
+      expect(index).toBe(1);
+
+      // The existing data
+      expect(it.next().done).toBe(false);
+      expect(it.getNumber('id')).toBe(1);
+      expect(it.getNumber('function_info_index')).toBe(0);
+      expect(it.getNumber('count')).toBe(0);
+      expect(it.getNumber('size')).toBe(0);
+
+      childIt = it.getChildren('children');
+
+      expect(childIt.next().done).toBe(false);
+      expect(childIt.getNumber('id')).toBe(2);
+      expect(childIt.getNumber('function_info_index')).toBe(0);
+      expect(childIt.getNumber('count')).toBe(1);
+      expect(childIt.getNumber('size')).toBe(40);
+      expect(childIt.getChildren('children').next().done).toBe(true);
+
+      expect(childIt.next().done).toBe(false);
+      expect(childIt.getNumber('id')).toBe(3);
+      expect(childIt.getNumber('function_info_index')).toBe(0);
+      expect(childIt.getNumber('count')).toBe(0);
+      expect(childIt.getNumber('size')).toBe(42);
+      expect(childIt.getChildren('children').next().done).toBe(true);
+
+      expect(childIt.next().done).toBe(true);
+
+      // The data we appended
+      expect(it.next().done).toBe(false);
+      expect(it.getNumber('id')).toBe(100);
+      expect(it.getNumber('function_info_index')).toBe(0);
+      expect(it.getNumber('count')).toBe(100);
+      expect(it.getNumber('size')).toBe(100);
+
+      childIt = it.getChildren('children');
+
+      expect(childIt.next().done).toBe(false);
+      expect(childIt.getNumber('id')).toBe(101);
+      expect(childIt.getNumber('function_info_index')).toBe(0);
+      expect(childIt.getNumber('count')).toBe(50);
+      expect(childIt.getNumber('size')).toBe(50);
+      expect(childIt.getChildren('children').next().done).toBe(true);
+
+      expect(childIt.next().done).toBe(true);
+
+      expect(it.next().done).toBe(true);
+    });
   });
 
-  test('field type checking', () => {
-    const processor = new ChromeHeapSnapshotProcessor({
-      ...SNAPSHOT_COMMON,
-      edges: [],
-      locations: [],
-      nodes: [
-        // -- Node #0 --
-        /* type (synthetic) */ 9,
-        /* name */ 0,
-        /* id */ 1,
-        /* self_size */ 0,
-        /* edge_count */ 0,
-        /* trace_node_id */ 0,
-        /* detachedness */ 0,
-      ],
-      samples: [],
-      strings: ['Node #0'],
-      trace_function_infos: [
-        // -- Trace function info #0 --
-        /* function_id */ 0,
-        /* name */ 2,
-        /* script_name */ 3,
-        /* script_id */ 0,
-        /* line */ 10,
-        /* column */ 20,
-      ],
-      trace_tree: [
-        /* id */ 1,
-        /* function_info_index */ 0,
-        /* count */ 0,
-        /* size */ 0,
-        /* children */ [],
-      ],
+  describe('field type checking', () => {
+    let data: ChromeHeapSnapshot;
+    beforeEach(() => {
+      data = {
+        ...SNAPSHOT_COMMON,
+        edges: ([]: Array<number>),
+        locations: ([]: Array<number>),
+        nodes: [
+          // -- Node #0 --
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
+        ],
+        samples: [],
+        strings: ['Node #0'],
+        trace_function_infos: [
+          // -- Trace function info #0 --
+          /* function_id */ 0, /* name */ 2, /* script_name */ 3,
+          /* script_id */ 0, /* line */ 10, /* column */ 20,
+        ],
+        trace_tree: [
+          /* id */ 1,
+          /* function_info_index */ 0,
+          /* count */ 0,
+          /* size */ 0,
+          /* children */ [],
+        ],
+      };
     });
-    let it;
 
-    it = processor.nodes();
-    expect(it.next().done).toBe(false);
-    expect(() => it.getNumber('name')).toThrowError('Not a number field: name');
-    expect(() => it.setNumber('name', 0)).toThrowError(
-      'Not a number field: name',
-    );
-    expect(() => it.getChildren('name')).toThrowError(
-      'Not a children field: name',
-    );
-    expect(() => it.getNumber('type')).toThrowError('Not a number field: type');
-    expect(() => it.setNumber('type', 1)).toThrowError(
-      'Not a number field: type',
-    );
-    expect(() => it.setString('type', 'some new type')).toThrowError(
-      'Cannot define new values in enum field',
-    );
-    expect(() => it.getChildren('type')).toThrowError(
-      'Not a children field: type',
-    );
-    expect(() => it.getString('id')).toThrowError(
-      'Not a string or enum field: id',
-    );
-    expect(() => it.setString('id', 'foo')).toThrowError(
-      'Not a string or enum field: id',
-    );
-    expect(() => it.getChildren('id')).toThrowError('Not a children field: id');
-    expect(it.next().done).toBe(true);
+    test('getters and setters', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      let it;
 
-    it = processor.traceTree();
-    expect(it.next().done).toBe(false);
-    expect(() => it.getChildren('id')).toThrowError('Not a children field: id');
-    expect(() => it.getNumber('children')).toThrowError(
-      'Not a scalar field: children',
-    );
-    expect(() => it.getString('children')).toThrowError(
-      'Not a scalar field: children',
-    );
-    expect(() => it.setString('children', 'foo')).toThrowError(
-      'Not a string or enum field: children',
-    );
-    expect(() => it.setNumber('children', 1)).toThrowError(
-      'Not a number field: children',
-    );
-    expect(it.next().done).toBe(true);
+      it = processor.nodes();
+      expect(it.next().done).toBe(false);
+      expect(() => it.getNumber('name')).toThrowError(
+        'Not a number field: name',
+      );
+      expect(() => it.setNumber('name', 0)).toThrowError(
+        'Not a number field: name',
+      );
+      expect(() => it.getChildren('name')).toThrowError(
+        'Not a children field: name',
+      );
+      expect(() => it.getNumber('type')).toThrowError(
+        'Not a number field: type',
+      );
+      expect(() => it.setNumber('type', 1)).toThrowError(
+        'Not a number field: type',
+      );
+      expect(() => it.setString('type', 'some new type')).toThrowError(
+        'Cannot define new values in enum field',
+      );
+      expect(() => it.getChildren('type')).toThrowError(
+        'Not a children field: type',
+      );
+      expect(() => it.getString('id')).toThrowError(
+        'Not a string or enum field: id',
+      );
+      expect(() => it.setString('id', 'foo')).toThrowError(
+        'Not a string or enum field: id',
+      );
+      expect(() => it.getChildren('id')).toThrowError(
+        'Not a children field: id',
+      );
+      expect(it.next().done).toBe(true);
+
+      it = processor.traceTree();
+      expect(it.next().done).toBe(false);
+      expect(() => it.getChildren('id')).toThrowError(
+        'Not a children field: id',
+      );
+      expect(() => it.getNumber('children')).toThrowError(
+        'Not a scalar field: children',
+      );
+      expect(() => it.getString('children')).toThrowError(
+        'Not a scalar field: children',
+      );
+      expect(() => it.setString('children', 'foo')).toThrowError(
+        'Not a string or enum field: children',
+      );
+      expect(() => it.setNumber('children', 1)).toThrowError(
+        'Not a number field: children',
+      );
+      expect(it.next().done).toBe(true);
+    });
+
+    test('missing fields in append', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      expect(() => it.append({name: 'Node #1'})).toThrow(
+        'Missing value for field: type',
+      );
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.next().done).toBe(true);
+    });
+
+    test('missing fields in insert', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      expect(() => it.moveAndInsert(0, {name: 'Node #-1'})).toThrow(
+        'Missing value for field: type',
+      );
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.next().done).toBe(true);
+    });
+
+    test('wrong type in append', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      expect(() =>
+        it.append({
+          type: 'synthetic',
+          name: 'Node #1',
+          id: 'some_string',
+          self_size: 0,
+          edge_count: 0,
+          trace_node_id: 0,
+          detachedness: 0,
+        }),
+      ).toThrow('Not a string or enum field: id');
+      expect(it.next().done).toBe(false);
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.next().done).toBe(true);
+    });
+
+    test('wrong type in insert', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.nodes();
+      expect(() =>
+        it.moveAndInsert(0, {
+          type: 9,
+          name: 'Node #-1',
+          id: 100,
+          self_size: 0,
+          edge_count: 0,
+          trace_node_id: 0,
+          detachedness: 0,
+        }),
+      ).toThrow('Not a number field: type');
+      expect(it.getString('name')).toBe('Node #0');
+      expect(it.next().done).toBe(true);
+    });
+
+    test('wrong type in child record', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.traceTree();
+      expect(() =>
+        it.append({
+          id: 100,
+          function_info_index: 0,
+          count: 10,
+          size: 0,
+          children: [
+            {
+              id: 'some_string',
+              function_info_index: 0,
+              count: 0,
+              size: 0,
+              children: [],
+            },
+          ],
+        }),
+      ).toThrow('Not a string or enum field: id');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getNumber('id')).toBe(1);
+      const childIt = it.getChildren('children');
+      expect(childIt.next().done).toBe(true);
+      expect(it.next().done).toBe(true);
+    });
+
+    test('wrong type in children field', () => {
+      const processor = new ChromeHeapSnapshotProcessor(data);
+      const it = processor.traceTree();
+      expect(() =>
+        it.append({
+          id: 100,
+          function_info_index: 0,
+          count: 10,
+          size: 0,
+          children: 'foo',
+        }),
+      ).toThrow('Not a string or enum field: children');
+
+      expect(it.next().done).toBe(false);
+      expect(it.getNumber('id')).toBe(1);
+      const childIt = it.getChildren('children');
+      expect(childIt.next().done).toBe(true);
+      expect(it.next().done).toBe(true);
+    });
   });
 
   describe('validation', () => {
@@ -510,21 +784,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ -1,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ -1, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         samples: [],
@@ -551,22 +816,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type */ 42,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type */ 42, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type */ -1,
-          /* name */ 0,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type */ -1, /* name */ 0, /* id */ 43, /* self_size */ 4320,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
         ],
         samples: [],
         strings: [''],
@@ -592,18 +847,11 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 9,
-          /* name */ 0,
-          /* id */ 43,
+          /* type (native) */ 9, /* name */ 0, /* id */ 43,
           /* self_size */ 4320,
           // Missing fields:
           /* edge_count */
@@ -622,32 +870,23 @@ describe('ChromeHeapSnapshotProcessor', () => {
     });
 
     test('data truncated while iterating', () => {
-      const data = {
+      const data: ChromeHeapSnapshot = {
         ...SNAPSHOT_COMMON,
-        edges: [],
-        locations: [],
+        edges: ([]: Array<number>),
+        locations: ([]: Array<number>),
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ 0,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ 0, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         samples: [],
         strings: [''],
-        trace_function_infos: [],
+        trace_function_infos: ([]: Array<number>),
         trace_tree: [],
       };
       const processor = new ChromeHeapSnapshotProcessor(data);

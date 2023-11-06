@@ -1,23 +1,24 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
 const path = require('path');
 
-type PlatformFilePathParts = {|
+type PlatformFilePathParts = {
   dirPath: string,
   baseName: string,
   platform: ?string,
   extension: ?string,
-|};
+};
 
 const PATH_RE = /^(.+?)(\.([^.]+))?\.([^.]+)$/;
 
@@ -27,7 +28,7 @@ const PATH_RE = /^(.+?)(\.([^.]+))?\.([^.]+)$/;
  */
 function parsePlatformFilePath(
   filePath: string,
-  platforms: Set<string>,
+  platforms: $ReadOnlySet<string>,
 ): PlatformFilePathParts {
   const dirPath = path.dirname(filePath);
   const fileName = path.basename(filePath);

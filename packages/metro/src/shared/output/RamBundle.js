@@ -1,22 +1,22 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const Server = require('../../Server');
+import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
+import type {OutputOptions, RequestOptions} from '../types.flow';
 
+const Server = require('../../Server');
 const asAssets = require('./RamBundle/as-assets');
 const asIndexedFile = require('./RamBundle/as-indexed-file').save;
-
-import type {OutputOptions, RequestOptions} from '../types.flow';
-import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
 
 async function build(
   packagerClient: Server,

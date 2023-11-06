@@ -1,6 +1,6 @@
 ---
 id: api
-title: API
+title: Bundling API
 ---
 
 ## Quick Start
@@ -21,9 +21,7 @@ title: API
   ```js
   const config = await Metro.loadConfig();
 
-  await Metro.runServer(config, {
-    port: 8080,
-  });
+  await Metro.runServer(config);
   ```
 
 - Create a Connect middleware and plug it into a server
@@ -62,7 +60,7 @@ Creates a Metro server based on the config and returns it. You can use this as a
 
 **Required options:** `entry`, `out`
 
-**Basic options:** `dev`, `optimize`, `platform`, `sourceMap`, `sourceMapUrl`
+**Basic options:** `dev`, `minify`, `platform`, `sourceMap`, `sourceMapUrl`
 
 Bundles `entry` for the given `platform`, and saves it to location `out`. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined. In the latter case, a new file will be generated with the basename of the `sourceMapUrl` parameter.
 

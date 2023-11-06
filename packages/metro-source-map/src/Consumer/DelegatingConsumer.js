@@ -1,32 +1,32 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
-const createConsumer = require('./createConsumer');
-
-const {
-  GENERATED_ORDER,
-  ORIGINAL_ORDER,
-  GREATEST_LOWER_BOUND,
-  LEAST_UPPER_BOUND,
-} = require('./constants');
-
 import type {MixedSourceMap} from '../source-map';
 import type {LookupBias} from './constants.js';
 import type {
-  SourcePosition,
   GeneratedPositionLookup,
-  Mapping,
   IConsumer,
   IterationOrder,
+  Mapping,
+  SourcePosition,
 } from './types.flow';
+
+const {
+  GENERATED_ORDER,
+  GREATEST_LOWER_BOUND,
+  LEAST_UPPER_BOUND,
+  ORIGINAL_ORDER,
+} = require('./constants');
+const createConsumer = require('./createConsumer');
 
 /**
  * A source map consumer that supports both "basic" and "indexed" source maps.
@@ -41,6 +41,7 @@ class DelegatingConsumer implements IConsumer {
 
   _rootConsumer: IConsumer;
 
+  // $FlowFixMe[incompatible-return]
   constructor(sourceMap: MixedSourceMap): IConsumer {
     this._rootConsumer = createConsumer(sourceMap);
     return this._rootConsumer;

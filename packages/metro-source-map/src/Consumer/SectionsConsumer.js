@@ -1,32 +1,31 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const AbstractConsumer = require('./AbstractConsumer');
-
-const createConsumer = require('./createConsumer');
-
-const {FIRST_COLUMN, FIRST_LINE, EMPTY_POSITION} = require('./constants');
-const {subtractOffsetFromPosition} = require('./positionMath');
-const {greatestLowerBound} = require('./search');
-const {add, get0, get1, add0, sub1, sub} = require('ob1');
-
 import type {IndexMap} from '../source-map';
 import type {
   GeneratedOffset,
-  SourcePosition,
   GeneratedPositionLookup,
-  Mapping,
   IConsumer,
+  Mapping,
+  SourcePosition,
 } from './types.flow';
+
+const AbstractConsumer = require('./AbstractConsumer');
+const {EMPTY_POSITION, FIRST_COLUMN, FIRST_LINE} = require('./constants');
+const createConsumer = require('./createConsumer');
+const {subtractOffsetFromPosition} = require('./positionMath');
+const {greatestLowerBound} = require('./search');
+const {add, add0, get0, get1, sub, sub1} = require('ob1');
 
 /**
  * A source map consumer that supports "indexed" source maps (that have a
@@ -53,7 +52,7 @@ class SectionsConsumer extends AbstractConsumer implements IConsumer {
     const [generatedOffset, consumer] =
       this._consumerForPosition(generatedPosition) || [];
     if (!consumer) {
-      return EMPTY_POSITION;
+      return {...EMPTY_POSITION};
     }
     return consumer.originalPositionFor(
       subtractOffsetFromPosition(generatedPosition, generatedOffset),

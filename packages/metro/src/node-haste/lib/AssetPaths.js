@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -13,19 +14,17 @@
 const parsePlatformFilePath = require('./parsePlatformFilePath');
 const path = require('path');
 
-export type AssetPath = {|
+export type AssetPath = {
   assetName: string,
   name: string,
   platform: ?string,
   resolution: number,
   type: string,
-|};
+};
 
 const ASSET_BASE_NAME_RE = /(.+?)(@([\d.]+)x)?$/;
 
-function parseBaseName(
-  baseName: string,
-): {
+function parseBaseName(baseName: string): {
   resolution: number,
   rootName: string,
   ...
@@ -48,7 +47,10 @@ function parseBaseName(
  * Return `null` if the `filePath` doesn't have a valid extension, required
  * to describe the type of an asset.
  */
-function tryParse(filePath: string, platforms: Set<string>): ?AssetPath {
+function tryParse(
+  filePath: string,
+  platforms: $ReadOnlySet<string>,
+): ?AssetPath {
   const result = parsePlatformFilePath(filePath, platforms);
   const {dirPath, baseName, platform, extension} = result;
   if (extension == null) {
@@ -64,7 +66,7 @@ function tryParse(filePath: string, platforms: Set<string>): ?AssetPath {
   };
 }
 
-function parse(filePath: string, platforms: Set<string>): AssetPath {
+function parse(filePath: string, platforms: $ReadOnlySet<string>): AssetPath {
   const result = tryParse(filePath, platforms);
   if (result == null) {
     throw new Error('invalid asset file path: `${filePath}');

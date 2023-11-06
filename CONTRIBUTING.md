@@ -10,9 +10,9 @@ Facebook has adopted a Code of Conduct that we expect project participants to ad
 
 The core team works directly on GitHub and all work is public.
 
-### `master` is unsafe
+### `main` is unsafe
 
-We will do our best to keep `master` in good shape, with tests passing at all times. But in order to move fast, we will make API changes that your application might not be compatible with. We will do our best to communicate these changes and always version appropriately so you can lock into a specific version if need be.
+We will do our best to keep `main` in good shape, with tests passing at all times. But in order to move fast, we will make API changes that your application might not be compatible with. We will do our best to communicate these changes and always version appropriately so you can lock into a specific version if need be.
 
 ### Workflow and Pull Requests
 
@@ -20,7 +20,7 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
 
 *Before* submitting a pull request, please make sure the following is done…
 
-1. Fork the repo and create your branch from `master`.
+1. Fork the repo and create your branch from `main`.
 
    ```sh
    git clone https://github.com/facebook/metro
@@ -34,22 +34,11 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
     yarn
     ```
 
-3. Run `lerna bootstrap`.
-
-    ```sh
-    lerna bootstrap
-    ```
-
-4. If you've added code that should be tested, add tests. You
-   can use watch mode that continuously transforms changed files
-   to make your life easier.
-
-   ```sh
-   # in the background
-   npm run watch
-   ```
-
-5. If you've changed APIs, update the documentation.
+3. Code in this repo is typechecked with [Flow](https://flow.org/). [Optional] If you are using VS Code, we recommend opening the `metro.code-workspace` file, which should configure the Flow Language Service and other workspace settings correctly.
+4. If you've added code that should be tested, add tests.
+5. If you've changed APIs:
+    1. Update the documentation if necessary.
+    2. Update any relevant `.d.ts` files under the package's `types/` directory.
 6. Ensure the test suite passes via `npm test`.
 7. If you haven't already, complete the CLA.
 
@@ -75,7 +64,7 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 
 ## How to Get in Touch
 
-* Discord - [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) on [Reactiflux](http://www.reactiflux.com/)
+* Discord - [#help-react-native](https://discord.gg/JuTwWB8rsy) on [Reactiflux](http://www.reactiflux.com/)
 
 ### Code Conventions
 

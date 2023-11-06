@@ -1,11 +1,11 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -14,23 +14,22 @@ jest
   .setMock('jest-worker', () => ({}))
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('assert')
-  .mock('../getTransformCacheKey', () => () => 'hash')
+  .mock('../getTransformCacheKey', () => jest.fn(() => 'hash'))
   .mock('../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Transformer = require('../Transformer');
+var fs = require('fs');
 var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
-var fs = require('fs');
-const mkdirp = require('mkdirp');
 
-describe('Transformer', function() {
+describe('Transformer', function () {
   let watchFolders;
   let projectRoot;
   let commonOptions;
   const getSha1 = jest.fn(() => '0123456789012345678901234567890123456789');
 
-  beforeEach(function() {
+  beforeEach(function () {
     const baseConfig = {
       resolver: {
         extraNodeModules: {},
@@ -39,7 +38,6 @@ describe('Transformer', function() {
       transformer: {
         assetRegistryPath: '/AssetRegistry.js',
         enableBabelRCLookup: true,
-        postMinifyProcess: e => e,
       },
       cacheStores: [],
       cacheVersion: 'smth',
@@ -54,9 +52,11 @@ describe('Transformer', function() {
     projectRoot = '/root';
     watchFolders = [projectRoot];
 
-    mkdirp.sync('/path/to');
-    mkdirp.sync('/root');
+    fs.mkdirSync('/path/to', {recursive: true});
+    fs.mkdirSync('/root', {recursive: true});
     fs.writeFileSync('/path/to/transformer.js', '');
+
+    require('../getTransformCacheKey').mockClear();
   });
 
   it('uses new cache layers when transforming if requested to do so', async () => {
@@ -99,5 +99,45 @@ describe('Transformer', function() {
     expect(get.mock.calls[0][0].toString('hex').substr(0, 32)).toBe(
       set.mock.calls[0][0].toString('hex').substr(0, 32),
     );
+  });
+
+  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await transformerInstance.transformFile('./foo.js', {});
+
+    expect(require('../getTransformCacheKey')).not.toBeCalled();
+  });
+
+  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await transformerInstance.transformFile('./foo.js', {});
+
+    expect(require('../getTransformCacheKey')).not.toBeCalled();
   });
 });

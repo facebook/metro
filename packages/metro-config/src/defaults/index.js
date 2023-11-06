@@ -1,34 +1,35 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const TerminalReporter = require('metro/src/lib/TerminalReporter');
-
-const exclusionList = require('./exclusionList');
-const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
-const os = require('os');
-const path = require('path');
+import type {ConfigT} from '../configTypes.flow';
 
 const {
+  DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
-  sourceExts,
-  platforms,
-  DEFAULT_METRO_MINIFIER_PATH,
+  additionalExts,
   defaultCreateModuleIdFactory,
+  platforms,
+  sourceExts,
+  noopPerfLoggerFactory,
 } = require('./defaults');
+const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
 const {Terminal} = require('metro-core');
-
-import type {ConfigT} from '../configTypes.flow';
+const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
+const TerminalReporter = require('metro/src/lib/TerminalReporter');
+const os = require('os');
+const path = require('path');
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
@@ -38,12 +39,24 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     sourceExts,
     blockList: exclusionList(),
     dependencyExtractor: undefined,
+    disableHierarchicalLookup: false,
+    unstable_enableSymlinks: true,
+    emptyModulePath: require.resolve(
+      'metro-runtime/src/modules/empty-module.js',
+    ),
+    enableGlobalPackages: false,
     extraNodeModules: {},
     hasteImplModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    unstable_conditionNames: ['require', 'import'],
+    unstable_conditionsByPlatform: {
+      web: ['browser'],
+    },
+    unstable_enablePackageExports: false,
     useWatchman: true,
+    requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
 
   serializer: {
@@ -51,25 +64,27 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     getRunModuleStatement: (moduleId: number | string) =>
       `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
-    postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
     customSerializer: null,
+    isThirdPartyModule: module =>
+      /(?:^|[/\\])node_modules[/\\]/.test(module.path),
   },
 
   server: {
-    useGlobalHotkey: true,
-    port: 8080,
-    enhanceMiddleware: middleware => middleware,
+    enhanceMiddleware: (middleware, _) => middleware,
+    port: 8081,
     rewriteRequestUrl: url => url,
-    runInspectorProxy: true,
+    unstable_serverRoot: null,
+    useGlobalHotkey: true,
     verifyConnections: false,
   },
 
   symbolicator: {
     customizeFrame: () => {},
+    customizeStack: async (stack, _) => stack,
   },
 
   transformer: {
@@ -80,7 +95,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
-    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
@@ -91,6 +105,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       ramGroups: [],
     }),
     globalPrefix: '',
+    hermesParser: false,
     minifierConfig: {
       mangle: {
         toplevel: false,
@@ -111,11 +126,29 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     },
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
-    postMinifyProcess: x => x,
     transformVariants: {default: {}},
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
+    unstable_allowRequireContext: false,
+    unstable_dependencyMapReservedName: null,
+    unstable_disableModuleWrapping: false,
+    unstable_disableNormalizePseudoGlobals: false,
+    unstable_compactOutput: false,
+    unstable_workerThreads: false,
+  },
+  watcher: {
+    additionalExts,
+    healthCheck: {
+      enabled: false,
+      filePrefix: '.metro-health-check',
+      interval: 30000,
+      timeout: 5000,
+    },
+    unstable_workerThreads: false,
+    watchman: {
+      deferStates: ['hg.update'],
+    },
   },
   cacheStores: [
     new FileStore({
@@ -128,10 +161,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   stickyWorkers: true,
   watchFolders: [],
-  transformerPath: require.resolve('metro-transform-worker'),
+  transformerPath: 'metro-transform-worker',
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  unstable_perfLoggerFactory: noopPerfLoggerFactory,
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
@@ -141,5 +175,5 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
   return getDefaultValues(rootPath);
 }
 
+getDefaultConfig.getDefaultValues = getDefaultValues;
 module.exports = getDefaultConfig;
-module.exports.getDefaultValues = getDefaultValues;

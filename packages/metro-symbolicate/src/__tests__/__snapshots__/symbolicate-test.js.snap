@@ -1,5 +1,73 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`coverage option symbolicating a CJS stack trace ignores the module id of the file name 1`] = `
+"/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js:13:getValue
+"
+`;
+
+exports[`coverage option symbolicating a CJS stack trace ignores the segment id of the file name 1`] = `
+"/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js:13:getValue
+"
+`;
+
+exports[`coverage option symbolicating a coverage stack trace CJS 1`] = `
+Array [
+  Object {
+    "column": 2,
+    "functionName": "<global>",
+    "isIgnored": false,
+    "line": 16,
+    "name": null,
+    "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "<global>",
+    "isIgnored": false,
+    "line": 25,
+    "name": null,
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+  Object {
+    "column": 0,
+    "functionName": "<global>",
+    "isIgnored": false,
+    "line": 8,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+]
+`;
+
+exports[`coverage option symbolicating a coverage stack trace Classic 1`] = `
+Array [
+  Object {
+    "column": 9,
+    "functionName": "<anonymous>",
+    "isIgnored": false,
+    "line": 162,
+    "name": "param",
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+  Object {
+    "column": 21,
+    "functionName": "<anonymous>",
+    "isIgnored": false,
+    "line": 100,
+    "name": null,
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+  Object {
+    "column": 15,
+    "functionName": "getValue",
+    "isIgnored": false,
+    "line": 10,
+    "name": "getValue",
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+]
+`;
+
 exports[`directory context does not read source maps outside the root dir, with relative or absolute paths 1`] = `
 "<testDir>/__fixtures__/testfile.js:1:null
 ../testfile.js:1:null
@@ -20,11 +88,12 @@ exports[`directory context symbolicating a stack trace with absolute paths 1`] =
 "
 `;
 
-exports[`symbolicating a hermes stack trace 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace 1`] = `
 Array [
   Object {
     "column": 21,
     "functionName": "columns.forEach$argument_0",
+    "isIgnored": false,
     "line": 480,
     "name": "rows",
     "source": "/js/node_modules/react-native/Libraries/polyfills/console.js",
@@ -32,6 +101,7 @@ Array [
   Object {
     "column": 8,
     "functionName": "setEnabled",
+    "isIgnored": false,
     "line": 101,
     "name": "_enabled",
     "source": "/js/react-native-github/Libraries/Performance/Systrace.js",
@@ -39,6 +109,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -46,6 +117,7 @@ Array [
   Object {
     "column": null,
     "functionName": null,
+    "isIgnored": false,
     "line": null,
     "name": null,
     "source": null,
@@ -53,6 +125,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -63,11 +136,12 @@ Array [
 ]
 `;
 
-exports[`symbolicating a hermes stack trace CJS 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace CJS 1`] = `
 Array [
   Object {
     "column": 36,
     "functionName": "result.clearExceptTimespans",
+    "isIgnored": false,
     "line": 160,
     "name": null,
     "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
@@ -75,6 +149,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -82,6 +157,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -89,6 +165,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -99,11 +176,12 @@ Array [
 ]
 `;
 
-exports[`symbolicating a hermes stack trace CJS with SegmentID 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace CJS with SegmentID 1`] = `
 Array [
   Object {
     "column": 36,
     "functionName": "result.clearExceptTimespans",
+    "isIgnored": false,
     "line": 160,
     "name": null,
     "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
@@ -111,6 +189,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -118,6 +197,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
@@ -125,6 +205,7 @@ Array [
   Object {
     "column": 2,
     "functionName": "getValue",
+    "isIgnored": false,
     "line": 13,
     "name": null,
     "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",

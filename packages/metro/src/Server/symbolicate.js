@@ -1,22 +1,27 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+import type {
+  MetroSourceMapSegmentTuple,
+  FBSourceFunctionMap,
+} from '../../../metro-source-map/src/source-map';
+
+import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const {greatestLowerBound} = require('metro-source-map/src/Consumer/search');
 const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/src/Symbolication');
-
-import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export type StackFrameInput = {
   +file: ?string,
@@ -25,13 +30,17 @@ export type StackFrameInput = {
   +methodName: ?string,
   ...
 };
-export type StackFrameOutput = $ReadOnly<{
+export type IntermediateStackFrame = {
   ...StackFrameInput,
-  +collapse: boolean,
+  collapse?: boolean,
+  ...
+};
+export type StackFrameOutput = $ReadOnly<{
+  ...IntermediateStackFrame,
   ...
 }>;
 type ExplodedSourceMapModule = $ElementType<ExplodedSourceMap, number>;
-type Position = {|+line1Based: number, column0Based: number|};
+type Position = {+line1Based: number, column0Based: number};
 
 function createFunctionNameGetter(
   module: ExplodedSourceMapModule,
@@ -58,12 +67,21 @@ async function symbolicate(
   stack: $ReadOnlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
+  extraData: mixed,
 ): Promise<$ReadOnlyArray<StackFrameOutput>> {
-  const mapsByUrl = new Map();
+  const mapsByUrl = new Map<?string, ExplodedSourceMap>();
   for (const [url, map] of maps) {
     mapsByUrl.set(url, map);
   }
-  const functionNameGetters = new Map();
+  const functionNameGetters = new Map<
+    {
+      +firstLine1Based: number,
+      +functionMap: ?FBSourceFunctionMap,
+      +map: Array<MetroSourceMapSegmentTuple>,
+      +path: string,
+    },
+    (Position) => ?string,
+  >();
 
   function findModule(frame: StackFrameInput): ?ExplodedSourceMapModule {
     const map = mapsByUrl.get(frame.file);
@@ -124,7 +142,15 @@ async function symbolicate(
     };
   }
 
-  function findFunctionName(originalPos, module): ?string {
+  function findFunctionName(
+    originalPos: Position,
+    module: {
+      +firstLine1Based: number,
+      +functionMap: ?FBSourceFunctionMap,
+      +map: Array<MetroSourceMapSegmentTuple>,
+      +path: string,
+    },
+  ): ?string {
     if (module.functionMap) {
       let getFunctionName = functionNameGetters.get(module);
       if (!getFunctionName) {
@@ -136,10 +162,10 @@ async function symbolicate(
     return null;
   }
 
-  function symbolicateFrame(frame: StackFrameInput): StackFrameInput {
+  function symbolicateFrame(frame: StackFrameInput): IntermediateStackFrame {
     const module = findModule(frame);
     if (!module) {
-      return frame;
+      return {...frame};
     }
     if (!Array.isArray(module.map)) {
       throw new Error(
@@ -148,7 +174,7 @@ async function symbolicate(
     }
     const originalPos = findOriginalPos(frame, module);
     if (!originalPos) {
-      return frame;
+      return {...frame};
     }
     const methodName =
       findFunctionName(originalPos, module) ?? frame.methodName;
@@ -161,15 +187,41 @@ async function symbolicate(
     };
   }
 
+  /**
+   * `customizeFrame` allows for custom modifications of the symbolicated frame in a stack.
+   * It can be used to collapse stack frames that are not relevant to users, pointing them
+   * to more relevant product code instead.
+   *
+   * An example usecase is a library throwing an error while sanitizing inputs from product code.
+   * In some cases, it's more useful to point the developer looking at the error towards the product code directly.
+   */
   async function customizeFrame(
-    frame: StackFrameInput,
-  ): Promise<StackFrameOutput> {
+    frame: IntermediateStackFrame,
+  ): Promise<IntermediateStackFrame> {
     const customizations =
       (await config.symbolicator.customizeFrame(frame)) || {};
-    return {...frame, collapse: false, ...customizations};
+    return {...frame, ...customizations};
   }
 
-  return Promise.all(stack.map(symbolicateFrame).map(customizeFrame));
+  /**
+   * `customizeStack` allows for custom modifications of a symbolicated stack.
+   * Where `customizeFrame` operates on individual frames, this hook can process the entire stack in context.
+   *
+   * Note: `customizeStack` has access to an `extraData` object which can be used to attach metadata
+   * to the error coming in, to be used by the customizeStack hook.
+   */
+  async function customizeStack(
+    symbolicatedStack: Array<IntermediateStackFrame>,
+  ): Promise<Array<IntermediateStackFrame>> {
+    return await config.symbolicator.customizeStack(
+      symbolicatedStack,
+      extraData,
+    );
+  }
+
+  return Promise.all(stack.map(symbolicateFrame).map(customizeFrame)).then(
+    customizeStack,
+  );
 }
 
 module.exports = symbolicate;

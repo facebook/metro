@@ -1,30 +1,35 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
+
+import type {CustomResolverOptions} from 'metro-resolver';
+import type {CustomTransformOptions} from 'metro-transform-worker';
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
+import type {Terminal} from 'metro-core';
 
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
 
-const {Terminal} = require('metro-core');
-
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
 export type BundleDetails = {
   bundleType: string,
+  customResolverOptions: CustomResolverOptions,
+  customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
   minify: boolean,
   platform: ?string,
-  runtimeBytecodeVersion: ?number,
   ...
 };
 
@@ -46,6 +51,10 @@ export type ReportableEvent =
       ...
     }
   | {
+      type: 'initialize_done',
+      port: number,
+    }
+  | {
       buildID: string,
       type: 'bundle_build_done',
       ...
@@ -58,6 +67,7 @@ export type ReportableEvent =
   | {
       buildID: string,
       bundleDetails: BundleDetails,
+      isPrefetch?: boolean,
       type: 'bundle_build_started',
       ...
     }
@@ -117,7 +127,30 @@ export type ReportableEvent =
         | 'groupEnd'
         | 'debug',
       data: Array<mixed>,
+      mode: 'BRIDGE' | 'NOBRIDGE',
       ...
+    }
+  | {
+      type: 'resolver_warning',
+      message: string,
+    }
+  | {
+      type: 'transformer_load_started',
+    }
+  | {
+      type: 'transformer_load_done',
+    }
+  | {
+      type: 'transformer_load_failed',
+      error: Error,
+    }
+  | {
+      type: 'watcher_health_check_result',
+      result: HealthCheckResult,
+    }
+  | {
+      type: 'watcher_status',
+      status: WatcherStatus,
     };
 
 /**
@@ -138,7 +171,7 @@ export type ReportableEvent =
  * TerminalReporter, that should be the only place in the application should
  * access the `terminal` module (nor the `console`).
  */
-export type Reporter = {update(event: ReportableEvent): void, ...};
+export type Reporter = interface {update(event: ReportableEvent): void};
 
 /**
  * A standard way to log a warning to the terminal. This should not be called

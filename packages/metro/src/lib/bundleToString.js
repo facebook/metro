@@ -1,11 +1,12 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
  * @format
+ * @oncall react_native
  */
 
 'use strict';
@@ -18,9 +19,10 @@ import type {
 /**
  * Serializes a bundle into a plain JS bundle.
  */
-function bundleToString(
-  bundle: Bundle,
-): {|+code: string, +metadata: BundleMetadata|} {
+function bundleToString(bundle: Bundle): {
+  +code: string,
+  +metadata: BundleMetadata,
+} {
   let code = bundle.pre.length > 0 ? bundle.pre + '\n' : '';
   const modules = [];
 

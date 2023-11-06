@@ -1,19 +1,19 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+metro_bundler
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-
 import type {CustomTransformOptions} from 'metro-transform-worker';
+
+const nullthrows = require('nullthrows');
 
 const PREFIX = 'transform.';
 
@@ -26,6 +26,7 @@ module.exports = function parseCustomTransformOptions(urlObj: {
 
   Object.keys(query).forEach((key: string) => {
     if (key.startsWith(PREFIX)) {
+      // $FlowFixMe[prop-missing]
       customTransformOptions[key.substr(PREFIX.length)] = query[key];
     }
   });
