@@ -76,7 +76,9 @@ module.exports = function parseOptionsFromUrl(
       // when loading the bundle for either Android or iOS.
       // TODO(T167298674): Remove when remote debugging is not needed in React Native
       protocol:
-        platform != null && platform.match(/^(android|ios|vr)$/) ? 'http' : '',
+        platform != null && platform.match(/^(android|ios|vr|windows|macos)$/)
+          ? 'http'
+          : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
     sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
