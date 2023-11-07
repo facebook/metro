@@ -30,7 +30,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     ).not.toBe(
@@ -48,7 +50,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -70,7 +74,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     ).not.toBe(
@@ -88,7 +94,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -110,7 +118,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     ).toBe(
@@ -128,7 +138,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -154,7 +166,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     ).toBe(
@@ -176,7 +190,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -201,6 +217,7 @@ describe('getGraphId', () => {
           customResolverOptions: {
             foo: 'bar',
           },
+          dev: true,
         },
       }),
     ).not.toBe(
@@ -212,6 +229,7 @@ describe('getGraphId', () => {
           customResolverOptions: {
             something: 'else',
           },
+          dev: true,
         },
       }),
     );
@@ -237,6 +255,7 @@ describe('getGraphId', () => {
             a: true,
             b: false,
           },
+          dev: true,
         },
       }),
     ).toBe(
@@ -249,6 +268,7 @@ describe('getGraphId', () => {
             b: false,
             a: true,
           },
+          dev: true,
         },
       }),
     );
@@ -274,6 +294,7 @@ describe('getGraphId', () => {
           unstable_allowRequireContext: false,
           resolverOptions: {
             customResolverOptions: undefined,
+            dev: true,
           },
         },
       ),
@@ -292,7 +313,9 @@ describe('getGraphId', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );

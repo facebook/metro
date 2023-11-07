@@ -112,6 +112,9 @@ export type ResolutionContext = $ReadOnly<{
   doesFileExist: DoesFileExist,
   extraNodeModules: ?{[string]: string, ...},
 
+  /** Is resolving for a development bundle. */
+  dev: boolean,
+
   /**
    * Get the parsed contents of the specified `package.json` file.
    */
