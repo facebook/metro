@@ -55,14 +55,14 @@ export type GetTransformOptions = (
 export type Middleware = HandleFunction;
 
 type PerfAnnotations = Partial<{
-  string: {[key: string]: string},
-  int: {[key: string]: number},
-  double: {[key: string]: number},
-  bool: {[key: string]: boolean},
-  string_array: {[key: string]: Array<string>},
-  int_array: {[key: string]: Array<number>},
-  double_array: {[key: string]: Array<number>},
-  bool_array: {[key: string]: Array<boolean>},
+  string: $ReadOnly<{[key: string]: string}>,
+  int: $ReadOnly<{[key: string]: number}>,
+  double: $ReadOnly<{[key: string]: number}>,
+  bool: $ReadOnly<{[key: string]: boolean}>,
+  string_array: $ReadOnly<{[key: string]: $ReadOnlyArray<string>}>,
+  int_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
+  double_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
+  bool_array: $ReadOnly<{[key: string]: $ReadOnlyArray<boolean>}>,
 }>;
 
 type PerfLoggerPointOptions = $ReadOnly<{
