@@ -262,7 +262,7 @@ export default class FileMap extends EventEmitter {
 
     if (options.perfLoggerFactory) {
       this._startupPerfLogger =
-        options.perfLoggerFactory?.('START_UP').subSpan('hasteMap') ?? null;
+        options.perfLoggerFactory?.('START_UP').subSpan('fileMap') ?? null;
       this._startupPerfLogger?.point('constructor_start');
     }
 
