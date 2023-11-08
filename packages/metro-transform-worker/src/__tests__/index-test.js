@@ -42,13 +42,9 @@ const babelTransformerPath = require.resolve(
 const transformerContents = (() =>
   require('fs').readFileSync(babelTransformerPath))();
 
-function getExpectedHeaderDev(expectedInferredFactoryName: string) {
-  return `__d(function ${expectedInferredFactoryName}__module_factory__(global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {`;
-}
-
-function getExpectedHeaderProd() {
-  return '__d(function (g, r, i, a, m, e, d) {';
-}
+const HEADER_DEV =
+  '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
+const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 
 let fs: FSType;
 let Transformer: TransformerType;
@@ -134,9 +130,7 @@ it('transforms a simple module', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toBe(
-    [getExpectedHeaderDev('local_file_js'), '  arbitrary(code);', '});'].join(
-      '\n',
-    ),
+    [HEADER_DEV, '  arbitrary(code);', '});'].join('\n'),
   );
   expect(result.output[0].data.map).toMatchSnapshot();
   expect(result.output[0].data.functionMap).toMatchSnapshot();
@@ -163,7 +157,7 @@ it('transforms a module with dependencies', async () => {
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toBe(
     [
-      getExpectedHeaderDev('local_file_js'),
+      HEADER_DEV,
       '  "use strict";',
       '',
       '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
@@ -252,7 +246,7 @@ it('transforms import/export syntax when experimental flag is on', async () => {
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toBe(
     [
-      getExpectedHeaderDev('local_file_js'),
+      HEADER_DEV,
       '  "use strict";',
       '',
       '  var c = _$$_IMPORT_DEFAULT(_dependencyMap[0], "./c");',
@@ -282,11 +276,7 @@ it('does not add "use strict" on non-modules', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toBe(
-    [
-      getExpectedHeaderDev('node_modules_local_file_js'),
-      '  module.exports = {};',
-      '});',
-    ].join('\n'),
+    [HEADER_DEV, '  module.exports = {};', '});'].join('\n'),
   );
 });
 
@@ -345,7 +335,7 @@ it('supports dynamic dependencies from within `node_modules`', async () => {
     ).output[0].data.code,
   ).toBe(
     [
-      getExpectedHeaderDev('node_modules_foo_bar_js'),
+      HEADER_DEV,
       '  (function (line) {',
       "    throw new Error('Dynamic require defined at line ' + line + '; not supported by Metro');",
       '  })(1);',
@@ -365,7 +355,7 @@ it('minifies the code correctly', async () => {
         {...baseTransformOptions, minify: true},
       )
     ).output[0].data.code,
-  ).toBe([getExpectedHeaderProd(), '  minified(code);', '});'].join('\n'));
+  ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
 });
 
 it('minifies a JSON file', async () => {
@@ -571,23 +561,4 @@ it('allows outputting comments when `minify: true`', async () => {
       /*#__PURE__*/minified(code);
     });"
   `);
-});
-
-it('omits invalid characters from module factory name', async () => {
-  const result = await Transformer.transform(
-    baseConfig,
-    '/root',
-    'local/!@£% weird name.js',
-    Buffer.from('arbitrary(code)', 'utf8'),
-    baseTransformOptions,
-  );
-
-  expect(result.output[0].type).toBe('js/module');
-  expect(result.output[0].data.code).toBe(
-    [
-      getExpectedHeaderDev('local______weird_name_js'),
-      '  arbitrary(code);',
-      '});',
-    ].join('\n'),
-  );
 });

@@ -346,11 +346,6 @@ async function transformJS(
   let dependencies;
   let wrappedAst;
 
-  const minify =
-    options.minify &&
-    options.unstable_transformProfile !== 'hermes-canary' &&
-    options.unstable_transformProfile !== 'hermes-stable';
-
   // If the module to transform is a script (meaning that is not part of the
   // dependency graph and it code will just be prepended to the bundle modules),
   // we need to wrap it differently than a commonJS module (also, scripts do
@@ -387,20 +382,20 @@ async function transformJS(
     if (config.unstable_disableModuleWrapping === true) {
       wrappedAst = ast;
     } else {
-      let moduleFactoryName;
-      if (options.dev && !minify) {
-        moduleFactoryName = file.filename;
-      }
       ({ast: wrappedAst} = JsFileWrapping.wrapModule(
         ast,
         importDefault,
         importAll,
         dependencyMapName,
         config.globalPrefix,
-        moduleFactoryName,
       ));
     }
   }
+
+  const minify =
+    options.minify &&
+    options.unstable_transformProfile !== 'hermes-canary' &&
+    options.unstable_transformProfile !== 'hermes-stable';
 
   const reserved = [];
   if (config.unstable_dependencyMapReservedName != null) {

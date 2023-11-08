@@ -240,7 +240,7 @@ Object {
 `;
 
 exports[`transforms an es module with asyncToGenerator 1`] = `
-"__d(function local_file_js__module_factory__(global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+"__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
   Object.defineProperty(exports, \\"__esModule\\", {
     value: true
@@ -268,7 +268,7 @@ Object {
 `;
 
 exports[`transforms async generators 1`] = `
-"__d(function local_file_js__module_factory__(global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+"__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
   Object.defineProperty(exports, \\"__esModule\\", {
     value: true
