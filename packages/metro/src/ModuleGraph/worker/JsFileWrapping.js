@@ -32,6 +32,7 @@ function wrapModule(
   importAllName: string,
   dependencyMapName: string,
   globalPrefix: string,
+  moduleFactoryName?: string,
 ): {
   ast: BabelNodeFile,
   requireName: string,
@@ -41,7 +42,11 @@ function wrapModule(
     importAllName,
     dependencyMapName,
   );
-  const factory = functionFromProgram(fileAst.program, params);
+  const factory = functionFromProgram(
+    fileAst.program,
+    params,
+    moduleFactoryName,
+  );
   const def = t.callExpression(t.identifier(`${globalPrefix}__d`), [factory]);
   const ast = t.file(t.program([t.expressionStatement(def)]));
 
@@ -76,12 +81,26 @@ function wrapJson(source: string, globalPrefix: string): string {
   ].join('\n');
 }
 
+const JS_INVALID_IDENT_RE = /[^a-zA-Z0-9$_]/g;
+
 function functionFromProgram(
   program: Program,
   parameters: $ReadOnlyArray<string>,
+  moduleFactoryName?: string,
 ): FunctionExpression {
+  let identifier;
+  if (typeof moduleFactoryName === 'string' && moduleFactoryName !== '') {
+    // Keep the name readable so it shows up in profiler traces.
+    // Add an unlikely suffix to avoid collisions with the module code.
+    identifier = t.identifier(
+      `${moduleFactoryName.replace(
+        JS_INVALID_IDENT_RE,
+        '_',
+      )}__module_factory__`,
+    );
+  }
   return t.functionExpression(
-    undefined,
+    identifier,
     parameters.map(makeIdentifier),
     t.blockStatement(program.body, program.directives),
   );
