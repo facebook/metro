@@ -21,6 +21,8 @@ suppress_type=$FlowFixMeState
 suppress_type=$FlowFixMeEmpty
 suppress_type=$FlowExpectedError
 
+casting_syntax=both
+
 [lints]
 sketchy-null-number=warn
 sketchy-null-mixed=warn
