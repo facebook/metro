@@ -455,6 +455,24 @@ describe('with package exports resolution enabled', () => {
         expect(logWarning).not.toHaveBeenCalled();
       });
     });
+
+    describe('haste package', () => {
+      test('should resolve subpath in "exports"', () => {
+        const context = {
+          ...baseContext,
+          resolveHastePackage(name: string) {
+            if (name === 'test-pkg') {
+              return '/root/node_modules/test-pkg/package.json';
+            }
+            return null;
+          },
+        };
+        expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
+      });
+    });
   });
 
   describe('subpath patterns', () => {
