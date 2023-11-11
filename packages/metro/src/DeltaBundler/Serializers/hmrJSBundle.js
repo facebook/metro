@@ -42,7 +42,7 @@ function generateModules(
       // Construct a bundle URL for this specific module only
       const getURL = (extension: 'bundle' | 'map') => {
         options.clientUrl.pathname = path.relative(
-          options.projectRoot,
+          options.serverRoot ?? options.projectRoot,
           path.join(
             path.dirname(module.path),
             path.basename(module.path, path.extname(module.path)) +
