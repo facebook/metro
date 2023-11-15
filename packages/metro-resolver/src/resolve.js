@@ -206,7 +206,7 @@ function resolveHasteName(
   const packageDirPath = path.dirname(packageJsonPath);
   const pathInModule = moduleName.substring(packageName.length + 1);
   const potentialModulePath = path.join(packageDirPath, pathInModule);
-  const result = resolveModulePath(context, potentialModulePath, platform);
+  const result = resolvePackage(context, potentialModulePath, platform);
   if (result.type === 'resolved') {
     return result;
   }
