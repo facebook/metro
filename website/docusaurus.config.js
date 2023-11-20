@@ -48,8 +48,8 @@ const siteConfig = {
   tagline: '\ud83d\ude87 The JavaScript bundler for React Native',
   organizationName: 'facebook',
   projectName: 'metro',
-  url: 'https://facebook.github.io',
-  baseUrl: '/metro/',
+  url: 'https://metrobundler.dev',
+  baseUrl: '/',
   favicon: 'img/favicon.png',
   themeConfig: {
     announcementBar: {
