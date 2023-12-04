@@ -56,7 +56,12 @@ class HttpGetStore<T> extends HttpStore<T> {
         ].join(' '),
       );
 
-      Logger.createEntry(`CACHE_ERROR: ${err.message} (${err.code})`);
+      Logger.log(
+        Logger.createEntry({
+          action_name: 'HttpGetStore:Warning',
+          log_entry_label: `${err.message} (${err.code})`,
+        }),
+      );
       this._warned = true;
     }
   }
