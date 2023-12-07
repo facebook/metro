@@ -9,6 +9,29 @@
  * @oncall react_native
  */
 
+/*
+ * Diagrams in this file are created with the help of
+ * https://dot-to-ascii.ggerganov.com/ with rankdir=lr and "Boxart" mode, e.g:
+ *
+ * digraph {
+ *   rankdir = lr
+ *   "/bundle" -> "/foo"
+ *   "/foo" -> "/bar"
+ *   "/foo" -> "/baz"
+ *   "/baz" -> "/foo"
+ *   "/baz" -> "/async" [style=dotted,label="async"]
+ * }
+ *
+ * - Represent the delta visually: use thicker lines for added modules/edges,
+ *   cross out deleted modules/edges (this needs to be done manually)
+ * - Put a comment above each initialTraverseDependencies or
+ *   traverseDependencies call with the state of the graph which that call will
+ *   observe.
+ * - Ideally, keep the same graph layout from comment to comment (e.g. first
+ *   render out the most complete version of the graph and manually remove
+ *   boxes/lines as needed).
+ */
+
 import type {
   Dependency,
   MixedOutput,
@@ -844,6 +867,108 @@ describe('edge cases', () => {
       deleted: new Set(['/foo', '/bar', '/baz']),
     });
   });
+
+  it('removes a cycle with a weak dependency', async () => {
+    Actions.addDependency('/baz', '/foo');
+    Actions.addDependency('/baz', '/weak', {data: {asyncType: 'weak'}});
+    files.clear();
+
+    /*
+    Initial state contains a /foo-/baz cycle with a weak leaf.
+
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐  weak    ┌───────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /baz │ ·······▶ │ /weak │
+    └─────────┘     └──────┘     └──────┘          └───────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /bar │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    /*
+    Remove /bundle -> /foo to cause the cycle to be collected.
+
+                        ┌────────────┐
+                        ▼            │
+    ┌─────────┐   /  ┌──────┐     ┌──────┐  weak    ┌───────┐
+    │ /bundle │ ─/─▶ │ /foo │ ──▶ │ /baz │ ·······▶ │ /weak │
+    └─────────┘ /    └──────┘     └──────┘          └───────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /bar │
+                      └──────┘
+    */
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  it.each([true, false])(
+    'removes a cycle with an async dependency when lazy: %s',
+    async lazy => {
+      Actions.addDependency('/baz', '/foo');
+      Actions.addDependency('/baz', '/async', {data: {asyncType: 'async'}});
+      files.clear();
+
+      /*
+      Initial state contains a /foo-/baz cycle with an async leaf.
+
+                        ┌────────────┐
+                        ▼            │
+      ┌─────────┐     ┌──────┐     ┌──────┐  async   ┌────────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /baz │ ·······▶ │ /async │
+      └─────────┘     └──────┘     └──────┘          └────────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /bar │
+                      └──────┘
+      */
+
+      const localOptions = {...options, lazy};
+      await graph.initialTraverseDependencies(localOptions);
+
+      /*
+      Remove /bundle -> /foo to cause the cycle to be collected.
+
+                          ┌────────────┐
+                          ▼            │
+      ┌─────────┐   /  ┌──────┐     ┌──────┐  async   ┌────────┐
+      │ /bundle │ ─/─▶ │ /foo │ ──▶ │ /baz │ ·······▶ │ /async │
+      └─────────┘ /    └──────┘     └──────┘          └────────┘
+                          │
+                          │
+                          ▼
+                        ┌──────┐
+                        │ /bar │
+                        └──────┘
+      */
+      Actions.removeDependency('/bundle', '/foo');
+
+      expect(
+        getPaths(await graph.traverseDependencies([...files], localOptions)),
+      ).toEqual({
+        added: new Set(),
+        modified: new Set(['/bundle']),
+        // The /async node was never in the graph in lazy mode.
+        deleted: new Set(['/foo', '/bar', '/baz', ...(lazy ? [] : ['/async'])]),
+      });
+    },
+  );
 
   it('removes a cyclic dependency which is both inverse dependency and direct dependency', async () => {
     Actions.addDependency('/foo', '/bundle');

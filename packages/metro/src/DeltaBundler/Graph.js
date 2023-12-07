@@ -202,7 +202,7 @@ export class Graph<T = MixedOutput> {
       }
     }
 
-    this._collectCycles(delta);
+    this._collectCycles(delta, internalOptions);
 
     const added = new Map<string, Module<T>>();
     for (const path of delta.added) {
@@ -709,6 +709,21 @@ export class Graph<T = MixedOutput> {
     this.#gc.color.set(module.path, 'black');
   }
 
+  // Iterate "children" of the given module - i.e. non-weak / async
+  // dependencies having a corresponding inverse dependency.
+  *_children(
+    module: Module<T>,
+    options: InternalOptions<T>,
+  ): Iterator<Module<T>> {
+    for (const dependency of module.dependencies.values()) {
+      const asyncType = dependency.data.data.asyncType;
+      if (asyncType === 'weak' || (options.lazy && asyncType != null)) {
+        continue;
+      }
+      yield nullthrows(this.dependencies.get(dependency.absolutePath));
+    }
+  }
+
   // Delete an unreachable module (and its outbound edges) from the graph
   // immediately.
   // Called when the reference count of a module has reached 0.
@@ -749,13 +764,13 @@ export class Graph<T = MixedOutput> {
   }
 
   // Collect any unreachable cycles in the graph.
-  _collectCycles(delta: Delta) {
+  _collectCycles(delta: Delta, options: InternalOptions<T>) {
     // Mark recursively from roots (trial deletion)
     for (const path of this.#gc.possibleCycleRoots) {
       const module = nullthrows(this.dependencies.get(path));
       const color = nullthrows(this.#gc.color.get(path));
       if (color === 'purple') {
-        this._markGray(module);
+        this._markGray(module, options);
       } else {
         this.#gc.possibleCycleRoots.delete(path);
         if (
@@ -770,7 +785,7 @@ export class Graph<T = MixedOutput> {
     // Scan recursively from roots (undo unsuccessful trial deletions)
     for (const path of this.#gc.possibleCycleRoots) {
       const module = nullthrows(this.dependencies.get(path));
-      this._scan(module);
+      this._scan(module, options);
     }
     // Collect recursively from roots (free unreachable cycles)
     for (const path of this.#gc.possibleCycleRoots) {
@@ -780,52 +795,43 @@ export class Graph<T = MixedOutput> {
     }
   }
 
-  _markGray(module: Module<T>) {
+  _markGray(module: Module<T>, options: InternalOptions<T>) {
     const color = nullthrows(this.#gc.color.get(module.path));
     if (color !== 'gray') {
       this.#gc.color.set(module.path, 'gray');
-      for (const dependency of module.dependencies.values()) {
-        const childModule = nullthrows(
-          this.dependencies.get(dependency.absolutePath),
-        );
+      for (const childModule of this._children(module, options)) {
         // The inverse dependency will be restored during the scan phase if this module remains live.
         childModule.inverseDependencies.delete(module.path);
-        this._markGray(childModule);
+        this._markGray(childModule, options);
       }
     }
   }
 
-  _scan(module: Module<T>) {
+  _scan(module: Module<T>, options: InternalOptions<T>) {
     const color = nullthrows(this.#gc.color.get(module.path));
     if (color === 'gray') {
       if (
         module.inverseDependencies.size > 0 ||
         this.entryPoints.has(module.path)
       ) {
-        this._scanBlack(module);
+        this._scanBlack(module, options);
       } else {
         this.#gc.color.set(module.path, 'white');
-        for (const dependency of module.dependencies.values()) {
-          const childModule = nullthrows(
-            this.dependencies.get(dependency.absolutePath),
-          );
-          this._scan(childModule);
+        for (const childModule of this._children(module, options)) {
+          this._scan(childModule, options);
         }
       }
     }
   }
 
-  _scanBlack(module: Module<T>) {
+  _scanBlack(module: Module<T>, options: InternalOptions<T>) {
     this.#gc.color.set(module.path, 'black');
-    for (const dependency of module.dependencies.values()) {
-      const childModule = nullthrows(
-        this.dependencies.get(dependency.absolutePath),
-      );
+    for (const childModule of this._children(module, options)) {
       // The inverse dependency must have been deleted during the mark phase.
       childModule.inverseDependencies.add(module.path);
       const childColor = nullthrows(this.#gc.color.get(childModule.path));
       if (childColor !== 'black') {
-        this._scanBlack(childModule);
+        this._scanBlack(childModule, options);
       }
     }
   }
