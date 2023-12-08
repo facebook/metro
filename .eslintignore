@@ -9,3 +9,4 @@ flow-typed/**
 packages/*/build/**
 website/
 **/third-party/**
+scripts/eslint/rules/sort-imports.js
