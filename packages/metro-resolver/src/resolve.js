@@ -19,17 +19,17 @@ import type {
   Result,
 } from './types';
 
-import path from 'path';
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
-import formatFileCandidates from './errors/formatFileCandidates';
-import {getPackageEntryPoint} from './PackageResolve';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
+import {getPackageEntryPoint} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
+import path from 'path';
 
 function resolve(
   context: ResolutionContext,

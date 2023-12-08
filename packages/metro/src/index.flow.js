@@ -11,11 +11,10 @@
 
 'use strict';
 
-import type {HandleFunction} from 'connect';
-import type {CustomResolverOptions} from 'metro-resolver';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
+import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 import type {
@@ -24,6 +23,7 @@ import type {
   MetroConfig,
   Middleware,
 } from 'metro-config/src/configTypes.flow';
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
 

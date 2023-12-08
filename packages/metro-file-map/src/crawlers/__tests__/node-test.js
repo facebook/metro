@@ -8,8 +8,8 @@
  * @oncall react_native
  */
 
-import {AbortController} from 'node-abort-controller';
 import TreeFS from '../../lib/TreeFS';
+import {AbortController} from 'node-abort-controller';
 
 jest.useRealTimers();
 

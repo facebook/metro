@@ -9,7 +9,6 @@
  */
 
 import type {BuildParameters} from '../../flow-types';
-
 import typeof PathModule from 'path';
 
 import rootRelativeCacheKeys from '../rootRelativeCacheKeys';

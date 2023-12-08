@@ -9,13 +9,13 @@
  * @oncall react_native
  */
 
-import parseKeyValueParamArray from '../cli/parseKeyValueParamArray';
-
+import type {RunBuildOptions} from '../index';
 import type {CustomTransformOptions} from 'metro-babel-transformer';
 import type {CustomResolverOptions} from 'metro-resolver';
-import type {RunBuildOptions} from '../index';
-import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
+import typeof Yargs from 'yargs';
+
+import parseKeyValueParamArray from '../cli/parseKeyValueParamArray';
 
 const {makeAsyncCommand} = require('../cli-utils');
 const TerminalReporter = require('../lib/TerminalReporter');

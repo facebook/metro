@@ -13,9 +13,10 @@
 
 import type {ResolutionContext} from '../index';
 
+import {createResolutionContext} from './utils';
+
 const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
 const Resolver = require('../index');
-import {createResolutionContext} from './utils';
 
 const fileMap = {
   '/root/project/foo.js': '',

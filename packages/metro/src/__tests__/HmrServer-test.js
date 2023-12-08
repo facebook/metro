@@ -9,18 +9,18 @@
  * @oncall react_native
  */
 
-import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
+import type {TransformResultDependency} from '../DeltaBundler/types.flow';
 import type {Client} from '../HmrServer';
-import {mergeConfig} from 'metro-config';
+import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
 
 import DeltaBundler from '../DeltaBundler';
 import IncrementalBundler from '../IncrementalBundler';
 import EventEmitter from 'events';
+import {mergeConfig} from 'metro-config';
 
 const HmrServer = require('../HmrServer');
 const getGraphId = require('../lib/getGraphId');
 const {getDefaultValues} = require('metro-config/src/defaults');
-import type {TransformResultDependency} from '../DeltaBundler/types.flow';
 
 jest.mock('../lib/transformHelpers', () => ({
   getResolveDependencyFn:

@@ -19,14 +19,13 @@ import type {
   TransformResultDependency,
 } from '../DeltaBundler/types.flow';
 import type {TransformOptions} from '../DeltaBundler/Worker';
+import type {ResolverInputOptions} from '../shared/types.flow';
+import type {RequireContext} from './contextModule';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
-import type {RequireContext} from './contextModule';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
 import isAssetFile from 'metro-resolver/src/utils/isAssetFile';
-
-import type {ResolverInputOptions} from '../shared/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 

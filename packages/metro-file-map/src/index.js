@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {IJestWorker} from 'jest-worker';
 import type {
   BuildParameters,
   BuildResult,
@@ -19,24 +18,25 @@ import type {
   CanonicalPath,
   ChangeEvent,
   ChangeEventMetadata,
-  CrawlerOptions,
   Console,
+  CrawlerOptions,
   EventsQueue,
   FileData,
   FileMetaData,
   FileSystem,
-  HType,
   HasteMapData,
   HasteMapItem,
+  HType,
   MutableFileSystem,
   Path,
-  PerfLoggerFactory,
   PerfLogger,
+  PerfLoggerFactory,
   RawMockMap,
   ReadOnlyRawMockMap,
-  WorkerMetadata,
   WatchmanClocks,
+  WorkerMetadata,
 } from './flow-types';
+import type {IJestWorker} from 'jest-worker';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
@@ -44,19 +44,19 @@ import getMockName from './getMockName';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import {DuplicateError} from './lib/DuplicateError';
 import * as fastPath from './lib/fast_path';
+import MockMapImpl from './lib/MockMap';
+import MutableHasteMap from './lib/MutableHasteMap';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import TreeFS from './lib/TreeFS';
-import MutableHasteMap from './lib/MutableHasteMap';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
 import EventEmitter from 'events';
 import invariant from 'invariant';
 import {Worker} from 'jest-worker';
-import * as path from 'path';
 import {AbortController} from 'node-abort-controller';
-import {performance} from 'perf_hooks';
 import nullthrows from 'nullthrows';
-import MockMapImpl from './lib/MockMap';
+import * as path from 'path';
+import {performance} from 'perf_hooks';
 
 const debug = require('debug')('Metro:FileMap');
 

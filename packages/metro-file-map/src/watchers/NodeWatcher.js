@@ -15,8 +15,8 @@
 
 'use strict';
 
-import type {WatcherOptions} from './common';
 import type {ChangeEventMetadata} from '../flow-types';
+import type {WatcherOptions} from './common';
 import type {FSWatcher, Stats} from 'fs';
 
 const common = require('./common');

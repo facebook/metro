@@ -11,9 +11,9 @@
 
 'use strict';
 
-import path from 'path';
 import Resolver from '../index';
 import {createResolutionContext} from './utils';
+import path from 'path';
 
 describe('asset resolutions', () => {
   const baseContext = {

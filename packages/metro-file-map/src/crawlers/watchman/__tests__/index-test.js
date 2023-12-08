@@ -10,6 +10,7 @@
  */
 
 import type {CrawlerOptions} from '../../../flow-types';
+
 import TreeFS from '../../../lib/TreeFS';
 import watchmanCrawl from '../index';
 import EventEmitter from 'events';

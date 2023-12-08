@@ -10,6 +10,7 @@
  */
 
 import type {MockMap as IMockMap, Path, RawMockMap} from '../flow-types';
+
 import {resolve} from './fast_path';
 
 export default class MockMap implements IMockMap {

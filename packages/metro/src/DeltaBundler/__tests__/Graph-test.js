@@ -32,6 +32,8 @@
  *   boxes/lines as needed).
  */
 
+import type {RequireContext} from '../../lib/contextModule';
+import type {Result} from '../Graph';
 import type {
   Dependency,
   MixedOutput,
@@ -42,14 +44,11 @@ import type {
   TransformResultDependency,
   TransformResultWithSource,
 } from '../types.flow';
-import type {Result} from '../Graph';
-import type {RequireContext} from '../../lib/contextModule';
 
-import CountingSet from '../../lib/CountingSet';
 import {deriveAbsolutePathFromContext} from '../../lib/contextModule';
-import nullthrows from 'nullthrows';
-
+import CountingSet from '../../lib/CountingSet';
 import {Graph} from '../Graph';
+import nullthrows from 'nullthrows';
 
 const {objectContaining} = expect;
 

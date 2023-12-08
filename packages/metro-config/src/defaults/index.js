@@ -15,13 +15,13 @@ import type {ConfigT} from '../configTypes.flow';
 
 const {
   DEFAULT_METRO_MINIFIER_PATH,
+  additionalExts,
   assetExts,
   assetResolutions,
-  additionalExts,
   defaultCreateModuleIdFactory,
+  noopPerfLoggerFactory,
   platforms,
   sourceExts,
-  noopPerfLoggerFactory,
 } = require('./defaults');
 const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');

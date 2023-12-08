@@ -10,8 +10,8 @@
  */
 
 import {
-  fileMatchesContext,
   deriveAbsolutePathFromContext,
+  fileMatchesContext,
 } from '../contextModule';
 
 describe('deriveAbsolutePathFromContext', () => {

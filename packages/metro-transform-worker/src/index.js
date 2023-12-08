@@ -45,10 +45,10 @@ const {
 } = require('metro-source-map');
 const metroTransformPlugins = require('metro-transform-plugins');
 const countLines = require('metro/src/lib/countLines');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
 } = require('metro/src/ModuleGraph/worker/collectDependencies');
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 const nullthrows = require('nullthrows');

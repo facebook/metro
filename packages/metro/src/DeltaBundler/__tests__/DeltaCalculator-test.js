@@ -9,16 +9,16 @@
  * @oncall react_native
  */
 
+import type {Graph as GraphType, Result} from '../Graph';
 import type {
+  Dependency,
   Module,
   Options,
-  Dependency,
   TransformResultDependency,
 } from '../types.flow';
-import type {Graph as GraphType, Result} from '../Graph';
 
-import path from 'path';
 import CountingSet from '../../lib/CountingSet';
+import path from 'path';
 
 jest.mock('../../Bundler');
 

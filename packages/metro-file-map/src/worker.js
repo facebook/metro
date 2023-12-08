@@ -18,8 +18,8 @@ const H = require('./constants');
 const dependencyExtractor = require('./lib/dependencyExtractor');
 const excludedExtensions = require('./workerExclusionList');
 const {createHash} = require('crypto');
-const fs = require('graceful-fs');
 const {promises: fsPromises} = require('fs');
+const fs = require('graceful-fs');
 const path = require('path');
 
 const PACKAGE_JSON = path.sep + 'package.json';

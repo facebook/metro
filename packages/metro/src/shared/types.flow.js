@@ -16,6 +16,7 @@ import type {
   TransformInputOptions,
 } from '../DeltaBundler/types.flow';
 import type {TransformProfile} from 'metro-babel-transformer';
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {
   MetroSourceMapSegmentTuple,
   MixedSourceMap,
@@ -24,7 +25,6 @@ import type {
   CustomTransformOptions,
   MinifierOptions,
 } from 'metro-transform-worker';
-import type {CustomResolverOptions} from 'metro-resolver';
 
 type BundleType =
   | 'bundle'

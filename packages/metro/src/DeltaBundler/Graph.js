@@ -29,8 +29,8 @@
  *    nodes and entries in the importBundleNodes set.
  */
 
-import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {
   Dependencies,
   Dependency,
@@ -42,13 +42,13 @@ import type {
   TransformResultDependency,
 } from './types.flow';
 
-import CountingSet from '../lib/CountingSet';
 import {
   deriveAbsolutePathFromContext,
   fileMatchesContext,
 } from '../lib/contextModule';
-
+import CountingSet from '../lib/CountingSet';
 import * as path from 'path';
+
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 

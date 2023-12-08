@@ -13,18 +13,18 @@
 
 import type {Module} from '../types.flow';
 
-export type SourceMapGeneratorOptions = $ReadOnly<{
-  excludeSource: boolean,
-  processModuleFilter: (module: Module<>) => boolean,
-  shouldAddToIgnoreList: (module: Module<>) => boolean,
-}>;
-
 const getSourceMapInfo = require('./helpers/getSourceMapInfo');
 const {isJsModule} = require('./helpers/js');
 const {
   fromRawMappings,
   fromRawMappingsNonBlocking,
 } = require('metro-source-map');
+
+export type SourceMapGeneratorOptions = $ReadOnly<{
+  excludeSource: boolean,
+  processModuleFilter: (module: Module<>) => boolean,
+  shouldAddToIgnoreList: (module: Module<>) => boolean,
+}>;
 
 function getSourceMapInfosImpl(
   isBlocking: boolean,

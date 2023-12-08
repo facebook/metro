@@ -9,14 +9,13 @@
  * @oncall react_native
  */
 
-import {transformSync} from '@babel/core';
-import fs from 'fs';
-
+import type {DefineFn, RequireFn} from '../require';
 import typeof React from 'react';
 import typeof ReactRefreshRuntime from 'react-refresh/runtime';
 import typeof ReactTestRenderer from 'react-test-renderer';
 
-import type {DefineFn, RequireFn} from '../require';
+import {transformSync} from '@babel/core';
+import fs from 'fs';
 
 type RuntimeGlobal = Object;
 

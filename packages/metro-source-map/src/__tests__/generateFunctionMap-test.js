@@ -11,8 +11,8 @@
 
 'use strict';
 
-import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 import type {Context} from '../generateFunctionMap';
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {
   functionMapBabelPlugin,

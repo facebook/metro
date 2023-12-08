@@ -11,11 +11,12 @@
 
 'use strict';
 
-import path from 'path';
-import {Graph} from './Graph';
 import type {DeltaResult, Options} from './types.flow';
 import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEventMetadata} from 'metro-file-map';
+
+import {Graph} from './Graph';
+import path from 'path';
 
 const debug = require('debug')('Metro:DeltaCalculator');
 const {EventEmitter} = require('events');

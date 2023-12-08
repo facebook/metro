@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
@@ -17,8 +18,6 @@ import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
-import type MetroServer from 'metro/src/Server';
-
 import type {
   DeltaResult,
   Module,
@@ -26,7 +25,7 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
+import type MetroServer from 'metro/src/Server';
 
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true, ...} | false,

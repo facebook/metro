@@ -8,8 +8,9 @@
  * @flow strict-local
  */
 
-import {copyContextToObject, awaitProperties} from './utils';
 import type {RequireWithContext} from './utils';
+
+import {awaitProperties, copyContextToObject} from './utils';
 
 declare var require: RequireWithContext;
 

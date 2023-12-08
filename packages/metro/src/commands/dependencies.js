@@ -12,8 +12,8 @@
 'use strict';
 
 import type {ConfigT} from 'metro-config';
-import typeof Yargs from 'yargs';
 import type {ModuleObject} from 'yargs';
+import typeof Yargs from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
 const Server = require('../Server');

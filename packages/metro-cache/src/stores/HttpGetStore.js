@@ -10,9 +10,9 @@
 
 'use strict';
 
-import type {HttpOptions} from 'metro-cache';
 import type HttpError from './HttpError';
 import type NetworkError from './NetworkError';
+import type {HttpOptions} from 'metro-cache';
 
 const HttpStore = require('./HttpStore');
 const {Logger} = require('metro-core');

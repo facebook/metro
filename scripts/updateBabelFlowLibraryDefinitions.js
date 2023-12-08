@@ -13,8 +13,8 @@
  * This script updates all flow types. Run it every time you upgrade babel
  */
 
-import {promises as fsPromises} from 'fs';
 import generateBabelFlowLibraryDefinitions from './support/generateBabelFlowLibraryDefinitions';
+import {promises as fsPromises} from 'fs';
 
 async function main() {
   const newContentByFile = await generateBabelFlowLibraryDefinitions();

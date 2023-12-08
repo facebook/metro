@@ -9,8 +9,8 @@
  * @oncall react_native
  */
 
-import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
 import type {ResolutionContext} from './types';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
 
 import {redirectModulePath} from './PackageResolve';
 

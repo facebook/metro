@@ -11,11 +11,11 @@
 
 'use strict';
 
-import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {Node} from '@babel/types';
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import traverse from '@babel/traverse';
 import {

@@ -9,8 +9,8 @@
  * @oncall react_native
  */
 
-import type TreeFS from '../TreeFS';
 import type {FileData} from '../../flow-types';
+import type TreeFS from '../TreeFS';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);

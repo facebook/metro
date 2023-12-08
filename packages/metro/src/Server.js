@@ -11,7 +11,6 @@
 
 'use strict';
 
-import type {StackFrameOutput} from './Server/symbolicate';
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -25,6 +24,7 @@ import type {
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
+import type {StackFrameOutput} from './Server/symbolicate';
 import type {
   BundleOptions,
   GraphOptions,
@@ -61,10 +61,9 @@ const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
+const MultipartResponse = require('./Server/MultipartResponse');
 const symbolicate = require('./Server/symbolicate');
 const {codeFrameColumns} = require('@babel/code-frame');
-const MultipartResponse = require('./Server/MultipartResponse');
-const {performance} = require('perf_hooks');
 const debug = require('debug')('Metro:Server');
 const fs = require('graceful-fs');
 const invariant = require('invariant');
@@ -73,10 +72,10 @@ const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-
 const mime = require('mime-types');
 const nullthrows = require('nullthrows');
 const path = require('path');
+const {performance} = require('perf_hooks');
 const querystring = require('querystring');
 const url = require('url');
 

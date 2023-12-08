@@ -18,16 +18,16 @@ import type {
   TransformResultDependency,
 } from '../../DeltaBundler/types.flow';
 
-// $FlowFixMe[untyped-import]
-import MockResponse from 'mock-res';
+import CountingSet from '../../lib/CountingSet';
+import {mergeConfig} from 'metro-config/src';
 // $FlowFixMe[untyped-import]
 import MockRequest from 'mock-req';
-import {mergeConfig} from 'metro-config/src';
+// $FlowFixMe[untyped-import]
+import MockResponse from 'mock-res';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
 const {getDefaultValues} = require('metro-config/src/defaults');
 const path = require('path');
-import CountingSet from '../../lib/CountingSet';
 
 jest
   .mock('jest-worker', () => ({}))

@@ -20,17 +20,17 @@ import type {
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
 import type {AbortSignal} from 'node-abort-controller';
 
-import watchmanCrawl from './crawlers/watchman';
 import nodeCrawl from './crawlers/node';
-import WatchmanWatcher from './watchers/WatchmanWatcher';
+import watchmanCrawl from './crawlers/watchman';
+import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 import NodeWatcher from './watchers/NodeWatcher';
-import * as path from 'path';
-import * as fs from 'fs';
-import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
+import WatchmanWatcher from './watchers/WatchmanWatcher';
 import EventEmitter from 'events';
-import {performance} from 'perf_hooks';
+import * as fs from 'fs';
 import nullthrows from 'nullthrows';
+import * as path from 'path';
+import {performance} from 'perf_hooks';
 
 const debug = require('debug')('Metro:Watcher');
 
