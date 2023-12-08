@@ -30,6 +30,7 @@ module.exports = {
     'consistent-return': 'error',
     'import/no-extraneous-dependencies': 'error',
     'lint/extra-arrow-initializer': 'off',
+    'lint/sort-imports': 'warn',
     'lint/strictly-null': 'warn',
     'max-len': 'off',
     'no-alert': 'error',
