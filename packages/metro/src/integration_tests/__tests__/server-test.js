@@ -101,4 +101,20 @@ describe('Metro development server serves bundles via HTTP', () => {
       ]),
     );
   });
+
+  test('responds with 404 when the bundle cannot be resolved', async () => {
+    const response = await fetch(
+      'http://localhost:' + config.server.port + '/doesnotexist.bundle',
+    );
+    expect(response.status).toBe(404);
+  });
+
+  test('responds with 500 when an import inside the bundle cannot be resolved', async () => {
+    const response = await fetch(
+      'http://localhost:' +
+        config.server.port +
+        '/build-errors/inline-requires-cannot-resolve-import.bundle',
+    );
+    expect(response.status).toBe(500);
+  });
 });

@@ -60,6 +60,9 @@ const getGraphId = require('./lib/getGraphId');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
+const {
+  UnableToResolveError,
+} = require('./node-haste/DependencyGraph/ModuleResolution');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const MultipartResponse = require('./Server/MultipartResponse');
 const symbolicate = require('./Server/symbolicate');
@@ -610,11 +613,23 @@ class Server {
        * `entryFile` is relative to projectRoot, we need to use resolution function
        * to find the appropriate file with supported extensions.
        */
-      const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
-        relativeTo: 'server',
-        resolverOptions,
-        transformOptions,
-      });
+      let resolvedEntryFilePath;
+      try {
+        resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
+          relativeTo: 'server',
+          resolverOptions,
+          transformOptions,
+        });
+      } catch (error) {
+        const formattedError = formatBundlingError(error);
+
+        const status = error instanceof UnableToResolveError ? 404 : 500;
+        res.writeHead(status, {
+          'Content-Type': 'application/json; charset=UTF-8',
+        });
+        res.end(JSON.stringify(formattedError));
+        return;
+      }
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         unstable_allowRequireContext:
           this._config.transformer.unstable_allowRequireContext,
