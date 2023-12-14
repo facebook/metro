@@ -365,6 +365,7 @@ function getNameForPath(path: NodePath<>): string {
   return name;
 }
 
+// $FlowFixMe[deprecated-type]
 function isAnyCallExpression(node: Node): boolean %checks {
   return (
     node.type === 'CallExpression' ||
@@ -373,6 +374,7 @@ function isAnyCallExpression(node: Node): boolean %checks {
   );
 }
 
+// $FlowFixMe[deprecated-type]
 function isAnyMemberExpression(node: Node): boolean %checks {
   return (
     node.type === 'MemberExpression' ||
@@ -381,6 +383,7 @@ function isAnyMemberExpression(node: Node): boolean %checks {
   );
 }
 
+// $FlowFixMe[deprecated-type]
 function isAnyIdentifier(node: Node): boolean %checks {
   return isIdentifier(node) || isJSXIdentifier(node);
 }

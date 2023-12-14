@@ -87,6 +87,7 @@ function prepareModule(
   const inverseDependenciesById = Object.create(null);
   Object.keys(inverseDependencies).forEach((path: string) => {
     // $FlowFixMe[prop-missing]
+    // $FlowFixMe[invalid-computed-prop]
     inverseDependenciesById[options.createModuleId(path)] = inverseDependencies[
       path
     ].map(options.createModuleId);
