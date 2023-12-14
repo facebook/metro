@@ -86,10 +86,6 @@ type Delta<T> = $ReadOnly<{
   touched: Set<string>,
   deleted: Set<string>,
 
-  // A place to temporarily track inverse dependencies for a module while it is
-  // being processed but has not been added to `graph.dependencies` yet.
-  earlyInverseDependencies: Map<string, CountingSet<string>>,
-
   moduleData: Map<string, ModuleData<T>>,
 }>;
 
@@ -210,7 +206,6 @@ export class Graph<T = MixedOutput> {
       added: new Set<string>(),
       touched: new Set<string>(),
       deleted: new Set<string>(),
-      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
       moduleData,
     };
 
@@ -278,7 +273,6 @@ export class Graph<T = MixedOutput> {
       added: new Set<string>(),
       touched: new Set<string>(),
       deleted: new Set<string>(),
-      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
       moduleData,
     };
 
@@ -319,8 +313,7 @@ export class Graph<T = MixedOutput> {
 
     const nextModule = {
       ...(previousModule ?? {
-        inverseDependencies:
-          delta.earlyInverseDependencies.get(path) ?? new CountingSet(),
+        inverseDependencies: new CountingSet(),
         path,
       }),
       ...transformResult,
@@ -436,26 +429,12 @@ export class Graph<T = MixedOutput> {
       this._incrementImportBundleReference(dependency, parentModule);
     } else {
       if (!module) {
-        // Add a new node to the graph.
-        const earlyInverseDependencies =
-          delta.earlyInverseDependencies.get(path);
-        if (earlyInverseDependencies) {
-          // This module is being transformed at the moment in parallel, so we
-          // should only mark its parent as an inverse dependency.
-          earlyInverseDependencies.add(parentModule.path);
-        } else {
-          delta.earlyInverseDependencies.set(path, new CountingSet());
-
-          module = this._recursivelyCommitModule(path, delta, options);
-
-          this.dependencies.set(module.path, module);
-        }
+        module = this._recursivelyCommitModule(path, delta, options);
       }
-      if (module) {
-        // We either added a new node to the graph, or we're updating an existing one.
-        module.inverseDependencies.add(parentModule.path);
-        this._markModuleInUse(module);
-      }
+
+      // We either added a new node to the graph, or we're updating an existing one.
+      module.inverseDependencies.add(parentModule.path);
+      this._markModuleInUse(module);
     }
 
     // Always update the parent's dependency map.
@@ -696,7 +675,6 @@ export class Graph<T = MixedOutput> {
     // Clean up all the state associated with this module in order to correctly
     // re-add it if we encounter it again.
     this.dependencies.delete(module.path);
-    delta.earlyInverseDependencies.delete(module.path);
     this.#gc.possibleCycleRoots.delete(module.path);
     this.#gc.color.delete(module.path);
     this.#resolvedContexts.delete(module.path);
