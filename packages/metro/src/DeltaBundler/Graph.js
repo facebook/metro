@@ -240,10 +240,6 @@ export class Graph<T = MixedOutput> {
       this._recursivelyCommitModule(path, delta, internalOptions);
     }
 
-    this.reorderGraph({
-      shallow: options.shallow,
-    });
-
     return {
       added: this.dependencies,
       modified: new Map(),
@@ -504,59 +500,6 @@ export class Graph<T = MixedOutput> {
   *getModifiedModulesForDeletedPath(filePath: string): Iterable<string> {
     yield* this.dependencies.get(filePath)?.inverseDependencies ?? [];
     yield* this.#importBundleNodes.get(filePath)?.inverseDependencies ?? [];
-  }
-
-  /**
-   * Re-traverse the dependency graph in DFS order to reorder the modules and
-   * guarantee the same order between runs. This method mutates the passed graph.
-   */
-  reorderGraph(options: {shallow: boolean, ...}): void {
-    const orderedDependencies = new Map<string, Module<T>>();
-
-    this.entryPoints.forEach((entryPoint: string) => {
-      const mainModule = this.dependencies.get(entryPoint);
-
-      if (!mainModule) {
-        throw new ReferenceError(
-          'Module not registered in graph: ' + entryPoint,
-        );
-      }
-
-      this._reorderDependencies(mainModule, orderedDependencies, options);
-    });
-    this.dependencies.clear();
-    for (const [key, dep] of orderedDependencies) {
-      this.dependencies.set(key, dep);
-    }
-  }
-
-  _reorderDependencies(
-    module: Module<T>,
-    orderedDependencies: Map<string, Module<T>>,
-    options: {shallow: boolean, ...},
-  ): void {
-    if (module.path) {
-      if (orderedDependencies.has(module.path)) {
-        return;
-      }
-
-      orderedDependencies.set(module.path, module);
-    }
-
-    module.dependencies.forEach((dependency: Dependency) => {
-      const path = dependency.absolutePath;
-      const childModule = this.dependencies.get(path);
-
-      if (!childModule) {
-        if (dependency.data.data.asyncType != null || options.shallow) {
-          return;
-        } else {
-          throw new ReferenceError('Module not registered in graph: ' + path);
-        }
-      }
-
-      this._reorderDependencies(childModule, orderedDependencies, options);
-    });
   }
 
   /** Garbage collection functions */

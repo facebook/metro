@@ -35,7 +35,6 @@
 import type {RequireContext} from '../../lib/contextModule';
 import type {Result} from '../Graph';
 import type {
-  Dependency,
   MixedOutput,
   Module,
   Options,
@@ -3067,62 +3066,6 @@ describe('require.context', () => {
     expect(getMatchingContextModules(graph, '/ctx/matched-file')).toEqual(
       new Set(),
     );
-  });
-});
-
-describe('reorderGraph', () => {
-  it('should reorder any unordered graph in DFS order', async () => {
-    const dep = (path: string): Dependency => ({
-      absolutePath: path,
-      data: {
-        data: {
-          asyncType: null,
-          locs: [],
-          key: path.substr(1),
-        },
-        name: path.substr(1),
-      },
-    });
-
-    const mod = (moduleData: {
-      dependencies: Map<string, Dependency>,
-      path: string,
-    }): Module<MixedOutput> => ({
-      ...moduleData,
-      output: [],
-      getSource: () => Buffer.from('// source'),
-      // NOTE: inverseDependencies is traversal state/output, not input, so we
-      // don't pre-populate it.
-      inverseDependencies: new CountingSet(),
-    });
-
-    const graph = new TestGraph({
-      entryPoints: new Set(['/a', '/b']),
-      transformOptions: options.transformOptions,
-    });
-    // prettier-ignore
-    const deps = [
-      ['/2', mod({path: '/2', dependencies: new Map()})],
-      ['/0', mod({path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])})],
-      ['/1', mod({path: '/1', dependencies: new Map([['/2', dep('/2')]])})],
-      ['/3', mod({path: '/3', dependencies: new Map([])})],
-      ['/b', mod({path: '/b', dependencies: new Map([['/3', dep('/3')]])})],
-      ['/a', mod({path: '/a', dependencies: new Map([['/0', dep('/0')]])})],
-    ];
-    for (const [key, dep] of deps) {
-      graph.dependencies.set(key, dep);
-    }
-
-    graph.reorderGraph({shallow: false});
-
-    expect([...graph.dependencies.keys()]).toEqual([
-      '/a',
-      '/0',
-      '/1',
-      '/2',
-      '/b',
-      '/3',
-    ]);
   });
 });
 
