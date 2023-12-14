@@ -171,43 +171,20 @@ export class Graph<T = MixedOutput> {
   ): Promise<Result<T>> {
     const internalOptions = getInternalOptions(options);
 
-    const modifiedPathsInBaseGraph = paths.filter(path =>
-      this.dependencies.has(path),
+    const modifiedPathsInBaseGraph = new Set(
+      paths.filter(path => this.dependencies.has(path)),
     );
 
     const allModifiedPaths = new Set(paths);
 
-    const moduleData = await buildSubgraph(
-      new Set(modifiedPathsInBaseGraph),
-      this.#resolvedContexts,
-      {
-        resolve: options.resolve,
-        transform: async (absolutePath, requireContext) => {
-          internalOptions.onDependencyAdd();
-          const result = await options.transform(absolutePath, requireContext);
-          internalOptions.onDependencyAdded();
-          return result;
-        },
-        shouldTraverse: (dependency: Dependency) => {
-          if (
-            // Don't traverse into any path that hasn't been modified and as is
-            // already in the graph.
-            this.dependencies.has(dependency.absolutePath) &&
-            !allModifiedPaths.has(dependency.absolutePath)
-          ) {
-            return false;
-          }
-          return !options.shallow && !isWeakOrLazy(dependency, internalOptions);
-        },
-      },
+    const delta = await this._buildDelta(
+      modifiedPathsInBaseGraph,
+      internalOptions,
+      // Traverse new or modified paths
+      absolutePath =>
+        !this.dependencies.has(absolutePath) ||
+        allModifiedPaths.has(absolutePath),
     );
-
-    const delta = {
-      added: new Set<string>(),
-      touched: new Set<string>(),
-      deleted: new Set<string>(),
-      moduleData,
-    };
 
     for (const modified of modifiedPathsInBaseGraph) {
       if (this.dependencies.has(modified)) {
@@ -257,28 +234,11 @@ export class Graph<T = MixedOutput> {
       this.#gc.color.set(path, 'black');
     }
 
-    const moduleData = await buildSubgraph(this.entryPoints, new Map(), {
-      resolve: options.resolve,
-      transform: async (absolutePath, requireContext) => {
-        internalOptions.onDependencyAdd();
-        const result = await options.transform(absolutePath, requireContext);
-        internalOptions.onDependencyAdded();
-        return result;
-      },
-      shouldTraverse: (dependency: Dependency) =>
-        !options.shallow && !isWeakOrLazy(dependency, internalOptions),
-    });
+    const delta = await this._buildDelta(this.entryPoints, internalOptions);
 
-    const delta = {
-      added: new Set<string>(),
-      touched: new Set<string>(),
-      deleted: new Set<string>(),
-      moduleData,
-    };
-
-    [...this.entryPoints].forEach((path: string) =>
-      this._recursivelyCommitModule(path, delta, internalOptions),
-    );
+    for (const path of this.entryPoints) {
+      this._recursivelyCommitModule(path, delta, internalOptions);
+    }
 
     this.reorderGraph({
       shallow: options.shallow,
@@ -288,6 +248,39 @@ export class Graph<T = MixedOutput> {
       added: this.dependencies,
       modified: new Map(),
       deleted: new Set(),
+    };
+  }
+
+  async _buildDelta(
+    pathsToVisit: $ReadOnlySet<string>,
+    options: InternalOptions<T>,
+    moduleFilter?: (path: string) => boolean,
+  ): Promise<Delta<T>> {
+    const moduleData = await buildSubgraph(
+      pathsToVisit,
+      this.#resolvedContexts,
+      {
+        resolve: options.resolve,
+        transform: async (absolutePath, requireContext) => {
+          options.onDependencyAdd();
+          const result = await options.transform(absolutePath, requireContext);
+          options.onDependencyAdded();
+          return result;
+        },
+        shouldTraverse: (dependency: Dependency) => {
+          if (!options.shallow && isWeakOrLazy(dependency, options)) {
+            return false;
+          }
+          return moduleFilter == null || moduleFilter(dependency.absolutePath);
+        },
+      },
+    );
+
+    return {
+      added: new Set<string>(),
+      touched: new Set<string>(),
+      deleted: new Set<string>(),
+      moduleData,
     };
   }
 
