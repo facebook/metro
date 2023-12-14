@@ -25,41 +25,41 @@ export type MixedOutput = {
 
 export type AsyncDependencyType = 'async' | 'prefetch' | 'weak';
 
-export type TransformResultDependency = {
+export type TransformResultDependency = $ReadOnly<{
   /**
    * The literal name provided to a require or import call. For example 'foo' in
    * case of `require('foo')`.
    */
-  +name: string,
+  name: string,
 
   /**
    * Extra data returned by the dependency extractor.
    */
-  +data: {
+  data: $ReadOnly<{
     /**
      * A locally unique key for this dependency within the current module.
      */
-    +key: string,
+    key: string,
     /**
      * If not null, this dependency is due to a dynamic `import()` or `__prefetchImport()` call.
      */
-    +asyncType: AsyncDependencyType | null,
+    asyncType: AsyncDependencyType | null,
     /**
      * The dependency is enclosed in a try/catch block.
      */
-    +isOptional?: boolean,
+    isOptional?: boolean,
 
-    +locs: $ReadOnlyArray<BabelSourceLocation>,
+    locs: $ReadOnlyArray<BabelSourceLocation>,
 
     /** Context for requiring a collection of modules. */
-    +contextParams?: RequireContextParams,
-  },
-};
+    contextParams?: RequireContextParams,
+  }>,
+}>;
 
-export type Dependency = {
-  +absolutePath: string,
-  +data: TransformResultDependency,
-};
+export type Dependency = $ReadOnly<{
+  absolutePath: string,
+  data: TransformResultDependency,
+}>;
 
 export type Module<T = MixedOutput> = $ReadOnly<{
   dependencies: Map<string, Dependency>,
