@@ -37,17 +37,14 @@ import type {
   GraphInputOptions,
   MixedOutput,
   Module,
+  ModuleData,
   Options,
   TransformInputOptions,
-  TransformResultDependency,
 } from './types.flow';
 
-import {
-  deriveAbsolutePathFromContext,
-  fileMatchesContext,
-} from '../lib/contextModule';
+import {buildSubgraph} from './buildSubgraph';
+import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
-import * as path from 'path';
 
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
@@ -80,7 +77,7 @@ export type Result<T> = {
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta = $ReadOnly<{
+type Delta<T> = $ReadOnly<{
   // `added` and `deleted` are mutually exclusive.
   // Internally, a module can be in both `modified` and (either) `added` or
   // `deleted`. We fix this up before returning the delta to the client.
@@ -91,6 +88,8 @@ type Delta = $ReadOnly<{
   // A place to temporarily track inverse dependencies for a module while it is
   // being processed but has not been added to `graph.dependencies` yet.
   earlyInverseDependencies: Map<string, CountingSet<string>>,
+
+  moduleData: Map<string, ModuleData<T>>,
 }>;
 
 type InternalOptions<T> = $ReadOnly<{
@@ -120,6 +119,14 @@ function getInternalOptions<T>({
     onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
     shallow,
   };
+}
+
+function isWeakOrLazy<T>(
+  dependency: Dependency,
+  options: InternalOptions<T>,
+): boolean {
+  const asyncType = dependency.data.data.asyncType;
+  return asyncType === 'weak' || (asyncType != null && options.lazy);
 }
 
 export class Graph<T = MixedOutput> {
@@ -165,13 +172,6 @@ export class Graph<T = MixedOutput> {
     paths: $ReadOnlyArray<string>,
     options: Options<T>,
   ): Promise<Result<T>> {
-    const delta = {
-      added: new Set<string>(),
-      modified: new Set<string>(),
-      deleted: new Set<string>(),
-      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
-    };
-
     const internalOptions = getInternalOptions(options);
 
     // Record the paths that are part of the dependency graph before we start
@@ -186,19 +186,48 @@ export class Graph<T = MixedOutput> {
       }
     }
 
-    for (const [path] of originalModules) {
-      // Traverse over modules that are part of the dependency graph.
-      //
-      // Note: A given path may not be part of the graph *at this time*, in
-      // particular it may have been removed since we started traversing, but
-      // in that case the path will be visited if and when we add it back to
-      // the graph in a subsequent iteration.
-      if (this.dependencies.has(path)) {
-        await this._traverseDependenciesForSingleFile(
-          path,
-          delta,
-          internalOptions,
-        );
+    const allModifiedPaths = new Set(paths);
+
+    const modifiedPathsInBaseGraph = paths.filter(path =>
+      this.dependencies.has(path),
+    );
+
+    const moduleData = await buildSubgraph(
+      new Set(modifiedPathsInBaseGraph),
+      this.#resolvedContexts,
+      {
+        resolve: options.resolve,
+        transform: async (absolutePath, requireContext) => {
+          internalOptions.onDependencyAdd();
+          const result = await options.transform(absolutePath, requireContext);
+          internalOptions.onDependencyAdded();
+          return result;
+        },
+        shouldTraverse: (dependency: Dependency) => {
+          if (
+            // Don't traverse into any path that hasn't been modified and as is
+            // already in the graph.
+            this.dependencies.has(dependency.absolutePath) &&
+            !allModifiedPaths.has(dependency.absolutePath)
+          ) {
+            return false;
+          }
+          return !options.shallow && !isWeakOrLazy(dependency, internalOptions);
+        },
+      },
+    );
+
+    const delta = {
+      added: new Set<string>(),
+      modified: new Set<string>(),
+      deleted: new Set<string>(),
+      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
+      moduleData,
+    };
+
+    for (const modified of modifiedPathsInBaseGraph) {
+      if (this.dependencies.has(modified)) {
+        this._recursivelyCommitModule(modified, delta, internalOptions);
       }
     }
 
@@ -232,8 +261,9 @@ export class Graph<T = MixedOutput> {
             // Module.dependencies is mutable, so it's not obviously the case
             // that referential equality implies no modification. However, we
             // only mutate dependencies in two cases:
-            // 1. Within _processModule. In that case, we always mutate a new
-            //    module and set a new reference in this.dependencies.
+            // 1. Within _recursivelyCommitModule. In that case, we always
+            //    mutate a new module and set a new reference in
+            //    this.dependencies.
             // 2. During _releaseModule, when recursively removing
             //    dependencies. In that case, we immediately discard the module
             //    object.
@@ -257,13 +287,6 @@ export class Graph<T = MixedOutput> {
   }
 
   async initialTraverseDependencies(options: Options<T>): Promise<Result<T>> {
-    const delta = {
-      added: new Set<string>(),
-      modified: new Set<string>(),
-      deleted: new Set<string>(),
-      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
-    };
-
     const internalOptions = getInternalOptions(options);
 
     invariant(
@@ -280,10 +303,28 @@ export class Graph<T = MixedOutput> {
       this.#gc.color.set(path, 'black');
     }
 
-    await Promise.all(
-      [...this.entryPoints].map((path: string) =>
-        this._traverseDependenciesForSingleFile(path, delta, internalOptions),
-      ),
+    const moduleData = await buildSubgraph(this.entryPoints, new Map(), {
+      resolve: options.resolve,
+      transform: async (absolutePath, requireContext) => {
+        internalOptions.onDependencyAdd();
+        const result = await options.transform(absolutePath, requireContext);
+        internalOptions.onDependencyAdded();
+        return result;
+      },
+      shouldTraverse: (dependency: Dependency) =>
+        !options.shallow && !isWeakOrLazy(dependency, internalOptions),
+    });
+
+    const delta = {
+      added: new Set<string>(),
+      modified: new Set<string>(),
+      deleted: new Set<string>(),
+      earlyInverseDependencies: new Map<string, CountingSet<string>>(),
+      moduleData,
+    };
+
+    [...this.entryPoints].forEach((path: string) =>
+      this._recursivelyCommitModule(path, delta, internalOptions),
     );
 
     this.reorderGraph({
@@ -297,37 +338,25 @@ export class Graph<T = MixedOutput> {
     };
   }
 
-  async _traverseDependenciesForSingleFile(
+  _recursivelyCommitModule(
     path: string,
-    delta: Delta,
+    delta: Delta<T>,
     options: InternalOptions<T>,
-  ): Promise<void> {
-    options.onDependencyAdd();
-
-    await this._processModule(path, delta, options);
-
-    options.onDependencyAdded();
-  }
-
-  async _processModule(
-    path: string,
-    delta: Delta,
-    options: InternalOptions<T>,
-  ): Promise<Module<T>> {
-    const resolvedContext = this.#resolvedContexts.get(path);
-
+  ): Module<T> {
     // Transform the file via the given option.
     // TODO: Unbind the transform method from options
-    const result = await options.transform(path, resolvedContext);
+    const result = nullthrows(delta.moduleData.get(path));
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
-    const {dependencies: currentDependencies, resolvedContexts} =
-      this._resolveDependencies(path, result.dependencies, options);
 
     const previousModule = this.dependencies.get(path);
-
     const previousDependencies = previousModule?.dependencies ?? new Map();
+    const {
+      dependencies: currentDependencies,
+      resolvedContexts,
+      ...transformResult
+    } = result;
 
     const nextModule = {
       ...(previousModule ?? {
@@ -335,10 +364,8 @@ export class Graph<T = MixedOutput> {
           delta.earlyInverseDependencies.get(path) ?? new CountingSet(),
         path,
       }),
+      ...transformResult,
       dependencies: new Map(previousDependencies),
-      getSource: result.getSource,
-      output: result.output,
-      unstable_transformResultKey: result.unstable_transformResultKey,
     };
 
     // Update the module information.
@@ -358,22 +385,21 @@ export class Graph<T = MixedOutput> {
     }
 
     // Diff dependencies (2/2): add dependencies that have changed or been added.
-    const addDependencyPromises = [];
+    let dependenciesAdded = false;
     for (const [key, curDependency] of currentDependencies) {
       const prevDependency = previousDependencies.get(key);
       if (
         !prevDependency ||
         !dependenciesEqual(prevDependency, curDependency, options)
       ) {
-        addDependencyPromises.push(
-          this._addDependency(
-            nextModule,
-            key,
-            curDependency,
-            resolvedContexts.get(key),
-            delta,
-            options,
-          ),
+        dependenciesAdded = true;
+        this._addDependency(
+          nextModule,
+          key,
+          curDependency,
+          resolvedContexts.get(key),
+          delta,
+          options,
         );
       }
     }
@@ -382,7 +408,7 @@ export class Graph<T = MixedOutput> {
       previousModule &&
       !transfromOutputMayDiffer(previousModule, nextModule) &&
       !dependenciesRemoved &&
-      addDependencyPromises.length === 0
+      !dependenciesAdded
     ) {
       // We have not operated on nextModule, so restore previousModule
       // to aid diffing.
@@ -391,8 +417,6 @@ export class Graph<T = MixedOutput> {
     }
 
     delta.modified.add(path);
-
-    await Promise.all(addDependencyPromises);
 
     // Replace dependencies with the correctly-ordered version. As long as all
     // the above promises have resolved, this will be the same map but without
@@ -406,19 +430,19 @@ export class Graph<T = MixedOutput> {
       'Failed to add the correct dependencies',
     );
 
-    nextModule.dependencies = currentDependencies;
+    nextModule.dependencies = new Map(currentDependencies);
 
     return nextModule;
   }
 
-  async _addDependency(
+  _addDependency(
     parentModule: Module<T>,
     key: string,
     dependency: Dependency,
     requireContext: ?RequireContext,
-    delta: Delta,
+    delta: Delta<T>,
     options: InternalOptions<T>,
-  ): Promise<void> {
+  ): void {
     const path = dependency.absolutePath;
 
     if (requireContext) {
@@ -461,9 +485,7 @@ export class Graph<T = MixedOutput> {
           }
           delta.earlyInverseDependencies.set(path, new CountingSet());
 
-          options.onDependencyAdd();
-          module = await this._processModule(path, delta, options);
-          options.onDependencyAdded();
+          module = this._recursivelyCommitModule(path, delta, options);
 
           this.dependencies.set(module.path, module);
         }
@@ -486,7 +508,7 @@ export class Graph<T = MixedOutput> {
     parentModule: Module<T>,
     key: string,
     dependency: Dependency,
-    delta: Delta,
+    delta: Delta<T>,
     options: InternalOptions<T>,
   ): void {
     parentModule.dependencies.delete(key);
@@ -549,81 +571,6 @@ export class Graph<T = MixedOutput> {
   *getModifiedModulesForDeletedPath(filePath: string): Iterable<string> {
     yield* this.dependencies.get(filePath)?.inverseDependencies ?? [];
     yield* this.#importBundleNodes.get(filePath)?.inverseDependencies ?? [];
-  }
-
-  _resolveDependencies(
-    parentPath: string,
-    dependencies: $ReadOnlyArray<TransformResultDependency>,
-    options: InternalOptions<T>,
-  ): {
-    dependencies: Map<string, Dependency>,
-    resolvedContexts: Map<string, RequireContext>,
-  } {
-    const maybeResolvedDeps = new Map<string, void | Dependency>();
-    const resolvedContexts = new Map<string, RequireContext>();
-    for (const dep of dependencies) {
-      let resolvedDep;
-      const key = dep.data.key;
-
-      // `require.context`
-      const {contextParams} = dep.data;
-      if (contextParams) {
-        // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
-        // statements can be used to target the same file with different properties.
-        const from = path.join(parentPath, '..', dep.name);
-        const absolutePath = deriveAbsolutePathFromContext(from, contextParams);
-
-        const resolvedContext: RequireContext = {
-          from,
-          mode: contextParams.mode,
-          recursive: contextParams.recursive,
-          filter: new RegExp(
-            contextParams.filter.pattern,
-            contextParams.filter.flags,
-          ),
-        };
-
-        resolvedContexts.set(key, resolvedContext);
-
-        resolvedDep = {
-          absolutePath,
-          data: dep,
-        };
-      } else {
-        try {
-          resolvedDep = {
-            absolutePath: options.resolve(parentPath, dep).filePath,
-            data: dep,
-          };
-        } catch (error) {
-          // Ignore unavailable optional dependencies. They are guarded
-          // with a try-catch block and will be handled during runtime.
-          if (dep.data.isOptional !== true) {
-            throw error;
-          }
-        }
-      }
-
-      if (maybeResolvedDeps.has(key)) {
-        throw new Error(
-          `resolveDependencies: Found duplicate dependency key '${key}' in ${parentPath}`,
-        );
-      }
-      maybeResolvedDeps.set(key, resolvedDep);
-    }
-
-    const resolvedDeps = new Map<string, Dependency>();
-    // Return just the dependencies we successfully resolved.
-    // FIXME: This has a bad bug affecting all dependencies *after* an unresolved
-    // optional dependency. We'll need to propagate the nulls all the way to the
-    // serializer and the require() runtime to keep the dependency map from being
-    // desynced from the contents of the module.
-    for (const [key, resolvedDep] of maybeResolvedDeps) {
-      if (resolvedDep) {
-        resolvedDeps.set(key, resolvedDep);
-      }
-    }
-    return {dependencies: resolvedDeps, resolvedContexts};
   }
 
   /**
@@ -726,8 +673,7 @@ export class Graph<T = MixedOutput> {
     options: InternalOptions<T>,
   ): Iterator<Module<T>> {
     for (const dependency of module.dependencies.values()) {
-      const asyncType = dependency.data.data.asyncType;
-      if (asyncType === 'weak' || (options.lazy && asyncType != null)) {
+      if (isWeakOrLazy(dependency, options)) {
         continue;
       }
       yield nullthrows(this.dependencies.get(dependency.absolutePath));
@@ -737,7 +683,37 @@ export class Graph<T = MixedOutput> {
   // Delete an unreachable module (and its outbound edges) from the graph
   // immediately.
   // Called when the reference count of a module has reached 0.
-  _releaseModule(module: Module<T>, delta: Delta, options: InternalOptions<T>) {
+  _releaseModule(
+    module: Module<T>,
+    delta: Delta<T>,
+    options: InternalOptions<T>,
+  ) {
+    if (!delta.moduleData.has(module.path)) {
+      // Before releasing a module, take a snapshot of the data we might need
+      // to reintroduce it to the graph later in this commit. As it is not
+      // already present in moduleData we can infer it has not been modified,
+      // so the transform output and dependencies we copy here are current.
+      const {dependencies, getSource, output, unstable_transformResultKey} =
+        module;
+
+      const resolvedContexts: Map<string, RequireContext> = new Map();
+      for (const [key, dependency] of dependencies) {
+        const resolvedContext = this.#resolvedContexts.get(
+          dependency.absolutePath,
+        );
+        if (resolvedContext != null) {
+          resolvedContexts.set(key, resolvedContext);
+        }
+      }
+      delta.moduleData.set(module.path, {
+        dependencies: new Map(dependencies),
+        resolvedContexts,
+        getSource,
+        output,
+        unstable_transformResultKey,
+      });
+    }
+
     for (const [key, dependency] of module.dependencies) {
       this._removeDependency(module, key, dependency, delta, options);
     }
@@ -746,7 +722,7 @@ export class Graph<T = MixedOutput> {
   }
 
   // Delete an unreachable module from the graph.
-  _freeModule(module: Module<T>, delta: Delta) {
+  _freeModule(module: Module<T>, delta: Delta<T>) {
     if (delta.added.has(module.path)) {
       // Mark the deletion by clearing a prior addition.
       delta.added.delete(module.path);
@@ -774,7 +750,7 @@ export class Graph<T = MixedOutput> {
   }
 
   // Collect any unreachable cycles in the graph.
-  _collectCycles(delta: Delta, options: InternalOptions<T>) {
+  _collectCycles(delta: Delta<T>, options: InternalOptions<T>) {
     // Mark recursively from roots (trial deletion)
     for (const path of this.#gc.possibleCycleRoots) {
       const module = nullthrows(this.dependencies.get(path));
@@ -846,7 +822,7 @@ export class Graph<T = MixedOutput> {
     }
   }
 
-  _collectWhite(module: Module<T>, delta: Delta) {
+  _collectWhite(module: Module<T>, delta: Delta<T>) {
     const color = nullthrows(this.#gc.color.get(module.path));
     if (color === 'white' && !this.#gc.possibleCycleRoots.has(module.path)) {
       this.#gc.color.set(module.path, 'black');

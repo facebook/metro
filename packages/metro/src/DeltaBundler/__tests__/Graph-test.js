@@ -41,6 +41,7 @@ import type {
   Options,
   ReadOnlyDependencies,
   ReadOnlyGraph,
+  TransformFn,
   TransformResultDependency,
   TransformResultWithSource,
 } from '../types.flow';
@@ -73,6 +74,12 @@ let mockedDependencyTree: Map<
  * a changed count reflected in a change to the transform output key.
  */
 const files = new CountingSet<string>();
+
+/* The default mock transformer in these tests may be overridden for specific
+ * module paths by setting an entry in this map.
+ */
+let transformOverrides: Map<string, TransformFn<MixedOutput>>;
+
 let graph: TestGraph;
 let options;
 
@@ -334,6 +341,7 @@ function getMatchingContextModules<T>(graph: Graph<T>, filePath: string) {
 beforeEach(async () => {
   mockedDependencies = new Set();
   mockedDependencyTree = new Map();
+  transformOverrides = new Map();
 
   mockTransform = jest
     .fn<
@@ -341,6 +349,10 @@ beforeEach(async () => {
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(async (path: string, context: ?RequireContext) => {
+      const override = transformOverrides.get(path);
+      if (override != null) {
+        return override(path, context);
+      }
       const unstable_transformResultKey =
         path +
         (context
@@ -2184,6 +2196,46 @@ describe('edge cases', () => {
     expect(mockTransform.mock.calls.length).toBe(4);
   });
 
+  it('should not re-transform an unmodified file when it is removed and readded within a delta', async () => {
+    /*
+    ┌─────────┐     ┌──────┐     ┌───────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar  │
+    └─────────┘     └──────┘     └───────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.removeDependency('/foo', '/baz');
+    Actions.addDependency('/bar', '/baz');
+
+    /*
+    ┌─────────┐     ┌──────┐     ┌───────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar  │
+    └─────────┘     └──────┘     └───────┘
+                      │/           ┃
+                     /│            ┃
+                      ▽            ┃
+                    ┌──────┐       ┃
+                    │ /baz │ ◀━━━━━┛
+                    └──────┘
+    */
+    mockTransform.mockClear();
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/foo', '/bar']),
+      deleted: new Set([]),
+    });
+    // /baz has not been modified, but a naive implementation might re-transform it
+    expect(mockTransform).not.toHaveBeenCalledWith('/baz', undefined);
+  });
+
   it('should try to transform every file only once with multiple entry points', async () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/foo');
@@ -3248,6 +3300,195 @@ describe('parallel edges', () => {
       added: new Set(),
       modified: new Set(['/foo']),
       deleted: new Set(['/bar']),
+    });
+  });
+});
+
+describe('recovery from transform and resolution errors', () => {
+  beforeEach(() => {
+    transformOverrides.clear();
+  });
+
+  test('a modified parent module is reported after a child error has been cleared', async () => {
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    class BarError extends Error {}
+    transformOverrides.set('/bar', () => {
+      throw new BarError();
+    });
+    Actions.modifyFile('/foo');
+    Actions.modifyFile('/bar');
+
+    /*
+    ┌─────────┐     ┏━━━━━━┓     ┏━━━━━━┓
+    │ /bundle │ ──▶ ┃ /foo ┃ ──▶ ┃ /bar ┃ ⚠ BarError
+    └─────────┘     ┗━━━━━━┛     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toThrow(BarError);
+
+    // User fixes /bar
+    transformOverrides.clear();
+
+    // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+    /*
+    ┌─────────┐     ┏━━━━━━┓     ┏━━━━━━┓
+    │ /bundle │ ──▶ ┃ /foo ┃ ──▶ ┃ /bar ┃
+    └─────────┘     ┗━━━━━━┛     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo', '/bar']),
+      deleted: new Set(),
+    });
+  });
+
+  test('report removed dependencies after being interrupted by a transform error', async () => {
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    class BadError extends Error {}
+    transformOverrides.set('/bad', () => {
+      throw new BadError();
+    });
+    Actions.createFile('/bad');
+    Actions.removeDependency('/bundle', '/foo');
+    Actions.addDependency('/bundle', '/bad');
+
+    /*
+    ┌─────────┐     /   ┌──────┐     ┌──────┐
+    │ /bundle │ ───/──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘   /     └──────┘     └──────┘
+        ┃                 │
+        ┃                 │
+        ▼                 ▼
+    ┏━━━━━━┓            ┌──────┐
+    ┃ /bad ┃ ⚠ BadError │ /baz │
+    ┗━━━━━━┛            └──────┘
+    */
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toBeInstanceOf(BadError);
+
+    // User fixes /bad
+    transformOverrides.clear();
+
+    /*
+    ┌─────────┐     /   ┌──────┐     ┌──────┐
+    │ /bundle │ ───/──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘   /     └──────┘     └──────┘
+        ┃                 │
+        ┃                 │
+        ▼                 ▼
+    ┏━━━━━━┓            ┌──────┐
+    ┃ /bad ┃            │ /baz │
+    ┗━━━━━━┛            └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(['/bad']),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  test('report new dependencies as added after correcting an error in their dependencies', async () => {
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.createFile('/new');
+    Actions.createFile('/bad');
+    Actions.addDependency('/bar', '/new');
+    Actions.addDependency('/new', '/bad');
+    class BadError extends Error {}
+    transformOverrides.set('/bad', () => {
+      throw new BadError();
+    });
+
+    /*
+
+    ┌─────────┐     ┌──────┐     ┌──────┐     ┏━━━━━━┓     ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ━━▶ ┃ /new ┃ ━━▶ ┃ /bad ┃ ⚠ BadError
+    └─────────┘     └──────┘     └──────┘     ┗━━━━━━┛     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toBeInstanceOf(BadError);
+
+    // User fixes /bad
+    transformOverrides.clear();
+    /*
+
+    ┌─────────┐     ┌──────┐     ┌──────┐     ┏━━━━━━┓     ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ━━▶ ┃ /new ┃ ━━▶ ┃ /bad ┃
+    └─────────┘     └──────┘     └──────┘     ┗━━━━━━┛     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set(['/new', '/bad']),
+      modified: new Set(['/bar']),
+      deleted: new Set([]),
     });
   });
 });
