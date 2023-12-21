@@ -65,6 +65,7 @@ export type BundleOptions = {
 
 export type ResolverInputOptions = $ReadOnly<{
   customResolverOptions?: CustomResolverOptions,
+  dev: boolean,
 }>;
 
 export type SerializerOptions = {

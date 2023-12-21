@@ -21,6 +21,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
     entryFile: options.entryFile,
     resolverOptions: {
       customResolverOptions: options.customResolverOptions,
+      dev: options.dev,
     },
     transformOptions: {
       customTransformOptions: options.customTransformOptions,

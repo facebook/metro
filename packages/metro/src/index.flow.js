@@ -458,7 +458,7 @@ exports.buildGraph = async function (
         platform,
         type,
       },
-      {customResolverOptions},
+      {customResolverOptions, dev},
     );
   } finally {
     bundler.end();

@@ -116,7 +116,7 @@ function dep(name: string): TransformResultDependency {
       resolve: (
         from: string,
         dependency: TransformResultDependency,
-        resolverOptions?: ResolverInputOptions = {},
+        resolverOptions?: ResolverInputOptions = {dev: true},
         options: void | {assumeFlatNodeModules: boolean},
       ) =>
         dependencyGraph.resolveDependency(
@@ -2723,6 +2723,7 @@ function dep(name: string): TransformResultDependency {
         });
         expect(
           resolver.resolve(p('/root1/dir/a.js'), dep('target'), {
+            dev: true,
             customResolverOptions: {
               foo: 'bar',
               key: 'value',
@@ -2731,6 +2732,7 @@ function dep(name: string): TransformResultDependency {
         ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
         expect(
           resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
+            dev: true,
             customResolverOptions: {
               // NOTE: reverse order from what we passed above
               key: 'value',
@@ -2743,6 +2745,7 @@ function dep(name: string): TransformResultDependency {
         resolveRequest.mockClear();
         expect(
           resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
+            dev: true,
             customResolverOptions: {
               // NOTE: only a subset of the options passed above
               foo: 'bar',
@@ -2754,6 +2757,7 @@ function dep(name: string): TransformResultDependency {
         resolveRequest.mockClear();
         expect(
           resolver.resolve(p('/root1/dir/b.js'), dep('target'), {
+            dev: true,
             customResolverOptions: {
               something: 'else',
             },

@@ -335,10 +335,7 @@ class DependencyGraph extends EventEmitter {
 
     // Compound key for the resolver cache
     const resolverOptionsKey =
-      JSON.stringify(
-        resolverOptions.customResolverOptions ?? {},
-        canonicalize,
-      ) ?? '';
+      JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
     const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
     const targetKey = to;
     const platformKey = platform ?? NULL_PLATFORM;

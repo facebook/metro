@@ -120,7 +120,7 @@ class ModuleResolver<TPackage: Packageish> {
         },
         false,
         null,
-        /* resolverOptions */ {},
+        /* resolverOptions */ {dev: false},
       );
       this._cachedEmptyModule = emptyModule;
     }
@@ -157,6 +157,7 @@ class ModuleResolver<TPackage: Packageish> {
           {
             allowHaste,
             assetExts,
+            dev: resolverOptions.dev,
             disableHierarchicalLookup,
             doesFileExist,
             extraNodeModules,

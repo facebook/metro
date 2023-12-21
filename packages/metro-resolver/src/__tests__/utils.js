@@ -32,6 +32,7 @@ export function createResolutionContext(
   {enableSymlinks}: $ReadOnly<{enableSymlinks?: boolean}> = {},
 ): $Diff<ResolutionContext, {originModulePath: string}> {
   return {
+    dev: true,
     allowHaste: true,
     assetExts: new Set(['jpg', 'png']),
     customResolverOptions: {},

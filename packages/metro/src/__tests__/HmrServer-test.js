@@ -212,7 +212,9 @@ describe('HmrServer', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -239,7 +241,9 @@ describe('HmrServer', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -266,7 +270,9 @@ describe('HmrServer', () => {
           shallow: false,
           lazy: false,
           unstable_allowRequireContext: false,
-          resolverOptions: {},
+          resolverOptions: {
+            dev: true,
+          },
         },
       ),
     );
@@ -293,7 +299,9 @@ describe('HmrServer', () => {
         shallow: false,
         lazy: false,
         unstable_allowRequireContext: false,
-        resolverOptions: {},
+        resolverOptions: {
+          dev: true,
+        },
       },
     )}\` was not found.`;
 
