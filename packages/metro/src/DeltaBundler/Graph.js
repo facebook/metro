@@ -322,11 +322,8 @@ export class Graph<T = MixedOutput> {
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
-    const currentDependencies = this._resolveDependencies(
-      path,
-      result.dependencies,
-      options,
-    );
+    const {dependencies: currentDependencies, resolvedContexts} =
+      this._resolveDependencies(path, result.dependencies, options);
 
     const previousModule = this.dependencies.get(path);
 
@@ -369,7 +366,14 @@ export class Graph<T = MixedOutput> {
         !dependenciesEqual(prevDependency, curDependency, options)
       ) {
         addDependencyPromises.push(
-          this._addDependency(nextModule, key, curDependency, delta, options),
+          this._addDependency(
+            nextModule,
+            key,
+            curDependency,
+            resolvedContexts.get(key),
+            delta,
+            options,
+          ),
         );
       }
     }
@@ -411,10 +415,19 @@ export class Graph<T = MixedOutput> {
     parentModule: Module<T>,
     key: string,
     dependency: Dependency,
+    requireContext: ?RequireContext,
     delta: Delta,
     options: InternalOptions<T>,
   ): Promise<void> {
     const path = dependency.absolutePath;
+
+    if (requireContext) {
+      this.#resolvedContexts.set(path, requireContext);
+    } else {
+      // This dependency may have existed previously as a require.context -
+      // clean it up.
+      this.#resolvedContexts.delete(path);
+    }
 
     // The module may already exist, in which case we just need to update some
     // bookkeeping instead of adding a new node to the graph.
@@ -542,13 +555,15 @@ export class Graph<T = MixedOutput> {
     parentPath: string,
     dependencies: $ReadOnlyArray<TransformResultDependency>,
     options: InternalOptions<T>,
-  ): Map<string, Dependency> {
-    const maybeResolvedDeps = new Map<
-      string,
-      void | {absolutePath: string, data: TransformResultDependency},
-    >();
+  ): {
+    dependencies: Map<string, Dependency>,
+    resolvedContexts: Map<string, RequireContext>,
+  } {
+    const maybeResolvedDeps = new Map<string, void | Dependency>();
+    const resolvedContexts = new Map<string, RequireContext>();
     for (const dep of dependencies) {
       let resolvedDep;
+      const key = dep.data.key;
 
       // `require.context`
       const {contextParams} = dep.data;
@@ -568,7 +583,7 @@ export class Graph<T = MixedOutput> {
           ),
         };
 
-        this.#resolvedContexts.set(absolutePath, resolvedContext);
+        resolvedContexts.set(key, resolvedContext);
 
         resolvedDep = {
           absolutePath,
@@ -580,10 +595,6 @@ export class Graph<T = MixedOutput> {
             absolutePath: options.resolve(parentPath, dep).filePath,
             data: dep,
           };
-
-          // This dependency may have existed previously as a require.context -
-          // clean it up.
-          this.#resolvedContexts.delete(resolvedDep.absolutePath);
         } catch (error) {
           // Ignore unavailable optional dependencies. They are guarded
           // with a try-catch block and will be handled during runtime.
@@ -593,7 +604,6 @@ export class Graph<T = MixedOutput> {
         }
       }
 
-      const key = dep.data.key;
       if (maybeResolvedDeps.has(key)) {
         throw new Error(
           `resolveDependencies: Found duplicate dependency key '${key}' in ${parentPath}`,
@@ -613,7 +623,7 @@ export class Graph<T = MixedOutput> {
         resolvedDeps.set(key, resolvedDep);
       }
     }
-    return resolvedDeps;
+    return {dependencies: resolvedDeps, resolvedContexts};
   }
 
   /**
