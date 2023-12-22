@@ -38,7 +38,7 @@ export type Dependency = $ReadOnly<{
 // TODO: Convert to a Flow enum
 export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
-type ContextFilter = {pattern: string, flags: string};
+type ContextFilter = $ReadOnly<{pattern: string, flags: string}>;
 
 export type RequireContextParams = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
