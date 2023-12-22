@@ -79,10 +79,11 @@ export type Result<T> = {
  **/
 type Delta<T> = $ReadOnly<{
   // `added` and `deleted` are mutually exclusive.
-  // Internally, a module can be in both `modified` and (either) `added` or
-  // `deleted`. We fix this up before returning the delta to the client.
+  // Internally, a module can be in both `touched` and (either) `added` or
+  // `deleted`. Before returning the result, we'll calculate
+  // modified = touched - added - deleted.
   added: Set<string>,
-  modified: Set<string>,
+  touched: Set<string>,
   deleted: Set<string>,
 
   // A place to temporarily track inverse dependencies for a module while it is
@@ -174,23 +175,11 @@ export class Graph<T = MixedOutput> {
   ): Promise<Result<T>> {
     const internalOptions = getInternalOptions(options);
 
-    // Record the paths that are part of the dependency graph before we start
-    // traversing - we'll use this to ensure we don't report modules modified
-    // that only exist as part of the graph mid-traversal, and to eliminate
-    // modules that end up in the same state that they started from the delta.
-    const originalModules = new Map<string, Module<T>>();
-    for (const path of paths) {
-      const originalModule = this.dependencies.get(path);
-      if (originalModule) {
-        originalModules.set(path, originalModule);
-      }
-    }
-
-    const allModifiedPaths = new Set(paths);
-
     const modifiedPathsInBaseGraph = paths.filter(path =>
       this.dependencies.has(path),
     );
+
+    const allModifiedPaths = new Set(paths);
 
     const moduleData = await buildSubgraph(
       new Set(modifiedPathsInBaseGraph),
@@ -219,7 +208,7 @@ export class Graph<T = MixedOutput> {
 
     const delta = {
       added: new Set<string>(),
-      modified: new Set<string>(),
+      touched: new Set<string>(),
       deleted: new Set<string>(),
       earlyInverseDependencies: new Map<string, CountingSet<string>>(),
       moduleData,
@@ -239,43 +228,13 @@ export class Graph<T = MixedOutput> {
     }
 
     const modified = new Map<string, Module<T>>();
-
-    // A path in delta.modified has been processed during this traversal,
-    // but may not actually differ, may be new, or may have been deleted after
-    // processing. The actually-modified modules are the intersection of
-    // delta.modified with the pre-existing paths, minus modules deleted.
-    for (const [path, originalModule] of originalModules) {
-      invariant(
-        !delta.added.has(path),
-        'delta.added has %s, but this path was already in the graph.',
-        path,
-      );
-      if (delta.modified.has(path)) {
-        // It's expected that a module may be both modified and subsequently
-        // deleted - we'll only return it as deleted.
-        if (!delta.deleted.has(path)) {
-          // If a module existed before and has not been deleted, it must be
-          // in the dependencies map.
-          const newModule = nullthrows(this.dependencies.get(path));
-          if (
-            // Module.dependencies is mutable, so it's not obviously the case
-            // that referential equality implies no modification. However, we
-            // only mutate dependencies in two cases:
-            // 1. Within _recursivelyCommitModule. In that case, we always
-            //    mutate a new module and set a new reference in
-            //    this.dependencies.
-            // 2. During _releaseModule, when recursively removing
-            //    dependencies. In that case, we immediately discard the module
-            //    object.
-            // TODO: Refactor for more explicit immutability
-            newModule !== originalModule ||
-            transfromOutputMayDiffer(newModule, originalModule) ||
-            // $FlowFixMe[incompatible-call]
-            !allDependenciesEqual(newModule, originalModule)
-          ) {
-            modified.set(path, newModule);
-          }
-        }
+    for (const path of modifiedPathsInBaseGraph) {
+      if (
+        delta.touched.has(path) &&
+        !delta.deleted.has(path) &&
+        !delta.added.has(path)
+      ) {
+        modified.set(path, nullthrows(this.dependencies.get(path)));
       }
     }
 
@@ -317,7 +276,7 @@ export class Graph<T = MixedOutput> {
 
     const delta = {
       added: new Set<string>(),
-      modified: new Set<string>(),
+      touched: new Set<string>(),
       deleted: new Set<string>(),
       earlyInverseDependencies: new Map<string, CountingSet<string>>(),
       moduleData,
@@ -398,19 +357,28 @@ export class Graph<T = MixedOutput> {
       }
     }
 
-    if (
-      previousModule &&
-      !transfromOutputMayDiffer(previousModule, nextModule) &&
+    if (!previousModule) {
+      // If the module is not currently in the graph, it is either new or was
+      // released earlier in the commit.
+      if (delta.deleted.has(path)) {
+        // Mark the addition by clearing a prior deletion.
+        delta.deleted.delete(path);
+      } else {
+        // Mark the addition in the added set.
+        delta.added.add(path);
+      }
+    } else if (
+      !transformOutputMayDiffer(previousModule, nextModule) &&
       !dependenciesRemoved &&
       !dependenciesAdded
     ) {
       // We have not operated on nextModule, so restore previousModule
-      // to aid diffing.
+      // to aid diffing. Don't add this path to delta.touched.
       this.dependencies.set(previousModule.path, previousModule);
       return previousModule;
     }
 
-    delta.modified.add(path);
+    delta.touched.add(path);
 
     // Replace dependencies with the correctly-ordered version. As long as all
     // the above promises have resolved, this will be the same map but without
@@ -470,13 +438,6 @@ export class Graph<T = MixedOutput> {
           // should only mark its parent as an inverse dependency.
           earlyInverseDependencies.add(parentModule.path);
         } else {
-          if (delta.deleted.has(path)) {
-            // Mark the addition by clearing a prior deletion.
-            delta.deleted.delete(path);
-          } else {
-            // Mark the addition in the added set.
-            delta.added.add(path);
-          }
           delta.earlyInverseDependencies.set(path, new CountingSet());
 
           module = this._recursivelyCommitModule(path, delta, options);
@@ -847,23 +808,6 @@ function dependenciesEqual(
   );
 }
 
-function allDependenciesEqual<T>(
-  a: Module<T>,
-  b: Module<T>,
-  options: $ReadOnly<{lazy: boolean, ...}>,
-): boolean {
-  if (a.dependencies.size !== b.dependencies.size) {
-    return false;
-  }
-  for (const [key, depA] of a.dependencies) {
-    const depB = b.dependencies.get(key);
-    if (!depB || !dependenciesEqual(depA, depB, options)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function contextParamsEqual(
   a: ?RequireContextParams,
   b: ?RequireContextParams,
@@ -880,7 +824,7 @@ function contextParamsEqual(
   );
 }
 
-function transfromOutputMayDiffer<T>(a: Module<T>, b: Module<T>): boolean {
+function transformOutputMayDiffer<T>(a: Module<T>, b: Module<T>): boolean {
   return (
     a.unstable_transformResultKey == null ||
     a.unstable_transformResultKey !== b.unstable_transformResultKey
