@@ -70,6 +70,14 @@ export type Module<T = MixedOutput> = $ReadOnly<{
   unstable_transformResultKey?: ?string,
 }>;
 
+export type ModuleData<T = MixedOutput> = $ReadOnly<{
+  dependencies: $ReadOnlyMap<string, Dependency>,
+  resolvedContexts: $ReadOnlyMap<string, RequireContext>,
+  output: $ReadOnlyArray<T>,
+  getSource: () => Buffer,
+  unstable_transformResultKey?: ?string,
+}>;
+
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
   string,
@@ -115,6 +123,12 @@ export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
 ) => Promise<TransformResultWithSource<T>>;
+
+export type ResolveFn = (
+  from: string,
+  dependency: TransformResultDependency,
+) => BundlerResolution;
+
 export type AllowOptionalDependenciesWithOptions = {
   +exclude: Array<string>,
 };
@@ -128,10 +142,7 @@ export type BundlerResolution = $ReadOnly<{
 }>;
 
 export type Options<T = MixedOutput> = {
-  +resolve: (
-    from: string,
-    dependency: TransformResultDependency,
-  ) => BundlerResolution,
+  +resolve: ResolveFn,
   +transform: TransformFn<T>,
   +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
