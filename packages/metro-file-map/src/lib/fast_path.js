@@ -13,22 +13,39 @@ import * as path from 'path';
 // rootDir must be normalized and absolute, filename may be any absolute path.
 // (but will optimally start with rootDir)
 export function relative(rootDir: string, filename: string): string {
-  return filename.indexOf(rootDir + path.sep) === 0
-    ? filename.substr(rootDir.length + 1)
-    : path.relative(rootDir, filename);
+  if (filename.indexOf(rootDir + path.sep) === 0) {
+    const relativePath = filename.substr(rootDir.length + 1);
+    // Allow any sequence of indirection fragments at the start of the path,
+    // e.g ../../foo, but bail out to Node's path.relative if we find a
+    // possible indirection after any other segment, or a leading "./".
+    for (let i = 0; ; i += UP_FRAGMENT_LENGTH) {
+      const nextIndirection = relativePath.indexOf(CURRENT_FRAGMENT, i);
+      if (nextIndirection === -1) {
+        return relativePath;
+      }
+      if (
+        nextIndirection !== i + 1 || // Fallback when ./ later in the path, or leading
+        relativePath[i] !== '.' // and for anything other than a leading ../
+      ) {
+        return path.relative(rootDir, filename);
+      }
+    }
+  }
+  return path.relative(rootDir, filename);
 }
 
-const INDIRECTION_FRAGMENT = '..' + path.sep;
-const INDIRECTION_FRAGMENT_LENGTH = INDIRECTION_FRAGMENT.length;
+const UP_FRAGMENT = '..' + path.sep;
+const UP_FRAGMENT_LENGTH = UP_FRAGMENT.length;
+const CURRENT_FRAGMENT = '.' + path.sep;
 
 // rootDir must be an absolute path and normalPath must be a normal relative
 // path (e.g.: foo/bar or ../foo/bar, but never ./foo or foo/../bar)
 // As of Node 18 this is several times faster than path.resolve, over
 // thousands of real calls with 1-3 levels of indirection.
 export function resolve(rootDir: string, normalPath: string): string {
-  if (normalPath.startsWith(INDIRECTION_FRAGMENT)) {
+  if (normalPath.startsWith(UP_FRAGMENT)) {
     const dirname = rootDir === '' ? '' : path.dirname(rootDir);
-    return resolve(dirname, normalPath.slice(INDIRECTION_FRAGMENT_LENGTH));
+    return resolve(dirname, normalPath.slice(UP_FRAGMENT_LENGTH));
   } else {
     return (
       rootDir +

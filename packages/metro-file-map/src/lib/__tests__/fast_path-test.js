@@ -23,23 +23,49 @@ describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
       : filePath;
 
   let fastPath: FastPath;
+  let pathRelative: JestMockFn<[string, string], string>;
 
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
+    pathRelative = jest.spyOn(mockPathModule, 'relative');
     fastPath = require('../fast_path');
   });
 
+  test.each([
+    p('/project/root/baz/foobar'),
+    p('/project/root/../root2/foobar'),
+    p('/project/root/../../project2/foo'),
+  ])(`relative('/project/root', '%s') is correct and optimised`, normalPath => {
+    const rootDir = p('/project/root');
+    const expected = mockPathModule.relative(rootDir, normalPath);
+    pathRelative.mockClear();
+    expect(fastPath.relative(rootDir, normalPath)).toEqual(expected);
+    expect(pathRelative).not.toHaveBeenCalled();
+  });
+
   describe.each([p('/project/root'), p('/')])('root: %s', rootDir => {
+    beforeEach(() => {
+      pathRelative.mockClear();
+    });
+
     test.each([
-      p('/project/root/baz/foobar'),
+      p('/project/root/../root2/../root3/foo'),
       p('/project/baz/foobar'),
       p('/project/rootfoo/baz'),
-    ])(`relative('${rootDir}', '%s') matches path.relative`, normalPath => {
-      expect(fastPath.relative(rootDir, normalPath)).toEqual(
-        mockPathModule.relative(rootDir, normalPath),
-      );
-    });
+      p('/project/root/./baz/foo/bar'),
+      p('/project/root/a./../foo'),
+      p('/project/root/../a./foo'),
+      p('/project/root/.././foo'),
+    ])(
+      `relative('${rootDir}', '%s') falls back to path.relative`,
+      normalPath => {
+        const expected = mockPathModule.relative(rootDir, normalPath);
+        pathRelative.mockClear();
+        expect(fastPath.relative(rootDir, normalPath)).toEqual(expected);
+        expect(pathRelative).toHaveBeenCalled();
+      },
+    );
 
     test.each([
       p('normal/path'),
