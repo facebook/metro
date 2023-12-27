@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-transformer",
-  "version": "0.80.0",
+  "version": "0.80.2",
   "description": "🚇 Base Babel transformer for Metro.",
   "main": "src/index.js",
   "repository": {
@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.20.0",
-    "hermes-parser": "0.17.0",
+    "hermes-parser": "0.18.2",
     "nullthrows": "^1.1.1"
   },
   "engines": {

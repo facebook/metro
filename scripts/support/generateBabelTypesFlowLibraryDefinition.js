@@ -142,16 +142,16 @@ function main() {
 
   for (let i = 0; i < t.TYPES.length; i++) {
     const type = t.TYPES[i];
-    let decl = `declare export function is${type}(node: ?Object, opts?: ?Object): boolean`;
+    let decl = `declare export function is${type}(node: ?Object, opts?: ?Object):`;
 
     const realName = t.DEPRECATED_KEYS[type] ?? type;
 
     if (t.NODE_FIELDS[realName]) {
-      decl += ` %checks (node != null && node.type === '${realName}');`;
+      decl += ` node is ${realName};`;
     } else if (t.FLIPPED_ALIAS_KEYS[realName]) {
       const types = t.FLIPPED_ALIAS_KEYS[realName];
-      const checks = types.map(t => `node.type === '${t}'`).join(' || ');
-      decl += ` %checks (node != null && (${checks}));`;
+      const checks = types.join(' | ');
+      decl += ` node is (${checks});`;
     } else {
       continue;
     }
@@ -251,18 +251,18 @@ function main() {
     `declare export function is(type: string, n: BabelNode, opts: Object): boolean;`,
     `declare export function isBinding(node: BabelNode, parent: BabelNode, grandparent?: BabelNode): boolean`,
     `declare export function isBlockScoped(node: BabelNode): boolean`,
-    `declare export function isLet(node: BabelNode): boolean %checks (node.type === 'VariableDeclaration')`,
+    `declare export function isLet(node: BabelNode): node is VariableDeclaration`,
     `declare export function isNode(node: ?Object): boolean`,
     `declare export function isNodesEquivalent(a: any, b: any): boolean`,
     `declare export function isPlaceholderType(placeholderType: string, targetType: string): boolean`,
     `declare export function isReferenced(node: BabelNode, parent: BabelNode, grandparent?: BabelNode): boolean`,
-    `declare export function isScope(node: BabelNode, parent: BabelNode): boolean %checks (node.type === 'BlockStatement' ||  node.type === 'CatchClause' || node.type === 'DoWhileStatement' || node.type === 'ForInStatement' || node.type === 'ForStatement' || node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'Program' || node.type === 'ObjectMethod' || node.type === 'SwitchStatement' || node.type === 'WhileStatement' || node.type === 'ArrowFunctionExpression' || node.type === 'ClassExpression' || node.type === 'ClassDeclaration' || node.type === 'ForOfStatement' || node.type === 'ClassMethod' || node.type === 'ClassPrivateMethod' || node.type === 'TSModuleBlock')`,
+    `declare export function isScope(node: BabelNode, parent: BabelNode): node is (BlockStatement | CatchClause | DoWhileStatement | ForInStatement | ForStatement | FunctionDeclaration | FunctionExpression | Program | ObjectMethod | SwitchStatement | WhileStatement | ArrowFunctionExpression | ClassExpression | ClassDeclaration | ForOfStatement | ClassMethod | ClassPrivateMethod | TSModuleBlock)`,
     `declare export function isSpecifierDefault(specifier: BabelNodeModuleSpecifier): boolean`,
     `declare export function isType(nodetype: ?string, targetType: string): boolean`,
     `declare export function isValidES3Identifier(name: string): boolean`,
     `declare export function isValidES3Identifier(name: string): boolean`,
     `declare export function isValidIdentifier(name: string): boolean`,
-    `declare export function isVar(node: BabelNode): boolean %checks (node.type === 'VariableDeclaration')`,
+    `declare export function isVar(node: BabelNode): node is VariableDeclaration`,
     // eslint-disable-next-line max-len
     `declare export function matchesPattern(node: ?BabelNode, match: string | Array<string>, allowPartial?: boolean): boolean`,
     `declare export function validate(n: BabelNode, key: string, value: mixed): void;`,

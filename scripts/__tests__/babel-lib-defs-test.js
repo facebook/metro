@@ -10,8 +10,8 @@
 
 'use strict';
 
-import {promises as fsPromises} from 'fs';
 import generateBabelFlowLibraryDefinitions from '../support/generateBabelFlowLibraryDefinitions';
+import {promises as fsPromises} from 'fs';
 
 test('Babel Flow library definitions should be up to date', async () => {
   // Run `yarn update-babel-flow-lib-defs` in the Metro monorepo if this test fails.

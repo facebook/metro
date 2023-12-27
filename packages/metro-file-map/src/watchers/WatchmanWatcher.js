@@ -9,15 +9,15 @@
  * @oncall react_native
  */
 
-import type {WatcherOptions} from './common';
 import type {ChangeEventMetadata} from '../flow-types';
+import type {WatcherOptions} from './common';
 import type {
   Client,
   WatchmanClockResponse,
   WatchmanFileChange,
   WatchmanQuery,
-  WatchmanSubscriptionEvent,
   WatchmanSubscribeResponse,
+  WatchmanSubscriptionEvent,
   WatchmanWatchResponse,
 } from 'fb-watchman';
 

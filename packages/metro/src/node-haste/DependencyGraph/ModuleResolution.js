@@ -12,6 +12,12 @@
 'use strict';
 
 import type {
+  BundlerResolution,
+  TransformResultDependency,
+} from '../../DeltaBundler/types.flow';
+import type {Reporter} from '../../lib/reporting';
+import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {
   CustomResolver,
   DoesFileExist,
   FileCandidates,
@@ -19,7 +25,6 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
-import type {ResolverInputOptions} from '../../shared/types.flow';
 import type {PackageInfo, PackageJson} from 'metro-resolver/src/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
@@ -29,11 +34,6 @@ const Resolver = require('metro-resolver');
 const createDefaultContext = require('metro-resolver/src/createDefaultContext');
 const path = require('path');
 const util = require('util');
-import type {
-  BundlerResolution,
-  TransformResultDependency,
-} from '../../DeltaBundler/types.flow';
-import type {Reporter} from '../../lib/reporting';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -120,7 +120,7 @@ class ModuleResolver<TPackage: Packageish> {
         },
         false,
         null,
-        /* resolverOptions */ {},
+        /* resolverOptions */ {dev: false},
       );
       this._cachedEmptyModule = emptyModule;
     }
@@ -157,6 +157,7 @@ class ModuleResolver<TPackage: Packageish> {
           {
             allowHaste,
             assetExts,
+            dev: resolverOptions.dev,
             disableHierarchicalLookup,
             doesFileExist,
             extraNodeModules,

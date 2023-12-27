@@ -13,6 +13,7 @@ import type {Stats} from 'fs';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 import type {FSEvents} from 'fsevents';
 
+import {isIncluded, typeFromStat} from './common';
 // $FlowFixMe[untyped-import] - anymatch
 import anymatch from 'anymatch';
 import EventEmitter from 'events';
@@ -20,7 +21,6 @@ import {promises as fsPromises} from 'fs';
 import * as path from 'path';
 // $FlowFixMe[untyped-import] - walker
 import walker from 'walker';
-import {isIncluded, typeFromStat} from './common';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
 

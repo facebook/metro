@@ -16,8 +16,8 @@ import type {
   IgnoreMatcher,
 } from '../../flow-types';
 
-import hasNativeFindSupport from './hasNativeFindSupport';
 import * as fastPath from '../../lib/fast_path';
+import hasNativeFindSupport from './hasNativeFindSupport';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
 import {platform} from 'os';

@@ -258,6 +258,7 @@ function getInlineableModule(path, state) {
 
   return moduleName == null ||
     state.ignoredRequires.has(moduleName) ||
+    moduleName.startsWith('@babel/runtime/') ||
     isRequireInScope
     ? null
     : {moduleName, requireFnName: fnName};

@@ -11,10 +11,10 @@
 
 'use strict';
 
-const babel = require('@babel/core');
 const inlineRequiresPlugin = require('../inline-requires-plugin');
-const pluginTester = require('babel-plugin-tester');
 const validateOutputAst = require('./validateOutputAst');
+const babel = require('@babel/core');
+const pluginTester = require('babel-plugin-tester');
 
 pluginTester({
   babelOptions: {

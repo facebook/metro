@@ -10,9 +10,9 @@
 
 'use strict';
 
-import type {HttpOptions} from 'metro-cache';
 import type HttpError from './HttpError';
 import type NetworkError from './NetworkError';
+import type {HttpOptions} from 'metro-cache';
 
 const HttpStore = require('./HttpStore');
 const {Logger} = require('metro-core');
@@ -56,7 +56,12 @@ class HttpGetStore<T> extends HttpStore<T> {
         ].join(' '),
       );
 
-      Logger.createEntry(`CACHE_ERROR: ${err.message} (${err.code})`);
+      Logger.log(
+        Logger.createEntry({
+          action_name: 'HttpGetStore:Warning',
+          log_entry_label: `${err.message} (${err.code})`,
+        }),
+      );
       this._warned = true;
     }
   }

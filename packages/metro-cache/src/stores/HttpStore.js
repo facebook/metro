@@ -153,6 +153,10 @@ class HttpStore<T> {
         reject(new NetworkError(err.message, err.code));
       });
 
+      req.on('timeout', () => {
+        req.destroy(new Error('Request timed out'));
+      });
+
       req.end();
     });
   }
@@ -193,6 +197,10 @@ class HttpStore<T> {
 
         // Consume all the data from the response without processing it.
         res.resume();
+      });
+
+      req.on('timeout', () => {
+        req.destroy(new Error('Request timed out'));
       });
 
       gzip.pipe(req);

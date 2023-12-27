@@ -116,6 +116,7 @@ function createInlinePlatformChecks(
       isWrappedModule,
     );
 
+  // $FlowFixMe[deprecated-type]
   function isGlobal(binding: mixed): boolean %checks {
     return !binding;
   }

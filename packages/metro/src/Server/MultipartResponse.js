@@ -11,6 +11,7 @@
 
 'use strict';
 import type {IncomingMessage, ServerResponse} from 'http';
+
 const accepts = require('accepts');
 
 const CRLF = '\r\n';

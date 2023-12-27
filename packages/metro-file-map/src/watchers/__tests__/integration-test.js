@@ -9,13 +9,13 @@
  * @oncall react_native
  */
 
-import type {EventHelpers} from './helpers';
 import type {WatcherOptions} from '../common';
+import type {EventHelpers} from './helpers';
 
 import FSEventsWatcher from '../FSEventsWatcher';
-import {createTempWatchRoot, startWatching, WATCHERS} from './helpers';
-import os from 'os';
+import {WATCHERS, createTempWatchRoot, startWatching} from './helpers';
 import {promises as fsPromises} from 'fs';
+import os from 'os';
 import {join} from 'path';
 const {mkdir, writeFile, rm, symlink, unlink} = fsPromises;
 

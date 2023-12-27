@@ -9,13 +9,14 @@
  * @oncall react_native
  */
 
-import crypto from 'crypto';
-import path from 'path';
 import type {
   ContextMode,
   RequireContextParams,
 } from '../ModuleGraph/worker/collectDependencies';
+
+import crypto from 'crypto';
 import nullthrows from 'nullthrows';
+import path from 'path';
 
 export type RequireContext = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */

@@ -11,10 +11,10 @@
 
 'use strict';
 
+import type {Terminal} from 'metro-core';
+import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
-import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
-import type {Terminal} from 'metro-core';
 
 const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');

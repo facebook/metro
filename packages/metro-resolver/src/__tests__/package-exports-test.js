@@ -9,9 +9,9 @@
  * @oncall react_native
  */
 
-import path from 'path';
 import Resolver from '../index';
 import {createPackageAccessors, createResolutionContext} from './utils';
+import path from 'path';
 
 // Tests validating Package Exports resolution behaviour. See RFC0534:
 // https://github.com/react-native-community/discussions-and-proposals/blob/master/proposals/0534-metro-package-exports-support.md
@@ -453,6 +453,24 @@ describe('with package exports resolution enabled', () => {
           },
         );
         expect(logWarning).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('haste package', () => {
+      test('should resolve subpath in "exports"', () => {
+        const context = {
+          ...baseContext,
+          resolveHastePackage(name: string) {
+            if (name === 'test-pkg') {
+              return '/root/node_modules/test-pkg/package.json';
+            }
+            return null;
+          },
+        };
+        expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/lib/foo.js',
+        });
       });
     });
   });

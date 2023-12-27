@@ -12,9 +12,9 @@ import type {RequireWithContext} from './utils';
 
 import {copyContextToObject} from './utils';
 
-declare var require: RequireWithContext;
-
 const normalModule = require('./subdir-conflict');
+
+declare var require: RequireWithContext;
 const contextModule = require.context<$FlowFixMe>('./subdir-conflict');
 
 function main() {

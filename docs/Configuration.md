@@ -14,7 +14,7 @@ You can also give a custom file to the configuration by specifying `--config <pa
 :::note
 
 When Metro is started via the React Native CLI, some defaults are different from those mentioned below.
-See the [React Native repository](https://github.com/react-native-community/cli/blob/main/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
+See the [React Native repository](https://github.com/facebook/react-native/blob/main/packages/community-cli-plugin/src/utils/loadMetroConfig.js) for details.
 
 :::
 
@@ -535,7 +535,7 @@ Type: `string`
 
 The name of a module that compiles code with Babel, returning an AST and optional metadata. Defaults to `metro-babel-transformer`.
 
-Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`metro-react-native-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
+Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`@react-native/metro-babel-transformer`](https://github.com/facebook/react-native/blob/main/packages/react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
 
 :::note
 This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.

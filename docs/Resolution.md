@@ -164,6 +164,10 @@ Parameters: (*context*, *moduleName*, *platform*)
 
 The set of file extensions used to identify asset files. Defaults to [`resolver.assetExts`](./Configuration.md#assetexts).
 
+#### `dev: boolean`
+
+`true` if the resolution is for a development bundle, or `false` otherwise.
+
 #### `doesFileExist: string => boolean`
 
 Returns `true` if the file with the given path exists, or `false` otherwise.
@@ -299,7 +303,7 @@ Resolver results may be cached under the following conditions:
 
 1. For given origin module paths _A_ and _B_ and target module name _M_, the resolution for _M_ may be reused if **all** of the following conditions hold:
     1. _A_ and _B_ are in the same directory.
-    2. The contents of [`customResolverOptions`](#customresolveroptions-string-mixed) are equivalent ( = serialize to JSON the same) in both calls to the resolver.
+    2. The contents of [`dev`](#dev) and [`customResolverOptions`](#customresolveroptions-string-mixed) are equivalent ( = serialize to JSON the same) in both calls to the resolver.
 2. Any cache of resolutions must be invalidated if any file in the project has changed.
 
 Custom resolvers must adhere to these assumptions, e.g. they may not return different resolutions for origin modules in the same directory under the same `customResolverOptions`.

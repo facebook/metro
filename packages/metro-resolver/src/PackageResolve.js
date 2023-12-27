@@ -11,8 +11,8 @@
 
 import type {PackageInfo, PackageJson, ResolutionContext} from './types';
 
-import path from 'path';
 import toPosixPath from './utils/toPosixPath';
+import path from 'path';
 
 /**
  * Resolve the main entry point subpath for a package.

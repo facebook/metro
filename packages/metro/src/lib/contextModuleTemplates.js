@@ -9,9 +9,10 @@
  * @oncall react_native
  */
 
-import * as path from 'path';
-import * as os from 'os';
 import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
+
+import * as os from 'os';
+import * as path from 'path';
 
 function createFileMap(
   modulePath: string,

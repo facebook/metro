@@ -14,6 +14,7 @@
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
 import crypto from 'crypto';
 
 const getTransformCacheKey = require('./getTransformCacheKey');
@@ -44,6 +45,7 @@ class Transformer {
       getTransformOptions: _getTransformOptions,
       transformVariants: _transformVariants,
       workerPath: _workerPath,
+      unstable_workerThreads: _workerThreads,
       ...transformerConfig
     } = this._config.transformer;
 

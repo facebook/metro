@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
@@ -17,8 +18,6 @@ import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
-import type MetroServer from 'metro/src/Server';
-
 import type {
   DeltaResult,
   Module,
@@ -26,7 +25,7 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {Reporter} from 'metro/src/lib/reporting';
-import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
+import type MetroServer from 'metro/src/Server';
 
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true, ...} | false,
@@ -55,14 +54,14 @@ export type GetTransformOptions = (
 export type Middleware = HandleFunction;
 
 type PerfAnnotations = Partial<{
-  string: {[key: string]: string},
-  int: {[key: string]: number},
-  double: {[key: string]: number},
-  bool: {[key: string]: boolean},
-  string_array: {[key: string]: Array<string>},
-  int_array: {[key: string]: Array<number>},
-  double_array: {[key: string]: Array<number>},
-  bool_array: {[key: string]: Array<boolean>},
+  string: $ReadOnly<{[key: string]: string}>,
+  int: $ReadOnly<{[key: string]: number}>,
+  double: $ReadOnly<{[key: string]: number}>,
+  bool: $ReadOnly<{[key: string]: boolean}>,
+  string_array: $ReadOnly<{[key: string]: $ReadOnlyArray<string>}>,
+  int_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
+  double_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
+  bool_array: $ReadOnly<{[key: string]: $ReadOnlyArray<boolean>}>,
 }>;
 
 type PerfLoggerPointOptions = $ReadOnly<{
@@ -146,6 +145,7 @@ type TransformerConfigT = {
   transformVariants: {+[name: string]: {...}},
   workerPath: string,
   publicPath: string,
+  unstable_workerThreads: boolean,
 };
 
 type MetalConfigT = {
@@ -196,6 +196,7 @@ type WatcherConfigT = {
     timeout: number,
     filePrefix: string,
   },
+  unstable_workerThreads: boolean,
   watchman: {
     deferStates: $ReadOnlyArray<string>,
   },

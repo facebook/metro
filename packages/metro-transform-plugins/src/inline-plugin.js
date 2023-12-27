@@ -61,6 +61,7 @@ function inlinePlugin(
     options.requireName || 'require',
   );
 
+  // $FlowFixMe[deprecated-type]
   function isGlobal(binding: ?Binding): boolean %checks {
     return !binding;
   }
@@ -68,6 +69,7 @@ function inlinePlugin(
   const isFlowDeclared = (binding: Binding) =>
     t.isDeclareVariable(binding.path);
 
+  // $FlowFixMe[deprecated-type]
   function isGlobalOrFlowDeclared(binding: ?Binding): boolean %checks {
     return isGlobal(binding) || isFlowDeclared(binding);
   }

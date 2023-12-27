@@ -13,11 +13,11 @@
 
 import type {TransformResultDependency} from '../types.flow';
 
-jest.mock('../DeltaCalculator');
-
 const DeltaBundler = require('../../DeltaBundler');
 const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
+
+jest.mock('../DeltaCalculator');
 
 describe('DeltaBundler', () => {
   let deltaBundler;

@@ -10,10 +10,11 @@
  */
 
 import type {
-  WatchmanSubscribeResponse,
   WatchmanClockResponse,
+  WatchmanSubscribeResponse,
   WatchmanWatchResponse,
 } from 'fb-watchman';
+
 import WatchmanWatcher from '../WatchmanWatcher';
 import EventEmitter from 'events';
 

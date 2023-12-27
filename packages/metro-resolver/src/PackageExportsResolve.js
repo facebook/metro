@@ -17,12 +17,12 @@ import type {
   ResolutionContext,
 } from './types';
 
-import path from 'path';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import toPosixPath from './utils/toPosixPath';
+import path from 'path';
 
 /**
  * Resolve a package subpath based on the entry points defined in the package's

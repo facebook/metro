@@ -11,11 +11,12 @@
 
 'use strict';
 
-import path from 'path';
-import {Graph} from './Graph';
 import type {DeltaResult, Options} from './types.flow';
 import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEventMetadata} from 'metro-file-map';
+
+import {Graph} from './Graph';
+import path from 'path';
 
 const debug = require('debug')('Metro:DeltaCalculator');
 const {EventEmitter} = require('events');
@@ -132,8 +133,6 @@ class DeltaCalculator<T> extends EventEmitter {
 
     let result;
 
-    const numDependencies = this._graph.dependencies.size;
-
     try {
       result = await this._currentBuildPromise;
     } catch (error) {
@@ -144,13 +143,6 @@ class DeltaCalculator<T> extends EventEmitter {
       modifiedFiles.forEach((file: string) => this._modifiedFiles.add(file));
       deletedFiles.forEach((file: string) => this._deletedFiles.add(file));
       addedFiles.forEach((file: string) => this._addedFiles.add(file));
-
-      // If after an error the number of modules has changed, we could be in
-      // a weird state. As a safe net we clean the dependency modules to force
-      // a clean traversal of the graph next time.
-      if (this._graph.dependencies.size !== numDependencies) {
-        this._graph.dependencies.clear();
-      }
 
       throw error;
     } finally {

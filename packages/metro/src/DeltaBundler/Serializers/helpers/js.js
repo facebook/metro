@@ -136,7 +136,7 @@ function isJsModule(module: Module<>): boolean {
   return module.output.filter(isJsOutput).length > 0;
 }
 
-function isJsOutput(output: MixedOutput): boolean %checks {
+function isJsOutput(output: MixedOutput): boolean {
   return output.type.startsWith('js/');
 }
 

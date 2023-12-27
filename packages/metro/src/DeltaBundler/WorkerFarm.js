@@ -125,6 +125,7 @@ class WorkerFarm {
           this._computeWorkerKey
         : undefined,
       exposedMethods,
+      enableWorkerThreads: this._config.transformer.unstable_workerThreads,
       forkOptions: {env},
       numWorkers,
     });

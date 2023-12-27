@@ -9,17 +9,17 @@
  * @oncall react_native
  */
 
+import type {ChangeEventMetadata} from '../../flow-types';
 import type {WatcherOptions} from '../common';
 
-import NodeWatcher from '../NodeWatcher';
 import FSEventsWatcher from '../FSEventsWatcher';
+import NodeWatcher from '../NodeWatcher';
 import WatchmanWatcher from '../WatchmanWatcher';
-import type {ChangeEventMetadata} from '../../flow-types';
-import {promises as fsPromises} from 'fs';
 import {execSync} from 'child_process';
-import {join} from 'path';
-import os from 'os';
+import {promises as fsPromises} from 'fs';
 import invariant from 'invariant';
+import os from 'os';
+import {join} from 'path';
 
 jest.useRealTimers();
 

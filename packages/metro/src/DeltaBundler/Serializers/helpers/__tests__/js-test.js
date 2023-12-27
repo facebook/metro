@@ -12,10 +12,9 @@
 import type {Dependency} from '../../../types.flow';
 
 import CountingSet from '../../../../lib/CountingSet';
-
-import {wrap as raw} from 'jest-snapshot-serializer-raw';
 import createModuleIdFactory from '../../../../lib/createModuleIdFactory';
 import {wrapModule} from '../js';
+import {wrap as raw} from 'jest-snapshot-serializer-raw';
 import nullthrows from 'nullthrows';
 
 let myModule;

@@ -9,6 +9,11 @@
  * @oncall react_native
  */
 
+import type {
+  BundlerResolution,
+  TransformResultDependency,
+} from '../DeltaBundler/types.flow';
+import type {ResolverInputOptions} from '../shared/types.flow';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {
@@ -21,7 +26,6 @@ import type MetroFileMap, {
 
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
-const canonicalize = require('metro-core/src/canonicalize');
 const createFileMap = require('./DependencyGraph/createFileMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const ModuleCache = require('./ModuleCache');
@@ -32,14 +36,10 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
   PackageResolutionError,
 } = require('metro-core');
+const canonicalize = require('metro-core/src/canonicalize');
 const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
-import type {ResolverInputOptions} from '../shared/types.flow';
-import type {
-  BundlerResolution,
-  TransformResultDependency,
-} from '../DeltaBundler/types.flow';
 
 const NULL_PLATFORM = Symbol();
 
@@ -335,10 +335,7 @@ class DependencyGraph extends EventEmitter {
 
     // Compound key for the resolver cache
     const resolverOptionsKey =
-      JSON.stringify(
-        resolverOptions.customResolverOptions ?? {},
-        canonicalize,
-      ) ?? '';
+      JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
     const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
     const targetKey = to;
     const platformKey = platform ?? NULL_PLATFORM;

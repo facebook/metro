@@ -11,8 +11,8 @@
 
 'use strict';
 
-import invariant from 'invariant';
 import MultipartResponse from '../MultipartResponse';
+import invariant from 'invariant';
 
 describe('MultipartResponse', () => {
   it('forwards calls to response', () => {

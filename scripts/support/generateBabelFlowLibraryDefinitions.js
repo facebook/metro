@@ -13,9 +13,9 @@
  * This script updates all flow types. Run it every time you upgrade babel
  */
 
-import * as prettier from 'prettier';
-import updateBabelTraverseFlowLibraryDefinition from './updateBabelTraverseFlowLibraryDefinition';
 import generateBabelTypesFlowLibraryDefinition from './generateBabelTypesFlowLibraryDefinition';
+import updateBabelTraverseFlowLibraryDefinition from './updateBabelTraverseFlowLibraryDefinition';
+import * as prettier from 'prettier';
 
 export default async function main(): Promise<
   Map<string /* absolute file path */, string /* new content */>,
