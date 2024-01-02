@@ -23,48 +23,59 @@ const makeTransformDep = (
   data: {key: 'key-' + name, asyncType, locs: [], contextParams},
 });
 
+class BadTransformError extends Error {}
+class DoesNotExistError extends Error {}
+
 describe('GraphTraversal', () => {
-  const transformDeps: Map<
-    string,
-    $ReadOnlyArray<TransformResultDependency>,
-  > = new Map([
-    ['/bundle', [makeTransformDep('foo')]],
-    ['/foo', [makeTransformDep('bar'), makeTransformDep('baz')]],
-    ['/bar', []],
-    ['/baz', [makeTransformDep('qux', 'weak')]],
-    [
-      '/entryWithContext',
-      [
-        makeTransformDep('virtual', null, {
-          filter: {
-            pattern: 'contextMatch.*',
-            flags: 'i',
-          },
-          mode: 'sync',
-          recursive: true,
-        }),
-      ],
-    ],
-    [
-      '/virtual?ctx=af3bf59b8564d441084c02bdf04c4d662d74d3bd',
-      [makeTransformDep('contextMatch')],
-    ],
-    ['/contextMatch', []],
-  ]);
+  let transformDeps: Map<string, $ReadOnlyArray<TransformResultDependency>>;
 
   let params;
 
   beforeEach(() => {
+    transformDeps = new Map([
+      ['/bundle', [makeTransformDep('foo')]],
+      ['/foo', [makeTransformDep('bar'), makeTransformDep('baz')]],
+      ['/bar', []],
+      ['/baz', [makeTransformDep('qux', 'weak')]],
+      [
+        '/entryWithContext',
+        [
+          makeTransformDep('virtual', null, {
+            filter: {
+              pattern: 'contextMatch.*',
+              flags: 'i',
+            },
+            mode: 'sync',
+            recursive: true,
+          }),
+        ],
+      ],
+      [
+        '/virtual?ctx=af3bf59b8564d441084c02bdf04c4d662d74d3bd',
+        [makeTransformDep('contextMatch')],
+      ],
+      ['/contextMatch', []],
+    ]);
     params = {
-      resolve: jest.fn((from, dependency) => ({
-        filePath: `/${dependency.name}`,
-        type: 'sourceFile',
-      })),
-      transform: jest.fn(async (path, requireContext) => ({
-        dependencies: nullthrows(transformDeps.get(path), path),
-        output: [],
-        getSource: () => Buffer.from('// source'),
-      })),
+      resolve: jest.fn((from, dependency) => {
+        if (dependency.name === 'does-not-exist') {
+          throw new DoesNotExistError();
+        }
+        return {
+          filePath: `/${dependency.name}`,
+          type: 'sourceFile',
+        };
+      }),
+      transform: jest.fn(async (path, requireContext) => {
+        if (path === '/bad') {
+          throw new BadTransformError();
+        }
+        return {
+          dependencies: nullthrows(transformDeps.get(path), path),
+          output: [],
+          getSource: () => Buffer.from('// source'),
+        };
+      }),
       shouldTraverse: jest.fn(
         (dependency: Dependency) => dependency.data.data.asyncType !== 'weak',
       ),
@@ -72,7 +83,7 @@ describe('GraphTraversal', () => {
   });
 
   test('traverses all nodes out from /bundle, except a weak dependency', async () => {
-    const moduleData = await buildSubgraph(
+    const {moduleData} = await buildSubgraph(
       new Set(['/bundle']),
       new Map(),
       params,
@@ -95,7 +106,7 @@ describe('GraphTraversal', () => {
   });
 
   test('resolves context and traverses context matches', async () => {
-    const moduleData = await buildSubgraph(
+    const {moduleData} = await buildSubgraph(
       new Set(['/entryWithContext']),
       new Map(),
       params,
@@ -173,5 +184,17 @@ describe('GraphTraversal', () => {
         ],
       ]),
     );
+  });
+
+  test('returns errors thrown by the transformer', async () => {
+    transformDeps.set('/bar', [makeTransformDep('bad')]);
+    const result = await buildSubgraph(new Set(['/bundle']), new Map(), params);
+    expect([...result.errors]).toEqual([['/bad', new BadTransformError()]]);
+  });
+
+  test('returns errors thrown by the resolver', async () => {
+    transformDeps.set('/bar', [makeTransformDep('does-not-exist')]);
+    const result = await buildSubgraph(new Set(['/bundle']), new Map(), params);
+    expect([...result.errors]).toEqual([['/bar', new DoesNotExistError()]]);
   });
 });

@@ -2217,8 +2217,8 @@ describe('edge cases', () => {
     ┌─────────┐     ┌──────┐     ┌───────┐
     │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar  │
     └─────────┘     └──────┘     └───────┘
-                      │/           ┃
-                     /│            ┃
+                      ┆/           ┃
+                     /┆            ┃
                       ▽            ┃
                     ┌──────┐       ┃
                     │ /baz │ ◀━━━━━┛
@@ -2499,6 +2499,427 @@ describe('edge cases', () => {
       added: new Set([]),
       modified: new Set(['/bundle', '/bar', '/baz']),
       deleted: new Set([]),
+    });
+  });
+});
+
+describe('only reachable errors are reported', () => {
+  test('a resolver error is ignored when batched before detaching the origin module from the graph', async () => {
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.addDependency('/bar', '/does-not-exist');
+    Actions.deleteFile('/does-not-exist', graph);
+    Actions.removeDependency('/foo', '/bar');
+
+    /*
+    ┌─────────┐     ┌──────┐   / ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ┈/▷ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘     └──────┘ /   └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
+  test('a resolver error is cleared after detaching the origin module from the graph', async () => {
+    /*
+    Generate the initial dependency graph:
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.addDependency('/bar', '/does-not-exist');
+    Actions.deleteFile('/does-not-exist', graph);
+
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toThrowError('Dependency not found: /bar -> /does-not-exist');
+
+    // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+    Actions.removeDependency('/foo', '/bar');
+
+    /*
+    ┌─────────┐     ┌──────┐   / ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ┈/▷ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘     └──────┘ /   └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
+  test('a transformer error is ignored when batched before detaching the module from the graph', async () => {
+    class BarError extends Error {}
+
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.modifyFile('/bar');
+    Actions.removeDependency('/foo', '/bar');
+    transformOverrides.set('/bar', () => {
+      throw new BarError();
+    });
+
+    /*
+    ┌─────────┐     ┌──────┐   / ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ┈/▷ ┃ /bar ┃ ⚠ BarError
+    └─────────┘     └──────┘ /   ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
+  test('a transformer error is cleared after detaching the module from the graph', async () => {
+    class BarError extends Error {}
+
+    /*
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.modifyFile('/bar');
+    transformOverrides.set('/bar', () => {
+      throw new BarError();
+    });
+
+    /*
+    ┌─────────┐     ┌──────┐     ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ──▶ ┃ /bar ┃ ⚠ BarError
+    └─────────┘     └──────┘     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(graph.traverseDependencies([...files], options)).rejects.toThrow(
+      BarError,
+    );
+
+    // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+    Actions.removeDependency('/foo', '/bar');
+
+    /*
+    ┌─────────┐     ┌──────┐   / ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ┈/▷ ┃ /bar ┃ ⚠ BarError
+    └─────────┘     └──────┘ /   ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
+  test('a resolver error in a cycle is ignored when batched before detaching the origin module from the graph', async () => {
+    Actions.addDependency('/bar', '/foo');
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.addDependency('/bar', '/does-not-exist');
+    Actions.deleteFile('/does-not-exist', graph);
+    Actions.removeDependency('/bundle', '/foo');
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐   / ┌──────┐     ┌──────┐
+    │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘ /   └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  test('a resolver error in a cycle is cleared after detaching the origin module from the graph', async () => {
+    Actions.addDependency('/bar', '/foo');
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.addDependency('/bar', '/does-not-exist');
+    Actions.deleteFile('/does-not-exist', graph);
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toThrowError('Dependency not found: /bar -> /does-not-exist');
+
+    // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐   / ┌──────┐     ┌──────┐
+    │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │ ━━▶ /does-not-exist
+    └─────────┘ /   └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  test('a transformer error in a cycle is ignored when batched before detaching the module from the graph', async () => {
+    class BarError extends Error {}
+
+    Actions.addDependency('/bar', '/foo');
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.modifyFile('/bar');
+    Actions.removeDependency('/bundle', '/foo');
+    transformOverrides.set('/bar', () => {
+      throw new BarError();
+    });
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐   / ┌──────┐     ┏━━━━━━┓
+    │ /bundle │ ┈/▷ │ /foo │ ──▶ ┃ /bar ┃ ⚠ BarError
+    └─────────┘ /   └──────┘     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  test('a transformer error in a cycle is cleared after detaching the module from the graph', async () => {
+    class BarError extends Error {}
+
+    Actions.addDependency('/bar', '/foo');
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┌──────┐
+    │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+    └─────────┘     └──────┘     └──────┘
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    await graph.initialTraverseDependencies(options);
+
+    Actions.modifyFile('/bar');
+    transformOverrides.set('/bar', () => {
+      throw new BarError();
+    });
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐     ┌──────┐     ┏━━━━━━┓
+    │ /bundle │ ──▶ │ /foo │ ──▶ ┃ /bar ┃ ⚠ BarError
+    └─────────┘     └──────┘     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(graph.traverseDependencies([...files], options)).rejects.toThrow(
+      BarError,
+    );
+
+    // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    /*
+                      ┌────────────┐
+                      ▼            │
+    ┌─────────┐   / ┌──────┐     ┏━━━━━━┓
+    │ /bundle │ ┈/▷ │ /foo │ ──▶ ┃ /bar ┃ ⚠ BarError
+    └─────────┘ /   └──────┘     ┗━━━━━━┛
+                      │
+                      │
+                      ▼
+                    ┌──────┐
+                    │ /baz │
+                    └──────┘
+    */
+    expect(
+      getPaths(await graph.traverseDependencies([...files], options)),
+    ).toEqual({
+      added: new Set([]),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
     });
   });
 });
@@ -3394,7 +3815,7 @@ describe('recovery from transform and resolution errors', () => {
 
     /*
     ┌─────────┐     /   ┌──────┐     ┌──────┐
-    │ /bundle │ ───/──▶ │ /foo │ ──▶ │ /bar │
+    │ /bundle │ ┈┈┈/┈┈▷ │ /foo │ ──▶ │ /bar │
     └─────────┘   /     └──────┘     └──────┘
         ┃                 │
         ┃                 │
@@ -3412,7 +3833,7 @@ describe('recovery from transform and resolution errors', () => {
 
     /*
     ┌─────────┐     /   ┌──────┐     ┌──────┐
-    │ /bundle │ ───/──▶ │ /foo │ ──▶ │ /bar │
+    │ /bundle │ ┈┈┈/┈┈▷ │ /foo │ ──▶ │ /bar │
     └─────────┘   /     └──────┘     └──────┘
         ┃                 │
         ┃                 │
