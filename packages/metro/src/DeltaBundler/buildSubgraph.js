@@ -36,6 +36,7 @@ function resolveDependencies(
 } {
   const maybeResolvedDeps = new Map<string, void | Dependency>();
   const resolvedContexts = new Map<string, RequireContext>();
+
   for (const dep of dependencies) {
     let resolvedDep;
     const key = dep.data.key;
@@ -105,8 +106,12 @@ export async function buildSubgraph<T>(
   entryPaths: $ReadOnlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
-): Promise<Map<string, ModuleData<T>>> {
+): Promise<{
+  moduleData: Map<string, ModuleData<T>>,
+  errors: Map<string, Error>,
+}> {
   const moduleData: Map<string, ModuleData<T>> = new Map();
+  const errors: Map<string, Error> = new Map();
   const visitedPaths: Set<string> = new Set();
 
   async function visit(
@@ -139,16 +144,18 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
-          ),
+          ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );
   }
 
   await Promise.all(
     [...entryPaths].map(absolutePath =>
-      visit(absolutePath, resolvedContexts.get(absolutePath)),
+      visit(absolutePath, resolvedContexts.get(absolutePath)).catch(error =>
+        errors.set(absolutePath, error),
+      ),
     ),
   );
 
-  return moduleData;
+  return {moduleData, errors};
 }
