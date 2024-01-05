@@ -232,6 +232,8 @@ class DependencyGraph extends EventEmitter {
       unstable_conditionNames: this._config.resolver.unstable_conditionNames,
       unstable_conditionsByPlatform:
         this._config.resolver.unstable_conditionsByPlatform,
+      unstable_enableIncrementalResolution:
+        this._config.resolver.unstable_enableIncrementalResolution,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
       unstable_getRealPath: getRealPathIfFile,

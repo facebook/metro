@@ -78,6 +78,7 @@ type Options<TPackage> = $ReadOnly<{
   unstable_conditionsByPlatform: $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
+  unstable_enableIncrementalResolution: boolean,
   unstable_enablePackageExports: boolean,
   unstable_getRealPath: ?GetRealPath,
 }>;
