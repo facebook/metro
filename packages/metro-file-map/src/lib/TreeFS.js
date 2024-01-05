@@ -18,7 +18,7 @@ import type {
 } from '../flow-types';
 
 import H from '../constants';
-import * as fastPath from '../lib/fast_path';
+import {RootPathUtils} from './RootPathUtils';
 import invariant from 'invariant';
 import path from 'path';
 
@@ -37,9 +37,11 @@ export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTargets: WeakMap<FileNode, Path> = new WeakMap();
   +#rootDir: Path;
   #rootNode: DirectoryNode = new Map();
+  #pathUtils: RootPathUtils;
 
   constructor({rootDir, files}: {rootDir: Path, files?: FileData}) {
     this.#rootDir = rootDir;
+    this.#pathUtils = new RootPathUtils(rootDir);
     if (files != null) {
       this.bulkAddOrModify(files);
     }
@@ -138,13 +140,12 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   getAllFiles(): Array<Path> {
-    const rootDir = this.#rootDir;
     return Array.from(
       this.metadataIterator({
         includeSymlinks: false,
         includeNodeModules: true,
       }),
-      ({canonicalPath}) => fastPath.resolve(rootDir, canonicalPath),
+      ({canonicalPath}) => this.#pathUtils.normalToAbsolute(canonicalPath),
     );
   }
 
@@ -245,7 +246,7 @@ export default class TreeFS implements MutableFileSystem {
     if (!result || result.node instanceof Map) {
       return null;
     }
-    return fastPath.resolve(this.#rootDir, result.canonicalPath);
+    return this.#pathUtils.normalToAbsolute(result.canonicalPath);
   }
 
   addOrModify(mixedPath: Path, metadata: FileMetaData): void {
@@ -461,7 +462,7 @@ export default class TreeFS implements MutableFileSystem {
 
   _normalizePath(relativeOrAbsolutePath: Path): string {
     return path.isAbsolute(relativeOrAbsolutePath)
-      ? fastPath.relative(this.#rootDir, relativeOrAbsolutePath)
+      ? this.#pathUtils.absoluteToNormal(relativeOrAbsolutePath)
       : path.normalize(relativeOrAbsolutePath);
   }
 
