@@ -33,9 +33,11 @@ function resolveDependencies(
 ): {
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
+  resolutionDependencies: Set<string>,
 } {
   const maybeResolvedDeps = new Map<string, void | Dependency>();
   const resolvedContexts = new Map<string, RequireContext>();
+  const resolutionDependencies = new Set<string>();
 
   for (const dep of dependencies) {
     let resolvedDep;
@@ -67,8 +69,14 @@ function resolveDependencies(
       };
     } else {
       try {
+        const resolution = resolve(parentPath, dep);
+        if (resolution.dependencies) {
+          for (const resolutionDependency of resolution.dependencies) {
+            resolutionDependencies.add(resolutionDependency);
+          }
+        }
         resolvedDep = {
-          absolutePath: resolve(parentPath, dep).filePath,
+          absolutePath: resolution.filePath,
           data: dep,
         };
       } catch (error) {
@@ -99,7 +107,7 @@ function resolveDependencies(
       resolvedDeps.set(key, resolvedDep);
     }
   }
-  return {dependencies: resolvedDeps, resolvedContexts};
+  return {dependencies: resolvedDeps, resolvedContexts, resolutionDependencies};
 }
 
 export async function buildSubgraph<T>(

@@ -205,6 +205,7 @@ class DependencyGraph extends EventEmitter {
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
+      pathLookup: mixedPath => this._fileSystem.lookup(mixedPath),
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
@@ -236,7 +237,6 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_enableIncrementalResolution,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
-      unstable_getRealPath: getRealPathIfFile,
     });
   }
 

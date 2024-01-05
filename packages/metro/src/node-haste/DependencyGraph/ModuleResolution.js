@@ -17,11 +17,11 @@ import type {
 } from '../../DeltaBundler/types.flow';
 import type {Reporter} from '../../lib/reporting';
 import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {LookupResult} from 'metro-file-map/src/flow-types';
 import type {
   CustomResolver,
   DoesFileExist,
   FileCandidates,
-  GetRealPath,
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
@@ -68,6 +68,7 @@ type Options<TPackage> = $ReadOnly<{
   mainFields: $ReadOnlyArray<string>,
   moduleCache: ModuleishCache<TPackage>,
   nodeModulesPaths: $ReadOnlyArray<string>,
+  pathLookup: ?(path: string) => LookupResult,
   preferNativePlatform: boolean,
   projectRoot: string,
   reporter: Reporter,
@@ -80,7 +81,6 @@ type Options<TPackage> = $ReadOnly<{
   }>,
   unstable_enableIncrementalResolution: boolean,
   unstable_enablePackageExports: boolean,
-  unstable_getRealPath: ?GetRealPath,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -142,15 +142,37 @@ class ModuleResolver<TPackage: Packageish> {
       extraNodeModules,
       mainFields,
       nodeModulesPaths,
+      pathLookup,
       preferNativePlatform,
       resolveAsset,
       resolveRequest,
       sourceExts,
       unstable_conditionNames,
       unstable_conditionsByPlatform,
+      unstable_enableIncrementalResolution,
       unstable_enablePackageExports,
-      unstable_getRealPath,
     } = this._options;
+
+    const resolutionDependencies = unstable_enableIncrementalResolution
+      ? new Set<string>()
+      : null;
+    const unstable_getRealPath =
+      pathLookup == null
+        ? null
+        : (mixedPath: string) => {
+            const result = pathLookup(mixedPath);
+            if (resolutionDependencies != null) {
+              for (const link of result.links) {
+                resolutionDependencies.add(link);
+              }
+              if (!result.exists) {
+                resolutionDependencies.add(result.missing);
+              }
+            }
+            return result.exists && result.type === 'f'
+              ? result.realPath
+              : null;
+          };
 
     try {
       const result = Resolver.resolve(
@@ -188,7 +210,7 @@ class ModuleResolver<TPackage: Packageish> {
         dependency.name,
         platform,
       );
-      return this._getFileResolvedModule(result);
+      return this._getFileResolvedModule(result, resolutionDependencies);
     } catch (error) {
       if (error instanceof Resolver.FailedToResolvePathError) {
         const {candidates} = error;
@@ -274,10 +296,15 @@ class ModuleResolver<TPackage: Packageish> {
   /**
    * TODO: Return Resolution instead of coercing to BundlerResolution here
    */
-  _getFileResolvedModule(resolution: Resolution): BundlerResolution {
+  _getFileResolvedModule(
+    resolution: Resolution,
+    resolutionDependencies: ?$ReadOnlySet<string>,
+  ): BundlerResolution {
     switch (resolution.type) {
       case 'sourceFile':
-        return resolution;
+        return resolutionDependencies
+          ? {...resolution, dependencies: resolutionDependencies}
+          : resolution;
       case 'assetFiles':
         // FIXME: we should forward ALL the paths/metadata,
         // not just an arbitrary item!
