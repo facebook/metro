@@ -922,7 +922,7 @@ export default class FileMap extends EventEmitter {
     ) => {
       if (
         metadata &&
-        // Ignore all directory events
+        // Ignore all directory events from watcher backends
         (metadata.type === 'd' ||
           // Ignore regular files with unwatched extensions
           (metadata.type === 'f' && !hasWatchedExtension(filePath)) ||
@@ -984,9 +984,12 @@ export default class FileMap extends EventEmitter {
 
           const linkStats = fileSystem.linkStats(relativeFilePath);
 
-          const enqueueEvent = (metadata: ChangeEventMetadata) => {
+          const enqueueEvent = (
+            metadata: ChangeEventMetadata,
+            filePath: string = absoluteFilePath,
+          ) => {
             const event = {
-              filePath: absoluteFilePath,
+              filePath,
               metadata,
               type,
             };
@@ -1038,7 +1041,20 @@ export default class FileMap extends EventEmitter {
                 fileMetadata,
                 {forceInBand: true}, // No need to clean up workers
               );
-              fileSystem.addOrModify(relativeFilePath, fileMetadata);
+              const {topmostNewDirectory} = fileSystem.addOrModify(
+                relativeFilePath,
+                fileMetadata,
+              );
+              if (topmostNewDirectory != null) {
+                enqueueEvent(
+                  {
+                    modifiedTime: null,
+                    size: null,
+                    type: 'd',
+                  },
+                  topmostNewDirectory,
+                );
+              }
               enqueueEvent(metadata);
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {

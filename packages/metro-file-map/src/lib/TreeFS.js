@@ -283,7 +283,10 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  addOrModify(mixedPath: Path, metadata: FileMetaData): void {
+  addOrModify(
+    mixedPath: Path,
+    metadata: FileMetaData,
+  ): {topmostNewDirectory: ?string} {
     const normalPath = this._normalizePath(mixedPath);
     // Walk the tree to find the *real* path of the parent node, creating
     // directories as we need.
@@ -295,11 +298,16 @@ export default class TreeFS implements MutableFileSystem {
         `TreeFS: Failed to make parent directory entry for ${mixedPath}`,
       );
     }
+    const topmostNewDirectory =
+      parentDirNode.canonicalNewDirectory != null
+        ? this.#pathUtils.normalToAbsolute(parentDirNode.canonicalNewDirectory)
+        : null;
     // Normalize the resulting path to account for the parent node being root.
     const canonicalPath = this._normalizePath(
       parentDirNode.canonicalPath + path.sep + path.basename(normalPath),
     );
     this.bulkAddOrModify(new Map([[canonicalPath, metadata]]));
+    return {topmostNewDirectory};
   }
 
   bulkAddOrModify(addedOrModifiedFiles: FileData): void {
@@ -372,6 +380,7 @@ export default class TreeFS implements MutableFileSystem {
   ):
     | {
         canonicalLinkPaths: Array<string>,
+        canonicalNewDirectory: ?string,
         canonicalPath: string,
         exists: true,
         node: MixedNode,
@@ -379,6 +388,7 @@ export default class TreeFS implements MutableFileSystem {
       }
     | {
         canonicalLinkPaths: Array<string>,
+        canonicalNewDirectory: ?string,
         canonicalPath: string,
         exists: true,
         node: DirectoryNode,
@@ -400,6 +410,8 @@ export default class TreeFS implements MutableFileSystem {
     let fromIdx = 0;
     // The parent of the current segment
     let parentNode = this.#rootNode;
+    // The first non-indirection directory node added during this traversal
+    let canonicalNewDirectory: ?string = null;
 
     while (targetNormalPath.length > fromIdx) {
       const nextSepIdx = targetNormalPath.indexOf(path.sep, fromIdx);
@@ -416,7 +428,8 @@ export default class TreeFS implements MutableFileSystem {
       let segmentNode = parentNode.get(segmentName);
 
       if (segmentNode == null) {
-        if (opts.makeDirectories !== true && segmentName !== '..') {
+        const isUpIndirection = segmentName === '..';
+        if (opts.makeDirectories !== true && !isUpIndirection) {
           return {
             canonicalLinkPaths,
             canonicalMissingPath: isLastSegment
@@ -427,6 +440,11 @@ export default class TreeFS implements MutableFileSystem {
         }
         segmentNode = new Map();
         if (opts.makeDirectories === true) {
+          if (canonicalNewDirectory == null && !isUpIndirection) {
+            canonicalNewDirectory = isLastSegment
+              ? targetNormalPath
+              : targetNormalPath.slice(0, fromIdx - 1);
+          }
           parentNode.set(segmentName, segmentNode);
         }
       }
@@ -441,6 +459,7 @@ export default class TreeFS implements MutableFileSystem {
       ) {
         return {
           canonicalLinkPaths,
+          canonicalNewDirectory,
           canonicalPath: targetNormalPath,
           exists: true,
           node: segmentNode,
@@ -497,6 +516,7 @@ export default class TreeFS implements MutableFileSystem {
     invariant(parentNode === this.#rootNode, 'Unexpectedly escaped traversal');
     return {
       canonicalLinkPaths,
+      canonicalNewDirectory,
       canonicalPath: targetNormalPath,
       exists: true,
       node: this.#rootNode,

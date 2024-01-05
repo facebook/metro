@@ -1583,10 +1583,10 @@ describe('FileMap', () => {
       size: null,
     };
 
-    const MOCK_CHANGE_FOLDER = {
+    const MOCK_CHANGE_DIR = {
       type: 'd',
-      modifiedTime: 45,
-      size: 55,
+      modifiedTime: null,
+      size: null,
     };
 
     fm_it('handles several change events at once', async hm => {
@@ -1747,10 +1747,11 @@ describe('FileMap', () => {
           'node_modules',
           'apple.js',
         );
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
-        ]);
+        expect(eventsQueue).toEqual(
+          expect.arrayContaining([
+            {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
+          ]),
+        );
         expect(fileSystem.getModuleName(filePath)).toBeDefined();
       },
     );
@@ -2011,6 +2012,66 @@ describe('FileMap', () => {
       expect(hasteMap.getModule('Melon')).toEqual(newPath);
     });
 
+    fm_it(
+      'ignore directory events (even with file-ish names) on existing directories',
+      async hm => {
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        mockFs[path.join('/', 'project', 'fruits', 'tomato.js', 'index.js')] = `
+      // Tomato!
+    `;
+        e.emit(
+          'all',
+          'change',
+          'tomato.js',
+          path.join('/', 'project', 'fruits'),
+          MOCK_CHANGE_DIR,
+        );
+
+        // Trigger an event we expect to be reported so that we have something to wait for.
+        e.emit(
+          'all',
+          'change',
+          'Strawberry.js',
+          path.join('/', 'project', 'fruits'),
+          MOCK_CHANGE_FILE,
+        );
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toHaveLength(1);
+        expect(eventsQueue[0]).toMatchObject({
+          filePath: expect.stringContaining('Strawberry'),
+        });
+      },
+    );
+
+    fm_it('emit directory events for topmost new directories', async hm => {
+      const e = mockEmitters[path.join('/', 'project', 'fruits')];
+      mockFs[path.join('/', 'project', 'fruits', 'new', 'index.js')] = `
+    // Tomato!
+  `;
+      e.emit(
+        'all',
+        'add',
+        path.join('new', 'index.js'),
+        path.join('/', 'project', 'fruits'),
+        MOCK_CHANGE_FILE,
+      );
+      const {eventsQueue} = await waitForItToChange(hm);
+      expect(eventsQueue).toHaveLength(2);
+
+      expect(eventsQueue).toEqual([
+        {
+          filePath: path.join('/', 'project', 'fruits', 'new'),
+          metadata: MOCK_CHANGE_DIR,
+          type: 'add',
+        },
+        {
+          filePath: path.join('/', 'project', 'fruits', 'new', 'index.js'),
+          metadata: MOCK_CHANGE_FILE,
+          type: 'add',
+        },
+      ]);
+    });
+
     describe('recovery from duplicate module IDs', () => {
       async function setupDuplicates(hm) {
         const {fileSystem, hasteMap} = await hm.build();
@@ -2124,29 +2185,6 @@ describe('FileMap', () => {
         expect(hasteMap.getModule('Pear2')).toBe(
           path.join('/', 'project', 'fruits', 'another', 'Pear2.js'),
         );
-      });
-
-      fm_it('ignore directory events (even with file-ish names)', async hm => {
-        const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        mockFs[path.join('/', 'project', 'fruits', 'tomato.js', 'index.js')] = `
-        // Tomato!
-      `;
-        e.emit(
-          'all',
-          'change',
-          'tomato.js',
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FOLDER,
-        );
-        e.emit(
-          'all',
-          'change',
-          path.join('tomato.js', 'index.js'),
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FILE,
-        );
-        const {eventsQueue} = await waitForItToChange(hm);
-        expect(eventsQueue).toHaveLength(1);
       });
     });
   });

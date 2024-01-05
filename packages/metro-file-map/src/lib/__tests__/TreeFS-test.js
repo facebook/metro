@@ -417,6 +417,52 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.getSize(p('/project/link-to-foo/new.js'))).toEqual(1);
         expect(tfs.getSize(p('/project/fileatroot.js'))).toEqual(2);
       });
+
+      test('returns new directories we may be watching for', () => {
+        const tfs = new TreeFS({
+          rootDir: p('/project'),
+          files: new Map(),
+        });
+        const metadata = ['', 0, 1, 0, '', '', 0];
+        // The root directory is pre-existing, and not reported as new.
+        expect(tfs.addOrModify(p('index.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+        // 'new' is new
+        expect(tfs.addOrModify(p('new/foo.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/new'),
+        });
+        // 'new' already exists
+        expect(tfs.addOrModify(p('new/bar.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+        // 'newer' is new and topmost
+        expect(tfs.addOrModify(p('newer/inner/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/newer'),
+        });
+        // 'newer' already exists, but 'inner2' is new
+        expect(tfs.addOrModify(p('newer/inner2/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/newer/inner2'),
+        });
+        // '/' is not reported as the topmost new even though we create a node
+        // for '..' (as an implementation detail) - 'outside' is the first
+        // unseen branch.
+        expect(tfs.addOrModify(p('../outside/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/outside'),
+        });
+        // other is new, reported consistenly as above
+        expect(tfs.addOrModify(p('../other/foo.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/other'),
+        });
+        // '../other' exists, 'deep' is new
+        expect(tfs.addOrModify(p('../other/deep/bar.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/other/deep'),
+        });
+        // '../other/deep' exists
+        expect(tfs.addOrModify(p('../other/deep/baz.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+      });
     });
 
     describe('bulkAddOrModify', () => {

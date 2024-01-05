@@ -262,7 +262,10 @@ export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): ?FileMetaData;
-  addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
+  addOrModify(
+    filePath: Path,
+    fileMetadata: FileMetaData,
+  ): {topmostNewDirectory: ?Path};
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
 }
 
