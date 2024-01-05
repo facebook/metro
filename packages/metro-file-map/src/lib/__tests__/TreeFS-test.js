@@ -93,7 +93,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
-  describe('getRealPath', () => {
+  describe('lookup', () => {
     test.each([
       [p('/project/foo/link-to-another.js'), p('/project/foo/another.js')],
       [p('/project/foo/link-to-bar.js'), p('/project/bar.js')],
@@ -101,17 +101,29 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       [p('/project/root/outside/external.js'), p('/outside/external.js')],
       [p('/outside/../project/bar.js'), p('/project/bar.js')],
     ])('%s -> %s', (givenPath, expectedRealPath) =>
-      expect(tfs.getRealPath(givenPath)).toEqual(expectedRealPath),
+      expect(tfs.lookup(givenPath)).toMatchObject({
+        exists: true,
+        realPath: expectedRealPath,
+        type: 'f',
+      }),
     );
 
     test.each([
-      [p('/project/foo')],
       [p('/project/bar.js/bad-parent')],
-      [p('/project/root/outside')],
       [p('/project/link-to-nowhere')],
       [p('/project/not/exists')],
-    ])('returns null for directories or broken paths: %s', givenPath =>
-      expect(tfs.getRealPath(givenPath)).toEqual(null),
+    ])(
+      'returns exists: false for missing files, bad paths or broken links: %s',
+      givenPath => expect(tfs.lookup(givenPath).exists).toEqual(false),
+    );
+
+    test.each([[p('/project/foo')], [p('/project/root/outside')]])(
+      'returns type: d for %s',
+      givenPath =>
+        expect(tfs.lookup(givenPath)).toMatchObject({
+          exists: true,
+          type: 'd',
+        }),
     );
   });
 
@@ -360,7 +372,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]);
 
         expect(
-          tfs.getRealPath(p('/project/newdir/link-to-link-to-bar.js')),
+          tfs.lookup(p('/project/newdir/link-to-link-to-bar.js')).realPath,
         ).toEqual(p('/project/bar.js'));
 
         expect(tfs.linkStats('bar.js')).toEqual({

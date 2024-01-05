@@ -175,7 +175,6 @@ export interface FileSystem {
     removedFiles: Set<string>,
   };
   getModuleName(file: Path): ?string;
-  getRealPath(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
 
@@ -184,6 +183,12 @@ export interface FileSystem {
    * information about the symlink without following it.
    */
   linkStats(file: Path): ?FileStats;
+
+  /**
+   * Return information about the given path, whether a directory or file.
+   * Always follow symlinks, and return a real path if it exists.
+   */
+  lookup(mixedPath: Path): LookupResult;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
@@ -202,6 +207,12 @@ export interface FileSystem {
 }
 
 export type Glob = string;
+
+export type LookupResult =
+  | {
+      exists: false,
+    }
+  | {exists: true, realPath: string, type: 'd' | 'f' | 'l'};
 
 export interface MockMap {
   getMockModule(name: string): ?Path;
