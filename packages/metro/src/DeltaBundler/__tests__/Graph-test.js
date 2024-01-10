@@ -3913,3 +3913,32 @@ describe('recovery from transform and resolution errors', () => {
     });
   });
 });
+
+test('when only the order of transformer dependencies changes, the resolved dependencies should be reordered too', async () => {
+  await graph.initialTraverseDependencies(options);
+  expect([
+    ...nullthrows(graph.dependencies.get('/foo')).dependencies.values(),
+  ]).toEqual([
+    objectContaining({absolutePath: '/bar'}),
+    objectContaining({absolutePath: '/baz'}),
+  ]);
+
+  Actions.modifyFile('/foo');
+  const transformerDeps = nullthrows(mockedDependencyTree.get('/foo'));
+  mockedDependencyTree.set('/foo', [...transformerDeps].reverse());
+
+  expect(
+    getPaths(await graph.traverseDependencies([...files], options)),
+  ).toEqual({
+    added: new Set(),
+    modified: new Set(['/foo']),
+    deleted: new Set(),
+  });
+
+  expect([
+    ...nullthrows(graph.dependencies.get('/foo')).dependencies.values(),
+  ]).toEqual([
+    objectContaining({absolutePath: '/baz'}),
+    objectContaining({absolutePath: '/bar'}),
+  ]);
+});
