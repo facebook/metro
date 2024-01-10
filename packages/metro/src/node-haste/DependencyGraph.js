@@ -248,14 +248,6 @@ class DependencyGraph extends EventEmitter {
   }
 
   getSha1(filename: string): string {
-    // TODO If it looks like we're trying to get the sha1 from a file located
-    // within a Zip archive, then we instead compute the sha1 for what looks
-    // like the Zip archive itself.
-
-    const splitIndex = filename.indexOf('.zip/');
-    const containerName =
-      splitIndex !== -1 ? filename.slice(0, splitIndex + 4) : filename;
-
     // Prior to unstable_enableSymlinks:
     // Calling realpath allows us to get a hash for a given path even when
     // it's a symlink to a file, which prevents Metro from crashing in such a
@@ -266,8 +258,8 @@ class DependencyGraph extends EventEmitter {
     //
     // This is unnecessary with a symlink-aware fileSystem implementation.
     const resolvedPath = this._config.resolver.unstable_enableSymlinks
-      ? containerName
-      : fs.realpathSync(containerName);
+      ? filename
+      : fs.realpathSync(filename);
 
     const sha1 = this._fileSystem.getSha1(resolvedPath);
 
