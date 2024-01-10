@@ -421,7 +421,7 @@ export class Graph<T = MixedOutput> {
       }
     }
 
-    // Diff dependencies (1/2): remove dependencies that have changed or been removed.
+    // Diff dependencies (1/3): remove dependencies that have changed or been removed.
     let dependenciesRemoved = false;
     for (const [key, prevDependency] of previousDependencies) {
       const curDependency = currentDependencies.get(key);
@@ -434,7 +434,7 @@ export class Graph<T = MixedOutput> {
       }
     }
 
-    // Diff dependencies (2/2): add dependencies that have changed or been added.
+    // Diff dependencies (2/3): add dependencies that have changed or been added.
     let dependenciesAdded = false;
     if (!commitOptions.onlyRemove) {
       for (const [key, curDependency] of currentDependencies) {
@@ -456,11 +456,21 @@ export class Graph<T = MixedOutput> {
       }
     }
 
+    // Diff dependencies (3/3): detect changes in the ordering of dependency
+    // keys, which must be committed even if no other changes were made.
+    const previousDependencyKeys = [...previousDependencies.keys()];
+    const dependencyKeysChangedOrReordered =
+      currentDependencies.size !== previousDependencies.size ||
+      [...currentDependencies.keys()].some(
+        (currentKey, index) => currentKey !== previousDependencyKeys[index],
+      );
+
     if (
       previousModule != null &&
       !transformOutputMayDiffer(previousModule, nextModule) &&
       !dependenciesRemoved &&
-      !dependenciesAdded
+      !dependenciesAdded &&
+      !dependencyKeysChangedOrReordered
     ) {
       // We have not operated on nextModule, so restore previousModule
       // to aid diffing. Don't add this path to delta.touched.
