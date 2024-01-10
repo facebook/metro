@@ -20,7 +20,7 @@ const path = require('path');
 const prettyFormat = require('pretty-format');
 const stripAnsi = require('strip-ansi');
 
-function fixupAbsolutePaths(result) {
+function fixupAbsolutePaths(result: any) {
   result.transformer.minifierPath = result.transformer.minifierPath.replace(
     process.cwd(),
     '/~',
