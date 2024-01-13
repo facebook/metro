@@ -38,7 +38,8 @@ function constantFoldingPlugin(context: {
     const unsafe = (
       path:
         | NodePath<BabelNodeAssignmentExpression>
-        | NodePath<BabelNodeCallExpression>,
+        | NodePath<BabelNodeCallExpression>
+        | NodePath<BabelNodeOptionalCallExpression>,
       state: {safe: boolean},
     ) => {
       state.safe = false;
@@ -46,6 +47,7 @@ function constantFoldingPlugin(context: {
 
     path.traverse(
       {
+        AssignmentExpression: unsafe,
         CallExpression: unsafe,
         /**
          * This will mark `foo?.()` as unsafe, so it is not replaced with `undefined` down the line.
@@ -54,7 +56,6 @@ function constantFoldingPlugin(context: {
          * resulting in the expression call being skipped.
          */
         OptionalCallExpression: unsafe,
-        AssignmentExpression: unsafe,
       },
       state,
     );
