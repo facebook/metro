@@ -47,6 +47,13 @@ function constantFoldingPlugin(context: {
     path.traverse(
       {
         CallExpression: unsafe,
+        /**
+         * This will mark `foo?.()` as unsafe, so it is not replaced with `undefined` down the line.
+         *
+         * We saw this case in the wild, where the unary expression `void foo?.()` was replaced with `undefined`
+         * resulting in the expression call being skipped.
+         */
+        OptionalCallExpression: unsafe,
         AssignmentExpression: unsafe,
       },
       state,
