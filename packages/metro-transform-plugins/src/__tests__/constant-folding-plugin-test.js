@@ -361,4 +361,20 @@ describe('constant expressions', () => {
 
     compare([constantFoldingPlugin], code, expected);
   });
+
+  it('does not transform optional chained call into `undefined`', () => {
+    const code = `foo?.();`;
+
+    const expected = `foo?.();`;
+
+    compare([constantFoldingPlugin], code, expected);
+  });
+
+  it('does not transform `void` prefixed optional chained call into `undefined`', () => {
+    const code = `void foo?.();`;
+
+    const expected = `void foo?.();`;
+
+    compare([constantFoldingPlugin], code, expected);
+  });
 });
