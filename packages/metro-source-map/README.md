@@ -1,5 +1,5 @@
 # Metro
 
-🚇 The source map generator for [Metro](https://facebook.github.io/metro/).
+🚇 The source map generator for [Metro](https://metrobundler.dev/).
 
 (TODO)
