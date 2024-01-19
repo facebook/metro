@@ -16,11 +16,11 @@
 
 Metro is included with React Native — see the [React Native docs](https://reactnative.dev/docs/getting-started) to quickly get started ⏱️.
 
-To add Metro to an existing project, see our [Getting Started guide](https://facebook.github.io/metro/docs/getting-started).
+To add Metro to an existing project, see our [Getting Started guide](https://metrobundler.dev/docs/getting-started).
 
 ## Documentation
 
-All available documentation, including on [configuring Metro](https://facebook.github.io/metro/docs/configuration), can be found on the [Metro website](https://facebook.github.io/metro/docs/getting-started).
+All available documentation, including on [configuring Metro](https://metrobundler.dev/docs/configuration), can be found on the [Metro website](https://metrobundler.dev/docs/getting-started).
 
 Source code for documentation is located in this repository under `docs/`.
 

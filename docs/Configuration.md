@@ -213,7 +213,7 @@ Type: `Array<string>`
 
 The list of source file extensions to include in the bundle. For example, including `'ts'` allows Metro to include `.ts` files in the bundle.
 
-The order of these extensions defines the order to match files on disk. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+The order of these extensions defines the order to match files on disk. For more information, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
 Defaults to `['js', 'jsx', 'json', 'ts', 'tsx']`.
 
@@ -223,7 +223,7 @@ Type: `Array<string>`
 
 The list of fields in `package.json` that Metro will treat as describing a package's entry points. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
 
-Metro's default resolver processes each of these fields according to the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), including the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+Metro's default resolver processes each of these fields according to the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), including the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files. For more information, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
 :::note
 
@@ -253,13 +253,13 @@ Whether to automatically resolve references to first-party packages (e.g. worksp
 
 Type: `{[string]: string}`
 
-A mapping of package names to directories that is consulted after the standard lookup through `node_modules` as well as any [`nodeModulesPaths`](#nodemodulespaths). For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+A mapping of package names to directories that is consulted after the standard lookup through `node_modules` as well as any [`nodeModulesPaths`](#nodemodulespaths). For more information, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
 #### `nodeModulesPaths`
 
 Type: `Array<string>`
 
-A list of paths to check for modules after looking through all `node_modules` directories. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files. For more information, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+A list of paths to check for modules after looking through all `node_modules` directories. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files. For more information, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
 #### `resolveRequest`
 
@@ -282,7 +282,7 @@ resolveRequest: (context, moduleName, platform) => {
 }
 ```
 
-For more information on customizing the resolver, see [Module Resolution](https://facebook.github.io/metro/docs/resolution).
+For more information on customizing the resolver, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
 #### `useWatchman`
 

@@ -19,18 +19,17 @@ const supportLinks = [
     content: (
       <ul>
         <li>
-          Learn how to <a href="/metro/docs/getting-started">get started</a>{' '}
-          with Metro.
-        </li>
-        <li>
-          <a href="/metro/docs/troubleshooting">Troubleshoot</a> problems with
+          Learn how to <a href="/docs/getting-started">get started</a> with
           Metro.
         </li>
         <li>
-          Learn how to <a href="/metro/docs/configuration">configure Metro</a>.
+          <a href="/docs/troubleshooting">Troubleshoot</a> problems with Metro.
         </li>
         <li>
-          Look at the full <a href="/metro/docs/api">API Reference</a>.
+          Learn how to <a href="/docs/configuration">configure Metro</a>.
+        </li>
+        <li>
+          Look at the full <a href="/docs/api">API Reference</a>.
         </li>
       </ul>
     ),

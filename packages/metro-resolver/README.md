@@ -1,3 +1,3 @@
 # metro-resolver
 
-🚇 [Metro](https://facebook.github.io/metro/) resolution logic
+🚇 [Metro](https://metrobundler.dev/) resolution logic
