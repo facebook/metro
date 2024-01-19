@@ -110,8 +110,8 @@ describe('inline constants', () => {
 
     it("doesn't replace __DEV__ as the name of an optional property access", () => {
       const code = `
-        const dev = true;
-        export { dev as __DEV__ };
+        x?.__DEV__;
+        x?.__DEV__();
       `;
 
       compare([inlinePlugin], code, code, {dev: false});
