@@ -87,10 +87,7 @@ function inlinePlugin(
 
   const isDev = (node: Node, parent: Node, scope: Scope): boolean =>
     isIdentifier(node, dev) &&
-    isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
-    !isMemberExpression(parent) &&
-    // not { __DEV__: 'value'}
-    (!isObjectProperty(parent) || parent.value === node);
+    isGlobalOrFlowDeclared(scope.getBinding(dev.name));
 
   function findProperty(
     objectExpression: ObjectExpression,
