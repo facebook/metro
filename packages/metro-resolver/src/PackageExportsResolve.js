@@ -103,8 +103,19 @@ export function resolvePackageTargetFromExports(
       }
     }
 
-    if (context.doesFileExist(filePath)) {
-      return {type: 'sourceFile', filePath};
+    if (context.unstable_getRealPath != null) {
+      const maybeRealPath = context.unstable_getRealPath(filePath);
+      if (maybeRealPath != null) {
+        return {
+          type: 'sourceFile',
+          filePath: maybeRealPath,
+        };
+      }
+    } else if (context.doesFileExist(filePath)) {
+      return {
+        type: 'sourceFile',
+        filePath,
+      };
     }
 
     throw createConfigError(

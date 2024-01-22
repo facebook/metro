@@ -109,14 +109,20 @@ describe('with package exports resolution disabled', () => {
 describe('with package exports resolution enabled', () => {
   describe('main entry point', () => {
     const baseContext = {
-      ...createResolutionContext({
-        '/root/src/main.js': '',
-        '/root/node_modules/test-pkg/package.json': '',
-        '/root/node_modules/test-pkg/index.js': '',
-        '/root/node_modules/test-pkg/index-main.js': '',
-        '/root/node_modules/test-pkg/index-exports.js.js': '',
-        '/root/node_modules/test-pkg/index-exports.ios.js': '',
-      }),
+      ...createResolutionContext(
+        {
+          '/root/src/main.js': '',
+          '/root/node_modules/test-pkg/package.json': '',
+          '/root/node_modules/test-pkg/index.js': '',
+          '/root/node_modules/test-pkg/index-main.js': '',
+          '/root/node_modules/test-pkg/index-exports.js.js': '',
+          '/root/node_modules/test-pkg/index-exports.ios.js': '',
+          '/root/node_modules/test-pkg/symlink.js': {
+            realPath: '/root/node_modules/test-pkg/symlink-target.js',
+          },
+        },
+        {enableSymlinks: true},
+      ),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
     };
@@ -227,6 +233,23 @@ describe('with package exports resolution enabled', () => {
         expect(Resolver.resolve(context, 'test-pkg', 'ios')).toEqual({
           type: 'sourceFile',
           filePath: '/root/node_modules/test-pkg/index-main.js',
+        });
+      });
+
+      test('following symlinks and resolving real paths', () => {
+        const context = {
+          ...baseContext,
+          ...createPackageAccessors({
+            '/root/node_modules/test-pkg/package.json': {
+              main: 'index-main.js',
+              exports: './symlink.js',
+            },
+          }),
+        };
+
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/symlink-target.js',
         });
       });
     });
