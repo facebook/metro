@@ -15,7 +15,6 @@ import type {PluginObj} from '@babel/core';
 import type {Binding, NodePath, Scope} from '@babel/traverse';
 import type {
   CallExpression,
-  Identifier,
   MemberExpression,
   Node,
   ObjectExpression,
@@ -86,12 +85,9 @@ function inlinePlugin(
     isIdentifier(node.object.object, processId) &&
     isGlobal(scope.getBinding(processId.name));
 
-  const isDev = (node: Identifier, parent: Node, scope: Scope): boolean =>
+  const isDev = (node: Node, parent: Node, scope: Scope): boolean =>
     isIdentifier(node, dev) &&
-    isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
-    !isMemberExpression(parent) &&
-    // not { __DEV__: 'value'}
-    (!isObjectProperty(parent) || parent.value === node);
+    isGlobalOrFlowDeclared(scope.getBinding(dev.name));
 
   function findProperty(
     objectExpression: ObjectExpression,
@@ -136,7 +132,7 @@ function inlinePlugin(
 
   return {
     visitor: {
-      Identifier(path: NodePath<Identifier>, state: State): void {
+      ReferencedIdentifier(path: NodePath<Node>, state: State): void {
         if (!state.opts.dev && isDev(path.node, path.parent, path.scope)) {
           path.replaceWith(t.booleanLiteral(state.opts.dev));
         }
