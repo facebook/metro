@@ -19,6 +19,7 @@
     "metro": "0.80.4",
     "metro-cache": "0.80.4",
     "metro-core": "0.80.4",
+    "metro-minify-terser": "0.80.4",
     "metro-runtime": "0.80.4"
   },
   "devDependencies": {

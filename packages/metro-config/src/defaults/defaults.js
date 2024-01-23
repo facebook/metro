@@ -63,7 +63,9 @@ exports.moduleSystem = (require.resolve(
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-terser';
+exports.DEFAULT_METRO_MINIFIER_PATH = (require.resolve(
+  'metro-minify-terser',
+): string);
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;
 

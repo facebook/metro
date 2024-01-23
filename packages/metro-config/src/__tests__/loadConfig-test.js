@@ -20,6 +20,13 @@ const path = require('path');
 const prettyFormat = require('pretty-format');
 const stripAnsi = require('strip-ansi');
 
+function fixupAbsolutePaths(result: any) {
+  result.transformer.minifierPath = result.transformer.minifierPath.replace(
+    process.cwd(),
+    '/~',
+  );
+}
+
 describe('loadConfig', () => {
   beforeEach(() => {
     cosmiconfig.reset();
@@ -39,6 +46,7 @@ describe('loadConfig', () => {
     cosmiconfig.setResolvedConfig(config);
 
     const result = await loadConfig({});
+    fixupAbsolutePaths(result);
 
     expect(result).toMatchSnapshot();
     expect(result.cacheStores).toEqual([]);
@@ -92,6 +100,7 @@ describe('loadConfig', () => {
     // We don't actually use the specified file in this test but it needs to
     // resolve to a real file on the file system.
     const result = await loadConfig({config: './__tests__/loadConfig-test.js'});
+    fixupAbsolutePaths(result);
 
     const relativizedResult = {
       ...result,
@@ -131,6 +140,7 @@ describe('loadConfig', () => {
     // We don't actually use the specified file in this test but it needs to
     // resolve to a real file on the file system.
     const result = await loadConfig({config: path.resolve(__dirname, '../')});
+    fixupAbsolutePaths(result);
 
     const relativizedResult = {
       ...result,
@@ -214,6 +224,7 @@ describe('loadConfig', () => {
     cosmiconfig.setResolvedConfig(config);
 
     const result = await loadConfig({});
+    fixupAbsolutePaths(result);
 
     expect(result).toMatchSnapshot();
     expect(result.cacheStores).toEqual([]);
