@@ -228,12 +228,14 @@ class HmrServer<TClient: Client> {
             ),
           );
         case 'log':
-          this._config.reporter.update({
-            type: 'client_log',
-            level: data.level,
-            data: data.data,
-            mode: data.mode,
-          });
+          if (this._config.server.forwardClientLogs) {
+            this._config.reporter.update({
+              type: 'client_log',
+              level: data.level,
+              data: data.data,
+              mode: data.mode,
+            });
+          }
           break;
         case 'log-opt-in':
           client.optedIntoHMR = true;

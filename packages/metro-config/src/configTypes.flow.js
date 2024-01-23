@@ -167,6 +167,7 @@ type MetalConfigT = {
 type ServerConfigT = {
   /** @deprecated */
   enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
+  forwardClientLogs: boolean,
   port: number,
   rewriteRequestUrl: string => string,
   unstable_serverRoot: ?string,

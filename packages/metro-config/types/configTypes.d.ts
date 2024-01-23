@@ -165,6 +165,7 @@ export interface ServerConfigT {
     metroMiddleware: Middleware,
     metroServer: MetroServer,
   ) => Middleware | Server;
+  forwardClientLogs: boolean;
   port: number;
   rewriteRequestUrl: (url: string) => string;
   unstable_serverRoot: string | null;
