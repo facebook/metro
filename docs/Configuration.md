@@ -661,6 +661,12 @@ Type: `string => string`
 
 A function that will be called every time Metro processes a URL, after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
 
+#### `forwardClientLogs`
+
+Type: `boolean`
+
+Enable forwarding of `client_log` events (when client logs are [configured](https://github.com/facebook/metro/blob/614ad14a85b22958129ee94e04376b096f03ccb1/packages/metro/src/lib/createWebsocketServer.js#L20)) to the reporter. Defaults to `true`.
+
 ---
 
 ### Watcher Options

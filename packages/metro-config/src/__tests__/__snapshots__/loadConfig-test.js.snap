@@ -100,6 +100,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "forwardClientLogs": true,
     "port": 8081,
     "rewriteRequestUrl": [Function],
     "unstable_serverRoot": null,
@@ -280,6 +281,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "forwardClientLogs": true,
     "port": 8081,
     "rewriteRequestUrl": [Function],
     "unstable_serverRoot": null,
@@ -460,6 +462,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "forwardClientLogs": true,
     "port": 8081,
     "rewriteRequestUrl": [Function],
     "unstable_serverRoot": null,
@@ -640,6 +643,7 @@ Object {
   },
   "server": Object {
     "enhanceMiddleware": [Function],
+    "forwardClientLogs": true,
     "port": 8081,
     "rewriteRequestUrl": [Function],
     "unstable_serverRoot": null,
