@@ -21,7 +21,8 @@ if [ $TAG_ON_RELEASE_BRANCH -eq $TAG_ON_MAIN ]; then
 fi
 
 NPM_TAG="latest"
-[ "$TAG_ON_RELEASE_BRANCH" -eq 1 ] && NPM_TAG=$RELEASE_BRANCH
+# Use a tag name like "0.123-stable" as the dist-tag for a hotfix. This *must not* be valid semver.
+[ "$TAG_ON_RELEASE_BRANCH" -eq 1 ] && NPM_TAG="${RELEASE_BRANCH/%.x/-stable}"
 echo "Publishing with --tag=$NPM_TAG"
 
 npm run publish --tag="$NPM_TAG"
