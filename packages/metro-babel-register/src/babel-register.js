@@ -167,7 +167,7 @@ function registerForMetroMonorepo() {
     // including Metro's root.
     //
     // $FlowExpectedError[cannot-resolve-module] - Won't resolve in OSS
-    require('@fb-scripts/babel-register'); // eslint-disable-line
+    require('@fb-tools/babel-register'); // eslint-disable-line
   } else {
     register([path.resolve(__dirname, '..', '..')]);
   }
