@@ -272,7 +272,13 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logToConsole(this.terminal, event.level, event.mode, ...event.data);
+        logToConsole(
+          this.terminal,
+          event.level,
+          event.mode,
+          event.platform,
+          ...event.data,
+        );
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
