@@ -290,13 +290,15 @@ function overrideConfigWithArguments(
 
 /**
  * Load the metro configuration from disk
- * @param  {object} argv                    Arguments coming from the CLI, can be empty
- * @param  {object} defaultConfigOverrides  A configuration that can override the default config
- * @return {object}                         Configuration returned
+ * @param  {object}  argv                           Arguments coming from the CLI, can be empty
+ * @param  {object}  defaultConfigOverrides         A configuration that can override the default config
+ * @param  {boolean} injectProjectRootAsWatchFolder Will ensure `projectRoot` is present in the `watchFolders`
+ * @return {object}                                 Configuration returned
  */
 async function loadConfig(
   argvInput?: YargArguments = {},
   defaultConfigOverrides?: InputConfigT = {},
+  injectProjectRootAsWatchFolder?: boolean = true,
 ): Promise<ConfigT> {
   const argv = {...argvInput, config: overrideArgument(argvInput.config)};
 
@@ -321,10 +323,12 @@ async function loadConfig(
 
   const overriddenConfig: {[string]: mixed} = {};
 
-  overriddenConfig.watchFolders = [
-    configWithArgs.projectRoot,
-    ...configWithArgs.watchFolders,
-  ];
+  if (injectProjectRootAsWatchFolder) {
+    overriddenConfig.watchFolders = [
+      configWithArgs.projectRoot,
+      ...(configWithArgs.watchFolders ?? []),
+    ];
+  }
 
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
