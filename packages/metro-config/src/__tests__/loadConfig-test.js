@@ -166,6 +166,21 @@ describe('loadConfig', () => {
     expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
   });
 
+  it('does not inject projectRoot into watchFolders when called with a third `false` argument', async () => {
+    cosmiconfig.setReturnNull(true);
+
+    const result = await loadConfig(
+      {cwd: process.cwd()},
+      {watchFolders: undefined},
+      false,
+    );
+    const defaultConfig = {
+      ...(await getDefaultConfig(process.cwd())),
+      watchFolders: undefined,
+    };
+    expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
+  });
+
   it('validates config for server', async () => {
     expect.assertions(1);
     const config = (defaultConfig: any) => ({
