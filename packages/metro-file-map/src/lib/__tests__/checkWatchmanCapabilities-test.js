@@ -34,7 +34,9 @@ describe('checkWatchmanCapabilities', () => {
 
   it('executes watchman list-capabilities and resolves on success', async () => {
     setMockExecFileResponse(null, mockSuccessResponse);
-    await expect(checkWatchmanCapabilities(['c1', 'c2'])).resolves.toEqual();
+    await expect(checkWatchmanCapabilities(['c1', 'c2'])).resolves.toEqual({
+      version: 'v123',
+    });
     expect(mockExecFile).toHaveBeenCalledWith(
       'watchman',
       [

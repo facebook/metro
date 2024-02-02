@@ -1142,7 +1142,14 @@ export default class FileMap extends EventEmitter {
       this._canUseWatchmanPromise = checkWatchmanCapabilities(
         WATCHMAN_REQUIRED_CAPABILITIES,
       )
-        .then(() => true)
+        .then(({version}) => {
+          this._startupPerfLogger?.annotate({
+            string: {
+              watchmanVersion: version,
+            },
+          });
+          return true;
+        })
         .catch(e => {
           // TODO: Advise people to either install Watchman or set
           // `useWatchman: false` here?

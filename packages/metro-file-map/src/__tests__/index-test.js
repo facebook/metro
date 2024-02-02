@@ -20,7 +20,7 @@ function mockHashContents(contents) {
 
 jest.mock('../lib/checkWatchmanCapabilities', () => ({
   __esModule: true,
-  default: async () => {},
+  default: async () => ({version: 'v123'}),
 }));
 
 jest.mock('jest-worker', () => ({

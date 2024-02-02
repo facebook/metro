@@ -13,7 +13,7 @@ import {promisify} from 'util';
 
 export default async function checkWatchmanCapabilities(
   requiredCapabilities: $ReadOnlyArray<string>,
-): Promise<void> {
+): Promise<{version: string}> {
   const execFilePromise: (
     cmd: string,
     args: $ReadOnlyArray<string>,
@@ -64,4 +64,5 @@ export default async function checkWatchmanCapabilities(
       )}`,
     );
   }
+  return {version};
 }
