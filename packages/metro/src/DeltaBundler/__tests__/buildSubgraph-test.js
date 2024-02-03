@@ -101,6 +101,7 @@ describe('GraphTraversal', () => {
       ]),
       getSource: expect.any(Function),
       output: [],
+      resolutionDependencies: new Set(),
       resolvedContexts: new Map(),
     });
   });
@@ -145,6 +146,7 @@ describe('GraphTraversal', () => {
                 },
               ],
             ]),
+            resolutionDependencies: new Set(),
             resolvedContexts: new Map([
               ['key-virtual', expectedResolvedContext],
             ]),
@@ -156,6 +158,7 @@ describe('GraphTraversal', () => {
           '/contextMatch',
           {
             dependencies: new Map(),
+            resolutionDependencies: new Set(),
             resolvedContexts: new Map(),
             output: [],
             getSource: expect.any(Function),
@@ -177,6 +180,7 @@ describe('GraphTraversal', () => {
                 },
               ],
             ]),
+            resolutionDependencies: new Set(),
             resolvedContexts: new Map(),
             output: [],
             getSource: expect.any(Function),

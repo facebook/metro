@@ -76,6 +76,7 @@ export type ModuleData<T = MixedOutput> = $ReadOnly<{
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  resolutionDependencies: $ReadOnlySet<string>,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
@@ -138,6 +139,7 @@ export type AllowOptionalDependencies =
 
 export type BundlerResolution = $ReadOnly<{
   type: 'sourceFile',
+  dependencies?: $ReadOnlySet<string>,
   filePath: string,
 }>;
 

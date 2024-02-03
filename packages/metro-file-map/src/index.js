@@ -43,10 +43,10 @@ import H from './constants';
 import getMockName from './getMockName';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import {DuplicateError} from './lib/DuplicateError';
-import * as fastPath from './lib/fast_path';
 import MockMapImpl from './lib/MockMap';
 import MutableHasteMap from './lib/MutableHasteMap';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
+import {RootPathUtils} from './lib/RootPathUtils';
 import TreeFS from './lib/TreeFS';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
@@ -246,6 +246,7 @@ export default class FileMap extends EventEmitter {
   _changeInterval: ?IntervalID;
   _console: Console;
   _options: InternalOptions;
+  _pathUtils: RootPathUtils;
   _watcher: ?Watcher;
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
@@ -330,6 +331,7 @@ export default class FileMap extends EventEmitter {
         });
 
     this._buildPromise = null;
+    this._pathUtils = new RootPathUtils(options.rootDir);
     this._worker = null;
     this._startupPerfLogger?.point('constructor_end');
     this._crawlerAbortController = new AbortController();
@@ -526,7 +528,7 @@ export default class FileMap extends EventEmitter {
   ): ?Promise<void> {
     const rootDir = this._options.rootDir;
 
-    const relativeFilePath = fastPath.relative(rootDir, filePath);
+    const relativeFilePath = this._pathUtils.absoluteToNormal(filePath);
     const isSymlink = fileMetadata[H.SYMLINK] !== 0;
 
     const computeSha1 =
@@ -628,7 +630,7 @@ export default class FileMap extends EventEmitter {
       const existingMockPath = mockMap.get(mockPath);
 
       if (existingMockPath != null) {
-        const secondMockPath = fastPath.relative(rootDir, filePath);
+        const secondMockPath = this._pathUtils.absoluteToNormal(filePath);
         if (existingMockPath !== secondMockPath) {
           const method = this._options.throwOnModuleCollision
             ? 'error'
@@ -706,10 +708,7 @@ export default class FileMap extends EventEmitter {
       }
 
       // SHA-1, if requested, should already be present thanks to the crawler.
-      const filePath = fastPath.resolve(
-        this._options.rootDir,
-        relativeFilePath,
-      );
+      const filePath = this._pathUtils.normalToAbsolute(relativeFilePath);
       const maybePromise = this._processFile(
         hasteMap,
         mockMap,
@@ -879,8 +878,6 @@ export default class FileMap extends EventEmitter {
     const hasWatchedExtension = (filePath: string) =>
       this._options.extensions.some(ext => filePath.endsWith(ext));
 
-    const rootDir = this._options.rootDir;
-
     let changeQueue: Promise<null | void> = Promise.resolve();
     let nextEmit: ?{
       eventsQueue: EventsQueue,
@@ -925,7 +922,7 @@ export default class FileMap extends EventEmitter {
     ) => {
       if (
         metadata &&
-        // Ignore all directory events
+        // Ignore all directory events from watcher backends
         (metadata.type === 'd' ||
           // Ignore regular files with unwatched extensions
           (metadata.type === 'f' && !hasWatchedExtension(filePath)) ||
@@ -946,7 +943,8 @@ export default class FileMap extends EventEmitter {
         return;
       }
 
-      const relativeFilePath = fastPath.relative(rootDir, absoluteFilePath);
+      const relativeFilePath =
+        this._pathUtils.absoluteToNormal(absoluteFilePath);
       const linkStats = fileSystem.linkStats(relativeFilePath);
 
       // The file has been accessed, not modified. If the modified time is
@@ -986,9 +984,12 @@ export default class FileMap extends EventEmitter {
 
           const linkStats = fileSystem.linkStats(relativeFilePath);
 
-          const enqueueEvent = (metadata: ChangeEventMetadata) => {
+          const enqueueEvent = (
+            metadata: ChangeEventMetadata,
+            filePath: string = absoluteFilePath,
+          ) => {
             const event = {
-              filePath: absoluteFilePath,
+              filePath,
               metadata,
               type,
             };
@@ -1040,7 +1041,20 @@ export default class FileMap extends EventEmitter {
                 fileMetadata,
                 {forceInBand: true}, // No need to clean up workers
               );
-              fileSystem.addOrModify(relativeFilePath, fileMetadata);
+              const {topmostNewDirectory} = fileSystem.addOrModify(
+                relativeFilePath,
+                fileMetadata,
+              );
+              if (topmostNewDirectory != null) {
+                enqueueEvent(
+                  {
+                    modifiedTime: null,
+                    size: null,
+                    type: 'd',
+                  },
+                  topmostNewDirectory,
+                );
+              }
               enqueueEvent(metadata);
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {

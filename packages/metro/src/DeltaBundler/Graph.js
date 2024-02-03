@@ -151,6 +151,9 @@ export class Graph<T = MixedOutput> {
   /** Resolved context parameters from `require.context`. */
   #resolvedContexts: Map<string, RequireContext> = new Map();
 
+  +#resolutionDependencies: Map<string, $ReadOnlySet<string>> = new Map();
+  +#inverseResolutionDependencies: Map<string, CountingSet<string>> = new Map();
+
   constructor(options: GraphInputOptions) {
     this.entryPoints = options.entryPoints;
     this.transformOptions = options.transformOptions;
@@ -176,6 +179,15 @@ export class Graph<T = MixedOutput> {
     const modifiedPathsInBaseGraph = new Set(
       paths.filter(path => this.dependencies.has(path)),
     );
+
+    for (const modifiedPath of paths) {
+      const modulePaths = this.#inverseResolutionDependencies.get(modifiedPath);
+      if (modulePaths != null) {
+        for (const modulePath of modulePaths) {
+          modifiedPathsInBaseGraph.add(modulePath);
+        }
+      }
+    }
 
     const allModifiedPaths = new Set(paths);
 
@@ -373,6 +385,36 @@ export class Graph<T = MixedOutput> {
     };
   }
 
+  _updateInverseResolutionDependencies(
+    modulePath: string,
+    previous: $ReadOnlySet<string>,
+    next: $ReadOnlySet<string>,
+  ): void {
+    for (const prevResolutionDep of previous) {
+      if (!next.has(prevResolutionDep)) {
+        const inverse = nullthrows(
+          this.#inverseResolutionDependencies.get(prevResolutionDep),
+        );
+        inverse.delete(modulePath);
+        if (inverse.size === 0) {
+          this.#inverseResolutionDependencies.delete(prevResolutionDep);
+        }
+      }
+    }
+
+    for (const nextResolutionDep of next) {
+      if (!previous.has(nextResolutionDep)) {
+        let inverse =
+          this.#inverseResolutionDependencies.get(nextResolutionDep);
+        if (inverse == null) {
+          inverse = new CountingSet();
+          this.#inverseResolutionDependencies.set(nextResolutionDep, inverse);
+        }
+        inverse.add(modulePath);
+      }
+    }
+  }
+
   _recursivelyCommitModule(
     path: string,
     delta: Delta<T>,
@@ -394,6 +436,7 @@ export class Graph<T = MixedOutput> {
     const {
       dependencies: currentDependencies,
       resolvedContexts,
+      resolutionDependencies,
       ...transformResult
     } = currentModule;
 
@@ -405,6 +448,13 @@ export class Graph<T = MixedOutput> {
       ...transformResult,
       dependencies: new Map(previousDependencies),
     };
+
+    this._updateInverseResolutionDependencies(
+      path,
+      this.#resolutionDependencies.get(path) ?? new Set(),
+      resolutionDependencies,
+    );
+    this.#resolutionDependencies.set(path, resolutionDependencies);
 
     // Update the module information.
     this.dependencies.set(nextModule.path, nextModule);
@@ -760,6 +810,9 @@ export class Graph<T = MixedOutput> {
       getSource,
       output,
       unstable_transformResultKey,
+      resolutionDependencies: nullthrows(
+        this.#resolutionDependencies.get(module.path),
+      ),
     };
   }
 
@@ -806,6 +859,12 @@ export class Graph<T = MixedOutput> {
     this.#gc.possibleCycleRoots.delete(module.path);
     this.#gc.color.delete(module.path);
     this.#resolvedContexts.delete(module.path);
+    this._updateInverseResolutionDependencies(
+      module.path,
+      nullthrows(this.#resolutionDependencies.get(module.path)),
+      new Set(),
+    );
+    this.#resolutionDependencies.delete(module.path);
   }
 
   // Mark a module as a possible cycle root

@@ -10,7 +10,7 @@
  */
 
 import type {FileData} from '../../flow-types';
-import type TreeFS from '../TreeFS';
+import type TreeFSType from '../TreeFS';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
@@ -23,11 +23,13 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
       : filePath;
 
-  let tfs: TreeFS;
+  let tfs: TreeFSType;
+  let TreeFS: Class<TreeFSType>;
+
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
-    const TreeFS = require('../TreeFS').default;
+    TreeFS = require('../TreeFS').default;
     tfs = new TreeFS({
       rootDir: p('/project'),
       files: new Map([
@@ -93,26 +95,106 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
-  describe('getRealPath', () => {
+  describe('lookup', () => {
     test.each([
-      [p('/project/foo/link-to-another.js'), p('/project/foo/another.js')],
-      [p('/project/foo/link-to-bar.js'), p('/project/bar.js')],
-      [p('link-to-foo/link-to-another.js'), p('/project/foo/another.js')],
-      [p('/project/root/outside/external.js'), p('/outside/external.js')],
-      [p('/outside/../project/bar.js'), p('/project/bar.js')],
-    ])('%s -> %s', (givenPath, expectedRealPath) =>
-      expect(tfs.getRealPath(givenPath)).toEqual(expectedRealPath),
+      [
+        p('/project/foo/link-to-another.js'),
+        p('/project/foo/another.js'),
+        [p('/project/foo/link-to-another.js')],
+      ],
+      [
+        p('/project/foo/link-to-bar.js'),
+        p('/project/bar.js'),
+        [p('/project/foo/link-to-bar.js')],
+      ],
+      [
+        p('link-to-foo/link-to-another.js'),
+        p('/project/foo/another.js'),
+        [p('/project/link-to-foo'), p('/project/foo/link-to-another.js')],
+      ],
+      [
+        p('/project/root/outside/external.js'),
+        p('/outside/external.js'),
+        [p('/project/root')],
+      ],
+      [p('/outside/../project/bar.js'), p('/project/bar.js'), []],
+    ])(
+      '%s -> %s through expected symlinks',
+      (givenPath, expectedRealPath, expectedSymlinks) =>
+        expect(tfs.lookup(givenPath)).toEqual({
+          exists: true,
+          links: new Set(expectedSymlinks),
+          realPath: expectedRealPath,
+          type: 'f',
+        }),
     );
 
     test.each([
-      [p('/project/foo')],
-      [p('/project/bar.js/bad-parent')],
-      [p('/project/root/outside')],
-      [p('/project/link-to-nowhere')],
-      [p('/project/not/exists')],
-    ])('returns null for directories or broken paths: %s', givenPath =>
-      expect(tfs.getRealPath(givenPath)).toEqual(null),
+      [p('/project/bar.js/bad-parent'), [], p('/project/bar.js')],
+      [
+        p('/project/link-to-nowhere'),
+        [p('/project/link-to-nowhere')],
+        p('/project/nowhere'),
+      ],
+      [p('/project/not/exists'), [], p('/project/not')],
+      [p('/project/root/missing'), [p('/project/root')], p('/missing')],
+      [p('/project/../missing'), [], p('/missing')],
+      [p('/project/foo/../../missing'), [], p('/missing')],
+      [p('/project/foo/../../project/missing'), [], p('/project/missing')],
+    ])(
+      'non-existence for bad paths, missing files or broken links %s',
+      (givenPath, expectedSymlinks, missingPath) =>
+        expect(tfs.lookup(givenPath)).toEqual({
+          exists: false,
+          links: new Set(expectedSymlinks),
+          missing: missingPath,
+        }),
     );
+
+    test.each([[p('/project/foo')], [p('/project/root/outside')]])(
+      'returns type: d for %s',
+      givenPath =>
+        expect(tfs.lookup(givenPath)).toMatchObject({
+          exists: true,
+          type: 'd',
+        }),
+    );
+
+    test('traversing the same symlink multiple times does not imply a cycle', () => {
+      expect(
+        tfs.lookup(p('/project/foo/owndir/owndir/another.js')),
+      ).toMatchObject({
+        exists: true,
+        realPath: p('/project/foo/another.js'),
+        type: 'f',
+      });
+    });
+
+    test('ancestors of the root are not reported as missing', () => {
+      const tfs = new TreeFS({
+        rootDir: p('/deep/project/root'),
+        files: new Map([
+          [p('foo/index.js'), ['', 123, 0, 0, '', '', 0]],
+          [p('link-up'), ['', 123, 0, 0, '', '', p('..')]],
+        ]),
+      });
+      expect(tfs.lookup(p('/deep/missing/bar.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/missing'),
+      });
+      expect(tfs.lookup(p('link-up/bar.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/project/bar.js'),
+      });
+      expect(tfs.lookup(p('../../baz.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/baz.js'),
+      });
+      expect(tfs.lookup(p('../../project/root/baz.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/project/root/baz.js'),
+      });
+    });
   });
 
   describe('getDifference', () => {
@@ -335,6 +417,52 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.getSize(p('/project/link-to-foo/new.js'))).toEqual(1);
         expect(tfs.getSize(p('/project/fileatroot.js'))).toEqual(2);
       });
+
+      test('returns new directories we may be watching for', () => {
+        const tfs = new TreeFS({
+          rootDir: p('/project'),
+          files: new Map(),
+        });
+        const metadata = ['', 0, 1, 0, '', '', 0];
+        // The root directory is pre-existing, and not reported as new.
+        expect(tfs.addOrModify(p('index.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+        // 'new' is new
+        expect(tfs.addOrModify(p('new/foo.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/new'),
+        });
+        // 'new' already exists
+        expect(tfs.addOrModify(p('new/bar.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+        // 'newer' is new and topmost
+        expect(tfs.addOrModify(p('newer/inner/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/newer'),
+        });
+        // 'newer' already exists, but 'inner2' is new
+        expect(tfs.addOrModify(p('newer/inner2/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/project/newer/inner2'),
+        });
+        // '/' is not reported as the topmost new even though we create a node
+        // for '..' (as an implementation detail) - 'outside' is the first
+        // unseen branch.
+        expect(tfs.addOrModify(p('../outside/file.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/outside'),
+        });
+        // other is new, reported consistenly as above
+        expect(tfs.addOrModify(p('../other/foo.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/other'),
+        });
+        // '../other' exists, 'deep' is new
+        expect(tfs.addOrModify(p('../other/deep/bar.js'), metadata)).toEqual({
+          topmostNewDirectory: p('/other/deep'),
+        });
+        // '../other/deep' exists
+        expect(tfs.addOrModify(p('../other/deep/baz.js'), metadata)).toEqual({
+          topmostNewDirectory: null,
+        });
+      });
     });
 
     describe('bulkAddOrModify', () => {
@@ -360,7 +488,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]);
 
         expect(
-          tfs.getRealPath(p('/project/newdir/link-to-link-to-bar.js')),
+          tfs.lookup(p('/project/newdir/link-to-link-to-bar.js')).realPath,
         ).toEqual(p('/project/bar.js'));
 
         expect(tfs.linkStats('bar.js')).toEqual({
@@ -390,6 +518,33 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
       });
 
+      test('deletes empty ancestor directories', () => {
+        // node_modules/pkg contains two files
+        tfs.remove(p('node_modules/pkg/a.js'));
+        // Still one file left, we expect the directory to remain
+        expect(tfs.lookup(p('node_modules/pkg'))).toMatchObject({
+          exists: true,
+          type: 'd',
+        });
+        // Delete the remaining file
+        tfs.remove(p('node_modules/pkg/package.json'));
+        // Expect the directory to be deleted
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(false);
+        // And its parent, which is now empty
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+      });
+
+      test('deleting all files leaves an empty map', () => {
+        for (const {canonicalPath} of tfs.metadataIterator({
+          includeSymlinks: true,
+          includeNodeModules: true,
+        })) {
+          tfs.remove(canonicalPath);
+        }
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+        expect(tfs.lookup(p('foo')).exists).toBe(false);
+      });
+
       test('returns null for a non-existent file', () => {
         expect(tfs.remove('notexists.js')).toBeNull();
       });
@@ -397,7 +552,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   });
 
   describe('metadataIterator', () => {
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, skipping node_modules and symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: false,
@@ -422,7 +577,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ]);
     });
 
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, including node_modules, skipping symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: false,
@@ -439,7 +594,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       );
     });
 
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, including node_modules and symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: true,

@@ -11,19 +11,21 @@
 
 import type {MockMap as IMockMap, Path, RawMockMap} from '../flow-types';
 
-import {resolve} from './fast_path';
+import {RootPathUtils} from './RootPathUtils';
 
 export default class MockMap implements IMockMap {
   +#raw: RawMockMap;
   +#rootDir: Path;
+  +#pathUtils: RootPathUtils;
 
   constructor({rawMockMap, rootDir}: {rawMockMap: RawMockMap, rootDir: Path}) {
     this.#raw = rawMockMap;
     this.#rootDir = rootDir;
+    this.#pathUtils = new RootPathUtils(rootDir);
   }
 
   getMockModule(name: string): ?Path {
     const mockPath = this.#raw.get(name) || this.#raw.get(name + '/index');
-    return mockPath != null ? resolve(this.#rootDir, mockPath) : null;
+    return mockPath != null ? this.#pathUtils.normalToAbsolute(mockPath) : null;
   }
 }

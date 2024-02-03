@@ -16,7 +16,7 @@ import type {
   IgnoreMatcher,
 } from '../../flow-types';
 
-import * as fastPath from '../../lib/fast_path';
+import {RootPathUtils} from '../../lib/RootPathUtils';
 import hasNativeFindSupport from './hasNativeFindSupport';
 import {spawn} from 'child_process';
 import * as fs from 'graceful-fs';
@@ -37,6 +37,7 @@ function find(
 ): void {
   const result: FileData = new Map();
   let activeCalls = 0;
+  const pathUtils = new RootPathUtils(rootDir);
 
   function search(directory: string): void {
     activeCalls++;
@@ -71,7 +72,7 @@ function find(
           if (!err && stat) {
             const ext = path.extname(file).substr(1);
             if (stat.isSymbolicLink() || extensions.includes(ext)) {
-              result.set(fastPath.relative(rootDir, file), [
+              result.set(pathUtils.absoluteToNormal(file), [
                 '',
                 stat.mtime.getTime(),
                 stat.size,
@@ -122,6 +123,8 @@ function findNative(
     includeSymlinks ? '-o -type l ' : ''
   })`;
 
+  const pathUtils = new RootPathUtils(rootDir);
+
   const child = spawn('find', roots.concat(expression.split(' ')));
   let stdout = '';
   if (child.stdout == null) {
@@ -145,7 +148,7 @@ function findNative(
       lines.forEach(path => {
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
-            result.set(fastPath.relative(rootDir, path), [
+            result.set(pathUtils.absoluteToNormal(path), [
               '',
               stat.mtime.getTime(),
               stat.size,

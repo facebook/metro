@@ -113,6 +113,7 @@ type ResolverConfigT = {
   unstable_conditionsByPlatform: $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
+  unstable_enableIncrementalResolution: boolean,
   unstable_enablePackageExports: boolean,
   useWatchman: boolean,
   requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
