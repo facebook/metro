@@ -20,9 +20,9 @@ import type {
 } from '../../flow-types';
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
-import * as fastPath from '../../lib/fast_path';
 import normalizePathSeparatorsToPosix from '../../lib/normalizePathSeparatorsToPosix';
 import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
+import {RootPathUtils} from '../../lib/RootPathUtils';
 import {planQuery} from './planQuery';
 import invariant from 'invariant';
 import * as path from 'path';
@@ -66,6 +66,7 @@ module.exports = async function watchmanCrawl({
   abortSignal?.throwIfAborted();
 
   const client = new watchman.Client();
+  const pathUtils = new RootPathUtils(rootDir);
   abortSignal?.addEventListener('abort', () => client.end());
 
   perfLogger?.point('watchmanCrawl_start');
@@ -177,6 +178,7 @@ module.exports = async function watchmanCrawl({
     perfLogger?.point('watchmanCrawl/queryWatchmanForDirs_start');
     const results = new Map<string, WatchmanQueryResponse>();
     let isFresh = false;
+
     await Promise.all(
       Array.from(rootProjectDirMappings).map(
         async ([root, {directoryFilters, watcher}], index) => {
@@ -189,7 +191,7 @@ module.exports = async function watchmanCrawl({
           // By using scm queries, we can create the haste map on a different
           // system and import it, transforming the clock into a local clock.
           const since = previousState.clocks.get(
-            normalizePathSeparatorsToPosix(fastPath.relative(rootDir, root)),
+            normalizePathSeparatorsToPosix(pathUtils.absoluteToNormal(root)),
           );
 
           perfLogger?.annotate({
@@ -288,7 +290,7 @@ module.exports = async function watchmanCrawl({
 
   for (const [watchRoot, response] of results) {
     const fsRoot = normalizePathSeparatorsToSystem(watchRoot);
-    const relativeFsRoot = fastPath.relative(rootDir, fsRoot);
+    const relativeFsRoot = pathUtils.absoluteToNormal(fsRoot);
     newClocks.set(
       normalizePathSeparatorsToPosix(relativeFsRoot),
       // Ensure we persist only the local clock.
@@ -300,7 +302,7 @@ module.exports = async function watchmanCrawl({
     for (const fileData of response.files) {
       const filePath =
         fsRoot + path.sep + normalizePathSeparatorsToSystem(fileData.name);
-      const relativeFilePath = fastPath.relative(rootDir, filePath);
+      const relativeFilePath = pathUtils.absoluteToNormal(filePath);
 
       if (!fileData.exists) {
         if (!isFresh) {

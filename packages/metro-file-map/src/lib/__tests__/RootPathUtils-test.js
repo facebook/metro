@@ -9,12 +9,12 @@
  * @oncall react_native
  */
 
-import typeof * as FastPath from '../fast_path';
+import type {RootPathUtils as RootPathUtilsT} from '../RootPathUtils';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
-describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
+describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
   // Convenience function to write paths with posix separators but convert them
   // to system separators
   const p: string => string = filePath =>
@@ -22,31 +22,34 @@ describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
       : filePath;
 
-  let fastPath: FastPath;
+  let RootPathUtils: Class<RootPathUtilsT>;
+  let pathUtils: RootPathUtilsT;
   let pathRelative: JestMockFn<[string, string], string>;
 
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
     pathRelative = jest.spyOn(mockPathModule, 'relative');
-    fastPath = require('../fast_path');
+    RootPathUtils = require('../RootPathUtils').RootPathUtils;
   });
 
   test.each([
     p('/project/root/baz/foobar'),
     p('/project/root/../root2/foobar'),
     p('/project/root/../../project2/foo'),
-  ])(`relative('/project/root', '%s') is correct and optimised`, normalPath => {
+  ])(`absoluteToNormal('%s') is correct and optimised`, normalPath => {
     const rootDir = p('/project/root');
+    pathUtils = new RootPathUtils(rootDir);
     const expected = mockPathModule.relative(rootDir, normalPath);
     pathRelative.mockClear();
-    expect(fastPath.relative(rootDir, normalPath)).toEqual(expected);
+    expect(pathUtils.absoluteToNormal(normalPath)).toEqual(expected);
     expect(pathRelative).not.toHaveBeenCalled();
   });
 
   describe.each([p('/project/root'), p('/')])('root: %s', rootDir => {
     beforeEach(() => {
       pathRelative.mockClear();
+      pathUtils = new RootPathUtils(rootDir);
     });
 
     test.each([
@@ -57,15 +60,12 @@ describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
       p('/project/root/a./../foo'),
       p('/project/root/../a./foo'),
       p('/project/root/.././foo'),
-    ])(
-      `relative('${rootDir}', '%s') falls back to path.relative`,
-      normalPath => {
-        const expected = mockPathModule.relative(rootDir, normalPath);
-        pathRelative.mockClear();
-        expect(fastPath.relative(rootDir, normalPath)).toEqual(expected);
-        expect(pathRelative).toHaveBeenCalled();
-      },
-    );
+    ])(`absoluteToNormal('%s') falls back to path.relative`, normalPath => {
+      const expected = mockPathModule.relative(rootDir, normalPath);
+      pathRelative.mockClear();
+      expect(pathUtils.absoluteToNormal(normalPath)).toEqual(expected);
+      expect(pathRelative).toHaveBeenCalled();
+    });
 
     test.each([
       p('..'),
@@ -74,8 +74,8 @@ describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
       p('../normal/path'),
       p('../../normal/path'),
       p('../../../normal/path'),
-    ])(`resolve('${rootDir}', '%s') matches path.resolve`, normalPath => {
-      expect(fastPath.resolve(rootDir, normalPath)).toEqual(
+    ])(`normalToAbsolute('%s') matches path.resolve`, normalPath => {
+      expect(pathUtils.normalToAbsolute(normalPath)).toEqual(
         mockPathModule.resolve(rootDir, normalPath),
       );
     });

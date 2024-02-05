@@ -25,8 +25,8 @@ import type {
 import H from '../constants';
 import {DuplicateError} from './DuplicateError';
 import {DuplicateHasteCandidatesError} from './DuplicateHasteCandidatesError';
-import * as fastPath from './fast_path';
 import getPlatformExtension from './getPlatformExtension';
+import {RootPathUtils} from './RootPathUtils';
 import path from 'path';
 
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
@@ -45,13 +45,15 @@ export default class MutableHasteMap implements HasteMap {
   #duplicates: DuplicatesIndex = new Map();
 
   +#console: ?Console;
-  #throwOnModuleCollision: boolean;
+  +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
+  #throwOnModuleCollision: boolean;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
+    this.#pathUtils = new RootPathUtils(options.rootDir);
     this.#throwOnModuleCollision = options.throwOnModuleCollision;
   }
 
@@ -103,7 +105,7 @@ export default class MutableHasteMap implements HasteMap {
     );
     if (module && module[H.TYPE] === (type ?? H.MODULE)) {
       const modulePath = module[H.PATH];
-      return modulePath && fastPath.resolve(this.#rootDir, modulePath);
+      return modulePath && this.#pathUtils.normalToAbsolute(modulePath);
     }
     return null;
   }
@@ -186,7 +188,7 @@ export default class MutableHasteMap implements HasteMap {
     const duplicates = new Map<string, number>();
 
     for (const [relativePath, type] of relativePathSet) {
-      const duplicatePath = fastPath.resolve(this.#rootDir, relativePath);
+      const duplicatePath = this.#pathUtils.normalToAbsolute(relativePath);
       duplicates.set(duplicatePath, type);
     }
 
