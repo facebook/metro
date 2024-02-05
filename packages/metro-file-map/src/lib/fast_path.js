@@ -38,19 +38,41 @@ const UP_FRAGMENT = '..' + path.sep;
 const UP_FRAGMENT_LENGTH = UP_FRAGMENT.length;
 const CURRENT_FRAGMENT = '.' + path.sep;
 
+// Optimise for the case where we're often repeatedly dealing with the same
+// root by caching just the most recent.
+let cachedDirName = null;
+let dirnameCache = [];
+
 // rootDir must be an absolute path and normalPath must be a normal relative
 // path (e.g.: foo/bar or ../foo/bar, but never ./foo or foo/../bar)
 // As of Node 18 this is several times faster than path.resolve, over
 // thousands of real calls with 1-3 levels of indirection.
 export function resolve(rootDir: string, normalPath: string): string {
-  if (normalPath.startsWith(UP_FRAGMENT)) {
-    const dirname = rootDir === '' ? '' : path.dirname(rootDir);
-    return resolve(dirname, normalPath.slice(UP_FRAGMENT_LENGTH));
-  } else {
-    return (
-      rootDir +
-      // If rootDir is the file system root, it will end in a path separator
-      (rootDir.endsWith(path.sep) ? normalPath : path.sep + normalPath)
-    );
+  let left = rootDir;
+  let i = 0;
+  let pos = 0;
+  while (
+    normalPath.startsWith(UP_FRAGMENT, pos) ||
+    (normalPath.endsWith('..') && normalPath.length === 2 + pos)
+  ) {
+    if (i === 0 && cachedDirName !== rootDir) {
+      dirnameCache = [];
+      cachedDirName = rootDir;
+    }
+    if (dirnameCache.length === i) {
+      dirnameCache.push(path.dirname(left));
+    }
+    left = dirnameCache[i++];
+    pos += UP_FRAGMENT_LENGTH;
   }
+  const right = pos === 0 ? normalPath : normalPath.slice(pos);
+  if (right.length === 0) {
+    return left;
+  }
+  // left may already end in a path separator only if it is a filesystem root,
+  // '/' or 'X:\'.
+  if (left.endsWith(path.sep)) {
+    return left + right;
+  }
+  return left + path.sep + right;
 }
