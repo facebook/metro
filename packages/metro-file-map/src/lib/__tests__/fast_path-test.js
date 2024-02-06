@@ -68,6 +68,8 @@ describe.each([['win32'], ['posix']])('fast_path on %s', platform => {
     );
 
     test.each([
+      p('..'),
+      p('../..'),
       p('normal/path'),
       p('../normal/path'),
       p('../../normal/path'),
