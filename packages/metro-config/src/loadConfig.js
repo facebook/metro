@@ -103,7 +103,7 @@ async function resolveConfig(
   return result;
 }
 
-const resolveExtra = (base: any = {}, key: string, resolver) => {
+const resolveExtra = (base: any = {}, key: string, resolver: Function) => {
   const value = base[key];
   return value != null ? {[key]: resolver(value)} : {};
 };
@@ -115,17 +115,25 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
   return xtends.populateSync(defaultConfig, {
+    // $FlowFixMe[prop-missing]
+    cwd: mergeConfig.cwd,
     extends: configs.map(c => {
       return {
         ...c,
         transformer: {
           ...(c.transformer || {}),
-          ...resolveExtra(c.transformer, 'babelTransformerPath', resolve),
+          ...(resolveExtra(c.transformer, 'babelTransformerPath', resolve): {
+            babelTransformerPath?: string,
+          }),
         },
         resolver: {
           ...(c.resolver || {}),
-          ...resolveExtra(c.resolver, 'dependencyExtractor', resolve),
-          ...resolveExtra(c.resolver, 'hasteImplModulePath', resolve),
+          ...(resolveExtra(c.resolver, 'dependencyExtractor', resolve): {
+            dependencyExtractor?: string,
+          }),
+          ...(resolveExtra(c.resolver, 'hasteImplModulePath', resolve): {
+            hasteImplModulePath?: string,
+          }),
         },
         ...resolveExtra(c, 'cacheStores', stores => {
           return typeof stores === 'function' ? stores(MetroCache) : stores;
@@ -146,6 +154,24 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
   });
 }
 
+// mergeConfig is public, we should try to keep its API stable
+// This trick is necessary to pass proper cwd to `populateSync`
+const mergeConfigHooked = <T: $ReadOnly<InputConfigT>>(
+  cwd: string,
+  base: T,
+  extra: ConfigT | InputConfigT,
+): T => {
+  // $FlowFixMe[prop-missing]
+  mergeConfig.cwd = cwd;
+
+  // $FlowFixMe[incompatible-variance]
+  // $FlowFixMe[incompatible-call]
+  const config = mergeConfig(base, extra);
+  // $FlowFixMe[prop-missing]
+  mergeConfig.cwd = undefined;
+  return config;
+};
+
 async function loadMetroConfigFromDisk(
   path?: string,
   cwd?: string,
@@ -160,23 +186,21 @@ async function loadMetroConfigFromDisk(
   const rootPath = dirname(filepath);
 
   const defaults = await getDefaultConfig(rootPath);
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-call]
-  const defaultConfig: ConfigT = mergeConfig(defaults, defaultConfigOverrides);
+  const defaultConfig: ConfigT = mergeConfigHooked(
+    rootPath,
+    defaults,
+    defaultConfigOverrides,
+  );
 
   if (typeof configModule === 'function') {
     // Get a default configuration based on what we know, which we in turn can pass
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
-    // $FlowFixMe[incompatible-call]
-    // $FlowFixMe[incompatible-variance]
-    return mergeConfig(defaultConfig, resultedConfig);
+    return mergeConfigHooked(rootPath, defaultConfig, resultedConfig);
   }
 
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-call]
-  return mergeConfig(defaultConfig, configModule);
+  return mergeConfigHooked(rootPath, defaultConfig, configModule);
 }
 
 function overrideConfigWithArguments(
