@@ -16,6 +16,8 @@ jest.mock('cosmiconfig');
 const getDefaultConfig = require('../defaults');
 const {loadConfig} = require('../loadConfig');
 const cosmiconfig = require('cosmiconfig');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const prettyFormat = require('pretty-format');
 const stripAnsi = require('strip-ansi');
@@ -150,6 +152,38 @@ describe('loadConfig', () => {
     };
     expect(relativizedResult).toMatchSnapshot();
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
+  });
+
+  it('can populate `extends` references', async () => {
+    const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'temp-'));
+    await fs.promises.writeFile(
+      path.resolve(temp, 'config.json'),
+      '{"extends": "./base.json"}',
+      'utf8',
+    );
+    await fs.promises.writeFile(
+      path.resolve(temp, 'base.json'),
+      '{"cacheVersion": "foo"}',
+      'utf8',
+    );
+
+    const config: any = {
+      reporter: null,
+      maxWorkers: 2,
+      cacheStores: [],
+      transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
+      extends: path.resolve(temp, 'config.json'),
+    };
+
+    cosmiconfig.setResolvedConfig(config);
+
+    const result = await loadConfig({});
+
+    expect(result).toMatchSnapshot();
+    expect(result.cacheVersion).toBe('foo');
   });
 
   it('can load the config with no config present', async () => {

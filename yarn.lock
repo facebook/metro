@@ -1726,6 +1726,11 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
+"@topoconfig/extends@^0.7.2":
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/@topoconfig/extends/-/extends-0.7.2.tgz#a58772603b0c791da535d6183c45b3225dc85948"
+  integrity sha512-UNa+GsWOL3dlQdeqYaglM6Pr8sbMYSQIw+hvchik/149EbIYj5dLaM11j4fsu/O1fSokDz/4GANYB8XT7urKag==
+
 "@tsconfig/node18@1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@tsconfig/node18/-/node18-1.0.1.tgz#ea5b375a9ead6b09ccbd70c3894ea069829ea1bb"

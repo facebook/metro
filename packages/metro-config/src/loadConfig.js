@@ -15,6 +15,7 @@ import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
 const getDefaultConfig = require('./defaults');
 const validConfig = require('./defaults/validConfig');
+const xtends = require('@topoconfig/extends');
 const cosmiconfig = require('cosmiconfig');
 const fs = require('fs');
 const {validate} = require('jest-validate');
@@ -102,84 +103,47 @@ async function resolveConfig(
   return result;
 }
 
+const resolveExtra = (base: any = {}, key: string, resolver) => {
+  const value = base[key];
+  return value != null ? {[key]: resolver(value)} : {};
+};
+
 function mergeConfig<T: $ReadOnly<InputConfigT>>(
   defaultConfig: T,
   ...configs: Array<InputConfigT>
 ): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
-  return configs.reduce(
-    (totalConfig, nextConfig) => ({
-      ...totalConfig,
-      ...nextConfig,
-
-      cacheStores:
-        nextConfig.cacheStores != null
-          ? typeof nextConfig.cacheStores === 'function'
-            ? nextConfig.cacheStores(MetroCache)
-            : nextConfig.cacheStores
-          : totalConfig.cacheStores,
-
-      resolver: {
-        ...totalConfig.resolver,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.resolver || {}),
-        dependencyExtractor:
-          nextConfig.resolver && nextConfig.resolver.dependencyExtractor != null
-            ? resolve(nextConfig.resolver.dependencyExtractor)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.resolver.dependencyExtractor,
-        hasteImplModulePath:
-          nextConfig.resolver && nextConfig.resolver.hasteImplModulePath != null
-            ? resolve(nextConfig.resolver.hasteImplModulePath)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.resolver.hasteImplModulePath,
-      },
-      serializer: {
-        ...totalConfig.serializer,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.serializer || {}),
-      },
-      transformer: {
-        ...totalConfig.transformer,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.transformer || {}),
-        babelTransformerPath:
-          nextConfig.transformer &&
-          nextConfig.transformer.babelTransformerPath != null
-            ? resolve(nextConfig.transformer.babelTransformerPath)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.transformer.babelTransformerPath,
-      },
-      server: {
-        ...totalConfig.server,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.server || {}),
-      },
-      symbolicator: {
-        ...totalConfig.symbolicator,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.symbolicator || {}),
-      },
-      watcher: {
-        ...totalConfig.watcher,
-        // $FlowFixMe[exponential-spread]
-        ...nextConfig.watcher,
-        watchman: {
-          // $FlowFixMe[exponential-spread]
-          ...totalConfig.watcher?.watchman,
-          ...nextConfig.watcher?.watchman,
+  return xtends.populateSync(defaultConfig, {
+    extends: configs.map(c => {
+      return {
+        ...c,
+        transformer: {
+          ...(c.transformer || {}),
+          ...resolveExtra(c.transformer, 'babelTransformerPath', resolve),
         },
-        healthCheck: {
-          // $FlowFixMe[exponential-spread]
-          ...totalConfig.watcher?.healthCheck,
-          // $FlowFixMe: Spreading shapes creates an explosion of union types
-          ...nextConfig.watcher?.healthCheck,
+        resolver: {
+          ...(c.resolver || {}),
+          ...resolveExtra(c.resolver, 'dependencyExtractor', resolve),
+          ...resolveExtra(c.resolver, 'hasteImplModulePath', resolve),
         },
-      },
+        ...resolveExtra(c, 'cacheStores', stores => {
+          return typeof stores === 'function' ? stores(MetroCache) : stores;
+        }),
+      };
     }),
-    defaultConfig,
-  );
+    rules: {
+      '*': 'override',
+      resolver: 'merge',
+      serializer: 'merge',
+      server: 'merge',
+      symbolicator: 'merge',
+      transformer: 'merge',
+      watcher: 'merge',
+      'watcher.watchman': 'merge',
+      'watcher.healthCheck': 'merge',
+    },
+  });
 }
 
 async function loadMetroConfigFromDisk(
