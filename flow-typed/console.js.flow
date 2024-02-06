@@ -10,6 +10,7 @@
 
 'use strict';
 
+// $FlowFixMe[unsupported-syntax]
 declare module 'console' {
   declare export class Console {
     constructor(stdout: mixed, stderr: mixed): void;

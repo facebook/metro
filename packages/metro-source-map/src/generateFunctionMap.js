@@ -249,7 +249,7 @@ function getNameForPath(path: NodePath<>): string {
     return '<global>';
   }
 
-  let {id} = (path: any);
+  let {id}: any = path;
   // has an `id` so we don't need to infer one
   if (node.id) {
     // $FlowFixMe Flow error uncovered by typing Babel more strictly

@@ -37,7 +37,7 @@ function relativateSerializedMap(
   map: string,
   sourceMapSourcesRoot: string,
 ): string {
-  const sourceMap = (JSON.parse(map): MixedSourceMap);
+  const sourceMap: MixedSourceMap = JSON.parse(map);
   relativizeSourceMapInline(sourceMap, sourceMapSourcesRoot);
   return JSON.stringify(sourceMap);
 }

@@ -30,7 +30,7 @@ function getTransformCacheKey(opts: {
   const {transformerPath, transformerConfig} = opts.transformerConfig;
 
   // eslint-disable-next-line no-useless-call
-  const Transformer = (require.call(null, transformerPath): CacheKeyProvider);
+  const Transformer: CacheKeyProvider = require.call(null, transformerPath);
   const transformerKey = Transformer.getCacheKey
     ? Transformer.getCacheKey(transformerConfig)
     : '';

@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+// $FlowFixMe[unsupported-syntax]
 declare module 'ci-info' {
   declare module.exports: {
     isCI: boolean,
