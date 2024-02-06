@@ -37,6 +37,16 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
     p('/project/root/baz/foobar'),
     p('/project/root/../root2/foobar'),
     p('/project/root/../../project2/foo'),
+    p('/project/root/../../project/foo'),
+    p('/project/root/../../project/root'),
+    p('/project/root/../../project/root/foo.js'),
+    p('/project/bar'),
+    p('/project/../outside/bar'),
+    p('/project/baz/foobar'),
+    p('/project/rootfoo/baz'),
+    p('/project'),
+    p('/'),
+    p('/outside'),
   ])(`absoluteToNormal('%s') is correct and optimised`, normalPath => {
     const rootDir = p('/project/root');
     pathUtils = new RootPathUtils(rootDir);
@@ -54,8 +64,6 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
 
     test.each([
       p('/project/root/../root2/../root3/foo'),
-      p('/project/baz/foobar'),
-      p('/project/rootfoo/baz'),
       p('/project/root/./baz/foo/bar'),
       p('/project/root/a./../foo'),
       p('/project/root/../a./foo'),
@@ -79,5 +87,25 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
         mockPathModule.resolve(rootDir, normalPath),
       );
     });
+
+    test.each([
+      p('..'),
+      p('../root'),
+      p('../root/path'),
+      p('../project'),
+      p('../../project/root'),
+      p('../../../normal/path'),
+      p('../../..'),
+    ])(
+      `relativeToNormal('%s') matches path.resolve + path.relative`,
+      relativePath => {
+        expect(pathUtils.relativeToNormal(relativePath)).toEqual(
+          mockPathModule.relative(
+            rootDir,
+            mockPathModule.resolve(rootDir, relativePath),
+          ),
+        );
+      },
+    );
   });
 });

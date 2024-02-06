@@ -463,7 +463,7 @@ export default class TreeFS implements MutableFileSystem {
   _normalizePath(relativeOrAbsolutePath: Path): string {
     return path.isAbsolute(relativeOrAbsolutePath)
       ? this.#pathUtils.absoluteToNormal(relativeOrAbsolutePath)
-      : path.normalize(relativeOrAbsolutePath);
+      : this.#pathUtils.relativeToNormal(relativeOrAbsolutePath);
   }
 
   /**
