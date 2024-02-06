@@ -101,10 +101,10 @@ async function transformFile(
   transformerConfig: TransformerConfig,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
-  const Transformer = (require.call(
+  const Transformer: TransformerInterface = require.call(
     null,
     transformerConfig.transformerPath,
-  ): TransformerInterface);
+  );
 
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
