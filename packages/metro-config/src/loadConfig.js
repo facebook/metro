@@ -154,9 +154,9 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
   });
 }
 
-// mergeConfig is public, we should try to keep its API stable
-// This trick is necessary to pass proper cwd to `populateSync`
-const mergeConfigHooked = <T: $ReadOnly<InputConfigT>>(
+// `mergeConfig` is public, so we should try to keep its API stable
+// This trick is necessary to pass the proper cwd to the internal `populateSync` call
+const mergeConfigWithCwd = <T: $ReadOnly<InputConfigT>>(
   cwd: string,
   base: T,
   extra: ConfigT | InputConfigT,
@@ -186,7 +186,7 @@ async function loadMetroConfigFromDisk(
   const rootPath = dirname(filepath);
 
   const defaults = await getDefaultConfig(rootPath);
-  const defaultConfig: ConfigT = mergeConfigHooked(
+  const defaultConfig: ConfigT = mergeConfigWithCwd(
     rootPath,
     defaults,
     defaultConfigOverrides,
@@ -197,10 +197,10 @@ async function loadMetroConfigFromDisk(
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
-    return mergeConfigHooked(rootPath, defaultConfig, resultedConfig);
+    return mergeConfigWithCwd(rootPath, defaultConfig, resultedConfig);
   }
 
-  return mergeConfigHooked(rootPath, defaultConfig, configModule);
+  return mergeConfigWithCwd(rootPath, defaultConfig, configModule);
 }
 
 function overrideConfigWithArguments(
