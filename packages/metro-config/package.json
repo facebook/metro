@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@topoconfig/extends": "^0.7.2",
+    "@topoconfig/extends": "^0.7.3",
     "connect": "^3.6.5",
     "cosmiconfig": "^5.0.5",
     "jest-validate": "^29.6.3",
