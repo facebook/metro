@@ -10,7 +10,7 @@
  */
 
 import type {FileData} from '../../flow-types';
-import type TreeFS from '../TreeFS';
+import type TreeFSType from '../TreeFS';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
@@ -23,11 +23,13 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
       : filePath;
 
-  let tfs: TreeFS;
+  let tfs: TreeFSType;
+  let TreeFS: Class<TreeFSType>;
+
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
-    const TreeFS = require('../TreeFS').default;
+    TreeFS = require('../TreeFS').default;
     tfs = new TreeFS({
       rootDir: p('/project'),
       files: new Map([
@@ -95,26 +97,58 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
   describe('lookup', () => {
     test.each([
-      [p('/project/foo/link-to-another.js'), p('/project/foo/another.js')],
-      [p('/project/foo/link-to-bar.js'), p('/project/bar.js')],
-      [p('link-to-foo/link-to-another.js'), p('/project/foo/another.js')],
-      [p('/project/root/outside/external.js'), p('/outside/external.js')],
-      [p('/outside/../project/bar.js'), p('/project/bar.js')],
-    ])('%s -> %s', (givenPath, expectedRealPath) =>
-      expect(tfs.lookup(givenPath)).toMatchObject({
-        exists: true,
-        realPath: expectedRealPath,
-        type: 'f',
-      }),
+      [
+        p('/project/foo/link-to-another.js'),
+        p('/project/foo/another.js'),
+        [p('/project/foo/link-to-another.js')],
+      ],
+      [
+        p('/project/foo/link-to-bar.js'),
+        p('/project/bar.js'),
+        [p('/project/foo/link-to-bar.js')],
+      ],
+      [
+        p('link-to-foo/link-to-another.js'),
+        p('/project/foo/another.js'),
+        [p('/project/link-to-foo'), p('/project/foo/link-to-another.js')],
+      ],
+      [
+        p('/project/root/outside/external.js'),
+        p('/outside/external.js'),
+        [p('/project/root')],
+      ],
+      [p('/outside/../project/bar.js'), p('/project/bar.js'), []],
+    ])(
+      '%s -> %s through expected symlinks',
+      (givenPath, expectedRealPath, expectedSymlinks) =>
+        expect(tfs.lookup(givenPath)).toEqual({
+          exists: true,
+          links: new Set(expectedSymlinks),
+          realPath: expectedRealPath,
+          type: 'f',
+        }),
     );
 
     test.each([
-      [p('/project/bar.js/bad-parent')],
-      [p('/project/link-to-nowhere')],
-      [p('/project/not/exists')],
+      [p('/project/bar.js/bad-parent'), [], p('/project/bar.js')],
+      [
+        p('/project/link-to-nowhere'),
+        [p('/project/link-to-nowhere')],
+        p('/project/nowhere'),
+      ],
+      [p('/project/not/exists'), [], p('/project/not')],
+      [p('/project/root/missing'), [p('/project/root')], p('/missing')],
+      [p('/project/../missing'), [], p('/missing')],
+      [p('/project/foo/../../missing'), [], p('/missing')],
+      [p('/project/foo/../../project/missing'), [], p('/project/missing')],
     ])(
-      'returns exists: false for missing files, bad paths or broken links: %s',
-      givenPath => expect(tfs.lookup(givenPath).exists).toEqual(false),
+      'non-existence for bad paths, missing files or broken links %s',
+      (givenPath, expectedSymlinks, missingPath) =>
+        expect(tfs.lookup(givenPath)).toEqual({
+          exists: false,
+          links: new Set(expectedSymlinks),
+          missing: missingPath,
+        }),
     );
 
     test.each([[p('/project/foo')], [p('/project/root/outside')]])(
@@ -125,6 +159,42 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           type: 'd',
         }),
     );
+
+    test('traversing the same symlink multiple times does not imply a cycle', () => {
+      expect(
+        tfs.lookup(p('/project/foo/owndir/owndir/another.js')),
+      ).toMatchObject({
+        exists: true,
+        realPath: p('/project/foo/another.js'),
+        type: 'f',
+      });
+    });
+
+    test('ancestors of the root are not reported as missing', () => {
+      const tfs = new TreeFS({
+        rootDir: p('/deep/project/root'),
+        files: new Map([
+          [p('foo/index.js'), ['', 123, 0, 0, '', '', 0]],
+          [p('link-up'), ['', 123, 0, 0, '', '', p('..')]],
+        ]),
+      });
+      expect(tfs.lookup(p('/deep/missing/bar.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/missing'),
+      });
+      expect(tfs.lookup(p('link-up/bar.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/project/bar.js'),
+      });
+      expect(tfs.lookup(p('../../baz.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/baz.js'),
+      });
+      expect(tfs.lookup(p('../../project/root/baz.js'))).toMatchObject({
+        exists: false,
+        missing: p('/deep/project/root/baz.js'),
+      });
+    });
   });
 
   describe('getDifference', () => {
@@ -436,7 +506,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   });
 
   describe('metadataIterator', () => {
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, skipping node_modules and symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: false,
@@ -461,7 +531,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ]);
     });
 
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, including node_modules, skipping symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: false,
@@ -478,7 +548,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       );
     });
 
-    test('iterates over all files with Haste names, skipping node_modules', () => {
+    test('iterates over all files with Haste names, including node_modules and symlinks', () => {
       expect([
         ...tfs.metadataIterator({
           includeSymlinks: true,
