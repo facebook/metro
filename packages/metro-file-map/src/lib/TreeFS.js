@@ -144,15 +144,34 @@ export default class TreeFS implements MutableFileSystem {
     const normalPath = this._normalizePath(mixedPath);
     const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
     if (!result.exists) {
+      const {canonicalMissingPath, canonicalLinkPaths} = result;
       return {
         exists: false,
+        links: new Set(
+          canonicalLinkPaths.map(canonicalPath =>
+            this.#pathUtils.normalToAbsolute(canonicalPath),
+          ),
+        ),
+        missing: this.#pathUtils.normalToAbsolute(canonicalMissingPath),
       };
     }
-    const {node, canonicalPath} = result;
+    const {canonicalPath, canonicalLinkPaths, node} = result;
+    const type = node instanceof Map ? 'd' : node[H.SYMLINK] === 0 ? 'f' : 'l';
+    invariant(
+      type !== 'l',
+      'lookup follows symlinks, so should never return one (%s -> %s)',
+      mixedPath,
+      canonicalPath,
+    );
     return {
       exists: true,
+      links: new Set(
+        canonicalLinkPaths.map(canonicalPath =>
+          this.#pathUtils.normalToAbsolute(canonicalPath),
+        ),
+      ),
       realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
-      type: node instanceof Map ? 'd' : node[H.SYMLINK] === 0 ? 'f' : 'l',
+      type,
     };
   }
 
@@ -345,20 +364,28 @@ export default class TreeFS implements MutableFileSystem {
     } = {followLeaf: true, makeDirectories: false},
   ):
     | {
+        canonicalLinkPaths: Array<string>,
         canonicalPath: string,
         exists: true,
         node: MixedNode,
         parentNode: DirectoryNode,
       }
     | {
+        canonicalLinkPaths: Array<string>,
         canonicalPath: string,
         exists: true,
         node: DirectoryNode,
         parentNode: null,
       }
-    | {exists: false} {
+    | {
+        canonicalLinkPaths: Array<string>,
+        canonicalMissingPath: string,
+        exists: false,
+      } {
     // We'll update the target if we hit a symlink.
     let targetNormalPath = requestedNormalPath;
+    // Set of traversed symlink paths to return.
+    const canonicalLinkPaths: Array<string> = [];
     // Lazy-initialised set of seen target paths, to detect symlink cycles.
     let seen: ?Set<string>;
     // Pointer to the first character of the current path segment in
@@ -380,14 +407,21 @@ export default class TreeFS implements MutableFileSystem {
       }
 
       let segmentNode = parentNode.get(segmentName);
+
       if (segmentNode == null) {
-        if (opts.makeDirectories !== true) {
+        if (opts.makeDirectories !== true && segmentName !== '..') {
           return {
+            canonicalLinkPaths,
+            canonicalMissingPath: isLastSegment
+              ? targetNormalPath
+              : targetNormalPath.slice(0, fromIdx - 1),
             exists: false,
           };
         }
         segmentNode = new Map();
-        parentNode.set(segmentName, segmentNode);
+        if (opts.makeDirectories === true) {
+          parentNode.set(segmentName, segmentNode);
+        }
       }
 
       // If there are no more '/' to come, we're done unless this is a symlink
@@ -399,6 +433,7 @@ export default class TreeFS implements MutableFileSystem {
           opts.followLeaf === false)
       ) {
         return {
+          canonicalLinkPaths,
           canonicalPath: targetNormalPath,
           exists: true,
           node: segmentNode,
@@ -410,18 +445,25 @@ export default class TreeFS implements MutableFileSystem {
       if (segmentNode instanceof Map) {
         parentNode = segmentNode;
       } else {
+        const currentPath = isLastSegment
+          ? targetNormalPath
+          : targetNormalPath.slice(0, fromIdx - 1);
+
         if (segmentNode[H.SYMLINK] === 0) {
           // Regular file in a directory path
-          return {exists: false};
+          return {
+            canonicalLinkPaths,
+            canonicalMissingPath: currentPath,
+            exists: false,
+          };
         }
 
         // Symlink in a directory path
         const normalSymlinkTarget = this._resolveSymlinkTargetToNormalPath(
           segmentNode,
-          isLastSegment
-            ? targetNormalPath
-            : targetNormalPath.slice(0, fromIdx - 1),
+          currentPath,
         );
+        canonicalLinkPaths.push(currentPath);
 
         // Append any subsequent path segments to the symlink target, and reset
         // with our new target.
@@ -434,7 +476,11 @@ export default class TreeFS implements MutableFileSystem {
         }
         if (seen.has(targetNormalPath)) {
           // TODO: Warn `Symlink cycle detected: ${[...seen, node].join(' -> ')}`
-          return {exists: false};
+          return {
+            canonicalLinkPaths,
+            canonicalMissingPath: targetNormalPath,
+            exists: false,
+          };
         }
         seen.add(targetNormalPath);
         fromIdx = 0;
@@ -443,6 +489,7 @@ export default class TreeFS implements MutableFileSystem {
     }
     invariant(parentNode === this.#rootNode, 'Unexpectedly escaped traversal');
     return {
+      canonicalLinkPaths,
       canonicalPath: targetNormalPath,
       exists: true,
       node: this.#rootNode,
