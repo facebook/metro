@@ -180,6 +180,11 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
+    const getRealPathIfFile = (path: string) => {
+      const result = this._fileSystem.lookup(path);
+      return result.exists && result.type === 'f' ? result.realPath : null;
+    };
+
     this._moduleResolver = new ModuleResolver({
       assetExts: new Set(this._config.resolver.assetExts),
       dirExists: (filePath: string) => {
@@ -213,9 +218,7 @@ class DependencyGraph extends EventEmitter {
         ];
 
         if (this._config.resolver.unstable_enableSymlinks) {
-          assets = assets
-            .map(candidate => this._fileSystem.getRealPath(candidate))
-            .filter(Boolean);
+          assets = assets.map(getRealPathIfFile).filter(Boolean);
         } else {
           assets = assets.filter(candidate =>
             this._fileSystem.exists(candidate),
@@ -232,7 +235,7 @@ class DependencyGraph extends EventEmitter {
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
       unstable_getRealPath: this._config.resolver.unstable_enableSymlinks
-        ? path => this._fileSystem.getRealPath(path)
+        ? getRealPathIfFile
         : null,
     });
   }

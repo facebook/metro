@@ -13,6 +13,7 @@ import type {
   FileData,
   FileMetaData,
   FileStats,
+  LookupResult,
   MutableFileSystem,
   Path,
 } from '../flow-types';
@@ -139,6 +140,22 @@ export default class TreeFS implements MutableFileSystem {
     return result != null;
   }
 
+  lookup(mixedPath: Path): LookupResult {
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
+    if (!result.exists) {
+      return {
+        exists: false,
+      };
+    }
+    const {node, canonicalPath} = result;
+    return {
+      exists: true,
+      realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
+      type: node instanceof Map ? 'd' : node[H.SYMLINK] === 0 ? 'f' : 'l',
+    };
+  }
+
   getAllFiles(): Array<Path> {
     return Array.from(
       this.metadataIterator({
@@ -238,15 +255,6 @@ export default class TreeFS implements MutableFileSystem {
         yield path.join(contextRootAbsolutePath, relativePath);
       }
     }
-  }
-
-  getRealPath(mixedPath: Path): ?string {
-    const normalPath = this._normalizePath(mixedPath);
-    const result = this._lookupByNormalPath(normalPath, {followLeaf: true});
-    if (!result || !result.exists || result.node instanceof Map) {
-      return null;
-    }
-    return this.#pathUtils.normalToAbsolute(result.canonicalPath);
   }
 
   addOrModify(mixedPath: Path, metadata: FileMetaData): void {

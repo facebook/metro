@@ -10,7 +10,7 @@
 
 export * from './types';
 
-import {ResolutionContext, Resolution} from './types';
+import {Resolution, ResolutionContext} from './types';
 
 export function resolve(
   context: ResolutionContext,
