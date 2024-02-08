@@ -402,6 +402,33 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
       });
 
+      test('deletes empty ancestor directories', () => {
+        // node_modules/pkg contains two files
+        tfs.remove(p('node_modules/pkg/a.js'));
+        // Still one file left, we expect the directory to remain
+        expect(tfs.lookup(p('node_modules/pkg'))).toMatchObject({
+          exists: true,
+          type: 'd',
+        });
+        // Delete the remaining file
+        tfs.remove(p('node_modules/pkg/package.json'));
+        // Expect the directory to be deleted
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(false);
+        // And its parent, which is now empty
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+      });
+
+      test('deleting all files leaves an empty map', () => {
+        for (const {canonicalPath} of tfs.metadataIterator({
+          includeSymlinks: true,
+          includeNodeModules: true,
+        })) {
+          tfs.remove(canonicalPath);
+        }
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+        expect(tfs.lookup(p('foo')).exists).toBe(false);
+      });
+
       test('returns null for a non-existent file', () => {
         expect(tfs.remove('notexists.js')).toBeNull();
       });
