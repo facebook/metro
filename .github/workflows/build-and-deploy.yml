@@ -1,0 +1,87 @@
+name: facebook/metro/build-and-deploy
+on:
+  push:
+    branches:
+    - main
+jobs:
+  run-js-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18.12
+        cache: yarn
+    - name: Install Dependencies
+      run: npm install --force flow-bin
+    - run: yarn typecheck
+    - run: yarn typecheck-ts
+    - run: yarn lint
+    - run: yarn test-smoke
+  test-with-coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18.12
+        cache: yarn
+    - name: Install Dependencies
+      run: npm install --force @babel/core
+    - run: yarn test-coverage
+    - name: Download Codecov Uploader
+      run: "./.circleci/scripts/install_codecov.sh"
+    - name: Upload coverage results
+      run: "./codecov -t ${{ secrets.CODECOV_TOKEN }} -f ./coverage/coverage-final.json"
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ 18.12, 20.2 ]
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install Dependencies
+      run: npm install --force --save-dev jest
+    - name: Run Jest tests
+      run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit
+  test-windows:
+    if: startsWith(github.ref, 'refs/heads/windows/')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/upload-artifact@v4.0.0
+      with:
+        path: reports/
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18.12
+        cache: yarn
+    - name: Install Dependencies
+      run: npm install --force --save-dev jest
+    - name: Run Jest tests
+      run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit
+  publish-to-npm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18.12
+        cache: yarn
+    - name: Check Tag Format
+      id: check_tag
+      run: |
+        if [[ $GITHUB_REF =~ ^refs/tags/v\d+(\.\d+){2}(-.*)?$ ]]; then
+          echo "valid=true" >> $GITHUB_OUTPUT
+        else
+          echo "valid=false" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+    - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+    - name: Infer dist-tag and run npm run publish
+      if: steps.check_tag.outputs.valid == 'true'
+      run: "./.circleci/scripts/publish.sh"
+    - run: rm ~/.npmrc
