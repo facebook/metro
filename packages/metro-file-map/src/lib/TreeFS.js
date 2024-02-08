@@ -316,19 +316,23 @@ export default class TreeFS implements MutableFileSystem {
     }
     const {parentNode, canonicalPath, node} = result;
 
-    if (node instanceof Map) {
-      throw new Error(`TreeFS: remove called on a directory: ${mixedPath}`);
+    if (node instanceof Map && node.size > 0) {
+      throw new Error(
+        `TreeFS: remove called on a non-empty directory: ${mixedPath}`,
+      );
     }
-    // If node is a symlink, get its metadata from the tuple.
-    const fileMetadata = node;
-    if (fileMetadata == null) {
-      throw new Error(`TreeFS: Missing metadata for ${mixedPath}`);
+    if (parentNode != null) {
+      parentNode.delete(path.basename(canonicalPath));
+      if (parentNode.size === 0 && parentNode !== this.#rootNode) {
+        // NB: This isn't the most efficient algorithm - in the case of
+        // removing the last file in a deep hierarchy it's O(depth^2), but
+        // that's not expected to be a case common enough to justify
+        // implementation complexity, or slowing down more common uses of
+        // _lookupByNormalPath.
+        this.remove(path.dirname(canonicalPath));
+      }
     }
-    if (parentNode == null) {
-      throw new Error(`TreeFS: Missing parent node for ${mixedPath}`);
-    }
-    parentNode.delete(path.basename(canonicalPath));
-    return fileMetadata;
+    return node instanceof Map ? null : node;
   }
 
   _lookupByNormalPath(
