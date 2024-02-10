@@ -175,7 +175,6 @@ export interface FileSystem {
     removedFiles: Set<string>,
   };
   getModuleName(file: Path): ?string;
-  getRealPath(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
 
@@ -184,6 +183,12 @@ export interface FileSystem {
    * information about the symlink without following it.
    */
   linkStats(file: Path): ?FileStats;
+
+  /**
+   * Return information about the given path, whether a directory or file.
+   * Always follow symlinks, and return a real path if it exists.
+   */
+  lookup(mixedPath: Path): LookupResult;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
@@ -202,6 +207,29 @@ export interface FileSystem {
 }
 
 export type Glob = string;
+
+export type LookupResult =
+  | {
+      // The node is missing from the FileSystem implementation (note this
+      // could indicate an unwatched path, or a directory containing no watched
+      // files).
+      exists: false,
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: $ReadOnlySet<string>,
+      // The real, normal, absolute path of the first path segment
+      // encountered that does not exist, or cannot be navigated through.
+      missing: string,
+    }
+  | {
+      exists: true,
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: $ReadOnlySet<string>,
+      // The real, normal, absolute path of the file or directory.
+      realPath: string,
+      // Currently lookup always follows symlinks, so can only return
+      // directories or regular files, but this may be extended.
+      type: 'd' | 'f',
+    };
 
 export interface MockMap {
   getMockModule(name: string): ?Path;
