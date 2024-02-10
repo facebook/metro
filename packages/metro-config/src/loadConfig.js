@@ -114,10 +114,9 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
 ): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
-  return xtends.populateSync(defaultConfig, {
-    // $FlowFixMe[prop-missing]
-    cwd: mergeConfig.cwd,
-    extends: configs.map(c => {
+  const extras = [
+    defaultConfig,
+    ...configs.map(c => {
       return {
         ...c,
         transformer: {
@@ -140,18 +139,27 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
         }),
       };
     }),
-    rules: {
-      '*': 'override',
-      resolver: 'merge',
-      serializer: 'merge',
-      server: 'merge',
-      symbolicator: 'merge',
-      transformer: 'merge',
-      watcher: 'merge',
-      'watcher.watchman': 'merge',
-      'watcher.healthCheck': 'merge',
+  ];
+
+  return xtends.populateSync(
+    {},
+    {
+      // $FlowFixMe[prop-missing]
+      cwd: mergeConfig.cwd,
+      extends: extras,
+      rules: {
+        '*': 'override',
+        resolver: 'merge',
+        serializer: 'merge',
+        server: 'merge',
+        symbolicator: 'merge',
+        transformer: 'merge',
+        watcher: 'merge',
+        'watcher.watchman': 'merge',
+        'watcher.healthCheck': 'merge',
+      },
     },
-  });
+  );
 }
 
 // `mergeConfig` is public, so we should try to keep its API stable
