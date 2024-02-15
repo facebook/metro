@@ -10,6 +10,7 @@
     "@typescript-eslint/parser": "^6.7.4",
     "acorn": "^8.7.1",
     "babel-jest": "^29.6.3",
+    "babel-plugin-syntax-hermes-parser": "0.19.1",
     "chalk": "^4.0.0",
     "debug": "^2.2.0",
     "eslint": "^8.23.1",
