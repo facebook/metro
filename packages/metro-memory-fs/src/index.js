@@ -1501,8 +1501,8 @@ class Stats {
       node.type === 'file'
         ? node.content.length
         : node.type === 'symbolicLink'
-        ? node.target.length
-        : 0;
+          ? node.target.length
+          : 0;
     this.blocks = Math.ceil(this.size / 512);
     this.atimeMs = 1;
     this.mtimeMs = 1;

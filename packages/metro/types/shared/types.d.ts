@@ -8,9 +8,12 @@
  * @oncall react_native
  */
 
+import type {
+  Options as DeltaBundlerOptions,
+  TransformInputOptions,
+} from '../DeltaBundler/types';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {CustomResolverOptions} from 'metro-resolver';
-
 import type {
   MetroSourceMapSegmentTuple,
   MixedSourceMap,
@@ -19,10 +22,6 @@ import type {
   CustomTransformOptions,
   MinifierOptions,
 } from 'metro-transform-worker';
-import type {
-  Options as DeltaBundlerOptions,
-  TransformInputOptions,
-} from '../DeltaBundler/types';
 
 export type BundleType =
   | 'bundle'

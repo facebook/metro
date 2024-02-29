@@ -8,11 +8,11 @@
  * @oncall react_native
  */
 
+import type {TransformResult} from './types';
 import type {
   JsTransformerConfig,
   JsTransformOptions,
 } from 'metro-transform-worker';
-import type {TransformResult} from './types';
 
 type LogEntry = unknown;
 

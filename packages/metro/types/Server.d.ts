@@ -10,7 +10,6 @@
 
 import type {AssetData} from './Asset';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import IncrementalBundler, {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type MultipartResponse from './Server/MultipartResponse';
 import type {
@@ -25,6 +24,8 @@ import type {
 } from 'metro-babel-transformer';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
+
+import IncrementalBundler, {RevisionId} from './IncrementalBundler';
 
 export interface SegmentLoadData {
   [index: number]: [number[], number | null];

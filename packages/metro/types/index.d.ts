@@ -14,22 +14,23 @@ export * from './ModuleGraph/worker/collectDependencies';
 export * from './Server';
 export * from './lib/reporting';
 
+import type {ReadOnlyGraph} from './DeltaBundler/types';
+import type {ServerOptions, default as MetroServer} from './Server';
+import type {OutputOptions, RequestOptions} from './shared/types';
 import type {HandleFunction} from 'connect';
 import type {EventEmitter} from 'events';
 import type {IncomingMessage, Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import type {CustomTransformOptions} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
   MetroConfig,
   Middleware,
 } from 'metro-config';
-import type {CustomTransformOptions} from 'metro-babel-transformer';
-import type {ReadOnlyGraph} from './DeltaBundler/types';
 import type {Duplex} from 'stream';
+
 import Yargs = require('yargs');
-import type {default as MetroServer, ServerOptions} from './Server';
-import type {OutputOptions, RequestOptions} from './shared/types';
 
 export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
 export {Terminal} from 'metro-core';

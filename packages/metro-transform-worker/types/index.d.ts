@@ -9,8 +9,6 @@
  */
 
 import type {DynamicRequiresBehavior} from 'metro';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types';
 import type {
   CustomTransformOptions,
   TransformProfile,
@@ -20,6 +18,8 @@ import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types';
 
 export type MinifierConfig = Readonly<Record<string, unknown>>;
 
