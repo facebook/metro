@@ -412,7 +412,7 @@ function refineDependencyLocation(
     // The error occurred in code that was added by a transform, then it
     // won't be present in the original source code.
     if (lines[line] == null) {
-      break;
+      continue;
     }
     const maxColumn =
       line === loc.end.line ? loc.end.column + 2 : lines[line].length;
