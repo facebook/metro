@@ -41,6 +41,7 @@ it('wraps a module correctly', () => {
     '_$$_IMPORT_ALL',
     dependencyMapName,
     defaultGlobalPrefix,
+    false,
   );
 
   expect(requireName).toBe(BABEL_RENAMED);
@@ -58,6 +59,42 @@ it('wraps a module correctly', () => {
   );
 });
 
+it('wraps a module without renaming require statements', () => {
+  const dependencyMapName = '_dependencyMapName';
+  const skipRequireRename = true;
+  const originalAst = astFromCode(`
+    const dynamicRequire = require;
+    const a = require('b/lib/a');
+    exports.do = () => require("do");
+    if (!something) {
+      require("setup/something");
+    }
+    require.blah('do');
+  `);
+  const {ast, requireName} = JsFileWrapping.wrapModule(
+    originalAst,
+    '_$$_IMPORT_DEFAULT',
+    '_$$_IMPORT_ALL',
+    dependencyMapName,
+    defaultGlobalPrefix,
+    skipRequireRename,
+  );
+
+  expect(requireName).toBe('require');
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
+        const dynamicRequire = require;
+        const a = require('b/lib/a');
+        exports.do = () => require("do");
+        if (!something) {
+          require("setup/something");
+        }
+        require.blah('do');
+      });`),
+  );
+});
+
 it('wraps a module correctly with global prefix', () => {
   const dependencyMapName = '_dependencyMapName';
 
@@ -71,6 +108,7 @@ it('wraps a module correctly with global prefix', () => {
     '_$$_IMPORT_ALL',
     dependencyMapName,
     globalPrefix,
+    false,
   );
 
   expect(requireName).toBe(BABEL_RENAMED);
@@ -104,6 +142,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_ALL',
           dependencyMapName,
           defaultGlobalPrefix,
+          false,
         );
 
         expect(requireName).toBe(BABEL_RENAMED);
@@ -141,6 +180,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_ALL',
           dependencyMapName,
           defaultGlobalPrefix,
+          false,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
@@ -181,6 +221,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_ALL',
           dependencyMapName,
           defaultGlobalPrefix,
+          false,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
