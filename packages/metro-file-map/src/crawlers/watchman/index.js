@@ -31,7 +31,7 @@ import {performance} from 'perf_hooks';
 const watchman = require('fb-watchman');
 
 type WatchmanRoots = Map<
-  string,
+  string, // Posix-separated absolute path
   $ReadOnly<{directoryFilters: Array<string>, watcher: string}>,
 >;
 
@@ -181,7 +181,7 @@ module.exports = async function watchmanCrawl({
 
     await Promise.all(
       Array.from(rootProjectDirMappings).map(
-        async ([root, {directoryFilters, watcher}], index) => {
+        async ([posixSeparatedRoot, {directoryFilters, watcher}], index) => {
           // Jest is only going to store one type of clock; a string that
           // represents a local clock. However, the Watchman crawler supports
           // a second type of clock that can be written by automation outside of
@@ -191,7 +191,11 @@ module.exports = async function watchmanCrawl({
           // By using scm queries, we can create the haste map on a different
           // system and import it, transforming the clock into a local clock.
           const since = previousState.clocks.get(
-            normalizePathSeparatorsToPosix(pathUtils.absoluteToNormal(root)),
+            normalizePathSeparatorsToPosix(
+              pathUtils.absoluteToNormal(
+                normalizePathSeparatorsToSystem(posixSeparatedRoot),
+              ),
+            ),
           );
 
           perfLogger?.annotate({
@@ -218,7 +222,7 @@ module.exports = async function watchmanCrawl({
           perfLogger?.point(`watchmanCrawl/query_${index}_start`);
           const response = await cmd<WatchmanQueryResponse>(
             'query',
-            root,
+            posixSeparatedRoot,
             query,
           );
           perfLogger?.point(`watchmanCrawl/query_${index}_end`);
@@ -232,7 +236,7 @@ module.exports = async function watchmanCrawl({
             isFresh = isFresh || response.is_fresh_instance;
           }
 
-          results.set(root, response);
+          results.set(posixSeparatedRoot, response);
         },
       ),
     );
