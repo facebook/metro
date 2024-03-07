@@ -8,8 +8,8 @@
  * @oncall react_native
  */
 
-import {OutputOptions, RequestOptions} from '../../shared/types';
 import Server from '../../Server';
+import {OutputOptions, RequestOptions} from '../../shared/types';
 
 export function build(
   packagerClient: Server,

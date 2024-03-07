@@ -10,12 +10,12 @@
 
 // <reference types="node" />
 
+import Cache from './Cache';
+import stableHash from './stableHash';
 import AutoCleanFileStore from './stores/AutoCleanFileStore';
 import FileStore from './stores/FileStore';
 import HttpGetStore from './stores/HttpGetStore';
 import HttpStore from './stores/HttpStore';
-import Cache from './Cache';
-import stableHash from './stableHash';
 
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';

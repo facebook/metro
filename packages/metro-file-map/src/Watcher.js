@@ -176,8 +176,8 @@ export class Watcher extends EventEmitter {
     const WatcherImpl = useWatchman
       ? WatchmanWatcher
       : FSEventsWatcher.isSupported()
-      ? FSEventsWatcher
-      : NodeWatcher;
+        ? FSEventsWatcher
+        : NodeWatcher;
 
     let watcher = 'node';
     if (WatcherImpl === WatchmanWatcher) {

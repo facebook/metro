@@ -8,11 +8,11 @@
  * @oncall react_native
  */
 
-import type {JsTransformOptions} from 'metro-transform-worker';
-import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {RequireContext} from '../lib/contextModule';
 import type CountingSet from '../lib/CountingSet';
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {Graph} from './Graph';
+import type {JsTransformOptions} from 'metro-transform-worker';
 
 export interface MixedOutput {
   readonly data: {code: string};

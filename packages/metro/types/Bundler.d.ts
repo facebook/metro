@@ -11,8 +11,8 @@
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type DependencyGraph from './node-haste/DependencyGraph';
-import type {ConfigT} from 'metro-config';
 import type {EventEmitter} from 'events';
+import type {ConfigT} from 'metro-config';
 
 export interface BundlerOptions {
   readonly hasReducedPerformance?: boolean;

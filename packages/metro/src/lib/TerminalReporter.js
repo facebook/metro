@@ -119,8 +119,8 @@ class TerminalReporter {
       phase === 'done'
         ? chalk.green
         : phase === 'failed'
-        ? chalk.red
-        : chalk.yellow;
+          ? chalk.red
+          : chalk.yellow;
     const progress =
       phase === 'in_progress'
         ? chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +

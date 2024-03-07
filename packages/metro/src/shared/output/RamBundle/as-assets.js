@@ -78,7 +78,7 @@ function saveAsAssets(
         ModuleTransportLike,
       >(),
     });
-    if (sourcemapSourcesRoot !== undefined) {
+    if (sourcemapSourcesRoot != null) {
       relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
     }
     const wroteSourceMap = writeSourceMap(

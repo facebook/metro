@@ -8,13 +8,13 @@
  * @oncall react_native
  */
 
-import {EventEmitter} from 'events';
-import {ConfigT} from 'metro-config';
-import {ResolverInputOptions} from '../shared/types';
 import {
   BundlerResolution,
   TransformResultDependency,
 } from '../DeltaBundler/types';
+import {ResolverInputOptions} from '../shared/types';
+import {EventEmitter} from 'events';
+import {ConfigT} from 'metro-config';
 
 export default class DependencyGraph extends EventEmitter {
   constructor(

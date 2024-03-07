@@ -8,16 +8,17 @@
  * @oncall react_native
  */
 
+import type Bundler from './Bundler';
 import type {
   Options as DeltaBundlerOptions,
   ReadOnlyDependencies,
   TransformInputOptions,
 } from './DeltaBundler/types';
-import {ResolverInputOptions} from './shared/types';
-import type {ConfigT} from 'metro-config';
 import type {GraphId} from './lib/getGraphId';
+import type {ConfigT} from 'metro-config';
+
 import DeltaBundler, {DeltaResult, Graph, Module} from './DeltaBundler';
-import type Bundler from './Bundler';
+import {ResolverInputOptions} from './shared/types';
 
 export type RevisionId = string;
 
