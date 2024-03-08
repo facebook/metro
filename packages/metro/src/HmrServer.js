@@ -69,12 +69,12 @@ function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
 class HmrServer<TClient: Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
-  _createModuleId: (path: string) => number;
+  _createModuleId: (path: string) => number | string;
   _clientGroups: Map<RevisionId, ClientGroup>;
 
   constructor(
     bundler: IncrementalBundler,
-    createModuleId: (path: string) => number,
+    createModuleId: (path: string) => number | string,
     config: ConfigT,
   ) {
     this._config = config;

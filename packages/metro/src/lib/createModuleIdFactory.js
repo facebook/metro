@@ -11,7 +11,7 @@
 
 'use strict';
 
-function createModuleIdFactory(): (path: string) => number {
+function createModuleIdFactory(): (path: string) => number | string {
   const fileToIdMap: Map<string, number> = new Map();
   let nextId = 0;
   return (path: string) => {

@@ -55,7 +55,7 @@ export interface BundleOptions {
   readonly shallow: boolean;
   sourceMapUrl?: string;
   sourceUrl?: string;
-  createModuleIdFactory?: () => (path: string) => number;
+  createModuleIdFactory?: () => (path: string) => number | string;
   readonly unstable_transformProfile: TransformProfile;
 }
 
@@ -132,7 +132,7 @@ export interface RequestOptions {
   dev?: boolean;
   minify: boolean;
   platform: string;
-  createModuleIdFactory?: () => (path: string) => number;
+  createModuleIdFactory?: () => (path: string) => number | string;
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
 }
 
