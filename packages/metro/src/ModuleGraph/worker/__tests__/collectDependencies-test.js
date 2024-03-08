@@ -40,6 +40,7 @@ const opts: Options = {
   allowOptionalDependencies: false,
   dependencyMapName: null,
   unstable_allowRequireContext: false,
+  unstable_disableModuleWrapping: false,
 };
 
 describe(`require.context`, () => {
