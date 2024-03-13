@@ -16,8 +16,7 @@ import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 const getDefaultConfig = require('./defaults');
 const validConfig = require('./defaults/validConfig');
 const cosmiconfig = require('cosmiconfig');
-const cosmiconfigTypeScriptLoader =
-  require('cosmiconfig-typescript-loader').TypeScriptLoader;
+const {TypeScriptLoader} = require('cosmiconfig-typescript-loader');
 const fs = require('fs');
 const {validate} = require('jest-validate');
 const MetroCache = require('metro-cache');
@@ -56,7 +55,7 @@ const explorer = cosmiconfig('metro', {
     'package.json',
   ],
   loaders: {
-    '.ts': cosmiconfigTypeScriptLoader(),
+    '.ts': TypeScriptLoader(),
     '.json': cosmiconfig.loadJson,
     '.yaml': cosmiconfig.loadYaml,
     '.yml': cosmiconfig.loadYaml,
