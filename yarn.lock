@@ -2629,6 +2629,13 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
+cosmiconfig-typescript-loader@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/cosmiconfig-typescript-loader/-/cosmiconfig-typescript-loader-5.0.0.tgz#0d3becfe022a871f7275ceb2397d692e06045dc8"
+  integrity sha512-+8cK7jRAReYkMwMiG+bxhcNKiHJDM6bR9FD/nGBXOWdMLuYawjF5cGrtLilJ+LGd3ZjCXnJjR5DkfWPoIVlqJA==
+  dependencies:
+    jiti "^1.19.1"
+
 cosmiconfig@^5.0.5:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-5.2.1.tgz#040f726809c591e77a17c0a3626ca45b4f168b1a"
@@ -4515,6 +4522,11 @@ jest@^29.6.3:
     "@jest/types" "^29.6.3"
     import-local "^3.0.2"
     jest-cli "^29.6.3"
+
+jiti@^1.19.1:
+  version "1.21.0"
+  resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.21.0.tgz#7c97f8fe045724e136a397f7340475244156105d"
+  integrity sha512-gFqAIbuKyyso/3G2qhiO2OM6shY6EPP/R0+mkDbyspxKazh8BXDC5FiFsUjlczgdNz/vfra0da2y+aHrusLG/Q==
 
 js-sdsl@^4.1.4:
   version "4.4.2"
