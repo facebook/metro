@@ -6,12 +6,10 @@
  * @oncall code_indexing
  */
 
-// $FlowFixMe[unsupported-syntax]
 declare module 'strip-ansi' {
   declare module.exports: (string: string) => string;
 }
 
-// $FlowFixMe[unsupported-syntax]
 declare module 'strip-ansi' {
   declare export default function stripAnsi(string: string): string;
 }

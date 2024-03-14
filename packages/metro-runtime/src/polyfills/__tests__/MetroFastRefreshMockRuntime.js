@@ -87,6 +87,7 @@ export class Runtime {
     // Set up Fast Refresh. Adapted from `setUpReactRefresh.js` in React Native.
     jest.isolateModules(() => {
       // $FlowFixMe[incompatible-type] Not sure why Flow doesn't approve
+      // $FlowFixMe[prop-missing]
       this.React = require('react');
 
       this.#reactRefreshRuntime = require('react-refresh/runtime');
