@@ -17,7 +17,6 @@ import type {InputConfigT} from 'metro-config/src/configTypes.flow';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
 const path = require('path');
-const mockPlatform = process.platform;
 
 jest.useRealTimers();
 jest
@@ -26,7 +25,7 @@ jest
   .mock('os', () => ({
     ...jest.requireActual('os'),
     platform: () => 'test',
-    tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
+    tmpdir: () => (process.platform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
     endianness: () => 'LE',
     release: () => '',

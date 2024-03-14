@@ -16,6 +16,7 @@ import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 const getDefaultConfig = require('./defaults');
 const validConfig = require('./defaults/validConfig');
 const cosmiconfig = require('cosmiconfig');
+const {TypeScriptLoader} = require('cosmiconfig-typescript-loader');
 const fs = require('fs');
 const {validate} = require('jest-validate');
 const MetroCache = require('metro-cache');
@@ -48,11 +49,13 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 const explorer = cosmiconfig('metro', {
   searchPlaces: [
     'metro.config.js',
+    'metro.config.ts',
     'metro.config.cjs',
     'metro.config.json',
     'package.json',
   ],
   loaders: {
+    '.ts': TypeScriptLoader(),
     '.json': cosmiconfig.loadJson,
     '.yaml': cosmiconfig.loadYaml,
     '.yml': cosmiconfig.loadYaml,

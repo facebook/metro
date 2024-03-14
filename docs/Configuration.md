@@ -3,11 +3,13 @@ id: configuration
 title: Configuring Metro
 ---
 
-A Metro config can be created in these three ways (ordered by priority):
+A Metro config can be created in these five ways (ordered by priority):
 
 1.  `metro.config.js`
-2.  `metro.config.json`
-3.  The `metro` field in `package.json`
+2.  `metro.config.ts`
+3.  `metro.config.cjs`
+4.  `metro.config.json`
+5.  The `metro` field in `package.json`
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
 
