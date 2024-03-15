@@ -13,7 +13,7 @@
     "babel-plugin-syntax-hermes-parser": "0.20.1",
     "chalk": "^4.0.0",
     "debug": "^2.2.0",
-    "eslint": "^8.23.1",
+    "eslint": "^8.57.0",
     "eslint-config-fb-strict": "^27.0.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-babel": "^5.3.1",
