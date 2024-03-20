@@ -396,25 +396,21 @@ describe('with package exports resolution enabled', () => {
       expect(logWarning).not.toHaveBeenCalled();
     });
 
-    test('should expand array of strings as subpath mapping (root shorthand)', () => {
+    test('should use first valid value when "exports" field is an array (root shorthand)', () => {
       const logWarning = jest.fn();
       const context = {
         ...baseContext,
         ...createPackageAccessors({
           '/root/node_modules/test-pkg/package.json': JSON.stringify({
-            exports: ['./index.js', './foo.js'],
+            exports: ['bad-specifier', './index.js', './foo.js'],
           }),
         }),
         unstable_logWarning: logWarning,
       };
 
-      expect(Resolver.resolve(context, 'test-pkg/index.js', null)).toEqual({
+      expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/index.js',
-      });
-      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/foo.js',
       });
       expect(logWarning).not.toHaveBeenCalled();
     });

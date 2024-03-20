@@ -154,20 +154,15 @@ function normalizeExportsField(
   let rootValue;
 
   if (Array.isArray(exportsField)) {
-    // If an array of strings, expand as subpath mapping (legacy root shorthand)
+    // If an array of strings, use first value with valid specifier (root shorthand)
     if (exportsField.every(value => typeof value === 'string')) {
-      // $FlowIssue[incompatible-call] exportsField is refined to `string[]`
-      return exportsField.reduce(
-        (result: ExportMap, subpath: string) => ({
-          ...result,
-          [subpath]: subpath,
-        }),
-        {},
-      );
+      // $FlowIssue exportsField is refined to `string[]`
+      const validValues = exportsField.filter(value => value.startsWith('./'));
+      rootValue = validValues[0];
+    } else {
+      // Otherwise, should be a condition map and fallback string (Node.js <13.7)
+      rootValue = exportsField[0];
     }
-
-    // Otherwise, should be a condition map and fallback string (Node.js <13.7)
-    rootValue = exportsField[0];
   } else {
     rootValue = exportsField;
   }
