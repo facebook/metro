@@ -115,6 +115,7 @@ describe('with package exports resolution enabled', () => {
           '/root/node_modules/test-pkg/package.json': '',
           '/root/node_modules/test-pkg/index.js': '',
           '/root/node_modules/test-pkg/index-main.js': '',
+          '/root/node_modules/test-pkg/index-exports.js': '',
           '/root/node_modules/test-pkg/index-exports.js.js': '',
           '/root/node_modules/test-pkg/index-exports.ios.js': '',
           '/root/node_modules/test-pkg/symlink.js': {
@@ -225,14 +226,14 @@ describe('with package exports resolution enabled', () => {
       test('without expanding `sourceExts`', () => {
         expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
           type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/index-main.js',
+          filePath: '/root/node_modules/test-pkg/index-exports.js',
         });
       });
 
       test('without expanding platform-specific extensions', () => {
         expect(Resolver.resolve(context, 'test-pkg', 'ios')).toEqual({
           type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/index-main.js',
+          filePath: '/root/node_modules/test-pkg/index-exports.js',
         });
       });
 
