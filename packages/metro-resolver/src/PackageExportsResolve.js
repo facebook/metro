@@ -376,8 +376,8 @@ function reduceConditionalExport(
     let match: typeof subpathValue | 'no-match';
 
     // when conditions are present and default is not specified
-    // the default condition is implictly set to null, to allow
-    // for resticting access to unexported internals of a package.
+    // the default condition is implicitly set to null, to allow
+    // for restricting access to unexported internals of a package.
     if ('default' in reducedValue) {
       match = 'no-match';
     } else {
