@@ -554,7 +554,7 @@ describe('with package exports resolution enabled', () => {
       ).toThrowError();
     });
 
-    test('should use the most specific pattern base - default condition', () => {
+    test('should use the most specific pattern base - implicit default condition', () => {
       expect(() =>
         Resolver.resolve(baseContext, 'test-pkg/features/bar/Bar.js', null),
       ).toThrowError();
