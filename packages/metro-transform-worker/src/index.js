@@ -44,7 +44,6 @@ const {
   toSegmentTuple,
 } = require('metro-source-map');
 const metroTransformPlugins = require('metro-transform-plugins');
-const countLines = require('metro/src/lib/countLines');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
@@ -441,11 +440,14 @@ async function transformJS(
     ));
   }
 
+  let lineCount;
+  ({lineCount, map} = countLinesAndTerminateMap(code, map));
+
   const output: Array<JsOutput> = [
     {
       data: {
         code,
-        lineCount: countLines(code),
+        lineCount,
         map,
         functionMap: file.functionMap,
       },
@@ -552,9 +554,11 @@ async function transformJSON(
     jsType = 'js/module';
   }
 
+  let lineCount;
+  ({lineCount, map} = countLinesAndTerminateMap(code, map));
   const output: Array<JsOutput> = [
     {
-      data: {code, lineCount: countLines(code), map, functionMap: null},
+      data: {code, lineCount, map, functionMap: null},
       type: jsType,
     },
   ];
@@ -652,6 +656,7 @@ module.exports = {
     const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
     const filesKey = getCacheKey([
+      __filename,
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),
@@ -670,3 +675,42 @@ module.exports = {
     ].join('$');
   },
 };
+
+function countLinesAndTerminateMap(
+  code: string,
+  map: $ReadOnlyArray<MetroSourceMapSegmentTuple>,
+): {
+  lineCount: number,
+  map: Array<MetroSourceMapSegmentTuple>,
+} {
+  const NEWLINE = /\r\n?|\n|\u2028|\u2029/g;
+  let lineCount = 1;
+  let lastLineStart = 0;
+
+  // Count lines and keep track of where the last line starts
+  for (const match of code.matchAll(NEWLINE)) {
+    lineCount++;
+    lastLineStart = match.index + match[0].length;
+  }
+  const lastLineLength = code.length - lastLineStart;
+  const lastLineIndex1Based = lineCount;
+  const lastLineNextColumn0Based = lastLineLength;
+
+  // If there isn't a mapping at one-past-the-last column of the last line,
+  // add one that maps to nothing. This ensures out-of-bounds lookups hit the
+  // null mapping rather than aliasing to whichever mapping happens to be last.
+  // ASSUMPTION: Mappings are generated in order of increasing line and column.
+  const lastMapping = map[map.length - 1];
+  const terminatingMapping = [lastLineIndex1Based, lastLineNextColumn0Based];
+  if (
+    !lastMapping ||
+    lastMapping[0] !== terminatingMapping[0] ||
+    lastMapping[1] !== terminatingMapping[1]
+  ) {
+    return {
+      lineCount,
+      map: map.concat([terminatingMapping]),
+    };
+  }
+  return {lineCount, map: [...map]};
+}
