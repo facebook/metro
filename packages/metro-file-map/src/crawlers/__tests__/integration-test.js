@@ -56,7 +56,16 @@ const FIXTURES_DIR = join(__dirname, '..', '__fixtures__');
 // Crawlers may return the target for symlinks *if* they can do so efficiently,
 // (Watchman with symlink_target), but otherwise they should return 1 and
 // defer to the caller. This matcher helps with nested expectations.
-declare var expect: {...expect, oneOf: () => {}};
+declare var expect: {
+  /** The object that you want to make assertions against */
+  (value: mixed, description?: string): JestExpectType,
+  extend(matchers: {[name: string]: JestMatcher, ...}): void,
+  assertions(expectedAssertions: number): void,
+  any(value: mixed): JestAsymmetricEqualityType,
+  oneOf: (mixed, mixed) => boolean,
+  ...
+};
+
 function oneOf(this: $FlowFixMe, actual: mixed, ...expectOneOf: mixed[]) {
   const pass = expectOneOf.includes(actual);
   return {
