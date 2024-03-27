@@ -373,7 +373,16 @@ function reduceConditionalExport(
   let reducedValue = subpathValue;
 
   while (reducedValue != null && typeof reducedValue !== 'string') {
-    let match: typeof subpathValue | 'no-match' = 'no-match';
+    let match: typeof subpathValue | 'no-match';
+
+    // when conditions are present and default is not specified
+    // the default condition is implicitly set to null, to allow
+    // for restricting access to unexported internals of a package.
+    if ('default' in reducedValue) {
+      match = 'no-match';
+    } else {
+      match = null;
+    }
 
     for (const conditionName in reducedValue) {
       if (conditionNames.has(conditionName)) {
