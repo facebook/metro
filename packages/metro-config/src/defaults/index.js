@@ -135,6 +135,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_dependencyMapReservedName: null,
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
+    unstable_disableRequireRename: false,
     unstable_compactOutput: false,
     unstable_workerThreads: false,
   },
