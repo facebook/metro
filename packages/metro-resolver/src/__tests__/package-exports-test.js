@@ -115,7 +115,6 @@ describe('with package exports resolution enabled', () => {
           '/root/node_modules/test-pkg/package.json': '',
           '/root/node_modules/test-pkg/index.js': '',
           '/root/node_modules/test-pkg/index-main.js': '',
-          '/root/node_modules/test-pkg/index-exports.js': '',
           '/root/node_modules/test-pkg/index-exports.js.js': '',
           '/root/node_modules/test-pkg/index-exports.ios.js': '',
           '/root/node_modules/test-pkg/symlink.js': {
@@ -217,7 +216,6 @@ describe('with package exports resolution enabled', () => {
         ...baseContext,
         ...createPackageAccessors({
           '/root/node_modules/test-pkg/package.json': {
-            main: 'index-main.js',
             exports: './index-exports.js',
           },
         }),
@@ -226,14 +224,16 @@ describe('with package exports resolution enabled', () => {
       test('without expanding `sourceExts`', () => {
         expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
           type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/index-exports.js',
+          // [nonstrict] Falls back to index.js based on file resolution
+          filePath: '/root/node_modules/test-pkg/index.js',
         });
       });
 
       test('without expanding platform-specific extensions', () => {
         expect(Resolver.resolve(context, 'test-pkg', 'ios')).toEqual({
           type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/index-exports.js',
+          // [nonstrict] Falls back to index.js based on file resolution
+          filePath: '/root/node_modules/test-pkg/index.js',
         });
       });
 
