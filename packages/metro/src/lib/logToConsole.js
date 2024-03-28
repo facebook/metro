@@ -24,6 +24,7 @@ module.exports = (
   terminal: Terminal,
   level: string,
   mode: 'BRIDGE' | 'NOBRIDGE',
+  platform: ?string,
   ...data: Array<mixed>
 ) => {
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
@@ -65,10 +66,15 @@ module.exports = (
       data[data.length - 1] = lastItem.trimEnd();
     }
 
+    const platformPrefix =
+      platform != null
+        ? chalk.inverse.bold.white` ${platform.toUpperCase()} ` + ' '
+        : '';
     const modePrefix =
       !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
+      platformPrefix +
+        color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.
