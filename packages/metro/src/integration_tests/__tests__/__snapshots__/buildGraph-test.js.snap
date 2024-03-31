@@ -389,6 +389,10 @@ Array [
           20,
           40,
         ],
+        Array [
+          24,
+          3,
+        ],
       ],
     },
     "type": "js/module",

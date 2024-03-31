@@ -1,6 +1,6 @@
 {
   "name": "metro-resolver",
-  "version": "0.80.6",
+  "version": "0.80.8",
   "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src",
   "repository": {
@@ -16,6 +16,6 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "metro": "0.80.6"
+    "metro": "0.80.8"
   }
 }
