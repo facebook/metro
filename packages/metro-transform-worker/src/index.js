@@ -97,8 +97,8 @@ export type JsTransformerConfig = $ReadOnly<{
   unstable_compactOutput: boolean,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
-  /** Disable renaming scoped `require` functions to `_$$_REQUIRE` which is an extraneous operation when serializing to iife (default). */
-  unstable_disableRequireRename: boolean,
+  /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
+  unstable_renameRequire?: boolean,
 }>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -390,7 +390,10 @@ async function transformJS(
         importAll,
         dependencyMapName,
         config.globalPrefix,
-        config.unstable_disableRequireRename,
+        // TODO: This config is optional to allow its introduction in a minor
+        // release. It should be made non-optional in ConfigT or removed in
+        // future.
+        config.unstable_renameRequire === false,
       ));
     }
   }
