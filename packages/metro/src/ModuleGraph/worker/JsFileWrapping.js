@@ -32,6 +32,7 @@ function wrapModule(
   importAllName: string,
   dependencyMapName: string,
   globalPrefix: string,
+  skipRequireRename: boolean,
 ): {
   ast: BabelNodeFile,
   requireName: string,
@@ -45,7 +46,9 @@ function wrapModule(
   const def = t.callExpression(t.identifier(`${globalPrefix}__d`), [factory]);
   const ast = t.file(t.program([t.expressionStatement(def)]));
 
-  const requireName = renameRequires(ast);
+  // `require` doesn't need to be scoped when Metro serializes to iife because the local function
+  // `require` will be used instead of the global one.
+  const requireName = skipRequireRename ? 'require' : renameRequires(ast);
 
   return {ast, requireName};
 }
