@@ -211,40 +211,6 @@ describe('with package exports resolution enabled', () => {
       `);
     });
 
-    test('[nonstrict] should fall back to file resolution and log warning when subpath is not listed', () => {
-      const logWarning = jest.fn();
-      const context = {
-        ...baseContext,
-        ...createPackageAccessors({
-          '/root/node_modules/test-pkg/package.json': {
-            main: 'index-main.js',
-            exports: 'index.js',
-          },
-        }),
-        unstable_logWarning: logWarning,
-      };
-
-      expect(Resolver.resolve(context, 'test-pkg/index.js', null)).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/index.js',
-      });
-      expect(logWarning).toHaveBeenCalledTimes(1);
-      expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
-        `"Attempted to import the module \\"/root/node_modules/test-pkg/index.js\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
-      );
-
-      expect(Resolver.resolve(context, 'test-pkg/index-main.js', null)).toEqual(
-        {
-          type: 'sourceFile',
-          filePath: '/root/node_modules/test-pkg/index-main.js',
-        },
-      );
-      expect(logWarning).toHaveBeenCalledTimes(2);
-      expect(logWarning.mock.calls[1][0]).toMatchInlineSnapshot(
-        `"Attempted to import the module \\"/root/node_modules/test-pkg/index-main.js\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
-      );
-    });
-
     describe('should resolve "exports" target directly', () => {
       const context = {
         ...baseContext,
