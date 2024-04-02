@@ -64,6 +64,8 @@ export type JsTransformerConfig = Readonly<{
   unstable_compactOutput: boolean;
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean;
+  /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
+  unstable_renameRequire?: boolean;
 }>;
 
 export {CustomTransformOptions} from 'metro-babel-transformer';
