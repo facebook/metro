@@ -10,8 +10,6 @@
 
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
-export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
-
 export interface BundleDetails {
   bundleType: string;
   dev: boolean;
@@ -65,12 +63,12 @@ export type ReportableEvent =
       totalFileCount: number;
     }
   | {
-      type: 'global_cache_error';
+      type: 'cache_read_error';
       error: Error;
     }
   | {
-      type: 'global_cache_disabled';
-      reason: GlobalCacheDisabledReason;
+      type: 'cache_write_error';
+      error: Error;
     }
   | {type: 'transform_cache_reset'}
   | {
