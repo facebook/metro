@@ -13,6 +13,18 @@
 
 import type {Writable} from 'stream';
 
+export type SerializedEvent<TEvent: {[string]: any, ...}> = TEvent extends {
+  error: Error,
+  ...
+}
+  ? {
+      ...Omit<TEvent, 'error'>,
+      message: string,
+      stack: string,
+      ...
+    }
+  : TEvent;
+
 class JsonReporter<TEvent: {[string]: any, ...}> {
   _stream: Writable;
 
