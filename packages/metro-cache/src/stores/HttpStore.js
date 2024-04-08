@@ -33,6 +33,7 @@ type EndpointOptions = {
   ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   params?: URLSearchParams,
   headers?: {[string]: string},
+  additionalSuccessStatuses?: $ReadOnlyArray<number>,
 };
 
 type Endpoint = {
@@ -44,6 +45,7 @@ type Endpoint = {
   params: URLSearchParams,
   headers?: {[string]: string},
   timeout: number,
+  additionalSuccessStatuses: $ReadOnlySet<number>,
 };
 
 const ZLIB_OPTIONS = {
@@ -109,6 +111,9 @@ class HttpStore<T> {
       params: new URLSearchParams(options.params),
       timeout: options.timeout || 5000,
       module: uri.protocol === 'http:' ? http : https,
+      additionalSuccessStatuses: new Set(
+        options.additionalSuccessStatuses ?? [],
+      ),
     };
   }
 
@@ -142,7 +147,10 @@ class HttpStore<T> {
           resolve(null);
 
           return;
-        } else if (code !== 200) {
+        } else if (
+          code !== 200 &&
+          !this._getEndpoint.additionalSuccessStatuses.has(code)
+        ) {
           res.resume();
           reject(new HttpError('HTTP error: ' + code, code));
 
@@ -215,7 +223,10 @@ class HttpStore<T> {
       const req = this._setEndpoint.module.request(options, res => {
         const code = res.statusCode;
 
-        if (code < 200 || code > 299) {
+        if (
+          (code < 200 || code > 299) &&
+          !this._setEndpoint.additionalSuccessStatuses.has(code)
+        ) {
           res.resume();
           reject(new HttpError('HTTP error: ' + code, code));
 

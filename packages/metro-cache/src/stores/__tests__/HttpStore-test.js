@@ -17,9 +17,9 @@ describe('HttpStore', () => {
   let HttpStore;
   let httpPassThrough;
 
-  function responseHttpOk(data) {
+  function responseHttpOk(data, statusCode = 200) {
     const res = Object.assign(new PassThrough(), {
-      statusCode: 200,
+      statusCode,
     });
 
     process.nextTick(() => {
@@ -30,10 +30,16 @@ describe('HttpStore', () => {
     return res;
   }
 
-  function responseHttpError(code) {
-    return Object.assign(new PassThrough(), {
-      statusCode: code,
+  function responseHttpError(statusCode) {
+    const res = Object.assign(new PassThrough(), {
+      statusCode,
     });
+
+    process.nextTick(() => {
+      res.end();
+    });
+
+    return res;
   }
 
   function responseError(err) {
@@ -112,6 +118,25 @@ describe('HttpStore', () => {
     });
   });
 
+  it('get() resolves when the HTTP code is in additionalSuccessStatuses', async () => {
+    const store = new HttpStore({
+      endpoint: 'http://www.example.com/endpoint',
+      additionalSuccessStatuses: [419],
+    });
+    const promise = store.get(Buffer.from('key'));
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('GET');
+    expect(opts.host).toEqual('www.example.com');
+    expect(opts.path).toEqual('/endpoint/6b6579');
+    expect(opts.timeout).toEqual(5000);
+
+    callback(responseHttpOk(JSON.stringify({foo: 42}), 419));
+    jest.runAllTimers();
+
+    expect(await promise).toEqual({foo: 42});
+  });
+
   it('rejects when it gets an invalid JSON response', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
@@ -183,6 +208,30 @@ describe('HttpStore', () => {
     promise.catch(err => {
       expect(err).toBeInstanceOf(Error);
       expect(err.message).toBe('ENOTFOUND');
+      done();
+    });
+  });
+
+  test('set() resolves when the HTTP code is in additionalSuccessStatuses', done => {
+    const store = new HttpStore({
+      endpoint: 'http://www.example.com/endpoint',
+      additionalSuccessStatuses: [403],
+    });
+    const promise = store.set(Buffer.from('key-set'), {foo: 42});
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('PUT');
+    expect(opts.host).toEqual('www.example.com');
+    expect(opts.path).toEqual('/endpoint/6b65792d736574');
+    expect(opts.timeout).toEqual(5000);
+
+    callback(responseHttpError(403));
+
+    httpPassThrough.on('data', () => {});
+
+    httpPassThrough.on('end', async () => {
+      await promise; // Ensure that the setting promise successfully finishes.
+
       done();
     });
   });
