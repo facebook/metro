@@ -71,10 +71,10 @@ function createActionStartEntry(data: ActionLogEntryData | string): LogEntry {
   const {action_name} = logEntry;
 
   return createEntry({
+    log_entry_label: action_name,
     ...logEntry,
     action_name,
     action_phase: 'start',
-    log_entry_label: action_name,
     start_timestamp: process.hrtime(),
   });
 }
@@ -90,14 +90,11 @@ function createActionEndEntry(logEntry: ActionStartLogEntry): LogEntry {
   const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
 
   return createEntry({
+    log_entry_label: (action_name: ?string),
     ...logEntry,
     action_name,
     action_phase: 'end',
     duration_ms,
-    /* $FlowFixMe[incompatible-cast] (>=0.111.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.111 was deployed. To see the error, delete this
-     * comment and run Flow. */
-    log_entry_label: (action_name: string),
   });
 }
 

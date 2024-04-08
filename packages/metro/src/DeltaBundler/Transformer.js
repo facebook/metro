@@ -131,7 +131,16 @@ class Transformer {
     }
 
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
-    const result = await cache.get(fullKey);
+    let result;
+    try {
+      result = await cache.get(fullKey);
+    } catch (error) {
+      this._config.reporter.update({
+        type: 'cache_read_error',
+        error,
+      });
+      throw error;
+    }
 
     // A valid result from the cache is used directly; otherwise we call into
     // the transformer to computed the corresponding result.
@@ -154,7 +163,12 @@ class Transformer {
     }
 
     // Fire-and-forget cache set promise.
-    void cache.set(fullKey, data.result);
+    cache.set(fullKey, data.result).catch(error => {
+      this._config.reporter.update({
+        type: 'cache_write_error',
+        error,
+      });
+    });
 
     return {
       ...data.result,

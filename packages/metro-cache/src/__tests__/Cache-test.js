@@ -167,11 +167,11 @@ describe('Cache', () => {
     await cache.get(Buffer.from('foo'));
 
     expect(log).toEqual([
-      {a: 'Cache get', l: 'Cache get', p: 'start'},
-      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache get', l: 'Local::666f6f', p: 'start'},
+      {a: 'Cache get', l: 'Local::666f6f', p: 'end'},
       {a: 'Cache miss', l: 'Local::666f6f', p: undefined},
-      {a: 'Cache get', l: 'Cache get', p: 'start'},
-      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache get', l: 'Network::666f6f', p: 'start'},
+      {a: 'Cache get', l: 'Network::666f6f', p: 'end'},
       {a: 'Cache hit', l: 'Network::666f6f', p: undefined},
     ]);
   });
@@ -191,11 +191,11 @@ describe('Cache', () => {
     }
 
     expect(log).toEqual([
-      {a: 'Cache get', l: 'Cache get', p: 'start'},
-      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache get', l: 'Local::666f6f', p: 'start'},
+      {a: 'Cache get', l: 'Local::666f6f', p: 'end'},
       {a: 'Cache miss', l: 'Local::666f6f', p: undefined},
-      {a: 'Cache get', l: 'Cache get', p: 'start'},
-      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache get', l: 'Network::666f6f', p: 'start'},
+      {a: 'Cache get', l: 'Network::666f6f', p: 'end'},
       {a: 'Cache miss', l: 'Network::666f6f', p: undefined},
     ]);
   });

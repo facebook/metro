@@ -20,13 +20,32 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
-export type Options = {
+export type Options =
+  | EndpointOptions // Uses the same options for both reads and writes
+  | {getOptions: EndpointOptions, setOptions: EndpointOptions}; // Uses different options for reads and writes
+
+type EndpointOptions = {
   endpoint: string,
   family?: 4 | 6,
   timeout?: number,
   key?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   cert?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
+  params?: URLSearchParams,
+  headers?: {[string]: string},
+  additionalSuccessStatuses?: $ReadOnlyArray<number>,
+};
+
+type Endpoint = {
+  module: typeof http | typeof https,
+  host: string,
+  path: string,
+  port: number,
+  agent: HttpAgent | HttpsAgent,
+  params: URLSearchParams,
+  headers?: {[string]: string},
+  timeout: number,
+  additionalSuccessStatuses: $ReadOnlySet<number>,
 };
 
 const ZLIB_OPTIONS = {
@@ -40,20 +59,19 @@ class HttpStore<T> {
   static HttpError: typeof HttpError = HttpError;
   static NetworkError: typeof NetworkError = NetworkError;
 
-  _module: typeof http | typeof https;
-  _timeout: number;
-
-  _host: string;
-  _port: number;
-  _path: string;
-
-  _getAgent: HttpAgent | HttpsAgent;
-  _setAgent: HttpAgent | HttpsAgent;
+  _getEndpoint: Endpoint;
+  _setEndpoint: Endpoint;
 
   constructor(options: Options) {
-    const uri = url.parse(options.endpoint);
-    const module = uri.protocol === 'http:' ? http : https;
+    this._getEndpoint = this.createEndpointConfig(
+      options.getOptions != null ? options.getOptions : options,
+    );
+    this._setEndpoint = this.createEndpointConfig(
+      options.setOptions != null ? options.setOptions : options,
+    );
+  }
 
+  createEndpointConfig(options: EndpointOptions): Endpoint {
     const agentConfig: http$agentOptions = {
       family: options.family,
       keepAlive: true,
@@ -77,36 +95,50 @@ class HttpStore<T> {
       agentConfig.ca = options.ca;
     }
 
+    const uri = url.parse(options.endpoint);
+    const module = uri.protocol === 'http:' ? http : https;
+
     if (!uri.hostname || !uri.pathname) {
       throw new TypeError('Invalid endpoint: ' + options.endpoint);
     }
 
-    this._module = module;
-    this._timeout = options.timeout || 5000;
-
-    this._host = uri.hostname;
-    this._path = uri.pathname;
-    this._port = +uri.port;
-
-    this._getAgent = new module.Agent(agentConfig);
-    this._setAgent = new module.Agent(agentConfig);
+    return {
+      headers: options.headers,
+      host: uri.hostname,
+      path: uri.pathname,
+      port: +uri.port,
+      agent: new module.Agent(agentConfig),
+      params: new URLSearchParams(options.params),
+      timeout: options.timeout || 5000,
+      module: uri.protocol === 'http:' ? http : https,
+      additionalSuccessStatuses: new Set(
+        options.additionalSuccessStatuses ?? [],
+      ),
+    };
   }
 
   get(key: Buffer): Promise<?T> {
     return new Promise((resolve, reject) => {
+      let searchParamsString = this._getEndpoint.params.toString();
+      if (searchParamsString != '') {
+        searchParamsString = '?' + searchParamsString;
+      }
       const options = {
-        agent: this._getAgent,
-        host: this._host,
+        agent: this._getEndpoint.agent,
+        headers: this._getEndpoint.headers,
+        host: this._getEndpoint.host,
         method: 'GET',
-        path: this._path + '/' + key.toString('hex'),
-        port: this._port,
-        timeout: this._timeout,
+        path: `${this._getEndpoint.path}/${key.toString(
+          'hex',
+        )}${searchParamsString}`,
+        port: this._getEndpoint.port,
+        timeout: this._getEndpoint.timeout,
       };
 
       /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
-      const req = this._module.request(options, res => {
+      const req = this._getEndpoint.module.request(options, res => {
         const code = res.statusCode;
         const data = [];
 
@@ -115,7 +147,10 @@ class HttpStore<T> {
           resolve(null);
 
           return;
-        } else if (code !== 200) {
+        } else if (
+          code !== 200 &&
+          !this._getEndpoint.additionalSuccessStatuses.has(code)
+        ) {
           res.resume();
           reject(new HttpError('HTTP error: ' + code, code));
 
@@ -165,22 +200,33 @@ class HttpStore<T> {
     return new Promise((resolve, reject) => {
       const gzip = zlib.createGzip(ZLIB_OPTIONS);
 
+      let searchParamsString = this._setEndpoint.params.toString();
+      if (searchParamsString != '') {
+        searchParamsString = '?' + searchParamsString;
+      }
+
       const options = {
-        agent: this._setAgent,
-        host: this._host,
+        agent: this._setEndpoint.agent,
+        headers: this._setEndpoint.headers,
+        host: this._setEndpoint.host,
         method: 'PUT',
-        path: this._path + '/' + key.toString('hex'),
-        port: this._port,
-        timeout: this._timeout,
+        path: `${this._setEndpoint.path}/${key.toString(
+          'hex',
+        )}${searchParamsString}`,
+        port: this._setEndpoint.port,
+        timeout: this._setEndpoint.timeout,
       };
 
       /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
-      const req = this._module.request(options, res => {
+      const req = this._setEndpoint.module.request(options, res => {
         const code = res.statusCode;
 
-        if (code < 200 || code > 299) {
+        if (
+          (code < 200 || code > 299) &&
+          !this._setEndpoint.additionalSuccessStatuses.has(code)
+        ) {
           res.resume();
           reject(new HttpError('HTTP error: ' + code, code));
 

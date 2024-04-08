@@ -20,8 +20,6 @@ const chalk = require('chalk');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
 
-export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
-
 export type BundleDetails = {
   bundleType: string,
   customResolverOptions: CustomResolverOptions,
@@ -90,13 +88,13 @@ export type ReportableEvent =
       ...
     }
   | {
-      type: 'global_cache_error',
+      type: 'cache_read_error',
       error: Error,
       ...
     }
   | {
-      type: 'global_cache_disabled',
-      reason: GlobalCacheDisabledReason,
+      type: 'cache_write_error',
+      error: Error,
       ...
     }
   | {type: 'transform_cache_reset', ...}

@@ -101,11 +101,58 @@ describe('Transformer', function () {
     );
   });
 
-  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+  it('logs cache read errors to reporter', async () => {
+    const readError = new Error('Cache write error');
+    const get = jest.fn().mockImplementation(() => {
+      throw readError;
+    });
+    const set = jest.fn();
+    const mockReporter = {
+      update: jest.fn(),
+    };
+
     const transformerInstance = new Transformer(
       {
         ...commonOptions,
-        cacheStores: [],
+        reporter: mockReporter,
+        cacheStores: [{get, set}],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await expect(
+      transformerInstance.transformFile('./foo.js', {}),
+    ).rejects.toBe(readError);
+
+    expect(get).toHaveBeenCalledTimes(1);
+
+    expect(mockReporter.update).toBeCalledWith({
+      type: 'cache_read_error',
+      error: readError,
+    });
+  });
+
+  it('logs cache write errors to reporter', async () => {
+    const get = jest.fn();
+    const writeError = new Error('Cache write error');
+    const set = jest.fn().mockImplementation(() => {
+      throw writeError;
+    });
+    const mockReporter = {
+      update: jest.fn(),
+    };
+
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        reporter: mockReporter,
+        cacheStores: [{get, set}],
         watchFolders,
       },
       getSha1,
@@ -118,7 +165,12 @@ describe('Transformer', function () {
 
     await transformerInstance.transformFile('./foo.js', {});
 
-    expect(require('../getTransformCacheKey')).not.toBeCalled();
+    expect(set).toHaveBeenCalledTimes(1);
+
+    expect(mockReporter.update).toBeCalledWith({
+      type: 'cache_write_error',
+      error: writeError,
+    });
   });
 
   it('short-circuits the transformer cache key when the cache is disabled', async () => {

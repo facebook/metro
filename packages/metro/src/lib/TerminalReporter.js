@@ -11,11 +11,7 @@
 
 'use strict';
 
-import type {
-  BundleDetails,
-  GlobalCacheDisabledReason,
-  ReportableEvent,
-} from './reporting';
+import type {BundleDetails, ReportableEvent} from './reporting';
 import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
@@ -52,9 +48,6 @@ type SnippetError = ErrnoError &
     filename?: string,
     snippet?: string,
   };
-
-const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
-  'The global cache is now disabled because %s';
 
 const DARK_BLOCK_CHAR = '\u2593';
 const LIGHT_BLOCK_CHAR = '\u2591';
@@ -139,26 +132,6 @@ class TerminalReporter {
       progress +
       '\n'
     );
-  }
-
-  _logCacheDisabled(reason: GlobalCacheDisabledReason): void {
-    const format = GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT;
-    switch (reason) {
-      case 'too_many_errors':
-        reporting.logWarning(
-          this.terminal,
-          format,
-          'it has been failing too many times.',
-        );
-        break;
-      case 'too_many_misses':
-        reporting.logWarning(
-          this.terminal,
-          format,
-          'it has been missing too many consecutive keys.',
-        );
-        break;
-    }
   }
 
   _logBundleBuildDone(buildID: string): void {
@@ -252,9 +225,6 @@ class TerminalReporter {
         break;
       case 'bundling_error':
         this._logBundlingError(event.error);
-        break;
-      case 'global_cache_disabled':
-        this._logCacheDisabled(event.reason);
         break;
       case 'resolver_warning':
         this._logWarning(event.message);
