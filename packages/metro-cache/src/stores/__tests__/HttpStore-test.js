@@ -36,6 +36,7 @@ describe('HttpStore', () => {
     });
 
     process.nextTick(() => {
+      res.write('HTTP error body');
       res.end();
     });
 
@@ -112,7 +113,27 @@ describe('HttpStore', () => {
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(HttpStore.HttpError);
-      expect(err.message).toMatch(/HTTP error: 503/);
+      expect(err.message).toMatch(/HTTP error: 503 Service Unavailable/);
+      expect(err.code).toBe(503);
+      done();
+    });
+  });
+
+  it('get() includes HTTP error body in rejection with debug: true', done => {
+    const store = new HttpStore({endpoint: 'http://example.com', debug: true});
+    const promise = store.get(Buffer.from('key'));
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('GET');
+
+    callback(responseHttpError(503));
+    jest.runAllTimers();
+
+    promise.catch(err => {
+      expect(err).toBeInstanceOf(HttpStore.HttpError);
+      expect(err.message).toMatch(
+        /HTTP error: 503 Service Unavailable.*HTTP error body/s,
+      );
       expect(err.code).toBe(503);
       done();
     });
@@ -248,7 +269,27 @@ describe('HttpStore', () => {
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(HttpStore.HttpError);
-      expect(err.message).toMatch(/HTTP error: 403/);
+      expect(err.message).toMatch(/HTTP error: 403 Forbidden/);
+      expect(err.code).toBe(403);
+      done();
+    });
+  });
+
+  it('set() includes HTTP error body in rejection with debug: true', done => {
+    const store = new HttpStore({endpoint: 'http://example.com', debug: true});
+    const promise = store.set(Buffer.from('key-set'), {foo: 42});
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('PUT');
+
+    callback(responseHttpError(403));
+    jest.runAllTimers();
+
+    promise.catch(err => {
+      expect(err).toBeInstanceOf(HttpStore.HttpError);
+      expect(err.message).toMatch(
+        /HTTP error: 403 Forbidden.*HTTP error body/s,
+      );
       expect(err.code).toBe(403);
       done();
     });

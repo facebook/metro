@@ -34,6 +34,10 @@ type EndpointOptions = {
   params?: URLSearchParams,
   headers?: {[string]: string},
   additionalSuccessStatuses?: $ReadOnlyArray<number>,
+  /**
+   * Whether to include additional debug information in error messages.
+   */
+  debug?: boolean,
 };
 
 type Endpoint = {
@@ -46,6 +50,7 @@ type Endpoint = {
   headers?: {[string]: string},
   timeout: number,
   additionalSuccessStatuses: $ReadOnlySet<number>,
+  debug: boolean,
 };
 
 const ZLIB_OPTIONS = {
@@ -114,6 +119,7 @@ class HttpStore<T> {
       additionalSuccessStatuses: new Set(
         options.additionalSuccessStatuses ?? [],
       ),
+      debug: options.debug ?? false,
     };
   }
 
@@ -151,8 +157,46 @@ class HttpStore<T> {
           code !== 200 &&
           !this._getEndpoint.additionalSuccessStatuses.has(code)
         ) {
-          res.resume();
-          reject(new HttpError('HTTP error: ' + code, code));
+          if (this._getEndpoint.debug) {
+            res.on('data', chunk => {
+              data.push(chunk);
+            });
+            res.on('error', err => {
+              reject(
+                new HttpError(
+                  'Encountered network error (' +
+                    err.message +
+                    ') while handling HTTP error: ' +
+                    code +
+                    ' ' +
+                    http.STATUS_CODES[code],
+                  code,
+                ),
+              );
+            });
+            res.on('end', () => {
+              const buffer = Buffer.concat(data);
+              reject(
+                new HttpError(
+                  'HTTP error: ' +
+                    code +
+                    ' ' +
+                    http.STATUS_CODES[code] +
+                    '\n\n' +
+                    buffer.toString(),
+                  code,
+                ),
+              );
+            });
+          } else {
+            res.resume();
+            reject(
+              new HttpError(
+                'HTTP error: ' + code + ' ' + http.STATUS_CODES[code],
+                code,
+              ),
+            );
+          }
 
           return;
         }
@@ -227,8 +271,47 @@ class HttpStore<T> {
           (code < 200 || code > 299) &&
           !this._setEndpoint.additionalSuccessStatuses.has(code)
         ) {
-          res.resume();
-          reject(new HttpError('HTTP error: ' + code, code));
+          if (this._setEndpoint.debug) {
+            const data = [];
+            res.on('data', chunk => {
+              data.push(chunk);
+            });
+            res.on('error', err => {
+              reject(
+                new HttpError(
+                  'Encountered network error (' +
+                    err.message +
+                    ') while handling HTTP error: ' +
+                    code +
+                    ' ' +
+                    http.STATUS_CODES[code],
+                  code,
+                ),
+              );
+            });
+            res.on('end', () => {
+              const buffer = Buffer.concat(data);
+              reject(
+                new HttpError(
+                  'HTTP error: ' +
+                    code +
+                    ' ' +
+                    http.STATUS_CODES[code] +
+                    '\n\n' +
+                    buffer.toString(),
+                  code,
+                ),
+              );
+            });
+          } else {
+            res.resume();
+            reject(
+              new HttpError(
+                'HTTP error: ' + code + ' ' + http.STATUS_CODES[code],
+                code,
+              ),
+            );
+          }
 
           return;
         }

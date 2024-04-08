@@ -1,13 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- * @format
- * @oncall react_native
- */
-
 'use strict';
 
 const {PassThrough} = require('stream');
@@ -79,7 +69,7 @@ describe('HttpGetStore', () => {
 
     expect(opts.method).toEqual('GET');
 
-    callback(responseHttpError(404)); // Page not found
+    callback(responseHttpError(404));
 
     await promise.then(result => {
       expect(result).toBe(null);
@@ -95,14 +85,14 @@ describe('HttpGetStore', () => {
 
     expect(opts.method).toEqual('GET');
 
-    callback(responseHttpError(502)); // Server error
+    callback(responseHttpError(502));
 
     await promise.then(result => {
       expect(result).toBe(null);
 
       expect(warningMessages.length).toBe(1);
       expect(warningMessages[0]).toMatchInlineSnapshot(
-        '"Could not connect to the HTTP cache. Original error: HTTP error: 502"',
+        `"Could not connect to the HTTP cache. Original error: HTTP error: 502 Bad Gateway"`,
       );
     });
   });
