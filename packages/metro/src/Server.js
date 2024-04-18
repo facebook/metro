@@ -465,6 +465,7 @@ class Server {
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
+      // $FlowFixMe[incompatible-type]
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
