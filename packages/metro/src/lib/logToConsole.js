@@ -26,6 +26,7 @@ module.exports = (
   mode: 'BRIDGE' | 'NOBRIDGE',
   ...data: Array<mixed>
 ) => {
+  // $FlowFixMe[invalid-computed-prop]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
     level === 'error'

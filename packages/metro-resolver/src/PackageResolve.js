@@ -31,6 +31,7 @@ export function getPackageEntryPoint(
   let main = 'index';
 
   for (const name of mainFields) {
+    // $FlowFixMe[invalid-computed-prop]
     if (typeof pkg[name] === 'string' && pkg[name].length) {
       main = pkg[name];
       break;
@@ -165,6 +166,7 @@ function matchSubpathFromMainFields(
   mainFields: $ReadOnlyArray<string>,
 ): string | false | null {
   const fieldValues = mainFields
+    // $FlowFixMe[invalid-computed-prop]
     .map(name => pkg[name])
     .filter(value => value != null && typeof value !== 'string');
 
