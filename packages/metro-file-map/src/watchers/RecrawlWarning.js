@@ -19,7 +19,7 @@
 export default class RecrawlWarning {
   static RECRAWL_WARNINGS: Array<RecrawlWarning> = [];
   static REGEXP: RegExp =
-    /Recrawled this watch (\d+) times, most recently because:\n([^:]+)/;
+    /Recrawled this watch (\d+) times?, most recently because:\n([^:]+)/;
 
   root: string;
   count: number;
