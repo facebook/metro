@@ -38,6 +38,7 @@ const watchmanPath: string => string = filePath =>
 const DEFAULT_OPTIONS: CrawlerOptions = {
   abortSignal: null,
   computeSha1: true,
+  console: global.console,
   extensions: ['js'],
   ignore: () => false,
   includeSymlinks: true,

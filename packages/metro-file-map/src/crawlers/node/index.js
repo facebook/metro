@@ -11,6 +11,7 @@
 
 import type {
   CanonicalPath,
+  Console,
   CrawlerOptions,
   FileData,
   IgnoreMatcher,
@@ -33,6 +34,7 @@ function find(
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   rootDir: string,
+  console: Console,
   callback: Callback,
 ): void {
   const result: FileData = new Map();
@@ -44,51 +46,52 @@ function find(
     fs.readdir(directory, {withFileTypes: true}, (err, entries) => {
       activeCalls--;
       if (err) {
-        callback(result);
-        return;
-      }
+        console.warn(
+          `Error "${err.code ?? err.message}" reading contents of "${directory}", skipping. Add this directory to your ignore list to exclude it.`,
+        );
+      } else {
+        entries.forEach((entry: fs.Dirent) => {
+          const file = path.join(directory, entry.name.toString());
 
-      entries.forEach((entry: fs.Dirent) => {
-        const file = path.join(directory, entry.name.toString());
+          if (ignore(file)) {
+            return;
+          }
 
-        if (ignore(file)) {
-          return;
-        }
+          if (entry.isSymbolicLink() && !includeSymlinks) {
+            return;
+          }
 
-        if (entry.isSymbolicLink() && !includeSymlinks) {
-          return;
-        }
+          if (entry.isDirectory()) {
+            search(file);
+            return;
+          }
 
-        if (entry.isDirectory()) {
-          search(file);
-          return;
-        }
+          activeCalls++;
 
-        activeCalls++;
+          fs.lstat(file, (err, stat) => {
+            activeCalls--;
 
-        fs.lstat(file, (err, stat) => {
-          activeCalls--;
-
-          if (!err && stat) {
-            const ext = path.extname(file).substr(1);
-            if (stat.isSymbolicLink() || extensions.includes(ext)) {
-              result.set(pathUtils.absoluteToNormal(file), [
-                '',
-                stat.mtime.getTime(),
-                stat.size,
-                0,
-                '',
-                null,
-                stat.isSymbolicLink() ? 1 : 0,
-              ]);
+            if (!err && stat) {
+              const ext = path.extname(file).substr(1);
+              if (stat.isSymbolicLink() || extensions.includes(ext)) {
+                result.set(pathUtils.absoluteToNormal(file), [
+                  '',
+                  stat.mtime.getTime(),
+                  stat.size,
+                  0,
+                  '',
+                  null,
+                  stat.isSymbolicLink() ? 1 : 0,
+                ]);
+              }
             }
-          }
 
-          if (activeCalls === 0) {
-            callback(result);
-          }
+            if (activeCalls === 0) {
+              callback(result);
+            }
+          });
         });
-      });
+      }
 
       if (activeCalls === 0) {
         callback(result);
@@ -109,6 +112,7 @@ function findNative(
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   rootDir: string,
+  console: Console,
   callback: Callback,
 ): void {
   // Examples:
@@ -172,6 +176,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   changedFiles: FileData,
 }> {
   const {
+    console,
     previousState,
     extensions,
     forceNodeFilesystemAPI,
@@ -194,7 +199,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   debug('Using system find: %s', useNativeFind);
 
   return new Promise((resolve, reject) => {
-    const callback = (fileData: FileData) => {
+    const callback: Callback = fileData => {
       const difference = previousState.fileSystem.getDifference(fileData);
 
       perfLogger?.point('nodeCrawl_end');
@@ -209,9 +214,25 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     };
 
     if (useNativeFind) {
-      findNative(roots, extensions, ignore, includeSymlinks, rootDir, callback);
+      findNative(
+        roots,
+        extensions,
+        ignore,
+        includeSymlinks,
+        rootDir,
+        console,
+        callback,
+      );
     } else {
-      find(roots, extensions, ignore, includeSymlinks, rootDir, callback);
+      find(
+        roots,
+        extensions,
+        ignore,
+        includeSymlinks,
+        rootDir,
+        console,
+        callback,
+      );
     }
   });
 };

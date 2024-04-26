@@ -288,6 +288,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       ignore: pearMatcher,
@@ -309,6 +310,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
@@ -331,6 +333,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
@@ -346,7 +349,13 @@ describe('node crawler', () => {
   it('completes with fs.readdir throwing an error', async () => {
     nodeCrawl = require('../node');
 
+    const mockConsole = {
+      ...global.console,
+      warn: jest.fn(),
+    };
+
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: mockConsole,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
@@ -355,6 +364,9 @@ describe('node crawler', () => {
       roots: ['/error'],
     });
 
+    expect(mockConsole.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Error "ENOTDIR" reading contents of "/error"'),
+    );
     expect(changedFiles).toEqual(new Map());
     expect(removedFiles).toEqual(new Set());
   });
@@ -364,6 +376,7 @@ describe('node crawler', () => {
     const fs = require('graceful-fs');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
       forceNodeFilesystemAPI: true,
@@ -390,6 +403,7 @@ describe('node crawler', () => {
     const err = new Error('aborted for test');
     await expect(
       nodeCrawl({
+        console: global.console,
         abortSignal: abortSignalWithReason(err),
         previousState: {fileSystem: emptyFS},
         extensions: ['js', 'json'],
@@ -420,6 +434,7 @@ describe('node crawler', () => {
     nodeCrawl = require('../node');
     await expect(
       nodeCrawl({
+        console: global.console,
         perfLogger: fakePerfLogger,
         abortSignal: abortController.signal,
         previousState: {fileSystem: emptyFS},

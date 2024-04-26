@@ -103,6 +103,7 @@ export class Watcher extends EventEmitter {
     const crawlerOptions: CrawlerOptions = {
       abortSignal: options.abortSignal,
       computeSha1: options.computeSha1,
+      console: options.console,
       includeSymlinks: options.enableSymlinks,
       extensions: options.extensions,
       forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,

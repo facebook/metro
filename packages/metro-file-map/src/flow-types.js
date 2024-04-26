@@ -88,6 +88,7 @@ export type Console = typeof global.console;
 export type CrawlerOptions = {
   abortSignal: ?AbortSignal,
   computeSha1: boolean,
+  console: Console,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,

@@ -120,6 +120,7 @@ describe.each(Object.keys(CRAWLERS))(
       async (includeSymlinks, expectedChangedFiles) => {
         invariant(crawl, 'crawl should not be null within maybeTest');
         const result = await crawl({
+          console: global.console,
           previousState: {
             fileSystem: new TreeFS({
               rootDir: FIXTURES_DIR,
