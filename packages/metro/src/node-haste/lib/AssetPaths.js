@@ -69,7 +69,7 @@ function tryParse(
 function parse(filePath: string, platforms: $ReadOnlySet<string>): AssetPath {
   const result = tryParse(filePath, platforms);
   if (result == null) {
-    throw new Error('invalid asset file path: `${filePath}');
+    throw new Error(`invalid asset file path: ${filePath}`);
   }
   return result;
 }
