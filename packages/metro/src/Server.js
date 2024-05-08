@@ -53,7 +53,9 @@ const {
   getExplodedSourceMap,
 } = require('./DeltaBundler/Serializers/getExplodedSourceMap');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
+const {
+  sourceMapStringNonBlocking,
+} = require('./DeltaBundler/Serializers/sourceMapString');
 const IncrementalBundler = require('./IncrementalBundler');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 const bundleToString = require('./lib/bundleToString');
@@ -288,7 +290,7 @@ class Server {
       ).code;
     }
     if (!bundleMap) {
-      bundleMap = sourceMapString(
+      bundleMap = await sourceMapStringNonBlocking(
         [...prepend, ...this._getSortedModules(graph)],
         {
           excludeSource: serializerOptions.excludeSource,
@@ -1151,14 +1153,17 @@ class Server {
         prepend = [];
       }
 
-      return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
-        excludeSource: serializerOptions.excludeSource,
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        shouldAddToIgnoreList: (module: Module<>) =>
-          this._shouldAddModuleToIgnoreList(module),
-        getSourceUrl: (module: Module<>) =>
-          this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
-      });
+      return await sourceMapStringNonBlocking(
+        [...prepend, ...this._getSortedModules(graph)],
+        {
+          excludeSource: serializerOptions.excludeSource,
+          processModuleFilter: this._config.serializer.processModuleFilter,
+          shouldAddToIgnoreList: (module: Module<>) =>
+            this._shouldAddModuleToIgnoreList(module),
+          getSourceUrl: (module: Module<>) =>
+            this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
+        },
+      );
     },
     finish({mres, result}) {
       mres.setHeader('Content-Type', 'application/json');

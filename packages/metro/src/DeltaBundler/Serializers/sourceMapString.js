@@ -14,7 +14,10 @@
 import type {Module} from '../types.flow';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 
-const {sourceMapGenerator} = require('./sourceMapGenerator');
+const {
+  sourceMapGenerator,
+  sourceMapGeneratorNonBlocking,
+} = require('./sourceMapGenerator');
 
 function sourceMapString(
   modules: $ReadOnlyArray<Module<>>,
@@ -25,4 +28,17 @@ function sourceMapString(
   });
 }
 
-module.exports = sourceMapString;
+async function sourceMapStringNonBlocking(
+  modules: $ReadOnlyArray<Module<>>,
+  options: SourceMapGeneratorOptions,
+): Promise<string> {
+  const generator = await sourceMapGeneratorNonBlocking(modules, options);
+  return generator.toString(undefined, {
+    excludeSource: options.excludeSource,
+  });
+}
+
+module.exports = {
+  sourceMapString,
+  sourceMapStringNonBlocking,
+};
