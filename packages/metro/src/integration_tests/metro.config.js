@@ -22,6 +22,7 @@ module.exports = {
   watchFolders: [path.resolve(__dirname, '../../../')],
   server: {port: 10028},
   resolver: {
+    blockList: [/excluded_from_file_map\.js$/],
     useWatchman: false,
   },
   transformer: {

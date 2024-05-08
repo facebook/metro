@@ -143,6 +143,10 @@ class Server {
   _platforms: Set<string>;
   _reporter: Reporter;
   _serverOptions: ServerOptions | void;
+  _allowedSuffixesForSourceRequests: $ReadOnlyArray<string>;
+  _sourceRequestRoutingMap: $ReadOnlyArray<
+    [pathnamePrefix: string, normalizedRootDir: string],
+  >;
 
   constructor(config: ConfigT, options?: ServerOptions) {
     this._config = config;
@@ -158,6 +162,22 @@ class Server {
     this._reporter = config.reporter;
     this._logger = Logger;
     this._platforms = new Set(this._config.resolver.platforms);
+    this._allowedSuffixesForSourceRequests = [
+      ...new Set(
+        [
+          ...this._config.resolver.sourceExts,
+          ...this._config.watcher.additionalExts,
+          ...this._config.resolver.assetExts,
+        ].map(ext => '.' + ext),
+      ),
+    ];
+    this._sourceRequestRoutingMap = [
+      ['/[metro-project]/', path.resolve(this._config.projectRoot)],
+      ...this._config.watchFolders.map((watchFolder, index) => [
+        `/[metro-watchFolders]/${index}/`,
+        path.resolve(watchFolder),
+      ]),
+    ];
     this._isEnded = false;
 
     // TODO(T34760917): These two properties should eventually be instantiated
@@ -563,8 +583,67 @@ class Server {
     } else if (pathname === '/symbolicate') {
       await this._symbolicate(req, res);
     } else {
-      next();
+      let handled = false;
+      for (const [pathnamePrefix, normalizedRootDir] of this
+        ._sourceRequestRoutingMap) {
+        if (pathname.startsWith(pathnamePrefix)) {
+          await this._processSourceRequest(
+            req,
+            res,
+            pathnamePrefix,
+            normalizedRootDir,
+          );
+          handled = true;
+          break;
+        }
+      }
+      if (!handled) {
+        next();
+      }
     }
+  }
+
+  async _processSourceRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    pathnamePrefix: string,
+    rootDir: string,
+  ): Promise<void> {
+    const urlObj = url.parse(req.url, true);
+    const relativePathname = nullthrows(urlObj.pathname).substr(
+      pathnamePrefix.length,
+    );
+    if (
+      !this._allowedSuffixesForSourceRequests.some(suffix =>
+        relativePathname.endsWith(suffix),
+      )
+    ) {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    const depGraph = await this._bundler.getBundler().getDependencyGraph();
+    const filePath = path.join(rootDir, relativePathname);
+    try {
+      depGraph.getSha1(filePath);
+    } catch {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    const mimeType = mime.lookup(path.basename(relativePathname));
+    res.setHeader('Content-Type', mimeType);
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+    stream.on('error', error => {
+      if (error.code === 'ENOENT') {
+        res.writeHead(404);
+        res.end();
+      } else {
+        res.writeHead(500);
+        res.end();
+      }
+    });
   }
 
   _createRequestProcessor<T>({

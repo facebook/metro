@@ -12,7 +12,9 @@
 
 const Metro = require('../../..');
 const execBundle = require('../execBundle');
+const fs = require('fs');
 const fetch = require('node-fetch');
+const path = require('path');
 
 jest.unmock('cosmiconfig');
 
@@ -116,5 +118,82 @@ describe('Metro development server serves bundles via HTTP', () => {
         '/build-errors/inline-requires-cannot-resolve-import.bundle',
     );
     expect(response.status).toBe(500);
+  });
+
+  describe('dedicated endpoints for serving source files', () => {
+    test('under /[metro-project]/', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/[metro-project]/TestBundle.js',
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toEqual(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/TestBundle.js'),
+          'utf8',
+        ),
+      );
+    });
+
+    test('under /[metro-watchFolders]/', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/[metro-watchFolders]/1/metro/src/integration_tests/basic_bundle/TestBundle.js',
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toEqual(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/TestBundle.js'),
+          'utf8',
+        ),
+      );
+    });
+
+    test('under /[metro-project]/', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/[metro-project]/TestBundle.js',
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toEqual(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/TestBundle.js'),
+          'utf8',
+        ),
+      );
+    });
+
+    test('no access to files without source extensions', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/[metro-project]/not_a_source_file.xyz',
+      );
+      expect(response.status).toBe(404);
+      expect(await response.text()).not.toContain(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/not_a_source_file.xyz'),
+          'utf8',
+        ),
+      );
+    });
+
+    test('no access to source files excluded from the file map', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/[metro-project]/excluded_from_file_map.js',
+      );
+      expect(response.status).toBe(404);
+      expect(await response.text()).not.toContain(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/excluded_from_file_map.js'),
+          'utf8',
+        ),
+      );
+    });
   });
 });
