@@ -17,7 +17,8 @@
     "babel-plugin-replace-ts-export-assignment": "^0.0.2",
     "babel-plugin-syntax-hermes-parser": "0.21.0",
     "babel-plugin-transform-flow-enums": "^0.0.2",
-    "escape-string-regexp": "^1.0.5"
+    "escape-string-regexp": "^1.0.5",
+    "flow-enums-runtime": "^0.0.6"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",

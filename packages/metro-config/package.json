@@ -15,6 +15,7 @@
   "dependencies": {
     "connect": "^3.6.5",
     "cosmiconfig": "^5.0.5",
+    "flow-enums-runtime": "^0.0.6",
     "jest-validate": "^29.6.3",
     "metro": "0.80.9",
     "metro-cache": "0.80.9",

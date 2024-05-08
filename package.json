@@ -11,6 +11,7 @@
     "acorn": "^8.7.1",
     "babel-jest": "^29.6.3",
     "babel-plugin-syntax-hermes-parser": "0.21.0",
+    "babel-plugin-transform-flow-enums": "^0.0.2",
     "chalk": "^4.0.0",
     "debug": "^2.2.0",
     "eslint": "^8.57.0",

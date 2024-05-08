@@ -15,7 +15,9 @@
     "metro"
   ],
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "flow-enums-runtime": "^0.0.6"
+  },
   "engines": {
     "node": ">=18"
   }

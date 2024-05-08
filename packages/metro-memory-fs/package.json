@@ -14,5 +14,8 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "flow-enums-runtime": "^0.0.6"
   }
 }

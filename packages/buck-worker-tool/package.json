@@ -6,6 +6,7 @@
   "main": "src/worker-tool.js",
   "dependencies": {
     "duplexer": "^0.1.1",
+    "flow-enums-runtime": "^0.0.6",
     "invariant": "^2.2.4",
     "jsonparse": "^1.2.0",
     "through": ">=2.2.7 <3"

@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "metro": "0.80.9"
+  },
+  "dependencies": {
+    "flow-enums-runtime": "^0.0.6"
   }
 }
