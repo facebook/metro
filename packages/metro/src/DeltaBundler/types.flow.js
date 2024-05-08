@@ -175,4 +175,5 @@ export type SerializerOptions = $ReadOnly<{
   shouldAddToIgnoreList: (Module<>) => boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
+  getSourceUrl: ?(Module<>) => string,
 }>;

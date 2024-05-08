@@ -106,6 +106,7 @@ it('should return the RAM bundle info', async () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ),
   ).toMatchSnapshot();
@@ -140,6 +141,7 @@ it('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
         shouldAddToIgnoreList: () => true,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ),
   ).toMatchSnapshot();
@@ -175,6 +177,7 @@ it('should use the preloadedModules and ramGroup configs to build a RAM bundle',
       shouldAddToIgnoreList: () => false,
       sourceMapUrl: 'http://localhost/bundle.map',
       sourceUrl: null,
+      getSourceUrl: null,
     },
   );
 

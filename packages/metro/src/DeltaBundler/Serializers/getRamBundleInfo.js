@@ -65,6 +65,7 @@ async function getRamBundleInfo(
         excludeSource: options.excludeSource,
         processModuleFilter: options.processModuleFilter,
         shouldAddToIgnoreList: options.shouldAddToIgnoreList,
+        getSourceUrl: options.getSourceUrl,
       }),
       name: path.basename(module.path),
       sourcePath: module.path,

@@ -24,6 +24,7 @@ function getSourceMapInfo(
   options: {
     +excludeSource: boolean,
     +shouldAddToIgnoreList: (Module<>) => boolean,
+    getSourceUrl: ?(module: Module<>) => string,
   },
 ): {
   +map: Array<MetroSourceMapSegmentTuple>,
@@ -37,7 +38,7 @@ function getSourceMapInfo(
   return {
     ...getJsOutput(module).data,
     isIgnored: options.shouldAddToIgnoreList(module),
-    path: module.path,
+    path: options?.getSourceUrl?.(module) ?? module.path,
     source: options.excludeSource ? '' : getModuleSource(module),
   };
 }

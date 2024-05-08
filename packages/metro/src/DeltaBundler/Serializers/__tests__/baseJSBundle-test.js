@@ -119,6 +119,7 @@ it('should generate a very simple bundle', () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ),
   ).toMatchInlineSnapshot(`
@@ -170,6 +171,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ).post,
   ).toMatchInlineSnapshot(`
@@ -208,6 +210,7 @@ it('should handle numeric module ids', () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ).modules,
   ).toMatchInlineSnapshot(`
@@ -255,6 +258,7 @@ it('outputs custom runModule statements', () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: null,
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ).post,
   ).toMatchInlineSnapshot(`
@@ -292,6 +296,7 @@ it('should add an inline source map to a very simple bundle', () => {
       shouldAddToIgnoreList: () => false,
       sourceMapUrl: null,
       sourceUrl: null,
+      getSourceUrl: null,
     },
   );
   expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
@@ -342,6 +347,7 @@ it('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
       shouldAddToIgnoreList: () => true,
       sourceMapUrl: null,
       sourceUrl: null,
+      getSourceUrl: null,
     },
   );
   expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
@@ -392,6 +398,7 @@ it('does not add polyfills when `modulesOnly` is used', () => {
         shouldAddToIgnoreList: () => false,
         sourceMapUrl: 'http://localhost/bundle.map',
         sourceUrl: null,
+        getSourceUrl: null,
       },
     ),
   ).toMatchInlineSnapshot(`

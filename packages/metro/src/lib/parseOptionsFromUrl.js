@@ -14,6 +14,8 @@
 import type {BundleOptions} from '../shared/types.flow';
 import type {TransformProfile} from 'metro-babel-transformer';
 
+import {SourcePathsMode} from '../shared/types.flow';
+
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const parseCustomResolverOptions = require('./parseCustomResolverOptions');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
@@ -81,6 +83,8 @@ module.exports = function parseOptionsFromUrl(
           : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
+    sourcePaths:
+      SourcePathsMode.cast(query.sourcePaths) ?? SourcePathsMode.Absolute,
     sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
     unstable_transformProfile: getTransformProfile(
       query.unstable_transformProfile,

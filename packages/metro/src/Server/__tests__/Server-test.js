@@ -685,6 +685,33 @@ describe('processRequest', () => {
     });
   });
 
+  test('sourcePaths=url-server mode', async () => {
+    const response = await makeRequest('mybundle.map?sourcePaths=url-server');
+
+    expect(response._getJSON()).toEqual({
+      version: 3,
+      sources: [
+        '/require-js',
+        '/[metro-project]/mybundle.js',
+        '/[metro-project]/foo.js',
+      ],
+      sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
+      names: [],
+      mappings: ';gBCAA;gBCAA',
+      x_facebook_sources: [
+        null,
+        null,
+        [
+          {
+            mappings: 'AAA',
+            names: ['<global>'],
+          },
+        ],
+      ],
+      x_google_ignoreList: [2],
+    });
+  });
+
   it('passes in the unstable_transformProfile param', async () => {
     await makeRequest('index.bundle?unstable_transformProfile=hermes-stable');
 

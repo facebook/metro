@@ -84,6 +84,7 @@ it('should serialize a very simple bundle', () => {
         excludeSource: false,
         processModuleFilter: module => true,
         shouldAddToIgnoreList: module => false,
+        getSourceUrl: null,
       }),
     ),
   ).toEqual({
@@ -103,6 +104,7 @@ it('modules should appear in their original order', () => {
         excludeSource: false,
         processModuleFilter: module => true,
         shouldAddToIgnoreList: module => false,
+        getSourceUrl: null,
       }),
     ),
   ).toEqual({
@@ -141,6 +143,7 @@ it('should not include the source of an asset', () => {
         excludeSource: false,
         processModuleFilter: module => true,
         shouldAddToIgnoreList: module => false,
+        getSourceUrl: null,
       }),
     ),
   ).toEqual({
@@ -160,6 +163,7 @@ it('should emit x_google_ignoreList based on shouldAddToIgnoreList', () => {
         excludeSource: false,
         processModuleFilter: module => true,
         shouldAddToIgnoreList: module => true,
+        getSourceUrl: null,
       }),
     ),
   ).toEqual({

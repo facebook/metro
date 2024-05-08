@@ -43,6 +43,8 @@ import type {
 import type {CustomResolverOptions} from 'metro-resolver/src/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
+import {SourcePathsMode} from './shared/types.flow';
+
 const {getAsset} = require('./Assets');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
@@ -262,6 +264,8 @@ class Server {
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
       shouldAddToIgnoreList: (module: Module<>) =>
         this._shouldAddModuleToIgnoreList(module),
+      getSourceUrl: (module: Module<>) =>
+        this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -290,6 +294,8 @@ class Server {
           excludeSource: serializerOptions.excludeSource,
           processModuleFilter: this._config.serializer.processModuleFilter,
           shouldAddToIgnoreList: bundleOptions.shouldAddToIgnoreList,
+          getSourceUrl: (module: Module<>) =>
+            this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
         },
       );
     }
@@ -353,6 +359,8 @@ class Server {
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,
       shouldAddToIgnoreList: (module: Module<>) =>
         this._shouldAddModuleToIgnoreList(module),
+      getSourceUrl: (module: Module<>) =>
+        this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
     });
   }
 
@@ -1000,6 +1008,8 @@ class Server {
             this._config.server.unstable_serverRoot ?? this._config.projectRoot,
           shouldAddToIgnoreList: (module: Module<>) =>
             this._shouldAddModuleToIgnoreList(module),
+          getSourceUrl: (module: Module<>) =>
+            this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
         },
       );
       bundlePerfLogger.point('serializingBundle_end');
@@ -1146,6 +1156,8 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
         shouldAddToIgnoreList: (module: Module<>) =>
           this._shouldAddModuleToIgnoreList(module),
+        getSourceUrl: (module: Module<>) =>
+          this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
       });
     },
     finish({mres, result}) {
@@ -1451,6 +1463,7 @@ class Server {
     shallow: false,
     sourceMapUrl: null,
     sourceUrl: null,
+    sourcePaths: SourcePathsMode,
   } = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
@@ -1462,6 +1475,7 @@ class Server {
     shallow: false,
     sourceMapUrl: null,
     sourceUrl: null,
+    sourcePaths: SourcePathsMode.Absolute,
   };
 
   _getServerRootDir(): string {
@@ -1487,6 +1501,33 @@ class Server {
       module.path.includes('?ctx=') ||
       this._config.serializer.isThirdPartyModule(module)
     );
+  }
+
+  // Flow checking is enough to ensure that a value is returned in all cases.
+  // eslint-disable-next-line consistent-return
+  _getModuleSourceUrl(module: Module<>, mode: SourcePathsMode): string {
+    switch (mode) {
+      case SourcePathsMode.ServerUrl:
+        for (const [pathnamePrefix, normalizedRootDir] of this
+          ._sourceRequestRoutingMap) {
+          if (module.path.startsWith(normalizedRootDir + path.sep)) {
+            const relativePath = module.path.slice(
+              normalizedRootDir.length + 1,
+            );
+            const relativePathPosix = relativePath.split(path.sep).join('/');
+            return pathnamePrefix + encodeURI(relativePathPosix);
+          }
+        }
+        // Ordinarily all files should match one of the roots above. If they
+        // don't, try to preserve useful information, even if fetching the path
+        // from Metro might fail.
+        const modulePathPosix = module.path.split(path.sep).join('/');
+        return modulePathPosix.startsWith('/')
+          ? encodeURI(modulePathPosix)
+          : '/' + encodeURI(modulePathPosix);
+      case SourcePathsMode.Absolute:
+        return module.path;
+    }
   }
 }
 

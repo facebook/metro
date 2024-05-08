@@ -30,6 +30,7 @@ type Options<T: number | string> = $ReadOnly<{
   shouldAddToIgnoreList: (Module<>) => boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
+  getSourceUrl: ?(Module<>) => string,
   ...
 }>;
 
@@ -75,6 +76,7 @@ function getAppendScripts<T: number | string>(
             processModuleFilter: (): boolean => true,
             excludeSource: false,
             shouldAddToIgnoreList: options.shouldAddToIgnoreList,
+            getSourceUrl: options.getSourceUrl,
           }),
         )
       : nullthrows(options.sourceMapUrl);

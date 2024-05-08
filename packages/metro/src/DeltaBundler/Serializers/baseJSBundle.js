@@ -67,6 +67,7 @@ function baseJSBundle(
       shouldAddToIgnoreList: options.shouldAddToIgnoreList,
       sourceMapUrl: options.sourceMapUrl,
       sourceUrl: options.sourceUrl,
+      getSourceUrl: options.getSourceUrl,
     }),
     processModulesOptions,
   )

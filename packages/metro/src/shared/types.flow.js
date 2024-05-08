@@ -41,6 +41,13 @@ type MetroSourceMapOrMappings =
   | MixedSourceMap
   | Array<MetroSourceMapSegmentTuple>;
 
+export enum SourcePathsMode {
+  /* Use absolute paths for source files in source maps (default). */
+  Absolute = 'absolute',
+  /* Use server-relative URL paths for source files in source maps. */
+  ServerUrl = 'url-server',
+}
+
 export type BundleOptions = {
   bundleType: BundleType,
   +customResolverOptions: CustomResolverOptions,
@@ -61,6 +68,7 @@ export type BundleOptions = {
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
   +unstable_transformProfile: TransformProfile,
+  +sourcePaths: SourcePathsMode,
 };
 
 export type ResolverInputOptions = $ReadOnly<{
@@ -75,6 +83,7 @@ export type SerializerOptions = {
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
   +modulesOnly: boolean,
+  +sourcePaths: SourcePathsMode,
 };
 
 export type GraphOptions = {

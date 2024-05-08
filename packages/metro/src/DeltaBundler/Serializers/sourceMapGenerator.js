@@ -24,6 +24,7 @@ export type SourceMapGeneratorOptions = $ReadOnly<{
   excludeSource: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   shouldAddToIgnoreList: (module: Module<>) => boolean,
+  getSourceUrl: ?(module: Module<>) => string,
 }>;
 
 function getSourceMapInfosImpl(
@@ -46,6 +47,7 @@ function getSourceMapInfosImpl(
     const info = getSourceMapInfo(mod, {
       excludeSource: options.excludeSource,
       shouldAddToIgnoreList: options.shouldAddToIgnoreList,
+      getSourceUrl: options.getSourceUrl,
     });
     sourceMapInfos.push(info);
     return false;
