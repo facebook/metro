@@ -10,7 +10,6 @@ emoji=true
 format.bracket_spacing=false
 
 munge_underscores=true
-experimental.global_find_ref=true
 enums=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
