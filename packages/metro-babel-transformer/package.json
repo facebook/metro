@@ -19,7 +19,7 @@
   "dependencies": {
     "@babel/core": "^7.20.0",
     "flow-enums-runtime": "^0.0.6",
-    "hermes-parser": "0.21.0",
+    "hermes-parser": "0.21.1",
     "nullthrows": "^1.1.1"
   },
   "engines": {
