@@ -309,6 +309,14 @@ exports.runServer = async (
       });
 
       httpServer.listen(config.server.port, host, () => {
+        const {address, port, family} = httpServer.address();
+        config.reporter.update({
+          type: 'server_listening',
+          address,
+          port, // Assigned port if configured with port 0
+          family,
+        });
+
         if (onReady) {
           onReady(httpServer);
         }

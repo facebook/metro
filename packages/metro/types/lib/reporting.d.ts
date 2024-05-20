@@ -97,6 +97,12 @@ export type ReportableEvent =
       data: unknown[];
     }
   | {
+      type: 'server_listening';
+      port: number;
+      address: string;
+      family: string;
+    }
+  | {
       type: 'transformer_load_started';
     }
   | {
