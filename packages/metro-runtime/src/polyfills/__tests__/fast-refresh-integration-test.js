@@ -36,7 +36,8 @@ describe('Fast Refresh integration with require()', () => {
 
     // Initial render
     const Component = metroRequire(ids['Component.js']);
-    const rendered = renderer.create(React.createElement(Component));
+    const createElement /*: $FlowFixMe */ = React.createElement;
+    const rendered = renderer.create(createElement(Component));
     expect(rendered.toJSON()).toBe('version1: initialState1');
 
     // Edit the component
@@ -89,7 +90,8 @@ describe('Fast Refresh integration with require()', () => {
 
     // Initial render
     const Component = metroRequire(ids['Component.js']);
-    const rendered = renderer.create(React.createElement(Component));
+    const createElement /*: $FlowFixMe */ = React.createElement;
+    const rendered = renderer.create(createElement(Component));
     expect(rendered.toJSON()).toBe('version1: initialState1');
 
     // Edit the component
