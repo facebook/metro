@@ -32,7 +32,7 @@ class Module {
   }
 
   getPackage(): ?Package {
-    return this._moduleCache.getPackageForModule(this);
+    return this._moduleCache.getPackageForModule(this)?.pkg;
   }
 
   invalidate() {}

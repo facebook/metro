@@ -113,6 +113,7 @@ export function createPackageAccessors(
         return {
           rootPath: dir,
           packageJson,
+          packageRelativePath: path.relative(dir, modulePath),
         };
       }
 

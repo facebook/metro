@@ -14,7 +14,10 @@
 const Module = require('./Module');
 const Package = require('./Package');
 
-type GetClosestPackageFn = (absoluteFilePath: string) => ?string;
+type GetClosestPackageFn = (absoluteFilePath: string) => ?{
+  packageJsonPath: string,
+  packageRelativePath: string,
+};
 
 class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
@@ -29,8 +32,11 @@ class ModuleCache {
     ...
   };
   // Cache for "closest package.json" queries by module path.
-  _packagePathByModulePath: {
-    [filePath: string]: string,
+  _packagePathAndSubpathByModulePath: {
+    [filePath: string]: ?{
+      packageJsonPath: string,
+      packageRelativePath: string,
+    },
     __proto__: null,
     ...
   };
@@ -45,7 +51,7 @@ class ModuleCache {
     this._getClosestPackage = options.getClosestPackage;
     this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);
-    this._packagePathByModulePath = Object.create(null);
+    this._packagePathAndSubpathByModulePath = Object.create(null);
     this._modulePathsByPackagePath = Object.create(null);
   }
 
@@ -65,29 +71,45 @@ class ModuleCache {
     return this._packageCache[filePath];
   }
 
-  getPackageForModule(module: Module): ?Package {
+  getPackageForModule(
+    module: Module,
+  ): ?{pkg: Package, packageRelativePath: string} {
     return this.getPackageOf(module.path);
   }
 
-  getPackageOf(absoluteModulePath: string): ?Package {
-    let packagePath: ?string =
-      this._packagePathByModulePath[absoluteModulePath];
-    if (packagePath && this._packageCache[packagePath]) {
-      return this._packageCache[packagePath];
+  getPackageOf(
+    absoluteModulePath: string,
+  ): ?{pkg: Package, packageRelativePath: string} {
+    let packagePathAndSubpath =
+      this._packagePathAndSubpathByModulePath[absoluteModulePath];
+    if (
+      packagePathAndSubpath &&
+      this._packageCache[packagePathAndSubpath.packageJsonPath]
+    ) {
+      return {
+        pkg: this._packageCache[packagePathAndSubpath.packageJsonPath],
+        packageRelativePath: packagePathAndSubpath.packageRelativePath,
+      };
     }
 
-    packagePath = this._getClosestPackage(absoluteModulePath);
-    if (!packagePath) {
+    packagePathAndSubpath = this._getClosestPackage(absoluteModulePath);
+    if (!packagePathAndSubpath) {
       return null;
     }
 
-    this._packagePathByModulePath[absoluteModulePath] = packagePath;
+    const packagePath = packagePathAndSubpath.packageJsonPath;
+
+    this._packagePathAndSubpathByModulePath[absoluteModulePath] =
+      packagePathAndSubpath;
     const modulePaths =
       this._modulePathsByPackagePath[packagePath] ?? new Set();
     modulePaths.add(absoluteModulePath);
     this._modulePathsByPackagePath[packagePath] = modulePaths;
 
-    return this.getPackage(packagePath);
+    return {
+      pkg: this.getPackage(packagePath),
+      packageRelativePath: packagePathAndSubpath.packageRelativePath,
+    };
   }
 
   invalidate(filePath: string) {
@@ -99,10 +121,12 @@ class ModuleCache {
       this._packageCache[filePath].invalidate();
       delete this._packageCache[filePath];
     }
-    if (this._packagePathByModulePath[filePath]) {
+    const packagePathAndSubpath =
+      this._packagePathAndSubpathByModulePath[filePath];
+    if (packagePathAndSubpath) {
       // filePath is a module inside a package.
-      const packagePath = this._packagePathByModulePath[filePath];
-      delete this._packagePathByModulePath[filePath];
+      const packagePath = packagePathAndSubpath.packageJsonPath;
+      delete this._packagePathAndSubpathByModulePath[filePath];
       // This change doesn't invalidate any cached "closest package.json"
       // queries for the package's other modules. Clean up only this module.
       const modulePaths = this._modulePathsByPackagePath[packagePath];
@@ -118,7 +142,7 @@ class ModuleCache {
       // package.json" queries for modules inside this package.
       const modulePaths = this._modulePathsByPackagePath[filePath];
       for (const modulePath of modulePaths) {
-        delete this._packagePathByModulePath[modulePath];
+        delete this._packagePathAndSubpathByModulePath[modulePath];
       }
       modulePaths.clear();
       delete this._modulePathsByPackagePath[filePath];
