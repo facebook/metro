@@ -138,6 +138,8 @@ function resolve(
       return {type: 'empty'};
     }
 
+    // candidate should be absolute here - we assume that redirectModulePath
+    // always returns an absolute path when given an absolute path.
     const result = resolvePackage(context, candidate, platform);
     if (result.type === 'resolved') {
       return result.resolution;
@@ -252,11 +254,11 @@ function resolvePackage(
    * The absolute path to a file or directory that may be contained within an
    * npm package, e.g. from being joined with `context.extraNodeModules`.
    */
-  modulePath: string,
+  absoluteCandidatePath: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
   if (context.unstable_enablePackageExports) {
-    const pkg = context.getPackageForModule(modulePath);
+    const pkg = context.getPackageForModule(absoluteCandidatePath);
     const exportsField = pkg?.packageJson.exports;
 
     if (pkg != null && exportsField != null) {
@@ -276,7 +278,7 @@ function resolvePackage(
         const packageExportsResult = resolvePackageTargetFromExports(
           {...context, unstable_conditionNames: conditionNamesOverride},
           pkg.rootPath,
-          modulePath,
+          absoluteCandidatePath,
           exportsField,
           platform,
         );
@@ -302,7 +304,7 @@ function resolvePackage(
     }
   }
 
-  return resolveModulePath(context, modulePath, platform);
+  return resolveModulePath(context, absoluteCandidatePath, platform);
 }
 
 /**

@@ -14,7 +14,7 @@
 const Module = require('./Module');
 const Package = require('./Package');
 
-type GetClosestPackageFn = (filePath: string) => ?string;
+type GetClosestPackageFn = (absoluteFilePath: string) => ?string;
 
 class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
@@ -69,21 +69,22 @@ class ModuleCache {
     return this.getPackageOf(module.path);
   }
 
-  getPackageOf(modulePath: string): ?Package {
-    let packagePath: ?string = this._packagePathByModulePath[modulePath];
+  getPackageOf(absoluteModulePath: string): ?Package {
+    let packagePath: ?string =
+      this._packagePathByModulePath[absoluteModulePath];
     if (packagePath && this._packageCache[packagePath]) {
       return this._packageCache[packagePath];
     }
 
-    packagePath = this._getClosestPackage(modulePath);
+    packagePath = this._getClosestPackage(absoluteModulePath);
     if (!packagePath) {
       return null;
     }
 
-    this._packagePathByModulePath[modulePath] = packagePath;
+    this._packagePathByModulePath[absoluteModulePath] = packagePath;
     const modulePaths =
       this._modulePathsByPackagePath[packagePath] ?? new Set();
-    modulePaths.add(modulePath);
+    modulePaths.add(absoluteModulePath);
     this._modulePathsByPackagePath[packagePath] = modulePaths;
 
     return this.getPackage(packagePath);

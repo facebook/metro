@@ -53,7 +53,7 @@ export type ModuleishCache<TPackage> = interface {
     platform?: string,
     supportsNativePlatform?: boolean,
   ): TPackage,
-  getPackageOf(modulePath: string): ?TPackage,
+  getPackageOf(absolutePath: string): ?TPackage,
 };
 
 type Options<TPackage> = $ReadOnly<{
@@ -179,8 +179,8 @@ class ModuleResolver<TPackage: Packageish> {
             resolveHastePackage: (name: string) =>
               this._options.getHastePackagePath(name, platform),
             getPackage: this._getPackage,
-            getPackageForModule: (modulePath: string) =>
-              this._getPackageForModule(fromModule, modulePath),
+            getPackageForModule: (absoluteModulePath: string) =>
+              this._getPackageForModule(absoluteModulePath),
           },
           dependency,
         ),
@@ -249,14 +249,11 @@ class ModuleResolver<TPackage: Packageish> {
     return null;
   };
 
-  _getPackageForModule = (
-    fromModule: Moduleish,
-    modulePath: string,
-  ): ?PackageInfo => {
+  _getPackageForModule = (absolutePath: string): ?PackageInfo => {
     let pkg;
 
     try {
-      pkg = this._options.moduleCache.getPackageOf(modulePath);
+      pkg = this._options.moduleCache.getPackageOf(absolutePath);
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.
