@@ -210,9 +210,9 @@ The ordered list of fields in `package.json` that should be read to resolve a pa
 
 Given the path to a `package.json` file, returns the parsed file contents.
 
-#### `getPackageForModule: (modulePath: string) => ?PackageInfo` <div class="label deprecated">Deprecated</div>
+#### `getPackageForModule: (absoluteModulePath: string) => ?PackageInfo` <div class="label deprecated">Deprecated</div>
 
-Given a module path that may exist under an npm package, locates and returns the package root path and parsed `package.json` contents.
+Given a candidate absolute module path that may exist under a package, locates and returns the closest package root (working upwards from the given path, stopping at the nearest `node_modules`), parsed `package.json` contents, and the package-relative path of the given path.
 
 #### `resolveHasteModule: string => ?string`
 
