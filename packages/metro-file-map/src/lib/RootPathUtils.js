@@ -34,8 +34,9 @@ import * as path from 'path';
  * back to `node:path` equivalents in those cases.
  */
 
-const UP_FRAGMENT = '..' + path.sep;
-const UP_FRAGMENT_LENGTH = UP_FRAGMENT.length;
+const UP_FRAGMENT_SEP = '..' + path.sep;
+const SEP_UP_FRAGMENT = path.sep + '..';
+const UP_FRAGMENT_SEP_LENGTH = UP_FRAGMENT_SEP.length;
 const CURRENT_FRAGMENT = '.' + path.sep;
 
 export class RootPathUtils {
@@ -64,6 +65,10 @@ export class RootPathUtils {
     if (this.#rootDepth === 0) {
       this.#rootParts.pop();
     }
+  }
+
+  getBasenameOfNthAncestor(n: number): string {
+    return this.#rootParts[this.#rootParts.length - 1 - n];
   }
 
   // absolutePath may be any well-formed absolute path.
@@ -114,11 +119,11 @@ export class RootPathUtils {
     let i = 0;
     let pos = 0;
     while (
-      normalPath.startsWith(UP_FRAGMENT, pos) ||
+      normalPath.startsWith(UP_FRAGMENT_SEP, pos) ||
       (normalPath.endsWith('..') && normalPath.length === 2 + pos)
     ) {
       left = this.#rootDirnames[i === this.#rootDepth ? this.#rootDepth : ++i];
-      pos += UP_FRAGMENT_LENGTH;
+      pos += UP_FRAGMENT_SEP_LENGTH;
     }
     const right = pos === 0 ? normalPath : normalPath.slice(pos);
     if (right.length === 0) {
@@ -139,6 +144,22 @@ export class RootPathUtils {
     );
   }
 
+  // Takes a normal and relative path, and joins them efficiently into a normal
+  // path, including collapsing trailing '..' in the first part with leading
+  // project root segments in the relative part.
+  joinNormalToRelative(normalPath: string, relativePath: string): string {
+    if (normalPath === '') {
+      return relativePath;
+    }
+    if (relativePath === '') {
+      return normalPath;
+    }
+    if (normalPath === '..' || normalPath.endsWith(SEP_UP_FRAGMENT)) {
+      return this.relativeToNormal(normalPath + path.sep + relativePath);
+    }
+    return normalPath + path.sep + relativePath;
+  }
+
   // Internal: Tries to collapse sequences like `../root/foo` for root
   // `/project/root` down to the normal 'foo'.
   #tryCollapseIndirectionsInSuffix(
@@ -151,7 +172,7 @@ export class RootPathUtils {
     // unmatched suffix e.g /project/[../../foo], but bail out to Node's
     // path.relative if we find a possible indirection after any later segment,
     // or on any "./" that isn't a "../".
-    for (let pos = startOfRelativePart; ; pos += UP_FRAGMENT_LENGTH) {
+    for (let pos = startOfRelativePart; ; pos += UP_FRAGMENT_SEP_LENGTH) {
       const nextIndirection = fullPath.indexOf(CURRENT_FRAGMENT, pos);
       if (nextIndirection === -1) {
         // If we have any indirections, they may "collapse" if a subsequent
@@ -185,13 +206,13 @@ export class RootPathUtils {
         ) {
           // If we have no right side (or an indirection that would take us
           // below the root), just ensure we don't include a trailing separtor.
-          return UP_FRAGMENT.repeat(totalUpIndirections).slice(0, -1);
+          return UP_FRAGMENT_SEP.repeat(totalUpIndirections).slice(0, -1);
         }
         // Optimisation for the common case, saves a concatenation.
         if (totalUpIndirections === 0) {
           return right;
         }
-        return UP_FRAGMENT.repeat(totalUpIndirections) + right;
+        return UP_FRAGMENT_SEP.repeat(totalUpIndirections) + right;
       }
 
       // Cap the number of indirections at the total number of root segments.

@@ -469,7 +469,11 @@ export default class TreeFS implements MutableFileSystem {
         // with our new target.
         targetNormalPath = isLastSegment
           ? normalSymlinkTarget
-          : normalSymlinkTarget + path.sep + targetNormalPath.slice(fromIdx);
+          : this.#pathUtils.joinNormalToRelative(
+              normalSymlinkTarget,
+              targetNormalPath.slice(fromIdx),
+            );
+
         if (seen == null) {
           // Optimisation: set this lazily only when we've encountered a symlink
           seen = new Set([requestedNormalPath]);
