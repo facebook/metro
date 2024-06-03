@@ -25,7 +25,7 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
-import type {PackageInfo, PackageJson} from 'metro-resolver/src/types';
+import type {PackageForModule, PackageJson} from 'metro-resolver/src/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
@@ -53,7 +53,10 @@ export type ModuleishCache<TPackage> = interface {
     platform?: string,
     supportsNativePlatform?: boolean,
   ): TPackage,
-  getPackageOf(absolutePath: string): ?TPackage,
+  getPackageOf(absolutePath: string): ?{
+    pkg: TPackage,
+    packageRelativePath: string,
+  },
 };
 
 type Options<TPackage> = $ReadOnly<{
@@ -95,7 +98,7 @@ class ModuleResolver<TPackage: Packageish> {
     this._projectRootFakeModule = {
       path: path.join(projectRoot, '_'),
       getPackage: () =>
-        moduleCache.getPackageOf(this._projectRootFakeModule.path),
+        moduleCache.getPackageOf(this._projectRootFakeModule.path)?.pkg,
       isHaste() {
         throw new Error('not implemented');
       },
@@ -249,20 +252,21 @@ class ModuleResolver<TPackage: Packageish> {
     return null;
   };
 
-  _getPackageForModule = (absolutePath: string): ?PackageInfo => {
-    let pkg;
+  _getPackageForModule = (absolutePath: string): ?PackageForModule => {
+    let result;
 
     try {
-      pkg = this._options.moduleCache.getPackageOf(absolutePath);
+      result = this._options.moduleCache.getPackageOf(absolutePath);
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.
     }
 
-    return pkg != null
+    return result != null
       ? {
-          rootPath: path.dirname(pkg.path),
-          packageJson: pkg.read(),
+          rootPath: path.dirname(result.pkg.path),
+          packageJson: result.pkg.read(),
+          packageRelativePath: result.packageRelativePath,
         }
       : null;
   };

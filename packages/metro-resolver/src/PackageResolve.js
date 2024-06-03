@@ -97,9 +97,10 @@ export function redirectModulePath(
   modulePath: string,
 ): string | false {
   const {getPackageForModule, mainFields, originModulePath} = context;
+  const isModulePathAbsolute = path.isAbsolute(modulePath);
 
   const containingPackage = getPackageForModule(
-    path.isAbsolute(modulePath) ? modulePath : originModulePath,
+    isModulePathAbsolute ? modulePath : originModulePath,
   );
 
   if (containingPackage == null) {
@@ -109,11 +110,19 @@ export function redirectModulePath(
 
   let redirectedPath;
 
-  if (modulePath.startsWith('.') || path.isAbsolute(modulePath)) {
-    const packageRelativeModulePath = path.relative(
-      containingPackage.rootPath,
-      path.resolve(path.dirname(originModulePath), modulePath),
-    );
+  if (modulePath.startsWith('.') || isModulePathAbsolute) {
+    const packageRelativeModulePath = isModulePathAbsolute
+      ? // If the module path is absolute, containingPackage is relative to it
+        // (see above).
+        containingPackage.packageRelativePath
+      : // Otherwise containingPackage is relative to the origin module.
+        // Origin's package-relative directory joined with the target module's
+        // origin-relative path gives us the module's package-relative path.
+        path.join(
+          path.dirname(containingPackage.packageRelativePath),
+          modulePath,
+        );
+
     redirectedPath = matchSubpathFromMainFields(
       // Use prefixed POSIX path for lookup in package.json
       './' + toPosixPath(packageRelativeModulePath),

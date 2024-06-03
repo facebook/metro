@@ -306,7 +306,7 @@ describe('with package exports resolution enabled', () => {
       });
       expect(logWarning).toHaveBeenCalledTimes(1);
       expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
-        `"Attempted to import the module \\"/root/node_modules/test-pkg/foo\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+        `"Attempted to import the module \\"/root/node_modules/test-pkg/foo\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\" under the requested subpath \\"./foo\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
       );
     });
 
@@ -454,7 +454,7 @@ describe('with package exports resolution enabled', () => {
         );
         expect(logWarning).toHaveBeenCalledTimes(1);
         expect(logWarning.mock.calls[0][0]).toMatchInlineSnapshot(
-          `"Attempted to import the module \\"/root/node_modules/test-pkg/private/bar\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
+          `"Attempted to import the module \\"/root/node_modules/test-pkg/private/bar\\" which is not listed in the \\"exports\\" of \\"/root/node_modules/test-pkg\\" under the requested subpath \\"./private/bar\\". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API."`,
         );
       });
 

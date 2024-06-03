@@ -51,6 +51,7 @@ export function resolvePackageTargetFromExports(
    * to a package-relative subpath for comparison.
    */
   modulePath: string,
+  packageRelativePath: string,
   exportsField: ExportsField,
   platform: string | null,
 ): FileResolution {
@@ -61,13 +62,14 @@ export function resolvePackageTargetFromExports(
     });
   };
 
-  const subpath = getExportsSubpath(packagePath, modulePath);
+  const subpath = getExportsSubpath(packageRelativePath);
   const exportMap = normalizeExportsField(exportsField, createConfigError);
 
   if (!isSubpathDefinedInExports(exportMap, subpath)) {
     throw new PackagePathNotExportedError(
       `Attempted to import the module "${modulePath}" which is not listed ` +
-        `in the "exports" of "${packagePath}".`,
+        `in the "exports" of "${packagePath}" under the requested subpath ` +
+        `"${subpath}".`,
     );
   }
 
@@ -135,9 +137,7 @@ export function resolvePackageTargetFromExports(
  * Convert a module path to the package-relative subpath key to attempt for
  * "exports" field lookup.
  */
-function getExportsSubpath(packagePath: string, modulePath: string): string {
-  const packageSubpath = path.relative(packagePath, modulePath);
-
+function getExportsSubpath(packageSubpath: string): string {
   return packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
 }
 

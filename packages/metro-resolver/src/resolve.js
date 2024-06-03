@@ -279,6 +279,7 @@ function resolvePackage(
           {...context, unstable_conditionNames: conditionNamesOverride},
           pkg.rootPath,
           absoluteCandidatePath,
+          pkg.packageRelativePath,
           exportsField,
           platform,
         );
