@@ -152,8 +152,8 @@ class DependencyGraph extends EventEmitter {
     return self;
   }
 
-  _getClosestPackage(filePath: string): ?string {
-    const parsedPath = path.parse(filePath);
+  _getClosestPackage(absoluteModulePath: string): ?string {
+    const parsedPath = path.parse(absoluteModulePath);
     const root = parsedPath.root;
     let dir = path.join(parsedPath.dir, parsedPath.base);
 
@@ -242,7 +242,8 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleCache(): ModuleCache {
     return new ModuleCache({
-      getClosestPackage: filePath => this._getClosestPackage(filePath),
+      getClosestPackage: absoluteModulePath =>
+        this._getClosestPackage(absoluteModulePath),
     });
   }
 
