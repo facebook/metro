@@ -118,6 +118,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('/project/root')],
       ],
       [p('/outside/../project/bar.js'), p('/project/bar.js'), []],
+      [p('root/project/bar.js'), p('/project/bar.js'), [p('/project/root')]],
     ])(
       '%s -> %s through expected symlinks',
       (givenPath, expectedRealPath, expectedSymlinks) =>
@@ -195,6 +196,35 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         missing: p('/deep/project/root/baz.js'),
       });
     });
+  });
+
+  describe('symlinks to an ancestor of the project root', () => {
+    beforeEach(() => {
+      tfs.addOrModify(p('foo/link-up-2'), ['', 0, 0, 0, '', '', p('../..')]);
+    });
+
+    test.each([
+      [
+        p('foo/link-up-2/project/bar.js'),
+        p('/project/bar.js'),
+        [p('/project/foo/link-up-2')],
+      ],
+      [
+        p('foo/link-up-2/project/foo/link-up-2/outside/external.js'),
+        p('/outside/external.js'),
+        [p('/project/foo/link-up-2')],
+      ],
+    ])(
+      'lookup can find files that go back towards the project root (%s)',
+      (mixedPath, expectedRealPath, expectedSymlinks) => {
+        expect(tfs.lookup(mixedPath)).toEqual({
+          exists: true,
+          realPath: expectedRealPath,
+          links: new Set(expectedSymlinks),
+          type: 'f',
+        });
+      },
+    );
   });
 
   describe('getDifference', () => {
