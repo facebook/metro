@@ -225,6 +225,25 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         });
       },
     );
+
+    test('matchFiles follows links up', () => {
+      const matches = [
+        ...tfs.matchFiles({
+          rootDir: p('/project/foo'),
+          follow: true,
+          recursive: true,
+        }),
+      ];
+      expect(matches).toContain(
+        p('/project/foo/link-up-2/project/foo/another.js'),
+      );
+      // Only follow a symlink cycle once.
+      expect(matches).not.toContain(
+        p(
+          '/project/foo/link-up-2/project/foo/link-up-2/project/foo/another.js',
+        ),
+      );
+    });
   });
 
   describe('getDifference', () => {
@@ -312,6 +331,23 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ).toEqual([p('/outside/external.js')]);
     });
 
+    test('ancestor of project root includes project root', () => {
+      expect(
+        Array.from(
+          tfs.matchFiles({
+            filter: new RegExp(
+              // Test starting with `./` since this is mandatory for parity with Webpack.
+              /^\.\/.*\/bar\.js/,
+            ),
+            filterComparePosix: true,
+            follow: true,
+            recursive: true,
+            rootDir: p('/'),
+          }),
+        ),
+      ).toEqual([p('/project/bar.js')]);
+    });
+
     test('recursive', () => {
       expect(
         Array.from(
@@ -337,6 +373,22 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         p('/project/link-to-foo/link-to-bar.js'),
         p('/project/link-to-foo/link-to-another.js'),
         p('/project/abs-link-out/external.js'),
+        p('/project/root/project/foo/another.js'),
+        p('/project/root/project/foo/owndir/another.js'),
+        p('/project/root/project/foo/owndir/link-to-bar.js'),
+        p('/project/root/project/foo/owndir/link-to-another.js'),
+        p('/project/root/project/foo/link-to-bar.js'),
+        p('/project/root/project/foo/link-to-another.js'),
+        p('/project/root/project/bar.js'),
+        p('/project/root/project/link-to-foo/another.js'),
+        p('/project/root/project/link-to-foo/owndir/another.js'),
+        p('/project/root/project/link-to-foo/owndir/link-to-bar.js'),
+        p('/project/root/project/link-to-foo/owndir/link-to-another.js'),
+        p('/project/root/project/link-to-foo/link-to-bar.js'),
+        p('/project/root/project/link-to-foo/link-to-another.js'),
+        p('/project/root/project/abs-link-out/external.js'),
+        p('/project/root/project/node_modules/pkg/a.js'),
+        p('/project/root/project/node_modules/pkg/package.json'),
         p('/project/root/outside/external.js'),
         p('/project/node_modules/pkg/a.js'),
         p('/project/node_modules/pkg/package.json'),
@@ -379,6 +431,10 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         p('/project/foo/owndir/another.js'),
         p('/project/link-to-foo/another.js'),
         p('/project/link-to-foo/owndir/another.js'),
+        p('/project/root/project/foo/another.js'),
+        p('/project/root/project/foo/owndir/another.js'),
+        p('/project/root/project/link-to-foo/another.js'),
+        p('/project/root/project/link-to-foo/owndir/another.js'),
       ]);
     });
 
