@@ -229,7 +229,12 @@ export default class TreeFS implements MutableFileSystem {
     if (!contextRootResult.exists) {
       return;
     }
-    const {canonicalPath: rootRealPath, node: contextRoot} = contextRootResult;
+    const {
+      ancestorOfRootIdx,
+      canonicalPath: rootRealPath,
+      node: contextRoot,
+      parentNode: contextRootParent,
+    } = contextRootResult;
     if (!(contextRoot instanceof Map)) {
       return;
     }
@@ -245,13 +250,18 @@ export default class TreeFS implements MutableFileSystem {
         ? contextRootAbsolutePath.replaceAll(path.sep, '/')
         : contextRootAbsolutePath;
 
-    for (const relativePathForComparison of this._pathIterator(contextRoot, {
-      alwaysYieldPosix: filterComparePosix,
-      canonicalPathOfRoot: rootRealPath,
-      follow,
-      recursive,
-      subtreeOnly: rootDir != null,
-    })) {
+    for (const relativePathForComparison of this._pathIterator(
+      contextRoot,
+      contextRootParent,
+      ancestorOfRootIdx,
+      {
+        alwaysYieldPosix: filterComparePosix,
+        canonicalPathOfRoot: rootRealPath,
+        follow,
+        recursive,
+        subtreeOnly: rootDir != null,
+      },
+    )) {
       if (
         filter == null ||
         filter.test(
@@ -364,6 +374,7 @@ export default class TreeFS implements MutableFileSystem {
     } = {followLeaf: true, makeDirectories: false},
   ):
     | {
+        ancestorOfRootIdx: ?number,
         canonicalLinkPaths: Array<string>,
         canonicalPath: string,
         exists: true,
@@ -371,6 +382,7 @@ export default class TreeFS implements MutableFileSystem {
         parentNode: DirectoryNode,
       }
     | {
+        ancestorOfRootIdx: ?number,
         canonicalLinkPaths: Array<string>,
         canonicalPath: string,
         exists: true,
@@ -393,6 +405,9 @@ export default class TreeFS implements MutableFileSystem {
     let fromIdx = 0;
     // The parent of the current segment
     let parentNode = this.#rootNode;
+    // If a returned node is a strict ancestor of the root, this is the number
+    // of levels below the root, i.e. '..' is 1, '../..' is 2, otherwise null.
+    let ancestorOfRootIdx: ?number = null;
 
     while (targetNormalPath.length > fromIdx) {
       const nextSepIdx = targetNormalPath.indexOf(path.sep, fromIdx);
@@ -407,6 +422,15 @@ export default class TreeFS implements MutableFileSystem {
       }
 
       let segmentNode = parentNode.get(segmentName);
+
+      // In normal paths all indirections are at the prefix, so we are at the
+      // nth ancestor of the root iff the path so far is n '..' segments.
+      if (segmentName === '..') {
+        ancestorOfRootIdx =
+          ancestorOfRootIdx == null ? 1 : ancestorOfRootIdx + 1;
+      } else if (segmentNode != null) {
+        ancestorOfRootIdx = null;
+      }
 
       if (segmentNode == null) {
         if (opts.makeDirectories !== true && segmentName !== '..') {
@@ -433,6 +457,7 @@ export default class TreeFS implements MutableFileSystem {
           opts.followLeaf === false)
       ) {
         return {
+          ancestorOfRootIdx,
           canonicalLinkPaths,
           canonicalPath: targetNormalPath,
           exists: true,
@@ -493,6 +518,7 @@ export default class TreeFS implements MutableFileSystem {
     }
     invariant(parentNode === this.#rootNode, 'Unexpectedly escaped traversal');
     return {
+      ancestorOfRootIdx: null,
       canonicalLinkPaths,
       canonicalPath: targetNormalPath,
       exists: true,
@@ -544,12 +570,28 @@ export default class TreeFS implements MutableFileSystem {
       : this.#pathUtils.relativeToNormal(relativeOrAbsolutePath);
   }
 
+  *#directoryNodeIterator(
+    node: DirectoryNode,
+    parent: ?DirectoryNode,
+    ancestorOfRootIdx: ?number,
+  ): Iterator<[string, MixedNode]> {
+    if (ancestorOfRootIdx != null && parent) {
+      yield [
+        this.#pathUtils.getBasenameOfNthAncestor(ancestorOfRootIdx - 1),
+        parent,
+      ];
+    }
+    yield* node.entries();
+  }
+
   /**
    * Enumerate paths under a given node, including symlinks and through
    * symlinks (if `follow` is enabled).
    */
   *_pathIterator(
-    rootNode: DirectoryNode,
+    iterationRootNode: DirectoryNode,
+    iterationRootParentNode: ?DirectoryNode,
+    ancestorOfRootIdx: ?number,
     opts: $ReadOnly<{
       alwaysYieldPosix: boolean,
       canonicalPathOfRoot: string,
@@ -562,7 +604,11 @@ export default class TreeFS implements MutableFileSystem {
   ): Iterable<Path> {
     const pathSep = opts.alwaysYieldPosix ? '/' : path.sep;
     const prefixWithSep = pathPrefix === '' ? pathPrefix : pathPrefix + pathSep;
-    for (const [name, node] of rootNode ?? this.#rootNode) {
+    for (const [name, node] of this.#directoryNodeIterator(
+      iterationRootNode,
+      iterationRootParentNode,
+      ancestorOfRootIdx,
+    )) {
       if (opts.subtreeOnly && name === '..') {
         continue;
       }
@@ -612,6 +658,8 @@ export default class TreeFS implements MutableFileSystem {
             // the path where we found the symlink as a prefix.
             yield* this._pathIterator(
               target,
+              resolved.parentNode,
+              resolved.ancestorOfRootIdx,
               opts,
               nodePath,
               new Set([...followedLinks, node]),
@@ -619,7 +667,16 @@ export default class TreeFS implements MutableFileSystem {
           }
         }
       } else if (opts.recursive) {
-        yield* this._pathIterator(node, opts, nodePath, followedLinks);
+        yield* this._pathIterator(
+          node,
+          iterationRootParentNode,
+          ancestorOfRootIdx != null && ancestorOfRootIdx > 1
+            ? ancestorOfRootIdx - 1
+            : null,
+          opts,
+          nodePath,
+          followedLinks,
+        );
       }
     }
   }
