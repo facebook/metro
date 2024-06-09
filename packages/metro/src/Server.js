@@ -540,7 +540,7 @@ class Server {
   ) {
     const originalUrl = req.url;
     req.url = this._rewriteAndNormalizeUrl(req.url);
-    const urlObj = url.parse(req.url, true);
+    const urlObj = url.parse(decodeURI(req.url), true);
     const {host} = req.headers;
     debug(
       `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
@@ -597,11 +597,11 @@ class Server {
       for (const [pathnamePrefix, normalizedRootDir] of this
         ._sourceRequestRoutingMap) {
         if (pathname.startsWith(pathnamePrefix)) {
+          const relativePathname = pathname.substr(pathnamePrefix.length);
           await this._processSourceRequest(
-            req,
-            res,
-            pathnamePrefix,
+            relativePathname,
             normalizedRootDir,
+            res,
           );
           handled = true;
           break;
@@ -614,15 +614,10 @@ class Server {
   }
 
   async _processSourceRequest(
-    req: IncomingMessage,
-    res: ServerResponse,
-    pathnamePrefix: string,
+    relativePathname: string,
     rootDir: string,
+    res: ServerResponse,
   ): Promise<void> {
-    const urlObj = url.parse(req.url, true);
-    const relativePathname = nullthrows(urlObj.pathname).substr(
-      pathnamePrefix.length,
-    );
     if (
       !this._allowedSuffixesForSourceRequests.some(suffix =>
         relativePathname.endsWith(suffix),

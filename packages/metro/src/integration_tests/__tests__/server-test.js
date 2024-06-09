@@ -195,5 +195,20 @@ describe('Metro development server serves bundles via HTTP', () => {
         ),
       );
     });
+
+    test('requested with aggressive URL encoding /%5Bmetro-project%5D', async () => {
+      const response = await fetch(
+        'http://localhost:' +
+          config.server.port +
+          '/%5Bmetro-project%5D/Foo%2Ejs',
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toEqual(
+        await fs.promises.readFile(
+          path.join(__dirname, '../basic_bundle/Foo.js'),
+          'utf8',
+        ),
+      );
+    });
   });
 });
