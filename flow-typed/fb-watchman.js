@@ -46,6 +46,13 @@ declare module 'fb-watchman' {
     files: $ReadOnlyArray<WatchmanFileChange>,
     'state-enter'?: ?string,
     'state-leave'?: ?string,
+    clock?: $ReadOnly<{
+      scm: {
+        'mergebase-with'?: string,
+        mergebase?: string,
+      },
+      clock: string,
+    }>,
   };
 
   declare type WatchmanLogEvent = mixed;
@@ -70,9 +77,21 @@ declare module 'fb-watchman' {
   declare type WatchmanFile = $ReadOnly<{
     name: string,
     exists: boolean,
+    dev?: number,
+    cclock?: string,
+    gid?: number,
+    ino?: number,
     type?: WatchmanFileType,
+    mode?: number,
     mtime_ms?: number | $ReadOnly<{toNumber: () => number}>,
+    mtime?: number,
+    mtime_us?: number,
+    mtime_ns?: number,
+    mtime_f?: number,
+    new?: boolean,
+    nlink?: number,
     size?: number,
+    uid?: number,
     'content.sha1hex'?: string,
     symlink_target?: string,
   }>;
@@ -140,6 +159,7 @@ declare module 'fb-watchman' {
   declare type WatchmanQuerySince =
     | string
     | $ReadOnly<{
+        clock?: string,
         scm: $ReadOnly<{
           'mergebase-with': string,
           'saved-state'?: {
@@ -180,7 +200,10 @@ declare module 'fb-watchman' {
     ): void;
     command(
       config: ['watch-project', string],
-      callback: (error: ?Error, response: WatchmanWatchResponse) => void,
+      callback: (
+        error: ?Error,
+        response: WatchmanWatchResponse,
+      ) => void | Promise<void>,
     ): void;
     command(
       config: ['watch-list'],
