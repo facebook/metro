@@ -2673,9 +2673,9 @@ describe('only reachable errors are reported', () => {
                     │ /baz │
                     └──────┘
     */
-    expect(graph.traverseDependencies([...files], options)).rejects.toThrow(
-      BarError,
-    );
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toThrow(BarError);
 
     // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
 
@@ -2893,9 +2893,9 @@ describe('only reachable errors are reported', () => {
                     │ /baz │
                     └──────┘
     */
-    expect(graph.traverseDependencies([...files], options)).rejects.toThrow(
-      BarError,
-    );
+    await expect(
+      graph.traverseDependencies([...files], options),
+    ).rejects.toThrow(BarError);
 
     // NOTE: not clearing `files`, to mimic DeltaCalculator's error behaviour.
 
