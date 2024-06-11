@@ -248,9 +248,26 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleCache(): ModuleCache {
+    const getClosestPackage = (absoluteModulePath: string) => {
+      const result = this._fileSystem.hierarchicalLookup(
+        absoluteModulePath,
+        'package.json',
+        {
+          breakOnSegment: 'node_modules',
+          invalidatedBy: null,
+          subpathType: 'f',
+        },
+      );
+      return result
+        ? {
+            packageJsonPath: result.absolutePath,
+            packageRelativePath: result.containerRelativePath,
+          }
+        : null;
+    };
+
     return new ModuleCache({
-      getClosestPackage: absoluteModulePath =>
-        this._getClosestPackage(absoluteModulePath),
+      getClosestPackage,
     });
   }
 
