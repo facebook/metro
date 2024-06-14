@@ -19,6 +19,7 @@ import nullthrows from 'nullthrows';
 
 let myModule;
 
+// $FlowFixMe[incompatible-variance]
 expect.addSnapshotSerializer(require('jest-snapshot-serializer-raw'));
 
 beforeEach(() => {
