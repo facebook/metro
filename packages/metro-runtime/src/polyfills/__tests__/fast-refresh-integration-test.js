@@ -37,8 +37,11 @@ describe('Fast Refresh integration with require()', () => {
     // Initial render
     const Component = metroRequire(ids['Component.js']);
     const createElement /*: $FlowFixMe */ = React.createElement;
-    const rendered = renderer.create(createElement(Component));
-    expect(rendered.toJSON()).toBe('version1: initialState1');
+    let rendered;
+    await renderer.act(async () => {
+      rendered = renderer.create(createElement(Component));
+    });
+    expect(rendered?.toJSON()).toBe('version1: initialState1');
 
     // Edit the component
     define(
@@ -61,7 +64,7 @@ describe('Fast Refresh integration with require()', () => {
     jest.runAllTimers();
 
     // Fast Refresh: Render the new version of the component with the old state.
-    expect(rendered.toJSON()).toBe('version2: initialState1');
+    expect(rendered?.toJSON()).toBe('version2: initialState1');
     expect(events.onFastRefresh).toHaveBeenCalled();
     expect(events.onFullReload).not.toHaveBeenCalled();
   });
@@ -91,8 +94,11 @@ describe('Fast Refresh integration with require()', () => {
     // Initial render
     const Component = metroRequire(ids['Component.js']);
     const createElement /*: $FlowFixMe */ = React.createElement;
-    const rendered = renderer.create(createElement(Component));
-    expect(rendered.toJSON()).toBe('version1: initialState1');
+    let rendered;
+    await renderer.act(async () => {
+      rendered = renderer.create(createElement(Component));
+    });
+    expect(rendered?.toJSON()).toBe('version1: initialState1');
 
     // Edit the component
     define(
