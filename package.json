@@ -5,6 +5,7 @@
     "@babel/plugin-syntax-class-properties": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.20.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
+    "@babel/plugin-transform-react-jsx": "^7.0.0",
     "@tsconfig/node18": "1.0.1",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
