@@ -18,9 +18,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "react": "^18.3.1",
+    "react": "19.0.0-rc-fb9a90fa48-20240614",
     "react-refresh": "^0.14.0",
-    "react-test-renderer": "^18.3.1"
+    "react-test-renderer": "19.0.0-rc-fb9a90fa48-20240614"
   },
   "engines": {
     "node": ">=18"
