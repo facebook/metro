@@ -934,6 +934,68 @@ describe('import() prefetching', () => {
   });
 });
 
+describe('require.unstable_importMaybeSync()', () => {
+  it('collects require.unstable_importMaybeSync calls', () => {
+    const ast = astFromCode(`
+      require.unstable_importMaybeSync("some/async/module");
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'maybeSync'}),
+      },
+      {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        require(${dependencyMapName}[1], "asyncRequire").unstable_importMaybeSync(${dependencyMapName}[0], _dependencyMap.paths, "some/async/module");
+      `),
+    );
+  });
+
+  it('keepRequireNames: false', () => {
+    const ast = astFromCode(`
+      require.unstable_importMaybeSync("some/async/module");
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(ast, {
+      ...opts,
+      keepRequireNames: false,
+    });
+    expect(dependencies).toEqual([
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'maybeSync'}),
+      },
+      {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        require(${dependencyMapName}[1]).unstable_importMaybeSync(${dependencyMapName}[0], _dependencyMap.paths);
+      `),
+    );
+  });
+
+  it('distinguishes between require.unstable_importMaybeSync and prefetch dependencies on the same module', () => {
+    const ast = astFromCode(`
+      __prefetchImport("some/async/module");
+      require.unstable_importMaybeSync("some/async/module").then(() => {});
+    `);
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'prefetch'}),
+      },
+      {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'maybeSync'}),
+      },
+    ]);
+  });
+});
+
 describe('Evaluating static arguments', () => {
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
@@ -1566,6 +1628,14 @@ const MockDependencyTransformer: DependencyTransformer = {
     state: State,
   ): void {
     transformAsyncRequire(path, dependency, state, 'async');
+  },
+
+  transformImportMaybeSyncCall(
+    path: NodePath<>,
+    dependency: InternalDependency,
+    state: State,
+  ): void {
+    transformAsyncRequire(path, dependency, state, 'unstable_importMaybeSync');
   },
 
   transformPrefetch(
