@@ -240,6 +240,7 @@ const minifyCode = async (
 const disabledDependencyTransformer: DependencyTransformer = {
   transformSyncRequire: () => void 0,
   transformImportCall: () => void 0,
+  transformImportMaybeSyncCall: () => void 0,
   transformPrefetch: () => void 0,
   transformIllegalDynamicRequire: () => void 0,
 };

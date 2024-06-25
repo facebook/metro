@@ -82,11 +82,15 @@ describe('Metro development server serves bundles via HTTP', () => {
     );
     await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
     await expect(object.asyncImportESM).resolves.toMatchSnapshot();
+    await expect(object.asyncImportMaybeSyncCJS).resolves.toMatchSnapshot();
+    await expect(object.asyncImportMaybeSyncESM).resolves.toMatchSnapshot();
     expect(bundlesDownloaded).toEqual(
       new Set([
         '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true',
-        '/import-export/export-6.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
         '/import-export/export-5.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
+        '/import-export/export-6.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
+        '/import-export/export-7.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
+        '/import-export/export-8.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
       ]),
     );
   });
@@ -97,6 +101,8 @@ describe('Metro development server serves bundles via HTTP', () => {
     );
     await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
     await expect(object.asyncImportESM).resolves.toMatchSnapshot();
+    await expect(object.asyncImportMaybeSyncCJS).toMatchSnapshot();
+    await expect(object.asyncImportMaybeSyncESM).toMatchSnapshot();
     expect(bundlesDownloaded).toEqual(
       new Set([
         '/import-export/index.bundle?platform=ios&dev=true&minify=false',

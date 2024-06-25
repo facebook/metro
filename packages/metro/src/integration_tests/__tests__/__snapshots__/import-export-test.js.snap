@@ -4,6 +4,16 @@ exports[`builds a simple bundle 1`] = `
 Object {
   "asyncImportCJS": Promise {},
   "asyncImportESM": Promise {},
+  "asyncImportMaybeSyncCJS": Object {
+    "default": Object {
+      "foo": "export-7: FOO",
+    },
+    "foo": "export-7: FOO",
+  },
+  "asyncImportMaybeSyncESM": Object {
+    "default": "export-8: DEFAULT",
+    "foo": "export-8: FOO",
+  },
   "default": "export-4: FOO",
   "extraData": Object {
     "foo": "export-null: FOO",

@@ -23,7 +23,7 @@ export type MixedOutput = {
   +type: string,
 };
 
-export type AsyncDependencyType = 'async' | 'prefetch' | 'weak';
+export type AsyncDependencyType = 'async' | 'maybeSync' | 'prefetch' | 'weak';
 
 export type TransformResultDependency = $ReadOnly<{
   /**
