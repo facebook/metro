@@ -39,6 +39,11 @@ export type TerminalReportableEvent =
       transformedFileCount: number,
       totalFileCount: number,
       ...
+    }
+  | {
+      type: 'unstable_set_interaction_status',
+      status: ?string,
+      ...
     };
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
@@ -64,6 +69,8 @@ class TerminalReporter {
    * built at the same time.
    */
   _activeBundles: Map<string, BundleProgress>;
+
+  _interactionStatus: ?string;
 
   _scheduleUpdateBundleProgress: {
     (data: {
@@ -378,6 +385,9 @@ class TerminalReporter {
       case 'bundle_transform_progressed_throttled':
         this._updateBundleProgress(event);
         break;
+      case 'unstable_set_interaction_status':
+        this._interactionStatus = event.status;
+        break;
     }
   }
 
@@ -391,7 +401,8 @@ class TerminalReporter {
       .map(([_, progress]: [string, BundleProgress]) =>
         this._getBundleStatusMessage(progress, 'in_progress'),
       )
-      .filter((str: null | string) => str != null)
+      .concat([this._interactionStatus])
+      .filter((str: ?string) => str != null)
       .join('\n');
   }
 
