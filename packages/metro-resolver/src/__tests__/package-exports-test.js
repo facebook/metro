@@ -254,6 +254,31 @@ describe('with package exports resolution enabled', () => {
         });
       });
     });
+
+    describe('array root shorthand', () => {
+      const logWarning = jest.fn();
+      const context = {
+        ...createResolutionContext({
+          '/root/src/main.js': '',
+          '/root/node_modules/test-pkg/index.js': '',
+          '/root/node_modules/test-pkg/foo.js': '',
+          '/root/node_modules/test-pkg/package.json': JSON.stringify({
+            exports: ['bad-specifier', './index.js', './foo.js'],
+          }),
+        }),
+        originModulePath: '/root/src/main.js',
+        unstable_enablePackageExports: true,
+        unstable_logWarning: logWarning,
+      };
+
+      test('should pick the first valid "exports" array entry', () => {
+        expect(Resolver.resolve(context, 'test-pkg', null)).toEqual({
+          type: 'sourceFile',
+          filePath: '/root/node_modules/test-pkg/index.js',
+        });
+        expect(logWarning).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('subpath exports', () => {
@@ -394,29 +419,6 @@ describe('with package exports resolution enabled', () => {
       });
       // If a warning was logged, we have incorrectly tried to resolve "exports"
       // against the parent package.json.
-      expect(logWarning).not.toHaveBeenCalled();
-    });
-
-    test('should expand array of strings as subpath mapping (root shorthand)', () => {
-      const logWarning = jest.fn();
-      const context = {
-        ...baseContext,
-        ...createPackageAccessors({
-          '/root/node_modules/test-pkg/package.json': JSON.stringify({
-            exports: ['./index.js', './foo.js'],
-          }),
-        }),
-        unstable_logWarning: logWarning,
-      };
-
-      expect(Resolver.resolve(context, 'test-pkg/index.js', null)).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/index.js',
-      });
-      expect(Resolver.resolve(context, 'test-pkg/foo.js', null)).toEqual({
-        type: 'sourceFile',
-        filePath: '/root/node_modules/test-pkg/foo.js',
-      });
       expect(logWarning).not.toHaveBeenCalled();
     });
 
