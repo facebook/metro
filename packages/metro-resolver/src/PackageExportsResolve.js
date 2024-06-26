@@ -202,21 +202,23 @@ function flattenLegacySubpathValues(
   exportMap: ExportMap | ExportMapWithFallbacks,
   createConfigError: (reason: string) => Error,
 ): ExportMap {
-  return Object.keys(exportMap).reduce((result: ExportMap, subpath: string) => {
-    const value = exportMap[subpath];
-
-    // We do not support empty or nested arrays (non-standard)
-    if (Array.isArray(value) && (!value.length || Array.isArray(value[0]))) {
-      throw createConfigError(
-        'Could not parse non-standard array value in "exports" field.',
-      );
-    }
-
-    return {
-      ...result,
-      [subpath]: Array.isArray(value) ? value[0] : value,
-    };
-  }, {});
+  return Object.entries(exportMap).reduce(
+    (result, [subpath, value]) => {
+      // We do not support empty or nested arrays (non-standard)
+      if (Array.isArray(value)) {
+        if (!value.length || Array.isArray(value[0])) {
+          throw createConfigError(
+            'Could not parse non-standard array value in "exports" field.',
+          );
+        }
+        result[subpath] = value[0];
+      } else {
+        result[subpath] = value;
+      }
+      return result;
+    },
+    {} as {[subpathOrCondition: string]: string | ExportMap | null},
+  );
 }
 
 /**

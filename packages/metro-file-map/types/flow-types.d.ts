@@ -167,6 +167,42 @@ export interface FileSystem {
   getSha1(file: Path): string | null;
 
   /**
+   * Given a start path (which need not exist), a subpath and type, and
+   * optionally a 'breakOnSegment', performs the following:
+   *
+   * X = mixedStartPath
+   * do
+   *   if basename(X) === opts.breakOnSegment
+   *     return null
+   *   if X + subpath exists and has type opts.subpathType
+   *     return {
+   *       absolutePath: realpath(X + subpath)
+   *       containerRelativePath: relative(mixedStartPath, X)
+   *     }
+   *   X = dirname(X)
+   * while X !== dirname(X)
+   *
+   * If opts.invalidatedBy is given, collects all absolute, real paths that if
+   * added or removed may invalidate this result.
+   *
+   * Useful for finding the closest package scope (subpath: package.json,
+   * type f, breakOnSegment: node_modules) or closest potential package root
+   * (subpath: node_modules/pkg, type: d) in Node.js resolution.
+   */
+  hierarchicalLookup(
+    mixedStartPath: string,
+    subpath: string,
+    opts: {
+      breakOnSegment: string | null | undefined;
+      invalidatedBy: Set<string> | null | undefined;
+      subpathType: 'f' | 'd';
+    },
+  ): {
+    absolutePath: string;
+    containerRelativePath: string;
+  } | null;
+
+  /**
    * Analogous to posix lstat. If the file at `file` is a symlink, return
    * information about the symlink without following it.
    */
