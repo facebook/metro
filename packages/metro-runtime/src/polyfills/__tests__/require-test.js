@@ -396,7 +396,7 @@ describe('require', () => {
       createModuleSystem(moduleSystem, true, '');
 
       createModule(moduleSystem, 0, 'index.js', (global, require) => {
-        expect(require.getModules()[0].verboseName).toEqual('index.js');
+        expect(require.getModules().get(0).verboseName).toEqual('index.js');
         done();
       });
 

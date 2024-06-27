@@ -67,11 +67,7 @@ type ModuleDefinition = {
   publicModule: Module,
   verboseName?: string,
 };
-type ModuleList = {
-  [number]: ?ModuleDefinition,
-  __proto__: null,
-  ...
-};
+type ModuleList = Map<number, ModuleDefinition>;
 export type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 export type DefineFn = (
   factory: FactoryFn,
@@ -103,7 +99,7 @@ if (__DEV__) {
 }
 
 function clear(): ModuleList {
-  modules = (Object.create(null): ModuleList);
+  modules = new Map();
 
   // We return modules here so that we can assign an initial value to modules
   // when defining it. Otherwise, we would have to do "let modules = null",
@@ -112,11 +108,14 @@ function clear(): ModuleList {
 }
 
 if (__DEV__) {
-  var verboseNamesToModuleIds: {
-    [key: string]: number,
-    __proto__: null,
-    ...
-  } = Object.create(null);
+  var verboseNamesToModuleIds: Map<string, number> = new Map();
+  var getModuleIdForVerboseName = (verboseName: string): number => {
+    const moduleId = verboseNamesToModuleIds.get(verboseName);
+    if (moduleId == null) {
+      throw new Error(`Unknown named module: "${verboseName}"`);
+    }
+    return moduleId;
+  };
   var initializingModuleIds: Array<number> = [];
 }
 
@@ -125,7 +124,7 @@ function define(
   moduleId: number,
   dependencyMap?: DependencyMap,
 ): void {
-  if (modules[moduleId] != null) {
+  if (modules.has(moduleId)) {
     if (__DEV__) {
       // (We take `inverseDependencies` from `arguments` to avoid an unused
       // named parameter in `define` in production.
@@ -153,7 +152,7 @@ function define(
     publicModule: {exports: {}},
   };
 
-  modules[moduleId] = mod;
+  modules.set(moduleId, mod);
 
   if (__DEV__) {
     // HMR
@@ -165,7 +164,7 @@ function define(
     const verboseName: string | void = arguments[3];
     if (verboseName) {
       mod.verboseName = verboseName;
-      verboseNamesToModuleIds[verboseName] = moduleId;
+      verboseNamesToModuleIds.set(verboseName, moduleId);
     }
   }
 }
@@ -173,15 +172,11 @@ function define(
 function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
-    if (moduleId == null) {
-      throw new Error(`Unknown named module: "${verboseName}"`);
-    } else {
-      console.warn(
-        `Requiring module "${verboseName}" by name is only supported for ` +
-          'debugging purposes and will BREAK IN PRODUCTION!',
-      );
-    }
+    moduleId = getModuleIdForVerboseName(verboseName);
+    console.warn(
+      `Requiring module "${verboseName}" by name is only supported for ` +
+        'debugging purposes and will BREAK IN PRODUCTION!',
+    );
   }
 
   //$FlowFixMe: at this point we know that moduleId is a number
@@ -194,10 +189,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     if (initializingIndex !== -1) {
       const cycle = initializingModuleIds
         .slice(initializingIndex)
-        .map((id: number) =>
-          modules[id] ? modules[id].verboseName : '[unknown]',
-        );
-
+        .map((id: number) => modules.get(id)?.verboseName ?? '[unknown]');
       if (shouldPrintRequireCycle(cycle)) {
         cycle.push(cycle[0]); // We want to print A -> B -> A:
         console.warn(
@@ -209,7 +201,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     }
   }
 
-  const module = modules[moduleIdReallyIsNumber];
+  const module = modules.get(moduleIdReallyIsNumber);
 
   return module && module.isInitialized
     ? module.publicModule.exports
@@ -237,25 +229,30 @@ function metroImportDefault(
 ): any | Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
+    moduleId = getModuleIdForVerboseName(verboseName);
   }
 
   //$FlowFixMe: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
+  const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
+
   if (
-    modules[moduleIdReallyIsNumber] &&
-    modules[moduleIdReallyIsNumber].importedDefault !== EMPTY
+    maybeInitializedModule &&
+    maybeInitializedModule.importedDefault !== EMPTY
   ) {
-    return modules[moduleIdReallyIsNumber].importedDefault;
+    return maybeInitializedModule.importedDefault;
   }
 
   const exports: Exports = metroRequire(moduleIdReallyIsNumber);
   const importedDefault: any | Exports =
     exports && exports.__esModule ? exports.default : exports;
 
-  // $FlowFixMe The metroRequire call above will throw if modules[id] is null
-  return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
+  // $FlowFixMe[incompatible-type] The `metroRequire` call above would have thrown if modules[id] was null
+  const initializedModule: ModuleDefinition = modules.get(
+    moduleIdReallyIsNumber,
+  );
+  return (initializedModule.importedDefault = importedDefault);
 }
 metroRequire.importDefault = metroImportDefault;
 
@@ -264,17 +261,16 @@ function metroImportAll(
 ): any | Exports | {[string]: any} {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[verboseName];
+    moduleId = getModuleIdForVerboseName(verboseName);
   }
 
   //$FlowFixMe: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
-  if (
-    modules[moduleIdReallyIsNumber] &&
-    modules[moduleIdReallyIsNumber].importedAll !== EMPTY
-  ) {
-    return modules[moduleIdReallyIsNumber].importedAll;
+  const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
+
+  if (maybeInitializedModule && maybeInitializedModule.importedAll !== EMPTY) {
+    return maybeInitializedModule.importedAll;
   }
 
   const exports: Exports = metroRequire(moduleIdReallyIsNumber);
@@ -297,8 +293,11 @@ function metroImportAll(
     importedAll.default = exports;
   }
 
-  // $FlowFixMe The metroRequire call above will throw if modules[id] is null
-  return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
+  // $FlowFixMe[incompatible-type] The `metroRequire` call above would have thrown if modules[id] was null
+  const initializedModule: ModuleDefinition = modules.get(
+    moduleIdReallyIsNumber,
+  );
+  return (initializedModule.importedAll = importedAll);
 }
 metroRequire.importAll = metroImportAll;
 
@@ -394,7 +393,7 @@ function registerSegment(
   }
   if (moduleIds) {
     moduleIds.forEach(moduleId => {
-      if (!modules[moduleId] && !definingSegmentByModuleID.has(moduleId)) {
+      if (!modules.has(moduleId) && !definingSegmentByModuleID.has(moduleId)) {
         definingSegmentByModuleID.set(moduleId, segmentId);
       }
     });
@@ -410,7 +409,7 @@ function loadModuleImplementation(
     const definer = moduleDefinersBySegmentID[segmentId];
     if (definer != null) {
       definer(moduleId);
-      module = modules[moduleId];
+      module = modules.get(moduleId);
       definingSegmentByModuleID.delete(moduleId);
     }
   }
@@ -419,7 +418,7 @@ function loadModuleImplementation(
   if (!module && nativeRequire) {
     const {segmentId, localId} = unpackModuleId(moduleId);
     nativeRequire(localId, segmentId);
-    module = modules[moduleId];
+    module = modules.get(moduleId);
   }
 
   if (!module) {
@@ -563,7 +562,7 @@ if (__DEV__) {
     dependencyMap: DependencyMap,
     inverseDependencies: InverseDependencyMap,
   ) {
-    const mod = modules[id];
+    const mod = modules.get(id);
     if (!mod) {
       if (factory) {
         // New modules are going to be handled by the define() method.
@@ -606,7 +605,7 @@ if (__DEV__) {
       updatedModuleIDs = topologicalSort(
         [id], // Start with the changed module and go upwards
         pendingID => {
-          const pendingModule = modules[pendingID];
+          const pendingModule = modules.get(pendingID);
           if (pendingModule == null) {
             // Nothing to do.
             return [];
@@ -677,7 +676,7 @@ if (__DEV__) {
       }
       seenModuleIDs.add(updatedID);
 
-      const updatedMod = modules[updatedID];
+      const updatedMod = modules.get(updatedID);
       if (updatedMod == null) {
         throw new Error('[Refresh] Expected to find the updated module.');
       }
@@ -734,7 +733,7 @@ if (__DEV__) {
           // Schedule all parent refresh boundaries to re-run in this loop.
           for (let j = 0; j < parentIDs.length; j++) {
             const parentID = parentIDs[j];
-            const parentMod = modules[parentID];
+            const parentMod = modules.get(parentID);
             if (parentMod == null) {
               throw new Error('[Refresh] Expected to find parent module.');
             }
@@ -810,7 +809,7 @@ if (__DEV__) {
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
   ): boolean {
-    const mod = modules[id];
+    const mod = modules.get(id);
     if (mod == null) {
       throw new Error('[Refresh] Expected to find the module.');
     }
