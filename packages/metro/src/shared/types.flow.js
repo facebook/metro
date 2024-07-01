@@ -66,7 +66,7 @@ export type BundleOptions = {
   +shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
-  createModuleIdFactory?: () => (path: string) => number,
+  createModuleIdFactory?: () => (path: string) => number | string,
   +unstable_transformProfile: TransformProfile,
   +sourcePaths: SourcePathsMode,
 };
@@ -147,7 +147,7 @@ export type RequestOptions = {
   dev?: boolean,
   minify: boolean,
   platform: string,
-  createModuleIdFactory?: () => (path: string) => number,
+  createModuleIdFactory?: () => (path: string) => number | string,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   +customResolverOptions?: CustomResolverOptions,
   +customTransformOptions?: CustomTransformOptions,

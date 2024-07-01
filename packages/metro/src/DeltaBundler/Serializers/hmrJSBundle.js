@@ -23,7 +23,7 @@ const url = require('url');
 
 type Options = $ReadOnly<{
   clientUrl: EntryPointURL,
-  createModuleId: string => number,
+  createModuleId: string => number | string,
   includeAsyncPaths: boolean,
   projectRoot: string,
   serverRoot: string,

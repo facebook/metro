@@ -140,7 +140,7 @@ const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
-  _createModuleId: (path: string) => number;
+  _createModuleId: (path: string) => number | string;
   _isEnded: boolean;
   _logger: typeof Logger;
   _nextBundleBuildNumber: number;
