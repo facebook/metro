@@ -1442,21 +1442,25 @@ class MemoryFs {
     options: {eventType: 'rename' | 'change', ...},
   ): void {
     const fileNode = nodePath.pop();
+    // $FlowFixMe[incompatible-use]
     let filePath = fileNode[0];
     let recursive = false;
 
+    // $FlowFixMe[incompatible-use]
     for (const watcher of fileNode[1].watchers) {
       watcher.listener(options.eventType, filePath);
     }
 
     while (nodePath.length > 0) {
       const dirNode = nodePath.pop();
+      // $FlowFixMe[incompatible-use]
       for (const watcher of dirNode[1].watchers) {
         if (recursive && !watcher.recursive) {
           continue;
         }
         watcher.listener(options.eventType, filePath);
       }
+      // $FlowFixMe[incompatible-use]
       filePath = dirNode[0] + this._pathSep + filePath;
       recursive = true;
     }

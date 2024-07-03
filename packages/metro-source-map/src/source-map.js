@@ -124,11 +124,14 @@ function fromRawMappingsImpl(
     }
 
     const mod = modulesToProcess.shift();
+    // $FlowFixMe[incompatible-use]
     const {code, map} = mod;
     if (Array.isArray(map)) {
+      // $FlowFixMe[incompatible-call]
       addMappingsForFile(generator, map, mod, carryOver);
     } else if (map != null) {
       throw new Error(
+        // $FlowFixMe[incompatible-use]
         `Unexpected module with full source map found: ${mod.path}`,
       );
     }

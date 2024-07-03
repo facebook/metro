@@ -44,6 +44,7 @@ function getSourceMapInfosImpl(
     }
 
     const mod = modulesToProcess.shift();
+    // $FlowFixMe[incompatible-call]
     const info = getSourceMapInfo(mod, {
       excludeSource: options.excludeSource,
       shouldAddToIgnoreList: options.shouldAddToIgnoreList,

@@ -323,6 +323,7 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
   return lowest;
 }
 
+// $FlowFixMe[incompatible-extend]
 class UnableToResolveError extends Error {
   /**
    * File path of the module that tried to require a module, ex. `/js/foo.js`.

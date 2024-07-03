@@ -123,13 +123,16 @@ async function main(
       outputColumnStart,
     };
     let context;
+    // $FlowFixMe[incompatible-call]
     if (fs.lstatSync(sourceMapFileName).isDirectory()) {
       context = Symbolication.unstable_createDirectoryContext(
         SourceMapConsumer,
+        // $FlowFixMe[incompatible-call]
         sourceMapFileName,
         options,
       );
     } else {
+      // $FlowFixMe[incompatible-call]
       const content = fs.readFileSync(sourceMapFileName, 'utf8');
       context = Symbolication.createContext(
         SourceMapConsumer,
