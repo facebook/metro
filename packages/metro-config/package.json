@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/connect": "^3.4.35",
+    "metro-babel-register": "0.80.9",
     "pretty-format": "^26.5.2",
     "strip-ansi": "^6.0.0"
   },

@@ -11,7 +11,13 @@
 
 'use strict';
 
+/*::
 export type * from './configTypes.flow';
+*/
+
+try {
+  require('metro-babel-register').unstable_registerForMetroMonorepo();
+} catch {}
 
 const getDefaultConfig = require('./defaults');
 const {loadConfig, mergeConfig, resolveConfig} = require('./loadConfig');
