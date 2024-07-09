@@ -11,7 +11,7 @@
 
 /**
  * Raised when package imports do not define or permit a target subpath in the
- * package for the given specifier.
+ * package for the given import specifier.
  */
 export default class PackageImportNotResolvedError extends Error {
   /**

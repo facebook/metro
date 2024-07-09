@@ -14,8 +14,8 @@ import type {ExportMap, FileResolution, ResolutionContext} from './types';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import PackageImportNotResolvedError from './errors/PackageImportNotResolvedError';
 import {
+  isSubpathDefinedInExports,
   matchSubpathFromExports,
-  matchSubpathPattern,
 } from './PackageExportsResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
@@ -46,7 +46,14 @@ export function resolvePackageTargetFromImports(
     );
   }
 
-  if (!isSubpathDefinedImports(importMap, importSpecifier)) {
+  /**
+   * for now, we can reuse the same logic from exports map:
+   * 1. `isSubpathDefinedInExports`: checking if an specifier is in an import map
+   *    is the same as checking if an specifier is in an export map
+   * 2. `matchSubpathFromExports`: matching subpath patterns in an import map
+   *    is the same as matching subpath patterns in an export map
+   */
+  if (!isSubpathDefinedInExports(importMap, importSpecifier)) {
     throw new PackageImportNotResolvedError({
       importSpecifier,
       reason: `"${importSpecifier}" could not be matched using "imports" of ${packagePath}`,
@@ -111,33 +118,6 @@ export function resolvePackageTargetFromImports(
       `"${importSpecifier}" which matches a subpath "imports" in ${packagePath}` +
       `however no match was resolved for this request (platform = ${platform ?? 'null'}).`,
   });
-}
-
-function isSubpathDefinedImports(
-  importMap: ExportMap,
-  importSpecifier: string,
-): boolean {
-  if (importSpecifier in importMap) {
-    /**
-     * if the specifier directly matches a subpath in the map
-     * (in case where the subpath has no patterns)
-     */
-    return true;
-  }
-
-  for (const key in importMap) {
-    /**
-     * if and only if there is exactly one * in the subpath key do
-     * we treat this subpath as a subpath pattern
-     */
-    const isSubpathPattern = key.split('*').length === 2;
-    if (isSubpathPattern && matchSubpathPattern(key, importSpecifier) != null) {
-      // if there is a matching subpath pattern then the specifier is in the map
-      return true;
-    }
-  }
-
-  return false;
 }
 
 function findInvalidPathSegment(path: string): ?string {

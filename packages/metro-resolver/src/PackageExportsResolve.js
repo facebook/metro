@@ -137,7 +137,7 @@ export function resolvePackageTargetFromExports(
  * Convert a module path to the package-relative subpath key to attempt for
  * "exports" field lookup.
  */
-export function getExportsSubpath(packageSubpath: string): string {
+function getExportsSubpath(packageSubpath: string): string {
   return packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
 }
 
@@ -147,7 +147,7 @@ export function getExportsSubpath(packageSubpath: string): string {
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#exports-sugar.
  */
-export function normalizeExportsField(
+function normalizeExportsField(
   exportsField: ExportsField,
   createConfigError: (reason: string) => Error,
 ): ExportMap {
