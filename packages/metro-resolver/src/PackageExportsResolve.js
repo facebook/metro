@@ -137,7 +137,7 @@ export function resolvePackageTargetFromExports(
  * Convert a module path to the package-relative subpath key to attempt for
  * "exports" field lookup.
  */
-function getExportsSubpath(packageSubpath: string): string {
+export function getExportsSubpath(packageSubpath: string): string {
   return packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
 }
 
@@ -147,7 +147,7 @@ function getExportsSubpath(packageSubpath: string): string {
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#exports-sugar.
  */
-function normalizeExportsField(
+export function normalizeExportsField(
   exportsField: ExportsField,
   createConfigError: (reason: string) => Error,
 ): ExportMap {
@@ -251,7 +251,7 @@ export function isSubpathDefinedInExports(
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  */
-function matchSubpathFromExports(
+export function matchSubpathFromExports(
   context: ResolutionContext,
   /**
    * The package-relative subpath (beginning with '.') to match against either
@@ -397,7 +397,7 @@ function reduceConditionalExport(
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns.
  */
-function matchSubpathPattern(
+export function matchSubpathPattern(
   subpathPattern: string,
   subpath: string,
 ): string | null {

@@ -56,6 +56,7 @@
     "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
     "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
     "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
+    "test-debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "typecheck": "flow check",
     "typecheck-ts": "tsc --project tsconfig.json",
     "update-babel-flow-lib-defs": "node -r @babel/register ./scripts/updateBabelFlowLibraryDefinitions",
