@@ -9,57 +9,124 @@
  * @oncall react_native
  */
 
+import Resolver from '../index';
 import {createResolutionContext} from './utils';
+import {createPackageAccessors} from './utils';
 
 // Implementation of PACKAGE_IMPORTS_RESOLVE described in https://nodejs.org/api/esm.html
 describe('subpath imports resolution support', () => {
-  let Resolver;
-  const mockRedirectModulePath = jest.fn();
+  const baseContext = {
+    ...createResolutionContext({
+      '/root/src/main.js': '',
+      '/root/node_modules/test-pkg/package.json': '',
+      '/root/node_modules/test-pkg/index.js': '',
+      '/root/node_modules/test-pkg/index-main.js': '',
+      '/root/node_modules/test-pkg/symlink.js': {
+        realPath: '/root/node_modules/test-pkg/symlink-target.js',
+      },
+    }),
+    originModulePath: '/root/src/main.js',
+  };
 
-  beforeEach(() => {
-    jest.resetModules();
-    jest.mock('../PackageResolve', () => ({
-      ...jest.requireActual('../PackageResolve'),
-      redirectModulePath: mockRedirectModulePath,
-    }));
-    Resolver = require('../index');
-  });
-
-  test('specifiers beginning # are reserved for future package imports support', () => {
-    const mockNeverCalledFn = jest.fn();
-    const mockCustomResolver = jest
-      .fn()
-      .mockImplementation((ctx, ...args) => ctx.resolveRequest(ctx, ...args));
-
+  test('"imports" subpath that maps directly to a file', () => {
     const context = {
-      ...createResolutionContext({}),
-      originModulePath: '/root/src/main.js',
-      doesFileExist: mockNeverCalledFn,
-      fileSystemLookup: mockNeverCalledFn,
-      redirectModulePath: mockNeverCalledFn,
-      resolveHasteModule: mockNeverCalledFn,
-      resolveHastePackage: mockNeverCalledFn,
-      resolveRequest: mockCustomResolver,
+      ...baseContext,
+      ...createPackageAccessors({
+        '/root/node_modules/test-pkg/package.json': {
+          main: 'index-main.js',
+          imports: {
+            '#foo': './index.js',
+          },
+        },
+      }),
+      originModulePath: '/root/node_modules/test-pkg/lib/foo.js',
     };
 
-    expect(() => Resolver.resolve(context, '#foo', null)).toThrow(
-      new Resolver.FailedToResolveUnsupportedError(
-        'Specifier starts with "#" but subpath imports are not currently supported.',
-      ),
-    );
+    expect(Resolver.resolve(context, '#foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/index.js',
+    });
+  });
+});
 
-    // Ensure any custom resolver *is* still called first.
-    expect(mockCustomResolver).toBeCalledTimes(1);
-    expect(mockCustomResolver).toBeCalledWith(
-      expect.objectContaining({
-        originModulePath: '/root/src/main.js',
+describe('import subpath patterns resolution support', () => {
+  const baseContext = {
+    ...createResolutionContext({
+      '/root/src/main.js': '',
+      '/root/node_modules/test-pkg/package.json': JSON.stringify({
+        name: 'test-pkg',
+        main: 'index.js',
+        imports: {
+          '#features/*': './src/features/*.js',
+        },
       }),
-      '#foo',
-      null,
-    );
+      '/root/node_modules/test-pkg/src/index.js': '',
+      '/root/node_modules/test-pkg/src/features/foo.js': '',
+      '/root/node_modules/test-pkg/src/features/foo.js.js': '',
+      '/root/node_modules/test-pkg/src/features/bar/Bar.js': '',
+      '/root/node_modules/test-pkg/src/features/baz.native.js': '',
+    }),
+    originModulePath: '/root/node_modules/test-pkg/src/index.js',
+  };
 
-    // Ensure package imports precedes any other attempt at resolution for a '#' specifier.
-    expect(mockNeverCalledFn).not.toHaveBeenCalled();
-    expect(mockRedirectModulePath).not.toHaveBeenCalled();
+  test('resolving subpath patterns in "imports" matching import specifier', () => {
+    expect(Resolver.resolve(baseContext, '#features/foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/src/features/foo.js',
+    });
+
+    expect(Resolver.resolve(baseContext, '#features/foo.js', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/src/features/foo.js.js',
+    });
+  });
+});
+
+describe('import subpath conditional imports resolution', () => {
+  const baseContext = {
+    ...createResolutionContext({
+      '/root/src/main.js': '',
+      '/root/node_modules/test-pkg/package.json': JSON.stringify({
+        name: 'test-pkg',
+        main: 'index.js',
+        imports: {
+          '#foo': {
+            import: './lib/foo-module.mjs',
+            development: './lib/foo-dev.js',
+            'react-native': {
+              import: './lib/foo-react-native.mjs',
+              require: './lib/foo-react-native.cjs',
+              default: './lib/foo-react-native.js',
+            },
+            browser: './lib/foo-browser.js',
+            require: './lib/foo-require.cjs',
+            default: './lib/foo.js',
+          },
+        },
+      }),
+      '/root/node_modules/test-pkg/index.js': '',
+      '/root/node_modules/test-pkg/lib/foo.js': '',
+      '/root/node_modules/test-pkg/lib/foo-require.cjs': '',
+      '/root/node_modules/test-pkg/lib/foo-module.mjs': '',
+      '/root/node_modules/test-pkg/lib/foo-dev.js': '',
+      '/root/node_modules/test-pkg/lib/foo-browser.js': '',
+      '/root/node_modules/test-pkg/lib/foo-react-native.cjs': '',
+      '/root/node_modules/test-pkg/lib/foo-react-native.mjs': '',
+      '/root/node_modules/test-pkg/lib/foo-react-native.js': '',
+      '/root/node_modules/test-pkg/lib/foo.web.js': '',
+    }),
+    originModulePath: '/root/node_modules/test-pkg/src/index.js',
+  };
+
+  test('resolving imports subpath with conditions', () => {
+    const context = {
+      ...baseContext,
+      unstable_conditionNames: ['require', 'react-native'],
+    };
+
+    expect(Resolver.resolve(context, '#foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/test-pkg/lib/foo-react-native.cjs',
+    });
   });
 });
