@@ -119,6 +119,105 @@ describe('HttpStore', () => {
     });
   });
 
+  it('does not retry when maxAttempts==1', async () => {
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 1,
+      retryStatuses: [429],
+    });
+    const promise = store.get(Buffer.from('key'));
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('GET');
+
+    callback(responseHttpError(429));
+    jest.runAllTimers();
+
+    let err = null;
+    try {
+      await promise;
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(HttpStore.HttpError);
+    expect(err.message).toMatch(/HTTP error: 429 Too Many Requests/);
+    expect(err.code).toBe(429);
+    expect(require('http').request).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries http errors when maxAttempts>1 and status in retryStatuses', async () => {
+    jest.useRealTimers();
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 2,
+      retryStatuses: [429],
+    });
+    const {request} = require('http');
+
+    request.mockImplementation((opts, callback) => {
+      if (request.mock.calls.length === 1) {
+        callback(responseHttpError(429));
+      } else {
+        callback(responseHttpOk(JSON.stringify({foo: 42}), 200));
+      }
+      return httpPassThrough;
+    });
+
+    expect(await store.get(Buffer.from('key'))).toEqual({foo: 42});
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws when retries exceed maxAttempts', async () => {
+    jest.useRealTimers();
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 3,
+      retryStatuses: [429],
+    });
+    const {request} = require('http');
+
+    request.mockImplementation((opts, callback) => {
+      callback(responseHttpError(429));
+      return httpPassThrough;
+    });
+
+    let err;
+    try {
+      await store.get(Buffer.from('key'));
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(HttpStore.HttpError);
+    expect(err.message).toMatch(/HTTP error: 429 Too Many Requests/);
+    expect(err.code).toBe(429);
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries timeouts when maxAttempts>1 and retryNetworkErrors=true', async () => {
+    jest.useRealTimers();
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 2,
+      retryNetworkErrors: true,
+    });
+    const {request} = require('http');
+
+    request.mockImplementation((opts, callback) => {
+      if (request.mock.calls.length === 1) {
+        process.nextTick(() => {
+          httpPassThrough.emit('timeout');
+        });
+      } else {
+        callback(responseHttpOk(JSON.stringify({foo: 42}), 200));
+      }
+      return httpPassThrough;
+    });
+
+    expect(await store.get(Buffer.from('key'))).toEqual({foo: 42});
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
   it('get() includes HTTP error body in rejection with debug: true', done => {
     const store = new HttpStore({endpoint: 'http://example.com', debug: true});
     const promise = store.get(Buffer.from('key'));

@@ -15,6 +15,7 @@ import type {Agent as HttpsAgent} from 'https';
 
 const HttpError = require('./HttpError');
 const NetworkError = require('./NetworkError');
+const {backOff} = require('exponential-backoff');
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -38,6 +39,13 @@ type EndpointOptions = {
    * Whether to include additional debug information in error messages.
    */
   debug?: boolean,
+
+  /**
+   * Retry configuration
+   */
+  maxAttempts?: number,
+  retryNetworkErrors?: boolean,
+  retryStatuses?: $ReadOnlySet<number>,
 };
 
 type Endpoint = {
@@ -51,6 +59,13 @@ type Endpoint = {
   timeout: number,
   additionalSuccessStatuses: $ReadOnlySet<number>,
   debug: boolean,
+
+  /**
+   * Retry configuration
+   */
+  maxAttempts: number,
+  retryNetworkErrors: boolean,
+  retryStatuses: $ReadOnlySet<number>,
 };
 
 const ZLIB_OPTIONS = {
@@ -120,10 +135,17 @@ class HttpStore<T> {
         options.additionalSuccessStatuses ?? [],
       ),
       debug: options.debug ?? false,
+      maxAttempts: options.maxAttempts ?? 1,
+      retryStatuses: new Set(options.retryStatuses ?? []),
+      retryNetworkErrors: options.retryNetworkErrors ?? false,
     };
   }
 
   get(key: Buffer): Promise<?T> {
+    return this.#withRetries(() => this.#getOnce(key), this._getEndpoint);
+  }
+
+  #getOnce(key: Buffer): Promise<?T> {
     return new Promise((resolve, reject) => {
       let searchParamsString = this._getEndpoint.params.toString();
       if (searchParamsString != '') {
@@ -241,6 +263,13 @@ class HttpStore<T> {
   }
 
   set(key: Buffer, value: T): Promise<void> {
+    return this.#withRetries(
+      () => this.#setOnce(key, value),
+      this._setEndpoint,
+    );
+  }
+
+  #setOnce(key: Buffer, value: T): Promise<void> {
     return new Promise((resolve, reject) => {
       const gzip = zlib.createGzip(ZLIB_OPTIONS);
 
@@ -345,6 +374,26 @@ class HttpStore<T> {
 
   clear() {
     // Not implemented.
+  }
+
+  #withRetries<R>(fn: () => Promise<R>, endpoint: Endpoint): Promise<R> {
+    if (endpoint.maxAttempts === 1) {
+      return fn();
+    }
+
+    return backOff(fn, {
+      jitter: 'full',
+      maxDelay: 30000,
+      numOfAttempts: this._getEndpoint.maxAttempts || Number.POSITIVE_INFINITY,
+      retry: (e: Error) => {
+        if (e instanceof HttpError) {
+          return this._getEndpoint.retryStatuses.has(e.code);
+        }
+        return (
+          e instanceof NetworkError && this._getEndpoint.retryNetworkErrors
+        );
+      },
+    });
   }
 }
 
