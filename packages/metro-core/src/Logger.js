@@ -45,6 +45,8 @@ export type LogEntry = {
   bundle_options?: BundleOptions,
   bundle_hash?: string,
   build_id?: string,
+  error_message?: string,
+  error_stack?: string,
   ...
 };
 
@@ -79,7 +81,10 @@ function createActionStartEntry(data: ActionLogEntryData | string): LogEntry {
   });
 }
 
-function createActionEndEntry(logEntry: ActionStartLogEntry): LogEntry {
+function createActionEndEntry(
+  logEntry: ActionStartLogEntry,
+  error?: ?Error,
+): LogEntry {
   const {action_name, action_phase, start_timestamp} = logEntry;
 
   if (action_phase !== 'start' || !Array.isArray(start_timestamp)) {
@@ -95,6 +100,9 @@ function createActionEndEntry(logEntry: ActionStartLogEntry): LogEntry {
     action_name,
     action_phase: 'end',
     duration_ms,
+    ...(error != null
+      ? {error_message: error.message, error_stack: error.stack}
+      : null),
   });
 }
 

@@ -139,11 +139,14 @@ describe('Transformer', function () {
   });
 
   it('logs cache write errors to reporter', async () => {
-    const get = jest.fn();
+    class MockStore {
+      get = jest.fn();
+      set = jest.fn().mockImplementation(() => {
+        throw writeError;
+      });
+    }
+    const store = new MockStore();
     const writeError = new Error('Cache write error');
-    const set = jest.fn().mockImplementation(() => {
-      throw writeError;
-    });
     const mockReporter = {
       update: jest.fn(),
     };
@@ -152,7 +155,7 @@ describe('Transformer', function () {
       {
         ...commonOptions,
         reporter: mockReporter,
-        cacheStores: [{get, set}],
+        cacheStores: [store],
         watchFolders,
       },
       getSha1,
@@ -163,13 +166,29 @@ describe('Transformer', function () {
       result: {},
     });
 
-    await transformerInstance.transformFile('./foo.js', {});
+    let resolve;
+    const waitForError = new Promise(r => {
+      resolve = r;
+    });
+    mockReporter.update.mockImplementation(event => {
+      if (event.type === 'cache_write_error') {
+        resolve();
+      }
+    });
 
-    expect(set).toHaveBeenCalledTimes(1);
+    await Promise.all([
+      transformerInstance.transformFile('./foo.js', {}),
+      waitForError,
+    ]);
+
+    expect(store.set).toHaveBeenCalledTimes(1);
 
     expect(mockReporter.update).toBeCalledWith({
       type: 'cache_write_error',
-      error: writeError,
+      error: new AggregateError(
+        [writeError],
+        'Cache write failed for store(s): MockStore',
+      ),
     });
   });
 

@@ -120,14 +120,20 @@ describe('Cache', () => {
     expect(store2.get).toHaveBeenCalledTimes(1);
   });
 
-  it('throws on a buggy store set', async () => {
-    const store1 = createStore();
-    const store2 = createStore();
-    const cache = new Cache([store1, store2]);
+  it('throws all errors on a buggy store set', async () => {
+    const goodStore = createStore('GoodStore');
+    const badAsyncStore = createStore('BadAsyncStore');
+    const badSyncStore = createStore('BadSyncStore');
+    const cache = new Cache([goodStore, badAsyncStore, badSyncStore]);
     let error = null;
 
-    store1.set.mockImplementation(() => null);
-    store2.set.mockImplementation(() => Promise.reject(new RangeError('foo')));
+    goodStore.set.mockImplementation(() => null);
+    badAsyncStore.set.mockImplementation(() =>
+      Promise.reject(new RangeError('foo')),
+    );
+    badSyncStore.set.mockImplementation(() => {
+      throw new TypeError('bar');
+    });
 
     try {
       await cache.set(Buffer.from('foo'), 'arg');
@@ -135,7 +141,13 @@ describe('Cache', () => {
       error = err;
     }
 
-    expect(error).toBeInstanceOf(RangeError);
+    expect(error).toBeInstanceOf(AggregateError);
+    expect(error?.message).toBe(
+      'Cache write failed for store(s): BadSyncStore, BadAsyncStore',
+    );
+    expect(error?.errors).toHaveLength(2);
+    expect(error?.errors[0].cause).toEqual(TypeError('bar'));
+    expect(error?.errors[1].cause).toEqual(RangeError('foo'));
   });
 
   it('throws on a buggy store get', async () => {
@@ -208,8 +220,10 @@ describe('Cache', () => {
     await cache.set(Buffer.from('foo'));
 
     expect(log).toEqual([
-      {a: 'Cache set', l: 'Local::666f6f', p: undefined},
-      {a: 'Cache set', l: 'Network::666f6f', p: undefined},
+      {a: 'Cache set', l: 'Local::666f6f', p: 'start'},
+      {a: 'Cache set', l: 'Network::666f6f', p: 'start'},
+      {a: 'Cache set', l: 'Local::666f6f', p: 'end'},
+      {a: 'Cache set', l: 'Network::666f6f', p: 'end'},
     ]);
   });
 

@@ -83,22 +83,43 @@ class Cache<T> {
     const stop = this._hits.get(key);
     const length = stores.length;
     const promises = [];
+    const writeErrors = [];
+    const storesWithErrors = new Set<string>();
 
     for (let i = 0; i < length && stores[i] !== stop; i++) {
       const store = stores[i];
       const name = store.constructor.name + '::' + key.toString('hex');
 
-      Logger.log(
-        Logger.createEntry({
+      const logStart = Logger.log(
+        Logger.createActionStartEntry({
           action_name: 'Cache set',
           log_entry_label: name,
         }),
       );
 
-      promises.push(stores[i].set(key, value));
+      promises.push(
+        (async () => {
+          try {
+            await stores[i].set(key, value);
+            Logger.log(Logger.createActionEndEntry(logStart));
+          } catch (e) {
+            Logger.log(Logger.createActionEndEntry(logStart, e));
+            storesWithErrors.add(store.constructor.name);
+            writeErrors.push(
+              new Error(`Cache write failed for ${name}`, {cause: e}),
+            );
+          }
+        })(),
+      );
     }
 
-    await Promise.all(promises);
+    await Promise.allSettled(promises);
+    if (writeErrors.length > 0) {
+      throw new AggregateError(
+        writeErrors,
+        `Cache write failed for store(s): ${Array.from(storesWithErrors).join(', ')}`,
+      );
+    }
   }
 
   // Returns true if the current configuration disables the cache, such that
