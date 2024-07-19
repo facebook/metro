@@ -38,7 +38,8 @@ class Cache<T> {
 
     for (let i = 0; i < length; i++) {
       const store = stores[i];
-      const name = store.constructor.name + '::' + key.toString('hex');
+      const storeName = store.name ?? store.constructor.name;
+      const name = storeName + '::' + key.toString('hex');
       let value = null;
 
       const logStart = Logger.log(
@@ -88,7 +89,8 @@ class Cache<T> {
 
     for (let i = 0; i < length && stores[i] !== stop; i++) {
       const store = stores[i];
-      const name = store.constructor.name + '::' + key.toString('hex');
+      const storeName = store.name ?? store.constructor.name;
+      const name = storeName + '::' + key.toString('hex');
 
       const logStart = Logger.log(
         Logger.createActionStartEntry({
@@ -104,7 +106,7 @@ class Cache<T> {
             Logger.log(Logger.createActionEndEntry(logStart));
           } catch (e) {
             Logger.log(Logger.createActionEndEntry(logStart, e));
-            storesWithErrors.add(store.constructor.name);
+            storesWithErrors.add(storeName);
             writeErrors.push(
               new Error(`Cache write failed for ${name}`, {cause: e}),
             );

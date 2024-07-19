@@ -12,6 +12,7 @@
 'use strict';
 
 export interface CacheStore<T> {
+  name?: string;
   get(key: Buffer): ?T | Promise<?T>;
   set(key: Buffer, value: T): void | Promise<void>;
   clear(): void | Promise<void>;
