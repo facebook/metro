@@ -59,11 +59,18 @@ class Cache<T> {
           value = valueOrPromise;
         }
       } finally {
-        Logger.log(Logger.createActionEndEntry(logStart));
+        const hitOrMiss = value != null ? 'hit' : 'miss';
+        Logger.log({
+          ...Logger.createActionEndEntry(logStart),
+          action_result: hitOrMiss,
+        });
 
+        // Deprecated - will be removed () - use 'Cache get' and action_result
+        // (above) instead.
+        // TODO: T196506422
         Logger.log(
           Logger.createEntry({
-            action_name: 'Cache ' + (value == null ? 'miss' : 'hit'),
+            action_name: 'Cache ' + hitOrMiss,
             log_entry_label: name,
           }),
         );

@@ -35,6 +35,7 @@ export type ActionStartLogEntry = {
 export type LogEntry = {
   action_name?: string,
   action_phase?: string,
+  action_result?: string,
   duration_ms?: number,
   entry_point?: string,
   log_entry_label: string,
