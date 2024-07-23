@@ -125,6 +125,10 @@ class BatchProcessor<TItem, TResult> {
       },
     );
   }
+
+  getQueueLength(): number {
+    return this._queue.length;
+  }
 }
 
 module.exports = BatchProcessor;
