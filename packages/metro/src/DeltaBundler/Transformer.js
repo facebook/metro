@@ -105,8 +105,10 @@ class Transformer {
       // This is the hash related to the global Bundler config.
       this._baseHash,
 
-      // Path.
-      localPath,
+      // Project-relative, posix-separated path for portability. Necessary in
+      // addition to content hash because transformers receive path as an
+      // input, and may apply e.g. extension-based logic.
+      path.sep === '/' ? localPath : localPath.replaceAll(path.sep, '/'),
 
       customTransformOptions,
       dev,
