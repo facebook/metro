@@ -94,5 +94,8 @@
   "dependencies": {},
   "engines": {
     "node": ">=18"
+  },
+  "volta": {
+    "node": "18.0.0"
   }
 }
