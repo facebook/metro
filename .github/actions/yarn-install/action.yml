@@ -1,0 +1,19 @@
+name: Install Dependencies
+inputs:
+  use-min-supported-version:
+    required: false
+    default: false
+
+runs:
+  using: "composite"
+  steps:
+  - uses: actions/setup-node@v4
+    with:
+      # if both node-version-file and node-version are provided, node-version is used
+      node-version-file: 'package.json'
+      node-version: ${{ inputs.use-min-supported-version == 'false' && 'lts/*' || ''  }}
+      cache: yarn
+      cache-dependency-path: yarn.lock
+  - name: Install Dependencies
+    run: yarn install --frozen-lockfile --non-interactive --ignore-scripts
+    shell: bash
