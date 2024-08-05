@@ -31,8 +31,8 @@ type MixedNode = FileNode | DirectoryNode;
 //
 // mixedPath - a root-relative or absolute path
 // relativePath - a root-relative path
-// normalPath - a root-relative, normalised path (no extraneous '.' or '..')
-// canonicalPath - a root-relative, normalised, real path (no symlinks in dirname)
+// normalPath - a root-relative, normalised path (no extraneous '.' or '..'), may have a trailing slash
+// canonicalPath - a root-relative, normalised, real path (no symlinks in dirname), no trailing slash
 
 export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTargets: WeakMap<FileNode, Path> = new WeakMap();
@@ -441,17 +441,23 @@ export default class TreeFS implements MutableFileSystem {
         }
       }
 
-      // If there are no more '/' to come, we're done unless this is a symlink
-      // we must follow.
+      // We are done if...
       if (
-        isLastSegment &&
-        (segmentNode instanceof Map ||
-          segmentNode[H.SYMLINK] === 0 ||
-          opts.followLeaf === false)
+        // ...at a directory node and the only subsequent character is `/`, or
+        (nextSepIdx === targetNormalPath.length - 1 &&
+          segmentNode instanceof Map) ||
+        // there are no subsequent `/`, and this node is anything but a symlink
+        // we're required to resolve due to followLeaf.
+        (isLastSegment &&
+          (segmentNode instanceof Map ||
+            segmentNode[H.SYMLINK] === 0 ||
+            opts.followLeaf === false))
       ) {
         return {
           ancestorOfRootIdx,
-          canonicalPath: targetNormalPath,
+          canonicalPath: isLastSegment
+            ? targetNormalPath
+            : targetNormalPath.slice(0, -1), // remove trailing `/`
           exists: true,
           node: segmentNode,
           parentNode,

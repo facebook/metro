@@ -132,6 +132,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
     test.each([
       [p('/project/bar.js/bad-parent'), [], p('/project/bar.js')],
+      [p('/project/bar.js/'), [], p('/project/bar.js')],
       [
         p('/project/link-to-nowhere'),
         [p('/project/link-to-nowhere')],
@@ -152,13 +153,16 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         }),
     );
 
-    test.each([[p('/project/foo')], [p('/project/root/outside')]])(
-      'returns type: d for %s',
-      givenPath =>
-        expect(tfs.lookup(givenPath)).toMatchObject({
-          exists: true,
-          type: 'd',
-        }),
+    test.each([
+      [p('/project/foo'), p('/project/foo')],
+      [p('/project/foo/'), p('/project/foo')],
+      [p('/project/root/outside'), p('/outside')],
+    ])('returns type: d for %s', (givenPath, expectedRealPath) =>
+      expect(tfs.lookup(givenPath)).toMatchObject({
+        exists: true,
+        type: 'd',
+        realPath: expectedRealPath,
+      }),
     );
 
     test('traversing the same symlink multiple times does not imply a cycle', () => {
