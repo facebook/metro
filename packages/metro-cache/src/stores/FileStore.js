@@ -12,7 +12,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const rimraf = require('rimraf');
 
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
@@ -94,7 +93,10 @@ class FileStore<T> {
 
   _removeDirs() {
     for (let i = 0; i < 256; i++) {
-      rimraf.sync(path.join(this._root, ('0' + i.toString(16)).slice(-2)));
+      fs.rmSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), {
+        force: true,
+        recursive: true,
+      });
     }
   }
 }
