@@ -93,7 +93,10 @@ class FileStore<T> {
 
   _removeDirs() {
     for (let i = 0; i < 256; i++) {
-      fs.rmSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), { force: true, recursive: true });
+      fs.rmSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), {
+        force: true,
+        recursive: true,
+      });
     }
   }
 }

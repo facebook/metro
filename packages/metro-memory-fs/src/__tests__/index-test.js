@@ -709,6 +709,70 @@ describe('posix support', () => {
     });
   });
 
+  describe('rmSync', () => {
+    it('removes a file', () => {
+      fs.writeFileSync('/foo.txt', 'test');
+      expect(fs.readdirSync('/')).toEqual(['foo.txt']);
+      fs.rmSync('/foo.txt');
+      expect(fs.readdirSync('/')).toEqual([]);
+      try {
+        fs.readFileSync('/foo.txt', 'utf8');
+        throw new Error('should not reach here');
+      } catch (error) {
+        if (error.code !== 'ENOENT') {
+          throw error;
+        }
+      }
+    });
+
+    it('removes a symlink (not the linked file)', () => {
+      fs.writeFileSync('/foo.txt', 'test');
+      fs.symlinkSync('foo.txt', '/bar.txt');
+      expect(fs.readdirSync('/')).toEqual(['foo.txt', 'bar.txt']);
+      fs.rmSync('/bar.txt');
+      expect(fs.readdirSync('/')).toEqual(['foo.txt']);
+    });
+
+    it('throws for non existent files', () => {
+      try {
+        fs.rmSync('/nonexistent.txt');
+        throw new Error('should not reach here');
+      } catch (error) {
+        if (error.code !== 'ENOENT') {
+          throw error;
+        }
+      }
+    });
+
+    it('removes directories', () => {
+      fs.mkdirSync('/foo');
+      expect(fs.readdirSync('/')).toEqual(['foo']);
+      fs.rmSync('/foo');
+      expect(fs.readdirSync('/')).toEqual([]);
+    });
+
+    it('throws when removing non-empty directories (recursive: false)', () => {
+      fs.mkdirSync('/foo');
+      fs.mkdirSync('/foo/bar');
+      try {
+        fs.rmSync('/foo');
+        throw new Error('should not reach here');
+      } catch (error) {
+        if (error.code !== 'ENOTEMPTY') {
+          throw error;
+        }
+      }
+    });
+
+    it('removes non-empty directories (recursive: true)', () => {
+      fs.mkdirSync('/foo');
+      fs.mkdirSync('/foo/bar');
+      expect(fs.readdirSync('/')).toEqual(['foo']);
+      fs.rmSync('/foo', {recursive: true});
+      expect(fs.readdirSync('/')).toEqual([]);
+    });
+  });
+
   describe('readlink', () => {
     it('reads a symlink target', () => {
       fs.symlinkSync('foo.txt', '/bar.txt');
