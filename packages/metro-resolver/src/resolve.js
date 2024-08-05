@@ -171,15 +171,25 @@ function resolveModulePath(
 
   const dirPath = path.dirname(redirectedPath);
   const fileName = path.basename(redirectedPath);
-  const fileResult = resolveFile(context, dirPath, fileName, platform);
-  if (fileResult.type === 'resolved') {
+
+  const fileResult: ?Result<Resolution, FileCandidates> =
+    // require('./foo/') should never resolve to ./foo.js - a trailing slash
+    // implies we should resolve as a directory only.
+    redirectedPath.endsWith(path.sep)
+      ? null
+      : resolveFile(context, dirPath, fileName, platform);
+
+  if (fileResult != null && fileResult.type === 'resolved') {
     return fileResult;
   }
   const dirResult = resolvePackageEntryPoint(context, redirectedPath, platform);
   if (dirResult.type === 'resolved') {
     return dirResult;
   }
-  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
+  return failedFor({
+    file: fileResult?.candidates ?? null,
+    dir: dirResult.candidates,
+  });
 }
 
 /**
@@ -234,8 +244,10 @@ class MissingFileInHastePackageError extends Error {
         `the Haste package \`${opts.packageName}\` was found. However the ` +
         `module \`${opts.pathInModule}\` could not be found within ` +
         'the package. Indeed, none of these files exist:\n\n' +
-        `  * \`${formatFileCandidates(opts.candidates.file)}\`\n` +
-        `  * \`${formatFileCandidates(opts.candidates.dir)}\``,
+        [opts.candidates.file, opts.candidates.dir]
+          .filter(Boolean)
+          .map(candidates => `  * \`${formatFileCandidates(candidates)}\``)
+          .join('\n'),
     );
     Object.assign(this, opts);
   }
