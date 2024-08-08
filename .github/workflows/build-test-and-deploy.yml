@@ -44,18 +44,14 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         runs-on: ['ubuntu-latest']
         node-version: ['18.0', '18.x', '20.x']
-    name: "Tests [Node.js ${{ matrix.node-version }}, ${{ matrix.runs-on }}]"
-    runs-on: ${{ matrix.runs-on }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/yarn-install
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Run Jest Tests
-        run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
+    uses: ./.github/workflows/test.yml
+    with:
+      node-version: ${{ matrix.node-version }}
+      runs-on: ${{ matrix.runs-on }}
 
   deploy:
     # runs only on tag pushes

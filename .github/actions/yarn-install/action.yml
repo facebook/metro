@@ -1,6 +1,7 @@
 name: Install Dependencies
 inputs:
   node-version:
+    type: string
     required: false
     default: '20.x'
 
