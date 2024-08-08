@@ -1,0 +1,24 @@
+name: test
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        required: false
+        default: 'ubuntu-latest'
+      runs-on:
+        type: string
+        required: false
+        default: '20.x'
+
+jobs:
+  test:
+    name: "Tests [Node.js ${{ inputs.node-version }}, ${{ inputs.runs-on }}]"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/yarn-install
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Run Jest Tests
+        run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
