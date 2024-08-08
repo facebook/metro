@@ -27,13 +27,55 @@ type DirectoryNode = Map<string, MixedNode>;
 type FileNode = FileMetaData;
 type MixedNode = FileNode | DirectoryNode;
 
-// Terminology:
-//
-// mixedPath - a root-relative or absolute path
-// relativePath - a root-relative path
-// normalPath - a root-relative, normalised path (no extraneous '.' or '..'), may have a trailing slash
-// canonicalPath - a root-relative, normalised, real path (no symlinks in dirname), no trailing slash
-
+/**
+ * OVERVIEW:
+ *
+ * TreeFS is Metro's in-memory representation of the file system. It is
+ * structured as a tree of non-empty maps and leaves (tuples), with the root
+ * node being representing the given `rootDir`, typically Metro's
+ * _project root_ (not a filesystem root). Map keys are path segments, and
+ * branches outside the project root are accessed via `'..'`.
+ *
+ * EXAMPLE:
+ *
+ * For a root dir '/data/project', the file '/data/other/app/index.js' would
+ * have metadata at #rootNode.get('..').get('other').get('app').get('index.js')
+ *
+ * SERIALISATION:
+ *
+ * #rootNode is designed to be directly serialisable and directly portable (for
+ * a given project) between different root directories and operating systems.
+ *
+ * SYMLINKS:
+ *
+ * Symlinks are represented as nodes whose metadata contains their literal
+ * target. Literal targets are resolved to normal paths at runtime, and cached.
+ * If a symlink is encountered during traversal, we restart traversal at the
+ * root node targeting join(normal symlink target, remaining path suffix).
+ *
+ * NODE TYPES:
+ *
+ * - A directory (including a parent directory at '..') is represented by a
+ *   `Map` of basenames to any other node type.
+ * - A file is represented by an `Array`  (tuple) of metadata, of which:
+ *   - A regular file has node[H.SYMLINK] === 0
+ *   - A symlink has node[H.SYMLINK] === 1 or
+ *     typeof node[H.SYMLINK] === 'string', where a string is the literal
+ *     content of the symlink (i.e. from readlink), if known.
+ *
+ * TERMINOLOGY:
+ *
+ * - mixedPath
+ *   A root-relative or absolute path
+ * - relativePath
+ *   A root-relative path
+ * - normalPath
+ *   A root-relative, normalised path (no extraneous '.' or '..'), may have a
+ *   single trailing slash
+ * - canonicalPath
+ *   A root-relative, normalised, real path (no symlinks in dirname), never has
+ *   a trailing slash
+ */
 export default class TreeFS implements MutableFileSystem {
   +#cachedNormalSymlinkTargets: WeakMap<FileNode, Path> = new WeakMap();
   +#rootDir: Path;
@@ -360,6 +402,21 @@ export default class TreeFS implements MutableFileSystem {
     return node instanceof Map ? null : node;
   }
 
+  /**
+   * The core traversal algorithm of TreeFS - takes a normal path and traverses
+   * through a tree of maps keyed on path segments, returning the node,
+   * canonical path, and other metadata if successful, or the first missing
+   * segment otherwise.
+   *
+   * When a symlink is encountered, we set a new target of the symlink's
+   * normalised target path plus the remainder of the original target path. In
+   * this way, the eventual target path in a successful lookup has all symlinks
+   * resolved, and gives us the real path "for free". Similarly if a traversal
+   * fails, we automatically have the real path of the first non-existent node.
+   *
+   * Note that this code is extremely hot during resolution, being the most
+   * expensive part of a file existence check. Benchmark any modifications!
+   */
   _lookupByNormalPath(
     requestedNormalPath: string,
     opts: {
@@ -369,6 +426,9 @@ export default class TreeFS implements MutableFileSystem {
       // Like lstat vs stat, whether to follow a symlink at the basename of
       // the given path, or return the details of the symlink itself.
       followLeaf?: boolean,
+      // Whether to (recursively) create missing directory nodes during
+      // traversal, useful when adding files. Will throw if an expected
+      // directory is already present as a file.
       makeDirectories?: boolean,
     } = {followLeaf: true, makeDirectories: false},
   ):
