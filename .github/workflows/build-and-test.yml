@@ -1,0 +1,51 @@
+name: facebook/metro/build-and-test
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# head_ref is per PR, so this ensures that updating the latest PR commit
+# will cancel the previous run of the workflow and trigger a new one
+concurrency:
+  group: "build-and-test-${{ github.head_ref }}"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  run-js-checks:
+    runs-on: ubuntu-latest
+    name: "Type check, lint, smoke test"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/yarn-install
+      - run: yarn typecheck
+      - run: yarn typecheck-ts
+      - run: yarn lint
+      - run: yarn test-smoke
+
+  test-with-coverage:
+    runs-on: ubuntu-latest
+    name: "Tests with coverage"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/yarn-install
+      - run: yarn test-coverage
+      - run: "./.github/scripts/install_codecov.sh"
+      - run: "./codecov -t ${{ secrets.CODECOV_TOKEN }} -f ./coverage/coverage-final.json"
+
+  test:
+    strategy:
+      matrix:
+        runs-on: ['ubuntu-latest']
+        node-version: ['18.0', '18.x', '20.x']
+    name: "Tests [Node.js ${{ matrix.node-version }}, ${{ matrix.runs-on }}]"
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/yarn-install
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Run Jest Tests
+        run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
