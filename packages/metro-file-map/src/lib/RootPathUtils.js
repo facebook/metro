@@ -27,6 +27,12 @@ import * as path from 'path';
  * Output and input paths are at least well-formed (normal where indicated by
  * naming).
  *
+ * Trailing path separators are preserved, except for fs roots in
+ * normalToAbsolute (fs roots always have a trailing separator), and the
+ * project root in absoluteToNormal and relativeToNormal (the project root is
+ * always the empty string, and is always a directory, so a trailing separator
+ * is redundant).
+ *
  * As of Node 20, absoluteToNormal is ~8x faster than `path.relative` and
  * `normalToAbsolute` is ~20x faster than `path.resolve`, benchmarked on the
  * real inputs from building FB's product graph. Some well-formed inputs
@@ -108,8 +114,16 @@ export class RootPathUtils {
         absolutePath,
         endOfMatchingPrefix,
         upIndirectionsToPrepend,
-      ) ?? path.relative(this.#rootDir, absolutePath)
+      ) ?? this.#slowAbsoluteToNormal(absolutePath)
     );
+  }
+
+  #slowAbsoluteToNormal(absolutePath: string): string {
+    const endsWithSep = absolutePath.endsWith(path.sep);
+    const result = path.relative(this.#rootDir, absolutePath);
+    return endsWithSep && !result.endsWith(path.sep)
+      ? result + path.sep
+      : result;
   }
 
   // `normalPath` is assumed to be normal (root-relative, no redundant
@@ -199,10 +213,21 @@ export class RootPathUtils {
             break;
           }
         }
-        const right = fullPath.slice(pos);
+        // After collapsing we may have no more segments remaining (following
+        // '..' indirections). Ensure that we don't drop or add a trailing
+        // separator in this case by taking .slice(pos-1). In any other case,
+        // we know that fullPath[pos] is a separator.
+        if (pos >= fullPath.length) {
+          return totalUpIndirections > 0
+            ? UP_FRAGMENT_SEP.repeat(totalUpIndirections - 1) +
+                '..' +
+                fullPath.slice(pos - 1)
+            : '';
+        }
+        const right = pos > 0 ? fullPath.slice(pos) : fullPath;
         if (
-          right === '' ||
-          (right === '..' && totalUpIndirections >= this.#rootParts.length - 1)
+          right === '..' &&
+          totalUpIndirections >= this.#rootParts.length - 1
         ) {
           // If we have no right side (or an indirection that would take us
           // below the root), just ensure we don't include a trailing separtor.

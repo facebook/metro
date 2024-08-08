@@ -14,7 +14,7 @@ import type {RootPathUtils as RootPathUtilsT} from '../RootPathUtils';
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
-describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
+describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
   // Convenience function to write paths with posix separators but convert them
   // to system separators
   const p: string => string = filePath =>
@@ -25,10 +25,12 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
   let RootPathUtils: Class<RootPathUtilsT>;
   let pathUtils: RootPathUtilsT;
   let pathRelative: JestMockFn<[string, string], string>;
+  let sep: string;
 
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
+    sep = mockPathModule.sep;
     pathRelative = jest.spyOn(mockPathModule, 'relative');
     RootPathUtils = require('../RootPathUtils').RootPathUtils;
   });
@@ -38,21 +40,30 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
     p('/project/root/../root2/foobar'),
     p('/project/root/../../project2/foo'),
     p('/project/root/../../project/foo'),
+    p('/project/root/../../project/foo/'),
     p('/project/root/../../project/root'),
+    p('/project/root/../../project/root/'),
     p('/project/root/../../project/root/foo.js'),
     p('/project/bar'),
+    p('/project/bar/'),
     p('/project/../outside/bar'),
     p('/project/baz/foobar'),
     p('/project/rootfoo/baz'),
     p('/project'),
+    p('/project/'),
     p('/'),
     p('/outside'),
-  ])(`absoluteToNormal('%s') is correct and optimised`, normalPath => {
+    p('/outside/'),
+  ])(`absoluteToNormal('%s') is correct and optimised`, absolutePath => {
     const rootDir = p('/project/root');
     pathUtils = new RootPathUtils(rootDir);
-    const expected = mockPathModule.relative(rootDir, normalPath);
+    let expected = mockPathModule.relative(rootDir, absolutePath);
+    // Unlike path.relative, we expect to preserve trailing separators.
+    if (absolutePath.endsWith(sep) && expected !== '') {
+      expected += sep;
+    }
     pathRelative.mockClear();
-    expect(pathUtils.absoluteToNormal(normalPath)).toEqual(expected);
+    expect(pathUtils.absoluteToNormal(absolutePath)).toEqual(expected);
     expect(pathRelative).not.toHaveBeenCalled();
   });
 
@@ -68,24 +79,35 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
       p('/project/root/a./../foo'),
       p('/project/root/../a./foo'),
       p('/project/root/.././foo'),
-    ])(`absoluteToNormal('%s') falls back to path.relative`, normalPath => {
-      const expected = mockPathModule.relative(rootDir, normalPath);
+      p('/project/root/.././foo/'),
+    ])(`absoluteToNormal('%s') falls back to path.relative`, absolutePath => {
+      let expected = mockPathModule.relative(rootDir, absolutePath);
+      // Unlike path.relative, we expect to preserve trailing separators.
+      if (absolutePath.endsWith(sep) && !expected.endsWith(sep)) {
+        expected += sep;
+      }
       pathRelative.mockClear();
-      expect(pathUtils.absoluteToNormal(normalPath)).toEqual(expected);
+      expect(pathUtils.absoluteToNormal(absolutePath)).toEqual(expected);
       expect(pathRelative).toHaveBeenCalled();
     });
 
     test.each([
       p('..'),
       p('../..'),
+      p('../../'),
       p('normal/path'),
+      p('normal/path/'),
       p('../normal/path'),
+      p('../normal/path/'),
       p('../../normal/path'),
       p('../../../normal/path'),
     ])(`normalToAbsolute('%s') matches path.resolve`, normalPath => {
-      expect(pathUtils.normalToAbsolute(normalPath)).toEqual(
-        mockPathModule.resolve(rootDir, normalPath),
-      );
+      let expected = mockPathModule.resolve(rootDir, normalPath);
+      // Unlike path.resolve, we expect to preserve trailing separators.
+      if (normalPath.endsWith(sep) && !expected.endsWith(sep)) {
+        expected += sep;
+      }
+      expect(pathUtils.normalToAbsolute(normalPath)).toEqual(expected);
     });
 
     test.each([
@@ -93,18 +115,29 @@ describe.each([['win32'], ['posix']])('pathUtilsForRoot on %s', platform => {
       p('../root'),
       p('../root/path'),
       p('../project'),
+      p('../project/'),
       p('../../project/root'),
+      p('../../project/root/'),
       p('../../../normal/path'),
+      p('../../../normal/path/'),
       p('../../..'),
     ])(
       `relativeToNormal('%s') matches path.resolve + path.relative`,
       relativePath => {
-        expect(pathUtils.relativeToNormal(relativePath)).toEqual(
-          mockPathModule.relative(
-            rootDir,
-            mockPathModule.resolve(rootDir, relativePath),
-          ),
+        let expected = mockPathModule.relative(
+          rootDir,
+          mockPathModule.resolve(rootDir, relativePath),
         );
+        // Unlike native path.resolve + path.relative, we expect to preserve
+        // trailing separators. (Consistent with path.normalize.)
+        if (
+          relativePath.endsWith(sep) &&
+          !expected.endsWith(sep) &&
+          expected !== ''
+        ) {
+          expected += sep;
+        }
+        expect(pathUtils.relativeToNormal(relativePath)).toEqual(expected);
       },
     );
   });
