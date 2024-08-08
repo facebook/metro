@@ -31,8 +31,8 @@ export type AssetResolution = $ReadOnly<{
 export type FileResolution = AssetResolution | SourceFileResolution;
 
 export type FileAndDirCandidates = {
-  +dir: FileCandidates,
-  +file: FileCandidates,
+  +dir: ?FileCandidates,
+  +file: ?FileCandidates,
 };
 
 /**

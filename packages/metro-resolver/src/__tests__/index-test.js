@@ -20,6 +20,7 @@ const Resolver = require('../index');
 
 const fileMap = {
   '/root/project/foo.js': '',
+  '/root/project/foo/index.js': '',
   '/root/project/bar.js': '',
   '/root/smth/beep.js': '',
   '/root/node_modules/apple/package.json': JSON.stringify({
@@ -89,11 +90,31 @@ it('resolves a relative path', () => {
   });
 });
 
+it('resolves a relative path ending in a slash as a directory', () => {
+  expect(Resolver.resolve(CONTEXT, './foo/', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/root/project/foo/index.js',
+  });
+});
+
 it('resolves a relative path in another folder', () => {
   expect(Resolver.resolve(CONTEXT, '../smth/beep', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/smth/beep.js',
   });
+});
+
+it('does not resolve a relative path ending in a slash as a file', () => {
+  expect(() => Resolver.resolve(CONTEXT, './bar/', null)).toThrow(
+    new FailedToResolvePathError({
+      file: null,
+      dir: {
+        type: 'sourceFile',
+        filePathPrefix: '/root/project/bar/index',
+        candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
+      },
+    }),
+  );
 });
 
 it('resolves a package in `node_modules`', () => {

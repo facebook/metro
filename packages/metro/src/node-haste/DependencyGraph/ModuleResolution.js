@@ -197,15 +197,14 @@ class ModuleResolver<TPackage: Packageish> {
         throw new UnableToResolveError(
           fromModule.path,
           dependency.name,
-          [
-            '\n\nNone of these files exist:',
-            `  * ${Resolver.formatFileCandidates(
-              this._removeRoot(candidates.file),
-            )}`,
-            `  * ${Resolver.formatFileCandidates(
-              this._removeRoot(candidates.dir),
-            )}`,
-          ].join('\n'),
+          '\n\nNone of these files exist:\n' +
+            [candidates.file, candidates.dir]
+              .filter(Boolean)
+              .map(
+                candidates =>
+                  `  * ${Resolver.formatFileCandidates(this._removeRoot(candidates))}`,
+              )
+              .join('\n'),
           {
             cause: error,
             dependency,
