@@ -523,7 +523,7 @@ function resolveWindowsPath(modulePath: string) {
 }
 
 function isRelativeImport(filePath: string) {
-  return /^[.][.]?(?:[/]|$)/.test(filePath);
+  return /^[.][.]?(?:[/\\]|$)/.test(filePath);
 }
 
 function normalizePath(modulePath: any | string) {
