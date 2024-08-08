@@ -24,8 +24,10 @@ import FailedToResolvePathError from './errors/FailedToResolvePathError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
+import PackageImportNotResolvedError from './errors/PackageImportNotResolvedError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
+import {resolvePackageTargetFromImports} from './PackageImportsResolve';
 import {getPackageEntryPoint} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
@@ -55,6 +57,49 @@ function resolve(
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
+  } else if (isSubpathImport(moduleName)) {
+    const pkg = context.getPackageForModule(context.originModulePath);
+    const importsField = pkg?.packageJson.imports;
+
+    if (pkg == null) {
+      throw new PackageImportNotResolvedError({
+        importSpecifier: moduleName,
+        reason: `Could not find a package.json file relative to module ${context.originModulePath}`,
+      });
+    } else if (importsField == null) {
+      throw new PackageImportNotResolvedError({
+        importSpecifier: moduleName,
+        reason: 'Missing field "imports" in package.json',
+      });
+    } else {
+      try {
+        const packageImportsResult = resolvePackageTargetFromImports(
+          context,
+          pkg.rootPath,
+          moduleName,
+          importsField,
+          platform,
+        );
+
+        if (packageImportsResult != null) {
+          return packageImportsResult;
+        }
+      } catch (e) {
+        if (e instanceof PackageImportNotResolvedError) {
+          context.unstable_logWarning(
+            e.message +
+              ' Falling back to file-based resolution. Consider updating the ' +
+              'call site or checking there is a matching subpath inside "imports" of package.json.',
+          );
+        } else if (e instanceof InvalidPackageConfigurationError) {
+          context.unstable_logWarning(
+            e.message + ' Falling back to file-based resolution.',
+          );
+        } else {
+          throw e;
+        }
+      }
+    }
   }
 
   const realModuleName = context.redirectModulePath(moduleName);
@@ -512,6 +557,10 @@ function resolveWindowsPath(modulePath: string) {
 
 function isRelativeImport(filePath: string) {
   return /^[.][.]?(?:[/]|$)/.test(filePath);
+}
+
+function isSubpathImport(filePath: string) {
+  return filePath.startsWith('#');
 }
 
 function normalizePath(modulePath: any | string) {

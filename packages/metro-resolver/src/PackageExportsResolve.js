@@ -251,7 +251,7 @@ export function isSubpathDefinedInExports(
  * Implements modern package resolution behaviour based on the [Package Entry
  * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
  */
-function matchSubpathFromExports(
+export function matchSubpathFromExports(
   context: ResolutionContext,
   /**
    * The package-relative subpath (beginning with '.') to match against either
@@ -397,7 +397,7 @@ function reduceConditionalExport(
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns.
  */
-function matchSubpathPattern(
+export function matchSubpathPattern(
   subpathPattern: string,
   subpath: string,
 ): string | null {
