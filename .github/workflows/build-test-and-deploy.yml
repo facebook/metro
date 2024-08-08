@@ -1,12 +1,19 @@
-name: facebook/metro/build-and-test
+name: facebook/metro/build-test-and-deploy
 on:
   pull_request:
     types: [opened, synchronize]
+  push:
+    tags:
+# The job is triggered for any tag push. Tag format validation will be done
+# as part of the deploy job for clearer error reporting for bad tag formatting
+      - '**'
 
-# head_ref is per PR, so this ensures that updating the latest PR commit
-# will cancel the previous run of the workflow and trigger a new one
+# ref us unique per PR (refs/pull/<pr_number>/merge)
+# and per pushed tag (refs/tags/<tag_name>)
+# So this makes sure that previous CI for the same PR/tag
+# are cancelled when a newer one is triggered
 concurrency:
-  group: "build-and-test-${{ github.head_ref }}"
+  group: "build-test-and-deploy-${{ github.ref }}"
   cancel-in-progress: true
 
 defaults:
@@ -49,3 +56,18 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run Jest Tests
         run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
+
+  deploy:
+    # runs only on tag pushes
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    name: "Deploy"
+    needs: [run-js-checks, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/yarn-install
+      - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+      - run: "./.github/scripts/publish.sh"
+        env:
+          RAW_TAG_NAME: ${{ github.ref_name }}
+      - run: rm ~/.npmrc
