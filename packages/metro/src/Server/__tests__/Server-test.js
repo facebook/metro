@@ -1005,30 +1005,34 @@ describe('processRequest', () => {
           }),
         });
 
+        // If snapshots in this file have to be updated but fail with
+        // "Multiple inline snapshots for the same call are not supported."
+        // Change `describe.each(['?', '//&'])` above to run only for one option:
+        // like so: `describe.each(['?'])`
         expect(response._getJSON()).toMatchInlineSnapshot(`
-        Object {
-          "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
-        [0m [90m   |[39m [31m[1m^[22m[39m[0m
-        [0m [90m 2 |[39m is[0m
-        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
-            "fileName": "/root/mybundle.js",
-            "location": Object {
-              "column": 0,
-              "row": 1,
+          Object {
+            "codeFrame": Object {
+              "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m
+           [90m   |[39m [31m[1m^[22m[39m
+           [90m 2 |[39m is
+           [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+              "fileName": "/root/mybundle.js",
+              "location": Object {
+                "column": 0,
+                "row": 1,
+              },
             },
-          },
-          "stack": Array [
-            Object {
-              "column": 0,
-              "customPropShouldBeLeftUnchanged": "foo",
-              "file": "/root/mybundle.js",
-              "lineNumber": 1,
-              "methodName": "clientSideMethodName",
-            },
-          ],
-        }
-      `);
+            "stack": Array [
+              Object {
+                "column": 0,
+                "customPropShouldBeLeftUnchanged": "foo",
+                "file": "/root/mybundle.js",
+                "lineNumber": 1,
+                "methodName": "clientSideMethodName",
+              },
+            ],
+          }
+        `);
       });
 
       describe('should rewrite URLs before symbolicating', () => {
@@ -1171,29 +1175,29 @@ describe('processRequest', () => {
         });
 
         expect(response._getJSON()).toMatchInlineSnapshot(`
-        Object {
-          "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
-        [0m [90m   |[39m [31m[1m^[22m[39m[0m
-        [0m [90m 2 |[39m is[0m
-        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
-            "fileName": "/root/mybundle.js",
-            "location": Object {
-              "column": 0,
-              "row": 1,
+          Object {
+            "codeFrame": Object {
+              "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m
+           [90m   |[39m [31m[1m^[22m[39m
+           [90m 2 |[39m is
+           [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+              "fileName": "/root/mybundle.js",
+              "location": Object {
+                "column": 0,
+                "row": 1,
+              },
             },
-          },
-          "stack": Array [
-            Object {
-              "column": 0,
-              "customPropShouldBeLeftUnchanged": "foo",
-              "file": "/root/mybundle.js",
-              "lineNumber": 1,
-              "methodName": "clientSideMethodName",
-            },
-          ],
-        }
-      `);
+            "stack": Array [
+              Object {
+                "column": 0,
+                "customPropShouldBeLeftUnchanged": "foo",
+                "file": "/root/mybundle.js",
+                "lineNumber": 1,
+                "methodName": "clientSideMethodName",
+              },
+            ],
+          }
+        `);
       });
 
       it('should symbolicate function name if available', async () => {
@@ -1290,19 +1294,19 @@ describe('processRequest', () => {
         });
 
         expect(response._getJSON()).toMatchInlineSnapshot(`
-        Object {
-          "codeFrame": null,
-          "stack": Array [
-            Object {
-              "column": 18,
-              "customPropShouldBeLeftUnchanged": "foo",
-              "file": "http://localhost:8081/mybundle.bundle?runModule=true&foo=bar&TEST_URL_WAS_REWRITTEN=true",
-              "lineNumber": 200,
-              "methodName": "clientSideMethodName",
-            },
-          ],
-        }
-      `);
+                  Object {
+                    "codeFrame": null,
+                    "stack": Array [
+                      Object {
+                        "column": 18,
+                        "customPropShouldBeLeftUnchanged": "foo",
+                        "file": "http://localhost:8081/mybundle.bundle?runModule=true&foo=bar&TEST_URL_WAS_REWRITTEN=true",
+                        "lineNumber": 200,
+                        "methodName": "clientSideMethodName",
+                      },
+                    ],
+                  }
+              `);
       });
     },
   );
