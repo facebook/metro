@@ -4,16 +4,32 @@ inputs:
     type: string
     required: false
     default: '20.x'
+  recreate-yarn-lock:
+    type: boolean
+    required: false
+    default: false
 
 runs:
   using: "composite"
   steps:
   - uses: actions/setup-node@v4
+    name: Setup Node With Yarn Cache
+    if: ${{ inputs.recreate-yarn-lock != 'true' }}
     with:
       node-version: ${{ inputs.node-version }}
+      check-latest: true
       cache: yarn
       cache-dependency-path: yarn.lock
+  - uses: actions/setup-node@v4
+    name: Setup Node With No Yarn Cache
+    if: ${{ inputs.recreate-yarn-lock == 'true' }}
+    with:
+      node-version: ${{ inputs.node-version }}
       check-latest: true
+  - name: Remove yarn.lock
+    if: ${{ inputs.recreate-yarn-lock == 'true' }}
+    run: rm yarn.lock
+    shell: bash
   - name: Install Dependencies
-    run: yarn install --frozen-lockfile --non-interactive --ignore-scripts
+    run: yarn install ${{ inputs.recreate-yarn-lock != 'true' && '--frozen-lockfile' || '' }} --non-interactive --ignore-scripts
     shell: bash

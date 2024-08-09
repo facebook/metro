@@ -5,11 +5,15 @@ on:
       node-version:
         type: string
         required: false
-        default: 'ubuntu-latest'
+        default: '20.x'
       runs-on:
         type: string
         required: false
-        default: '20.x'
+        default: 'ubuntu-latest'
+      recreate-yarn-lock:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   test:
@@ -20,5 +24,6 @@ jobs:
       - uses: ./.github/actions/yarn-install
         with:
           node-version: ${{ inputs.node-version }}
+          recreate-yarn-lock: ${{ inputs.recreate-yarn-lock }}
       - name: Run Jest Tests
         run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'

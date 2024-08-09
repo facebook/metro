@@ -6,12 +6,11 @@
 # to notify certain people when a Github workflow fails:
 # https://github.com/orgs/community/discussions/18039
 
-name: facebook/metro/nightly-node-compatibility-validation
+name: facebook/metro/nightly-nodejs-validation
 on:
   schedule:
     # Everyday at at 5:00 UTC (22:00 USA West Coast, 06:00 London)
     - cron:  '0 5 * * *'
-  push:
 
 jobs:
   test:
@@ -44,5 +43,5 @@ jobs:
               issue_number: 1314,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'A nightly test failed in `${{ github.workflow }}` in [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!',
+              body: 'The nightly workflow `${{ github.workflow }}` failed in [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!',
             });
