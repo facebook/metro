@@ -26,7 +26,7 @@ const fileMap = {
 };
 
 const CONTEXT: ResolutionContext = {
-  ...createResolutionContext(fileMap, {enableSymlinks: true}),
+  ...createResolutionContext(fileMap),
   originModulePath: '/root/project/foo.js',
 };
 

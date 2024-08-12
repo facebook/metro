@@ -28,8 +28,7 @@ type MockFileMap = $ReadOnly<{
  * consuming tests.
  */
 export function createResolutionContext(
-  fileMap: MockFileMap,
-  {enableSymlinks}: $ReadOnly<{enableSymlinks?: boolean}> = {},
+  fileMap: MockFileMap = {},
 ): $Diff<ResolutionContext, {originModulePath: string}> {
   return {
     dev: true,
@@ -37,6 +36,12 @@ export function createResolutionContext(
     assetExts: new Set(['jpg', 'png']),
     customResolverOptions: {},
     disableHierarchicalLookup: false,
+    doesFileExist: (filePath: string) =>
+      // Should return false unless realpath(filePath) exists. We mock shallow
+      // dereferencing.
+      fileMap[filePath] != null &&
+      (typeof fileMap[filePath] === 'string' ||
+        typeof fileMap[filePath].realPath === 'string'),
     extraNodeModules: null,
     mainFields: ['browser', 'main'],
     nodeModulesPaths: [],
@@ -51,26 +56,12 @@ export function createResolutionContext(
       web: ['browser'],
     },
     unstable_enablePackageExports: false,
+    unstable_getRealPath: filePath =>
+      typeof fileMap[filePath] === 'string'
+        ? filePath
+        : fileMap[filePath]?.realPath,
     unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
-    ...(enableSymlinks === true
-      ? {
-          doesFileExist: (filePath: string) =>
-            // Should return false unless realpath(filePath) exists. We mock shallow
-            // dereferencing.
-            fileMap[filePath] != null &&
-            (typeof fileMap[filePath] === 'string' ||
-              typeof fileMap[filePath].realPath === 'string'),
-          unstable_getRealPath: filePath =>
-            typeof fileMap[filePath] === 'string'
-              ? filePath
-              : fileMap[filePath]?.realPath,
-        }
-      : {
-          doesFileExist: (filePath: string) =>
-            typeof fileMap[filePath] === 'string',
-          unstable_getRealPath: null,
-        }),
   };
 }
 

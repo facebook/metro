@@ -197,13 +197,7 @@ class DependencyGraph extends EventEmitter {
           ),
         ];
 
-        if (this._config.resolver.unstable_enableSymlinks) {
-          assets = assets.map(getRealPathIfFile).filter(Boolean);
-        } else {
-          assets = assets.filter(candidate =>
-            this._fileSystem.exists(candidate),
-          );
-        }
+        assets = assets.map(getRealPathIfFile).filter(Boolean);
 
         return assets.length ? assets : null;
       },
@@ -214,9 +208,7 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
-      unstable_getRealPath: this._config.resolver.unstable_enableSymlinks
-        ? getRealPathIfFile
-        : null,
+      unstable_getRealPath: getRealPathIfFile,
     });
   }
 
@@ -251,24 +243,11 @@ class DependencyGraph extends EventEmitter {
   }
 
   getSha1(filename: string): string {
-    // Prior to unstable_enableSymlinks:
-    // Calling realpath allows us to get a hash for a given path even when
-    // it's a symlink to a file, which prevents Metro from crashing in such a
-    // case. However, it doesn't allow Metro to track changes to the target file
-    // of the symlink. We should fix this by implementing a symlink map into
-    // Metro (or maybe by implementing those "extra transformation sources" we've
-    // been talking about for stuff like CSS or WASM).
-    //
-    // This is unnecessary with a symlink-aware fileSystem implementation.
-    const resolvedPath = this._config.resolver.unstable_enableSymlinks
-      ? filename
-      : fs.realpathSync(filename);
-
-    const sha1 = this._fileSystem.getSha1(resolvedPath);
+    const sha1 = this._fileSystem.getSha1(filename);
 
     if (!sha1) {
       throw new ReferenceError(
-        `SHA-1 for file ${filename} (${resolvedPath}) is not computed.
+        `SHA-1 for file ${filename} is not computed.
          Potential causes:
            1) You have symlinks in your project - watchman does not follow symlinks.
            2) Check \`blockList\` in your metro.config.js and make sure it isn't excluding the file path.`,
