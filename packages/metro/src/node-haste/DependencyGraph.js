@@ -152,33 +152,6 @@ class DependencyGraph extends EventEmitter {
     return self;
   }
 
-  _getClosestPackage(
-    absoluteModulePath: string,
-  ): ?{packageJsonPath: string, packageRelativePath: string} {
-    const parsedPath = path.parse(absoluteModulePath);
-    const root = parsedPath.root;
-    let dir = path.join(parsedPath.dir, parsedPath.base);
-
-    do {
-      // If we've hit a node_modules directory, the closest package was not
-      // found (`filePath` was likely nonexistent).
-      if (path.basename(dir) === 'node_modules') {
-        return null;
-      }
-      const candidate = path.join(dir, 'package.json');
-      if (this._fileSystem.exists(candidate)) {
-        return {
-          packageJsonPath: candidate,
-          // Note that by construction, dir is a prefix of absoluteModulePath,
-          // so this relative path has no indirections.
-          packageRelativePath: path.relative(dir, absoluteModulePath),
-        };
-      }
-      dir = path.dirname(dir);
-    } while (dir !== '.' && dir !== root);
-    return null;
-  }
-
   _onHasteChange({eventsQueue}: ChangeEvent) {
     this._resolutionCache = new Map();
     eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
@@ -247,10 +220,29 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
+  _getClosestPackage(
+    absoluteModulePath: string,
+  ): ?{packageJsonPath: string, packageRelativePath: string} {
+    const result = this._fileSystem.hierarchicalLookup(
+      absoluteModulePath,
+      'package.json',
+      {
+        breakOnSegment: 'node_modules',
+        invalidatedBy: null,
+        subpathType: 'f',
+      },
+    );
+    return result
+      ? {
+          packageJsonPath: result.absolutePath,
+          packageRelativePath: result.containerRelativePath,
+        }
+      : null;
+  }
+
   _createModuleCache(): ModuleCache {
     return new ModuleCache({
-      getClosestPackage: absoluteModulePath =>
-        this._getClosestPackage(absoluteModulePath),
+      getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
     });
   }
 
