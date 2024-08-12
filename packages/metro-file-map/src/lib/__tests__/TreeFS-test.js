@@ -214,6 +214,11 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('/project/foo/link-up-2')],
       ],
       [
+        p('foo/link-up-2/project/foo/link-up-2/project/bar.js'),
+        p('/project/bar.js'),
+        [p('/project/foo/link-up-2')],
+      ],
+      [
         p('foo/link-up-2/project/foo/link-up-2/outside/external.js'),
         p('/outside/external.js'),
         [p('/project/foo/link-up-2')],
@@ -282,6 +287,194 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]),
       });
     });
+  });
+
+  describe('hierarchicalLookup', () => {
+    let tfs: TreeFSType;
+
+    beforeEach(() => {
+      tfs = new TreeFS({
+        rootDir: p('/A/B/C'),
+        files: new Map(
+          [
+            [
+              p('a/1/package.json'),
+              ['', 0, 0, 0, '', '', './real-package.json'],
+            ],
+            [
+              p('a/2/package.json'),
+              ['', 0, 0, 0, '', '', './notexist-package.json'],
+            ],
+            [p('a/b/c/d/link-to-C'), ['', 0, 0, 0, '', '', p('../../../..')]],
+            [
+              p('a/b/c/d/link-to-B'),
+              ['', 0, 0, 0, '', '', p('../../../../..')],
+            ],
+            [
+              p('a/b/c/d/link-to-A'),
+              ['', 0, 0, 0, '', '', p('../../../../../..')],
+            ],
+          ].concat(
+            [
+              'a/package.json',
+              // A directory named package.json should never match
+              'a/b/package.json/index.js',
+              'a/b/c/package.json',
+              'a/b/c/d/foo.js',
+              'a/1/real-package.json',
+              'a/b/bar.js',
+              'a/n_m/pkg/package.json',
+              'a/n_m/pkg/foo.js',
+              'a/n_m/pkg/subpath/deep/bar.js',
+              'a/n_m/pkg/subpath/package.json',
+              'a/n_m/pkg/n_m/pkg2/index.js',
+              'a/n_m/pkg/n_m/pkg2/package.json',
+              '../../package.json',
+              '../../../a/b/package.json',
+            ].map(posixPath => [p(posixPath), ['', 0, 0, 0, '', '', 0]]),
+          ),
+        ),
+      });
+    });
+
+    test.each([
+      ['/A/B/C/a', '/A/B/C/a/package.json', '', []],
+      ['/A/B/C/a/b', '/A/B/C/a/package.json', 'b', ['/A/B/C/a/b/package.json']],
+      [
+        '/A/B/C/a/package.json',
+        '/A/B/C/a/package.json',
+        'package.json',
+        ['/A/B/C/a/package.json'],
+      ],
+      [
+        '/A/B/C/a/b/notexists',
+        '/A/B/C/a/package.json',
+        'b/notexists',
+        ['/A/B/C/a/b/notexists', '/A/B/C/a/b/package.json'],
+      ],
+      ['/A/B/C/a/b/c', '/A/B/C/a/b/c/package.json', '', []],
+      [
+        '/A/B/C/other',
+        '/A/package.json',
+        'B/C/other',
+        ['/A/B/C/other', '/A/B/C/package.json', '/A/B/package.json'],
+      ],
+      [
+        '/A/B/C',
+        '/A/package.json',
+        'B/C',
+        ['/A/B/C/package.json', '/A/B/package.json'],
+      ],
+      ['/A/B', '/A/package.json', 'B', ['/A/B/package.json']],
+      [
+        '/A/B/foo',
+        '/A/package.json',
+        'B/foo',
+
+        ['/A/B/foo', '/A/B/package.json'],
+      ],
+      ['/A/foo', '/A/package.json', 'foo', ['/A/foo']],
+      ['/foo', null, null, ['/foo', '/package.json']],
+      [
+        '/A/B/C/a/b/c/d/link-to-C/foo.js',
+        '/A/B/C/a/b/c/package.json',
+        'd/link-to-C/foo.js',
+        [
+          '/A/B/C/a/b/c/d/link-to-C',
+          '/A/B/C/a/b/c/d/package.json',
+          '/A/B/C/foo.js',
+          '/A/B/C/package.json',
+        ],
+      ],
+      [
+        '/A/B/C/a/b/c/d/link-to-B/C/foo.js',
+        '/A/B/C/a/b/c/package.json',
+        'd/link-to-B/C/foo.js',
+        [
+          '/A/B/C/a/b/c/d/link-to-B',
+          '/A/B/C/a/b/c/d/package.json',
+          '/A/B/C/foo.js',
+          '/A/B/C/package.json',
+          '/A/B/package.json',
+        ],
+      ],
+      [
+        '/A/B/C/a/b/c/d/link-to-A/B/C/foo.js',
+        '/A/package.json',
+        'B/C/foo.js',
+        [
+          '/A/B/C/a/b/c/d/link-to-A',
+          '/A/B/C/foo.js',
+          '/A/B/C/package.json',
+          '/A/B/package.json',
+        ],
+      ],
+      [
+        '/A/B/C/a/1/foo.js',
+        '/A/B/C/a/1/real-package.json',
+        'foo.js',
+        ['/A/B/C/a/1/foo.js', '/A/B/C/a/1/package.json'],
+      ],
+      [
+        '/A/B/C/a/2/foo.js',
+        '/A/B/C/a/package.json',
+        '2/foo.js',
+        [
+          '/A/B/C/a/2/foo.js',
+          '/A/B/C/a/2/notexist-package.json',
+          '/A/B/C/a/2/package.json',
+        ],
+      ],
+      [
+        '/A/B/C/a/n_m/pkg/notexist.js',
+        '/A/B/C/a/n_m/pkg/package.json',
+        'notexist.js',
+        ['/A/B/C/a/n_m/pkg/notexist.js'],
+      ],
+      [
+        '/A/B/C/a/n_m/pkg/subpath/notexist.js',
+        '/A/B/C/a/n_m/pkg/subpath/package.json',
+        'notexist.js',
+        ['/A/B/C/a/n_m/pkg/subpath/notexist.js'],
+      ],
+      [
+        '/A/B/C/a/n_m/pkg/otherpath/notexist.js',
+        '/A/B/C/a/n_m/pkg/package.json',
+        'otherpath/notexist.js',
+        ['/A/B/C/a/n_m/pkg/otherpath'],
+      ],
+      // pkg3 does not exist, doesn't look beyond the containing n_m
+      ['/A/B/C/a/n_m/pkg3/foo.js', null, null, ['/A/B/C/a/n_m/pkg3']],
+      // Does not look beyond n_m, if n_m does not exist
+      ['/A/B/C/a/b/n_m/pkg/foo', null, null, ['/A/B/C/a/b/n_m']],
+    ])(
+      '%s => %s (relative %s, invalidatedBy %s)',
+      (
+        startPath,
+        expectedPath,
+        expectedRelativeSubpath,
+        expectedInvalidatedBy,
+      ) => {
+        const pathMap = (normalPosixPath: string) =>
+          mockPathModule.resolve(p('/A/B/C'), p(normalPosixPath));
+        const invalidatedBy = new Set<string>();
+        expect(
+          tfs.hierarchicalLookup(p(startPath), 'package.json', {
+            breakOnSegment: 'n_m',
+            invalidatedBy,
+            subpathType: 'f',
+          }),
+        ).toEqual(
+          expectedPath == null
+            ? null
+            : {
+                absolutePath: pathMap(expectedPath),
+                containerRelativePath: p(expectedRelativeSubpath),
+              },
+        );
+        expect(invalidatedBy).toEqual(new Set(expectedInvalidatedBy.map(p)));
+      },
+    );
   });
 
   describe('matchFiles', () => {

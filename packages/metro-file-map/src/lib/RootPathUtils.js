@@ -8,6 +8,7 @@
  * @flow strict
  */
 
+import invariant from 'invariant';
 import * as path from 'path';
 
 /**
@@ -77,6 +78,10 @@ export class RootPathUtils {
     return this.#rootParts[this.#rootParts.length - 1 - n];
   }
 
+  getParts(): $ReadOnlyArray<string> {
+    return this.#rootParts;
+  }
+
   // absolutePath may be any well-formed absolute path.
   absoluteToNormal(absolutePath: string): string {
     let endOfMatchingPrefix = 0;
@@ -114,7 +119,7 @@ export class RootPathUtils {
         absolutePath,
         endOfMatchingPrefix,
         upIndirectionsToPrepend,
-      ) ?? this.#slowAbsoluteToNormal(absolutePath)
+      )?.collapsedPath ?? this.#slowAbsoluteToNormal(absolutePath)
     );
   }
 
@@ -153,25 +158,62 @@ export class RootPathUtils {
 
   relativeToNormal(relativePath: string): string {
     return (
-      this.#tryCollapseIndirectionsInSuffix(relativePath, 0, 0) ??
+      this.#tryCollapseIndirectionsInSuffix(relativePath, 0, 0)
+        ?.collapsedPath ??
       path.relative(this.#rootDir, path.join(this.#rootDir, relativePath))
     );
+  }
+
+  // If a path is a direct ancestor of the project root (or the root itself),
+  // return a number with the degrees of separation, e.g. root=0, parent=1,..
+  // or null otherwise.
+  getAncestorOfRootIdx(normalPath: string): ?number {
+    if (normalPath === '') {
+      return 0;
+    }
+    if (normalPath === '..') {
+      return 1;
+    }
+    // Otherwise a *normal* path is only a root ancestor if it is a sequence of
+    // '../' segments followed by '..', so the length tells us the number of
+    // up fragments.
+    if (normalPath.endsWith(SEP_UP_FRAGMENT)) {
+      return (normalPath.length + 1) / 3;
+    }
+    return null;
   }
 
   // Takes a normal and relative path, and joins them efficiently into a normal
   // path, including collapsing trailing '..' in the first part with leading
   // project root segments in the relative part.
-  joinNormalToRelative(normalPath: string, relativePath: string): string {
+  joinNormalToRelative(
+    normalPath: string,
+    relativePath: string,
+  ): {normalPath: string, collapsedSegments: number} {
     if (normalPath === '') {
-      return relativePath;
+      return {collapsedSegments: 0, normalPath: relativePath};
     }
     if (relativePath === '') {
-      return normalPath;
+      return {collapsedSegments: 0, normalPath};
     }
+    const left = normalPath + path.sep;
+    const rawPath = left + relativePath;
     if (normalPath === '..' || normalPath.endsWith(SEP_UP_FRAGMENT)) {
-      return this.relativeToNormal(normalPath + path.sep + relativePath);
+      const collapsed = this.#tryCollapseIndirectionsInSuffix(rawPath, 0, 0);
+      invariant(collapsed != null, 'Failed to collapse');
+      return {
+        collapsedSegments: collapsed.collapsedSegments,
+        normalPath: collapsed.collapsedPath,
+      };
     }
-    return normalPath + path.sep + relativePath;
+    return {
+      collapsedSegments: 0,
+      normalPath: rawPath,
+    };
+  }
+
+  relative(from: string, to: string): string {
+    return path.relative(from, to);
   }
 
   // Internal: Tries to collapse sequences like `../root/foo` for root
@@ -180,8 +222,9 @@ export class RootPathUtils {
     fullPath: string, // A string ending with the relative path to process
     startOfRelativePart: number, // Index of the start of part to process
     implicitUpIndirections: number, // 0=root-relative, 1=dirname(root)-relative...
-  ): ?string {
+  ): ?{collapsedPath: string, collapsedSegments: number} {
     let totalUpIndirections = implicitUpIndirections;
+    let collapsedSegments = 0;
     // Allow any sequence of indirection fragments at the start of the
     // unmatched suffix e.g /project/[../../foo], but bail out to Node's
     // path.relative if we find a possible indirection after any later segment,
@@ -208,6 +251,7 @@ export class RootPathUtils {
               fullPath[segmentToMaybeCollapse.length + pos] === path.sep)
           ) {
             pos += segmentToMaybeCollapse.length + 1;
+            collapsedSegments++;
             totalUpIndirections--;
           } else {
             break;
@@ -218,11 +262,15 @@ export class RootPathUtils {
         // separator in this case by taking .slice(pos-1). In any other case,
         // we know that fullPath[pos] is a separator.
         if (pos >= fullPath.length) {
-          return totalUpIndirections > 0
-            ? UP_FRAGMENT_SEP.repeat(totalUpIndirections - 1) +
-                '..' +
-                fullPath.slice(pos - 1)
-            : '';
+          return {
+            collapsedPath:
+              totalUpIndirections > 0
+                ? UP_FRAGMENT_SEP.repeat(totalUpIndirections - 1) +
+                  '..' +
+                  fullPath.slice(pos - 1)
+                : '',
+            collapsedSegments,
+          };
         }
         const right = pos > 0 ? fullPath.slice(pos) : fullPath;
         if (
@@ -231,13 +279,22 @@ export class RootPathUtils {
         ) {
           // If we have no right side (or an indirection that would take us
           // below the root), just ensure we don't include a trailing separtor.
-          return UP_FRAGMENT_SEP.repeat(totalUpIndirections).slice(0, -1);
+          return {
+            collapsedPath: UP_FRAGMENT_SEP.repeat(totalUpIndirections).slice(
+              0,
+              -1,
+            ),
+            collapsedSegments,
+          };
         }
         // Optimisation for the common case, saves a concatenation.
         if (totalUpIndirections === 0) {
-          return right;
+          return {collapsedPath: right, collapsedSegments};
         }
-        return UP_FRAGMENT_SEP.repeat(totalUpIndirections) + right;
+        return {
+          collapsedPath: UP_FRAGMENT_SEP.repeat(totalUpIndirections) + right,
+          collapsedSegments,
+        };
       }
 
       // Cap the number of indirections at the total number of root segments.

@@ -141,4 +141,16 @@ describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
       },
     );
   });
+
+  test.each([
+    ['foo', null],
+    ['', 0],
+    ['..', 1],
+    [p('../..'), 2],
+    [p('../../..'), 3],
+    [p('../../../foo'), null],
+    [p('../../../..foo'), null],
+  ])('getAncestorOfRootIdx (%s => %s)', (input, expected) => {
+    expect(pathUtils.getAncestorOfRootIdx(input)).toEqual(expected);
+  });
 });
