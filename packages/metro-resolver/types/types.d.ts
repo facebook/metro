@@ -74,8 +74,15 @@ export interface PackageForModule extends PackageInfo {
  * Check existence of a single file.
  */
 export type DoesFileExist = (filePath: string) => boolean;
-export type GetRealPath = (path: string) => string | null;
 export type IsAssetFile = (fileName: string) => boolean;
+/**
+ * Performs a lookup against an absolute or project-relative path to determine
+ * whether it exists as a file or directory. Follows any symlinks, and returns
+ * a real absolute path on existence.
+ */
+export type FileSystemLookup = (
+  absoluteOrProjectRelativePath: string,
+) => {exists: false} | {exists: true; type: 'f' | 'd'; realPath: string};
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -158,7 +165,7 @@ export interface ResolutionContext {
     [platform: string]: ReadonlyArray<string>;
   }>;
   unstable_enablePackageExports: boolean;
-  unstable_getRealPath?: GetRealPath | null;
+  unstable_fileSystemLookup?: FileSystemLookup | null;
   unstable_logWarning: (message: string) => void;
 }
 

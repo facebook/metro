@@ -105,12 +105,12 @@ export function resolvePackageTargetFromExports(
       }
     }
 
-    if (context.unstable_getRealPath != null) {
-      const maybeRealPath = context.unstable_getRealPath(filePath);
-      if (maybeRealPath != null) {
+    if (context.unstable_fileSystemLookup != null) {
+      const lookupResult = context.unstable_fileSystemLookup(filePath);
+      if (lookupResult.exists && lookupResult.type === 'f') {
         return {
           type: 'sourceFile',
-          filePath: maybeRealPath,
+          filePath: lookupResult.realPath,
         };
       }
     } else if (context.doesFileExist(filePath)) {

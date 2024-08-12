@@ -500,10 +500,10 @@ function resolveSourceFileForExt(
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
-  if (context.unstable_getRealPath) {
-    const maybeRealPath = context.unstable_getRealPath(redirectedPath);
-    if (maybeRealPath != null) {
-      return maybeRealPath;
+  if (context.unstable_fileSystemLookup) {
+    const lookupResult = context.unstable_fileSystemLookup(redirectedPath);
+    if (lookupResult.exists && lookupResult.type === 'f') {
+      return lookupResult.realPath;
     }
   } else if (context.doesFileExist(redirectedPath)) {
     return redirectedPath;

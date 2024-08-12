@@ -162,7 +162,6 @@ export interface FileSystem {
   getAllFiles(): Path[];
   getDependencies(file: Path): string[] | null;
   getModuleName(file: Path): string | null;
-  getRealPath(file: Path): string | null;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): string | null;
 
@@ -208,6 +207,12 @@ export interface FileSystem {
    */
   linkStats(file: Path): FileStats | null;
 
+  /**
+   * Return information about the given path, whether a directory or file.
+   * Always follow symlinks, and return a real path if it exists.
+   */
+  lookup(mixedPath: Path): LookupResult;
+
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
     filter?: RegExp | null;
@@ -225,6 +230,29 @@ export interface FileSystem {
 }
 
 export type Glob = string;
+
+export type LookupResult =
+  | {
+      // The node is missing from the FileSystem implementation (note this
+      // could indicate an unwatched path, or a directory containing no watched
+      // files).
+      exists: false;
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: ReadonlySet<string>;
+      // The real, normal, absolute path of the first path segment
+      // encountered that does not exist, or cannot be navigated through.
+      missing: string;
+    }
+  | {
+      exists: true;
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: ReadonlySet<string>;
+      // The real, normal, absolute path of the file or directory.
+      realPath: string;
+      // Currently lookup always follows symlinks, so can only return
+      // directories or regular files, but this may be extended.
+      type: 'd' | 'f';
+    };
 
 export interface HasteMap {
   getModule(

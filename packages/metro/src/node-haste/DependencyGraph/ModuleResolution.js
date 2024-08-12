@@ -21,7 +21,7 @@ import type {
   CustomResolver,
   DoesFileExist,
   FileCandidates,
-  GetRealPath,
+  FileSystemLookup,
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
@@ -82,7 +82,7 @@ type Options<TPackage> = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
-  unstable_getRealPath: ?GetRealPath,
+  unstable_fileSystemLookup: ?FileSystemLookup,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -151,7 +151,7 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionNames,
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
-      unstable_getRealPath,
+      unstable_fileSystemLookup,
     } = this._options;
 
     try {
@@ -173,7 +173,7 @@ class ModuleResolver<TPackage: Packageish> {
             unstable_conditionNames,
             unstable_conditionsByPlatform,
             unstable_enablePackageExports,
-            unstable_getRealPath,
+            unstable_fileSystemLookup,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
             originModulePath: fromModule.path,

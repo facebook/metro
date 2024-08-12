@@ -56,10 +56,20 @@ export function createResolutionContext(
       web: ['browser'],
     },
     unstable_enablePackageExports: false,
-    unstable_getRealPath: filePath =>
-      typeof fileMap[filePath] === 'string'
-        ? filePath
-        : fileMap[filePath]?.realPath,
+    unstable_fileSystemLookup: filePath => {
+      const candidate = fileMap[filePath];
+      if (typeof candidate === 'string') {
+        return {exists: true, type: 'f', realPath: filePath};
+      }
+      if (candidate == null || candidate.realPath == null) {
+        return {exists: false};
+      }
+      return {
+        exists: true,
+        type: 'f',
+        realPath: candidate.realPath,
+      };
+    },
     unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
   };

@@ -160,9 +160,16 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
-    const getRealPathIfFile = (path: string) => {
+    const fileSystemLookup = (path: string) => {
       const result = this._fileSystem.lookup(path);
-      return result.exists && result.type === 'f' ? result.realPath : null;
+      if (result.exists) {
+        return {
+          exists: true,
+          realPath: result.realPath,
+          type: result.type,
+        };
+      }
+      return {exists: false};
     };
 
     this._moduleResolver = new ModuleResolver({
@@ -190,14 +197,14 @@ class DependencyGraph extends EventEmitter {
       reporter: this._config.reporter,
       resolveAsset: (dirPath: string, assetName: string, extension: string) => {
         const basePath = dirPath + path.sep + assetName;
-        let assets = [
+        const assets = [
           basePath + extension,
           ...this._config.resolver.assetResolutions.map(
             resolution => basePath + '@' + resolution + 'x' + extension,
           ),
-        ];
-
-        assets = assets.map(getRealPathIfFile).filter(Boolean);
+        ]
+          .map(assetPath => fileSystemLookup(assetPath).realPath)
+          .filter(Boolean);
 
         return assets.length ? assets : null;
       },
@@ -208,7 +215,7 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
-      unstable_getRealPath: getRealPathIfFile,
+      unstable_fileSystemLookup: fileSystemLookup,
     });
   }
 

@@ -97,7 +97,15 @@ export type PackageForModule = $ReadOnly<{
  * Check existence of a single file.
  */
 export type DoesFileExist = (filePath: string) => boolean;
-export type GetRealPath = (path: string) => ?string;
+
+/**
+ * Performs a lookup against an absolute or project-relative path to determine
+ * whether it exists as a file or directory. Follows any symlinks, and returns
+ * a real absolute path on existence.
+ */
+export type FileSystemLookup = (
+  absoluteOrProjectRelativePath: string,
+) => {exists: false} | {exists: true, type: 'f' | 'd', realPath: string};
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -181,7 +189,7 @@ export type ResolutionContext = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
-  unstable_getRealPath?: ?GetRealPath,
+  unstable_fileSystemLookup?: ?FileSystemLookup,
   unstable_logWarning: (message: string) => void,
 }>;
 
