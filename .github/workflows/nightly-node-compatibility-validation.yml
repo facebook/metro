@@ -11,7 +11,6 @@ on:
   schedule:
     # Everyday at at 5:00 UTC (22:00 USA West Coast, 06:00 London)
     - cron:  '0 5 * * *'
-  push:
 
 jobs:
   test:
