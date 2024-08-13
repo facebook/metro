@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: ['ubuntu-latest']
+        runs-on: ['ubuntu-latest', 'windows-latest']
         node-version: ['18.0', '18.x', '20.x']
     uses: ./.github/workflows/test.yml
     with:
