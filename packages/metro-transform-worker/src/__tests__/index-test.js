@@ -192,7 +192,7 @@ it('transforms an es module with asyncToGenerator', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toMatchSnapshot();
-  expect(result.output[0].data.map).toHaveLength(14);
+  expect(result.output[0].data.map).toHaveLength(34);
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {

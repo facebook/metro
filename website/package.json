@@ -30,7 +30,6 @@
     "@sideway/formula": "^3.0.1",
     "got": "^11.8.5",
     "http-cache-semantics": "^4.1.1",
-    "node-fetch": "^2.0.0",
     "terser": "^5.14.2",
     "trim": "^0.0.3"
   }

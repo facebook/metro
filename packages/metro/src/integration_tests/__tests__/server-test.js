@@ -13,7 +13,6 @@
 const Metro = require('../../..');
 const execBundle = require('../execBundle');
 const fs = require('fs');
-const fetch = require('node-fetch');
 const path = require('path');
 
 jest.unmock('cosmiconfig');
@@ -53,6 +52,7 @@ describe('Metro development server serves bundles via HTTP', () => {
 
     httpServer = await Metro.runServer(config, {
       reporter: {update() {}},
+      waitForBundler: true,
     });
   });
 

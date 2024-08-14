@@ -446,15 +446,19 @@ function processResolveWeakCall(
 
 function collectImports(path: NodePath<>, state: State): void {
   if (path.node.source) {
-    registerDependency(
-      state,
-      {
-        name: path.node.source.value,
-        asyncType: null,
-        optional: false,
-      },
-      path,
-    );
+    if (typeof path.node.source.value == 'string') {
+      registerDependency(
+        state,
+        {
+          name: path.node.source.value,
+          asyncType: null,
+          optional: false,
+        },
+        path,
+      );
+    } else {
+      throw new Error('expected import source value to be string.');
+    }
   }
 }
 
@@ -697,7 +701,6 @@ const DefaultDependencyTransformer: DependencyTransformer = {
     path.node.arguments = ([moduleIDExpression]: Array<
       | BabelNodeExpression
       | BabelNodeSpreadElement
-      | BabelNodeJSXNamespacedName
       | BabelNodeArgumentPlaceholder,
     >);
     // Always add the debug name argument last

@@ -224,17 +224,15 @@ function forEachMapping(
   // values missing the `hub` property needed by Babel transformation, so we
   // save, clear, and restore the cache around our traversal.
   // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
-  const previousCache = traverse.cache.path;
-  traverse.cache.clearPath();
-  traverse(ast, {
+  // TODO: update the comment ^ to the one describing this other solution
+  const shallowCopiedAST = {...ast};
+  traverse(shallowCopiedAST, {
     // Our visitor doesn't care about scope
     noScope: true,
-
     Function: visitor,
     Program: visitor,
     Class: visitor,
   });
-  traverse.cache.path = previousCache;
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
