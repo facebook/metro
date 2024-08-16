@@ -10,7 +10,10 @@ on:
         type: string
         required: false
         default: '20.x'
-
+      ignore-engines:
+        type: string
+        required: false
+        default: 'false'
 jobs:
   test:
     name: "Tests [Node.js ${{ inputs.node-version }}, ${{ inputs.runs-on }}]"
@@ -20,5 +23,6 @@ jobs:
       - uses: ./.github/actions/yarn-install
         with:
           node-version: ${{ inputs.node-version }}
+          ignore-engines: ${{ inputs.ignore-engines }}
       - name: Run Jest Tests
         run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
