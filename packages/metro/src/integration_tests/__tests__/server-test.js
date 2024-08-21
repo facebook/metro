@@ -20,13 +20,20 @@ jest.unmock('cosmiconfig');
 
 jest.setTimeout(60 * 1000);
 
+// Workaround for https://github.com/nodejs/node/issues/54484:
+// Fetch with connection: close to prevent Node reusing connections across tests
+const fetchAndClose = (path: string) =>
+  fetch(path, {
+    headers: {Connection: 'close'},
+  });
+
 describe('Metro development server serves bundles via HTTP', () => {
   let config;
   let httpServer;
   const bundlesDownloaded = new Set();
 
   async function downloadAndExec(path: string, context = {}): mixed {
-    const response = await fetch(
+    const response = await fetchAndClose(
       'http://localhost:' + config.server.port + path,
     );
     bundlesDownloaded.add(path);
@@ -111,14 +118,14 @@ describe('Metro development server serves bundles via HTTP', () => {
   });
 
   test('responds with 404 when the bundle cannot be resolved', async () => {
-    const response = await fetch(
+    const response = await fetchAndClose(
       'http://localhost:' + config.server.port + '/doesnotexist.bundle',
     );
     expect(response.status).toBe(404);
   });
 
   test('responds with 500 when an import inside the bundle cannot be resolved', async () => {
-    const response = await fetch(
+    const response = await fetchAndClose(
       'http://localhost:' +
         config.server.port +
         '/build-errors/inline-requires-cannot-resolve-import.bundle',
@@ -128,7 +135,7 @@ describe('Metro development server serves bundles via HTTP', () => {
 
   describe('dedicated endpoints for serving source files', () => {
     test('under /[metro-project]/', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/[metro-project]/TestBundle.js',
@@ -143,7 +150,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
 
     test('under /[metro-watchFolders]/', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/[metro-watchFolders]/1/metro/src/integration_tests/basic_bundle/TestBundle.js',
@@ -158,7 +165,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
 
     test('under /[metro-project]/', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/[metro-project]/TestBundle.js',
@@ -173,7 +180,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
 
     test('no access to files without source extensions', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/[metro-project]/not_a_source_file.xyz',
@@ -188,7 +195,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
 
     test('no access to source files excluded from the file map', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/[metro-project]/excluded_from_file_map.js',
@@ -203,7 +210,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
 
     test('requested with aggressive URL encoding /%5Bmetro-project%5D', async () => {
-      const response = await fetch(
+      const response = await fetchAndClose(
         'http://localhost:' +
           config.server.port +
           '/%5Bmetro-project%5D/Foo%2Ejs',
