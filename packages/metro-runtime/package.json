@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.0.0",
+    "@babel/runtime": "^7.25.0",
     "flow-enums-runtime": "^0.0.6"
   },
   "devDependencies": {
