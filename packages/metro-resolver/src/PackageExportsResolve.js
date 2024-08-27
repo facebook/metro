@@ -142,6 +142,25 @@ function getExportsSubpath(packageSubpath: string): string {
 }
 
 /**
+ * Maintain a WeakMap cache of the results of normalizedExportsField.
+ * Particularly in a large project, many source files depend on the same
+ * packages (eg @babel/runtime), and this avoids normalising the same JSON
+ * many times. Note that ExportsField is immutable, and the upstream package
+ * cache gives us a stable reference.
+ *
+ * The case where ExportsField is a string (not weakly referencable) has to be
+ * excluded, but those are very cheap to process anyway.
+ *
+ * (Ultimately this should be coupled more closely to the package cache, so that
+ * we can clean up immediately rather than on GC.)
+ */
+type ExcludeString<T> = T extends string ? empty : T;
+const _normalizedExportsFields: WeakMap<
+  ExcludeString<ExportsField>,
+  ExportMap,
+> = new WeakMap();
+
+/**
  * Normalise an "exports"-like field by parsing string shorthand and conditions
  * shorthand at root, and flattening any legacy Node.js <13.7 array values.
  *
@@ -152,6 +171,15 @@ function normalizeExportsField(
   createConfigError: (reason: string) => Error,
 ): ExportMap {
   let rootValue;
+
+  if (typeof exportsField === 'string') {
+    return {'.': exportsField};
+  }
+
+  const cachedValue = _normalizedExportsFields.get(exportsField);
+  if (cachedValue) {
+    return cachedValue;
+  }
 
   if (Array.isArray(exportsField)) {
     // If an array of strings, use first value with valid specifier (root shorthand)
@@ -173,7 +201,9 @@ function normalizeExportsField(
   }
 
   if (typeof rootValue === 'string') {
-    return {'.': rootValue};
+    const result = {'.': rootValue};
+    _normalizedExportsFields.set(exportsField, result);
+    return result;
   }
 
   const firstLevelKeys = Object.keys(rootValue);
@@ -182,7 +212,9 @@ function normalizeExportsField(
   );
 
   if (subpathKeys.length === firstLevelKeys.length) {
-    return flattenLegacySubpathValues(rootValue, createConfigError);
+    const result = flattenLegacySubpathValues(rootValue, createConfigError);
+    _normalizedExportsFields.set(exportsField, result);
+    return result;
   }
 
   if (subpathKeys.length !== 0) {
@@ -192,7 +224,11 @@ function normalizeExportsField(
     );
   }
 
-  return {'.': flattenLegacySubpathValues(rootValue, createConfigError)};
+  const result = {
+    '.': flattenLegacySubpathValues(rootValue, createConfigError),
+  };
+  _normalizedExportsFields.set(exportsField, result);
+  return result;
 }
 
 /**
