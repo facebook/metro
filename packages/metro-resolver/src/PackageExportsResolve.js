@@ -24,6 +24,11 @@ import isAssetFile from './utils/isAssetFile';
 import toPosixPath from './utils/toPosixPath';
 import path from 'path';
 
+type NormalizedExporthMap = Map<
+  string /* subpath */,
+  null | string | ExportMap,
+>;
+
 /**
  * Resolve a package subpath based on the entry points defined in the package's
  * "exports" field. If there is no match for the given subpath (which may be
@@ -157,7 +162,7 @@ function getExportsSubpath(packageSubpath: string): string {
 type ExcludeString<T> = T extends string ? empty : T;
 const _normalizedExportsFields: WeakMap<
   ExcludeString<ExportsField>,
-  ExportMap,
+  NormalizedExporthMap,
 > = new WeakMap();
 
 /**
@@ -169,11 +174,11 @@ const _normalizedExportsFields: WeakMap<
 function normalizeExportsField(
   exportsField: ExportsField,
   createConfigError: (reason: string) => Error,
-): ExportMap {
+): NormalizedExporthMap {
   let rootValue;
 
   if (typeof exportsField === 'string') {
-    return {'.': exportsField};
+    return new Map([['.', exportsField]]);
   }
 
   const cachedValue = _normalizedExportsFields.get(exportsField);
@@ -201,7 +206,7 @@ function normalizeExportsField(
   }
 
   if (typeof rootValue === 'string') {
-    const result = {'.': rootValue};
+    const result: NormalizedExporthMap = new Map([['.', rootValue]]);
     _normalizedExportsFields.set(exportsField, result);
     return result;
   }
@@ -212,7 +217,9 @@ function normalizeExportsField(
   );
 
   if (subpathKeys.length === firstLevelKeys.length) {
-    const result = flattenLegacySubpathValues(rootValue, createConfigError);
+    const result: NormalizedExporthMap = new Map(
+      Object.entries(flattenLegacySubpathValues(rootValue, createConfigError)),
+    );
     _normalizedExportsFields.set(exportsField, result);
     return result;
   }
@@ -224,9 +231,9 @@ function normalizeExportsField(
     );
   }
 
-  const result = {
-    '.': flattenLegacySubpathValues(rootValue, createConfigError),
-  };
+  const result: NormalizedExporthMap = new Map([
+    ['.', flattenLegacySubpathValues(rootValue, createConfigError)],
+  ]);
   _normalizedExportsFields.set(exportsField, result);
   return result;
 }
@@ -263,15 +270,15 @@ function flattenLegacySubpathValues(
  * whether the subpath is mapped to a value).
  */
 export function isSubpathDefinedInExports(
-  exportMap: ExportMap,
+  exportMap: NormalizedExporthMap,
   subpath: string,
 ): boolean {
-  if (subpath in exportMap) {
+  if (exportMap.has(subpath)) {
     return true;
   }
 
   // Attempt to match after expanding any subpath pattern keys
-  for (const key in exportMap) {
+  for (const key of exportMap.keys()) {
     if (
       key.split('*').length === 2 &&
       matchSubpathPattern(key, subpath) != null
@@ -296,7 +303,7 @@ function matchSubpathFromExports(
    * an exact subpath key or subpath pattern key in "exports".
    */
   subpath: string,
-  exportMap: ExportMap,
+  exportMap: NormalizedExporthMap,
   platform: string | null,
   createConfigError: (reason: string) => Error,
 ): $ReadOnly<{
@@ -317,19 +324,19 @@ function matchSubpathFromExports(
     createConfigError,
   );
 
-  let target = exportMapAfterConditions[subpath];
+  let target = exportMapAfterConditions.get(subpath);
   let patternMatch = null;
 
   // Attempt to match after expanding any subpath pattern keys
   if (target == null) {
     // Gather keys which are subpath patterns in descending order of specificity
-    const expansionKeys = Object.keys(exportMapAfterConditions)
+    const expansionKeys = [...exportMapAfterConditions.keys()]
       .filter(key => key.includes('*'))
       .sort(key => key.split('*')[0].length)
       .reverse();
 
     for (const key of expansionKeys) {
-      const value = exportMapAfterConditions[key];
+      const value = exportMapAfterConditions.get(key);
 
       // Skip invalid values (must include a single '*' or be `null`)
       if (typeof value === 'string' && value.split('*').length !== 2) {
@@ -345,45 +352,40 @@ function matchSubpathFromExports(
     }
   }
 
-  return {target, patternMatch};
+  return {target: target ?? null, patternMatch};
 }
 
-type FlattenedExportMap = $ReadOnly<{[subpath: string]: string | null}>;
+type FlattenedExportMap = $ReadOnlyMap<string /* subpath */, string | null>;
 
 /**
  * Reduce an "exports"-like mapping to a flat subpath mapping after resolving
  * conditional exports.
  */
 function reduceExportMap(
-  exportMap: ExportMap,
+  exportMap: NormalizedExporthMap,
   conditionNames: $ReadOnlySet<string>,
   createConfigError: (reason: string) => Error,
 ): FlattenedExportMap {
-  const result: {[subpath: string]: string | null} = {};
+  const result = new Map<string, string | null>();
 
-  for (const subpath in exportMap) {
-    const subpathValue = reduceConditionalExport(
-      exportMap[subpath],
-      conditionNames,
-    );
+  for (const [subpath, value] of exportMap) {
+    const subpathValue = reduceConditionalExport(value, conditionNames);
 
     // If a subpath has no resolution for the passed `conditionNames`, do not
     // include it in the result. (This includes only explicit `null` values,
     // which may conditionally hide higher-specificity subpath patterns.)
     if (subpathValue !== 'no-match') {
-      result[subpath] = subpathValue;
+      result.set(subpath, subpathValue);
     }
   }
 
-  const invalidValues = Object.values(result).filter(
-    value => value != null && !value.startsWith('./'),
-  );
-
-  if (invalidValues.length) {
-    throw createConfigError(
-      'One or more mappings for subpaths defined in "exports" are invalid. ' +
-        'All values must begin with "./".',
-    );
+  for (const value of result.values()) {
+    if (value != null && !value.startsWith('./')) {
+      throw createConfigError(
+        'One or more mappings for subpaths defined in "exports" are invalid. ' +
+          'All values must begin with "./".',
+      );
+    }
   }
 
   return result;
