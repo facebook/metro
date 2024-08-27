@@ -5,7 +5,7 @@ Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-require.js:
 
 None of these files exist:
   * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist
   13 |
   14 | // $FlowExpectedError[cannot-resolve-module]
 > 15 | const DoesNotExist = require('./does-not-exist');
@@ -20,7 +20,7 @@ Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-import.js:
 
 None of these files exist:
   * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist
   13 |
   14 | // $FlowExpectedError[cannot-resolve-module]
 > 15 | import DoesNotExist from './does-not-exist';
@@ -35,7 +35,7 @@ Unable to resolve module ./does-not-exist from <dir>/inline-requires-cannot-reso
 
 None of these files exist:
   * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist
   13 |
   14 | // $FlowExpectedError[cannot-resolve-module]
 > 15 | const DoesNotExist = require('./does-not-exist');
@@ -50,7 +50,7 @@ Unable to resolve module ./does-not-exist from <dir>/inline-requires-cannot-reso
 
 None of these files exist:
   * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist
   13 |
   14 | // $FlowExpectedError[cannot-resolve-module]
 > 15 | import DoesNotExist from './does-not-exist';
@@ -65,7 +65,7 @@ Unable to resolve module ./does-not'"-exist from <dir>/cannot-resolve-multi-line
 
 None of these files exist:
   * build-errors/does-not'"-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not'"-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not'"-exist
   14 | import type DoesNotExistT from './does-not/'"-exist';
   15 |
 > 16 | import {
@@ -80,7 +80,7 @@ Unable to resolve module ./does-not'"-exist from <dir>/cannot-resolve-specifier-
 
 None of these files exist:
   * build-errors/does-not'"-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not'"-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not'"-exist
   15 |
   16 | // $FlowExpectedError[cannot-resolve-module]
 > 17 | import {DoesNotExist} from './does-not/'"-exist';
@@ -95,7 +95,7 @@ Unable to resolve module ./foo from <dir>/cannot-resolve-require-with-embedded-c
 
 None of these files exist:
   * build-errors/foo(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/foo/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/foo
   13 |
   14 | // $FlowExpectedError[cannot-resolve-module]
 > 15 | const DoesNotExist = require('./foo' /* ./foo */);
@@ -110,7 +110,7 @@ Unable to resolve module ./does-not-exist from <dir>/cannot-resolve-multi-line-i
 
 None of these files exist:
   * build-errors/does-not-exist(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
-  * build-errors/does-not-exist/index(.web.js|.native.js|.js|.web.jsx|.native.jsx|.jsx|.web.json|.native.json|.json|.web.ts|.native.ts|.ts|.web.tsx|.native.tsx|.tsx)
+  * build-errors/does-not-exist
   25 |   iiiiiiiiii,
   26 |   // $FlowExpectedError[cannot-resolve-module]
 > 27 | } from './does-not-exist';
