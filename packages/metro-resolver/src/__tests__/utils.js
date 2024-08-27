@@ -30,6 +30,17 @@ type MockFileMap = $ReadOnly<{
 export function createResolutionContext(
   fileMap: MockFileMap = {},
 ): $Diff<ResolutionContext, {originModulePath: string}> {
+  const directorySet = new Set<string>();
+  for (const filePath of Object.keys(fileMap)) {
+    let currentDir = filePath;
+    let prevDir;
+    do {
+      prevDir = currentDir;
+      currentDir = path.dirname(currentDir);
+      directorySet.add(currentDir);
+    } while (currentDir !== prevDir);
+  }
+
   return {
     dev: true,
     allowHaste: true,
@@ -56,12 +67,20 @@ export function createResolutionContext(
       web: ['browser'],
     },
     unstable_enablePackageExports: false,
-    unstable_fileSystemLookup: filePath => {
+    unstable_fileSystemLookup: inputPath => {
+      // Normalise and remove any trailing slash.
+      const filePath = path.resolve(inputPath);
       const candidate = fileMap[filePath];
       if (typeof candidate === 'string') {
         return {exists: true, type: 'f', realPath: filePath};
       }
-      if (candidate == null || candidate.realPath == null) {
+      if (candidate == null) {
+        if (directorySet.has(filePath)) {
+          return {exists: true, type: 'd', realPath: filePath};
+        }
+        return {exists: false};
+      }
+      if (candidate.realPath == null) {
         return {exists: false};
       }
       return {

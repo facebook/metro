@@ -32,6 +32,7 @@ const fileMap = {
     name: 'invalid',
     main: 'main',
   }),
+  '/root/node_modules/flat-file-in-node-modules.js': '',
   '/node_modules/root-module/main.js': '',
   '/node_modules/root-module/package.json': JSON.stringify({
     name: 'root-module',
@@ -110,8 +111,8 @@ it('does not resolve a relative path ending in a slash as a file', () => {
       file: null,
       dir: {
         type: 'sourceFile',
-        filePathPrefix: '/root/project/bar/index',
-        candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
+        filePathPrefix: '/root/project/bar/',
+        candidateExts: [],
       },
     }),
   );
@@ -121,6 +122,13 @@ it('resolves a package in `node_modules`', () => {
   expect(Resolver.resolve(CONTEXT, 'apple', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/node_modules/apple/main.js',
+  });
+});
+
+it('resolves a standalone file in `node_modules`', () => {
+  expect(Resolver.resolve(CONTEXT, 'flat-file-in-node-modules', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/root/node_modules/flat-file-in-node-modules.js',
   });
 });
 
@@ -134,8 +142,8 @@ it('fails to resolve a relative path', () => {
     }
     expect(error.candidates).toEqual({
       dir: {
-        candidateExts: ['', '.js', '.jsx', '.json', '.ts', '.tsx'],
-        filePathPrefix: '/root/project/apple/index',
+        candidateExts: [],
+        filePathPrefix: '/root/project/apple',
         type: 'sourceFile',
       },
       file: {
@@ -326,7 +334,7 @@ it('throws a descriptive error when a file inside a Haste package cannot be reso
     "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
 
       * \`/haste/some-package/subdir/does-not-exist(.js|.jsx|.json|.ts|.tsx)\`
-      * \`/haste/some-package/subdir/does-not-exist/index(.js|.jsx|.json|.ts|.tsx)\`"
+      * \`/haste/some-package/subdir/does-not-exist\`"
   `);
 });
 
