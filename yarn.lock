@@ -1433,17 +1433,6 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@jest/types@^26.6.2":
-  version "26.6.2"
-  resolved "https://registry.yarnpkg.com/@jest/types/-/types-26.6.2.tgz#bef5a532030e1d88a2f5a6d933f84e97226ed48e"
-  integrity sha512-fC6QCp7Sc5sX6g8Tvbmj4XUTbyrik0akgRy03yjXbQaBWWNWGE7SGtJk98m0N8nzegD/7SggrUlivxo5ax4KWQ==
-  dependencies:
-    "@types/istanbul-lib-coverage" "^2.0.0"
-    "@types/istanbul-reports" "^3.0.0"
-    "@types/node" "*"
-    "@types/yargs" "^15.0.0"
-    chalk "^4.0.0"
-
 "@jest/types@^29.0.3":
   version "29.0.3"
   resolved "https://registry.yarnpkg.com/@jest/types/-/types-29.0.3.tgz#0be78fdddb1a35aeb2041074e55b860561c8ef63"
@@ -1861,13 +1850,6 @@
   version "13.0.12"
   resolved "https://registry.yarnpkg.com/@types/yargs/-/yargs-13.0.12.tgz#d895a88c703b78af0465a9de88aa92c61430b092"
   integrity sha512-qCxJE1qgz2y0hA4pIxjBR+PelCH0U5CK1XJXFwCNqfmliatKp47UCXXE9Dyk1OXBDLvsCF57TqQEJaeLfDYEOQ==
-  dependencies:
-    "@types/yargs-parser" "*"
-
-"@types/yargs@^15.0.0":
-  version "15.0.4"
-  resolved "https://registry.yarnpkg.com/@types/yargs/-/yargs-15.0.4.tgz#7e5d0f8ca25e9d5849f2ea443cf7c402decd8299"
-  integrity sha512-9T1auFmbPZoxHz0enUFlUuKRy3it01R+hlggyVUMtnCTQRunsQYifnSGb8hET4Xo8yiC0o0r1paW3ud5+rbURg==
   dependencies:
     "@types/yargs-parser" "*"
 
@@ -5269,16 +5251,6 @@ pretty-format@^24.9.0:
     ansi-styles "^3.2.0"
     react-is "^16.8.4"
 
-pretty-format@^26.5.2:
-  version "26.6.2"
-  resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-26.6.2.tgz#e35c2705f14cb7fe2fe94fa078345b444120fc93"
-  integrity sha512-7AeGuCYNGmycyQbCqd/3PWH4eOoX/OiCa0uphp57NVTeAGdJGaAliecxwBDHYQCIvrW7aDBZCYeNTP/WX69mkg==
-  dependencies:
-    "@jest/types" "^26.6.2"
-    ansi-regex "^5.0.0"
-    ansi-styles "^4.0.0"
-    react-is "^17.0.1"
-
 pretty-format@^29.0.3:
   version "29.0.3"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-29.0.3.tgz#23d5f8cabc9cbf209a77d49409d093d61166a811"
@@ -5292,6 +5264,15 @@ pretty-format@^29.6.3:
   version "29.6.3"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-29.6.3.tgz#d432bb4f1ca6f9463410c3fb25a0ba88e594ace7"
   integrity sha512-ZsBgjVhFAj5KeK+nHfF1305/By3lechHQSMWCTl8iHSbfOm2TN5nHEtFc/+W7fAyUeCs2n5iow72gld4gW0xDw==
+  dependencies:
+    "@jest/schemas" "^29.6.3"
+    ansi-styles "^5.0.0"
+    react-is "^18.0.0"
+
+pretty-format@^29.7.0:
+  version "29.7.0"
+  resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-29.7.0.tgz#ca42c758310f365bfa71a0bda0a807160b776812"
+  integrity sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==
   dependencies:
     "@jest/schemas" "^29.6.3"
     ansi-styles "^5.0.0"
@@ -5355,11 +5336,6 @@ react-is@^16.13.1, react-is@^16.8.4:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
-
-react-is@^17.0.1:
-  version "17.0.2"
-  resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
-  integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
 react-is@^18.0.0:
   version "18.2.0"

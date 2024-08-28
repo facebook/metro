@@ -163,7 +163,9 @@ describe('loadConfig', () => {
       watchFolders: [defaultConfig.projectRoot, ...defaultConfig.watchFolders],
     };
 
-    expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
+    expect(prettyFormat.format(result)).toEqual(
+      prettyFormat.format(defaultConfig),
+    );
   });
 
   it('validates config for server', async () => {
