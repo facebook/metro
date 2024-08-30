@@ -12,6 +12,7 @@
 'use strict';
 
 import type {Context} from '../generateFunctionMap';
+import type {NodePath} from '@babel/traverse';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {
@@ -22,6 +23,10 @@ const {
 const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
+const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
+  // $FlowIgnore[prop-missing]
+  // $FlowIgnore[incompatible-type]
+  require('@babel/types').STANDARDIZED_TYPES;
 const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/src/Symbolication');
@@ -1809,28 +1814,77 @@ function parent2() {
     // A minimal(?) Babel transformation that requires a `hub`, modelled on
     // `@babel/plugin-transform-modules-commonjs` and the `wrapInterop` call in
     // `@babel/helper-module-transforms`
-    const transformRequiringHub = (ast: BabelNodeFile) =>
+    const expectTransformPathesToHaveHub = (ast: BabelNodeFile) => {
+      let enterCount = 0;
+
+      const enter = (path: NodePath<BabelNode>) => {
+        enterCount++;
+        expect(path.hub).toBeDefined();
+      };
+
       transformFromAstSync(ast, '', {
         plugins: [
           () => ({
+            visitor: Object.fromEntries(
+              STANDARDIZED_TYPES.map(type => [type, {enter}]),
+            ) /** equivalent to:
             visitor: {
-              Program: {
-                enter: path => {
+              "FunctionDeclaration": {
+                enter: (path: NodePath<BabelNode>) => {
+                  enterCount++;
+                  expect(path.hub).toBeDefined();
+                }
+              },
+              "Program": {
+                enter: (path: NodePath<BabelNode>) => {
+                  enterCount++;
                   expect(path.hub).toBeDefined();
                 },
               },
-            },
+              // ... the rest of all the possible ast node types
+              //
+            } **/,
           }),
         ],
         babelrc: false,
         cloneInputAst: false,
       });
+      expect(enterCount).toBe(61);
+    };
 
     let ast;
 
     beforeEach(() => {
-      ast = getAst('arbitrary(code)');
+      ast = getAst(`
+window.foo = function bar() {
+  return false || {
+    a: {
+      "b": {
+        c: ['d', 1, {e: 'f'}],
+        g: function h() {
+          return (function(aa) {
+            if (null) {
+              return true;
+            }
+            return [{b: aa ? 2 : {b: 'ee'}}];
+          })(123);
+        }
+      }
+    }
+  }
+}
+window.foo();
+      `);
       traverse.cache.clearPath();
+    });
+
+    it('transform with no traverse has `hub` in every node', () => {
+      /* Ensures that our expectations of how transform works regardless
+       of the existence of a traverse cache pollution issue are correct.
+       Namely- that each node is expected to have a hub present.
+       If this fails, it means that "hub" is no longer expected to
+       exist on each node, and the pollution tests bellow has to be adjusted. */
+      expectTransformPathesToHaveHub(ast);
     });
 
     it('requires a workaround for traverse cache pollution', () => {
@@ -1847,14 +1901,14 @@ function parent2() {
       traverse(ast, {});
 
       // Expect that the path cache is polluted with entries lacking `hub`.
-      expect(() => transformRequiringHub(ast)).toThrow();
+      expect(() => expectTransformPathesToHaveHub(ast)).toThrow();
     });
 
     it('successfully works around traverse cache pollution', () => {
       generateFunctionMap(ast);
 
       // Check that the `hub` property is present on paths when transforming.
-      transformRequiringHub(ast);
+      expectTransformPathesToHaveHub(ast);
     });
 
     it('does not reset the path cache', () => {
