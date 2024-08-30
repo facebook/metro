@@ -19,11 +19,20 @@ jest.unmock('cosmiconfig');
 
 jest.setTimeout(60 * 1000);
 
+// Can't set the "Connection" header in node < 18.14.1 (undici < 5.15.0): https://github.com/nodejs/undici/pull/1829,
+// However in these versions "Connection" is set to "close" by default in node 18 anyway comparing with later version
+const [nodeVersionMajor, nodeVersionMinor, nodeVersionPatch] =
+  process.versions.node.split('.').map(Number);
+const canSetConnectionHeader =
+  nodeVersionMajor > 18 ||
+  (nodeVersionMajor === 18 && nodeVersionMinor > 14) ||
+  (nodeVersionMajor === 18 && nodeVersionMinor === 14 && nodeVersionPatch >= 1);
+
 // Workaround for https://github.com/nodejs/node/issues/54484:
 // Fetch with connection: close to prevent Node reusing connections across tests
 const fetchAndClose = (path: string) =>
   fetch(path, {
-    headers: {Connection: 'close'},
+    headers: canSetConnectionHeader ? {Connection: 'close'} : {},
   });
 
 describe('Metro development server serves bundles via HTTP', () => {
