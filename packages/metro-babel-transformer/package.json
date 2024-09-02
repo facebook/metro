@@ -17,7 +17,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.20.0",
+    "@babel/core": "^7.25.2",
     "flow-enums-runtime": "^0.0.6",
     "hermes-parser": "0.23.1",
     "nullthrows": "^1.1.1"
