@@ -5,18 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  */
 
-/* eslint-disable max-len */
-
 'use strict';
+
+import type {PluginOptions, State} from '../inline-requires-plugin';
 
 const inlineRequiresPlugin = require('../inline-requires-plugin');
 const validateOutputAst = require('./validateOutputAst');
 const babel = require('@babel/core');
 const pluginTester = require('babel-plugin-tester');
+const nullthrows = require('nullthrows');
 
-pluginTester({
+pluginTester<PluginOptions, State>({
   babelOptions: {
     babelrc: false,
     configFile: false,
@@ -246,17 +248,25 @@ pluginTester({
 });
 
 describe('inline-requires', () => {
-  const transform = (source, options) =>
-    babel.transform(source.join('\n'), {
+  const transform = (
+    source: $ReadOnlyArray<string>,
+    options?: $ReadOnly<{...}>,
+  ) =>
+    babel.transformSync(source.join('\n'), {
       ast: true,
       compact: true,
       plugins: [
+        // $FlowFixMe[untyped-import] @babel/plugin-transform-modules-commonjs
         [require('@babel/plugin-transform-modules-commonjs'), {strict: false}],
         [inlineRequiresPlugin, options],
       ],
     });
 
-  const compare = (input, output, options) => {
+  const compare = (
+    input: $ReadOnlyArray<string>,
+    output: $ReadOnlyArray<string>,
+    options?: $ReadOnly<{...}>,
+  ) => {
     expect(transform(input, options).code).toBe(
       transform(output, options).code,
     );
@@ -293,16 +303,19 @@ describe('inline-requires', () => {
 
   it('should remove loc information from nodes', function () {
     const ast = transform(['var x = require("x"); x']).ast;
-    const expression = ast.program.body[0].expression;
+    expect(ast).not.toBeNull();
+    const expression = nullthrows(ast).program.body[0].expression;
 
-    function expectNoLocation(node) {
+    function expectNodeWithNoLocation(maybeNode: ?BabelNode) {
+      expect(maybeNode).not.toBeNull();
+      const node = nullthrows(maybeNode);
       expect(node.start).toBeUndefined();
       expect(node.end).toBeUndefined();
       expect(node.loc).toBeUndefined();
     }
 
-    expectNoLocation(expression);
-    expectNoLocation(expression.arguments[0]);
+    expectNodeWithNoLocation(expression);
+    expectNodeWithNoLocation(nullthrows(expression?.arguments)[0]);
   });
 
   it('should not emit duplicate nodes', function () {
@@ -311,6 +324,6 @@ describe('inline-requires', () => {
       'foo.bar()',
       'foo.baz()',
     ]).ast;
-    validateOutputAst(ast);
+    validateOutputAst(nullthrows(ast));
   });
 });

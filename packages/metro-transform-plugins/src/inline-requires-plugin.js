@@ -5,9 +5,28 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict
  */
 
 'use strict';
+
+import type {PluginObj} from '@babel/core';
+import typeof * as Babel from '@babel/core';
+import type {NodePath} from '@babel/traverse';
+import type {Program} from '@babel/types';
+
+export type PluginOptions = $ReadOnly<{
+  ignoredRequires?: $ReadOnlyArray<string>,
+  inlineableCalls?: $ReadOnlyArray<string>,
+}>;
+
+export type State = {
+  opts?: PluginOptions,
+  ignoredRequires: Set<string>,
+  inlineableCalls: Set<string>,
+  membersAssigned: Map<string, Set<string>>,
+  ...
+};
 
 /**
  * This transform inlines top-level require(...) aliases with to enable lazy
@@ -36,30 +55,31 @@
  * Is also successfully inlined into:
  *     g(require('foo').Baz);
  */
-module.exports = babel => ({
+module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
   name: 'inline-requires',
   visitor: {
     Program: {
-      exit(path, state) {
-        const t = babel.types;
-        const ignoredRequires = new Set();
+      enter() {},
+      exit(path: NodePath<Program>, state: State): void {
+        const ignoredRequires = new Set<string>();
         const inlineableCalls = new Set(['require']);
+        const opts = state.opts;
 
-        if (state.opts != null) {
-          if (state.opts.ignoredRequires != null) {
-            for (const name of state.opts.ignoredRequires) {
+        if (opts != null) {
+          if (opts.ignoredRequires != null) {
+            for (const name of opts.ignoredRequires) {
               ignoredRequires.add(name);
             }
           }
-          if (state.opts.inlineableCalls != null) {
-            for (const name of state.opts.inlineableCalls) {
+          if (opts.inlineableCalls != null) {
+            for (const name of opts.inlineableCalls) {
               inlineableCalls.add(name);
             }
           }
         }
 
         path.scope.crawl();
-        path.traverse(
+        path.traverse<State>(
           {
             CallExpression(path, state) {
               const parseResult =
@@ -76,17 +96,22 @@ module.exports = babel => ({
                 ? declarationPath.node.id.name
                 : null;
 
-              const binding = declarationPath.scope.getBinding(name);
-              if (binding.constantViolations.length > 0) {
+              const binding =
+                name == null ? null : declarationPath.scope.getBinding(name);
+              if (binding == null || binding.constantViolations.length > 0) {
                 return;
               }
 
-              const initLoc = getNearestLocFromPath(
-                declarationPath.get('init'),
-              );
+              const initPath = declarationPath.get('init');
+
+              if (init == null || Array.isArray(initPath)) {
+                return;
+              }
+
+              const initLoc = getNearestLocFromPath(initPath);
 
               deleteLocation(init);
-              babel.traverse(init, {
+              traverse(init, {
                 noScope: true,
                 enter: path => deleteLocation(path.node),
               });
@@ -97,6 +122,7 @@ module.exports = babel => ({
                 try {
                   referencePath.scope.rename(requireFnName);
                   const refExpr = t.cloneDeep(init);
+                  // $FlowFixMe[prop-missing]
                   refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
                   referencePath.replaceWith(refExpr);
                 } catch (error) {
@@ -122,18 +148,23 @@ module.exports = babel => ({
   },
 });
 
-function excludeMemberAssignment(moduleName, referencePath, state) {
-  const assignment = referencePath.parentPath.parent;
+function excludeMemberAssignment(
+  moduleName: string,
+  referencePath: NodePath<>,
+  state: State,
+) {
+  const assignment: ?BabelNode = referencePath.parentPath?.parent;
 
-  const isValid =
-    assignment.type === 'AssignmentExpression' &&
-    assignment.left.type === 'MemberExpression' &&
-    assignment.left.object === referencePath.node;
-  if (!isValid) {
+  if (assignment?.type !== 'AssignmentExpression') {
     return;
   }
 
-  const memberPropertyName = getMemberPropertyName(assignment.left);
+  const left = assignment.left;
+  if (left.type !== 'MemberExpression' || left.object !== referencePath.node) {
+    return;
+  }
+
+  const memberPropertyName = getMemberPropertyName(left);
   if (memberPropertyName == null) {
     return;
   }
@@ -146,15 +177,16 @@ function excludeMemberAssignment(moduleName, referencePath, state) {
   membersAssigned.add(memberPropertyName);
 }
 
-function isExcludedMemberAssignment(moduleName, memberPropertyName, state) {
+function isExcludedMemberAssignment(
+  moduleName: string,
+  memberPropertyName: string,
+  state: State,
+) {
   const excludedAliases = state.membersAssigned.get(moduleName);
   return excludedAliases != null && excludedAliases.has(memberPropertyName);
 }
 
-function getMemberPropertyName(node) {
-  if (node.type !== 'MemberExpression') {
-    return null;
-  }
+function getMemberPropertyName(node: BabelNodeMemberExpression): ?string {
   if (node.property.type === 'Identifier') {
     return node.property.name;
   }
@@ -164,62 +196,113 @@ function getMemberPropertyName(node) {
   return null;
 }
 
-function deleteLocation(node) {
+function deleteLocation(node: BabelNode) {
   delete node.start;
   delete node.end;
   delete node.loc;
 }
 
-function parseInlineableAlias(path, state) {
+function parseInlineableAlias(
+  path: NodePath<BabelNodeCallExpression>,
+  state: State,
+): ?{
+  declarationPath: NodePath<BabelNode>,
+  moduleName: string,
+  requireFnName: string,
+} {
   const module = getInlineableModule(path, state);
   if (module == null) {
     return null;
   }
 
   const {moduleName, requireFnName} = module;
+  const parentPath = path.parentPath;
+  if (parentPath == null) {
+    return null;
+  }
+  const grandParentPath = parentPath.parentPath;
+  if (grandParentPath == null) {
+    return null;
+  }
+
   const isValid =
     path.parent.type === 'VariableDeclarator' &&
     path.parent.id.type === 'Identifier' &&
-    path.parentPath.parent.type === 'VariableDeclaration' &&
-    path.parentPath.parentPath.parent.type === 'Program';
+    parentPath.parent.type === 'VariableDeclaration' &&
+    grandParentPath.parent.type === 'Program';
 
-  return !isValid || path.parentPath.node == null
+  return !isValid || parentPath.node == null
     ? null
     : {
-        declarationPath: path.parentPath,
+        declarationPath: parentPath,
         moduleName,
         requireFnName,
       };
 }
 
-function parseInlineableMemberAlias(path, state) {
+function parseInlineableMemberAlias(
+  path: NodePath<BabelNodeCallExpression>,
+  state: State,
+): ?{
+  declarationPath: NodePath<BabelNode>,
+  moduleName: string,
+  requireFnName: string,
+} {
   const module = getInlineableModule(path, state);
   if (module == null) {
     return null;
   }
 
   const {moduleName, requireFnName} = module;
-  const isValid =
-    path.parent.type === 'MemberExpression' &&
-    path.parentPath.parent.type === 'VariableDeclarator' &&
-    path.parentPath.parent.id.type === 'Identifier' &&
-    path.parentPath.parentPath.parent.type === 'VariableDeclaration' &&
-    path.parentPath.parentPath.parentPath.parent.type === 'Program';
+  const parent = path.parent;
+  const parentPath = path.parentPath;
+  if (parentPath == null) {
+    return null;
+  }
+  const grandParentPath = parentPath.parentPath;
+  if (grandParentPath == null) {
+    return null;
+  }
 
-  const memberPropertyName = getMemberPropertyName(path.parent);
+  if (parent.type !== 'MemberExpression') {
+    return null;
+  }
 
-  return !isValid ||
-    path.parentPath.parentPath.node == null ||
+  const memberExpression: BabelNodeMemberExpression = parent;
+
+  if (parentPath.parent.type !== 'VariableDeclarator') {
+    return null;
+  }
+  const variableDeclarator = parentPath.parent;
+
+  if (variableDeclarator.id.type !== 'Identifier') {
+    return null;
+  }
+
+  if (
+    grandParentPath.parent.type !== 'VariableDeclaration' ||
+    grandParentPath.parentPath?.parent.type !== 'Program' ||
+    grandParentPath.node == null
+  ) {
+    return null;
+  }
+
+  const memberPropertyName = getMemberPropertyName(memberExpression);
+
+  return memberPropertyName == null ||
     isExcludedMemberAssignment(moduleName, memberPropertyName, state)
     ? null
     : {
-        declarationPath: path.parentPath.parentPath,
+        declarationPath: grandParentPath,
         moduleName,
         requireFnName,
       };
 }
 
-function getInlineableModule(path, state) {
+function getInlineableModule(
+  path: NodePath<BabelNodeCallExpression>,
+  state: State,
+): ?{moduleName: string, requireFnName: string} {
   const node = path.node;
   const isInlineable =
     node.type === 'CallExpression' &&
@@ -239,21 +322,30 @@ function getInlineableModule(path, state) {
 
   // require(require.resolve('foo'));
   if (moduleName == null) {
-    moduleName =
-      node['arguments'][0].type === 'CallExpression' &&
-      node['arguments'][0].callee.type === 'MemberExpression' &&
-      node['arguments'][0].callee.object.type === 'Identifier' &&
-      state.inlineableCalls.has(node['arguments'][0].callee.object.name) &&
-      node['arguments'][0].callee.property.type === 'Identifier' &&
-      node['arguments'][0].callee.property.name === 'resolve' &&
-      node['arguments'][0]['arguments'].length >= 1 &&
-      node['arguments'][0]['arguments'][0].type === 'StringLiteral'
-        ? node['arguments'][0]['arguments'][0].value
-        : null;
+    const callNode = node['arguments'][0];
+    if (
+      callNode.type === 'CallExpression' &&
+      callNode.callee.type === 'MemberExpression' &&
+      callNode.callee.object.type === 'Identifier'
+    ) {
+      const callee = callNode.callee;
+      moduleName =
+        callee.object.type === 'Identifier' &&
+        state.inlineableCalls.has(callee.object.name) &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'resolve' &&
+        callNode['arguments'].length >= 1 &&
+        callNode['arguments'][0].type === 'StringLiteral'
+          ? callNode['arguments'][0].value
+          : null;
+    }
   }
 
   // Check if require is in any parent scope
   const fnName = node.callee.name;
+  if (fnName == null) {
+    return null;
+  }
   const isRequireInScope = path.scope.getBinding(fnName) != null;
 
   return moduleName == null ||
