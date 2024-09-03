@@ -10,31 +10,6 @@ var foo = require(\\"foo\\");
 "
 `;
 
-exports[`inline-requires does not transform require calls if it is not needed: does not transform require calls if it is not needed 1`] = `
-"
-function test () {
-  function require(condition) {
-    if (!condition) {
-      throw new Error('The condition is false');
-    }
-  }
-
-  require('test');
-}
-
-      ↓ ↓ ↓ ↓ ↓ ↓
-
-function test() {
-  function require(condition) {
-    if (!condition) {
-      throw new Error('The condition is false');
-    }
-  }
-  require('test');
-}
-"
-`;
-
 exports[`inline-requires ensures that the inlined require still points to the global require function even if local require is not called: ensures that the inlined require still points to the global require function even if local require is not called 1`] = `
 "
 const foo = require('foo');

@@ -146,19 +146,18 @@ pluginTester<PluginOptions, State>({
         snapshot: false,
       },
 
-    'does not transform require calls if it is not needed': {
+    'does not transform require calls that are already inline': {
       code: `
-        function test () {
+        function test() {
           function require(condition) {
             if (!condition) {
               throw new Error('The condition is false');
             }
           }
-
           require('test');
         }
       `,
-      snapshot: true,
+      snapshot: false,
     },
 
     'inlines requires that are referenced before the require statement': {
