@@ -15,6 +15,7 @@ else
 fi
 
 # Does main contain this tag? (regular release workflow)
+git fetch origin main
 TAG_ON_MAIN=$(git branch -a --contains "$RAW_TAG_NAME" | grep -cFx '  remotes/origin/main' || true)
 echo "Tag is on main branch: $TAG_ON_MAIN"
 
