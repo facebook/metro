@@ -17,7 +17,8 @@ import type {NodePath} from '@babel/traverse';
 import type {Node} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
-import traverse from '@babel/traverse';
+// $FlowFixMe[cannot-resolve-module] - resolves to @babel/traverse
+import traverseForGenerateFunctionMap from '@babel/traverse--for-generate-function-map';
 import {
   isAssignmentExpression,
   isClassBody,
@@ -222,11 +223,9 @@ function forEachMapping(
 
   // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
   // values missing the `hub` property needed by Babel transformation, so we
-  // save, clear, and restore the cache around our traversal.
-  // See: https://github.com/facebook/metro/pull/854#issuecomment-1336499395
-  const previousCache = traverse.cache.path;
-  traverse.cache.clearPath();
-  traverse(ast, {
+  // use a separate copy of traverse to populate a separate cache to not pollute
+  // the main @babel/traverse cache. See: https://github.com/facebook/metro/pull/1340
+  traverseForGenerateFunctionMap(ast, {
     // Our visitor doesn't care about scope
     noScope: true,
 
@@ -234,7 +233,6 @@ function forEachMapping(
     Program: visitor,
     Class: visitor,
   });
-  traverse.cache.path = previousCache;
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
