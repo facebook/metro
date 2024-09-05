@@ -22,6 +22,7 @@ const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 const crypto = require('crypto');
+const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
 const {isImport} = types;
@@ -446,6 +447,12 @@ function processResolveWeakCall(
 
 function collectImports(path: NodePath<>, state: State): void {
   if (path.node.source) {
+    invariant(
+      path.node.source.type === 'StringLiteral',
+      `Expected import source to be a string. Maybe you're using 'createImportExpressions', which is not currently supported.
+See: https://github.com/facebook/metro/pull/1343`,
+    );
+
     registerDependency(
       state,
       {
@@ -697,7 +704,6 @@ const DefaultDependencyTransformer: DependencyTransformer = {
     path.node.arguments = ([moduleIDExpression]: Array<
       | BabelNodeExpression
       | BabelNodeSpreadElement
-      | BabelNodeJSXNamespacedName
       | BabelNodeArgumentPlaceholder,
     >);
     // Always add the debug name argument last

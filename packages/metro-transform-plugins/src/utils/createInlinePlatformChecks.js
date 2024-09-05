@@ -163,7 +163,6 @@ function createInlinePlatformChecks(
     args: Array<
       | BabelNodeExpression
       | BabelNodeSpreadElement
-      | BabelNodeJSXNamespacedName
       | BabelNodeArgumentPlaceholder,
     >,
     dependencyId: string,
