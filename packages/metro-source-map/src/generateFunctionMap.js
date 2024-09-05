@@ -156,7 +156,7 @@ function getFunctionMapVisitor(
 ): FunctionMapVisitor {
   const nameStack: Array<{loc: BabelNodeSourceLocation, name: string}> = [];
   let tailPos = {line: 1, column: 0};
-  let tailName = null;
+  let tailName: null | string = null;
 
   function advanceToPos(pos: {column: number, line: number}) {
     if (tailPos && positionGreater(pos, tailPos)) {
