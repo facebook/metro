@@ -20,7 +20,7 @@
     "graceful-fs": "^4.2.4",
     "invariant": "^2.2.4",
     "jest-worker": "^29.6.3",
-    "micromatch": "^4.0.4",
+    "micromatch": "^4.0.8",
     "node-abort-controller": "^3.1.1",
     "nullthrows": "^1.1.1",
     "walker": "^1.0.7"
