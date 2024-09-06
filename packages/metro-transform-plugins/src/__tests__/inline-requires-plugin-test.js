@@ -11,6 +11,7 @@
 'use strict';
 
 import type {PluginOptions, State} from '../inline-requires-plugin';
+import type {PluginTesterOptions} from 'babel-plugin-tester';
 
 const inlineRequiresPlugin = require('../inline-requires-plugin');
 const validateOutputAst = require('./validateOutputAst');
@@ -18,53 +19,45 @@ const babel = require('@babel/core');
 const pluginTester = require('babel-plugin-tester');
 const nullthrows = require('nullthrows');
 
-pluginTester<PluginOptions, State>({
-  babelOptions: {
-    babelrc: false,
-    configFile: false,
+type TestCases = PluginTesterOptions<PluginOptions, State>['tests'];
+
+const TEST_CASES: TestCases = {
+  'inlines single usage': {
+    code: ['var foo = require("foo");', 'foo.bar()'].join('\n'),
+    snapshot: true,
   },
-  plugin: inlineRequiresPlugin,
-  pluginOptions: {
-    ignoredRequires: ['CommonFoo'],
-    inlineableCalls: ['customStuff'],
+
+  'inlines multiple usages': {
+    code: ['var foo = require("foo");', 'foo.bar()', 'foo.baz()'].join('\n'),
+    snapshot: true,
   },
-  tests: {
-    'inlines single usage': {
-      code: ['var foo = require("foo");', 'foo.bar()'].join('\n'),
-      snapshot: true,
-    },
 
-    'inlines multiple usages': {
-      code: ['var foo = require("foo");', 'foo.bar()', 'foo.baz()'].join('\n'),
-      snapshot: true,
-    },
+  'inlines any number of variable declarations': {
+    code: [
+      'var foo = require("foo"), bar = require("bar"), baz = 4;',
+      'foo.method()',
+    ].join('\n'),
+    snapshot: true,
+  },
 
-    'inlines any number of variable declarations': {
-      code: [
-        'var foo = require("foo"), bar = require("bar"), baz = 4;',
-        'foo.method()',
-      ].join('\n'),
-      snapshot: true,
-    },
+  'ignores requires that are not assigned': {
+    code: ['require("foo");'].join('\n'),
+    snapshot: false,
+  },
 
-    'ignores requires that are not assigned': {
-      code: ['require("foo");'].join('\n'),
-      snapshot: false,
-    },
+  'delete unused requires': {
+    code: ['var foo = require("foo");'].join('\n'),
+    snapshot: true,
+  },
 
-    'delete unused requires': {
-      code: ['var foo = require("foo");'].join('\n'),
-      snapshot: true,
-    },
+  'ignores requires that are re-assigned': {
+    code: ['var foo = require("foo");', 'foo = "bar";'].join('\n'),
+    snapshot: false,
+  },
 
-    'ignores requires that are re-assigned': {
-      code: ['var foo = require("foo");', 'foo = "bar";'].join('\n'),
-      snapshot: false,
-    },
-
-    'ensures that the inlined require still points to the global require function':
-      {
-        code: `
+  'ensures that the inlined require still points to the global require function':
+    {
+      code: `
           const foo = require('foo');
 
           function test() {
@@ -77,12 +70,12 @@ pluginTester<PluginOptions, State>({
             require(foo.isOnline());
           }
         `,
-        snapshot: true,
-      },
+      snapshot: true,
+    },
 
-    'ensures that the inlined require still points to the global require function with inlineableCalls options':
-      {
-        code: `
+  'ensures that the inlined require still points to the global require function with inlineableCalls options':
+    {
+      code: `
           const foo = customStuff('foo');
 
           function test() {
@@ -95,12 +88,12 @@ pluginTester<PluginOptions, State>({
             customStuff(foo.isOnline());
           }
         `,
-        snapshot: true,
-      },
+      snapshot: true,
+    },
 
-    'ensures that the inlined require still points to the global require function even if local require is not called':
-      {
-        code: `
+  'ensures that the inlined require still points to the global require function even if local require is not called':
+    {
+      code: `
           const foo = require('foo');
 
           function test() {
@@ -113,12 +106,12 @@ pluginTester<PluginOptions, State>({
             foo.isOnline();
           }
         `,
-        snapshot: true,
-      },
+      snapshot: true,
+    },
 
-    'does not transform require calls if require is redeclared in the same declaration scope':
-      {
-        code: `
+  'does not transform require calls if require is redeclared in the same declaration scope':
+    {
+      code: `
           function require(condition) {
             if (!condition) {
               throw new Error('Condition is falsy');
@@ -127,12 +120,12 @@ pluginTester<PluginOptions, State>({
           const foo = require('foo');
           console.log(foo.test);
         `,
-        snapshot: false,
-      },
+      snapshot: false,
+    },
 
-    'does not transform require calls if require is redeclared in the global scope':
-      {
-        code: `
+  'does not transform require calls if require is redeclared in the global scope':
+    {
+      code: `
           function require(condition) {
             if (!condition) {
               throw new Error('Condition is falsy');
@@ -143,11 +136,11 @@ pluginTester<PluginOptions, State>({
             console.log(foo.test);
           }
         `,
-        snapshot: false,
-      },
+      snapshot: false,
+    },
 
-    'does not transform require calls that are already inline': {
-      code: `
+  'does not transform require calls that are already inline': {
+    code: `
         function test() {
           function require(condition) {
             if (!condition) {
@@ -157,93 +150,108 @@ pluginTester<PluginOptions, State>({
           require('test');
         }
       `,
-      snapshot: false,
-    },
-
-    'inlines requires that are referenced before the require statement': {
-      code: [
-        'function foo() {',
-        '  bar();',
-        '}',
-        'var bar = require("baz");',
-        'foo();',
-        'bar();',
-      ].join('\n'),
-      snapshot: true,
-    },
-
-    'inlines require properties': {
-      code: [
-        'var tmp = require("./a");',
-        'var a = tmp.a',
-        'var D = {',
-        '  b: function(c) { c ? a(c.toString()) : a("No c!"); },',
-        '};',
-      ].join('\n'),
-      snapshot: true,
-    },
-
-    'ignores require properties (as identifiers) that are re-assigned': {
-      code: [
-        'var X = require("X");',
-        'var origA = X.a',
-        'X.a = function() {',
-        '  origA();',
-        '};',
-      ].join('\n'),
-      snapshot: true,
-    },
-
-    'ignores require properties (as strings) that are re-assigned': {
-      code: [
-        'var X = require("X");',
-        'var origA = X["a"]',
-        'X["a"] = function() {',
-        '  origA();',
-        '};',
-      ].join('\n'),
-      snapshot: true,
-    },
-
-    'inlines functions provided via `inlineableCalls`': {
-      code: [
-        'const inlinedCustom = customStuff("foo");',
-        'const inlinedRequire = require("bar");',
-        '',
-        'inlinedCustom();',
-        'inlinedRequire();',
-      ].join('\n'),
-      snapshot: true,
-    },
-
-    'ignores requires in `ignoredRequires`': {
-      code: ['const CommonFoo = require("CommonFoo");', 'CommonFoo();'].join(
-        '\n',
-      ),
-      snapshot: false,
-    },
-
-    'ignores destructured properties of requires in `ignoredRequires`': {
-      code: [
-        'const tmp = require("CommonFoo");',
-        'const a = require("CommonFoo").a;',
-        'a();',
-      ].join('\n'),
-      snapshot: false,
-    },
-
-    'inlines require.resolve calls': {
-      code: ['const a = require(require.resolve("Foo")).bar;', '', 'a();'].join(
-        '\n',
-      ),
-      snapshot: true,
-    },
-
-    'inlines with multiple arguments': {
-      code: ['const a = require("Foo", "Bar", 47);', '', 'a();'].join('\n'),
-      snapshot: true,
-    },
+    snapshot: false,
   },
+
+  'inlines requires that are referenced before the require statement': {
+    code: [
+      'function foo() {',
+      '  bar();',
+      '}',
+      'var bar = require("baz");',
+      'foo();',
+      'bar();',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'inlines require properties': {
+    code: [
+      'var tmp = require("./a");',
+      'var a = tmp.a',
+      'var D = {',
+      '  b: function(c) { c ? a(c.toString()) : a("No c!"); },',
+      '};',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'ignores require properties (as identifiers) that are re-assigned': {
+    code: [
+      'var X = require("X");',
+      'var origA = X.a',
+      'X.a = function() {',
+      '  origA();',
+      '};',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'ignores require properties (as strings) that are re-assigned': {
+    code: [
+      'var X = require("X");',
+      'var origA = X["a"]',
+      'X["a"] = function() {',
+      '  origA();',
+      '};',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'inlines functions provided via `inlineableCalls`': {
+    code: [
+      'const inlinedCustom = customStuff("foo");',
+      'const inlinedRequire = require("bar");',
+      '',
+      'inlinedCustom();',
+      'inlinedRequire();',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'ignores requires in `ignoredRequires`': {
+    code: ['const CommonFoo = require("CommonFoo");', 'CommonFoo();'].join(
+      '\n',
+    ),
+    snapshot: false,
+  },
+
+  'ignores destructured properties of requires in `ignoredRequires`': {
+    code: [
+      'const tmp = require("CommonFoo");',
+      'const a = require("CommonFoo").a;',
+      'a();',
+    ].join('\n'),
+    snapshot: false,
+  },
+
+  'inlines require.resolve calls': {
+    code: ['const a = require(require.resolve("Foo")).bar;', '', 'a();'].join(
+      '\n',
+    ),
+    snapshot: true,
+  },
+
+  'inlines with multiple arguments': {
+    code: ['const a = require("Foo", "Bar", 47);', '', 'a();'].join('\n'),
+    snapshot: true,
+  },
+};
+
+describe.each([true, false])('memoizeCalls=%s:', memoizeCalls => {
+  pluginTester<PluginOptions, State>({
+    babelOptions: {
+      babelrc: false,
+      configFile: false,
+    },
+    plugin: inlineRequiresPlugin,
+    pluginOptions: {
+      ignoredRequires: ['CommonFoo'],
+      inlineableCalls: ['customStuff'],
+      memoizeCalls,
+    },
+    tests: TEST_CASES,
+  });
 });
 
 describe('inline-requires', () => {
