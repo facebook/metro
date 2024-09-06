@@ -12,12 +12,14 @@
 
 import type {PluginObj} from '@babel/core';
 import typeof * as Babel from '@babel/core';
-import type {NodePath} from '@babel/traverse';
+import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
+type Types = Babel['types'];
 
 export type PluginOptions = $ReadOnly<{
   ignoredRequires?: $ReadOnlyArray<string>,
   inlineableCalls?: $ReadOnlyArray<string>,
+  memoizeCalls?: boolean,
 }>;
 
 export type State = {
@@ -63,6 +65,7 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
       exit(path: NodePath<Program>, state: State): void {
         const ignoredRequires = new Set<string>();
         const inlineableCalls = new Set(['require']);
+        let memoizeCalls = false;
         const opts = state.opts;
 
         if (opts != null) {
@@ -76,8 +79,13 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
               inlineableCalls.add(name);
             }
           }
+          memoizeCalls = opts.memoizeCalls ?? false;
         }
 
+        const programNode = path.scope.block;
+        if (programNode.type !== 'Program') {
+          return;
+        }
         path.scope.crawl();
         path.traverse<State>(
           {
@@ -89,22 +97,26 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
               if (parseResult == null) {
                 return;
               }
-
               const {declarationPath, moduleName, requireFnName} = parseResult;
-              const init = declarationPath.node.init;
+              const maybeInit = declarationPath.node.init;
               const name = declarationPath.node.id
                 ? declarationPath.node.id.name
                 : null;
 
               const binding =
                 name == null ? null : declarationPath.scope.getBinding(name);
-              if (binding == null || binding.constantViolations.length > 0) {
+              if (
+                maybeInit == null ||
+                !t.isExpression(maybeInit) ||
+                binding == null ||
+                binding.constantViolations.length > 0
+              ) {
                 return;
               }
-
+              const init: BabelNodeExpression = maybeInit;
               const initPath = declarationPath.get('init');
 
-              if (init == null || Array.isArray(initPath)) {
+              if (Array.isArray(initPath)) {
                 return;
               }
 
@@ -117,14 +129,70 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
               });
 
               let thrown = false;
+              const memoVarName = parseResult.identifierName;
+
+              // Whether the module has a "var foo" at program scope, used to
+              // store the result of a require call if memoizeCalls is true.
+              let hasMemoVar = false;
+              if (
+                memoizeCalls &&
+                // Don't add a var init statement if there are no references to
+                // the lvalue of the require assignment.
+                binding.referencePaths.length > 0
+              ) {
+                // create var init statement
+                const varInitStmt = t.variableDeclaration('var', [
+                  t.variableDeclarator(t.identifier(memoVarName)),
+                ]);
+                // Must remove the declaration path
+                declarationPath.remove();
+                hasMemoVar = addStmtToBlock(programNode, varInitStmt, 0);
+              }
+
+              function getMemoOrCallExpr() {
+                const refExpr = t.cloneDeep(init);
+                // $FlowFixMe[prop-missing]
+                refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
+                return t.logicalExpression(
+                  '||',
+                  t.identifier(memoVarName),
+                  t.assignmentExpression(
+                    '=',
+                    t.identifier(memoVarName),
+                    refExpr,
+                  ),
+                );
+              }
+
+              const scopesWithInlinedRequire = new Set<Scope>();
               for (const referencePath of binding.referencePaths) {
                 excludeMemberAssignment(moduleName, referencePath, state);
                 try {
                   referencePath.scope.rename(requireFnName);
-                  const refExpr = t.cloneDeep(init);
-                  // $FlowFixMe[prop-missing]
-                  refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
-                  referencePath.replaceWith(refExpr);
+                  if (hasMemoVar) {
+                    referencePath.scope.rename(memoVarName);
+                    // Swap the local reference with (v || v = require(m)),
+                    // unless it is directly enclosed.
+                    if (!isDirectlyEnclosedByBlock(t, referencePath)) {
+                      referencePath.replaceWith(getMemoOrCallExpr());
+                      continue;
+                    }
+                    // if the current scope already has a (v || v = require(m))
+                    // expression for module m, use identifier reference v
+                    // instead. Else use the full (v || v = require(m)) and
+                    // register the current scope for subsequent references.
+                    if (scopesWithInlinedRequire.has(referencePath.scope)) {
+                      referencePath.replaceWith(t.identifier(memoVarName));
+                    } else {
+                      referencePath.replaceWith(getMemoOrCallExpr());
+                      scopesWithInlinedRequire.add(referencePath.scope);
+                    }
+                  } else {
+                    const refExpr = t.cloneDeep(init);
+                    // $FlowFixMe[prop-missing]
+                    refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
+                    referencePath.replaceWith(refExpr);
+                  }
                 } catch (error) {
                   thrown = true;
                 }
@@ -132,7 +200,7 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
 
               // If a replacement failed (e.g. replacing a type annotation),
               // avoid removing the initial require just to be safe.
-              if (!thrown) {
+              if (!thrown && declarationPath.node != null) {
                 declarationPath.remove();
               }
             },
@@ -209,6 +277,7 @@ function parseInlineableAlias(
   declarationPath: NodePath<BabelNode>,
   moduleName: string,
   requireFnName: string,
+  identifierName: string,
 } {
   const module = getInlineableModule(path, state);
   if (module == null) {
@@ -225,9 +294,19 @@ function parseInlineableAlias(
     return null;
   }
 
+  if (path.parent.type !== 'VariableDeclarator') {
+    return null;
+  }
+
+  const variableDeclarator = path.parent;
+
+  if (variableDeclarator.id.type !== 'Identifier') {
+    return null;
+  }
+
+  const identifier = variableDeclarator.id;
+
   const isValid =
-    path.parent.type === 'VariableDeclarator' &&
-    path.parent.id.type === 'Identifier' &&
     parentPath.parent.type === 'VariableDeclaration' &&
     grandParentPath.parent.type === 'Program';
 
@@ -237,6 +316,7 @@ function parseInlineableAlias(
         declarationPath: parentPath,
         moduleName,
         requireFnName,
+        identifierName: identifier.name,
       };
 }
 
@@ -247,6 +327,7 @@ function parseInlineableMemberAlias(
   declarationPath: NodePath<BabelNode>,
   moduleName: string,
   requireFnName: string,
+  identifierName: string,
 } {
   const module = getInlineableModule(path, state);
   if (module == null) {
@@ -279,6 +360,8 @@ function parseInlineableMemberAlias(
     return null;
   }
 
+  const identifier = variableDeclarator.id;
+
   if (
     grandParentPath.parent.type !== 'VariableDeclaration' ||
     grandParentPath.parentPath?.parent.type !== 'Program' ||
@@ -296,6 +379,7 @@ function parseInlineableMemberAlias(
         declarationPath: grandParentPath,
         moduleName,
         requireFnName,
+        identifierName: identifier.name,
       };
 }
 
@@ -362,4 +446,53 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
     current = current.parentPath;
   }
   return current?.node.loc;
+}
+
+// check if a node is a branch
+function isBranch(t: Types, node: BabelNode) {
+  return (
+    t.isIfStatement(node) ||
+    t.isLogicalExpression(node) ||
+    t.isConditionalExpression(node) ||
+    t.isSwitchStatement(node) ||
+    t.isSwitchCase(node) ||
+    t.isForStatement(node) ||
+    t.isForInStatement(node) ||
+    t.isForOfStatement(node) ||
+    t.isWhileStatement(node)
+  );
+}
+
+function isDirectlyEnclosedByBlock(t: Types, path: NodePath<BabelNode>) {
+  let curPath: ?NodePath<BabelNode> = path;
+  while (curPath) {
+    if (isBranch(t, curPath.node)) {
+      return false;
+    }
+    if (t.isBlockStatement(curPath.node)) {
+      return true;
+    }
+    curPath = curPath.parentPath;
+  }
+  return true;
+}
+
+// insert statement to the beginning of the scope block
+function addStmtToBlock(
+  block: BabelNodeProgram,
+  stmt: BabelNodeStatement,
+  idx: number,
+): boolean {
+  const scopeBody = block.body;
+  if (Array.isArray(scopeBody)) {
+    // if the code is inside global scope
+    scopeBody.splice(idx, 0, stmt);
+    return true;
+  } else if (scopeBody && Array.isArray(scopeBody.body)) {
+    // if the code is inside function scope
+    scopeBody.body.splice(idx, 0, stmt);
+    return true;
+  } else {
+    return false;
+  }
 }

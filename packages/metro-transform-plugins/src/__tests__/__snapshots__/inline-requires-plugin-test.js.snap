@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`inline-requires delete unused requires: delete unused requires 1`] = `
+exports[`memoizeCalls=false: inline-requires delete unused requires: delete unused requires 1`] = `
 "
 var foo = require(\\"foo\\");
 
@@ -10,7 +10,7 @@ var foo = require(\\"foo\\");
 "
 `;
 
-exports[`inline-requires ensures that the inlined require still points to the global require function even if local require is not called: ensures that the inlined require still points to the global require function even if local require is not called 1`] = `
+exports[`memoizeCalls=false: inline-requires ensures that the inlined require still points to the global require function even if local require is not called: ensures that the inlined require still points to the global require function even if local require is not called 1`] = `
 "
 const foo = require('foo');
 
@@ -37,7 +37,7 @@ function test() {
 "
 `;
 
-exports[`inline-requires ensures that the inlined require still points to the global require function with inlineableCalls options: ensures that the inlined require still points to the global require function with inlineableCalls options 1`] = `
+exports[`memoizeCalls=false: inline-requires ensures that the inlined require still points to the global require function with inlineableCalls options: ensures that the inlined require still points to the global require function with inlineableCalls options 1`] = `
 "
 const foo = customStuff('foo');
 
@@ -64,7 +64,7 @@ function test() {
 "
 `;
 
-exports[`inline-requires ensures that the inlined require still points to the global require function: ensures that the inlined require still points to the global require function 1`] = `
+exports[`memoizeCalls=false: inline-requires ensures that the inlined require still points to the global require function: ensures that the inlined require still points to the global require function 1`] = `
 "
 const foo = require('foo');
 
@@ -91,7 +91,7 @@ function test() {
 "
 `;
 
-exports[`inline-requires ignores require properties (as identifiers) that are re-assigned: ignores require properties (as identifiers) that are re-assigned 1`] = `
+exports[`memoizeCalls=false: inline-requires ignores require properties (as identifiers) that are re-assigned: ignores require properties (as identifiers) that are re-assigned 1`] = `
 "
 var X = require(\\"X\\");
 var origA = X.a
@@ -108,7 +108,7 @@ require(\\"X\\").a = function () {
 "
 `;
 
-exports[`inline-requires ignores require properties (as strings) that are re-assigned: ignores require properties (as strings) that are re-assigned 1`] = `
+exports[`memoizeCalls=false: inline-requires ignores require properties (as strings) that are re-assigned: ignores require properties (as strings) that are re-assigned 1`] = `
 "
 var X = require(\\"X\\");
 var origA = X[\\"a\\"]
@@ -125,7 +125,7 @@ require(\\"X\\")[\\"a\\"] = function () {
 "
 `;
 
-exports[`inline-requires inlines any number of variable declarations: inlines any number of variable declarations 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines any number of variable declarations: inlines any number of variable declarations 1`] = `
 "
 var foo = require(\\"foo\\"), bar = require(\\"bar\\"), baz = 4;
 foo.method()
@@ -137,7 +137,7 @@ require(\\"foo\\").method();
 "
 `;
 
-exports[`inline-requires inlines functions provided via \`inlineableCalls\`: inlines functions provided via \`inlineableCalls\` 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines functions provided via \`inlineableCalls\`: inlines functions provided via \`inlineableCalls\` 1`] = `
 "
 const inlinedCustom = customStuff(\\"foo\\");
 const inlinedRequire = require(\\"bar\\");
@@ -152,7 +152,7 @@ require(\\"bar\\")();
 "
 `;
 
-exports[`inline-requires inlines multiple usages: inlines multiple usages 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines multiple usages: inlines multiple usages 1`] = `
 "
 var foo = require(\\"foo\\");
 foo.bar()
@@ -165,7 +165,7 @@ require(\\"foo\\").baz();
 "
 `;
 
-exports[`inline-requires inlines require properties: inlines require properties 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines require properties: inlines require properties 1`] = `
 "
 var tmp = require(\\"./a\\");
 var a = tmp.a
@@ -183,7 +183,7 @@ var D = {
 "
 `;
 
-exports[`inline-requires inlines require.resolve calls: inlines require.resolve calls 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines require.resolve calls: inlines require.resolve calls 1`] = `
 "
 const a = require(require.resolve(\\"Foo\\")).bar;
 
@@ -195,7 +195,7 @@ require(require.resolve(\\"Foo\\")).bar();
 "
 `;
 
-exports[`inline-requires inlines requires that are referenced before the require statement: inlines requires that are referenced before the require statement 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines requires that are referenced before the require statement: inlines requires that are referenced before the require statement 1`] = `
 "
 function foo() {
   bar();
@@ -214,7 +214,7 @@ require(\\"baz\\")();
 "
 `;
 
-exports[`inline-requires inlines single usage: inlines single usage 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines single usage: inlines single usage 1`] = `
 "
 var foo = require(\\"foo\\");
 foo.bar()
@@ -225,7 +225,7 @@ require(\\"foo\\").bar();
 "
 `;
 
-exports[`inline-requires inlines with multiple arguments: inlines with multiple arguments 1`] = `
+exports[`memoizeCalls=false: inline-requires inlines with multiple arguments: inlines with multiple arguments 1`] = `
 "
 const a = require(\\"Foo\\", \\"Bar\\", 47);
 
@@ -234,5 +234,257 @@ a();
       ↓ ↓ ↓ ↓ ↓ ↓
 
 require(\\"Foo\\", \\"Bar\\", 47)();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires delete unused requires: delete unused requires 1`] = `
+"
+var foo = require(\\"foo\\");
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires ensures that the inlined require still points to the global require function even if local require is not called: ensures that the inlined require still points to the global require function even if local require is not called 1`] = `
+"
+const foo = require('foo');
+
+function test() {
+  function require(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+
+  foo.isOnline();
+}
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+function test() {
+  function _require(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+  (foo || (foo = require('foo'))).isOnline();
+}
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires ensures that the inlined require still points to the global require function with inlineableCalls options: ensures that the inlined require still points to the global require function with inlineableCalls options 1`] = `
+"
+const foo = customStuff('foo');
+
+function test() {
+  function customStuff(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+
+  customStuff(foo.isOnline());
+}
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+function test() {
+  function _customStuff(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+  _customStuff((foo || (foo = customStuff('foo'))).isOnline());
+}
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires ensures that the inlined require still points to the global require function: ensures that the inlined require still points to the global require function 1`] = `
+"
+const foo = require('foo');
+
+function test() {
+  function require(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+
+  require(foo.isOnline());
+}
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+function test() {
+  function _require(condition) {
+    if (!condition) {
+      throw new Error('Condition is falsy');
+    }
+  }
+  _require((foo || (foo = require('foo'))).isOnline());
+}
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires ignores require properties (as identifiers) that are re-assigned: ignores require properties (as identifiers) that are re-assigned 1`] = `
+"
+var X = require(\\"X\\");
+var origA = X.a
+X.a = function() {
+  origA();
+};
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var X;
+var origA = (X || (X = require(\\"X\\"))).a;
+X.a = function () {
+  origA();
+};
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires ignores require properties (as strings) that are re-assigned: ignores require properties (as strings) that are re-assigned 1`] = `
+"
+var X = require(\\"X\\");
+var origA = X[\\"a\\"]
+X[\\"a\\"] = function() {
+  origA();
+};
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var X;
+var origA = (X || (X = require(\\"X\\")))[\\"a\\"];
+X[\\"a\\"] = function () {
+  origA();
+};
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines any number of variable declarations: inlines any number of variable declarations 1`] = `
+"
+var foo = require(\\"foo\\"), bar = require(\\"bar\\"), baz = 4;
+foo.method()
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+var baz = 4;
+(foo || (foo = require(\\"foo\\"))).method();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines functions provided via \`inlineableCalls\`: inlines functions provided via \`inlineableCalls\` 1`] = `
+"
+const inlinedCustom = customStuff(\\"foo\\");
+const inlinedRequire = require(\\"bar\\");
+
+inlinedCustom();
+inlinedRequire();
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var inlinedRequire;
+var inlinedCustom;
+(inlinedCustom || (inlinedCustom = customStuff(\\"foo\\")))();
+(inlinedRequire || (inlinedRequire = require(\\"bar\\")))();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines multiple usages: inlines multiple usages 1`] = `
+"
+var foo = require(\\"foo\\");
+foo.bar()
+foo.baz()
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+(foo || (foo = require(\\"foo\\"))).bar();
+foo.baz();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines require properties: inlines require properties 1`] = `
+"
+var tmp = require(\\"./a\\");
+var a = tmp.a
+var D = {
+  b: function(c) { c ? a(c.toString()) : a(\\"No c!\\"); },
+};
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var tmp;
+var a = (tmp || (tmp = require(\\"./a\\"))).a;
+var D = {
+  b: function (c) {
+    c ? a(c.toString()) : a(\\"No c!\\");
+  }
+};
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines require.resolve calls: inlines require.resolve calls 1`] = `
+"
+const a = require(require.resolve(\\"Foo\\")).bar;
+
+a();
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var a;
+(a || (a = require(require.resolve(\\"Foo\\")).bar))();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines requires that are referenced before the require statement: inlines requires that are referenced before the require statement 1`] = `
+"
+function foo() {
+  bar();
+}
+var bar = require(\\"baz\\");
+foo();
+bar();
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var bar;
+function foo() {
+  (bar || (bar = require(\\"baz\\")))();
+}
+foo();
+(bar || (bar = require(\\"baz\\")))();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines single usage: inlines single usage 1`] = `
+"
+var foo = require(\\"foo\\");
+foo.bar()
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var foo;
+(foo || (foo = require(\\"foo\\"))).bar();
+"
+`;
+
+exports[`memoizeCalls=true: inline-requires inlines with multiple arguments: inlines with multiple arguments 1`] = `
+"
+const a = require(\\"Foo\\", \\"Bar\\", 47);
+
+a();
+
+      ↓ ↓ ↓ ↓ ↓ ↓
+
+var a;
+(a || (a = require(\\"Foo\\", \\"Bar\\", 47)))();
 "
 `;

@@ -64,6 +64,8 @@ export type JsTransformerConfig = Readonly<{
   unstable_compactOutput: boolean;
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean;
+  /** With inlineRequires, enable a module-scope memo var and inline as (v || v=require('foo')) */
+  unstable_memoizeInlineRequires?: boolean;
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean;
 }>;

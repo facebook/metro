@@ -137,6 +137,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_disableNormalizePseudoGlobals: false,
     unstable_renameRequire: true,
     unstable_compactOutput: false,
+    unstable_memoizeInlineRequires: false,
     unstable_workerThreads: false,
   },
   watcher: {
