@@ -314,6 +314,10 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               p('a/b/c/d/link-to-A'),
               ['', 0, 0, 0, '', '', p('../../../../../..')],
             ],
+            [
+              p('n_m/@internal/another'),
+              ['', 0, 0, 0, '', '', p('../../../another')],
+            ],
           ].concat(
             [
               'a/package.json',
@@ -331,6 +335,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               'a/n_m/pkg/n_m/pkg2/package.json',
               '../../package.json',
               '../../../a/b/package.json',
+              '../another/package.json',
             ].map(posixPath => [p(posixPath), ['', 0, 0, 0, '', '', 0]]),
           ),
         ),
@@ -447,6 +452,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ['/A/B/C/a/n_m/pkg3/foo.js', null, null, ['/A/B/C/a/n_m/pkg3']],
       // Does not look beyond n_m, if n_m does not exist
       ['/A/B/C/a/b/n_m/pkg/foo', null, null, ['/A/B/C/a/b/n_m']],
+      [
+        '/A/B/C/n_m/@internal/another/hi',
+        '/A/B/another/package.json',
+        'hi',
+        ['/A/B/C/n_m/@internal/another', '/A/B/another/hi'],
+      ],
     ])(
       '%s => %s (relative %s, invalidatedBy %s)',
       (
