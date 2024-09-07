@@ -35,7 +35,11 @@ function isRegularFile(node: FileNode): boolean {
   return node[H.SYMLINK] === 0;
 }
 
-type NormalizedSymlinkTarget = {ancestorOfRootIdx: ?number, normalPath: string};
+type NormalizedSymlinkTarget = {
+  ancestorOfRootIdx: ?number,
+  normalPath: string,
+  startOfBasenameIdx: number,
+};
 
 /**
  * OVERVIEW:
@@ -667,9 +671,10 @@ export default class TreeFS implements MutableFileSystem {
         }
 
         // For the purpose of collecting ancestors: Ignore the traversal to
-        // the symlink target, and start collecting ancestors only when we
-        // reach the remaining part of the path.
-        unseenPathFromIdx = normalSymlinkTarget.normalPath.length;
+        // the symlink target, and start collecting ancestors only
+        // from the target itself (ie, the basename of the normal target path)
+        // onwards.
+        unseenPathFromIdx = normalSymlinkTarget.startOfBasenameIdx;
 
         if (seen == null) {
           // Optimisation: set this lazily only when we've encountered a symlink
@@ -1122,6 +1127,7 @@ export default class TreeFS implements MutableFileSystem {
       ancestorOfRootIdx:
         this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget),
       normalPath: normalSymlinkTarget,
+      startOfBasenameIdx: normalSymlinkTarget.lastIndexOf(path.sep) + 1,
     };
     this.#cachedNormalSymlinkTargets.set(symlinkNode, result);
     return result;

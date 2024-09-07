@@ -314,6 +314,10 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               p('a/b/c/d/link-to-A'),
               ['', 0, 0, 0, '', '', p('../../../../../..')],
             ],
+            [
+              p('n_m/workspace/link-to-pkg'),
+              ['', 0, 0, 0, '', '', p('../../../workspace-pkg')],
+            ],
           ].concat(
             [
               'a/package.json',
@@ -331,6 +335,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               'a/n_m/pkg/n_m/pkg2/package.json',
               '../../package.json',
               '../../../a/b/package.json',
+              '../workspace-pkg/package.json',
             ].map(posixPath => [p(posixPath), ['', 0, 0, 0, '', '', 0]]),
           ),
         ),
@@ -447,6 +452,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       ['/A/B/C/a/n_m/pkg3/foo.js', null, null, ['/A/B/C/a/n_m/pkg3']],
       // Does not look beyond n_m, if n_m does not exist
       ['/A/B/C/a/b/n_m/pkg/foo', null, null, ['/A/B/C/a/b/n_m']],
+      [
+        '/A/B/C/n_m/workspace/link-to-pkg/subpath',
+        '/A/B/workspace-pkg/package.json',
+        'subpath',
+        ['/A/B/C/n_m/workspace/link-to-pkg', '/A/B/workspace-pkg/subpath'],
+      ],
     ])(
       '%s => %s (relative %s, invalidatedBy %s)',
       (
