@@ -25,6 +25,7 @@ exports.assetExts = [
   'psd',
   'svg',
   'webp',
+  'xml',
   // Video formats
   'm4v',
   'mov',
