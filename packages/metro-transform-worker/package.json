@@ -32,6 +32,6 @@
     "metro-memory-fs": "0.80.11"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18.18"
   }
 }
