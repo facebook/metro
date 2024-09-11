@@ -116,6 +116,8 @@ async function calcTransformerOptions(
     experimentalImportSupport: transform?.experimentalImportSupport || false,
     unstable_disableES6Transforms:
       transform?.unstable_disableES6Transforms || false,
+    unstable_memoizeInlineRequires:
+      transform?.unstable_memoizeInlineRequires || false,
     nonInlinedRequires:
       transform?.nonInlinedRequires || baseIgnoredInlineRequires,
     type: 'module',
