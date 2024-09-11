@@ -27,17 +27,19 @@ import type {
 import type {Reporter} from 'metro/src/lib/reporting';
 import type MetroServer from 'metro/src/Server';
 
-export type ExtraTransformOptions = {
-  +preloadedModules?: {[path: string]: true, ...} | false,
-  +ramGroups?: Array<string>,
-  +transform?: {
-    +experimentalImportSupport?: boolean,
-    +inlineRequires?: {+blockList: {[string]: true, ...}, ...} | boolean,
-    +nonInlinedRequires?: $ReadOnlyArray<string>,
-    +unstable_disableES6Transforms?: boolean,
-  },
+export type ExtraTransformOptions = $ReadOnly<{
+  preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
+  ramGroups?: $ReadOnlyArray<string>,
+  transform?: $ReadOnly<{
+    experimentalImportSupport?: boolean,
+    inlineRequires?:
+      | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
+      | boolean,
+    nonInlinedRequires?: $ReadOnlyArray<string>,
+    unstable_disableES6Transforms?: boolean,
+  }>,
   ...
-};
+}>;
 
 export type GetTransformOptionsOpts = {
   dev: boolean,
