@@ -12,10 +12,10 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "license": "MIT",
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"
+  },
+  "engines": {
+    "node": ">=18.18"
   }
 }

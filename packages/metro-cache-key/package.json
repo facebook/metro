@@ -15,10 +15,10 @@
   "devDependencies": {
     "metro-memory-fs": "0.81.0-alpha.0"
   },
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"
+  },
+  "engines": {
+    "node": ">=18.18"
   }
 }

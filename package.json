@@ -94,6 +94,6 @@
   "license": "MIT",
   "dependencies": {},
   "engines": {
-    "node": ">=18"
+    "node": ">=18.18"
   }
 }
