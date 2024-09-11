@@ -146,10 +146,12 @@ async function _getRamOptions(
   },
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
-): Promise<{
-  +preloadedModules: {[string]: true, ...},
-  +ramGroups: Array<string>,
-}> {
+): Promise<
+  $ReadOnly<{
+    preloadedModules: $ReadOnly<{[string]: true, ...}>,
+    ramGroups: $ReadOnlyArray<string>,
+  }>,
+> {
   if (getTransformOptions == null) {
     return {
       preloadedModules: {},

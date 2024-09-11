@@ -23,11 +23,13 @@ import type {Reporter} from 'metro/src/lib/reporting';
 import type MetroServer from 'metro/src/Server';
 
 export interface ExtraTransformOptions {
-  readonly preloadedModules: {[path: string]: true} | false;
-  readonly ramGroups: string[];
+  readonly preloadedModules: Readonly<{[path: string]: true}> | false;
+  readonly ramGroups: ReadonlyArray<string>;
   readonly transform: Readonly<{
     experimentalImportSupport: boolean;
-    inlineRequires: {blockList: {[path: string]: true}} | boolean;
+    inlineRequires:
+      | Readonly<{blockList: Readonly<{[path: string]: true}>}>
+      | boolean;
     nonInlinedRequires?: ReadonlyArray<string>;
     unstable_disableES6Transforms?: boolean;
   }>;
