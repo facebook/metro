@@ -19,6 +19,6 @@
     "flow-enums-runtime": "^0.0.6"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18.18"
   }
 }

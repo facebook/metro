@@ -4,10 +4,6 @@ inputs:
     type: string
     required: false
     default: '20.x'
-  ignore-engines:
-    type: string
-    required: false
-    default: 'false'
 
 runs:
   using: "composite"
@@ -19,5 +15,5 @@ runs:
       cache-dependency-path: yarn.lock
       check-latest: true
   - name: Install Dependencies
-    run: yarn install --frozen-lockfile --non-interactive --ignore-scripts ${{ inputs.ignore-engines == 'true' && '--ignore-engines' || ''}}
+    run: yarn install --frozen-lockfile --non-interactive --ignore-scripts
     shell: bash

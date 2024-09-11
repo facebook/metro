@@ -47,18 +47,11 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: ['ubuntu-latest']
-        node-version: ['18.0', '18.x', '20.x']
-        include:
-          - runs-on: ubuntu-latest
-            node-version: '18.0'
-            # @typescript-eslint/eslint-plugin requires node ^18.18
-            # but we allow yarn install to run regardless to test the package
-            ignore-engines: 'true'
+        node-version: ['18.18', '18.x', '20.x']
     uses: ./.github/workflows/test.yml
     with:
       node-version: ${{ matrix.node-version }}
       runs-on: ${{ matrix.runs-on }}
-      ignore-engines: ${{ matrix.ignore-engines }}
 
   deploy:
     # runs only on tag pushes
