@@ -47,7 +47,11 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: ['ubuntu-latest']
-        node-version: ['18.18', '18.x', '20.x']
+        node-version: [
+          '18.18.0', # minimum supported
+          'lts/-1',  # pre-latest lts
+          'lts/*',   # latest lts
+        ]
     uses: ./.github/workflows/test.yml
     with:
       node-version: ${{ matrix.node-version }}
