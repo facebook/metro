@@ -6,10 +6,10 @@
 # to notify certain people when a Github workflow fails:
 # https://github.com/orgs/community/discussions/18039
 
-name: facebook/metro/nightly-node-compatibility-validation
+name: facebook/metro/nightly-tests
 on:
   schedule:
-    # Everyday at at 5:00 UTC (22:00 USA West Coast, 06:00 London)
+    # Daily at at 5:00 UTC
     - cron:  '0 5 * * *'
 
 jobs:
@@ -20,15 +20,18 @@ jobs:
       matrix:
         runs-on: ['ubuntu-latest']
         node-version: [  # https://github.com/nodejs/release#release-schedule
-          '18.18',   # minimum supported
+          '18.18.0', # minimum supported
           'lts/-1',  # pre-latest lts
           'lts/*',   # latest lts
           'current'  # newest
         ]
+        no-lockfile: ['false', 'true']
+    name: "Tests [Node.js ${{ matrix.node-version }}, ${{ matrix.runs-on }}, ${{ matrix.no-lockfile == 'false' && 'Using yarn.lock' || 'Ignoring yarn.lock' }}]"
     uses: ./.github/workflows/test.yml
     with:
       node-version: ${{ matrix.node-version }}
       runs-on: ${{ matrix.runs-on }}
+      no-lockfile: ${{ matrix.no-lockfile }}
 
   comment-on-pr-for-failures:
     runs-on: ubuntu-latest
@@ -43,5 +46,5 @@ jobs:
               issue_number: 1314,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'A nightly test failed in `${{ github.workflow }}` in [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!',
+              body: 'The nightly workflow `${{ github.workflow }}` failed in [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!',
             });
