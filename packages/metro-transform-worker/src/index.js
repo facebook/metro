@@ -301,7 +301,9 @@ async function transformJS(
       {
         ...babelPluginOpts,
         ignoredRequires: options.nonInlinedRequires,
-        memoizeCalls: options.unstable_memoizeInlineRequires,
+        memoizeCalls:
+          options.customTransformOptions?.unstable_memoizeInlineRequires ??
+          options.unstable_memoizeInlineRequires,
       },
     ]);
   }
