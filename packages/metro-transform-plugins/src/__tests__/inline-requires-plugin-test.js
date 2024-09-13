@@ -11,6 +11,7 @@
 'use strict';
 
 import type {PluginOptions, State} from '../inline-requires-plugin';
+import type {Plugins} from '@babel/core';
 import type {PluginTesterOptions} from 'babel-plugin-tester';
 
 const inlineRequiresPlugin = require('../inline-requires-plugin');
@@ -257,25 +258,21 @@ describe.each([true, false])('memoizeCalls=%s:', memoizeCalls => {
 describe('inline-requires', () => {
   const transform = (
     source: $ReadOnlyArray<string>,
-    options?: $ReadOnly<{...}>,
+    plugins?: Plugins = [[inlineRequiresPlugin, {}]],
   ) =>
     babel.transformSync(source.join('\n'), {
       ast: true,
       compact: true,
-      plugins: [
-        // $FlowFixMe[untyped-import] @babel/plugin-transform-modules-commonjs
-        [require('@babel/plugin-transform-modules-commonjs'), {strict: false}],
-        [inlineRequiresPlugin, options],
-      ],
+      plugins,
     });
 
   const compare = (
     input: $ReadOnlyArray<string>,
     output: $ReadOnlyArray<string>,
-    options?: $ReadOnly<{...}>,
+    plugins?: Plugins = [[inlineRequiresPlugin, {}]],
   ) => {
-    expect(transform(input, options).code).toBe(
-      transform(output, options).code,
+    expect(transform(input, plugins).code).toBe(
+      transform(output, plugins).code,
     );
   };
 
@@ -286,6 +283,11 @@ describe('inline-requires', () => {
         'var _foo = _interopRequireDefault(require("foo"));',
         'function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }',
         'console.log(_foo.default);',
+      ],
+      [
+        // $FlowFixMe[untyped-import] @babel/plugin-transform-modules-commonjs
+        [require('@babel/plugin-transform-modules-commonjs'), {strict: false}],
+        [inlineRequiresPlugin, {}],
       ],
     );
   });
@@ -304,6 +306,11 @@ describe('inline-requires', () => {
         '    c ? (0, require("./a").a)(c.toString()) : (0, require("./a").a)("No c!");',
         '  }',
         '};',
+      ],
+      [
+        // $FlowFixMe[untyped-import] @babel/plugin-transform-modules-commonjs
+        [require('@babel/plugin-transform-modules-commonjs'), {strict: false}],
+        [inlineRequiresPlugin, {}],
       ],
     );
   });
@@ -332,5 +339,37 @@ describe('inline-requires', () => {
       'foo.baz()',
     ]).ast;
     validateOutputAst(nullthrows(ast));
+  });
+
+  it('respects nonMemoizedModules', function () {
+    expect(
+      transform(
+        [
+          'const foo = require("foo");',
+          'const noMemo = require("noMemo");',
+          'module.exports = function() {',
+          '  foo();',
+          '  noMemo();',
+          '};',
+        ],
+        [
+          [
+            inlineRequiresPlugin,
+            {
+              memoizeCalls: true,
+              nonMemoizedModules: ['noMemo'],
+            },
+          ],
+        ],
+      ).code.replace('"use strict";', ''),
+    ).toEqual(
+      [
+        'var foo;',
+        'module.exports=function(){',
+        '(foo||(foo=require("foo")))();',
+        'require("noMemo")();',
+        '};',
+      ].join(''),
+    );
   });
 });

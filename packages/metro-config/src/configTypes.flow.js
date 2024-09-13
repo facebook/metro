@@ -38,6 +38,7 @@ export type ExtraTransformOptions = $ReadOnly<{
     nonInlinedRequires?: $ReadOnlyArray<string>,
     unstable_disableES6Transforms?: boolean,
     unstable_memoizeInlineRequires?: boolean,
+    unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   }>,
   ...
 }>;
