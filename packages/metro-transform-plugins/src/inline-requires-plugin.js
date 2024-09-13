@@ -19,6 +19,7 @@ type Types = Babel['types'];
 export type PluginOptions = $ReadOnly<{
   ignoredRequires?: $ReadOnlyArray<string>,
   inlineableCalls?: $ReadOnlyArray<string>,
+  nonMemoizedModules?: $ReadOnlyArray<string>,
   memoizeCalls?: boolean,
 }>;
 
@@ -65,20 +66,16 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
       exit(path: NodePath<Program>, state: State): void {
         const ignoredRequires = new Set<string>();
         const inlineableCalls = new Set(['require']);
+        const nonMemoizedModules = new Set<string>();
         let memoizeCalls = false;
         const opts = state.opts;
 
         if (opts != null) {
-          if (opts.ignoredRequires != null) {
-            for (const name of opts.ignoredRequires) {
-              ignoredRequires.add(name);
-            }
-          }
-          if (opts.inlineableCalls != null) {
-            for (const name of opts.inlineableCalls) {
-              inlineableCalls.add(name);
-            }
-          }
+          opts.ignoredRequires?.forEach(name => ignoredRequires.add(name));
+          opts.inlineableCalls?.forEach(name => inlineableCalls.add(name));
+          opts.nonMemoizedModules?.forEach(name =>
+            nonMemoizedModules.add(name),
+          );
           memoizeCalls = opts.memoizeCalls ?? false;
         }
 
@@ -138,7 +135,10 @@ module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
                 memoizeCalls &&
                 // Don't add a var init statement if there are no references to
                 // the lvalue of the require assignment.
-                binding.referencePaths.length > 0
+                binding.referencePaths.length > 0 &&
+                // Some modules should never be memoized even though they
+                // may be inlined.
+                !nonMemoizedModules.has(moduleName)
               ) {
                 // create var init statement
                 const varInitStmt = t.variableDeclaration('var', [

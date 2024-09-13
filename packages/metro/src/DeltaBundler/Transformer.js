@@ -88,6 +88,7 @@ class Transformer {
       unstable_disableES6Transforms,
       unstable_transformProfile,
       unstable_memoizeInlineRequires,
+      unstable_nonMemoizedInlineRequires,
       ...extra
     } = transformerOptions;
 
@@ -123,6 +124,7 @@ class Transformer {
       type,
       unstable_disableES6Transforms,
       unstable_memoizeInlineRequires,
+      unstable_nonMemoizedInlineRequires,
       unstable_transformProfile,
     ]);
 

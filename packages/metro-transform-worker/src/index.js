@@ -98,6 +98,8 @@ export type JsTransformerConfig = $ReadOnly<{
   unstable_allowRequireContext: boolean,
   /** With inlineRequires, enable a module-scope memo var and inline as (v || v=require('foo')) */
   unstable_memoizeInlineRequires?: boolean,
+  /** With inlineRequires, do not memoize these module specifiers */
+  unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean,
 }>;
@@ -117,6 +119,7 @@ export type JsTransformOptions = $ReadOnly<{
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_memoizeInlineRequires?: boolean,
+  unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   unstable_transformProfile: TransformProfile,
 }>;
 
@@ -304,6 +307,7 @@ async function transformJS(
         memoizeCalls:
           options.customTransformOptions?.unstable_memoizeInlineRequires ??
           options.unstable_memoizeInlineRequires,
+        nonMemoizedModules: options.unstable_nonMemoizedInlineRequires,
       },
     ]);
   }

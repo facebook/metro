@@ -66,6 +66,8 @@ export type JsTransformerConfig = Readonly<{
   unstable_allowRequireContext: boolean;
   /** With inlineRequires, enable a module-scope memo var and inline as (v || v=require('foo')) */
   unstable_memoizeInlineRequires?: boolean;
+  /** With inlineRequires, do not memoize these module specifiers */
+  unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean;
 }>;
