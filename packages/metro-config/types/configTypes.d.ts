@@ -107,7 +107,6 @@ export interface ResolverConfigT {
   resolveRequest?: CustomResolver;
   resolverMainFields: ReadonlyArray<string>;
   sourceExts: ReadonlyArray<string>;
-  unstable_enableSymlinks: boolean;
   unstable_conditionNames: ReadonlyArray<string>;
   unstable_conditionsByPlatform: Readonly<{
     [platform: string]: ReadonlyArray<string>;

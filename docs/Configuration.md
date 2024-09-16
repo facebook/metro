@@ -103,6 +103,14 @@ A list of directories outside of [`projectRoot`](#projectroot) that can contain 
 Despite the naming of this option, it isn't related solely to file watching. Even in an offline build (for example, in CI), all files must be visible to Metro through the combination of `watchFolders` and `projectRoot`.
 :::
 
+:::info
+
+Note that, as with any other file Metro needs to resolve, targets of any symlinks within your `watchFolders` *must also be within `watchFolders`* and not otherwise excluded.
+
+If you have a Metro project within a workspace, such as a [Yarn workspace](https://classic.yarnpkg.com/lang/en/docs/workspaces/) (a subdirectory of a Yarn workspace root), it's likely you'll want to include your workspace *root* path in your configured `watchFolders` so that Metro can resolve other workspaces or hoisted `node_modules`. Similarly, to use [linked packages](https://classic.yarnpkg.com/lang/en/docs/cli/link/), you'll need to list those package source locations (or a containing directory) in `watchFolders`.
+
+:::
+
 #### `transformerPath`
 
 Type: `string`
@@ -386,30 +394,6 @@ Defaults to `false`.
 :::note
 
 In a future release of Metro, this option will become `true` by default.
-
-:::
-
----
-
-#### `unstable_enableSymlinks` <div class="label experimental">Experimental</div>
-
-Type: `boolean`
-
-Enable experimental support for projects containing symbolic links (symlinks).
-
-When enabled, Metro traverses symlinks during module and asset [resolution](./Resolution.md), instead of ignoring symlinks. Note that, as with any other file Metro needs to resolve, the symlink target *must be within configured [watched folders](#watchfolders)* and not otherwise excluded.
-
-Defaults to `true` since Metro v0.79.0.
-
-:::info
-
-For example, if you have a Metro project within a [Yarn workspace](https://classic.yarnpkg.com/lang/en/docs/workspaces/) (a subdirectory of a Yarn workspace root), it's likely you'll want to include your workspace *root* path in your configured [`watchFolders`](#watchfolders) so that Metro can resolve other workspaces or hoisted `node_modules`. Similarly, to use [linked packages](https://classic.yarnpkg.com/lang/en/docs/cli/link/), you'll need to list those package source locations (or a containing directory) in [`watchFolders`](#watchfolders).
-
-:::
-
-:::note
-
-In a future release of Metro, this option will be removed (symlink support will be always-on).
 
 :::
 
