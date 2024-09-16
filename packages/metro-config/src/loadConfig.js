@@ -196,8 +196,7 @@ async function loadMetroConfigFromDisk(
   const rootPath = dirname(filepath);
 
   const defaults = await getDefaultConfig(rootPath);
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-call]
+
   const defaultConfig: ConfigT = mergeConfig(defaults, defaultConfigOverrides);
 
   if (typeof configModule === 'function') {
@@ -205,13 +204,10 @@ async function loadMetroConfigFromDisk(
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
-    // $FlowFixMe[incompatible-call]
-    // $FlowFixMe[incompatible-variance]
+
     return mergeConfig(defaultConfig, resultedConfig);
   }
 
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-call]
   return mergeConfig(defaultConfig, configModule);
 }
 
@@ -220,8 +216,14 @@ function overrideConfigWithArguments(
   argv: YargArguments,
 ): ConfigT {
   // We override some config arguments here with the argv
-
-  const output: InputConfigT = {
+  const output: {
+    // Spread to remove invariance so that `output` is mutable.
+    ...Partial<ConfigT>,
+    resolver: {...Partial<ConfigT['resolver']>},
+    serializer: {...Partial<ConfigT['serializer']>},
+    server: {...Partial<ConfigT['server']>},
+    transformer: {...Partial<ConfigT['transformer']>},
+  } = {
     resolver: {},
     serializer: {},
     server: {},
@@ -229,8 +231,6 @@ function overrideConfigWithArguments(
   };
 
   if (argv.port != null) {
-    // $FlowFixMe[incompatible-use]
-    // $FlowFixMe[cannot-write]
     output.server.port = Number(argv.port);
   }
 
@@ -243,20 +243,14 @@ function overrideConfigWithArguments(
   }
 
   if (argv.assetExts != null) {
-    // $FlowFixMe[incompatible-use]
-    // $FlowFixMe[cannot-write]
     output.resolver.assetExts = argv.assetExts;
   }
 
   if (argv.sourceExts != null) {
-    // $FlowFixMe[incompatible-use]
-    // $FlowFixMe[cannot-write]
     output.resolver.sourceExts = argv.sourceExts;
   }
 
   if (argv.platforms != null) {
-    // $FlowFixMe[incompatible-use]
-    // $FlowFixMe[cannot-write]
     output.resolver.platforms = argv.platforms;
   }
 
@@ -265,8 +259,6 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
-    // $FlowFixMe[incompatible-use]
-    // $FlowFixMe[cannot-write]
     output.transformer.babelTransformerPath = argv.transformer;
   }
 
@@ -283,8 +275,6 @@ function overrideConfigWithArguments(
     // TODO: Ask if this is the way to go
   }
 
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-call]
   return mergeConfig(config, output);
 }
 
@@ -319,19 +309,11 @@ async function loadConfig(
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
 
-  const overriddenConfig: {[string]: mixed} = {};
-
-  overriddenConfig.watchFolders = [
-    configWithArgs.projectRoot,
-    ...configWithArgs.watchFolders,
-  ];
-
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
-  // $FlowFixMe[incompatible-variance]
-  // $FlowFixMe[incompatible-indexer]
-  // $FlowFixMe[incompatible-call]
-  return mergeConfig(configWithArgs, overriddenConfig);
+  return mergeConfig(configWithArgs, {
+    watchFolders: [configWithArgs.projectRoot, ...configWithArgs.watchFolders],
+  });
 }
 
 module.exports = {
