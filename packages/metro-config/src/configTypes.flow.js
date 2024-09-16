@@ -195,37 +195,39 @@ type SymbolicatorConfigT = {
 
 type WatcherConfigT = {
   additionalExts: $ReadOnlyArray<string>,
-  healthCheck: {
+  healthCheck: $ReadOnly<{
     enabled: boolean,
     interval: number,
     timeout: number,
     filePrefix: string,
-  },
+  }>,
   unstable_workerThreads: boolean,
-  watchman: {
+  watchman: $ReadOnly<{
     deferStates: $ReadOnlyArray<string>,
-  },
+  }>,
 };
 
-export type InputConfigT = Partial<{
-  ...MetalConfigT,
-  ...$ReadOnly<{
-    cacheStores:
-      | $ReadOnlyArray<CacheStore<TransformResult<>>>
-      | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
-    resolver: $ReadOnly<Partial<ResolverConfigT>>,
-    server: $ReadOnly<Partial<ServerConfigT>>,
-    serializer: $ReadOnly<Partial<SerializerConfigT>>,
-    symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
-    transformer: $ReadOnly<Partial<TransformerConfigT>>,
-    watcher: $ReadOnly<
-      Partial<{
-        ...WatcherConfigT,
-        healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
-      }>,
-    >,
+export type InputConfigT = $ReadOnly<
+  Partial<{
+    ...MetalConfigT,
+    ...$ReadOnly<{
+      cacheStores:
+        | $ReadOnlyArray<CacheStore<TransformResult<>>>
+        | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
+      resolver: $ReadOnly<Partial<ResolverConfigT>>,
+      server: $ReadOnly<Partial<ServerConfigT>>,
+      serializer: $ReadOnly<Partial<SerializerConfigT>>,
+      symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
+      transformer: $ReadOnly<Partial<TransformerConfigT>>,
+      watcher: $ReadOnly<
+        Partial<{
+          ...WatcherConfigT,
+          healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
+        }>,
+      >,
+    }>,
   }>,
-}>;
+>;
 
 export type MetroConfig = InputConfigT;
 
