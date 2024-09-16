@@ -105,7 +105,6 @@ type ResolverConfigT = {
   dependencyExtractor: ?string,
   emptyModulePath: string,
   enableGlobalPackages: boolean,
-  unstable_enableSymlinks: boolean,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,
