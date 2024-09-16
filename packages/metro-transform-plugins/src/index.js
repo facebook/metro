@@ -61,6 +61,7 @@ module.exports = ({
     require.resolve('./constant-folding-plugin'),
     require.resolve('./import-export-plugin'),
     require.resolve('./inline-plugin'),
+    require.resolve('./inline-requires-plugin'),
     require.resolve('./normalizePseudoGlobals'),
   ],
 }: TransformPlugins);
