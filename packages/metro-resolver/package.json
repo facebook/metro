@@ -1,6 +1,6 @@
 {
   "name": "metro-resolver",
-  "version": "0.81.0-alpha.0",
+  "version": "0.81.0-alpha.1",
   "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src",
   "repository": {
@@ -16,7 +16,7 @@
     "node": ">=18.18"
   },
   "devDependencies": {
-    "metro": "0.81.0-alpha.0"
+    "metro": "0.81.0-alpha.1"
   },
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"
