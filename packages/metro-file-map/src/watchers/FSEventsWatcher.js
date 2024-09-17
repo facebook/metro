@@ -11,6 +11,7 @@
 import type {ChangeEventMetadata} from '../flow-types';
 import type {Stats} from 'fs';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
+// $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
 import {isIncluded, typeFromStat} from './common';
@@ -26,9 +27,11 @@ const debug = require('debug')('Metro:FSEventsWatcher');
 
 type Matcher = typeof anymatch.Matcher;
 
+// $FlowFixMe[value-as-type]
 let fsevents: ?FSEvents = null;
 try {
   // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
+  // $FlowFixMe[untyped-import]
   fsevents = require('fsevents');
 } catch {
   // Optional dependency, only supported on Darwin.
