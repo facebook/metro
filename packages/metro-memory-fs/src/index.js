@@ -927,16 +927,18 @@ class MemoryFs {
     });
   };
 
-  rmSync: (filePath: FilePath, options?: {recursive?: boolean}) => void = (
+  rmSync: (
     filePath: FilePath,
-    options,
-  ) => {
+    options?: {recursive?: boolean, force?: boolean},
+  ) => void = (filePath: FilePath, options) => {
     filePath = pathStr(filePath);
     const {dirNode, node, basename} = this._resolve(filePath, {
       keepFinalSymlink: true,
     });
     if (node == null) {
-      throw makeError('ENOENT', filePath, 'no such file or directory');
+      if (options?.force !== true) {
+        throw makeError('ENOENT', filePath, 'no such file or directory');
+      }
     } else if (node.type === 'directory') {
       if (options && options.recursive) {
         // NOTE: File watchers won't be informed of recursive deletions
