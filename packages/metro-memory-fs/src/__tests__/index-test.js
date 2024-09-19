@@ -771,6 +771,19 @@ describe('posix support', () => {
       fs.rmSync('/foo', {recursive: true});
       expect(fs.readdirSync('/')).toEqual([]);
     });
+
+    it.each([false, undefined])(
+      'throws on non-existent path (force: %s)',
+      force => {
+        expect(() =>
+          fs.rmSync('/notexists', force != null ? {force} : {}),
+        ).toThrow('ENOENT');
+      },
+    );
+
+    it('succeeds non-existent path (force: true)', () => {
+      fs.rmSync('/notexists', {force: true});
+    });
   });
 
   describe('readlink', () => {
