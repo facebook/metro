@@ -10,6 +10,8 @@
 
 'use strict';
 
+const {dirname} = require('path');
+
 describe('FileStore', () => {
   let FileStore;
   let fs;
@@ -44,7 +46,7 @@ describe('FileStore', () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const filePath = fileStore._getFilePath(cache);
-
+    fs.mkdirSync(dirname(filePath), {recursive: true});
     fs.writeFileSync(filePath, '');
     expect(await fileStore.get(cache)).toEqual(null);
   });

@@ -25,7 +25,6 @@ class FileStore<T> {
 
   constructor(options: Options) {
     this._root = options.root;
-    this._createDirs();
   }
 
   async get(key: Buffer): Promise<?T> {
@@ -72,7 +71,6 @@ class FileStore<T> {
 
   clear() {
     this._removeDirs();
-    this._createDirs();
   }
 
   _getFilePath(key: Buffer): string {
@@ -81,14 +79,6 @@ class FileStore<T> {
       key.slice(0, 1).toString('hex'),
       key.slice(1).toString('hex'),
     );
-  }
-
-  _createDirs() {
-    for (let i = 0; i < 256; i++) {
-      fs.mkdirSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), {
-        recursive: true,
-      });
-    }
   }
 
   _removeDirs() {
