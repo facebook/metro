@@ -134,7 +134,9 @@ export function redirectModulePath(
       // BRITTLE ASSUMPTION: This is always treated as a package-relative path
       // and is converted back, even if the redirected path is a specifier
       // referring to another package.
-      redirectedPath = path.resolve(containingPackage.rootPath, redirectedPath);
+      redirectedPath = path.isAbsolute(redirectedPath)
+        ? path.normalize(redirectedPath)
+        : path.join(containingPackage.rootPath, redirectedPath);
     }
   } else {
     // Otherwise, `modulePath` may be an unprefixed relative path or a bare

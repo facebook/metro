@@ -220,8 +220,11 @@ function resolveModulePath(
   toModuleName: string,
   platform: string | null,
 ): Result<Resolution, FileAndDirCandidates> {
+  // System-separated absolute path
   const modulePath = path.isAbsolute(toModuleName)
-    ? resolveWindowsPath(toModuleName)
+    ? path.sep === '/'
+      ? toModuleName
+      : toModuleName.replaceAll('/', '\\')
     : path.join(path.dirname(context.originModulePath), toModuleName);
   const redirectedPath = context.redirectModulePath(modulePath);
   if (redirectedPath === false) {
@@ -582,16 +585,6 @@ function resolveSourceFileForExt(
   }
   context.candidateExts.push(extension);
   return null;
-}
-
-// HasteFS stores paths with backslashes on Windows, this ensures the path is in
-// the proper format. Will also add drive letter if not present so `/root` will
-// resolve to `C:\root`. Noop on other platforms.
-function resolveWindowsPath(modulePath: string) {
-  if (path.sep !== '\\') {
-    return modulePath;
-  }
-  return path.resolve(modulePath);
 }
 
 function isRelativeImport(filePath: string) {
