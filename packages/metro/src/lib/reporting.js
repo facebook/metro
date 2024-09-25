@@ -212,6 +212,18 @@ function logError(
 }
 
 /**
+ * Similar to `logWarning`, but for informational messages.
+ */
+function logInfo(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<mixed>
+): void {
+  const str = util.format(format, ...args);
+  terminal.log('%s: %s', chalk.cyan('info'), str);
+}
+
+/**
  * A reporter that does nothing. Errors and warnings will be swallowed, that
  * is generally not what you want.
  */
@@ -220,5 +232,6 @@ const nullReporter = {update(): void {}};
 module.exports = {
   logWarning,
   logError,
+  logInfo,
   nullReporter,
 };
