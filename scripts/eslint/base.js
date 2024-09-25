@@ -59,6 +59,7 @@ module.exports = {
       env: {
         jest: true,
       },
+      plugins: ['jest'],
       rules: {
         'babel/quotes': [
           'error',
