@@ -60,7 +60,7 @@ describe('Terminal', () => {
     return {stream, terminal: new Terminal(stream)};
   }
 
-  it('is not printing status to non-interactive terminal', () => {
+  test('is not printing status to non-interactive terminal', () => {
     const {stream, terminal} = prepare(false);
     terminal.log('foo %s', 'smth');
     terminal.status('status');
@@ -69,7 +69,7 @@ describe('Terminal', () => {
     expect(stream.buffer.join('').trim()).toEqual('foo smth  bar');
   });
 
-  it('print status', () => {
+  test('print status', () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');
@@ -77,7 +77,7 @@ describe('Terminal', () => {
     expect(stream.buffer.join('').trim()).toEqual('foo       status');
   });
 
-  it('updates status when logging, single line', () => {
+  test('updates status when logging, single line', () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');
@@ -94,7 +94,7 @@ describe('Terminal', () => {
     );
   });
 
-  it('updates status when logging, multi-line', () => {
+  test('updates status when logging, multi-line', () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status\nanother');
@@ -105,7 +105,7 @@ describe('Terminal', () => {
     );
   });
 
-  it('persists status', () => {
+  test('persists status', () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');

@@ -22,7 +22,7 @@ describe('BatchProcessor', () => {
     concurrency: 2,
   };
 
-  it('aggregate items concurrently', async () => {
+  test('aggregate items concurrently', async () => {
     const input = [...Array(9).keys()].slice(1);
     const transform = (e: number) => e * 10;
     const batches = [];
@@ -64,7 +64,7 @@ describe('BatchProcessor', () => {
     expect(results).toEqual(input.map(transform));
   });
 
-  it('report errors', async () => {
+  test('report errors', async () => {
     const error = new Error('oh noes');
     const bp = new BatchProcessor(
       options,

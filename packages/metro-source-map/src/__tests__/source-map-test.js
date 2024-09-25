@@ -19,13 +19,13 @@ const {
 } = require('../source-map');
 
 describe('flattening mappings / compacting', () => {
-  it('flattens simple mappings', () => {
+  test('flattens simple mappings', () => {
     expect(toSegmentTuple({generated: {line: 12, column: 34}})).toEqual([
       12, 34,
     ]);
   });
 
-  it('flattens mappings with a source location', () => {
+  test('flattens mappings with a source location', () => {
     expect(
       toSegmentTuple({
         generated: {column: 34, line: 12},
@@ -34,7 +34,7 @@ describe('flattening mappings / compacting', () => {
     ).toEqual([12, 34, 56, 78]);
   });
 
-  it('flattens mappings with a source location and a symbol name', () => {
+  test('flattens mappings with a source location and a symbol name', () => {
     expect(
       toSegmentTuple({
         generated: {column: 34, line: 12},
@@ -46,11 +46,11 @@ describe('flattening mappings / compacting', () => {
 });
 
 describe('build map from raw mappings', () => {
-  it('returns a `Generator` instance', () => {
+  test('returns a `Generator` instance', () => {
     expect(fromRawMappings([])).toBeInstanceOf(Generator);
   });
 
-  it('returns a working source map containing all mappings', () => {
+  test('returns a working source map containing all mappings', () => {
     const input = [
       {
         code: lines(11),
@@ -120,7 +120,7 @@ describe('build map from raw mappings', () => {
     ).toMatchSnapshot();
   });
 
-  it('offsets the resulting source map by the provided offset argument', () => {
+  test('offsets the resulting source map by the provided offset argument', () => {
     const input = [
       {
         code: lines(11),

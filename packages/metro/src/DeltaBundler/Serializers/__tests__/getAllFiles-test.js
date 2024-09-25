@@ -23,7 +23,7 @@ describe('getOrderedDependencyPaths', () => {
     ]);
   });
 
-  it('Should return all module dependencies correctly', async () => {
+  test('Should return all module dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
         [
@@ -104,7 +104,7 @@ describe('getOrderedDependencyPaths', () => {
     ]);
   });
 
-  it('Should add assets data dependencies correctly', async () => {
+  test('Should add assets data dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
         [

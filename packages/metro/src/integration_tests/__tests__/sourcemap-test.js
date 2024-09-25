@@ -24,7 +24,7 @@ const INLINE_SOURCE_MAP_STR =
   '//# sourceMappingURL=data:application/json;charset=utf-8;base64,';
 const ERROR_STR = "new Error('SOURCEMAP:";
 
-it('creates correct sourcemaps in dev mode', async () => {
+test('creates correct sourcemaps in dev mode', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });
@@ -41,7 +41,7 @@ it('creates correct sourcemaps in dev mode', async () => {
   ).toBeTruthy();
 });
 
-it('creates correct sourcemaps in prod mode', async () => {
+test('creates correct sourcemaps in prod mode', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });
@@ -60,7 +60,7 @@ it('creates correct sourcemaps in prod mode', async () => {
   ).toBeTruthy();
 });
 
-it('creates correct inline sourcemaps', async () => {
+test('creates correct inline sourcemaps', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });

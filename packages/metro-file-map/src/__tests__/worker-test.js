@@ -77,7 +77,7 @@ describe('worker', () => {
     jest.clearAllMocks();
   });
 
-  it('parses JavaScript files and extracts module information', async () => {
+  test('parses JavaScript files and extracts module information', async () => {
     expect(
       await worker({
         computeDependencies: true,
@@ -99,7 +99,7 @@ describe('worker', () => {
     });
   });
 
-  it('accepts a custom dependency extractor', async () => {
+  test('accepts a custom dependency extractor', async () => {
     expect(
       await worker({
         computeDependencies: true,
@@ -112,7 +112,7 @@ describe('worker', () => {
     });
   });
 
-  it('delegates to hasteImplModulePath for getting the id', async () => {
+  test('delegates to hasteImplModulePath for getting the id', async () => {
     expect(
       await worker({
         computeDependencies: true,
@@ -140,7 +140,7 @@ describe('worker', () => {
     });
   });
 
-  it('parses package.json files as haste packages when enableHastePackages=true', async () => {
+  test('parses package.json files as haste packages when enableHastePackages=true', async () => {
     expect(
       await worker({
         computeDependencies: true,
@@ -155,7 +155,7 @@ describe('worker', () => {
     });
   });
 
-  it('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
+  test('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
     expect(
       await worker({
         computeDependencies: true,
@@ -170,7 +170,7 @@ describe('worker', () => {
     });
   });
 
-  it('returns an error when a file cannot be accessed', async () => {
+  test('returns an error when a file cannot be accessed', async () => {
     let error = null;
 
     try {
@@ -182,7 +182,7 @@ describe('worker', () => {
     expect(error.message).toEqual(`Cannot read path '/kiwi.js'.`);
   });
 
-  it('simply computes SHA-1s when requested (works well with binary data)', async () => {
+  test('simply computes SHA-1s when requested (works well with binary data)', async () => {
     expect(
       await worker({
         computeSha1: true,
@@ -220,7 +220,7 @@ describe('worker', () => {
     ).rejects.toThrow();
   });
 
-  it('avoids computing dependencies if not requested and Haste does not need it', async () => {
+  test('avoids computing dependencies if not requested and Haste does not need it', async () => {
     expect(
       await worker({
         computeDependencies: false,
@@ -240,7 +240,7 @@ describe('worker', () => {
     expect(fs.readFile).not.toHaveBeenCalled();
   });
 
-  it('calls readLink and returns symlink target when readLink=true', async () => {
+  test('calls readLink and returns symlink target when readLink=true', async () => {
     expect(
       await worker({
         computeDependencies: false,
@@ -260,7 +260,7 @@ describe('worker', () => {
     expect(fs.promises.readlink).toHaveBeenCalled();
   });
 
-  it('can be loaded directly without transpilation', async () => {
+  test('can be loaded directly without transpilation', async () => {
     const code = await jest
       .requireActual('fs')
       .promises.readFile(require.resolve('../worker.js'), 'utf8');

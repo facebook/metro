@@ -61,7 +61,7 @@ jest.mock(
   {virtual: true},
 );
 
-it('returns a distinct cache key for any change', () => {
+test('returns a distinct cache key for any change', () => {
   const {
     hasteImplModulePath: _,
     dependencyExtractor: __,
@@ -133,7 +133,7 @@ describe('cross-platform cache keys', () => {
     jest.unmock('path');
   });
 
-  it('returns the same cache key for Windows and POSIX path parameters', () => {
+  test('returns the same cache key for Windows and POSIX path parameters', () => {
     let mockPathModule;
     jest.mock('path', () => mockPathModule);
 

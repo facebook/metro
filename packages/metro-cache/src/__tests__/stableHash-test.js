@@ -13,7 +13,7 @@
 const stableHash = require('../stableHash');
 
 describe('stableHash', () => {
-  it('ensures that the hash implementation supports switched order properties', () => {
+  test('ensures that the hash implementation supports switched order properties', () => {
     const sortedHash = stableHash({
       a: 3,
       b: 4,

@@ -282,11 +282,11 @@ describe('FileMap', () => {
     console.error = consoleError;
   });
 
-  it('exports constants', () => {
+  test('exports constants', () => {
     expect(FileMap.H).toBe(require('../constants'));
   });
 
-  it('ignores files given a pattern', async () => {
+  test('ignores files given a pattern', async () => {
     const config = {...defaultConfig, ignorePattern: /Kiwi/};
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
@@ -295,7 +295,7 @@ describe('FileMap', () => {
     expect([...fileSystem.matchFiles({filter: /Kiwi/})]).toEqual([]);
   });
 
-  it('ignores vcs directories without ignore pattern', async () => {
+  test('ignores vcs directories without ignore pattern', async () => {
     mockFs[path.join('/', 'project', 'fruits', '.git', 'fruit-history.js')] = `
       // test
     `;
@@ -303,7 +303,7 @@ describe('FileMap', () => {
     expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
-  it('ignores vcs directories with ignore pattern regex', async () => {
+  test('ignores vcs directories with ignore pattern regex', async () => {
     const config = {...defaultConfig, ignorePattern: /Kiwi/};
     mockFs[path.join('/', 'project', 'fruits', 'Kiwi.js')] = `
       // Kiwi!
@@ -316,7 +316,7 @@ describe('FileMap', () => {
     expect([...fileSystem.matchFiles({filter: /\.git/})]).toEqual([]);
   });
 
-  it('throw on ignore pattern except for regex', async () => {
+  test('throw on ignore pattern except for regex', async () => {
     const config = {ignorePattern: 'Kiwi', ...defaultConfig};
     mockFs['/project/fruits/Kiwi.js'] = `
       // Kiwi!
@@ -331,7 +331,7 @@ describe('FileMap', () => {
     }
   });
 
-  it('builds a haste map on a fresh cache', async () => {
+  test('builds a haste map on a fresh cache', async () => {
     // Include these files in the map
     mockFs[
       path.join('/', 'project', 'fruits', 'node_modules', 'react', 'React.js')
@@ -498,7 +498,7 @@ describe('FileMap', () => {
   });
 
   describe('builds a file map on a fresh cache with SHA-1s', () => {
-    it.each([
+    test.each([
       [false, false],
       [false, true],
       [true, false],
@@ -655,7 +655,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('handles a Haste module moving between builds', async () => {
+  test('handles a Haste module moving between builds', async () => {
     mockFs = object({
       [path.join('/', 'project', 'vegetables', 'Melon.js')]: `
         // Melon is a fruit!
@@ -688,7 +688,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('does not crawl native files even if requested to do so', async () => {
+  test('does not crawl native files even if requested to do so', async () => {
     mockFs[path.join('/', 'project', 'video', 'IRequireAVideo.js')] = `
       module.exports = require("./video.mp4");
     `;
@@ -713,7 +713,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('retains all files if `retainAllFiles` is specified', async () => {
+  test('retains all files if `retainAllFiles` is specified', async () => {
     mockFs[
       path.join('/', 'project', 'fruits', 'node_modules', 'fbjs', 'fbjs.js')
     ] = `
@@ -742,7 +742,7 @@ describe('FileMap', () => {
     expect(fs.readFileSync.mock.calls.length).toBe(5);
   });
 
-  it('warns on duplicate mock files', async () => {
+  test('warns on duplicate mock files', async () => {
     expect.assertions(1);
 
     // Duplicate mock files for blueberry
@@ -784,7 +784,7 @@ describe('FileMap', () => {
     }
   });
 
-  it('warns on duplicate module ids', async () => {
+  test('warns on duplicate module ids', async () => {
     mockFs[path.join('/', 'project', 'fruits', 'other', 'Strawberry.js')] = `
       const Banana = require("Banana");
     `;
@@ -800,7 +800,7 @@ describe('FileMap', () => {
     ).toMatchSnapshot();
   });
 
-  it('throws on duplicate module ids if "throwOnModuleCollision" is set to true', async () => {
+  test('throws on duplicate module ids if "throwOnModuleCollision" is set to true', async () => {
     expect.assertions(1);
     // Raspberry thinks it is a Strawberry
     mockFs[path.join('/', 'project', 'fruits', 'another', 'Strawberry.js')] = `
@@ -819,7 +819,7 @@ describe('FileMap', () => {
     }
   });
 
-  it('splits up modules by platform', async () => {
+  test('splits up modules by platform', async () => {
     mockFs = Object.create(null);
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
@@ -881,7 +881,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('does not access the file system on a warm cache with no changes', async () => {
+  test('does not access the file system on a warm cache with no changes', async () => {
     await new FileMap(defaultConfig).build();
     const initialData = cacheContent;
 
@@ -918,7 +918,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('only does minimal file system access when files change', async () => {
+  test('only does minimal file system access when files change', async () => {
     // Run with a cold cache initially
     const {fileSystem: initialFileSystem} = await new FileMap(
       defaultConfig,
@@ -960,7 +960,7 @@ describe('FileMap', () => {
     ).toEqual(['Kiwi']);
   });
 
-  it('correctly handles file deletions', async () => {
+  test('correctly handles file deletions', async () => {
     await new FileMap(defaultConfig).build();
     fs.readFileSync.mockClear();
 
@@ -981,7 +981,7 @@ describe('FileMap', () => {
     expect(hasteMap.getModule('Banana')).toBeNull();
   });
 
-  it('correctly handles platform-specific file additions', async () => {
+  test('correctly handles platform-specific file additions', async () => {
     mockFs = Object.create(null);
     // Begin with only a generic implementation.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
@@ -1013,7 +1013,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('correctly handles platform-specific file deletions', async () => {
+  test('correctly handles platform-specific file deletions', async () => {
     mockFs = Object.create(null);
     // Begin with generic and ios implementations.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
@@ -1059,7 +1059,7 @@ describe('FileMap', () => {
     expect(thirdHasteMap.getModule('Strawberry')).toBeNull();
   });
 
-  it('correctly handles platform-specific file renames', async () => {
+  test('correctly handles platform-specific file renames', async () => {
     mockFs = Object.create(null);
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
@@ -1148,7 +1148,7 @@ describe('FileMap', () => {
       );
     });
 
-    it('recovers when a duplicate file is deleted', async () => {
+    test('recovers when a duplicate file is deleted', async () => {
       delete mockFs[
         path.join('/', 'project', 'fruits', 'another', 'Strawberry.js')
       ];
@@ -1171,7 +1171,7 @@ describe('FileMap', () => {
       );
     });
 
-    it('recovers when a duplicate platform-specific file is deleted', async () => {
+    test('recovers when a duplicate platform-specific file is deleted', async () => {
       delete mockFs[
         path.join('/', 'project', 'fruits', 'another', 'Banana.ios.js')
       ];
@@ -1195,7 +1195,7 @@ describe('FileMap', () => {
       );
     });
 
-    it('recovers with the correct type when a duplicate file is deleted', async () => {
+    test('recovers with the correct type when a duplicate file is deleted', async () => {
       mockFs[
         path.join('/', 'project', 'fruits', 'strawberryPackage', 'package.json')
       ] = `
@@ -1271,7 +1271,7 @@ describe('FileMap', () => {
       );
     });
 
-    it('recovers when a duplicate module is renamed', async () => {
+    test('recovers when a duplicate module is renamed', async () => {
       mockChangedFiles = object({
         [path.join('/', 'project', 'fruits', 'another', 'Pineapple.js')]: `
           const Blackberry = require("Blackberry");
@@ -1296,7 +1296,7 @@ describe('FileMap', () => {
     });
   });
 
-  it('ignores files that do not exist', async () => {
+  test('ignores files that do not exist', async () => {
     const watchman = require('../crawlers/watchman');
     const mockImpl = watchman.getMockImplementation();
     // Wrap the watchman mock and add an invalid file to the file list.
@@ -1317,7 +1317,7 @@ describe('FileMap', () => {
     expect(fileSystem.exists(invalidFilePath)).toBe(false);
   });
 
-  it('distributes work across workers', async () => {
+  test('distributes work across workers', async () => {
     const jestWorker = require('jest-worker').Worker;
     const path = require('path');
     const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
@@ -1398,7 +1398,7 @@ describe('FileMap', () => {
     expect(mockEnd).toBeCalled();
   });
 
-  it('tries to crawl using node as a fallback', async () => {
+  test('tries to crawl using node as a fallback', async () => {
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');
 
@@ -1437,7 +1437,7 @@ describe('FileMap', () => {
     expect(console.warn.mock.calls[0][0]).toMatchSnapshot();
   });
 
-  it('tries to crawl using node as a fallback when promise fails once', async () => {
+  test('tries to crawl using node as a fallback when promise fails once', async () => {
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');
 
@@ -1474,7 +1474,7 @@ describe('FileMap', () => {
     );
   });
 
-  it('stops crawling when both crawlers fail', async () => {
+  test('stops crawling when both crawlers fail', async () => {
     expect.assertions(1);
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');

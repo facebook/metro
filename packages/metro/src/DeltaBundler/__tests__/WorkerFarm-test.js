@@ -58,7 +58,7 @@ describe('Worker Farm', function () {
     WorkerFarm = require('../WorkerFarm');
   });
 
-  it('passes transform data to the worker farm when transforming', async () => {
+  test('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
     const transformerConfig = {
       transformerPath: config.transformerPath,
@@ -79,7 +79,7 @@ describe('Worker Farm', function () {
     );
   });
 
-  it('Passes the correct config to separate farm instances', async () => {
+  test('Passes the correct config to separate farm instances', async () => {
     const transformerConfig = {
       transformerPath: config.transformerPath,
       transformerConfig: config.transformer,
@@ -116,7 +116,7 @@ describe('Worker Farm', function () {
     );
   });
 
-  it('should add file info to parse errors', () => {
+  test('should add file info to parse errors', () => {
     const workerFarm = new WorkerFarm(config, {
       transformerPath: config.transformerPath,
       transformerConfig: config.transformer,

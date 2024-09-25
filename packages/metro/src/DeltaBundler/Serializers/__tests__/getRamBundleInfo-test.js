@@ -77,7 +77,7 @@ const pre = [createModule('pre', [], 'js/script')[1]];
 const getRunModuleStatement = (moduleId: string | number) =>
   `require(${JSON.stringify(moduleId)});`;
 
-it('should return the RAM bundle info', async () => {
+test('should return the RAM bundle info', async () => {
   expect(
     await getRamBundleInfo(
       '/root/entry.js',
@@ -112,7 +112,7 @@ it('should return the RAM bundle info', async () => {
   ).toMatchSnapshot();
 });
 
-it('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
+test('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
   expect(
     await getRamBundleInfo(
       '/root/entry.js',
@@ -147,7 +147,7 @@ it('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
   ).toMatchSnapshot();
 });
 
-it('should use the preloadedModules and ramGroup configs to build a RAM bundle', async () => {
+test('should use the preloadedModules and ramGroup configs to build a RAM bundle', async () => {
   const getTransformOptions = async () => ({
     preloadedModules: {'/root/entry2.js': true},
     ramGroups: ['/root/foo.js'],

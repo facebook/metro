@@ -84,28 +84,28 @@ const CONTEXT: ResolutionContext = {
   },
 };
 
-it('resolves a relative path', () => {
+test('resolves a relative path', () => {
   expect(Resolver.resolve(CONTEXT, './bar', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/project/bar.js',
   });
 });
 
-it('resolves a relative path ending in a slash as a directory', () => {
+test('resolves a relative path ending in a slash as a directory', () => {
   expect(Resolver.resolve(CONTEXT, './foo/', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/project/foo/index.js',
   });
 });
 
-it('resolves a relative path in another folder', () => {
+test('resolves a relative path in another folder', () => {
   expect(Resolver.resolve(CONTEXT, '../smth/beep', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/smth/beep.js',
   });
 });
 
-it('does not resolve a relative path ending in a slash as a file', () => {
+test('does not resolve a relative path ending in a slash as a file', () => {
   expect(() => Resolver.resolve(CONTEXT, './bar/', null)).toThrow(
     new FailedToResolvePathError({
       file: null,
@@ -118,21 +118,21 @@ it('does not resolve a relative path ending in a slash as a file', () => {
   );
 });
 
-it('resolves a package in `node_modules`', () => {
+test('resolves a package in `node_modules`', () => {
   expect(Resolver.resolve(CONTEXT, 'apple', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/node_modules/apple/main.js',
   });
 });
 
-it('resolves a standalone file in `node_modules`', () => {
+test('resolves a standalone file in `node_modules`', () => {
   expect(Resolver.resolve(CONTEXT, 'flat-file-in-node-modules', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/node_modules/flat-file-in-node-modules.js',
   });
 });
 
-it('fails to resolve a relative path', () => {
+test('fails to resolve a relative path', () => {
   try {
     Resolver.resolve(CONTEXT, './apple', null);
     throw new Error('should not reach');
@@ -155,7 +155,7 @@ it('fails to resolve a relative path', () => {
   }
 });
 
-it('throws on invalid package name', () => {
+test('throws on invalid package name', () => {
   try {
     Resolver.resolve(CONTEXT, 'invalid', null);
     throw new Error('should have thrown');
@@ -181,7 +181,7 @@ it('throws on invalid package name', () => {
   }
 });
 
-it('resolves `node_modules` up to the root', () => {
+test('resolves `node_modules` up to the root', () => {
   expect(Resolver.resolve(CONTEXT, 'root-module', null)).toEqual({
     type: 'sourceFile',
     filePath: '/node_modules/root-module/main.js',
@@ -197,7 +197,7 @@ it('resolves `node_modules` up to the root', () => {
   `);
 });
 
-it('does not resolve to additional `node_modules` if `nodeModulesPaths` is not specified', () => {
+test('does not resolve to additional `node_modules` if `nodeModulesPaths` is not specified', () => {
   expect(() => Resolver.resolve(CONTEXT, 'banana', null))
     .toThrowErrorMatchingInlineSnapshot(`
     "Module does not exist in the Haste module map or in these directories:
@@ -208,7 +208,7 @@ it('does not resolve to additional `node_modules` if `nodeModulesPaths` is not s
   `);
 });
 
-it('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
+test('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
   const context = {...CONTEXT, nodeModulesPaths: ['/other-root/node_modules']};
   expect(Resolver.resolve(context, 'banana', null)).toEqual({
     type: 'sourceFile',
@@ -226,7 +226,7 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
   `);
 });
 
-it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
+test('resolves transitive dependencies when using `nodeModulesPaths`', () => {
   const context = {
     ...CONTEXT,
     originModulePath: '/other-root/node_modules/banana/main.js',
@@ -248,7 +248,7 @@ it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
 describe('disableHierarchicalLookup', () => {
   const context = {...CONTEXT, disableHierarchicalLookup: true};
 
-  it('disables node_modules lookup', () => {
+  test('disables node_modules lookup', () => {
     expect(() => Resolver.resolve(context, 'apple', null))
       .toThrowErrorMatchingInlineSnapshot(`
       "Module does not exist in the Haste module map
@@ -257,7 +257,7 @@ describe('disableHierarchicalLookup', () => {
     `);
   });
 
-  it('respects nodeModulesPaths', () => {
+  test('respects nodeModulesPaths', () => {
     const contextWithOtherRoot = {
       ...context,
       nodeModulesPaths: ['/other-root/node_modules'],
@@ -285,7 +285,7 @@ describe('disableHierarchicalLookup', () => {
     `);
   });
 
-  it('respects extraNodeModules', () => {
+  test('respects extraNodeModules', () => {
     const contextWithExtra = {
       ...context,
       extraNodeModules: {
@@ -300,7 +300,7 @@ describe('disableHierarchicalLookup', () => {
   });
 });
 
-it('resolves Haste modules', () => {
+test('resolves Haste modules', () => {
   expect(Resolver.resolve(CONTEXT, 'Foo', null)).toEqual({
     type: 'sourceFile',
     filePath: '/haste/Foo.js',
@@ -311,14 +311,14 @@ it('resolves Haste modules', () => {
   });
 });
 
-it('resolves a Haste package', () => {
+test('resolves a Haste package', () => {
   expect(Resolver.resolve(CONTEXT, 'some-package', null)).toEqual({
     type: 'sourceFile',
     filePath: '/haste/some-package/main.js',
   });
 });
 
-it('resolves a file inside a Haste package', () => {
+test('resolves a file inside a Haste package', () => {
   expect(
     Resolver.resolve(CONTEXT, 'some-package/subdir/other-file', null),
   ).toEqual({
@@ -327,7 +327,7 @@ it('resolves a file inside a Haste package', () => {
   });
 });
 
-it('throws a descriptive error when a file inside a Haste package cannot be resolved', () => {
+test('throws a descriptive error when a file inside a Haste package cannot be resolved', () => {
   expect(() => {
     Resolver.resolve(CONTEXT, 'some-package/subdir/does-not-exist', null);
   }).toThrowErrorMatchingInlineSnapshot(`
@@ -347,7 +347,7 @@ describe('redirectModulePath', () => {
     redirectModulePath.mockImplementation(filePath => false);
   });
 
-  it('is used for relative path requests', () => {
+  test('is used for relative path requests', () => {
     expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
@@ -357,7 +357,7 @@ describe('redirectModulePath', () => {
     expect(redirectModulePath).toBeCalledWith('/root/project/bar');
   });
 
-  it('is used for absolute path requests', () => {
+  test('is used for absolute path requests', () => {
     expect(Resolver.resolve(context, '/bar', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
@@ -367,7 +367,7 @@ describe('redirectModulePath', () => {
     expect(redirectModulePath).toBeCalledWith('/bar');
   });
 
-  it('is used for non-Haste package requests', () => {
+  test('is used for non-Haste package requests', () => {
     expect(Resolver.resolve(context, 'does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -378,7 +378,7 @@ describe('redirectModulePath', () => {
     expect(redirectModulePath).toBeCalledWith('does-not-exist');
   });
 
-  it('can be used to redirect to an arbitrary relative module', () => {
+  test('can be used to redirect to an arbitrary relative module', () => {
     redirectModulePath
       .mockImplementationOnce(filePath => '../smth/beep')
       .mockImplementation(filePath => filePath);
@@ -404,7 +404,7 @@ describe('redirectModulePath', () => {
     `);
   });
 
-  it("is called for source extension candidates that don't exist on disk", () => {
+  test("is called for source extension candidates that don't exist on disk", () => {
     redirectModulePath.mockImplementation(filePath =>
       filePath.replace('.another-fake-ext', '.js'),
     );
@@ -435,7 +435,7 @@ describe('redirectModulePath', () => {
     `);
   });
 
-  it('can resolve to empty from a candidate with an added source extension', () => {
+  test('can resolve to empty from a candidate with an added source extension', () => {
     redirectModulePath.mockImplementation(filePath =>
       filePath.endsWith('.fake-ext') ? false : filePath,
     );
@@ -462,7 +462,7 @@ describe('redirectModulePath', () => {
     `);
   });
 
-  it('is not called redundantly for a candidate that does exist on disk', () => {
+  test('is not called redundantly for a candidate that does exist on disk', () => {
     redirectModulePath.mockImplementation(filePath => filePath);
     expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
       Object {
@@ -493,7 +493,7 @@ describe('resolveRequest', () => {
     resolveRequest.mockImplementation(() => ({type: 'empty'}));
   });
 
-  it('is called for non-Haste package requests', () => {
+  test('is called for non-Haste package requests', () => {
     expect(Resolver.resolve(context, 'does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -508,7 +508,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called for relative path requests', () => {
+  test('is called for relative path requests', () => {
     expect(Resolver.resolve(context, './does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -523,7 +523,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called for absolute path requests', () => {
+  test('is called for absolute path requests', () => {
     expect(Resolver.resolve(context, '/does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -538,7 +538,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called for Haste packages', () => {
+  test('is called for Haste packages', () => {
     expect(Resolver.resolve(context, 'some-package', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -553,7 +553,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called for Haste modules', () => {
+  test('is called for Haste modules', () => {
     expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
@@ -567,7 +567,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called with the platform and non-redirected module path', () => {
+  test('is called with the platform and non-redirected module path', () => {
     const contextWithRedirect = {
       ...context,
       redirectModulePath: (filePath: string) => filePath + '.redirected',
@@ -586,7 +586,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is called if redirectModulePath returns false', () => {
+  test('is called if redirectModulePath returns false', () => {
     resolveRequest.mockImplementation(() => ({
       type: 'sourceFile',
       filePath: '/some/fake/path',
@@ -610,7 +610,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('can forward requests to the standard resolver', () => {
+  test('can forward requests to the standard resolver', () => {
     // This test shows a common pattern for wrapping the standard resolver.
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       return Resolver.resolve(
@@ -636,7 +636,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('can forward Haste requests to the standard resolver', () => {
+  test('can forward Haste requests to the standard resolver', () => {
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       return Resolver.resolve(
         {...ctx, resolveRequest: null},
@@ -658,7 +658,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('can forward requests to the standard resolver via resolveRequest', () => {
+  test('can forward requests to the standard resolver via resolveRequest', () => {
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       return ctx.resolveRequest(ctx, moduleName, platform);
     });
@@ -679,7 +679,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('throwing an error stops the standard resolution', () => {
+  test('throwing an error stops the standard resolution', () => {
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       throw new Error('Custom resolver hit an error');
     });
@@ -709,7 +709,7 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('receives customResolverOptions', () => {
+  test('receives customResolverOptions', () => {
     expect(
       Resolver.resolve(
         {...context, customResolverOptions: {key: 'value'}},

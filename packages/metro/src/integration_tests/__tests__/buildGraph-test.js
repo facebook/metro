@@ -19,7 +19,7 @@ jest.unmock('cosmiconfig');
 
 jest.setTimeout(120 * 1000);
 
-it('should build the dependency graph', async () => {
+test('should build the dependency graph', async () => {
   const entryPoint = path.resolve(
     __dirname,
     '..',

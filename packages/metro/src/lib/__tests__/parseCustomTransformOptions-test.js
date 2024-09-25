@@ -14,7 +14,7 @@
 const parseCustomTransformOptions = require('../parseCustomTransformOptions');
 const url = require('url');
 
-it('should parse some custom options from a http url', () => {
+test('should parse some custom options from a http url', () => {
   const myUrl =
     'http://localhost/my/bundle.bundle?dev=true&transform.foo=value&transform.bar=other';
 
@@ -24,7 +24,7 @@ it('should parse some custom options from a http url', () => {
   });
 });
 
-it('should parse some custom options from a websocket url', () => {
+test('should parse some custom options from a websocket url', () => {
   const myUrl = 'ws://localhost/hot?transform.foo=value&transform.bar=other';
 
   expect(parseCustomTransformOptions(url.parse(myUrl, true))).toEqual({
@@ -33,7 +33,7 @@ it('should parse some custom options from a websocket url', () => {
   });
 });
 
-it('should return an empty object if there are no custom params', () => {
+test('should return an empty object if there are no custom params', () => {
   const myUrl = 'http://localhost/my/bundle.bundle?dev=true';
 
   expect(parseCustomTransformOptions(url.parse(myUrl, true))).toEqual({});

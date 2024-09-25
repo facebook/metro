@@ -23,7 +23,7 @@ describe('Module', () => {
     module = new Module('/root/to/file.js', moduleCache);
   });
 
-  it('Returns the correct values for many properties and methods', () => {
+  test('Returns the correct values for many properties and methods', () => {
     expect(module.path).toBe('/root/to/file.js');
   });
 });

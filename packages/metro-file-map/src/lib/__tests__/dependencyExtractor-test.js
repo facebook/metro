@@ -11,7 +11,7 @@
 import {extract} from '../dependencyExtractor';
 
 describe('dependencyExtractor', () => {
-  it('should not extract dependencies inside comments', () => {
+  test('should not extract dependencies inside comments', () => {
     const code = `
       // import a from 'ignore-line-comment';
       // import 'ignore-line-comment';
@@ -27,7 +27,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set());
   });
 
-  it('should not extract dependencies inside comments (windows line endings)', () => {
+  test('should not extract dependencies inside comments (windows line endings)', () => {
     const code = [
       '// const module1 = require("module1");',
       '/**',
@@ -38,7 +38,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set([]));
   });
 
-  it('should not extract dependencies inside comments (unicode line endings)', () => {
+  test('should not extract dependencies inside comments (unicode line endings)', () => {
     const code = [
       '// const module1 = require("module1");\u2028',
       '// const module1 = require("module2");\u2029',
@@ -50,7 +50,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set([]));
   });
 
-  it('should extract dependencies from `import` statements', () => {
+  test('should extract dependencies from `import` statements', () => {
     const code = `
       // Good
       import * as depNS from 'dep1';
@@ -73,7 +73,7 @@ describe('dependencyExtractor', () => {
 
   // https://github.com/facebook/jest/issues/8547
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import#Import_a_module_for_its_side_effects_only
-  it('should extract dependencies from side-effect only `import` statements', () => {
+  test('should extract dependencies from side-effect only `import` statements', () => {
     const code = `
         // Good
         import './side-effect-dep1';
@@ -88,7 +88,7 @@ describe('dependencyExtractor', () => {
     );
   });
 
-  it('should not extract dependencies from `import type/typeof` statements', () => {
+  test('should not extract dependencies from `import type/typeof` statements', () => {
     const code = `
       // Bad
       import typeof {foo} from 'inv1';
@@ -97,7 +97,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set([]));
   });
 
-  it('should extract dependencies from `export` statements', () => {
+  test('should extract dependencies from `export` statements', () => {
     const code = `
       // Good
       export * as depNS from 'dep1';
@@ -118,7 +118,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3', 'dep4']));
   });
 
-  it('should extract dependencies from `export-from` statements', () => {
+  test('should extract dependencies from `export-from` statements', () => {
     const code = `
       // Good
       export * as depNS from 'dep1';
@@ -139,7 +139,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3', 'dep4']));
   });
 
-  it('should not extract dependencies from `export type/typeof` statements', () => {
+  test('should not extract dependencies from `export type/typeof` statements', () => {
     const code = `
       // Bad
       export typeof {foo} from 'inv1';
@@ -148,7 +148,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set([]));
   });
 
-  it('should extract dependencies from dynamic `import` calls', () => {
+  test('should extract dependencies from dynamic `import` calls', () => {
     const code = `
       // Good
       import('dep1').then();
@@ -166,7 +166,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3']));
   });
 
-  it('should extract dependencies from `require` calls', () => {
+  test('should extract dependencies from `require` calls', () => {
     const code = `
       // Good
       require('dep1');
@@ -184,7 +184,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3']));
   });
 
-  it('should extract dependencies from `jest.requireActual` calls', () => {
+  test('should extract dependencies from `jest.requireActual` calls', () => {
     const code = `
       // Good
       jest.requireActual('dep1');
@@ -204,7 +204,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3', 'dep4']));
   });
 
-  it('should extract dependencies from `jest.requireMock` calls', () => {
+  test('should extract dependencies from `jest.requireMock` calls', () => {
     const code = `
       // Good
       jest.requireMock('dep1');
@@ -224,7 +224,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3', 'dep4']));
   });
 
-  it('should extract dependencies from `jest.genMockFromModule` calls', () => {
+  test('should extract dependencies from `jest.genMockFromModule` calls', () => {
     const code = `
       // Good
       jest.genMockFromModule('dep1');
@@ -244,7 +244,7 @@ describe('dependencyExtractor', () => {
     expect(extract(code)).toEqual(new Set(['dep1', 'dep2', 'dep3', 'dep4']));
   });
 
-  it('should extract dependencies from `jest.createMockFromModule` calls', () => {
+  test('should extract dependencies from `jest.createMockFromModule` calls', () => {
     const code = `
       // Good
       jest.createMockFromModule('dep1');

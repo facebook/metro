@@ -44,7 +44,7 @@ describe('HttpGetStore', () => {
     });
   });
 
-  it("doesn't throw any error for http 200 status code", async () => {
+  test("doesn't throw any error for http 200 status code", async () => {
     const store = new HttpGetStore({
       endpoint: 'http://www.example.com/endpoint',
     });
@@ -62,7 +62,7 @@ describe('HttpGetStore', () => {
     expect(warningMessages.length).toBe(0);
   });
 
-  it("doesn't throw any error and doesn't warn on http status 404 errors", async () => {
+  test("doesn't throw any error and doesn't warn on http status 404 errors", async () => {
     const store = new HttpGetStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -78,7 +78,7 @@ describe('HttpGetStore', () => {
     });
   });
 
-  it("doesn't throw any error and warns on http status 502 errors", async () => {
+  test("doesn't throw any error and warns on http status 502 errors", async () => {
     const store = new HttpGetStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];

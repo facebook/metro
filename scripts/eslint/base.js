@@ -66,6 +66,10 @@ module.exports = {
           'single',
           {avoidEscape: true, allowTemplateLiterals: true},
         ],
+        'jest/consistent-test-it': [
+          'warn',
+          {fn: 'test', withinDescribe: 'test'},
+        ],
         quotes: 'off',
       },
     },

@@ -97,7 +97,7 @@ beforeEach(() => {
   fs.writeFileSync(babelTransformerPath, transformerContents);
 });
 
-it('transforms a simple script', async () => {
+test('transforms a simple script', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -119,7 +119,7 @@ it('transforms a simple script', async () => {
   expect(result.dependencies).toEqual([]);
 });
 
-it('transforms a simple module', async () => {
+test('transforms a simple module', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -137,7 +137,7 @@ it('transforms a simple module', async () => {
   expect(result.dependencies).toEqual([]);
 });
 
-it('transforms a module with dependencies', async () => {
+test('transforms a module with dependencies', async () => {
   const contents = [
     '"use strict";',
     'require("./a");',
@@ -181,7 +181,7 @@ it('transforms a module with dependencies', async () => {
   ]);
 });
 
-it('transforms an es module with asyncToGenerator', async () => {
+test('transforms an es module with asyncToGenerator', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -206,7 +206,7 @@ it('transforms an es module with asyncToGenerator', async () => {
   ]);
 });
 
-it('transforms async generators', async () => {
+test('transforms async generators', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -232,7 +232,7 @@ it('transforms async generators', async () => {
   ]);
 });
 
-it('transforms import/export syntax when experimental flag is on', async () => {
+test('transforms import/export syntax when experimental flag is on', async () => {
   const contents = ['import c from "./c";'].join('\n');
 
   const result = await Transformer.transform(
@@ -265,7 +265,7 @@ it('transforms import/export syntax when experimental flag is on', async () => {
   ]);
 });
 
-it('does not add "use strict" on non-modules', async () => {
+test('does not add "use strict" on non-modules', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -280,7 +280,7 @@ it('does not add "use strict" on non-modules', async () => {
   );
 });
 
-it('preserves require() calls when module wrapping is disabled', async () => {
+test('preserves require() calls when module wrapping is disabled', async () => {
   const contents = ['require("./c");'].join('\n');
 
   const result = await Transformer.transform(
@@ -298,7 +298,7 @@ it('preserves require() calls when module wrapping is disabled', async () => {
   expect(result.output[0].data.code).toBe('require("./c");');
 });
 
-it('reports filename when encountering unsupported dynamic dependency', async () => {
+test('reports filename when encountering unsupported dynamic dependency', async () => {
   const contents = [
     'require("./a");',
     'let a = arbitrary(code);',
@@ -319,7 +319,7 @@ it('reports filename when encountering unsupported dynamic dependency', async ()
   }
 });
 
-it('supports dynamic dependencies from within `node_modules`', async () => {
+test('supports dynamic dependencies from within `node_modules`', async () => {
   expect(
     (
       await Transformer.transform(
@@ -344,7 +344,7 @@ it('supports dynamic dependencies from within `node_modules`', async () => {
   );
 });
 
-it('minifies the code correctly', async () => {
+test('minifies the code correctly', async () => {
   expect(
     (
       await Transformer.transform(
@@ -358,7 +358,7 @@ it('minifies the code correctly', async () => {
   ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
 });
 
-it('minifies a JSON file', async () => {
+test('minifies a JSON file', async () => {
   expect(
     (
       await Transformer.transform(
@@ -378,7 +378,7 @@ it('minifies a JSON file', async () => {
   );
 });
 
-it('does not wrap a JSON file when disableModuleWrapping is enabled', async () => {
+test('does not wrap a JSON file when disableModuleWrapping is enabled', async () => {
   expect(
     (
       await Transformer.transform(
@@ -395,7 +395,7 @@ it('does not wrap a JSON file when disableModuleWrapping is enabled', async () =
   ).toBe('module.exports = arbitrary(code);;');
 });
 
-it('uses a reserved dependency map name and prevents it from being minified', async () => {
+test('uses a reserved dependency map name and prevents it from being minified', async () => {
   const result = await Transformer.transform(
     {...baseConfig, unstable_dependencyMapReservedName: 'THE_DEP_MAP'},
     '/root',
@@ -410,7 +410,7 @@ it('uses a reserved dependency map name and prevents it from being minified', as
   `);
 });
 
-it('throws if the reserved dependency map name appears in the input', async () => {
+test('throws if the reserved dependency map name appears in the input', async () => {
   await expect(
     Transformer.transform(
       {...baseConfig, unstable_dependencyMapReservedName: 'THE_DEP_MAP'},
@@ -427,7 +427,7 @@ it('throws if the reserved dependency map name appears in the input', async () =
   );
 });
 
-it('allows disabling the normalizePseudoGlobals pass when minifying', async () => {
+test('allows disabling the normalizePseudoGlobals pass when minifying', async () => {
   const result = await Transformer.transform(
     {...baseConfig, unstable_disableNormalizePseudoGlobals: true},
     '/root',
@@ -442,7 +442,7 @@ it('allows disabling the normalizePseudoGlobals pass when minifying', async () =
   `);
 });
 
-it('allows emitting compact code when not minifying', async () => {
+test('allows emitting compact code when not minifying', async () => {
   const result = await Transformer.transform(
     {...baseConfig, unstable_compactOutput: true},
     '/root',
@@ -455,7 +455,7 @@ it('allows emitting compact code when not minifying', async () => {
   );
 });
 
-it('skips minification in Hermes stable transform profile', async () => {
+test('skips minification in Hermes stable transform profile', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -475,7 +475,7 @@ it('skips minification in Hermes stable transform profile', async () => {
   `);
 });
 
-it('skips minification in Hermes canary transform profile', async () => {
+test('skips minification in Hermes canary transform profile', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -495,7 +495,7 @@ it('skips minification in Hermes canary transform profile', async () => {
   `);
 });
 
-it('counts all line endings correctly', async () => {
+test('counts all line endings correctly', async () => {
   const transformStr = (str: string) =>
     Transformer.transform(
       baseConfig,
@@ -518,7 +518,7 @@ it('counts all line endings correctly', async () => {
   );
 });
 
-it('outputs comments when `minify: false`', async () => {
+test('outputs comments when `minify: false`', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -533,7 +533,7 @@ it('outputs comments when `minify: false`', async () => {
   `);
 });
 
-it('omits comments when `minify: true`', async () => {
+test('omits comments when `minify: true`', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -548,7 +548,7 @@ it('omits comments when `minify: true`', async () => {
   `);
 });
 
-it('allows outputting comments when `minify: true`', async () => {
+test('allows outputting comments when `minify: true`', async () => {
   const result = await Transformer.transform(
     {...baseConfig, minifierConfig: {output: {comments: true}}},
     '/root',

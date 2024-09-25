@@ -15,7 +15,7 @@ const path = require('path');
 
 const PROJECT_ROOT = path.sep === '/' ? '/my/project' : 'C:\\my\\project';
 
-it('exposes the correct absolute path to a source file to plugins', () => {
+test('exposes the correct absolute path to a source file to plugins', () => {
   let visitorFilename;
   let pluginCwd;
   transform({

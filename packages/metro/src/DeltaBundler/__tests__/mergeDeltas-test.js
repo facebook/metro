@@ -18,7 +18,7 @@ function sortById<T>([id1]: [number, T], [id2]: [number, T]): number {
 }
 
 describe('mergeDeltas', () => {
-  it('should apply a delta to another delta', async () => {
+  test('should apply a delta to another delta', async () => {
     const delta1 = {
       added: [
         [1, '1'],

@@ -85,7 +85,7 @@ describe('composeSourceMaps', () => {
     }
   });
 
-  it('verifies merged source maps work the same as applying them separately', async () => {
+  test('verifies merged source maps work the same as applying them separately', async () => {
     // Apply two tranformations: compression, then mangling.
     const stage1 = await terser.minify(
       {'test1.js': TestScript1, 'test2.js': TestScript2},
@@ -136,7 +136,7 @@ describe('composeSourceMaps', () => {
     expect(mergedSymbolicated).toEqual(serialSymbolicated);
   });
 
-  it('preserves x_facebook_sources', () => {
+  test('preserves x_facebook_sources', () => {
     const map1 = {
       version: 3,
       sections: [
@@ -167,7 +167,7 @@ describe('composeSourceMaps', () => {
     ]);
   });
 
-  it('preserves and reindexes x_google_ignoreList', () => {
+  test('preserves and reindexes x_google_ignoreList', () => {
     const map1 = {
       version: 3,
       sections: [
@@ -201,7 +201,7 @@ describe('composeSourceMaps', () => {
     );
   });
 
-  it('x_google_ignoreList: a source with inconsistent ignore status is considered to be ignored', () => {
+  test('x_google_ignoreList: a source with inconsistent ignore status is considered to be ignored', () => {
     const map1 = {
       version: 3,
       sections: [
@@ -252,7 +252,7 @@ describe('composeSourceMaps', () => {
     );
   });
 
-  it('preserves sourcesContent', () => {
+  test('preserves sourcesContent', () => {
     const map1 = {
       version: 3,
       sections: [
@@ -286,7 +286,7 @@ describe('composeSourceMaps', () => {
     ]);
   });
 
-  it('merges two maps', () => {
+  test('merges two maps', () => {
     const mergedMap = composeSourceMaps([
       fixtures['1.json'],
       fixtures['2.json'],
@@ -294,7 +294,7 @@ describe('composeSourceMaps', () => {
     expect(mergedMap).toEqual(fixtures['merged_1_2.json']);
   });
 
-  it('merges two maps preserving unmapped regions in the first one', () => {
+  test('merges two maps preserving unmapped regions in the first one', () => {
     const mergedMap = composeSourceMaps([
       fixtures['ignore_1.json'],
       fixtures['ignore_2.json'],
@@ -302,7 +302,7 @@ describe('composeSourceMaps', () => {
     expect(mergedMap).toEqual(fixtures['merged_ignore.json']);
   });
 
-  it('merges two maps preserving unmapped regions in the second one', () => {
+  test('merges two maps preserving unmapped regions in the second one', () => {
     const mergedMap = composeSourceMaps([
       {version: 3, names: ['a'], sources: ['a.js'], mappings: 'AAACA,CAACA'},
       {
@@ -329,7 +329,7 @@ describe('composeSourceMaps', () => {
     `);
   });
 
-  it('Propagate x_hermes_function_offsets', () => {
+  test('Propagate x_hermes_function_offsets', () => {
     const map1 = {
       version: 3,
       sections: [

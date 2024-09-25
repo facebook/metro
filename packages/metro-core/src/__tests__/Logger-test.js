@@ -31,7 +31,7 @@ describe('Logger', () => {
     console.log = originalConsoleLog;
   });
 
-  it('creates simple log entries', () => {
+  test('creates simple log entries', () => {
     const logEntry = createEntry('Test');
     expect(logEntry).toEqual({
       log_entry_label: 'Test',
@@ -40,7 +40,7 @@ describe('Logger', () => {
     });
   });
 
-  it('creates action start log entries', () => {
+  test('creates action start log entries', () => {
     const actionStartLogEntry = createActionStartEntry('Test');
     expect(actionStartLogEntry).toEqual({
       action_name: 'Test',
@@ -52,7 +52,7 @@ describe('Logger', () => {
     });
   });
 
-  it('creates action end log entries', () => {
+  test('creates action end log entries', () => {
     const actionEndLogEntry = createActionEndEntry(
       createActionStartEntry('Test'),
     );

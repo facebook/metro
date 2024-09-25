@@ -27,7 +27,7 @@ describe('FileStore', () => {
     jest.spyOn(fs, 'unlinkSync');
   });
 
-  it('sets and writes into the cache', async () => {
+  test('sets and writes into the cache', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
@@ -35,14 +35,14 @@ describe('FileStore', () => {
     expect(await fileStore.get(cache)).toEqual({foo: 42});
   });
 
-  it('returns null when reading a non-existing file', async () => {
+  test('returns null when reading a non-existing file', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     expect(await fileStore.get(cache)).toEqual(null);
   });
 
-  it('returns null when reading a empty file', async () => {
+  test('returns null when reading a empty file', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const filePath = fileStore._getFilePath(cache);
@@ -51,7 +51,7 @@ describe('FileStore', () => {
     expect(await fileStore.get(cache)).toEqual(null);
   });
 
-  it('writes into cache if folder is missing', async () => {
+  test('writes into cache if folder is missing', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);
@@ -61,7 +61,7 @@ describe('FileStore', () => {
     expect(await fileStore.get(cache)).toEqual(data);
   });
 
-  it('reads and writes binary data', async () => {
+  test('reads and writes binary data', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);

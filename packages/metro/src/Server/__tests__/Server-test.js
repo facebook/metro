@@ -322,7 +322,7 @@ describe('processRequest', () => {
     fs.realpath = jest.fn((file, cb) => cb?.(null, '/root/foo.js'));
   });
 
-  it.each(['?', '//&'])(
+  test.each(['?', '//&'])(
     'returns JS bundle source on request of *.bundle (delimiter: %s)',
     async delimiter => {
       const response = await makeRequest(
@@ -343,7 +343,7 @@ describe('processRequest', () => {
     },
   );
 
-  it('returns JS bundle without the initial require() call', async () => {
+  test('returns JS bundle without the initial require() call', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=false', null);
 
     expect(response._getString()).toEqual(
@@ -357,19 +357,19 @@ describe('processRequest', () => {
     );
   });
 
-  it('returns Last-Modified header on request of *.bundle', () => {
+  test('returns Last-Modified header on request of *.bundle', () => {
     return makeRequest('mybundle.bundle?runModule=true').then(response => {
       expect(response.getHeader('Last-Modified')).toBeDefined();
     });
   });
 
-  it('returns build info headers on request of *.bundle', async () => {
+  test('returns build info headers on request of *.bundle', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=true');
 
     expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('3');
   });
 
-  it('returns Content-Length header on request of *.bundle', () => {
+  test('returns Content-Length header on request of *.bundle', () => {
     return makeRequest('mybundle.bundle?runModule=true').then(response => {
       expect(response.getHeader('Content-Length')).toEqual(
         '' + Buffer.byteLength(response._getString()),
@@ -377,7 +377,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('returns Content-Location header on request of *.bundle', () => {
+  test('returns Content-Location header on request of *.bundle', () => {
     return makeRequest('mybundle.bundle?runModule=true').then(response => {
       expect(response.getHeader('Content-Location')).toEqual(
         'http://localhost:8081/mybundle.bundle//&runModule=true',
@@ -385,7 +385,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('returns 404 on request of *.bundle when resource does not exist', async () => {
+  test('returns 404 on request of *.bundle when resource does not exist', async () => {
     // $FlowFixMe[cannot-write]
     fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
@@ -399,7 +399,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', async () => {
+  test('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.getHeader('Last-Modified');
 
@@ -419,7 +419,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('returns 200 on request of *.bundle when something changes (ignoring if-modified-since headers)', async () => {
+  test('returns 200 on request of *.bundle when something changes (ignoring if-modified-since headers)', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.getHeader('Last-Modified');
 
@@ -451,7 +451,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('supports the `modulesOnly` option', async () => {
+  test('supports the `modulesOnly` option', async () => {
     const response = await makeRequest(
       'mybundle.bundle?modulesOnly=true&runModule=false',
       null,
@@ -467,7 +467,7 @@ describe('processRequest', () => {
     );
   });
 
-  it('supports the `shallow` option', async () => {
+  test('supports the `shallow` option', async () => {
     const response = await makeRequest(
       'mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
       null,
@@ -482,7 +482,7 @@ describe('processRequest', () => {
     );
   });
 
-  it('should handle DELETE requests on *.bundle', async () => {
+  test('should handle DELETE requests on *.bundle', async () => {
     const IncrementalBundler = require('../../IncrementalBundler');
     const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
     const initSpy = jest.spyOn(IncrementalBundler.prototype, 'initializeGraph');
@@ -517,7 +517,7 @@ describe('processRequest', () => {
     expect(updateSpy).not.toBeCalled();
   });
 
-  it('multiple DELETE requests on *.bundle succeed', async () => {
+  test('multiple DELETE requests on *.bundle succeed', async () => {
     await makeRequest('mybundle.bundle', null);
     await makeRequest('mybundle.bundle', {
       method: 'DELETE',
@@ -528,7 +528,7 @@ describe('processRequest', () => {
     expect(secondDeleteResponse.statusCode).toBe(204);
   });
 
-  it('DELETE succeeds with a nonexistent path', async () => {
+  test('DELETE succeeds with a nonexistent path', async () => {
     // $FlowFixMe[cannot-write]
     fs.realpath = jest.fn((file, cb: $FlowFixMe) =>
       cb(new ResourceNotFoundError('unknown.bundle')),
@@ -540,7 +540,7 @@ describe('processRequest', () => {
     expect(response.statusCode).toEqual(204);
   });
 
-  it('DELETE handles errors', async () => {
+  test('DELETE handles errors', async () => {
     const IncrementalBundler = require('../../IncrementalBundler');
     jest
       .spyOn(IncrementalBundler.prototype, 'endGraph')
@@ -561,7 +561,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('returns sourcemap on request of *.map', async () => {
+  test('returns sourcemap on request of *.map', async () => {
     const response = await makeRequest('mybundle.map');
 
     expect(response._getJSON()).toEqual({
@@ -584,7 +584,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('source map request respects `modulesOnly` option', async () => {
+  test('source map request respects `modulesOnly` option', async () => {
     const response = await makeRequest('mybundle.map?modulesOnly=true');
 
     expect(response._getJSON()).toEqual({
@@ -606,7 +606,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
+  test('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
     expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
       200,
     );
@@ -620,7 +620,7 @@ describe('processRequest', () => {
     expect(buildGraph.mock.calls.length).toBe(0);
   });
 
-  it('does build a delta when requesting the sourcemaps after having requested the same bundle', async () => {
+  test('does build a delta when requesting the sourcemaps after having requested the same bundle', async () => {
     expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
       200,
     );
@@ -634,7 +634,7 @@ describe('processRequest', () => {
     expect(getDelta.mock.calls.length).toBe(1);
   });
 
-  it('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
+  test('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
     expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
       200,
     );
@@ -650,7 +650,7 @@ describe('processRequest', () => {
     expect(buildGraph.mock.calls.length).toBe(1);
   });
 
-  it('passes in the platform param', async () => {
+  test('passes in the platform param', async () => {
     await makeRequest('index.bundle?platform=ios');
 
     expect(getTransformFn).toBeCalledWith(
@@ -712,7 +712,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('passes in the unstable_transformProfile param', async () => {
+  test('passes in the unstable_transformProfile param', async () => {
     await makeRequest('index.bundle?unstable_transformProfile=hermes-stable');
 
     expect(getTransformFn).toBeCalledWith(
@@ -747,7 +747,7 @@ describe('processRequest', () => {
     });
   });
 
-  it.each(['?', '//&'])(
+  test.each(['?', '//&'])(
     'rewrites URLs before bundling (query delimiter: %s)',
     async delimiter => {
       jest.clearAllMocks();
@@ -774,7 +774,7 @@ describe('processRequest', () => {
     },
   );
 
-  it('does not rebuild the bundle when making concurrent requests', async () => {
+  test('does not rebuild the bundle when making concurrent requests', async () => {
     // Delay the response of the buildGraph method.
     const promise1 = makeRequest('index.bundle');
     const promise2 = makeRequest('index.bundle');
@@ -793,14 +793,14 @@ describe('processRequest', () => {
       jest.useRealTimers();
     });
 
-    it('should serve simple case', async () => {
+    test('should serve simple case', async () => {
       getAsset.mockResolvedValue(Promise.resolve('i am image'));
 
       const response = await makeRequest('/assets/imgs/a.png');
       expect(response._getString()).toBe('i am image');
     });
 
-    it('should parse the platform option', async () => {
+    test('should parse the platform option', async () => {
       getAsset.mockResolvedValue(Promise.resolve('i am image'));
 
       const response = await makeRequest('/assets/imgs/a.png?platform=ios');
@@ -815,7 +815,7 @@ describe('processRequest', () => {
       );
     });
 
-    it('should serve range request', async () => {
+    test('should serve range request', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
@@ -833,7 +833,7 @@ describe('processRequest', () => {
       expect(response._getString()).toBe(mockData.slice(0, 4));
     });
 
-    it('should return headers in a range request', async () => {
+    test('should return headers in a range request', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
@@ -847,7 +847,7 @@ describe('processRequest', () => {
       expect(response.getHeader('content-range')).toBe('bytes 0-3/10');
     });
 
-    it('should return content-type and content-length header for a png asset', async () => {
+    test('should return content-type and content-length header for a png asset', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
@@ -859,7 +859,7 @@ describe('processRequest', () => {
       );
     });
 
-    it('should return content-type and content-length header for an svg asset', async () => {
+    test('should return content-type and content-length header for an svg asset', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
 
@@ -871,7 +871,7 @@ describe('processRequest', () => {
       );
     });
 
-    it("should serve assets files's name contain non-latin letter", async () => {
+    test("should serve assets files's name contain non-latin letter", async () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest(
@@ -888,7 +888,7 @@ describe('processRequest', () => {
       );
     });
 
-    it('should use unstable_path if provided', async () => {
+    test('should use unstable_path if provided', async () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest('/assets?unstable_path=imgs/a.png');
@@ -896,7 +896,7 @@ describe('processRequest', () => {
       expect(response._getString()).toBe('i am image');
     });
 
-    it('should parse the platform option if tacked onto unstable_path', async () => {
+    test('should parse the platform option if tacked onto unstable_path', async () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest(
@@ -913,7 +913,7 @@ describe('processRequest', () => {
       expect(response._getString()).toBe('i am image');
     });
 
-    it('unstable_path can escape from projectRoot', async () => {
+    test('unstable_path can escape from projectRoot', async () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest(
@@ -932,7 +932,7 @@ describe('processRequest', () => {
   });
 
   describe('build(options)', () => {
-    it('Calls the delta bundler with the correct args', async () => {
+    test('Calls the delta bundler with the correct args', async () => {
       await server.build({
         ...Server.DEFAULT_BUNDLE_OPTIONS,
         entryFile: 'foo file',
@@ -990,7 +990,7 @@ describe('processRequest', () => {
         );
       });
 
-      it('should symbolicate given stack trace', async () => {
+      test('should symbolicate given stack trace', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
@@ -1098,7 +1098,7 @@ describe('processRequest', () => {
         });
       });
 
-      it('should update the graph when symbolicating a second time', async () => {
+      test('should update the graph when symbolicating a second time', async () => {
         const requestData = {
           rawBody: JSON.stringify({
             stack: [
@@ -1135,7 +1135,7 @@ describe('processRequest', () => {
         expect(updateSpy).toBeCalledTimes(1);
       });
 
-      it('supports the `modulesOnly` option', async () => {
+      test('supports the `modulesOnly` option', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
@@ -1159,7 +1159,7 @@ describe('processRequest', () => {
         });
       });
 
-      it('supports the `shallow` option', async () => {
+      test('supports the `shallow` option', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
@@ -1200,7 +1200,7 @@ describe('processRequest', () => {
         `);
       });
 
-      it('should symbolicate function name if available', async () => {
+      test('should symbolicate function name if available', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
@@ -1222,7 +1222,7 @@ describe('processRequest', () => {
         });
       });
 
-      it('should collapse frames as specified in customizeFrame', async () => {
+      test('should collapse frames as specified in customizeFrame', async () => {
         // NOTE: See implementation of symbolicator.customizeFrame above.
 
         const response = await makeRequest('/symbolicate', {
@@ -1247,7 +1247,7 @@ describe('processRequest', () => {
         });
       });
 
-      it('should transform frames as specified in customizeStack', async () => {
+      test('should transform frames as specified in customizeStack', async () => {
         // NOTE: See implementation of symbolicator.customizeStack above.
 
         const response = await makeRequest('/symbolicate', {
@@ -1278,7 +1278,7 @@ describe('processRequest', () => {
 
       // TODO: This probably should restore the *original* file before rewrite
       // or normalisation.
-      it('should leave original file and position when cannot symbolicate (after normalisation and rewriting?)', async () => {
+      test('should leave original file and position when cannot symbolicate (after normalisation and rewriting?)', async () => {
         const response = await makeRequest('/symbolicate', {
           rawBody: JSON.stringify({
             stack: [
@@ -1312,7 +1312,7 @@ describe('processRequest', () => {
   );
 
   describe('/symbolicate handles errors', () => {
-    it('should symbolicate given stack trace', async () => {
+    test('should symbolicate given stack trace', async () => {
       const body = 'clearly-not-json';
       // $FlowFixMe[cannot-write]
       console.error = jest.fn();

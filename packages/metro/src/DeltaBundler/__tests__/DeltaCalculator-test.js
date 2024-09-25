@@ -201,17 +201,17 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     jest.resetModules();
   });
 
-  it('should start listening for file changes after being initialized', async () => {
+  test('should start listening for file changes after being initialized', async () => {
     expect(fileWatcher.listeners('change')).toHaveLength(1);
   });
 
-  it('should stop listening for file changes after being destroyed', () => {
+  test('should stop listening for file changes after being destroyed', () => {
     deltaCalculator.end();
 
     expect(fileWatcher.listeners('change')).toHaveLength(0);
   });
 
-  it('should include the entry file when calculating the initial bundle', async () => {
+  test('should include the entry file when calculating the initial bundle', async () => {
     const result = await deltaCalculator.getDelta({
       reset: false,
       shallow: false,
@@ -233,7 +233,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     jest.runAllTicks();
   });
 
-  it('should return an empty delta when there are no changes', async () => {
+  test('should return an empty delta when there are no changes', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     expect(
@@ -248,7 +248,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls.length).toBe(0);
   });
 
-  it('should return a full delta when passing reset=true', async () => {
+  test('should return a full delta when passing reset=true', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     const result = await deltaCalculator.getDelta({
@@ -270,7 +270,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     });
   });
 
-  it('should calculate a delta after a file addition', async () => {
+  test('should calculate a delta after a file addition', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
@@ -299,7 +299,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies).not.toBeCalled();
   });
 
-  it('should calculate a delta after a simple modification', async () => {
+  test('should calculate a delta after a simple modification', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
@@ -331,7 +331,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
-  it('should calculate a delta after removing a dependency', async () => {
+  test('should calculate a delta after removing a dependency', async () => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -364,7 +364,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
-  it('should calculate a delta after adding/removing dependencies', async () => {
+  test('should calculate a delta after adding/removing dependencies', async () => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -414,7 +414,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     });
   });
 
-  it('should emit an event when there is a relevant file change', done => {
+  test('should emit an event when there is a relevant file change', done => {
     deltaCalculator
       .getDelta({reset: false, shallow: false})
       .then(() => {
@@ -428,7 +428,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       .catch(done);
   });
 
-  it('should emit an event when a file is added', async () => {
+  test('should emit an event when a file is added', async () => {
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -443,7 +443,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(onChangeFile).toHaveBeenCalled();
   });
 
-  it('should not emit an event when there is a file deleted', async () => {
+  test('should not emit an event when there is a file deleted', async () => {
     const onChangeFile = jest.fn();
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
@@ -460,7 +460,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(onChangeFile).not.toHaveBeenCalled();
   });
 
-  it('should retry to build the last delta after getting an error', async () => {
+  test('should retry to build the last delta after getting an error', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     fileWatcher.emit('change', {
@@ -481,7 +481,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     ).rejects.toBeInstanceOf(Error);
   });
 
-  it('should never try to traverse a file after deleting it', async () => {
+  test('should never try to traverse a file after deleting it', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // First modify the file
@@ -519,7 +519,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/bundle')]);
   });
 
-  it('does not traverse a file after deleting it and one of its dependencies', async () => {
+  test('does not traverse a file after deleting it and one of its dependencies', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // Delete a file
@@ -552,7 +552,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/bundle')]);
   });
 
-  it('should not do unnecessary work when adding a file after deleting it', async () => {
+  test('should not do unnecessary work when adding a file after deleting it', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // First delete a file
@@ -583,7 +583,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual([p('/foo')]);
   });
 
-  it.each(['add', 'delete'])(
+  test.each(['add', 'delete'])(
     "should re-traverse everything after a symlink '%s'",
     async eventType => {
       await deltaCalculator.getDelta({reset: false, shallow: false});
@@ -682,7 +682,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies).not.toHaveBeenCalled();
   });
 
-  it('should not mutate an existing graph when calling end()', async () => {
+  test('should not mutate an existing graph when calling end()', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
     const graph = deltaCalculator.getGraph();
 

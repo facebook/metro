@@ -66,7 +66,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     httpServer.close(done);
   });
 
-  it('should serve development bundles', async () => {
+  test('should serve development bundles', async () => {
     expect(
       await downloadAndExec(
         '/TestBundle.bundle?platform=ios&dev=true&minify=false',
@@ -74,7 +74,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     ).toMatchSnapshot();
   });
 
-  it('should serve production bundles', async () => {
+  test('should serve production bundles', async () => {
     expect(
       await downloadAndExec(
         '/TestBundle.bundle?platform=ios&dev=false&minify=true',
@@ -82,7 +82,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     ).toMatchSnapshot();
   });
 
-  it('should serve lazy bundles', async () => {
+  test('should serve lazy bundles', async () => {
     const object = await downloadAndExec(
       '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true',
     );
@@ -101,7 +101,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     );
   });
 
-  it('should serve non-lazy bundles by default', async () => {
+  test('should serve non-lazy bundles by default', async () => {
     const object = await downloadAndExec(
       '/import-export/index.bundle?platform=ios&dev=true&minify=false',
     );

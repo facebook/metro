@@ -195,7 +195,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('relative paths', () => {
-      it('resolves standard relative paths with extension', async () => {
+      test('resolves standard relative paths with extension', async () => {
         setMockFileSystem({
           'index.js': '',
           'a.js': '',
@@ -209,7 +209,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves relative paths without extension', async () => {
+      test('resolves relative paths without extension', async () => {
         setMockFileSystem({
           'index.js': '',
           'a.js': '',
@@ -223,7 +223,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves extensions correctly', async () => {
+      test('resolves extensions correctly', async () => {
         setMockFileSystem({
           'index.js': '',
           'a.js': '',
@@ -238,7 +238,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves shorthand syntax for parent directory', async () => {
+      test('resolves shorthand syntax for parent directory', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.js': '',
@@ -266,7 +266,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves shorthand syntax for relative index module', async () => {
+      test('resolves shorthand syntax for relative index module', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.js': '',
@@ -280,7 +280,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves shorthand syntax for nested relative index module with resolution cache', async () => {
+      test('resolves shorthand syntax for nested relative index module with resolution cache', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.js': '',
@@ -302,7 +302,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves custom extensions in the correct order', async () => {
+      test('resolves custom extensions in the correct order', async () => {
         setMockFileSystem({
           'index.js': '',
           'a.another': '',
@@ -327,7 +327,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('fails when trying to implicitly require an extension not listed in sourceExts', async () => {
+      test('fails when trying to implicitly require an extension not listed in sourceExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import root from './a.another';"),
           'a.another': '',
@@ -339,7 +339,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('resolves relative paths on different folders', async () => {
+      test('resolves relative paths on different folders', async () => {
         setMockFileSystem({
           'index.js': '',
           folder: {
@@ -367,7 +367,7 @@ function dep(name: string): TransformResultDependency {
         );
       });
 
-      it('resolves files when there is a folder with the same name', async () => {
+      test('resolves files when there is a folder with the same name', async () => {
         setMockFileSystem({
           'index.js': '',
           folder: {
@@ -390,7 +390,7 @@ function dep(name: string): TransformResultDependency {
       });
 
       describe('with additional files included in the file map (watcher.additionalExts)', () => {
-        it('resolves modules outside sourceExts when required explicitly', async () => {
+        test('resolves modules outside sourceExts when required explicitly', async () => {
           setMockFileSystem({
             'index.js': mockFileImport("import a from './a.cjs';"),
             'a.cjs': '',
@@ -412,7 +412,7 @@ function dep(name: string): TransformResultDependency {
           );
         });
 
-        it('fails when implicitly requiring a file outside sourceExts', async () => {
+        test('fails when implicitly requiring a file outside sourceExts', async () => {
           setMockFileSystem({
             'index.js': mockFileImport("import a from './a';"),
             'a.cjs': '',
@@ -434,7 +434,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('absolute paths', () => {
-      it('supports requiring absolute paths', async () => {
+      test('supports requiring absolute paths', async () => {
         setMockFileSystem({
           'index.js': '',
           folder: {
@@ -453,7 +453,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('packages in node_modules/', () => {
-      it('resolves package.json files as normal modules', async () => {
+      test('resolves package.json files as normal modules', async () => {
         setMockFileSystem({
           'index.js': '',
           'package.json': JSON.stringify({name: 'package'}),
@@ -465,7 +465,7 @@ function dep(name: string): TransformResultDependency {
         ).toEqual({type: 'sourceFile', filePath: p('/root/package.json')});
       });
 
-      it('finds nested packages in node_modules', async () => {
+      test('finds nested packages in node_modules', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import qux from 'qux';"),
           node_modules: {
@@ -516,7 +516,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('can require specific files inside a package', async () => {
+      test('can require specific files inside a package', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -541,7 +541,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('finds the appropiate node_modules folder', async () => {
+      test('finds the appropiate node_modules folder', async () => {
         setMockFileSystem({
           node_modules: {
             foo: {
@@ -579,7 +579,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('caches the closest node_modules folder if a flat layout is assumed', async () => {
+      test('caches the closest node_modules folder if a flat layout is assumed', async () => {
         setMockFileSystem({
           node_modules: {
             foo: {
@@ -623,7 +623,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('works with packages with a .js extension', async () => {
+      test('works with packages with a .js extension', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -641,7 +641,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('works with one-character packages', async () => {
+      test('works with one-character packages', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -659,7 +659,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('uses the folder name and not the name in the package.json', async () => {
+      test('uses the folder name and not the name in the package.json', async () => {
         setMockFileSystem({
           'index.js': mockFileImport(
             "import * as invalidName from 'invalidName';",
@@ -684,7 +684,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('fails if there is no package.json', async () => {
+      test('fails if there is no package.json', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -703,7 +703,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves main package module to index.js by default', async () => {
+      test('resolves main package module to index.js by default', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -721,7 +721,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves main field correctly if it is a folder', async () => {
+      test('resolves main field correctly if it is a folder', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -744,7 +744,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves main field correctly for a fully specified module included by watcher.additionalExts', async () => {
+      test('resolves main field correctly for a fully specified module included by watcher.additionalExts', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -769,7 +769,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('allows package names with dots', async () => {
+      test('allows package names with dots', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -797,7 +797,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('allows relative requires against packages', async () => {
+      test('allows relative requires against packages', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -820,7 +820,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('allows to require package sub-dirs', async () => {
+      test('allows to require package sub-dirs', async () => {
         // $FlowFixMe[cannot-write]
         console.warn = jest.fn();
         setMockFileSystem({
@@ -844,7 +844,7 @@ function dep(name: string): TransformResultDependency {
 
       ['browser', 'react-native'].forEach(browserField => {
         describe(`${browserField} field in package.json`, () => {
-          it('supports simple field', async () => {
+          test('supports simple field', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -867,7 +867,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('overrides the main field', async () => {
+          test('overrides the main field', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -891,7 +891,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('can omit file extension', async () => {
+          test('can omit file extension', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -914,7 +914,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('resolves mappings from external calls', async () => {
+          test('resolves mappings from external calls', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -946,7 +946,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('resolves mappings without extensions', async () => {
+          test('resolves mappings without extensions', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -977,7 +977,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('resolves mappings from internal calls', async () => {
+          test('resolves mappings from internal calls', async () => {
             setMockFileSystem({
               'index.js': '',
               node_modules: {
@@ -1060,7 +1060,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('resolves mappings to other packages', async () => {
+          test('resolves mappings to other packages', async () => {
             setMockFileSystem({
               node_modules: {
                 aPackage: {
@@ -1105,7 +1105,7 @@ function dep(name: string): TransformResultDependency {
             ).toThrowErrorMatchingSnapshot();
           });
 
-          it('supports mapping a package to a file', async () => {
+          test('supports mapping a package to a file', async () => {
             setMockFileSystem({
               node_modules: {
                 aPackage: {
@@ -1134,7 +1134,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('supports excluding a package', async () => {
+          test('supports excluding a package', async () => {
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -1184,7 +1184,7 @@ function dep(name: string): TransformResultDependency {
             });
           });
 
-          it('supports excluding a package when the empty module is a relative path', async () => {
+          test('supports excluding a package when the empty module is a relative path', async () => {
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -1230,7 +1230,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('uses react-native field before browser field', async () => {
+      test('uses react-native field before browser field', async () => {
         setMockFileSystem({
           node_modules: {
             aPackage: {
@@ -1258,7 +1258,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('works with custom main fields', async () => {
+      test('works with custom main fields', async () => {
         setMockFileSystem({
           node_modules: {
             aPackage: {
@@ -1288,7 +1288,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('merges custom main fields', async () => {
+      test('merges custom main fields', async () => {
         setMockFileSystem({
           node_modules: {
             aPackage: {
@@ -1328,7 +1328,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('uses main attribute from custom main fields', async () => {
+      test('uses main attribute from custom main fields', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -1355,7 +1355,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('platforms', () => {
-      it('resolves platform-specific files', async () => {
+      test('resolves platform-specific files', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import f from './foo.js';"),
           'foo.ios.js': '',
@@ -1379,7 +1379,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('takes precedence over non-platform files', async () => {
+      test('takes precedence over non-platform files', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.ios.js': '',
@@ -1405,7 +1405,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves platforms on folder index files', async () => {
+      test('resolves platforms on folder index files', async () => {
         setMockFileSystem({
           'index.js': '',
           dir: {
@@ -1426,7 +1426,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves platforms on the main field of node_modules packages', async () => {
+      test('resolves platforms on the main field of node_modules packages', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -1447,7 +1447,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('does not resolve when the main field of node_modules packages when it has the extension', async () => {
+      test('does not resolve when the main field of node_modules packages when it has the extension', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -1469,7 +1469,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrow();
       });
 
-      it('does not resolve when the browser mappings of node_modules packages', async () => {
+      test('does not resolve when the browser mappings of node_modules packages', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -1493,7 +1493,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrow();
       });
 
-      it('supports custom platforms even if they are not configured', async () => {
+      test('supports custom platforms even if they are not configured', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.playstation.js': '',
@@ -1523,7 +1523,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('assets', () => {
-      it('resolves a standard asset', async () => {
+      test('resolves a standard asset', async () => {
         setMockFileSystem({
           'index.js': '',
           'asset.png': '',
@@ -1538,7 +1538,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves asset files with resolution suffixes (matching size)', async () => {
+      test('resolves asset files with resolution suffixes (matching size)', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import a from './a@1.5x.png';"),
           'a@1.5x.png': '',
@@ -1557,7 +1557,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('resolves asset files with resolution suffixes (matching exact)', async () => {
+      test('resolves asset files with resolution suffixes (matching exact)', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import a from './c@2x.png';"),
           'a@1.5x.png': '',
@@ -1576,7 +1576,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('checks asset extensions case insensitively', async () => {
+      test('checks asset extensions case insensitively', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import a from './asset.PNG';"),
           'asset.PNG': '',
@@ -1590,7 +1590,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('resolves custom asset extensions when overriding assetExts', async () => {
+      test('resolves custom asset extensions when overriding assetExts', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import a from './asset2.png';"),
           'asset1.ast': '',
@@ -1610,7 +1610,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('resolves assets from packages in node_modules', async () => {
+      test('resolves assets from packages in node_modules', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           node_modules: {
@@ -1639,7 +1639,7 @@ function dep(name: string): TransformResultDependency {
             enableGlobalPackages: true,
           },
         };
-        it('treats any folder with a package.json as a global package', async () => {
+        test('treats any folder with a package.json as a global package', async () => {
           setMockFileSystem({
             'index.js': '',
             aPackage: {
@@ -1673,7 +1673,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('resolves main package module to index.js by default', async () => {
+        test('resolves main package module to index.js by default', async () => {
           setMockFileSystem({
             'index.js': '',
             aPackage: {
@@ -1691,7 +1691,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('uses the name in the package.json as the package name', async () => {
+        test('uses the name in the package.json as the package name', async () => {
           setMockFileSystem({
             'index.js': mockFileImport("import a from 'aPackage';"),
             aPackage: {
@@ -1716,7 +1716,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('uses main field from the package.json', async () => {
+        test('uses main field from the package.json', async () => {
           setMockFileSystem({
             'index.js': '',
             aPackage: {
@@ -1736,7 +1736,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('supports package names with dots', async () => {
+        test('supports package names with dots', async () => {
           setMockFileSystem({
             'index.js': '',
             'leftpad.js': {
@@ -1762,7 +1762,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('allows relative requires against packages', async () => {
+        test('allows relative requires against packages', async () => {
           setMockFileSystem({
             'index.js': '',
             aPackage: {
@@ -1793,7 +1793,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('fatals on multiple packages with the same name', async () => {
+        test('fatals on multiple packages with the same name', async () => {
           // $FlowFixMe[cannot-write]
           console.warn = jest.fn();
           setMockFileSystem({
@@ -1825,7 +1825,7 @@ function dep(name: string): TransformResultDependency {
           );
         });
 
-        it('does not support multiple global packages for different platforms', async () => {
+        test('does not support multiple global packages for different platforms', async () => {
           setMockFileSystem({
             'index.js': '',
             'aPackage.android.js': {
@@ -1860,7 +1860,7 @@ function dep(name: string): TransformResultDependency {
           );
         });
 
-        it('resolves global packages before node_modules packages', async () => {
+        test('resolves global packages before node_modules packages', async () => {
           setMockFileSystem({
             'index.js': '',
             node_modules: {
@@ -1882,7 +1882,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('allows to require global package sub-dirs', async () => {
+        test('allows to require global package sub-dirs', async () => {
           // $FlowFixMe[cannot-write]
           console.warn = jest.fn();
           setMockFileSystem({
@@ -1904,7 +1904,7 @@ function dep(name: string): TransformResultDependency {
 
         ['browser', 'react-native'].forEach(browserField => {
           describe(`${browserField} field in global packages`, () => {
-            it('supports simple field', async () => {
+            test('supports simple field', async () => {
               setMockFileSystem({
                 'index.js': '',
                 aPackage: {
@@ -1925,7 +1925,7 @@ function dep(name: string): TransformResultDependency {
               });
             });
 
-            it('resolves mappings without extensions', async () => {
+            test('resolves mappings without extensions', async () => {
               setMockFileSystem({
                 'index.js': '',
                 aPackage: {
@@ -1956,7 +1956,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        it('works with custom main fields', async () => {
+        test('works with custom main fields', async () => {
           setMockFileSystem({
             aPackage: {
               'package.json': JSON.stringify({
@@ -2054,7 +2054,7 @@ function dep(name: string): TransformResultDependency {
         };
       });
 
-      it('resolves haste names globally', async () => {
+      test('resolves haste names globally', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2069,7 +2069,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('does not take file name or extension into account', async () => {
+      test('does not take file name or extension into account', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import module from 'hasteModule.js';"),
           'lib.js': mockFileImport("import invalid from 'invalidName';"),
@@ -2086,7 +2086,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('checks for haste modules in different folder', async () => {
+      test('checks for haste modules in different folder', async () => {
         setMockFileSystem({
           'index.js': '',
           dir: {subdir: {'hasteModule.js': '@providesModule hasteModule'}},
@@ -2101,7 +2101,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('fatals when there are duplicated haste names', async () => {
+      test('fatals when there are duplicated haste names', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2122,7 +2122,7 @@ function dep(name: string): TransformResultDependency {
         );
       });
 
-      it('resolves a haste module before a package in node_modules', async () => {
+      test('resolves a haste module before a package in node_modules', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2143,7 +2143,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('fatals when a haste module collides with a global package', async () => {
+      test('fatals when a haste module collides with a global package', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2166,7 +2166,7 @@ function dep(name: string): TransformResultDependency {
         );
       });
 
-      it('supports collisions between haste names and global packages if they have different platforms', async () => {
+      test('supports collisions between haste names and global packages if they have different platforms', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.ios.js': '@providesModule hasteModule',
@@ -2192,7 +2192,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves duplicated haste names when the filenames have different platforms', async () => {
+      test('resolves duplicated haste names when the filenames have different platforms', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2215,7 +2215,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('fatals when a filename uses a non-supported platform and there are collisions', async () => {
+      test('fatals when a filename uses a non-supported platform and there are collisions', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2236,7 +2236,7 @@ function dep(name: string): TransformResultDependency {
         );
       });
 
-      it('does not resolve haste names in node_modules folders', async () => {
+      test('does not resolve haste names in node_modules folders', async () => {
         setMockFileSystem({
           'index.js': mockFileImport("import hasteModule from 'hasteModule';"),
           node_modules: {
@@ -2253,7 +2253,7 @@ function dep(name: string): TransformResultDependency {
         ).toThrowErrorMatchingSnapshot();
       });
 
-      it('does not cause collision with haste modules in node_modules', async () => {
+      test('does not cause collision with haste modules in node_modules', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2274,7 +2274,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('respects package.json replacements for global (Haste) packages', async () => {
+      test('respects package.json replacements for global (Haste) packages', async () => {
         setMockFileSystem({
           node_modules: {
             aPackage: {
@@ -2309,7 +2309,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('respects package.json replacements for Haste modules', async () => {
+      test('respects package.json replacements for Haste modules', async () => {
         setMockFileSystem({
           node_modules: {
             aPackage: {
@@ -2341,7 +2341,7 @@ function dep(name: string): TransformResultDependency {
     });
 
     describe('extraNodeModules config param', () => {
-      it('works when it points to folders or packages', async () => {
+      test('works when it points to folders or packages', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           providesFoo: {
@@ -2374,7 +2374,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('uses extraNodeModules only after checking all possible filesystem locations', async () => {
+      test('uses extraNodeModules only after checking all possible filesystem locations', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           providesFoo: {
@@ -2408,7 +2408,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('supports scoped `extraNodeModules`', async () => {
+      test('supports scoped `extraNodeModules`', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           providesFoo: {
@@ -2436,7 +2436,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('supports browser mappings in its package.json', async () => {
+      test('supports browser mappings in its package.json', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           providesFoo: {
@@ -2460,7 +2460,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('resolves assets', async () => {
+      test('resolves assets', async () => {
         setMockFileSystem({
           folder: {'index.js': ''},
           providesFoo: {'asset.png': ''},
@@ -2489,7 +2489,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('overrides relative paths', async () => {
+      test('overrides relative paths', async () => {
         setMockFileSystem({
           'index.js': '',
           myFolder: {'foo.js': ''},
@@ -2509,7 +2509,7 @@ function dep(name: string): TransformResultDependency {
         );
       });
 
-      it('overrides node_modules package resolutions', async () => {
+      test('overrides node_modules package resolutions', async () => {
         setMockFileSystem({
           'index.js': '',
           node_modules: {
@@ -2529,7 +2529,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('overrides global package resolutions', async () => {
+      test('overrides global package resolutions', async () => {
         setMockFileSystem({
           'index.js': '',
           aPackage: {
@@ -2547,7 +2547,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('overrides haste names', async () => {
+      test('overrides haste names', async () => {
         setMockFileSystem({
           'index.js': '',
           'aPackage.js': '@providesModule aPackage',
@@ -2570,7 +2570,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      it('calls resolveRequest with the correct arguments', async () => {
+      test('calls resolveRequest with the correct arguments', async () => {
         setMockFileSystem({
           'index.js': '',
           'foo.js': '',
@@ -2588,7 +2588,7 @@ function dep(name: string): TransformResultDependency {
         expect(platform).toEqual('ios');
       });
 
-      it('caches resolutions by origin folder', async () => {
+      test('caches resolutions by origin folder', async () => {
         setMockFileSystem({
           root1: {
             dir: {
@@ -2646,7 +2646,7 @@ function dep(name: string): TransformResultDependency {
         expect(resolveRequest).toHaveBeenCalledTimes(4);
       });
 
-      it('caches resolutions globally if assumeFlatNodeModules=true', async () => {
+      test('caches resolutions globally if assumeFlatNodeModules=true', async () => {
         setMockFileSystem({
           root1: {
             dir: {
@@ -2698,7 +2698,7 @@ function dep(name: string): TransformResultDependency {
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
 
-      it('forks the cache by customResolverOptions', async () => {
+      test('forks the cache by customResolverOptions', async () => {
         setMockFileSystem({
           root1: {
             dir: {

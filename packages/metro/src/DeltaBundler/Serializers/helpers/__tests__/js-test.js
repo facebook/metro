@@ -59,7 +59,7 @@ beforeEach(() => {
 });
 
 describe('wrapModule()', () => {
-  it('Should wrap a module in nondev mode', () => {
+  test('Should wrap a module in nondev mode', () => {
     expect(
       raw(
         wrapModule(myModule, {
@@ -74,7 +74,7 @@ describe('wrapModule()', () => {
     ).toMatchInlineSnapshot(`__d(function() { console.log("foo") },0,[1,2]);`);
   });
 
-  it('Should wrap a module in dev mode', () => {
+  test('Should wrap a module in dev mode', () => {
     expect(
       raw(
         wrapModule(myModule, {
@@ -91,7 +91,7 @@ describe('wrapModule()', () => {
     );
   });
 
-  it('should not wrap a script', () => {
+  test('should not wrap a script', () => {
     myModule.output[0].type = 'js/script';
 
     expect(
@@ -108,7 +108,7 @@ describe('wrapModule()', () => {
     ).toMatchInlineSnapshot(`__d(function() { console.log("foo") });`);
   });
 
-  it('should use custom createModuleId param', () => {
+  test('should use custom createModuleId param', () => {
     // Just use a createModuleId that returns the same path.
     expect(
       raw(
@@ -126,7 +126,7 @@ describe('wrapModule()', () => {
     );
   });
 
-  it('includes the paths of async dependencies when requested', () => {
+  test('includes the paths of async dependencies when requested', () => {
     const dep = nullthrows(myModule.dependencies.get('bar'));
     myModule.dependencies.set('bar', {
       ...dep,
@@ -148,7 +148,7 @@ describe('wrapModule()', () => {
     );
   });
 
-  it('async dependency paths respect serverRoot', () => {
+  test('async dependency paths respect serverRoot', () => {
     const dep = nullthrows(myModule.dependencies.get('bar'));
     myModule.dependencies.set('bar', {
       ...dep,
@@ -170,7 +170,7 @@ describe('wrapModule()', () => {
     );
   });
 
-  it('async bundle paths override modulesOnly and runModule', () => {
+  test('async bundle paths override modulesOnly and runModule', () => {
     const dep = nullthrows(myModule.dependencies.get('bar'));
     myModule.dependencies.set('bar', {
       ...dep,

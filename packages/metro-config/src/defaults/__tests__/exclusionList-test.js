@@ -31,7 +31,7 @@ describe('exclusionList', () => {
     path.sep = originalSeparator;
   });
 
-  it('proves we can write to path.sep for setting up the tests', () => {
+  test('proves we can write to path.sep for setting up the tests', () => {
     setPathSeperator('/');
     expect(require('path').sep).toBe('/');
     setPathSeperator('\\');
@@ -41,7 +41,7 @@ describe('exclusionList', () => {
   describe('simulate macOS/linux enviornment', () => {
     beforeEach(() => setPathSeperator('/'));
 
-    it('converts forward slashes in the RegExp to the OS specific path separator', () => {
+    test('converts forward slashes in the RegExp to the OS specific path separator', () => {
       // Simple case
       expect('a/b/c').toMatch(exclusionList([new RegExp('a/b/c')]));
       expect('a/b/c').toMatch(exclusionList([/a\/b\/c/]));
@@ -52,7 +52,7 @@ describe('exclusionList', () => {
       expect('/foo/bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
-    it('converts forward slashes in the string to the OS specific path separator', () => {
+    test('converts forward slashes in the string to the OS specific path separator', () => {
       // Simple case
       expect('a/b/c').toMatch(exclusionList(['a/b/c']));
       // Make sure the special characters are escaped properly
@@ -61,7 +61,7 @@ describe('exclusionList', () => {
       );
     });
 
-    it('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
+    test('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
       // In node version 10 or below, the forward slash in brackets are escaped automatically.
       // eg. /[/\\]/ => /[\/\\]/
       // Ideally this test case should be removed and instead the whole test should run in
@@ -77,7 +77,7 @@ describe('exclusionList', () => {
   describe('simulate windows enviornment', () => {
     beforeEach(() => setPathSeperator('\\'));
 
-    it('converts forward slashes in the RegExp to the OS specific path separator', () => {
+    test('converts forward slashes in the RegExp to the OS specific path separator', () => {
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList([new RegExp('a/b/c')]));
       expect('a\\b\\c').toMatch(exclusionList([/a\/b\/c/]));
@@ -88,7 +88,7 @@ describe('exclusionList', () => {
       expect('\\foo\\bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
-    it('converts forward slashes in the string to the OS specific path separator', () => {
+    test('converts forward slashes in the string to the OS specific path separator', () => {
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList(['a/b/c']));
       // Make sure the special characters are escaped properly
@@ -97,7 +97,7 @@ describe('exclusionList', () => {
       );
     });
 
-    it('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
+    test('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
       // In node version 10 or below, the forward slash in brackets are escaped automatically.
       // eg. /[/\\]/ => /[\/\\]/
       // Ideally this test case should be removed and instead the whole test should run in

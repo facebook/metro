@@ -20,7 +20,7 @@ const opts = {
   importDefault: '_$$_IMPORT_DEFAULT',
 };
 
-it('correctly transforms and extracts "import" statements', () => {
+test('correctly transforms and extracts "import" statements', () => {
   const code = `
     import v from 'foo';
     import * as w from 'bar';
@@ -54,7 +54,7 @@ it('correctly transforms and extracts "import" statements', () => {
   `);
 });
 
-it('correctly transforms complex patterns', () => {
+test('correctly transforms complex patterns', () => {
   const code = `
     import 'first-with-side-effect';
     import a, * as b from 'second';
@@ -102,7 +102,7 @@ it('correctly transforms complex patterns', () => {
   `);
 });
 
-it('hoists declarations to the top', () => {
+test('hoists declarations to the top', () => {
   const code = `
     foo();
     import {foo} from 'bar';
@@ -122,7 +122,7 @@ it('hoists declarations to the top', () => {
   `);
 });
 
-it('exports members of another module directly from an import (as named)', () => {
+test('exports members of another module directly from an import (as named)', () => {
   const code = `
     export {default as foo} from 'bar';
   `;
@@ -143,7 +143,7 @@ it('exports members of another module directly from an import (as named)', () =>
   `);
 });
 
-it('exports members of another module directly from an import (as default)', () => {
+test('exports members of another module directly from an import (as default)', () => {
   const code = `
     export {foo as default, baz} from 'bar';
   `;
@@ -168,7 +168,7 @@ it('exports members of another module directly from an import (as default)', () 
   `);
 });
 
-it('exports named members', () => {
+test('exports named members', () => {
   const code = `
     export const foo = 'bar';
   `;
@@ -182,7 +182,7 @@ it('exports named members', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
-it('exports destructured named object members', () => {
+test('exports destructured named object members', () => {
   const code = `
     export const {foo,bar} = {foo: 'bar',bar: 'baz'};
   `;
@@ -197,7 +197,7 @@ it('exports destructured named object members', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
-it('exports destructured named array members', () => {
+test('exports destructured named array members', () => {
   const code = `
     export const [foo,bar] = ['bar','baz'];
   `;
@@ -212,7 +212,7 @@ it('exports destructured named array members', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
-it('exports members of another module directly from an import (as all)', () => {
+test('exports members of another module directly from an import (as all)', () => {
   const code = `
     export * from 'bar';
   `;
@@ -236,7 +236,7 @@ it('exports members of another module directly from an import (as all)', () => {
   `);
 });
 
-it('enables module exporting when something is exported', () => {
+test('enables module exporting when something is exported', () => {
   const code = `
     foo();
     import {foo} from 'bar';
@@ -262,7 +262,7 @@ it('enables module exporting when something is exported', () => {
   `);
 });
 
-it('supports `import {default as LocalName}`', () => {
+test('supports `import {default as LocalName}`', () => {
   const code = `
     import {
       Platform,

@@ -70,7 +70,7 @@ describe('HttpStore', () => {
     HttpStore = require('../HttpStore');
   });
 
-  it('works with HTTP and HTTPS', () => {
+  test('works with HTTP and HTTPS', () => {
     const httpStore = new HttpStore({endpoint: 'http://example.com'});
     const httpsStore = new HttpStore({endpoint: 'https://example.com'});
 
@@ -85,7 +85,7 @@ describe('HttpStore', () => {
     expect(require('https').request).toHaveBeenCalledTimes(1);
   });
 
-  it('gets using the network via GET method', async () => {
+  test('gets using the network via GET method', async () => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -101,7 +101,7 @@ describe('HttpStore', () => {
     expect(await promise).toEqual({foo: 42});
   });
 
-  it('rejects when an HTTP different from 200 is returned', done => {
+  test('rejects when an HTTP different from 200 is returned', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -119,7 +119,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('does not retry when maxAttempts==1', async () => {
+  test('does not retry when maxAttempts==1', async () => {
     const store = new HttpStore({
       endpoint: 'http://example.com',
       maxAttempts: 1,
@@ -146,7 +146,7 @@ describe('HttpStore', () => {
     expect(require('http').request).toHaveBeenCalledTimes(1);
   });
 
-  it('retries http errors when maxAttempts>1 and status in retryStatuses', async () => {
+  test('retries http errors when maxAttempts>1 and status in retryStatuses', async () => {
     jest.useRealTimers();
     const store = new HttpStore({
       endpoint: 'http://example.com',
@@ -168,7 +168,7 @@ describe('HttpStore', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('throws when retries exceed maxAttempts', async () => {
+  test('throws when retries exceed maxAttempts', async () => {
     jest.useRealTimers();
     const store = new HttpStore({
       endpoint: 'http://example.com',
@@ -194,7 +194,7 @@ describe('HttpStore', () => {
     expect(request).toHaveBeenCalledTimes(3);
   });
 
-  it('retries timeouts when maxAttempts>1 and retryNetworkErrors=true', async () => {
+  test('retries timeouts when maxAttempts>1 and retryNetworkErrors=true', async () => {
     jest.useRealTimers();
     const store = new HttpStore({
       endpoint: 'http://example.com',
@@ -218,7 +218,7 @@ describe('HttpStore', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('get() includes HTTP error body in rejection with debug: true', done => {
+  test('get() includes HTTP error body in rejection with debug: true', done => {
     const store = new HttpStore({endpoint: 'http://example.com', debug: true});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -238,7 +238,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('get() resolves when the HTTP code is in additionalSuccessStatuses', async () => {
+  test('get() resolves when the HTTP code is in additionalSuccessStatuses', async () => {
     const store = new HttpStore({
       endpoint: 'http://www.example.com/endpoint',
       additionalSuccessStatuses: [419],
@@ -257,7 +257,7 @@ describe('HttpStore', () => {
     expect(await promise).toEqual({foo: 42});
   });
 
-  it('rejects when it gets an invalid JSON response', done => {
+  test('rejects when it gets an invalid JSON response', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -273,7 +273,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('rejects when the HTTP layer throws', done => {
+  test('rejects when the HTTP layer throws', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -290,7 +290,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('sets using the network via PUT method', done => {
+  test('sets using the network via PUT method', done => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const promise = store.set(Buffer.from('key-set'), {foo: 42});
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -315,7 +315,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('rejects when setting and HTTP fails', done => {
+  test('rejects when setting and HTTP fails', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.set(Buffer.from('key-set'), {foo: 42});
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -356,7 +356,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('rejects when setting and HTTP returns an error response', done => {
+  test('rejects when setting and HTTP returns an error response', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.set(Buffer.from('key-set'), {foo: 42});
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -374,7 +374,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('set() includes HTTP error body in rejection with debug: true', done => {
+  test('set() includes HTTP error body in rejection with debug: true', done => {
     const store = new HttpStore({endpoint: 'http://example.com', debug: true});
     const promise = store.set(Buffer.from('key-set'), {foo: 42});
     const [opts, callback] = require('http').request.mock.calls[0];
@@ -394,7 +394,7 @@ describe('HttpStore', () => {
     });
   });
 
-  it('gets the same value that was set', async () => {
+  test('gets the same value that was set', async () => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const chunks = [];
     let storedValue;
@@ -421,7 +421,7 @@ describe('HttpStore', () => {
     expect(await promiseGet).toEqual({foo: 42});
   });
 
-  it('gets the same value that was set when storing buffers', async () => {
+  test('gets the same value that was set when storing buffers', async () => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const chunks = [];
     let storedValue;

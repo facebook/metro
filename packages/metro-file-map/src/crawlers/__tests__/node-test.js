@@ -145,7 +145,7 @@ describe('node crawler', () => {
     mockSpawnExit = 0;
   });
 
-  it('crawls for files based on patterns', async () => {
+  test('crawls for files based on patterns', async () => {
     childProcess = require('child_process');
     nodeCrawl = require('../node');
 
@@ -195,7 +195,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('updates only changed files', async () => {
+  test('updates only changed files', async () => {
     nodeCrawl = require('../node');
 
     // In this test sample, strawberry is changed and tomato is unchanged
@@ -223,7 +223,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('returns removed files', async () => {
+  test('returns removed files', async () => {
     nodeCrawl = require('../node');
 
     // In this test sample, previouslyExisted was present before and will not be
@@ -251,7 +251,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set(['fruits/previouslyExisted.js']));
   });
 
-  it('uses node fs APIs with incompatible find binary', async () => {
+  test('uses node fs APIs with incompatible find binary', async () => {
     mockResponse = '';
     mockSpawnExit = 1;
     childProcess = require('child_process');
@@ -280,7 +280,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('uses node fs APIs without find binary', async () => {
+  test('uses node fs APIs without find binary', async () => {
     childProcess = require('child_process');
     childProcess.spawn.mockImplementationOnce(() => {
       throw new Error();
@@ -305,7 +305,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
+  test('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
     childProcess = require('child_process');
     nodeCrawl = require('../node');
 
@@ -329,7 +329,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('completes with empty roots', async () => {
+  test('completes with empty roots', async () => {
     nodeCrawl = require('../node');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
@@ -346,7 +346,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('completes with fs.readdir throwing an error', async () => {
+  test('completes with fs.readdir throwing an error', async () => {
     nodeCrawl = require('../node');
 
     const mockConsole = {
@@ -371,7 +371,7 @@ describe('node crawler', () => {
     expect(removedFiles).toEqual(new Set());
   });
 
-  it('uses the withFileTypes option with readdir', async () => {
+  test('uses the withFileTypes option with readdir', async () => {
     nodeCrawl = require('../node');
     const fs = require('graceful-fs');
 
@@ -398,7 +398,7 @@ describe('node crawler', () => {
     expect(fs.lstat).toHaveBeenCalledTimes(2);
   });
 
-  it('aborts the crawl on pre-aborted signal', async () => {
+  test('aborts the crawl on pre-aborted signal', async () => {
     nodeCrawl = require('../node');
     const err = new Error('aborted for test');
     await expect(
@@ -414,7 +414,7 @@ describe('node crawler', () => {
     ).rejects.toThrow(err);
   });
 
-  it('aborts the crawl if signalled after start', async () => {
+  test('aborts the crawl if signalled after start', async () => {
     const err = new Error('aborted for test');
     const abortController = new AbortController();
 

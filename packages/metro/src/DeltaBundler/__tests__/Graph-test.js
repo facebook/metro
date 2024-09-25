@@ -448,7 +448,7 @@ beforeEach(async () => {
   });
 });
 
-it('should do the initial traversal correctly', async () => {
+test('should do the initial traversal correctly', async () => {
   const result = await graph.initialTraverseDependencies(options);
 
   expect(getPaths(result)).toEqual({
@@ -460,7 +460,7 @@ it('should do the initial traversal correctly', async () => {
   expect(graph).toMatchSnapshot();
 });
 
-it('should populate all the inverse dependencies', async () => {
+test('should populate all the inverse dependencies', async () => {
   // create a second inverse dependency on /bar.
   Actions.addDependency('/bundle', '/bar');
 
@@ -471,7 +471,7 @@ it('should populate all the inverse dependencies', async () => {
   ).toEqual(new CountingSet(['/foo', '/bundle']));
 });
 
-it('should return an empty result when there are no changes', async () => {
+test('should return an empty result when there are no changes', async () => {
   await graph.initialTraverseDependencies(options);
 
   expect(
@@ -483,7 +483,7 @@ it('should return an empty result when there are no changes', async () => {
   });
 });
 
-it('should return a removed dependency', async () => {
+test('should return a removed dependency', async () => {
   await graph.initialTraverseDependencies(options);
 
   Actions.removeDependency('/foo', '/bar');
@@ -497,7 +497,7 @@ it('should return a removed dependency', async () => {
   });
 });
 
-it('should return added/removed dependencies', async () => {
+test('should return added/removed dependencies', async () => {
   await graph.initialTraverseDependencies(options);
 
   Actions.addDependency('/foo', '/qux');
@@ -513,7 +513,7 @@ it('should return added/removed dependencies', async () => {
   });
 });
 
-it('should retry to traverse the dependencies as it was after getting an error', async () => {
+test('should retry to traverse the dependencies as it was after getting an error', async () => {
   await graph.initialTraverseDependencies(options);
 
   Actions.deleteFile(moduleBar, graph);
@@ -529,7 +529,7 @@ it('should retry to traverse the dependencies as it was after getting an error',
   ).rejects.toBeInstanceOf(Error);
 });
 
-it('should retry traversing dependencies after a transform error', async () => {
+test('should retry traversing dependencies after a transform error', async () => {
   class BadError extends Error {}
 
   const localOptions = {
@@ -567,7 +567,7 @@ it('should retry traversing dependencies after a transform error', async () => {
   });
 });
 
-it('should not traverse past the initial module if `shallow` is passed', async () => {
+test('should not traverse past the initial module if `shallow` is passed', async () => {
   const result = await graph.initialTraverseDependencies({
     ...options,
     shallow: true,
@@ -583,7 +583,7 @@ it('should not traverse past the initial module if `shallow` is passed', async (
 });
 
 describe('Progress updates', () => {
-  it('calls back for each finished module', async () => {
+  test('calls back for each finished module', async () => {
     const onProgress = jest.fn();
 
     await graph.initialTraverseDependencies({...options, onProgress});
@@ -593,7 +593,7 @@ describe('Progress updates', () => {
     expect(onProgress.mock.calls.length).toBe(mockedDependencies.size * 2);
   });
 
-  it('increases the number of discover/finished modules in steps of one', async () => {
+  test('increases the number of discover/finished modules in steps of one', async () => {
     const onProgress = jest.fn();
 
     await graph.initialTraverseDependencies({...options, onProgress});
@@ -612,7 +612,7 @@ describe('Progress updates', () => {
     }
   });
 
-  it('increases the number of discover/finished modules in steps of one when there are multiple entrypoints', async () => {
+  test('increases the number of discover/finished modules in steps of one when there are multiple entrypoints', async () => {
     const onProgress = jest.fn();
 
     // Add a new entry point to the graph.
@@ -642,7 +642,7 @@ describe('Progress updates', () => {
 });
 
 describe('edge cases', () => {
-  it('should handle cyclic dependencies', async () => {
+  test('should handle cyclic dependencies', async () => {
     Actions.addDependency('/baz', '/foo');
     files.clear();
 
@@ -657,7 +657,7 @@ describe('edge cases', () => {
     ).toEqual(new CountingSet(['/baz', '/bundle']));
   });
 
-  it('should handle renames correctly', async () => {
+  test('should handle renames correctly', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/baz');
@@ -673,7 +673,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('should not try to remove wrong dependencies when renaming files', async () => {
+  test('should not try to remove wrong dependencies when renaming files', async () => {
     await graph.initialTraverseDependencies(options);
 
     // Rename /foo to /foo-renamed, but keeping all its dependencies.
@@ -695,7 +695,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/foo')).toBe(undefined);
   });
 
-  it('should handle file extension changes correctly', async () => {
+  test('should handle file extension changes correctly', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/baz');
@@ -710,7 +710,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('modify a file and delete it afterwards', async () => {
+  test('modify a file and delete it afterwards', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.modifyFile('/baz');
@@ -727,7 +727,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('remove a dependency and modify it afterwards', async () => {
+  test('remove a dependency and modify it afterwards', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/bundle', '/foo');
@@ -746,7 +746,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('remove a dependency, modify it, and re-add it elsewhere', async () => {
+  test('remove a dependency, modify it, and re-add it elsewhere', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.removeDependency('/foo', '/bar');
@@ -762,7 +762,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('Add a dependency, modify it, and remove it', async () => {
+  test('Add a dependency, modify it, and remove it', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.createFile('/quux');
@@ -779,7 +779,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a cyclic dependency but should not remove any dependency', async () => {
+  test('removes a cyclic dependency but should not remove any dependency', async () => {
     Actions.createFile('/bar1');
     Actions.addDependency('/bar', '/bar1');
     Actions.addDependency('/bar1', '/foo');
@@ -799,7 +799,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes cyclic leaf dependencies interchangeably', async () => {
+  test('removes cyclic leaf dependencies interchangeably', async () => {
     Actions.createFile('/core');
     Actions.createFile('/a');
     Actions.createFile('/b');
@@ -843,7 +843,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a cyclic dependency with inverse dependency from other sub-graph', async () => {
+  test('removes a cyclic dependency with inverse dependency from other sub-graph', async () => {
     Actions.createFile('/toFoo');
     Actions.addDependency('/toFoo', '/baz');
     Actions.addDependency('/bundle', '/toFoo');
@@ -862,7 +862,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a cyclic dependency', async () => {
+  test('removes a cyclic dependency', async () => {
     Actions.addDependency('/baz', '/foo');
     files.clear();
 
@@ -879,7 +879,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a cycle with a weak dependency', async () => {
+  test('removes a cycle with a weak dependency', async () => {
     Actions.addDependency('/baz', '/foo');
     Actions.addDependency('/baz', '/weak', {data: {asyncType: 'weak'}});
     files.clear();
@@ -927,7 +927,7 @@ describe('edge cases', () => {
     });
   });
 
-  it.each([true, false])(
+  test.each([true, false])(
     'removes a cycle with an async dependency when lazy: %s',
     async lazy => {
       Actions.addDependency('/baz', '/foo');
@@ -981,7 +981,7 @@ describe('edge cases', () => {
     },
   );
 
-  it('removes a cyclic dependency which is both inverse dependency and direct dependency', async () => {
+  test('removes a cyclic dependency which is both inverse dependency and direct dependency', async () => {
     Actions.addDependency('/foo', '/bundle');
 
     files.clear();
@@ -999,7 +999,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a dependency with transient cyclic dependency', async () => {
+  test('removes a dependency with transient cyclic dependency', async () => {
     Actions.createFile('/baz1');
     Actions.addDependency('/baz', '/baz1');
     Actions.addDependency('/baz1', '/foo');
@@ -1019,7 +1019,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('removes a sub graph that has internal cyclic dependency', async () => {
+  test('removes a sub graph that has internal cyclic dependency', async () => {
     Actions.createFile('/bar2');
     Actions.addDependency('/bar', '/bar2');
     Actions.addDependency('/bar2', '/bar');
@@ -1040,7 +1040,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('move a file to a different folder', async () => {
+  test('move a file to a different folder', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.addDependency('/foo', '/baz-moved');
@@ -1057,7 +1057,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('maintain the order of module dependencies', async () => {
+  test('maintain the order of module dependencies', async () => {
     await graph.initialTraverseDependencies(options);
 
     Actions.addDependency('/foo', '/qux', {position: 0});
@@ -1127,7 +1127,7 @@ describe('edge cases', () => {
      *   * A "live" edge is one that makes it to the final state of graph.
      *   * A "dead" edge is one that is pruned from the final graph.
      */
-    it('all in one delta, adding the live edge first', async () => {
+    test('all in one delta, adding the live edge first', async () => {
       await graph.initialTraverseDependencies(options);
 
       /*
@@ -1202,7 +1202,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('all in one delta, adding the live edge after the dead edge', async () => {
+    test('all in one delta, adding the live edge after the dead edge', async () => {
       await graph.initialTraverseDependencies(options);
 
       /*
@@ -1279,7 +1279,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('add the dead edge, compute a delta, then add the live edge', async () => {
+    test('add the dead edge, compute a delta, then add the live edge', async () => {
       await graph.initialTraverseDependencies(options);
 
       /*
@@ -1380,7 +1380,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('create the module, compute a delta, then add the dead edge and the live edge', async () => {
+    test('create the module, compute a delta, then add the dead edge and the live edge', async () => {
       await graph.initialTraverseDependencies(options);
 
       /*
@@ -1502,7 +1502,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('more than two state transitions in one delta calculation', async () => {
+    test('more than two state transitions in one delta calculation', async () => {
       await graph.initialTraverseDependencies(options);
 
       /*
@@ -1618,7 +1618,7 @@ describe('edge cases', () => {
       };
     });
 
-    it('async dependencies and their deps are omitted from the initial graph', async () => {
+    test('async dependencies and their deps are omitted from the initial graph', async () => {
       Actions.removeDependency('/bundle', '/foo');
       Actions.addDependency('/bundle', '/foo', {
         data: {
@@ -1647,7 +1647,7 @@ describe('edge cases', () => {
       expect(graph.dependencies.get('/bar')).toBeUndefined();
     });
 
-    it('new async dependencies are not traversed', async () => {
+    test('new async dependencies are not traversed', async () => {
       Actions.removeDependency('/bundle', '/foo');
       Actions.addDependency('/bundle', '/foo', {
         data: {
@@ -1696,7 +1696,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('removing an async dependency preserves existing sync dependency', async () => {
+    test('removing an async dependency preserves existing sync dependency', async () => {
       const asyncDependencyKey = Actions.addDependency('/bundle', '/foo', {
         data: {
           asyncType: 'async',
@@ -1738,7 +1738,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('changing a sync dependency to async is a deletion', async () => {
+    test('changing a sync dependency to async is a deletion', async () => {
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
       │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
@@ -1780,7 +1780,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('changing an async dependency to sync is an addition', async () => {
+    test('changing an async dependency to sync is an addition', async () => {
       Actions.removeDependency('/bundle', '/foo');
       Actions.addDependency('/bundle', '/foo', {
         data: {
@@ -1825,7 +1825,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('initial graph can have async+sync edges to the same module', async () => {
+    test('initial graph can have async+sync edges to the same module', async () => {
       Actions.addDependency('/bar', '/foo', {
         data: {
           asyncType: 'async',
@@ -1851,7 +1851,7 @@ describe('edge cases', () => {
       expect(graph.dependencies.get('/foo')).not.toBeUndefined();
     });
 
-    it('adding an async edge pointing at an existing module in the graph', async () => {
+    test('adding an async edge pointing at an existing module in the graph', async () => {
       /*
       ┌─────────┐     ┌──────┐     ┌──────┐
       │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
@@ -1894,7 +1894,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('adding a sync edge brings in a module that is already the target of an async edge', async () => {
+    test('adding a sync edge brings in a module that is already the target of an async edge', async () => {
       Actions.removeDependency('/foo', '/bar');
       Actions.addDependency('/foo', '/bar', {
         data: {
@@ -1940,7 +1940,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('on initial traversal, modules are not kept alive by a cycle with an async dep', async () => {
+    test('on initial traversal, modules are not kept alive by a cycle with an async dep', async () => {
       Actions.removeDependency('/foo', '/bar');
       Actions.addDependency('/foo', '/bar', {
         data: {
@@ -1972,7 +1972,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - deleting the sync edge in a delta', async () => {
+    test('on incremental traversal, modules are not kept alive by a cycle with an async dep - deleting the sync edge in a delta', async () => {
       Actions.removeDependency('/foo', '/bar');
       Actions.addDependency('/foo', '/bar', {
         data: {
@@ -2021,7 +2021,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - adding the async edge in a delta', async () => {
+    test('on incremental traversal, modules are not kept alive by a cycle with an async dep - adding the async edge in a delta', async () => {
       Actions.removeDependency('/foo', '/bar');
       Actions.addDependency('/bar', '/foo');
       Actions.removeDependency('/bundle', '/foo');
@@ -2071,7 +2071,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - deletion + add async in the same delta', async () => {
+    test('on incremental traversal, modules are not kept alive by a cycle with an async dep - deletion + add async in the same delta', async () => {
       Actions.removeDependency('/foo', '/bar');
       Actions.addDependency('/bar', '/foo');
 
@@ -2120,7 +2120,7 @@ describe('edge cases', () => {
       });
     });
 
-    it('deleting the target of an async dependency retraverses its parent', async () => {
+    test('deleting the target of an async dependency retraverses its parent', async () => {
       Actions.removeDependency('/bundle', '/foo');
       Actions.addDependency('/bundle', '/foo', {
         data: {
@@ -2186,7 +2186,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('should try to transform every file only once', async () => {
+  test('should try to transform every file only once', async () => {
     // create a second inverse dependency on /bar to add a cycle.
     Actions.addDependency('/bundle', '/bar');
     files.clear();
@@ -2196,7 +2196,7 @@ describe('edge cases', () => {
     expect(mockTransform.mock.calls.length).toBe(4);
   });
 
-  it('should not re-transform an unmodified file when it is removed and readded within a delta', async () => {
+  test('should not re-transform an unmodified file when it is removed and readded within a delta', async () => {
     /*
     ┌─────────┐     ┌──────┐     ┌───────┐
     │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar  │
@@ -2236,7 +2236,7 @@ describe('edge cases', () => {
     expect(mockTransform).not.toHaveBeenCalledWith('/baz', undefined);
   });
 
-  it('should try to transform every file only once with multiple entry points', async () => {
+  test('should try to transform every file only once with multiple entry points', async () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/foo');
     files.clear();
@@ -2252,7 +2252,7 @@ describe('edge cases', () => {
     expect(mockTransform.mock.calls.length).toBe(5);
   });
 
-  it('should create two entries when requiring the same file in different forms', async () => {
+  test('should create two entries when requiring the same file in different forms', async () => {
     await graph.initialTraverseDependencies(options);
 
     // We're adding a new reference from bundle to foo.
@@ -2292,7 +2292,7 @@ describe('edge cases', () => {
     ]);
   });
 
-  it('should traverse a graph from multiple entry points', async () => {
+  test('should traverse a graph from multiple entry points', async () => {
     entryModule = Actions.createFile('/bundle-2');
 
     Actions.addDependency('/bundle-2', '/bundle-2-foo');
@@ -2319,7 +2319,7 @@ describe('edge cases', () => {
     ]);
   });
 
-  it('should traverse the dependency tree in a deterministic order', async () => {
+  test('should traverse the dependency tree in a deterministic order', async () => {
     const localMockTransform = jest.fn();
 
     // Mocks the transformer call, always resolving the module in `slowPath`
@@ -2401,7 +2401,7 @@ describe('edge cases', () => {
     expect(mockTransform).toHaveBeenCalledWith('/foo', undefined);
   });
 
-  it('removing a cycle with multiple outgoing edges to the same module', async () => {
+  test('removing a cycle with multiple outgoing edges to the same module', async () => {
     /*
                       ┌─────────────────────────┐
                       │                         ▼
@@ -2437,7 +2437,7 @@ describe('edge cases', () => {
     });
   });
 
-  it('deleting a cycle root, then reintroducing the same module, does not corrupt its dependencies', async () => {
+  test('deleting a cycle root, then reintroducing the same module, does not corrupt its dependencies', async () => {
     Actions.createFile('/quux');
     Actions.removeDependency('/foo', '/baz');
     Actions.addDependency('/bar', '/foo');
@@ -2948,7 +2948,7 @@ describe('require.context', () => {
 
   const ctxPath = deriveAbsolutePathFromContext('/ctx', ctxParams);
 
-  it('a context module is created when the context exists in the initial graph', async () => {
+  test('a context module is created when the context exists in the initial graph', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -2974,7 +2974,7 @@ describe('require.context', () => {
     expect(getMatchingContextModules(graph, '/no-match')).toEqual(new Set());
   });
 
-  it('a context module is created incrementally', async () => {
+  test('a context module is created incrementally', async () => {
     // Compute the initial graph
     files.clear();
     await graph.initialTraverseDependencies(localOptions);
@@ -3004,7 +3004,7 @@ describe('require.context', () => {
     );
   });
 
-  it('context exists in initial traversal and is then removed', async () => {
+  test('context exists in initial traversal and is then removed', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3034,7 +3034,7 @@ describe('require.context', () => {
     );
   });
 
-  it('context + matched file exist in initial traversal and are then removed', async () => {
+  test('context + matched file exist in initial traversal and are then removed', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3073,7 +3073,7 @@ describe('require.context', () => {
     );
   });
 
-  it('remove a matched file incrementally from a context', async () => {
+  test('remove a matched file incrementally from a context', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3117,7 +3117,7 @@ describe('require.context', () => {
     expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved);
   });
 
-  it('modify a matched file incrementally', async () => {
+  test('modify a matched file incrementally', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3153,7 +3153,7 @@ describe('require.context', () => {
     expect(mockTransform).not.toHaveBeenCalledWith(ctxPath, ctxResolved);
   });
 
-  it('add a matched file incrementally to a context', async () => {
+  test('add a matched file incrementally to a context', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3186,7 +3186,7 @@ describe('require.context', () => {
     expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved);
   });
 
-  it('add a matched file incrementally to a context with two references', async () => {
+  test('add a matched file incrementally to a context with two references', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3225,7 +3225,7 @@ describe('require.context', () => {
     expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved);
   });
 
-  it('remove only one of two references to a context module', async () => {
+  test('remove only one of two references to a context module', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3285,7 +3285,7 @@ describe('require.context', () => {
       narrowCtxParams,
     );
 
-    it('creates two context modules in the initial traversal', async () => {
+    test('creates two context modules in the initial traversal', async () => {
       // Create a context module
       Actions.addDependency('/bundle', '/ctx', {
         data: {
@@ -3329,7 +3329,7 @@ describe('require.context', () => {
       ).toEqual(new Set([ctxPath, narrowCtxPath]));
     });
 
-    it('add a file matched by both contexts', async () => {
+    test('add a file matched by both contexts', async () => {
       // Create a context module
       Actions.addDependency('/bundle', '/ctx', {
         data: {
@@ -3366,7 +3366,7 @@ describe('require.context', () => {
       });
     });
 
-    it('deleting one context does not delete a file matched by both contexts', async () => {
+    test('deleting one context does not delete a file matched by both contexts', async () => {
       // Create a context module
       Actions.addDependency('/bundle', '/ctx', {
         data: {
@@ -3404,7 +3404,7 @@ describe('require.context', () => {
       });
     });
 
-    it('edge case: changing context params incrementally under the same key', async () => {
+    test('edge case: changing context params incrementally under the same key', async () => {
       // Create a context module
       Actions.addDependency('/bundle', '/ctx', {
         data: {
@@ -3450,7 +3450,7 @@ describe('require.context', () => {
     });
   });
 
-  it('edge case: replacing a generated context file with a file that happens to have the same name and key', async () => {
+  test('edge case: replacing a generated context file with a file that happens to have the same name and key', async () => {
     // Create a context module
     Actions.addDependency('/bundle', '/ctx', {
       data: {
@@ -3492,7 +3492,7 @@ describe('require.context', () => {
 });
 
 describe('reorderGraph', () => {
-  it('should reorder any unordered graph in DFS order', async () => {
+  test('should reorder any unordered graph in DFS order', async () => {
     const dep = (path: string): Dependency => ({
       absolutePath: path,
       data: {
@@ -3619,7 +3619,7 @@ describe('optional dependencies', () => {
     Actions.deleteFile('/optional-b', localGraph);
   });
 
-  it('missing optional dependency will be skipped', async () => {
+  test('missing optional dependency will be skipped', async () => {
     localOptions = {
       ...options,
       transform: createMockTransform(),
@@ -3630,7 +3630,7 @@ describe('optional dependencies', () => {
     const dependencies = result.added;
     assertResults(dependencies, ['optional-b']);
   });
-  it('missing non-optional dependency will throw', async () => {
+  test('missing non-optional dependency will throw', async () => {
     localOptions = {
       ...options,
       transform: createMockTransform(['optional-b']),
@@ -3642,7 +3642,7 @@ describe('optional dependencies', () => {
 });
 
 describe('parallel edges', () => {
-  it('add twice w/ same name, build and remove once', async () => {
+  test('add twice w/ same name, build and remove once', async () => {
     // Create a second edge between /foo and /bar.
     Actions.addDependency('/foo', '/bar', {
       data: {
@@ -3664,7 +3664,7 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ same name, build and remove twice', async () => {
+  test('add twice w/ same name, build and remove twice', async () => {
     // Create a second edge between /foo and /bar.
     Actions.addDependency('/foo', '/bar', {
       data: {
@@ -3687,7 +3687,7 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ different names, build and remove once', async () => {
+  test('add twice w/ different names, build and remove once', async () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', {name: 'bar-second'});
 
@@ -3705,7 +3705,7 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ different names, build and remove twice', async () => {
+  test('add twice w/ different names, build and remove twice', async () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', {name: 'bar-second'});
 

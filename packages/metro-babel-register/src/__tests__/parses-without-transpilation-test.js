@@ -14,7 +14,7 @@
 const {promises: fsPromises} = require('fs');
 const vm = require('vm');
 
-it('can be loaded directly without transpilation', async () => {
+test('can be loaded directly without transpilation', async () => {
   const code = await fsPromises.readFile(
     require.resolve('../babel-register'),
     'utf8',

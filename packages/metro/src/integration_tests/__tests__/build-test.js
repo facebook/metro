@@ -22,7 +22,7 @@ jest.setTimeout(30 * 1000);
 
 const INPUT_PATH = path.resolve(__dirname, '../basic_bundle');
 
-it('builds a simple bundle', async () => {
+test('builds a simple bundle', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });
@@ -34,7 +34,7 @@ it('builds a simple bundle', async () => {
   expect(execBundle(result.code)).toMatchSnapshot();
 });
 
-it('build a simple bundle with polyfills', async () => {
+test('build a simple bundle with polyfills', async () => {
   const baseConfig = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });
@@ -50,7 +50,7 @@ it('build a simple bundle with polyfills', async () => {
   expect(execBundle(result.code)).toBe('POLYFILL_IS_INJECTED');
 });
 
-it('builds a bundle with BigInt and exponentiation syntax', async () => {
+test('builds a bundle with BigInt and exponentiation syntax', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });

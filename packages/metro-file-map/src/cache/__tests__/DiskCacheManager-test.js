@@ -43,7 +43,7 @@ const defaultConfig = {
 };
 
 describe('cacheManager', () => {
-  it('creates valid cache file paths', () => {
+  test('creates valid cache file paths', () => {
     expect(
       DiskCacheManager.getCacheFilePath(buildParameters, 'file-prefix', '/'),
     ).toMatch(
@@ -53,7 +53,7 @@ describe('cacheManager', () => {
     );
   });
 
-  it('creates different cache file paths for different roots', () => {
+  test('creates different cache file paths for different roots', () => {
     const cacheManager1 = new DiskCacheManager({
       ...defaultConfig,
       buildParameters: {
@@ -73,7 +73,7 @@ describe('cacheManager', () => {
     );
   });
 
-  it('creates different cache file paths for different dependency extractor cache keys', () => {
+  test('creates different cache file paths for different dependency extractor cache keys', () => {
     const dependencyExtractor = require('../../__tests__/dependencyExtractor');
     const config = {
       ...defaultConfig,
@@ -93,7 +93,7 @@ describe('cacheManager', () => {
     );
   });
 
-  it('creates different cache file paths for different values of computeDependencies', () => {
+  test('creates different cache file paths for different values of computeDependencies', () => {
     const cacheManager1 = new DiskCacheManager({
       ...defaultConfig,
       buildParameters: {
@@ -113,7 +113,7 @@ describe('cacheManager', () => {
     );
   });
 
-  it('creates different cache file paths for different hasteImplModulePath cache keys', () => {
+  test('creates different cache file paths for different hasteImplModulePath cache keys', () => {
     const hasteImpl = require('../../__tests__/haste_impl');
     hasteImpl.setCacheKey('foo');
     const cacheManager1 = new DiskCacheManager(defaultConfig);
@@ -124,7 +124,7 @@ describe('cacheManager', () => {
     );
   });
 
-  it('creates different cache file paths for different projects', () => {
+  test('creates different cache file paths for different projects', () => {
     const cacheManager1 = new DiskCacheManager({
       ...defaultConfig,
       cacheFilePrefix: 'package-a',

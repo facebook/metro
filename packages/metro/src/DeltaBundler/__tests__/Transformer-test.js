@@ -59,7 +59,7 @@ describe('Transformer', function () {
     require('../getTransformCacheKey').mockClear();
   });
 
-  it('uses new cache layers when transforming if requested to do so', async () => {
+  test('uses new cache layers when transforming if requested to do so', async () => {
     const get = jest.fn();
     const set = jest.fn();
 
@@ -101,7 +101,7 @@ describe('Transformer', function () {
     );
   });
 
-  it('logs cache read errors to reporter', async () => {
+  test('logs cache read errors to reporter', async () => {
     const readError = new Error('Cache write error');
     const get = jest.fn().mockImplementation(() => {
       throw readError;
@@ -138,7 +138,7 @@ describe('Transformer', function () {
     });
   });
 
-  it('logs cache write errors to reporter', async () => {
+  test('logs cache write errors to reporter', async () => {
     class MockStore {
       get = jest.fn();
       set = jest.fn().mockImplementation(() => {
@@ -192,7 +192,7 @@ describe('Transformer', function () {
     });
   });
 
-  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+  test('short-circuits the transformer cache key when the cache is disabled', async () => {
     const transformerInstance = new Transformer(
       {
         ...commonOptions,

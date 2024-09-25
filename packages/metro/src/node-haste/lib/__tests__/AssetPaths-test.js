@@ -16,7 +16,7 @@ var AssetPaths = require('../AssetPaths');
 const TEST_PLATFORMS = new Set(['ios', 'android']);
 
 describe('AssetPaths', () => {
-  it('should get data from name', () => {
+  test('should get data from name', () => {
     expect(AssetPaths.parse('a/b/c.png', TEST_PLATFORMS)).toEqual({
       resolution: 1,
       assetName: 'a/b/c.png',
@@ -75,7 +75,7 @@ describe('AssetPaths', () => {
   });
 
   describe('resolution extraction', () => {
-    it('should extract resolution simple case', () => {
+    test('should extract resolution simple case', () => {
       var data = AssetPaths.parse('test@2x.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',
@@ -86,7 +86,7 @@ describe('AssetPaths', () => {
       });
     });
 
-    it('should default resolution to 1', () => {
+    test('should default resolution to 1', () => {
       var data = AssetPaths.parse('test.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',
@@ -97,7 +97,7 @@ describe('AssetPaths', () => {
       });
     });
 
-    it('should support float', () => {
+    test('should support float', () => {
       var data = AssetPaths.parse('test@1.1x.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',

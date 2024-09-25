@@ -22,7 +22,7 @@ beforeEach(() => {
   }));
 });
 
-it('should return the bundle assets', async () => {
+test('should return the bundle assets', async () => {
   const dependencies = new Map([
     [
       '/tmp/1.js',

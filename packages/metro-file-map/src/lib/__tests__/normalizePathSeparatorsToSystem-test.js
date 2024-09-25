@@ -11,7 +11,7 @@
 'use strict';
 
 describe('normalizePathSeparatorsToSystem', () => {
-  it('does nothing on posix', () => {
+  test('does nothing on posix', () => {
     jest.resetModules();
     jest.mock('path', () => jest.requireActual('path').posix);
     const normalizePathSeparatorsToSystem =
@@ -21,7 +21,7 @@ describe('normalizePathSeparatorsToSystem', () => {
     );
   });
 
-  it('replace slashes on windows', () => {
+  test('replace slashes on windows', () => {
     jest.resetModules();
     jest.mock('path', () => jest.requireActual('path').win32);
     const normalizePathSeparatorsToSystem =

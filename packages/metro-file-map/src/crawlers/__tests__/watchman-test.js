@@ -550,7 +550,7 @@ describe('watchman watch', () => {
     expect(removedFiles).toEqual(new Set([TOMATO_RELATIVE]));
   });
 
-  it('aborts the crawl on pre-aborted signal', async () => {
+  test('aborts the crawl on pre-aborted signal', async () => {
     const err = new Error('aborted for test');
     await expect(
       watchmanCrawl({
@@ -567,7 +567,7 @@ describe('watchman watch', () => {
     ).rejects.toThrow(err);
   });
 
-  it('aborts the crawl if signalled after start', async () => {
+  test('aborts the crawl if signalled after start', async () => {
     const err = new Error('aborted for test');
     const abortController = new AbortController();
 

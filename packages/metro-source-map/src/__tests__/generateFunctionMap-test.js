@@ -54,7 +54,7 @@ function generateCompactRawMappings(ast: BabelNodeFile, context?: Context) {
 }
 
 describe('generateFunctionMap', () => {
-  it('nested', () => {
+  test('nested', () => {
     const ast = getAst(`
 
 function parent() {
@@ -92,7 +92,7 @@ function parent2() {
     `);
   });
 
-  it('two consecutive functions', () => {
+  test('two consecutive functions', () => {
     const ast = getAst('function a(){}function b(){}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -112,7 +112,7 @@ function parent2() {
     `);
   });
 
-  it('two consecutive functions with a gap', () => {
+  test('two consecutive functions with a gap', () => {
     const ast = getAst('function a(){} function b(){}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -134,7 +134,7 @@ function parent2() {
     `);
   });
 
-  it('leading code in global', () => {
+  test('leading code in global', () => {
     const ast = getAst('++x; () => {}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -154,7 +154,7 @@ function parent2() {
     `);
   });
 
-  it('trailing code in global', () => {
+  test('trailing code in global', () => {
     const ast = getAst('() => {}; ++x');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -174,7 +174,7 @@ function parent2() {
     `);
   });
 
-  it('object method', () => {
+  test('object method', () => {
     const ast = getAst(`(
       {
         m() {
@@ -201,7 +201,7 @@ function parent2() {
     `);
   });
 
-  it('object setter', () => {
+  test('object setter', () => {
     const ast = getAst(`(
       {
         set m(x) {
@@ -228,7 +228,7 @@ function parent2() {
     `);
   });
 
-  it('object getter', () => {
+  test('object getter', () => {
     const ast = getAst(`(
       {
         get m() {
@@ -255,7 +255,7 @@ function parent2() {
     `);
   });
 
-  it('object property', () => {
+  test('object property', () => {
     const ast = getAst(`(
       {
         m: function () {
@@ -282,7 +282,7 @@ function parent2() {
     `);
   });
 
-  it('class method', () => {
+  test('class method', () => {
     const ast = getAst(`
       class C {
         m() {
@@ -312,7 +312,7 @@ function parent2() {
     `);
   });
 
-  it('class constructor', () => {
+  test('class constructor', () => {
     const ast = getAst(`
       class C {
         constructor() {
@@ -342,7 +342,7 @@ function parent2() {
     `);
   });
 
-  it('class setter', () => {
+  test('class setter', () => {
     const ast = getAst(`
       class C {
         set m(x) {
@@ -372,7 +372,7 @@ function parent2() {
     `);
   });
 
-  it('class getter', () => {
+  test('class getter', () => {
     const ast = getAst(`
       class C {
         get m() {
@@ -402,7 +402,7 @@ function parent2() {
     `);
   });
 
-  it('class property', () => {
+  test('class property', () => {
     const ast = getAst(`
       class C {
         m = function () {
@@ -432,7 +432,7 @@ function parent2() {
     `);
   });
 
-  it('class static method', () => {
+  test('class static method', () => {
     const ast = getAst(`
       class C {
         static m() {
@@ -462,7 +462,7 @@ function parent2() {
     `);
   });
 
-  it('class static setter', () => {
+  test('class static setter', () => {
     const ast = getAst(`
       class C {
         static set m(x) {
@@ -492,7 +492,7 @@ function parent2() {
     `);
   });
 
-  it('class static getter', () => {
+  test('class static getter', () => {
     const ast = getAst(`
       class C {
         static get m() {
@@ -522,7 +522,7 @@ function parent2() {
     `);
   });
 
-  it('class static property', () => {
+  test('class static property', () => {
     const ast = getAst(`
       class C {
         static m = function () {
@@ -552,7 +552,7 @@ function parent2() {
     `);
   });
 
-  it('method of anonymous class', () => {
+  test('method of anonymous class', () => {
     const ast = getAst(`(
       class {
         m() {
@@ -582,7 +582,7 @@ function parent2() {
     `);
   });
 
-  it('method of anonymous class with inferred name', () => {
+  test('method of anonymous class with inferred name', () => {
     const ast = getAst(`
       const C = class {
         m() {
@@ -612,7 +612,7 @@ function parent2() {
     `);
   });
 
-  it('method of object with inferred name', () => {
+  test('method of object with inferred name', () => {
     const ast = getAst(`
       const obj = {
         m() {
@@ -639,7 +639,7 @@ function parent2() {
     `);
   });
 
-  it('method of object with nested inferred names', () => {
+  test('method of object with nested inferred names', () => {
     const ast = getAst(`
       const obj = {
         obj2: {
@@ -668,7 +668,7 @@ function parent2() {
     `);
   });
 
-  it('method with null computed name', () => {
+  test('method with null computed name', () => {
     const ast = getAst(`
       const obj = {
         [null]: {
@@ -697,7 +697,7 @@ function parent2() {
     `);
   });
 
-  it('method with regex literals computed name', () => {
+  test('method with regex literals computed name', () => {
     const ast = getAst(`
       const obj = {
         [/A-Z/ig]: {
@@ -726,7 +726,7 @@ function parent2() {
     `);
   });
 
-  it('method with template literal computed name', () => {
+  test('method with template literal computed name', () => {
     const ast = getAst(`
       const obj = {
         [\`obj${0}${'_'}Prop\`]: {
@@ -755,7 +755,7 @@ function parent2() {
     `);
   });
 
-  it('method with string literal computed name', () => {
+  test('method with string literal computed name', () => {
     const ast = getAst(`
       const obj = {
         ['objProp']: {
@@ -784,7 +784,7 @@ function parent2() {
     `);
   });
 
-  it('method with numeric literal computed name', () => {
+  test('method with numeric literal computed name', () => {
     const ast = getAst(`
       const obj = {
         1: {
@@ -813,7 +813,7 @@ function parent2() {
     `);
   });
 
-  it('setter method of object with inferred name', () => {
+  test('setter method of object with inferred name', () => {
     const ast = getAst(`
       var obj = {
         set m(x) {
@@ -840,7 +840,7 @@ function parent2() {
     `);
   });
 
-  it('method with well-known symbol as key', () => {
+  test('method with well-known symbol as key', () => {
     const ast = getAst(`
       class C {
         [Symbol.iterator]() {
@@ -870,7 +870,7 @@ function parent2() {
     `);
   });
 
-  it('method with computed property as key', () => {
+  test('method with computed property as key', () => {
     // NOTE: This will derive 'C#foo.bar' - not ideal but probably good enough.
     const ast = getAst(`
       class C {
@@ -901,7 +901,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from member expression', () => {
+  test('derive name from member expression', () => {
     const ast = getAst(`
       module.exports = function() {}
     `);
@@ -924,7 +924,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from partial member expression', () => {
+  test('derive name from partial member expression', () => {
     const ast = getAst(`
       obj[opaque() + 1].foo.bar = function() {}
     `);
@@ -947,7 +947,7 @@ function parent2() {
     `);
   });
 
-  it('chained class and object name inference', () => {
+  test('chained class and object name inference', () => {
     const ast = getAst(`
       var a = {
         b: class {
@@ -977,7 +977,7 @@ function parent2() {
     `);
   });
 
-  it('callback', () => {
+  test('callback', () => {
     const ast = getAst(`
       useEffect(() => {}, [])
     `);
@@ -1000,7 +1000,7 @@ function parent2() {
     `);
   });
 
-  it('thenable', () => {
+  test('thenable', () => {
     const ast = getAst(`
       foo(bar).then(() => {})
     `);
@@ -1023,7 +1023,7 @@ function parent2() {
     `);
   });
 
-  it('dynamic import handler', () => {
+  test('dynamic import handler', () => {
     const ast = getAst(`
       import('foo').then(() => {})
     `);
@@ -1046,7 +1046,7 @@ function parent2() {
     `);
   });
 
-  it('callback of optional method', () => {
+  test('callback of optional method', () => {
     const ast = getAst(`
       object?.method(() => {}, [])
     `);
@@ -1069,7 +1069,7 @@ function parent2() {
     `);
   });
 
-  it('optional call', () => {
+  test('optional call', () => {
     const ast = getAst(`
       func?.(() => {}, [])
     `);
@@ -1092,7 +1092,7 @@ function parent2() {
     `);
   });
 
-  it('JSX prop', () => {
+  test('JSX prop', () => {
     const ast = getAst(`
       <Button onClick={() => {}} />
     `);
@@ -1115,7 +1115,7 @@ function parent2() {
     `);
   });
 
-  it('JSX spread prop is anonymous', () => {
+  test('JSX spread prop is anonymous', () => {
     // NOTE: Unlikely case, just here as a sanity check
     const ast = getAst(`
       <Button {...(() => {})} />
@@ -1139,7 +1139,7 @@ function parent2() {
     `);
   });
 
-  it('JSX child', () => {
+  test('JSX child', () => {
     const ast = getAst(`
       <Button>{() => {}}</Button>
     `);
@@ -1162,7 +1162,7 @@ function parent2() {
     `);
   });
 
-  it('empty program', () => {
+  test('empty program', () => {
     const ast = getAst('');
 
     expect(generateCompactRawMappings(ast).trim()).toBe('');
@@ -1174,7 +1174,7 @@ function parent2() {
     `);
   });
 
-  it('IIFE is anonymous', () => {
+  test('IIFE is anonymous', () => {
     const ast = getAst('(() => {})()');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1195,7 +1195,7 @@ function parent2() {
     `);
   });
 
-  it('IIFE assigned to a variable is anonymous', () => {
+  test('IIFE assigned to a variable is anonymous', () => {
     const ast = getAst('const value = (() => {})()');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1216,7 +1216,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from new expression', () => {
+  test('derive name from new expression', () => {
     const ast = getAst('new Foo(() => {});');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1237,7 +1237,7 @@ function parent2() {
     `);
   });
 
-  it('collapses call chains', () => {
+  test('collapses call chains', () => {
     const ast = getAst(
       'factory().setOne().setTwo().setThree().setFour().setFive(() => {})',
     );
@@ -1260,7 +1260,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from member of typecast', () => {
+  test('derive name from member of typecast', () => {
     const ast = getAst(`
       (foo : T).bar = () => {}
     `);
@@ -1283,7 +1283,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from assignment target of a typecast', () => {
+  test('derive name from assignment target of a typecast', () => {
     const ast = getAst(`
       const foo = (() => {}: Bar);
     `);
@@ -1306,7 +1306,7 @@ function parent2() {
     `);
   });
 
-  it('skip Object.freeze when inferring object name', () => {
+  test('skip Object.freeze when inferring object name', () => {
     const ast = getAst(`
       var a = Object.freeze({
         b: () => {}
@@ -1331,7 +1331,7 @@ function parent2() {
     `);
   });
 
-  it('skip typecast when inferring object name', () => {
+  test('skip typecast when inferring object name', () => {
     const ast = getAst(`
       var a = ({
         b: () => {}
@@ -1356,7 +1356,7 @@ function parent2() {
     `);
   });
 
-  it('omit parent class name when it matches filename', () => {
+  test('omit parent class name when it matches filename', () => {
     const ast = getAst('class FooBar { baz() {} }');
     const context = {filename: 'FooBar.ios.js'};
 
@@ -1378,7 +1378,7 @@ function parent2() {
     `);
   });
 
-  it('do not omit parent class name when it only partially matches filename', () => {
+  test('do not omit parent class name when it only partially matches filename', () => {
     const ast = getAst('class FooBarItem { baz() {} }');
     const context = {filename: 'FooBar.ios.js'};
 
@@ -1400,7 +1400,7 @@ function parent2() {
     `);
   });
 
-  it('derive name from simple assignment even if it matches the filename', () => {
+  test('derive name from simple assignment even if it matches the filename', () => {
     const ast = getAst('var FooBar = () => {}');
     const context = {filename: 'FooBar.ios.js'};
 
@@ -1421,7 +1421,7 @@ function parent2() {
     `);
   });
 
-  it('round trip encoding/decoding and lookup', () => {
+  test('round trip encoding/decoding and lookup', () => {
     const ast = getAst(`
 
 function parent() {
@@ -1488,7 +1488,7 @@ function parent2() {
     }
   });
 
-  it('records class names like functions', () => {
+  test('records class names like functions', () => {
     const ast = getAst('class Foo {}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1506,7 +1506,7 @@ function parent2() {
     `);
   });
 
-  it('infers a name for the default export', () => {
+  test('infers a name for the default export', () => {
     const ast = getAst('export default function() {}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1526,7 +1526,7 @@ function parent2() {
     `);
   });
 
-  it('infers a name for methods of the default export', () => {
+  test('infers a name for methods of the default export', () => {
     const ast = getAst('export default class {foo() {}}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1549,7 +1549,7 @@ function parent2() {
     `);
   });
 
-  it("prefers the default export's name where available", () => {
+  test("prefers the default export's name where available", () => {
     const ast = getAst('export default class Foo {bar() {}}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1572,7 +1572,7 @@ function parent2() {
     `);
   });
 
-  it('method of generic class', () => {
+  test('method of generic class', () => {
     const ast = getAst(`
       class C<T> {
         m() {
@@ -1602,7 +1602,7 @@ function parent2() {
     `);
   });
 
-  it('generic method of class', () => {
+  test('generic method of class', () => {
     const ast = getAst(`
       class C {
         m<T>() {
@@ -1632,7 +1632,7 @@ function parent2() {
     `);
   });
 
-  it('generic function', () => {
+  test('generic function', () => {
     const ast = getAst('function a<T>(){}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1651,7 +1651,7 @@ function parent2() {
   });
 
   describe('React hooks', () => {
-    it('useCallback', () => {
+    test('useCallback', () => {
       const ast = getAst('const cb = useCallback(() => {})');
 
       expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1672,7 +1672,7 @@ function parent2() {
       `);
     });
 
-    it('useCallback with deps', () => {
+    test('useCallback with deps', () => {
       const ast = getAst('const cb = useCallback(() => {}, [dep1, dep2])');
 
       expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1693,7 +1693,7 @@ function parent2() {
       `);
     });
 
-    it('React.useCallback', () => {
+    test('React.useCallback', () => {
       const ast = getAst('const cb = React.useCallback(() => {})');
 
       expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1714,7 +1714,7 @@ function parent2() {
       `);
     });
 
-    it('treats SomeOtherNamespace.useCallback like any other function', () => {
+    test('treats SomeOtherNamespace.useCallback like any other function', () => {
       const ast = getAst('const cb = SomeOtherNamespace.useCallback(() => {})');
 
       expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1735,7 +1735,7 @@ function parent2() {
       `);
     });
 
-    it('named callback takes precedence', () => {
+    test('named callback takes precedence', () => {
       const ast = getAst('const cb = useCallback(function inner() {})');
 
       expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
@@ -1758,7 +1758,7 @@ function parent2() {
   });
 
   describe('functionMapBabelPlugin', () => {
-    it('exports a Babel plugin to be used during transformation', () => {
+    test('exports a Babel plugin to be used during transformation', () => {
       const code = 'export default function foo(bar){}';
       const result = transformFromAstSync<MetroBabelFileMetadata>(
         getAst(code),
@@ -1775,7 +1775,7 @@ function parent2() {
       });
     });
 
-    it('omits parent class name when it matches filename', () => {
+    test('omits parent class name when it matches filename', () => {
       const ast = getAst('class FooBar { baz() {} }');
       expect(
         transformFromAstSync<MetroBabelFileMetadata>(ast, '', {
@@ -1878,7 +1878,7 @@ window.foo();
       traverse.cache.clearPath();
     });
 
-    it('transform with no traverse has `hub` in every node', () => {
+    test('transform with no traverse has `hub` in every node', () => {
       /* Ensures that our expectations of how transform works regardless
        of the existence of a traverse cache pollution issue are correct.
        Namely- that each node is expected to have a hub present.
@@ -1887,7 +1887,7 @@ window.foo();
       expectTransformPathesToHaveHub(ast);
     });
 
-    it('requires a workaround for traverse cache pollution', () => {
+    test('requires a workaround for traverse cache pollution', () => {
       /* If this test fails, it likely means either:
          1. There are multiple copies of `@babel/traverse` in node_modules, and
             the one used by `@babel/core` is not the one used by this test.
@@ -1904,14 +1904,14 @@ window.foo();
       expect(() => expectTransformPathesToHaveHub(ast)).toThrow();
     });
 
-    it('successfully works around traverse cache pollution', () => {
+    test('successfully works around traverse cache pollution', () => {
       generateFunctionMap(ast);
 
       // Check that the `hub` property is present on paths when transforming.
       expectTransformPathesToHaveHub(ast);
     });
 
-    it('does not reset the path cache', () => {
+    test('does not reset the path cache', () => {
       const dummyCache: Map<mixed, mixed> = new Map();
       // $FlowIgnore[prop-missing] - Writing to readonly map for test purposes.
       traverse.cache.path.set(ast, dummyCache);

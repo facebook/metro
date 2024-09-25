@@ -46,7 +46,7 @@ describe(`require.context`, () => {
   const optsWithoutContext = {...opts, unstable_allowRequireContext: false};
   const optsWithContext = {...opts, unstable_allowRequireContext: true};
 
-  it('does not extract/transform if feature is disabled', () => {
+  test('does not extract/transform if feature is disabled', () => {
     // TODO: Should this error/warn?
     const ast = astFromCode(`
       require.context('./', false, /foobar/m, 'eager');
@@ -60,7 +60,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('can omit 2nd-4th arguments', () => {
+  test('can omit 2nd-4th arguments', () => {
     const ast = astFromCode(`
       const a = require.context('./');
       const b = require.context('./', false);
@@ -135,7 +135,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('can pass undefined for 2nd-4th arguments', () => {
+  test('can pass undefined for 2nd-4th arguments', () => {
     const ast = astFromCode(`
       const a = require.context('./', undefined, undefined, undefined);
       const b = require.context('./', false, undefined, undefined);
@@ -210,7 +210,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('can understand constant assignments', () => {
+  test('can understand constant assignments', () => {
     const ast = astFromCode(`
       const DOT_SLASH_FOO = './foo';
       const FALSE = false;
@@ -246,7 +246,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it.skip('can understand regex constant assignments', () => {
+  test.skip('can understand regex constant assignments', () => {
     // TODO: augment Babel's path.evaluate() with regex support
     const ast = astFromCode(`
       const DOT_SLASH_FOO = './foo';
@@ -285,7 +285,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require from require.context', () => {
+  test('distinguishes require from require.context', () => {
     const ast = astFromCode(`
       const a = require.context('./');
       const anotherA = require.context('./');
@@ -327,7 +327,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on path', () => {
+  test('distinguishes require.context based on path', () => {
     const ast = astFromCode(`
       const a = require.context('./a/');
       const anotherA = require.context('./a/');
@@ -376,7 +376,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on trailing slash in path', () => {
+  test('distinguishes require.context based on trailing slash in path', () => {
     // TODO: Can/should we merge these two?
     const ast = astFromCode(`
       const a = require.context('.');
@@ -426,7 +426,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes between backslash and slash in path', () => {
+  test('distinguishes between backslash and slash in path', () => {
     // TODO: Can/should we merge these two?
     const ast = astFromCode(`
       const a = require.context('.\\\\');
@@ -476,7 +476,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on `recursive`', () => {
+  test('distinguishes require.context based on `recursive`', () => {
     const ast = astFromCode(`
       const a = require.context('./', true);
       const anotherA = require.context('./');
@@ -525,7 +525,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on filter pattern', () => {
+  test('distinguishes require.context based on filter pattern', () => {
     const ast = astFromCode(`
       const a = require.context('./', true, /foo/);
       const anotherA = require.context('./', true, /foo/);
@@ -574,7 +574,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on filter flags', () => {
+  test('distinguishes require.context based on filter flags', () => {
     const ast = astFromCode(`
       const a = require.context('./', true, /foo/m);
       const anotherA = require.context('./', true, /foo/m);
@@ -623,7 +623,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it('distinguishes require.context based on mode', () => {
+  test('distinguishes require.context based on mode', () => {
     const ast = astFromCode(`
       const a = require.context('./', true, /.*/, 'sync');
       const anotherA = require.context('./', true, /.*/);
@@ -672,7 +672,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it(`asserts invalid first argument`, () => {
+  test(`asserts invalid first argument`, () => {
     const ast = astFromCode(`
   const a = require.context(42);
 `);
@@ -682,7 +682,7 @@ describe(`require.context`, () => {
       First argument of \`require.context\` should be a string denoting the directory to require."
     `);
   });
-  it(`asserts invalid second argument`, () => {
+  test(`asserts invalid second argument`, () => {
     const ast = astFromCode(`
   const a = require.context('./dir', 'hey');
 `);
@@ -692,7 +692,7 @@ describe(`require.context`, () => {
       Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not."
     `);
   });
-  it(`asserts invalid third argument`, () => {
+  test(`asserts invalid third argument`, () => {
     const ast = astFromCode(`
   const a = require.context('./dir', false, new RegExp('foobar'));
 `);
@@ -702,7 +702,7 @@ describe(`require.context`, () => {
       Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: NewExpression."
     `);
   });
-  it(`asserts invalid fourth argument`, () => {
+  test(`asserts invalid fourth argument`, () => {
     const ast = astFromCode(`
   const a = require.context('./dir', false, /foobar/, 34);
 `);
@@ -712,7 +712,7 @@ describe(`require.context`, () => {
       Fourth argument of \`require.context\` should be an optional string \\"mode\\" denoting how the modules will be resolved."
     `);
   });
-  it(`asserts invalid fourth argument enum value`, () => {
+  test(`asserts invalid fourth argument enum value`, () => {
     const ast = astFromCode(`
   const a = require.context('./dir', false, /foobar/, 'hello');
 `);
@@ -722,7 +722,7 @@ describe(`require.context`, () => {
       require.context \\"hello\\" mode is not supported. Expected one of: sync, eager, lazy, lazy-once"
     `);
   });
-  it(`asserts too many arguments`, () => {
+  test(`asserts too many arguments`, () => {
     const ast = astFromCode(`
   const a = require.context('./dir', false, /foobar/, 'sync', 'hey');
 `);
@@ -732,7 +732,7 @@ describe(`require.context`, () => {
       Too many arguments provided to \`require.context\` call. Expected 4, got: 5"
     `);
   });
-  it(`asserts no arguments`, () => {
+  test(`asserts no arguments`, () => {
     const ast = astFromCode(`
   const a = require.context();
 `);
@@ -744,7 +744,7 @@ describe(`require.context`, () => {
   });
 });
 
-it('collects unique dependency identifiers and transforms the AST', () => {
+test('collects unique dependency identifiers and transforms the AST', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     exports.do = () => require("do");
@@ -771,7 +771,7 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   );
 });
 
-it('uses dependencyMapName parameter as-is if provided', () => {
+test('uses dependencyMapName parameter as-is if provided', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     exports.do = () => require("do");
@@ -802,7 +802,7 @@ it('uses dependencyMapName parameter as-is if provided', () => {
   );
 });
 
-it('collects asynchronous dependencies', () => {
+test('collects asynchronous dependencies', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
   `);
@@ -818,7 +818,7 @@ it('collects asynchronous dependencies', () => {
   );
 });
 
-it('collects asynchronous dependencies with keepRequireNames: false', () => {
+test('collects asynchronous dependencies with keepRequireNames: false', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
   `);
@@ -837,7 +837,7 @@ it('collects asynchronous dependencies with keepRequireNames: false', () => {
   );
 });
 
-it('distinguishes sync and async dependencies on the same module', () => {
+test('distinguishes sync and async dependencies on the same module', () => {
   const ast = astFromCode(`
     const a = require("some/async/module");
     import("some/async/module").then(foo => {});
@@ -856,7 +856,7 @@ it('distinguishes sync and async dependencies on the same module', () => {
   );
 });
 
-it('distinguishes sync and async dependencies on the same module; reverse order', () => {
+test('distinguishes sync and async dependencies on the same module; reverse order', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
     const a = require("some/async/module");
@@ -876,7 +876,7 @@ it('distinguishes sync and async dependencies on the same module; reverse order'
 });
 
 describe('import() prefetching', () => {
-  it('collects prefetch calls', () => {
+  test('collects prefetch calls', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
     `);
@@ -895,7 +895,7 @@ describe('import() prefetching', () => {
     );
   });
 
-  it('keepRequireNames: false', () => {
+  test('keepRequireNames: false', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
     `);
@@ -917,7 +917,7 @@ describe('import() prefetching', () => {
     );
   });
 
-  it('distinguishes between import and prefetch dependncies on the same module', () => {
+  test('distinguishes between import and prefetch dependncies on the same module', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       import("some/async/module").then(() => {});
@@ -935,7 +935,7 @@ describe('import() prefetching', () => {
 });
 
 describe('require.unstable_importMaybeSync()', () => {
-  it('collects require.unstable_importMaybeSync calls', () => {
+  test('collects require.unstable_importMaybeSync calls', () => {
     const ast = astFromCode(`
       require.unstable_importMaybeSync("some/async/module");
     `);
@@ -954,7 +954,7 @@ describe('require.unstable_importMaybeSync()', () => {
     );
   });
 
-  it('keepRequireNames: false', () => {
+  test('keepRequireNames: false', () => {
     const ast = astFromCode(`
       require.unstable_importMaybeSync("some/async/module");
     `);
@@ -976,7 +976,7 @@ describe('require.unstable_importMaybeSync()', () => {
     );
   });
 
-  it('distinguishes between require.unstable_importMaybeSync and prefetch dependencies on the same module', () => {
+  test('distinguishes between require.unstable_importMaybeSync and prefetch dependencies on the same module', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       require.unstable_importMaybeSync("some/async/module").then(() => {});
@@ -997,7 +997,7 @@ describe('require.unstable_importMaybeSync()', () => {
 });
 
 describe('Evaluating static arguments', () => {
-  it('supports template literals as arguments', () => {
+  test('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
@@ -1008,7 +1008,7 @@ describe('Evaluating static arguments', () => {
     );
   });
 
-  it('supports template literals with static interpolations', () => {
+  test('supports template literals with static interpolations', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
@@ -1019,7 +1019,7 @@ describe('Evaluating static arguments', () => {
     );
   });
 
-  it('throws template literals with dyncamic interpolations', () => {
+  test('throws template literals with dyncamic interpolations', () => {
     const ast = astFromCode('let foo;require(`left${foo}pad`)');
     try {
       collectDependencies(ast, opts);
@@ -1032,7 +1032,7 @@ describe('Evaluating static arguments', () => {
     }
   });
 
-  it('throws on tagged template literals', () => {
+  test('throws on tagged template literals', () => {
     const ast = astFromCode('require(tag`left-pad`)');
     try {
       collectDependencies(ast, opts);
@@ -1045,7 +1045,7 @@ describe('Evaluating static arguments', () => {
     }
   });
 
-  it('supports multiple static strings concatenated', () => {
+  test('supports multiple static strings concatenated', () => {
     const ast = astFromCode('require("foo_" + "bar")');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
@@ -1056,7 +1056,7 @@ describe('Evaluating static arguments', () => {
     );
   });
 
-  it('supports concatenating strings and template literasl', () => {
+  test('supports concatenating strings and template literasl', () => {
     const ast = astFromCode('require("foo_" + "bar" + `_baz`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
@@ -1067,7 +1067,7 @@ describe('Evaluating static arguments', () => {
     );
   });
 
-  it('supports using static variables in require statements', () => {
+  test('supports using static variables in require statements', () => {
     const ast = astFromCode('const myVar="my"; require("foo_" + myVar)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
@@ -1080,7 +1080,7 @@ describe('Evaluating static arguments', () => {
     );
   });
 
-  it('throws when requiring non-strings', () => {
+  test('throws when requiring non-strings', () => {
     const ast = astFromCode('require(1)');
     try {
       collectDependencies(ast, opts);
@@ -1093,7 +1093,7 @@ describe('Evaluating static arguments', () => {
     }
   });
 
-  it('throws at runtime when requiring non-strings with special option', () => {
+  test('throws at runtime when requiring non-strings with special option', () => {
     const ast = astFromCode('require(1)');
     const opts: Options = {
       asyncRequireModulePath: 'asyncRequire',
@@ -1116,12 +1116,12 @@ describe('Evaluating static arguments', () => {
   });
 });
 
-it('exposes a string as `dependencyMapName` even without collecting dependencies', () => {
+test('exposes a string as `dependencyMapName` even without collecting dependencies', () => {
   const ast = astFromCode('');
   expect(collectDependencies(ast, opts).dependencyMapName).toEqual(any(String));
 });
 
-it('ignores require functions defined defined by lower scopes', () => {
+test('ignores require functions defined defined by lower scopes', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     exports.do = () => require("do");
@@ -1164,7 +1164,7 @@ it('ignores require functions defined defined by lower scopes', () => {
   );
 });
 
-it('collects imports', () => {
+test('collects imports', () => {
   const ast = astFromCode(`
     import b from 'b/lib/a';
     import * as d from 'do';
@@ -1180,7 +1180,7 @@ it('collects imports', () => {
   ]);
 });
 
-it('collects export from', () => {
+test('collects export from', () => {
   const ast = astFromCode(`
     export type {Apple} from 'Apple';
     export {Banana} from 'Banana';
@@ -1195,7 +1195,7 @@ it('collects export from', () => {
   ]);
 });
 
-it('records locations of dependencies', () => {
+test('records locations of dependencies', () => {
   const code = dedent`
     import b from 'b/lib/a';
     import * as d from 'do';
@@ -1375,7 +1375,7 @@ describe('optional dependencies', () => {
     expect(dependencies).toHaveLength(checked + (hasAsync ? 1 : 0));
     expect(dependencies).toHaveLength(expectedCount);
   };
-  it('dependency in try-block within 1-level will be optional', () => {
+  test('dependency in try-block within 1-level will be optional', () => {
     const ast = astFromCode(`
       function fFunc() {
         import('not-optional-async-f').then();
@@ -1402,7 +1402,7 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 8);
   });
-  it('nested try-block follows the inner-most scope', () => {
+  test('nested try-block follows the inner-most scope', () => {
     const ast = astFromCode(`
     try {
       const a = require('optional-a');
@@ -1416,14 +1416,14 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 4);
   });
-  it('can handle single-line statement', () => {
+  test('can handle single-line statement', () => {
     const ast = astFromCode(
       "try { const a = require('optional-a') } catch (e) {}",
     );
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 1);
   });
-  it('independent of sibling context', () => {
+  test('independent of sibling context', () => {
     const ast = astFromCode(`
       try {
         const x = whatever;
@@ -1433,7 +1433,7 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 2);
   });
-  it('ignores require functions defined by lower scopes', () => {
+  test('ignores require functions defined by lower scopes', () => {
     const ast = astFromCode(`
       const f = (require) => {
         try {
@@ -1444,7 +1444,7 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toHaveLength(0);
   });
-  it('supports using static variables in require statements', () => {
+  test('supports using static variables in require statements', () => {
     const ast = astFromCode(`
       const myVar="my";
       try {
@@ -1464,7 +1464,7 @@ describe('optional dependencies', () => {
       },
     ]);
   });
-  it('can exclude optional dependency', () => {
+  test('can exclude optional dependency', () => {
     const ast = () =>
       astFromCode(`
       const n = 2;
@@ -1497,7 +1497,7 @@ describe('optional dependencies', () => {
       {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
     ]);
   });
-  it('collapses optional and non-optional requires of the same module', () => {
+  test('collapses optional and non-optional requires of the same module', () => {
     const ast = astFromCode(`
       const nonOptional = require('foo');
       try {
@@ -1511,7 +1511,7 @@ describe('optional dependencies', () => {
   });
 });
 
-it('uses the dependency transformer specified in the options to transform the dependency calls', () => {
+test('uses the dependency transformer specified in the options to transform the dependency calls', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     require(1)
@@ -1540,7 +1540,7 @@ it('uses the dependency transformer specified in the options to transform the de
   );
 });
 
-it('collects require.resolveWeak calls', () => {
+test('collects require.resolveWeak calls', () => {
   const ast = astFromCode(`
     require.resolveWeak("some/async/module");
   `);

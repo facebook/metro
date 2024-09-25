@@ -13,7 +13,7 @@
 const SourceMetadataMapConsumer = require('../SourceMetadataMapConsumer.js');
 
 describe('SourceMetadataMapConsumer', () => {
-  it('ignores metadata beyond the range of the sources array', () => {
+  test('ignores metadata beyond the range of the sources array', () => {
     const consumer = new SourceMetadataMapConsumer({
       version: 3,
       mappings: '',
@@ -32,7 +32,7 @@ describe('SourceMetadataMapConsumer', () => {
     expect(consumer.toArray(['foo'])).toEqual([null]);
   });
 
-  it('ignores metadata for a null source', () => {
+  test('ignores metadata for a null source', () => {
     const consumer = new SourceMetadataMapConsumer({
       version: 3,
       mappings: '',
@@ -58,7 +58,7 @@ describe('SourceMetadataMapConsumer', () => {
     ]);
   });
 
-  it('accepts metadata blob with null function map', () => {
+  test('accepts metadata blob with null function map', () => {
     const consumer = new SourceMetadataMapConsumer({
       version: 3,
       mappings: 'AAAA',
@@ -71,7 +71,7 @@ describe('SourceMetadataMapConsumer', () => {
     );
   });
 
-  it('accepts null metadata blob', () => {
+  test('accepts null metadata blob', () => {
     const consumer = new SourceMetadataMapConsumer({
       version: 3,
       mappings: 'AAAA',

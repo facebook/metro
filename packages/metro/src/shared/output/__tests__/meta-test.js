@@ -13,6 +13,6 @@
 
 const meta = require('../meta');
 
-it('exports the block list creator', () => {
+test('exports the block list creator', () => {
   expect(meta('some formatted code', 'utf8')).toMatchSnapshot();
 });

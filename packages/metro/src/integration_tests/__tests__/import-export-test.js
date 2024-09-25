@@ -17,7 +17,7 @@ jest.unmock('cosmiconfig');
 
 jest.setTimeout(30 * 1000);
 
-it('builds a simple bundle', async () => {
+test('builds a simple bundle', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });

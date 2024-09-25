@@ -30,14 +30,14 @@ const CONTEXT: ResolutionContext = {
   originModulePath: '/root/project/foo.js',
 };
 
-it('resolves to a real path when the chosen candidate is a symlink', () => {
+test('resolves to a real path when the chosen candidate is a symlink', () => {
   expect(Resolver.resolve(CONTEXT, './link-to-foo', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/project/foo.js',
   });
 });
 
-it('does not resolve to a broken symlink', () => {
+test('does not resolve to a broken symlink', () => {
   // ./baz.js is a broken link, baz/index.js is real
   expect(() => Resolver.resolve(CONTEXT, './baz.js', null)).toThrow(
     FailedToResolvePathError,

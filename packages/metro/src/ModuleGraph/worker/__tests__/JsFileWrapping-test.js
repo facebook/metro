@@ -23,7 +23,7 @@ const BABEL_RENAMED2 = '_' + WRAP_NAME + '2';
 
 const defaultGlobalPrefix = '';
 
-it('wraps a module correctly', () => {
+test('wraps a module correctly', () => {
   const dependencyMapName = '_dependencyMapName';
 
   const originalAst = astFromCode(`
@@ -59,7 +59,7 @@ it('wraps a module correctly', () => {
   );
 });
 
-it('wraps a module without renaming require statements', () => {
+test('wraps a module without renaming require statements', () => {
   const dependencyMapName = '_dependencyMapName';
   const skipRequireRename = true;
   const originalAst = astFromCode(`
@@ -95,7 +95,7 @@ it('wraps a module without renaming require statements', () => {
   );
 });
 
-it('wraps a module correctly with global prefix', () => {
+test('wraps a module correctly with global prefix', () => {
   const dependencyMapName = '_dependencyMapName';
 
   const originalAst = astFromCode(`
@@ -123,7 +123,7 @@ it('wraps a module correctly with global prefix', () => {
 describe('safe renaming of require', () => {
   ['let', 'const', 'var'].forEach((declKeyword: string) => {
     describe('decl type = ' + declKeyword, () => {
-      it('original name will always be renamed so local decl should be fine', () => {
+      test('original name will always be renamed so local decl should be fine', () => {
         const dependencyMapName = '_dependencyMapName';
 
         const originalAst = astFromCode(`
@@ -161,7 +161,7 @@ describe('safe renaming of require', () => {
         );
       });
 
-      it('when the scope has the new name defined too', () => {
+      test('when the scope has the new name defined too', () => {
         const dependencyMapName = '_dependencyMapName';
 
         const originalAst = astFromCode(`
@@ -199,7 +199,7 @@ describe('safe renaming of require', () => {
         );
       });
 
-      it('when an inner scope already has the new name defined too', () => {
+      test('when an inner scope already has the new name defined too', () => {
         const dependencyMapName = '_dependencyMapName';
 
         // Note; it's not important HOW Babel changes the name. Only THAT it does.
@@ -243,7 +243,7 @@ describe('safe renaming of require', () => {
   });
 });
 
-it('wraps a polyfill correctly', () => {
+test('wraps a polyfill correctly', () => {
   const ast = astFromCode(`
     if (something) {
       console.log('foo');
@@ -265,7 +265,7 @@ it('wraps a polyfill correctly', () => {
   );
 });
 
-it('wraps a JSON file correctly', () => {
+test('wraps a JSON file correctly', () => {
   const source = JSON.stringify(
     {
       foo: 'foo',

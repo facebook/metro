@@ -89,7 +89,7 @@ const transformOptions: TransformInputOptions = {
   unstable_transformProfile: 'default',
 };
 
-it('should generate a very simple bundle', () => {
+test('should generate a very simple bundle', () => {
   expect(
     baseJSBundle(
       '/root/foo',
@@ -141,7 +141,7 @@ it('should generate a very simple bundle', () => {
   `);
 });
 
-it('should add runBeforeMainModule statements if found in the graph', () => {
+test('should add runBeforeMainModule statements if found in the graph', () => {
   expect(
     baseJSBundle(
       '/root/foo',
@@ -181,7 +181,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
   `);
 });
 
-it('should handle numeric module ids', () => {
+test('should handle numeric module ids', () => {
   expect(
     baseJSBundle(
       '/root/foo',
@@ -227,7 +227,7 @@ it('should handle numeric module ids', () => {
   `);
 });
 
-it('outputs custom runModule statements', () => {
+test('outputs custom runModule statements', () => {
   expect(
     baseJSBundle(
       '/root/foo',
@@ -267,7 +267,7 @@ it('outputs custom runModule statements', () => {
   `);
 });
 
-it('should add an inline source map to a very simple bundle', () => {
+test('should add an inline source map to a very simple bundle', () => {
   const bundle = baseJSBundle(
     '/root/foo',
     [polyfill],
@@ -318,7 +318,7 @@ it('should add an inline source map to a very simple bundle', () => {
   });
 });
 
-it('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
+test('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
   const bundle = baseJSBundle(
     '/root/foo',
     [polyfill],
@@ -368,7 +368,7 @@ it('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
   );
 });
 
-it('does not add polyfills when `modulesOnly` is used', () => {
+test('does not add polyfills when `modulesOnly` is used', () => {
   expect(
     baseJSBundle(
       '/root/foo',

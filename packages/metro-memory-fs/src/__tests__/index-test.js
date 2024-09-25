@@ -26,24 +26,24 @@ describe('posix support', () => {
   });
 
   describe('accessSync', () => {
-    it('accesses owned file', () => {
+    test('accesses owned file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       fs.accessSync('/foo.txt');
     });
 
-    it('check owned file can be read and written to', () => {
+    test('check owned file can be read and written to', () => {
       fs.writeFileSync('/foo.txt', 'test');
       fs.accessSync('/foo.txt', fs.constants.R_OK | fs.constants.W_OK);
     });
 
-    it('check owned file cannot be read', () => {
+    test('check owned file cannot be read', () => {
       fs.writeFileSync('/foo.txt', 'test', {mode: 0o000});
       expectFsError('EPERM', () =>
         fs.accessSync('/foo.txt', fs.constants.R_OK),
       );
     });
 
-    it('check owned file cannot be written to', () => {
+    test('check owned file cannot be written to', () => {
       fs.writeFileSync('/foo.txt', 'test', {mode: 0o000});
       expectFsError('EPERM', () =>
         fs.accessSync('/foo.txt', fs.constants.W_OK),
@@ -51,23 +51,23 @@ describe('posix support', () => {
     });
   });
 
-  it('can write then read a file', () => {
+  test('can write then read a file', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read a file with options object', () => {
+  test('can write then read a file with options object', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expect(fs.readFileSync('/foo.txt', {encoding: 'utf8'})).toEqual('test');
   });
 
-  it('works without binding functions', () => {
+  test('works without binding functions', () => {
     const {writeFileSync, readFileSync} = fs;
     writeFileSync('/foo.txt', 'test');
     expect(readFileSync('/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read a file (async)', done => {
+  test('can write then read a file (async)', done => {
     fs.writeFile('/foo.txt', 'test', wrError => {
       if (wrError) {
         done(wrError);
@@ -84,12 +84,12 @@ describe('posix support', () => {
     });
   });
 
-  it('can write then read a file as buffer', () => {
+  test('can write then read a file as buffer', () => {
     fs.writeFileSync('/foo.txt', Buffer.from([1, 2, 3, 4]));
     expect(fs.readFileSync('/foo.txt')).toEqual(Buffer.from([1, 2, 3, 4]));
   });
 
-  it('can write a file with a relative path', () => {
+  test('can write a file with a relative path', () => {
     fs.mkdirSync('/current');
     fs.mkdirSync('/current/working');
     fs.mkdirSync('/current/working/dir');
@@ -100,7 +100,7 @@ describe('posix support', () => {
   });
 
   describe('createWriteStream', () => {
-    it('writes a file', done => {
+    test('writes a file', done => {
       const st = fs.createWriteStream('/foo.txt', {emitClose: true});
       let opened = false;
       let closed = false;
@@ -119,7 +119,7 @@ describe('posix support', () => {
       });
     });
 
-    it('writes a file, as buffer', done => {
+    test('writes a file, as buffer', done => {
       const st = fs.createWriteStream('/foo.txt');
       let opened = false;
       st.on('open', () => (opened = true));
@@ -132,7 +132,7 @@ describe('posix support', () => {
       });
     });
 
-    it('writes a file, with a starting position', done => {
+    test('writes a file, with a starting position', done => {
       fs.writeFileSync('/foo.txt', 'test bar');
       const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
       let opened = false;
@@ -145,7 +145,7 @@ describe('posix support', () => {
       });
     });
 
-    it('writes a file with a custom fd', done => {
+    test('writes a file with a custom fd', done => {
       const fd = fs.openSync('/bar.txt', 'w');
       const st = fs.createWriteStream('/foo.txt', {fd});
       let opened = false;
@@ -166,31 +166,31 @@ describe('posix support', () => {
       fs.writeFileSync('/foo.txt', REF_STR);
     });
 
-    it('reads a file', async () => {
+    test('reads a file', async () => {
       const str = await readWithReadStream(null);
       expect(str).toBe(REF_STR);
     });
 
-    it('reads a file, with a starting position', async () => {
+    test('reads a file, with a starting position', async () => {
       const str = await readWithReadStream({start: 4});
       expect(str).toBe(REF_STR.substring(4));
     });
 
-    it('reads a file, with an ending position', async () => {
+    test('reads a file, with an ending position', async () => {
       const str = await readWithReadStream({end: 14});
       // The `end` option is inclusive, but it's exclusive for `substring`,
       // hence the difference between 14 and 15.
       expect(str).toBe(REF_STR.substring(0, 15));
     });
 
-    it('reads a file, with starting and ending positions', async () => {
+    test('reads a file, with starting and ending positions', async () => {
       const str = await readWithReadStream({start: 8, end: 14});
       // The `end` option is inclusive, but it's exclusive for `substring`,
       // hence the difference between 14 and 15.
       expect(str).toBe(REF_STR.substring(8, 15));
     });
 
-    it('reads a file, with custom flags and mode', async () => {
+    test('reads a file, with custom flags and mode', async () => {
       const str = await readWithReadStream(
         {flags: 'wx+', mode: 0o600},
         '/glo.txt',
@@ -231,7 +231,7 @@ describe('posix support', () => {
       });
     }
 
-    it('reads a file as buffer', done => {
+    test('reads a file as buffer', done => {
       const st = fs.createReadStream('/foo.txt');
       let buffer = Buffer.alloc(0);
       st.on('data', chunk => {
@@ -243,7 +243,7 @@ describe('posix support', () => {
       });
     });
 
-    it('reads a file with a custom fd', done => {
+    test('reads a file with a custom fd', done => {
       fs.writeFileSync('/bar.txt', 'tadam');
       const fd = fs.openSync('/bar.txt', 'r');
       const st = fs.createReadStream('/foo.txt', {fd, encoding: 'utf8'});
@@ -264,7 +264,7 @@ describe('posix support', () => {
       });
     });
 
-    it('reads a file with a custom fd, no auto-close', done => {
+    test('reads a file with a custom fd, no auto-close', done => {
       fs.writeFileSync('/bar.txt', 'tadam');
       const fd = fs.openSync('/bar.txt', 'r');
       const st = fs.createReadStream('/foo.txt', {
@@ -291,13 +291,13 @@ describe('posix support', () => {
     });
   });
 
-  it('truncates a file that already exist', () => {
+  test('truncates a file that already exist', () => {
     fs.writeFileSync('/foo.txt', 'test');
     fs.writeFileSync('/foo.txt', 'hop');
     expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('hop');
   });
 
-  it('can write to an arbitrary position in a file', () => {
+  test('can write to an arbitrary position in a file', () => {
     const fd = fs.openSync('/foo.txt', 'w');
     fs.writeSync(fd, 'test');
     fs.writeSync(fd, 'a', 1);
@@ -306,34 +306,34 @@ describe('posix support', () => {
     expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('taste');
   });
 
-  it('can check a file exist', () => {
+  test('can check a file exist', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expect(fs.existsSync('/foo.txt')).toBe(true);
     expect(fs.existsSync('/bar.txt')).toBe(false);
     expect(fs.existsSync('/glo/bar.txt')).toBe(false);
   });
 
-  it('can write then read a file in a subdirectory', () => {
+  test('can write then read a file in a subdirectory', () => {
     fs.mkdirSync('/glo');
     fs.writeFileSync('/glo/foo.txt', 'test');
     expect(fs.readFileSync('/glo/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read via a symlinked file', () => {
+  test('can write then read via a symlinked file', () => {
     fs.symlinkSync('foo.txt', '/bar.txt');
     fs.writeFileSync('/bar.txt', 'test');
     expect(fs.readFileSync('/bar.txt', 'utf8')).toEqual('test');
     expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read via a symlinked file (absolute path)', () => {
+  test('can write then read via a symlinked file (absolute path)', () => {
     fs.symlinkSync('/foo.txt', '/bar.txt');
     fs.writeFileSync('/bar.txt', 'test');
     expect(fs.readFileSync('/bar.txt', 'utf8')).toEqual('test');
     expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read a file in a symlinked directory', () => {
+  test('can write then read a file in a symlinked directory', () => {
     fs.mkdirSync('/glo');
     fs.symlinkSync('glo', '/baz');
     fs.writeFileSync('/baz/foo.txt', 'test');
@@ -341,25 +341,25 @@ describe('posix support', () => {
     expect(fs.readFileSync('/glo/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('gives the real path for a symbolic link to a non-existent file', () => {
+  test('gives the real path for a symbolic link to a non-existent file', () => {
     fs.symlinkSync('foo.txt', '/bar.txt');
     // This *is* expected to work even if the file doesn't actually exist.
     expect(fs.realpathSync('/bar.txt')).toEqual('/foo.txt');
   });
 
-  it('gives the real path for a symbolic link to a file', () => {
+  test('gives the real path for a symbolic link to a file', () => {
     fs.writeFileSync('/foo.txt', 'test');
     fs.symlinkSync('foo.txt', '/bar.txt');
     expect(fs.realpathSync('/bar.txt')).toEqual('/foo.txt');
   });
 
-  it('gives the real path via a symlinked directory', () => {
+  test('gives the real path via a symlinked directory', () => {
     fs.mkdirSync('/glo');
     fs.symlinkSync('glo', '/baz');
     expect(fs.realpathSync('/baz/foo.txt')).toEqual('/glo/foo.txt');
   });
 
-  it('realpathSync.native is supported', () => {
+  test('realpathSync.native is supported', () => {
     fs.mkdirSync('/glo');
     fs.symlinkSync('glo', '/baz');
     // $FlowFixMe: Ideally this should typecheck.
@@ -368,7 +368,7 @@ describe('posix support', () => {
   });
 
   describe('stat', () => {
-    it('works for a regular file', () => {
+    test('works for a regular file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       const st = fs.statSync('/foo.txt');
       expect(st.isFile()).toBe(true);
@@ -377,7 +377,7 @@ describe('posix support', () => {
       expect(st.size).toBe(4);
     });
 
-    it('works for a symlinked file', () => {
+    test('works for a symlinked file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       fs.symlinkSync('foo.txt', '/bar.txt');
       const st = fs.statSync('/bar.txt');
@@ -389,7 +389,7 @@ describe('posix support', () => {
   });
 
   describe('lstat', () => {
-    it('works for a regular file', () => {
+    test('works for a regular file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       const st = fs.lstatSync('/foo.txt');
       expect(st.isFile()).toBe(true);
@@ -398,7 +398,7 @@ describe('posix support', () => {
       expect(st.size).toBe(4);
     });
 
-    it('works for a symlink', () => {
+    test('works for a symlink', () => {
       const linkStr = 'foo/bar/baz.txt';
       fs.symlinkSync(linkStr, '/bar.txt');
       const st = fs.lstatSync('/bar.txt');
@@ -410,7 +410,7 @@ describe('posix support', () => {
   });
 
   describe('readdirsync', () => {
-    it('able to list files of a directory', () => {
+    test('able to list files of a directory', () => {
       fs.mkdirSync('/baz');
       fs.writeFileSync('/baz/foo.txt', 'test');
       fs.writeFileSync('/baz/bar.txt', 'boop');
@@ -432,14 +432,14 @@ describe('posix support', () => {
         }): $FlowFixMe);
       });
 
-      it('returns Dirent objects', () => {
+      test('returns Dirent objects', () => {
         expect.assertions(4);
         for (const entry of entries) {
           expect(entry).toBeInstanceOf(fs.Dirent);
         }
       });
 
-      it('regular file', () => {
+      test('regular file', () => {
         const entry = entries[0];
         expect(entry.name).toBe('foo.txt');
         expect(entry.isFile()).toBe(true);
@@ -451,7 +451,7 @@ describe('posix support', () => {
         expect(entry.isSocket()).toBe(false);
       });
 
-      it('target of a symlink', () => {
+      test('target of a symlink', () => {
         const entry = entries[1];
         expect(entry.name).toBe('bar.txt');
         expect(entry.isFile()).toBe(true);
@@ -463,7 +463,7 @@ describe('posix support', () => {
         expect(entry.isSocket()).toBe(false);
       });
 
-      it('symlink', () => {
+      test('symlink', () => {
         const entry = entries[2];
         expect(entry.name).toBe('glo.txt');
         expect(entry.isFile()).toBe(false);
@@ -475,7 +475,7 @@ describe('posix support', () => {
         expect(entry.isSocket()).toBe(false);
       });
 
-      it('subdirectory', () => {
+      test('subdirectory', () => {
         const entry = entries[3];
         expect(entry.name).toBe('subdir');
         expect(entry.isFile()).toBe(false);
@@ -487,7 +487,7 @@ describe('posix support', () => {
         expect(entry.isSocket()).toBe(false);
       });
 
-      it('Buffer support', () => {
+      test('Buffer support', () => {
         const entriesWithBuffers: Array<fs.Dirent> = (fs.readdirSync('/baz', {
           withFileTypes: true,
           encoding: 'buffer',
@@ -509,7 +509,7 @@ describe('posix support', () => {
   });
 
   describe('watch', () => {
-    it('reports changed files', () => {
+    test('reports changed files', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -525,7 +525,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('does not report nested changed files if non-recursive', () => {
+    test('does not report nested changed files if non-recursive', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -537,7 +537,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('does report nested changed files if recursive', () => {
+    test('does report nested changed files if recursive', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -549,7 +549,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports created files', () => {
+    test('reports created files', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -560,7 +560,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports unlinked files', () => {
+    test('reports unlinked files', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -571,7 +571,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports changed files when watching a file directly', () => {
+    test('reports changed files when watching a file directly', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -582,7 +582,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('does not report changes when just reading a file', () => {
+    test('does not report changes when just reading a file', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -593,7 +593,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports source and destination files when renaming', () => {
+    test('reports source and destination files when renaming', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -607,7 +607,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports destination file twice when renaming and overwriting ', () => {
+    test('reports destination file twice when renaming and overwriting ', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -623,7 +623,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports new hard links', () => {
+    test('reports new hard links', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -634,7 +634,7 @@ describe('posix support', () => {
       watcher.close();
     });
 
-    it('reports truncated files', () => {
+    test('reports truncated files', () => {
       const changedPaths: Array<
         Array<?(Buffer | string | 'change' | 'rename')>,
       > = [];
@@ -662,7 +662,7 @@ describe('posix support', () => {
   });
 
   describe('unlink', () => {
-    it('removes a file', () => {
+    test('removes a file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       expect(fs.readdirSync('/')).toEqual(['foo.txt']);
       fs.unlinkSync('/foo.txt');
@@ -677,7 +677,7 @@ describe('posix support', () => {
       }
     });
 
-    it('removes a symlink (not the linked file)', () => {
+    test('removes a symlink (not the linked file)', () => {
       fs.writeFileSync('/foo.txt', 'test');
       fs.symlinkSync('foo.txt', '/bar.txt');
       expect(fs.readdirSync('/')).toEqual(['foo.txt', 'bar.txt']);
@@ -685,7 +685,7 @@ describe('posix support', () => {
       expect(fs.readdirSync('/')).toEqual(['foo.txt']);
     });
 
-    it('throws for non existent files', () => {
+    test('throws for non existent files', () => {
       try {
         fs.unlinkSync('/nonexistent.txt');
         throw new Error('should not reach here');
@@ -696,7 +696,7 @@ describe('posix support', () => {
       }
     });
 
-    it('throws for directories', () => {
+    test('throws for directories', () => {
       fs.mkdirSync('/foo');
       try {
         fs.unlinkSync('/foo');
@@ -710,7 +710,7 @@ describe('posix support', () => {
   });
 
   describe('rmSync', () => {
-    it('removes a file', () => {
+    test('removes a file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       expect(fs.readdirSync('/')).toEqual(['foo.txt']);
       fs.rmSync('/foo.txt');
@@ -725,7 +725,7 @@ describe('posix support', () => {
       }
     });
 
-    it('removes a symlink (not the linked file)', () => {
+    test('removes a symlink (not the linked file)', () => {
       fs.writeFileSync('/foo.txt', 'test');
       fs.symlinkSync('foo.txt', '/bar.txt');
       expect(fs.readdirSync('/')).toEqual(['foo.txt', 'bar.txt']);
@@ -733,7 +733,7 @@ describe('posix support', () => {
       expect(fs.readdirSync('/')).toEqual(['foo.txt']);
     });
 
-    it('throws for non existent files', () => {
+    test('throws for non existent files', () => {
       try {
         fs.rmSync('/nonexistent.txt');
         throw new Error('should not reach here');
@@ -744,14 +744,14 @@ describe('posix support', () => {
       }
     });
 
-    it('removes directories', () => {
+    test('removes directories', () => {
       fs.mkdirSync('/foo');
       expect(fs.readdirSync('/')).toEqual(['foo']);
       fs.rmSync('/foo');
       expect(fs.readdirSync('/')).toEqual([]);
     });
 
-    it('throws when removing non-empty directories (recursive: false)', () => {
+    test('throws when removing non-empty directories (recursive: false)', () => {
       fs.mkdirSync('/foo');
       fs.mkdirSync('/foo/bar');
       try {
@@ -764,7 +764,7 @@ describe('posix support', () => {
       }
     });
 
-    it('removes non-empty directories (recursive: true)', () => {
+    test('removes non-empty directories (recursive: true)', () => {
       fs.mkdirSync('/foo');
       fs.mkdirSync('/foo/bar');
       expect(fs.readdirSync('/')).toEqual(['foo']);
@@ -772,7 +772,7 @@ describe('posix support', () => {
       expect(fs.readdirSync('/')).toEqual([]);
     });
 
-    it.each([false, undefined])(
+    test.each([false, undefined])(
       'throws on non-existent path (force: %s)',
       force => {
         expect(() =>
@@ -781,57 +781,57 @@ describe('posix support', () => {
       },
     );
 
-    it('succeeds non-existent path (force: true)', () => {
+    test('succeeds non-existent path (force: true)', () => {
       fs.rmSync('/notexists', {force: true});
     });
   });
 
   describe('readlink', () => {
-    it('reads a symlink target', () => {
+    test('reads a symlink target', () => {
       fs.symlinkSync('foo.txt', '/bar.txt');
       expect(fs.readlinkSync('/bar.txt')).toBe('foo.txt');
     });
 
-    it('reads a symlink target as buffer', () => {
+    test('reads a symlink target as buffer', () => {
       fs.symlinkSync('foo.txt', '/bar.txt');
       expect(fs.readlinkSync('/bar.txt', 'buffer')).toEqual(
         Buffer.from('foo.txt'),
       );
     });
 
-    it('throws when trying to read a regular file', () => {
+    test('throws when trying to read a regular file', () => {
       fs.writeFileSync('/foo.txt', 'test');
       expectFsError('EINVAL', () => fs.readlinkSync('/foo.txt'));
     });
   });
 
-  it('throws when trying to read inexistent file', () => {
+  test('throws when trying to read inexistent file', () => {
     expectFsError('ENOENT', () => fs.readFileSync('/foo.txt'));
   });
 
-  it('throws when trying to read file via inexistent directory', () => {
+  test('throws when trying to read file via inexistent directory', () => {
     fs.writeFileSync('/foo.txt', 'test');
     // It is *not* expected to simplify the path before resolution. Because
     // `glo` does not exist along the way, it is expected to fail.
     expectFsError('ENOENT', () => fs.readFileSync('/glo/../foo.txt'));
   });
 
-  it('throws when trying to create symlink over existing file', () => {
+  test('throws when trying to create symlink over existing file', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expectFsError('EEXIST', () => fs.symlinkSync('bar', '/foo.txt'));
   });
 
-  it('throws when trying to write a directory entry', () => {
+  test('throws when trying to write a directory entry', () => {
     fs.mkdirSync('/glo');
     expectFsError('EISDIR', () => fs.writeFileSync('/glo', 'test'));
   });
 
-  it('throws when trying to read a directory entry', () => {
+  test('throws when trying to read a directory entry', () => {
     fs.mkdirSync('/glo');
     expectFsError('EISDIR', () => fs.readFileSync('/glo'));
   });
 
-  it('throws when trying to read inexistent file (async)', done => {
+  test('throws when trying to read inexistent file (async)', done => {
     fs.readFile('/foo.txt', (error: any) => {
       if (error.code !== 'ENOENT') {
         done(error);
@@ -842,38 +842,38 @@ describe('posix support', () => {
     });
   });
 
-  it('throws when trying to read directory as file', () => {
+  test('throws when trying to read directory as file', () => {
     fs.mkdirSync('/glo');
     expectFsError('EISDIR', () => fs.readFileSync('/glo'));
   });
 
-  it('throws when trying to write to a win32-style path', () => {
+  test('throws when trying to write to a win32-style path', () => {
     expectFsError('ENOENT', () => fs.writeFileSync('C:\\foo.txt', ''));
   });
 
-  it('throws when trying to read file with trailing slash', () => {
+  test('throws when trying to read file with trailing slash', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expectFsError('ENOTDIR', () => fs.readFileSync('/foo.txt/'));
   });
 
-  it('throws when finding a symlink loop', () => {
+  test('throws when finding a symlink loop', () => {
     fs.symlinkSync('foo.txt', '/bar.txt');
     fs.symlinkSync('bar.txt', '/glo.txt');
     fs.symlinkSync('glo.txt', '/foo.txt');
     expectFsError('ELOOP', () => fs.readFileSync('/foo.txt'));
   });
 
-  it('throws when trying to write to an inexistent file descriptor', () => {
+  test('throws when trying to write to an inexistent file descriptor', () => {
     expectFsError('EBADF', () => fs.writeSync(42, Buffer.from([1])));
   });
 
-  it('throws when trying to write to a read-only file descriptor', () => {
+  test('throws when trying to write to a read-only file descriptor', () => {
     fs.writeFileSync('/foo.txt', 'test');
     const fd = fs.openSync('/foo.txt', 'r');
     expectFsError('EBADF', () => fs.writeSync(fd, Buffer.from([1])));
   });
 
-  it('throws when trying to open too many files', () => {
+  test('throws when trying to open too many files', () => {
     fs.writeFileSync('/foo.txt', 'test');
     expectFsError('EMFILE', () => {
       for (let i = 0; i < 1000; ++i) {
@@ -882,7 +882,7 @@ describe('posix support', () => {
     });
   });
 
-  it('supports copying files', () => {
+  test('supports copying files', () => {
     const source = '/source-file';
     const data = 'arbitrary data';
     fs.writeFileSync(source, data);
@@ -896,7 +896,7 @@ describe('posix support', () => {
     expect(fs.readFileSync(dest2, 'utf8')).toBe(data);
   });
 
-  it('supports COPYFILE_EXCL for copyFile', () => {
+  test('supports COPYFILE_EXCL for copyFile', () => {
     const data = 'arbitrary data';
     const source = '/source-file';
     const dest = '/dest-file';
@@ -918,13 +918,13 @@ describe('posix support', () => {
   });
 
   describe('renameSync', () => {
-    it('errors when the source does not exist', () => {
+    test('errors when the source does not exist', () => {
       fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
       expectFsError('ENOENT', () => fs.renameSync('/source', '/dest'));
       expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
     });
 
-    it('errors when the destination is in a nonexistent directory', () => {
+    test('errors when the destination is in a nonexistent directory', () => {
       fs.writeFileSync('/source', 'DATA');
 
       expectFsError('ENOENT', () => fs.renameSync('/source', '/bad/dest'));
@@ -933,7 +933,7 @@ describe('posix support', () => {
       expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
     });
 
-    it('errors when making a directory its own subdirectory', () => {
+    test('errors when making a directory its own subdirectory', () => {
       fs.mkdirSync('/source');
       fs.writeFileSync('/source/data', 'DATA');
 
@@ -941,14 +941,14 @@ describe('posix support', () => {
       expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
     });
 
-    it('errors when using a file as a directory in the source path', () => {
+    test('errors when using a file as a directory in the source path', () => {
       fs.writeFileSync('/source', 'DATA');
 
       expectFsError('ENOTDIR', () => fs.renameSync('/source/nope', '/dest'));
       expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
     });
 
-    it('errors when using a file as a directory in the destination path', () => {
+    test('errors when using a file as a directory in the destination path', () => {
       fs.writeFileSync('/source', 'DATA');
       fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
 
@@ -958,7 +958,7 @@ describe('posix support', () => {
     });
 
     describe('when the destination is valid and does not exist', () => {
-      it('renames a file', () => {
+      test('renames a file', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.renameSync('/source', '/dest');
@@ -966,7 +966,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
       });
 
-      it('renames a symbolic link', () => {
+      test('renames a symbolic link', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
 
@@ -977,7 +977,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/dest')).toBe('/sourceReal');
       });
 
-      it('renames a directory', () => {
+      test('renames a directory', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
 
@@ -988,7 +988,7 @@ describe('posix support', () => {
     });
 
     describe('when the source is valid and the destination exists', () => {
-      it('file -> file succeeds', () => {
+      test('file -> file succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.writeFileSync('/dest', 'OVERWRITE_ME');
 
@@ -997,14 +997,14 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
       });
 
-      it('file -> itself succeeds', () => {
+      test('file -> itself succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.renameSync('/source', '/source');
         expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
       });
 
-      it('file -> other hard link to itself succeeds', () => {
+      test('file -> other hard link to itself succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.linkSync('/source', '/source_alt');
 
@@ -1018,7 +1018,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/source_alt', 'utf8')).toBe('NEW_DATA');
       });
 
-      it('file -> directory succeeds', () => {
+      test('file -> directory succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.mkdirSync('/dest');
 
@@ -1027,7 +1027,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
       });
 
-      it('file -> symbolic link succeeds', () => {
+      test('file -> symbolic link succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
         fs.symlinkSync('/destReal', '/dest');
@@ -1041,7 +1041,7 @@ describe('posix support', () => {
         );
       });
 
-      it('symbolic link -> file succeeds', () => {
+      test('symbolic link -> file succeeds', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.writeFileSync('/dest', 'OVERWRITE_ME');
@@ -1053,7 +1053,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/dest')).toBe('/sourceReal');
       });
 
-      it('symbolic link -> directory succeeds', () => {
+      test('symbolic link -> directory succeeds', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.mkdirSync('/dest');
@@ -1065,7 +1065,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/dest')).toBe('/sourceReal');
       });
 
-      it('symbolic link -> symbolic link succeeds', () => {
+      test('symbolic link -> symbolic link succeeds', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
@@ -1081,7 +1081,7 @@ describe('posix support', () => {
         );
       });
 
-      it('symbolic link -> itself succeeds', () => {
+      test('symbolic link -> itself succeeds', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
 
@@ -1092,7 +1092,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/source')).toBe('/sourceReal');
       });
 
-      it('directory -> file errors', () => {
+      test('directory -> file errors', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
 
@@ -1101,7 +1101,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('directory -> symbolic link errors', () => {
+      test('directory -> symbolic link errors', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
         fs.symlinkSync('/destReal', '/dest');
@@ -1112,7 +1112,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/dest')).toBe('/destReal');
       });
 
-      it('directory -> empty directory succeeds', () => {
+      test('directory -> empty directory succeeds', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
         fs.mkdirSync('/dest');
@@ -1122,7 +1122,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest/data', 'utf8')).toBe('DATA');
       });
 
-      it('directory -> non-empty directory errors', () => {
+      test('directory -> non-empty directory errors', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
         fs.mkdirSync('/dest');
@@ -1135,7 +1135,7 @@ describe('posix support', () => {
         );
       });
 
-      it('directory -> itself succeeds', () => {
+      test('directory -> itself succeeds', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
 
@@ -1146,13 +1146,13 @@ describe('posix support', () => {
   });
 
   describe('linkSync', () => {
-    it('errors when the source does not exist', () => {
+    test('errors when the source does not exist', () => {
       fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
       expectFsError('ENOENT', () => fs.linkSync('/source', '/dest'));
       expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
     });
 
-    it('errors when the destination is in a nonexistent directory', () => {
+    test('errors when the destination is in a nonexistent directory', () => {
       fs.writeFileSync('/source', 'DATA');
 
       expectFsError('ENOENT', () => fs.linkSync('/source', '/bad/dest'));
@@ -1161,14 +1161,14 @@ describe('posix support', () => {
       expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
     });
 
-    it('errors when using a file as a directory in the source path', () => {
+    test('errors when using a file as a directory in the source path', () => {
       fs.writeFileSync('/source', 'DATA');
 
       expectFsError('ENOTDIR', () => fs.linkSync('/source/nope', '/dest'));
       expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
     });
 
-    it('errors when using a file as a directory in the destination path', () => {
+    test('errors when using a file as a directory in the destination path', () => {
       fs.writeFileSync('/source', 'DATA');
       fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
 
@@ -1177,7 +1177,7 @@ describe('posix support', () => {
       expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
     });
 
-    it('links a file', () => {
+    test('links a file', () => {
       fs.writeFileSync('/source', 'DATA');
 
       fs.linkSync('/source', '/dest');
@@ -1186,7 +1186,7 @@ describe('posix support', () => {
     });
 
     describe('relationship after linking', () => {
-      it('unlinking the source keeps the destination in place', () => {
+      test('unlinking the source keeps the destination in place', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.linkSync('/source', '/dest');
@@ -1195,7 +1195,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
       });
 
-      it('unlinking the destination keeps the source in place', () => {
+      test('unlinking the destination keeps the source in place', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.linkSync('/source', '/dest');
@@ -1204,7 +1204,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
       });
 
-      it('writing to the destination updates the source', () => {
+      test('writing to the destination updates the source', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.linkSync('/source', '/dest');
@@ -1213,7 +1213,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('NEW_DATA');
       });
 
-      it('writing to the source updates the destination', () => {
+      test('writing to the source updates the destination', () => {
         fs.writeFileSync('/source', 'DATA');
 
         fs.linkSync('/source', '/dest');
@@ -1224,7 +1224,7 @@ describe('posix support', () => {
     });
 
     describe('never overwrites the destination', () => {
-      it('file -> file', () => {
+      test('file -> file', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
 
@@ -1233,14 +1233,14 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('file -> itself', () => {
+      test('file -> itself', () => {
         fs.writeFileSync('/source', 'DATA');
 
         expectFsError('EEXIST', () => fs.linkSync('/source', '/source'));
         expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
       });
 
-      it('file -> directory', () => {
+      test('file -> directory', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.mkdirSync('/dest');
 
@@ -1249,7 +1249,7 @@ describe('posix support', () => {
         expect(fs.statSync('/dest').isDirectory()).toBe(true);
       });
 
-      it('file -> symbolic link', () => {
+      test('file -> symbolic link', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
         fs.symlinkSync('/destReal', '/dest');
@@ -1260,7 +1260,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('symbolic link -> file', () => {
+      test('symbolic link -> file', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
@@ -1271,7 +1271,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('symbolic link -> directory', () => {
+      test('symbolic link -> directory', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.mkdirSync('/dest');
@@ -1282,7 +1282,7 @@ describe('posix support', () => {
         expect(fs.statSync('/dest').isDirectory()).toBe(true);
       });
 
-      it('symbolic link -> symbolic link', () => {
+      test('symbolic link -> symbolic link', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
@@ -1295,7 +1295,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('symbolic link -> itself', () => {
+      test('symbolic link -> itself', () => {
         fs.writeFileSync('/sourceReal', 'DATA');
         fs.symlinkSync('/sourceReal', '/source');
 
@@ -1307,7 +1307,7 @@ describe('posix support', () => {
     });
 
     describe('errors when source is a directory', () => {
-      it('directory -> file', () => {
+      test('directory -> file', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
 
@@ -1316,7 +1316,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
       });
 
-      it('directory -> symbolic link', () => {
+      test('directory -> symbolic link', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
         fs.symlinkSync('/destReal', '/dest');
@@ -1327,7 +1327,7 @@ describe('posix support', () => {
         expect(fs.readlinkSync('/dest')).toBe('/destReal');
       });
 
-      it('directory -> empty directory', () => {
+      test('directory -> empty directory', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
         fs.mkdirSync('/dest');
@@ -1337,7 +1337,7 @@ describe('posix support', () => {
         expect(fs.existsSync('/dest/data')).toBe(false);
       });
 
-      it('directory -> non-empty directory', () => {
+      test('directory -> non-empty directory', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
         fs.mkdirSync('/dest');
@@ -1350,7 +1350,7 @@ describe('posix support', () => {
         );
       });
 
-      it('directory -> itself', () => {
+      test('directory -> itself', () => {
         fs.mkdirSync('/source');
         fs.writeFileSync('/source/data', 'DATA');
 
@@ -1361,56 +1361,56 @@ describe('posix support', () => {
   });
 
   describe('truncateSync', () => {
-    it('errors on truncating a directory', () => {
+    test('errors on truncating a directory', () => {
       fs.mkdirSync('/foo');
 
       expectFsError('EISDIR', () => fs.truncateSync('/foo'));
     });
 
-    it('truncates an empty file', () => {
+    test('truncates an empty file', () => {
       fs.writeFileSync('/foo', Buffer.from([]));
       fs.truncateSync('/foo');
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
     });
 
-    it('truncates a non-empty file', () => {
+    test('truncates a non-empty file', () => {
       fs.writeFileSync('/foo', Buffer.from([42, 1337]));
       fs.truncateSync('/foo');
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
     });
 
-    it('zero pads an empty file to the specified length', () => {
+    test('zero pads an empty file to the specified length', () => {
       fs.writeFileSync('/foo', Buffer.from([]));
       fs.truncateSync('/foo', 3);
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([0, 0, 0]));
     });
 
-    it('zero pads a non-empty file to the specified length', () => {
+    test('zero pads a non-empty file to the specified length', () => {
       fs.writeFileSync('/foo', Buffer.from([42]));
       fs.truncateSync('/foo', 3);
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([42, 0, 0]));
     });
 
-    it('truncates a non-empty file to the specified length', () => {
+    test('truncates a non-empty file to the specified length', () => {
       fs.writeFileSync('/foo', Buffer.from([0xfa, 0xce, 0xb0, 0x0c]));
       fs.truncateSync('/foo', 2);
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([0xfa, 0xce]));
     });
 
-    it('truncates a non-empty file to its current length', () => {
+    test('truncates a non-empty file to its current length', () => {
       fs.writeFileSync('/foo', Buffer.from([42, 1337]));
       fs.truncateSync('/foo', 2);
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([42, 1337]));
     });
 
-    it('explicitly specifying length 0 works', () => {
+    test('explicitly specifying length 0 works', () => {
       fs.writeFileSync('/foo', Buffer.from([42, 1337]));
       fs.truncateSync('/foo', 0);
       expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
     });
 
     describe('with file descriptor', () => {
-      it('errors on truncating a a non-writable file', () => {
+      test('errors on truncating a a non-writable file', () => {
         fs.writeFileSync('/foo', '');
         const fd = fs.openSync('/foo', 'r');
 
@@ -1419,11 +1419,11 @@ describe('posix support', () => {
         fs.closeSync(fd);
       });
 
-      it('errors on a nonexistent file descriptor', () => {
+      test('errors on a nonexistent file descriptor', () => {
         expectFsError('EBADF', () => fs.truncateSync(42));
       });
 
-      it('errors on a closed file descriptor', () => {
+      test('errors on a closed file descriptor', () => {
         fs.writeFileSync('/foo', 'DATA');
         const fd = fs.openSync('/foo', 'r');
         fs.closeSync(fd);
@@ -1431,7 +1431,7 @@ describe('posix support', () => {
         expect(fs.readFileSync('/foo', 'utf8')).toBe('DATA');
       });
 
-      it('truncates a non-empty file to the specified length', () => {
+      test('truncates a non-empty file to the specified length', () => {
         fs.writeFileSync('/foo', Buffer.from([0xfa, 0xce, 0xb0, 0x0c]));
         const fd = fs.openSync('/foo', 'r+');
         const buf = Buffer.alloc(100);
@@ -1443,7 +1443,7 @@ describe('posix support', () => {
         fs.closeSync(fd);
       });
 
-      it('truncates without changing the current read position', () => {
+      test('truncates without changing the current read position', () => {
         fs.writeFileSync('/foo', Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]));
         const fd = fs.openSync('/foo', 'r+');
         const buf = Buffer.alloc(100);
@@ -1459,7 +1459,7 @@ describe('posix support', () => {
         fs.closeSync(fd);
       });
 
-      it('truncates without changing the current write position', () => {
+      test('truncates without changing the current write position', () => {
         fs.writeFileSync('/foo', Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]));
         const fd = fs.openSync('/foo', 'r+');
 
@@ -1478,20 +1478,20 @@ describe('posix support', () => {
 
   describe('chmod', () => {
     describe('chmodSync', () => {
-      it('sets the file mode', () => {
+      test('sets the file mode', () => {
         fs.writeFileSync('/foo.txt', 'test', {mode: 0o700});
         expect(fs.statSync('/foo.txt').mode).toBe(0o700);
         fs.chmodSync('/foo.txt', 0o400);
         expect(fs.statSync('/foo.txt').mode).toBe(0o400);
       });
 
-      it('parses strings as octal integers', () => {
+      test('parses strings as octal integers', () => {
         fs.writeFileSync('/foo.txt', 'test');
         fs.chmodSync('/foo.txt', '400');
         expect(fs.statSync('/foo.txt').mode).toBe(0o400);
       });
 
-      it('follows symlinks', () => {
+      test('follows symlinks', () => {
         fs.writeFileSync('/foo.txt', 'test');
         fs.symlinkSync('/foo.txt', '/link.txt');
         fs.chmodSync('/link.txt', '400');
@@ -1501,20 +1501,20 @@ describe('posix support', () => {
     });
 
     describe('lchmodSync', () => {
-      it('sets the file mode', () => {
+      test('sets the file mode', () => {
         fs.writeFileSync('/foo.txt', 'test', {mode: 0o700});
         expect(fs.statSync('/foo.txt').mode).toBe(0o700);
         fs.lchmodSync('/foo.txt', 0o400);
         expect(fs.statSync('/foo.txt').mode).toBe(0o400);
       });
 
-      it('parses strings as octal integers', () => {
+      test('parses strings as octal integers', () => {
         fs.writeFileSync('/foo.txt', 'test');
         fs.lchmodSync('/foo.txt', '400');
         expect(fs.statSync('/foo.txt').mode).toBe(0o400);
       });
 
-      it('does not follow symlinks', () => {
+      test('does not follow symlinks', () => {
         fs.writeFileSync('/foo.txt', 'test');
         fs.symlinkSync('/foo.txt', '/link.txt');
         fs.lchmodSync('/link.txt', '400');
@@ -1524,14 +1524,14 @@ describe('posix support', () => {
     });
 
     describe('fchmodSync', () => {
-      it('sets the file mode', () => {
+      test('sets the file mode', () => {
         const fd = fs.openSync('/foo.txt', 'w', 0o700);
         expect(fs.fstatSync(fd).mode).toBe(0o700);
         fs.fchmodSync(fd, 0o400);
         expect(fs.fstatSync(fd).mode).toBe(0o400);
       });
 
-      it('parses strings as octal integers', () => {
+      test('parses strings as octal integers', () => {
         const fd = fs.openSync('/foo.txt', 'w');
         fs.fchmodSync(fd, '400');
         expect(fs.fstatSync(fd).mode).toBe(0o400);
@@ -1540,24 +1540,24 @@ describe('posix support', () => {
   });
 
   describe('mkdtemp', () => {
-    it('creates a directory', () => {
+    test('creates a directory', () => {
       const name = fs.mkdtempSync('/');
       expect(fs.statSync(name).isDirectory()).toBe(true);
     });
 
-    it('creates the directory with mode 0700', () => {
+    test('creates the directory with mode 0700', () => {
       const name = fs.mkdtempSync('/');
       expect(fs.statSync(name).mode).toBe(0o700);
     });
 
-    it('concatenates a random suffix to the given prefix', () => {
+    test('concatenates a random suffix to the given prefix', () => {
       fs.mkdirSync('/tmp');
       const name = fs.mkdtempSync('/tmp/prefix');
       expect(path.posix.dirname(name)).toBe('/tmp');
       expect(path.posix.basename(name)).toMatch(/^prefix.{6}$/);
     });
 
-    it('fails to create in a nonexistent directory', () => {
+    test('fails to create in a nonexistent directory', () => {
       expectFsError(
         'ENOENT',
         () => {
@@ -1570,13 +1570,13 @@ describe('posix support', () => {
       );
     });
 
-    it('returns a different name every time', () => {
+    test('returns a different name every time', () => {
       const name1 = fs.mkdtempSync('/');
       const name2 = fs.mkdtempSync('/');
       expect(name2).not.toBe(name1);
     });
 
-    it('returns the directory name interpreted in the requested encoding', () => {
+    test('returns the directory name interpreted in the requested encoding', () => {
       const nameHex = fs.mkdtempSync('/', {encoding: 'hex'});
       const name = Buffer.from(nameHex, 'hex').toString('utf8');
       expect(name).toMatch(/^\/.{6}$/);
@@ -1590,24 +1590,24 @@ describe('win32 support', () => {
     fs = new MemoryFs({platform: 'win32'});
   });
 
-  it('can write then read a file', () => {
+  test('can write then read a file', () => {
     fs.writeFileSync('C:\\foo.txt', 'test');
     expect(fs.readFileSync('C:\\foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('gives the real path for a file', () => {
+  test('gives the real path for a file', () => {
     fs.writeFileSync('C:\\foo.txt', 'test');
     expect(fs.realpathSync('c:/foo.txt')).toEqual('c:\\foo.txt');
   });
 
-  it('can write then read via a symlinked file', () => {
+  test('can write then read via a symlinked file', () => {
     fs.symlinkSync('foo.txt', 'c:\\bar.txt');
     fs.writeFileSync('c:\\bar.txt', 'test');
     expect(fs.readFileSync('c:\\bar.txt', 'utf8')).toEqual('test');
     expect(fs.readFileSync('c:\\foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('can write then read via an absolutely symlinked file', () => {
+  test('can write then read via an absolutely symlinked file', () => {
     fs.symlinkSync('c:\\foo.txt', 'c:\\bar.txt');
     fs.writeFileSync('c:\\bar.txt', 'test');
     expect(fs.readFileSync('c:\\bar.txt', 'utf8')).toEqual('test');
@@ -1620,17 +1620,17 @@ describe('promises', () => {
     fs = new MemoryFs({cwd: () => '/current/working/dir'});
   });
 
-  it('exists', () => {
+  test('exists', () => {
     expect(fs.promises).toBeDefined();
   });
 
-  it('can write then read a file', async () => {
+  test('can write then read a file', async () => {
     await fs.promises.writeFile('/foo.txt', 'test');
 
     expect(await fs.promises.readFile('/foo.txt', 'utf8')).toEqual('test');
   });
 
-  it('throws when trying to read inexistent file', async () => {
+  test('throws when trying to read inexistent file', async () => {
     await expect(fs.promises.readFile('/foo.txt')).rejects.toEqual(
       expect.objectContaining({code: 'ENOENT'}),
     );

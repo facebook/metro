@@ -657,7 +657,7 @@ describe('source path normalization', () => {
 });
 
 describe('known bugs in source-map', () => {
-  it('accepts mappings without sources in an indexed map', () => {
+  test('accepts mappings without sources in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -689,7 +689,7 @@ describe('known bugs in source-map', () => {
     ]);
   });
 
-  it('accepts mappings without names in an indexed map', () => {
+  test('accepts mappings without names in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -720,7 +720,7 @@ describe('known bugs in source-map', () => {
     ]);
   });
 
-  it('accepts mappings to the first name entry in an indexed map', () => {
+  test('accepts mappings to the first name entry in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -751,7 +751,7 @@ describe('known bugs in source-map', () => {
     ]);
   });
 
-  it('processes sources correctly in an indexed map', () => {
+  test('processes sources correctly in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -789,7 +789,7 @@ describe('known bugs in source-map', () => {
     ]);
   });
 
-  it('supports unmapped sections in an indexed map', () => {
+  test('supports unmapped sections in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -826,7 +826,7 @@ describe('known bugs in source-map', () => {
     );
   });
 
-  it('performs lookup correctly in an indexed map', () => {
+  test('performs lookup correctly in an indexed map', () => {
     const map = {
       version: 3,
       sections: [
@@ -865,7 +865,7 @@ describe('known bugs in source-map', () => {
     ).toEqual(objectContaining({source: 'quux.js', line: 2, column: 1}));
   });
 
-  it('performs lookup correctly in a non-indexed map', () => {
+  test('performs lookup correctly in a non-indexed map', () => {
     const map = {
       version: 3,
       names: ['first', 'second'],

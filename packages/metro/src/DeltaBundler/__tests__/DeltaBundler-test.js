@@ -70,7 +70,7 @@ describe('DeltaBundler', () => {
     DeltaCalculator.prototype.getGraph.mockReturnValue(mockGraph);
   });
 
-  it('should create a new graph when buildGraph gets called', async () => {
+  test('should create a new graph when buildGraph gets called', async () => {
     expect(
       await deltaBundler.buildGraph(mockGraph.entryPoints, options),
     ).toEqual(mockGraph);
@@ -82,7 +82,7 @@ describe('DeltaBundler', () => {
     });
   });
 
-  it('should get a delta when getDelta gets called', async () => {
+  test('should get a delta when getDelta gets called', async () => {
     const graph = await deltaBundler.buildGraph(mockGraph.entryPoints, options);
 
     expect(
@@ -94,7 +94,7 @@ describe('DeltaBundler', () => {
     });
   });
 
-  it('should get a reset delta when calling getDelta({reset: true, shallow: false})', async () => {
+  test('should get a reset delta when calling getDelta({reset: true, shallow: false})', async () => {
     const graph = await deltaBundler.buildGraph(mockGraph.entryPoints, options);
 
     expect(
@@ -106,7 +106,7 @@ describe('DeltaBundler', () => {
     });
   });
 
-  it('should throw an error when trying to get the delta of a graph that does not exist', async () => {
+  test('should throw an error when trying to get the delta of a graph that does not exist', async () => {
     const graph = await deltaBundler.buildGraph(mockGraph.entryPoints, options);
 
     deltaBundler.endGraph(graph);
@@ -116,7 +116,7 @@ describe('DeltaBundler', () => {
     ).rejects.toBeInstanceOf(Error);
   });
 
-  it('should throw an error when trying to end a graph twice', async () => {
+  test('should throw an error when trying to end a graph twice', async () => {
     const graph = await deltaBundler.buildGraph(mockGraph.entryPoints, options);
 
     deltaBundler.endGraph(graph);

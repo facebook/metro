@@ -33,7 +33,7 @@ function checkAssertionInPackages(packages, assertionCb) {
   }
 }
 
-it('forces all package names to match their folder name', () => {
+test('forces all package names to match their folder name', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).name).toEqual(
       path.basename(packagePath),
@@ -41,19 +41,19 @@ it('forces all package names to match their folder name', () => {
   });
 });
 
-it('forces all packages to use the main metro version', () => {
+test('forces all packages to use the main metro version', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).version).toEqual(METRO_VERSION);
   });
 });
 
-it('forces all packages to use the root "engines" spec', () => {
+test('forces all packages to use the root "engines" spec', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).engines).toEqual(ENGINES);
   });
 });
 
-it('forces all metro dependencies to be fixed to the main version', () => {
+test('forces all metro dependencies to be fixed to the main version', () => {
   const packages = getPackages();
   const packageNames = new Set(
     packages.map(packageName => path.basename(packageName)),
@@ -70,7 +70,7 @@ it('forces all metro dependencies to be fixed to the main version', () => {
   });
 });
 
-it('forces all packages to have a prepare-release and cleanup-release scripts', () => {
+test('forces all packages to have a prepare-release and cleanup-release scripts', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(readPackageJson(packagePath).scripts).toEqual(
       expect.objectContaining({
@@ -81,7 +81,7 @@ it('forces all packages to have a prepare-release and cleanup-release scripts', 
   });
 });
 
-it('forces all packages to have a src/ folder', () => {
+test('forces all packages to have a src/ folder', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(fs.lstatSync(path.join(packagePath, 'src')).isDirectory()).toBe(
       true,
@@ -89,7 +89,7 @@ it('forces all packages to have a src/ folder', () => {
   });
 });
 
-it('forces all packages to have an .npmignore with expected entries', () => {
+test('forces all packages to have an .npmignore with expected entries', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     const npmIgnorePath = path.join(packagePath, '.npmignore');
     expect(fs.existsSync(npmIgnorePath)).toBe(true);

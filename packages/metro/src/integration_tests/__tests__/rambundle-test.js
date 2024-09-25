@@ -22,7 +22,7 @@ jest.unmock('cosmiconfig');
 
 jest.setTimeout(30 * 1000);
 
-it('builds and executes a RAM bundle', async () => {
+test('builds and executes a RAM bundle', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });

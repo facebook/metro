@@ -25,7 +25,7 @@ describe('loadConfig', () => {
     cosmiconfig.reset();
   });
 
-  it('can load config objects', async () => {
+  test('can load config objects', async () => {
     const config: any = {
       reporter: null,
       maxWorkers: 2,
@@ -44,7 +44,7 @@ describe('loadConfig', () => {
     expect(result.cacheStores).toEqual([]);
   });
 
-  it('can load config from function', async () => {
+  test('can load config from function', async () => {
     const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       cacheStores: [],
@@ -74,7 +74,7 @@ describe('loadConfig', () => {
     });
   });
 
-  it('can load the config from a path', async () => {
+  test('can load the config from a path', async () => {
     const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
@@ -113,7 +113,7 @@ describe('loadConfig', () => {
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
   });
 
-  it('can load the config from a path pointing to a directory', async () => {
+  test('can load the config from a path pointing to a directory', async () => {
     const config = (defaultConfig: any): any => ({
       ...defaultConfig,
       projectRoot: '/',
@@ -152,7 +152,7 @@ describe('loadConfig', () => {
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
   });
 
-  it('can load the config with no config present', async () => {
+  test('can load the config with no config present', async () => {
     cosmiconfig.setReturnNull(true);
 
     const result = await loadConfig({cwd: process.cwd()});
@@ -168,7 +168,7 @@ describe('loadConfig', () => {
     );
   });
 
-  it('validates config for server', async () => {
+  test('validates config for server', async () => {
     expect.assertions(1);
     const config = (defaultConfig: any) => ({
       ...defaultConfig,
@@ -186,7 +186,7 @@ describe('loadConfig', () => {
     }
   });
 
-  it('validates config for projectRoot', async () => {
+  test('validates config for projectRoot', async () => {
     expect.assertions(1);
     const config = (defaultConfig: any) => ({
       ...defaultConfig,
@@ -202,7 +202,7 @@ describe('loadConfig', () => {
     }
   });
 
-  it('injects `metro-cache` into the `cacheStores` callback', async () => {
+  test('injects `metro-cache` into the `cacheStores` callback', async () => {
     const config = {
       reporter: null,
       maxWorkers: 2,

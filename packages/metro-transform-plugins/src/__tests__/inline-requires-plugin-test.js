@@ -276,7 +276,7 @@ describe('inline-requires', () => {
     );
   };
 
-  it('should be compatible with other transforms like transform-modules-commonjs', function () {
+  test('should be compatible with other transforms like transform-modules-commonjs', function () {
     compare(
       ['import Imported from "foo";', 'console.log(Imported);'],
       [
@@ -292,7 +292,7 @@ describe('inline-requires', () => {
     );
   });
 
-  it('should be compatible with `transform-modules-commonjs` when using named imports', function () {
+  test('should be compatible with `transform-modules-commonjs` when using named imports', function () {
     compare(
       [
         'import {a} from "./a";',
@@ -315,7 +315,7 @@ describe('inline-requires', () => {
     );
   });
 
-  it('should remove loc information from nodes', function () {
+  test('should remove loc information from nodes', function () {
     const ast = transform(['var x = require("x"); x']).ast;
     expect(ast).not.toBeNull();
     const expression = nullthrows(ast).program.body[0].expression;
@@ -332,7 +332,7 @@ describe('inline-requires', () => {
     expectNodeWithNoLocation(nullthrows(expression?.arguments)[0]);
   });
 
-  it('should not emit duplicate nodes', function () {
+  test('should not emit duplicate nodes', function () {
     const ast = transform([
       'var foo = require("foo");',
       'foo.bar()',
@@ -341,7 +341,7 @@ describe('inline-requires', () => {
     validateOutputAst(nullthrows(ast));
   });
 
-  it('respects nonMemoizedModules', function () {
+  test('respects nonMemoizedModules', function () {
     expect(
       transform(
         [

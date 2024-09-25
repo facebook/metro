@@ -12,7 +12,7 @@ import getMockName from '../getMockName';
 import path from 'path';
 
 describe('getMockName', () => {
-  it('extracts mock name from file path', () => {
+  test('extracts mock name from file path', () => {
     expect(getMockName(path.join('a', '__mocks__', 'c.js'))).toBe('c');
 
     expect(getMockName(path.join('a', '__mocks__', 'c', 'd.js'))).toBe(

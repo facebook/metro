@@ -14,7 +14,7 @@
 const getGraphId = require('../getGraphId');
 
 describe('getGraphId', () => {
-  it('generates a unique id from entry file', () => {
+  test('generates a unique id from entry file', () => {
     expect(
       getGraphId(
         '/root/waddup',
@@ -58,7 +58,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it('generates a unique id from transform options', () => {
+  test('generates a unique id from transform options', () => {
     expect(
       getGraphId(
         '/root/waddup',
@@ -102,7 +102,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it("order of keys in transform options doesn't matter", () => {
+  test("order of keys in transform options doesn't matter", () => {
     expect(
       getGraphId(
         '/root/waddup',
@@ -146,7 +146,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it("order of keys in custom transform options doesn't matter", () => {
+  test("order of keys in custom transform options doesn't matter", () => {
     expect(
       getGraphId(
         '/root/waddup',
@@ -198,7 +198,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it('generates different graph IDs for different custom resolver options', () => {
+  test('generates different graph IDs for different custom resolver options', () => {
     const transformOptions = {
       customTransformOptions: {},
       dev: true,
@@ -235,7 +235,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it("order of keys in custom resolver options doesn't matter", () => {
+  test("order of keys in custom resolver options doesn't matter", () => {
     const transformOptions = {
       customTransformOptions: {},
       dev: true,
@@ -274,7 +274,7 @@ describe('getGraphId', () => {
     );
   });
 
-  it('optional and nullable options are defaulted', () => {
+  test('optional and nullable options are defaulted', () => {
     expect(
       getGraphId(
         '/root/waddup',
