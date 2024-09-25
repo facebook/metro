@@ -41,8 +41,18 @@ export type TerminalReportableEvent =
       ...
     }
   | {
-      type: 'unstable_set_interaction_status',
-      status: ?string,
+      type: 'unstable_server_log',
+      level: 'info' | 'warn' | 'error',
+      data: string | Array<mixed>,
+      ...
+    }
+  | {
+      type: 'unstable_server_menu_updated',
+      message: string,
+      ...
+    }
+  | {
+      type: 'unstable_server_menu_cleared',
       ...
     };
 
@@ -251,6 +261,15 @@ class TerminalReporter {
       case 'client_log':
         logToConsole(this.terminal, event.level, event.mode, ...event.data);
         break;
+      case 'unstable_server_log':
+        const logFn = {
+          info: reporting.logInfo,
+          warn: reporting.logWarning,
+          error: reporting.logError,
+        }[event.level];
+        const [format, ...args] = [].concat(event.data);
+        logFn(this.terminal, String(format), ...args);
+        break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
         const version = 'v' + require('../../package.json').version;
@@ -385,8 +404,11 @@ class TerminalReporter {
       case 'bundle_transform_progressed_throttled':
         this._updateBundleProgress(event);
         break;
-      case 'unstable_set_interaction_status':
-        this._interactionStatus = event.status;
+      case 'unstable_server_menu_updated':
+        this._interactionStatus = event.message;
+        break;
+      case 'unstable_server_menu_cleared':
+        this._interactionStatus = null;
         break;
     }
   }
