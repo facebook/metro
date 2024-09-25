@@ -189,7 +189,7 @@ function logWarning(
   ...args: Array<mixed>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s: %s', chalk.yellow('warning'), str);
+  terminal.log('%s %s', chalk.yellow.inverse.bold(' WARN '), str);
 }
 
 /**
@@ -201,8 +201,8 @@ function logError(
   ...args: Array<mixed>
 ): void {
   terminal.log(
-    '%s: %s',
-    chalk.red('error'),
+    '%s %s',
+    chalk.red.inverse.bold(' ERROR '),
     // Syntax errors may have colors applied for displaying code frames
     // in various places outside of where Metro is currently running.
     // If the current terminal does not support color, we'll strip the colors
@@ -220,7 +220,7 @@ function logInfo(
   ...args: Array<mixed>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s: %s', chalk.cyan('info'), str);
+  terminal.log('%s %s', chalk.cyan.inverse.bold(' INFO '), str);
 }
 
 /**
