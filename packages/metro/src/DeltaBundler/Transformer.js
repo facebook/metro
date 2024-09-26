@@ -188,9 +188,8 @@ class Transformer {
     };
   }
 
-  end(): void {
-    // $FlowFixMe[unused-promise]
-    this._workerFarm.kill();
+  async end(): Promise<void> {
+    await this._workerFarm.kill();
   }
 }
 

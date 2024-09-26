@@ -59,6 +59,7 @@ export default class FSEventsWatcher extends EventEmitter {
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
+  +watcherInitialReaddirPromise: Promise<void>;
   _tracked: Set<string>;
 
   static isSupported(): boolean {
@@ -77,8 +78,7 @@ export default class FSEventsWatcher extends EventEmitter {
     dirCallback: (normalizedPath: string, stats: Stats) => void,
     fileCallback: (normalizedPath: string, stats: Stats) => void,
     symlinkCallback: (normalizedPath: string, stats: Stats) => void,
-    // $FlowFixMe[unclear-type] Add types for callback
-    endCallback: Function,
+    endCallback: () => void,
     // $FlowFixMe[unclear-type] Add types for callback
     errorCallback: Function,
     ignored?: Matcher,
@@ -91,9 +91,7 @@ export default class FSEventsWatcher extends EventEmitter {
       .on('file', FSEventsWatcher._normalizeProxy(fileCallback))
       .on('symlink', FSEventsWatcher._normalizeProxy(symlinkCallback))
       .on('error', errorCallback)
-      .on('end', () => {
-        endCallback();
-      });
+      .on('end', endCallback);
   }
 
   constructor(
@@ -132,29 +130,43 @@ export default class FSEventsWatcher extends EventEmitter {
     const trackPath = (filePath: string) => {
       this._tracked.add(filePath);
     };
-    FSEventsWatcher._recReaddir(
-      this.root,
-      trackPath,
-      trackPath,
-      trackPath,
-      // $FlowFixMe[method-unbinding] - Refactor
-      this.emit.bind(this, 'ready'),
-      // $FlowFixMe[method-unbinding] - Refactor
-      this.emit.bind(this, 'error'),
-      this.ignored,
-    );
+    this.watcherInitialReaddirPromise = new Promise(resolve => {
+      FSEventsWatcher._recReaddir(
+        this.root,
+        trackPath,
+        trackPath,
+        trackPath,
+        () => {
+          this.emit('ready');
+          resolve();
+        },
+        (...args) => {
+          this.emit('error', ...args);
+          resolve();
+        },
+        this.ignored,
+      );
+    });
   }
 
   /**
    * End watching.
    */
   async close(callback?: () => void): Promise<void> {
+    await this.watcherInitialReaddirPromise;
     await this.fsEventsWatchStopper();
     this.removeAllListeners();
-    if (typeof callback === 'function') {
-      // $FlowFixMe[extra-arg] - Is this a Node-style callback or as typed?
-      process.nextTick(callback.bind(null, null, true));
-    }
+
+    await new Promise(resolve => {
+      // it takes around 100ms for fsevents to release its resounces after
+      // watching is stopped. See __tests__/server-torn-down-test.js
+      setTimeout(() => {
+        if (typeof callback === 'function') {
+          callback();
+        }
+        resolve();
+      }, 100);
+    });
   }
 
   async _handleEvent(filepath: string) {

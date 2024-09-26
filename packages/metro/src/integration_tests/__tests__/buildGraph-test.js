@@ -16,7 +16,7 @@ const Metro = require('../../..');
 const path = require('path');
 
 jest.unmock('cosmiconfig');
-
+jest.useRealTimers();
 jest.setTimeout(120 * 1000);
 
 test('should build the dependency graph', async () => {

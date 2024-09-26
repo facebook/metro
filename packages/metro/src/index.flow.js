@@ -52,7 +52,7 @@ const {parse} = require('url');
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
-  end: () => void,
+  end: () => Promise<void>,
   metroServer: MetroServer,
   middleware: Middleware,
 };
@@ -67,6 +67,7 @@ export type RunServerOptions = $ReadOnly<{
   host?: string,
   onError?: (Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
+  onClose?: () => void,
   secureServerOptions?: Object,
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
@@ -223,8 +224,8 @@ const createConnectMiddleware = async function (
     },
     metroServer,
     middleware: enhancedMiddleware,
-    end(): void {
-      metroServer.end();
+    async end(): Promise<void> {
+      await metroServer.end();
     },
   };
 };
@@ -237,6 +238,7 @@ exports.runServer = async (
     host,
     onError,
     onReady,
+    onClose,
     secureServerOptions,
     secure, //deprecated
     secureCert, // deprecated
@@ -263,7 +265,11 @@ exports.runServer = async (
 
   const serverApp = connect();
 
-  const {middleware, end, metroServer} = await createConnectMiddleware(config, {
+  const {
+    middleware,
+    end: endMiddleware,
+    metroServer,
+  } = await createConnectMiddleware(config, {
     hasReducedPerformance,
     waitForBundler,
     watch,
@@ -297,11 +303,10 @@ exports.runServer = async (
       reject: mixed => mixed,
     ) => {
       httpServer.on('error', error => {
-        if (onError) {
-          onError(error);
-        }
-        reject(error);
-        end();
+        endMiddleware().finally(() => {
+          onError?.(error);
+          reject(error);
+        });
       });
 
       httpServer.listen(config.server.port, host, () => {
@@ -312,10 +317,6 @@ exports.runServer = async (
           port, // Assigned port if configured with port 0
           family,
         });
-
-        if (onReady) {
-          onReady(httpServer);
-        }
 
         websocketEndpoints = {
           ...websocketEndpoints,
@@ -344,6 +345,10 @@ exports.runServer = async (
           }
         });
 
+        if (onReady) {
+          onReady(httpServer);
+        }
+
         resolve(httpServer);
       });
 
@@ -353,7 +358,9 @@ exports.runServer = async (
       httpServer.timeout = 0;
 
       httpServer.on('close', () => {
-        end();
+        endMiddleware()?.finally(() => {
+          onClose?.();
+        });
       });
     },
   );
@@ -463,7 +470,7 @@ exports.buildGraph = async function (
       {customResolverOptions, dev},
     );
   } finally {
-    bundler.end();
+    await bundler.end();
   }
 };
 

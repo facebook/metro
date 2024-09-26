@@ -184,10 +184,13 @@ module.exports = class NodeWatcher extends EventEmitter {
   /**
    * Stop watching a directory.
    */
-  _stopWatching(dir: string) {
+  async _stopWatching(dir: string): Promise<void> {
     if (this.watched[dir]) {
-      this.watched[dir].close();
-      delete this.watched[dir];
+      await new Promise(resolve => {
+        this.watched[dir].once('close', () => process.nextTick(resolve));
+        this.watched[dir].close();
+        delete this.watched[dir];
+      });
     }
   }
 
@@ -195,7 +198,10 @@ module.exports = class NodeWatcher extends EventEmitter {
    * End watching.
    */
   async close(): Promise<void> {
-    Object.keys(this.watched).forEach(dir => this._stopWatching(dir));
+    const promises = Object.keys(this.watched).map(dir =>
+      this._stopWatching(dir),
+    );
+    await Promise.all(promises);
     this.removeAllListeners();
   }
 
@@ -345,11 +351,11 @@ module.exports = class NodeWatcher extends EventEmitter {
         return;
       }
       this._unregister(fullPath);
-      this._stopWatching(fullPath);
       this._unregisterDir(fullPath);
       if (registered) {
         this._emitEvent(DELETE_EVENT, relativePath);
       }
+      await this._stopWatching(fullPath);
     }
   }
 

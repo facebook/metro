@@ -1713,6 +1713,7 @@ class FSWatcher extends EventEmitter {
   close() {
     this._node.watchers.splice(this._node.watchers.indexOf(this._nodeWatcher));
     clearInterval(this._persistIntervalId);
+    this.emit('close');
   }
 
   _listener = (eventType: 'change' | 'rename', filePath: string) => {

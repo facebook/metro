@@ -79,10 +79,9 @@ class IncrementalBundler {
     this._deltaBundler = new DeltaBundler(this._bundler.getWatcher());
   }
 
-  end(): void {
+  async end(): Promise<void> {
     this._deltaBundler.end();
-    // $FlowFixMe[unused-promise]
-    this._bundler.end();
+    await this._bundler.end();
   }
 
   getBundler(): Bundler {

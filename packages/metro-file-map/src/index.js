@@ -736,7 +736,7 @@ export default class FileMap extends EventEmitter {
     try {
       await Promise.all(promises);
     } finally {
-      this._cleanup();
+      await this._cleanup();
     }
     this._startupPerfLogger?.point('applyFileDelta_process_end');
     this._startupPerfLogger?.point('applyFileDelta_add_start');
@@ -758,12 +758,11 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_end');
   }
 
-  _cleanup() {
+  async _cleanup() {
     const worker = this._worker;
 
     if (worker && typeof worker.end === 'function') {
-      // $FlowFixMe[unused-promise]
-      worker.end();
+      await worker.end();
     }
 
     this._worker = null;
@@ -1113,12 +1112,11 @@ export default class FileMap extends EventEmitter {
       clearInterval(this._healthCheckInterval);
     }
 
+    await this._cleanup();
+
     this._crawlerAbortController.abort();
 
-    if (!this._watcher) {
-      return;
-    }
-    await this._watcher.close();
+    await this._watcher?.close();
   }
 
   /**

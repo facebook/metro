@@ -316,7 +316,7 @@ function dep(name: string): TransformResultDependency {
           type: 'sourceFile',
           filePath: p('/root/a.another'),
         });
-        end();
+        await end();
 
         resolver = await createResolver({
           resolver: {sourceExts: ['js', 'another']},
@@ -1508,7 +1508,7 @@ function dep(name: string): TransformResultDependency {
           type: 'sourceFile',
           filePath: p('/root/foo.playstation.js'),
         });
-        end();
+        await end();
 
         resolver = await createResolver(
           {resolver: {platforms: ['playstation']}},
@@ -2181,7 +2181,7 @@ function dep(name: string): TransformResultDependency {
           type: 'sourceFile',
           filePath: p('/root/hasteModule.ios.js'),
         });
-        end();
+        await end();
 
         resolver = await createResolver(config, 'android');
         expect(
@@ -2204,7 +2204,7 @@ function dep(name: string): TransformResultDependency {
           type: 'sourceFile',
           filePath: p('/root/hasteModule.ios.js'),
         });
-        end();
+        await end();
 
         resolver = await createResolver(config, 'android');
         expect(

@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 jest.unmock('cosmiconfig');
-
+jest.useRealTimers();
 jest.setTimeout(60 * 1000);
 
 // Workaround for https://github.com/nodejs/node/issues/54484:
@@ -30,6 +30,7 @@ describe('Metro development server serves bundles via HTTP', () => {
   let config;
   let httpServer;
   const bundlesDownloaded = new Set();
+  let serverClosedPromise;
 
   async function downloadAndExec(path: string, context = {}): mixed {
     const response = await fetchAndClose(
@@ -53,17 +54,24 @@ describe('Metro development server serves bundles via HTTP', () => {
 
   beforeEach(async () => {
     bundlesDownloaded.clear();
+
     config = await Metro.loadConfig({
       config: require.resolve('../metro.config.js'),
     });
 
+    let onCloseResolve;
+    serverClosedPromise = new Promise(resolve => (onCloseResolve = resolve));
     httpServer = await Metro.runServer(config, {
       reporter: {update() {}},
+      onClose: () => {
+        onCloseResolve();
+      },
     });
   });
 
-  afterEach(done => {
-    httpServer.close(done);
+  afterEach(async () => {
+    httpServer.close();
+    await serverClosedPromise;
   });
 
   test('should serve development bundles', async () => {

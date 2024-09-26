@@ -83,6 +83,17 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 
 * `host (string)`: Where to host the server on.
 * `onReady (Function)`: Called when the server is ready to serve requests.
+* `onClose (Function)`: Called when the server and all other Metro processes are closed. You can also observe the server close event directly using `httpServer.on('close', () => {});`.
+
+```js
+const config = await Metro.loadConfig();
+
+const metroHttpServer = await Metro.runServer(config, {
+  onClose: () => {console.log('metro server and all associated processes are closed')}
+});
+
+httpServer.on('close', () => {console.log('metro server is closed')});
+```
 * `secure (boolean)`: **DEPRECATED** Whether the server should run on `https` instead of `http`.
 * `secureKey (string)`: **DEPRECATED** The key to use for `https` when `secure` is on.
 * `secureCert (string)`: **DEPRECATED** The cert to use for `https` when `secure` is on.

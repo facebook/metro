@@ -196,9 +196,9 @@ class Server {
     this._nextBundleBuildNumber = 1;
   }
 
-  end() {
+  async end() {
     if (!this._isEnded) {
-      this._bundler.end();
+      await this._bundler.end();
       this._isEnded = true;
     }
   }

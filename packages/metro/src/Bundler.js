@@ -26,13 +26,13 @@ export type BundlerOptions = $ReadOnly<{
 
 class Bundler {
   _depGraph: DependencyGraph;
-  _readyPromise: Promise<void>;
+  _initializedPromise: Promise<void>;
   _transformer: Transformer;
 
   constructor(config: ConfigT, options?: BundlerOptions) {
     this._depGraph = new DependencyGraph(config, options);
 
-    this._readyPromise = this._depGraph
+    this._initializedPromise = this._depGraph
       .ready()
       .then(() => {
         config.reporter.update({type: 'transformer_load_started'});
@@ -55,14 +55,15 @@ class Bundler {
   }
 
   async end(): Promise<void> {
-    await this._depGraph.ready();
+    await this.ready();
 
-    this._transformer.end();
-    this._depGraph.end();
+    await this._transformer.end();
+    await this._depGraph.end();
   }
 
   async getDependencyGraph(): Promise<DependencyGraph> {
-    await this._depGraph.ready();
+    await this.ready();
+
     return this._depGraph;
   }
 
@@ -74,7 +75,7 @@ class Bundler {
   ): Promise<TransformResultWithSource<>> {
     // We need to be sure that the DependencyGraph has been initialized.
     // TODO: Remove this ugly hack!
-    await this._depGraph.ready();
+    await this.ready();
 
     return this._transformer.transformFile(
       filePath,
@@ -85,7 +86,7 @@ class Bundler {
 
   // Waits for the bundler to become ready.
   async ready(): Promise<void> {
-    await this._readyPromise;
+    await this._initializedPromise;
   }
 }
 
