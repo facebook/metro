@@ -1216,6 +1216,7 @@ class MemoryFs {
     if (spec == null) {
       throw new Error(`flags not supported: \`${flags.toString()}\``);
     }
+    // $FlowFixMe[incompatible-type]
     const {writable = false, readable = false} = spec;
     const {exclusive, mustExist, truncate} = spec;
     let {dirNode, node, basename, dirPath} = this._resolve(filePath);
