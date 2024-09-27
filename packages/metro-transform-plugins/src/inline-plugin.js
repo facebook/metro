@@ -60,17 +60,15 @@ function inlinePlugin(
     options.requireName || 'require',
   );
 
-  // $FlowFixMe[deprecated-type]
-  function isGlobal(binding: ?Binding): boolean %checks {
+  function isGlobal(binding: ?Binding): boolean {
     return !binding;
   }
 
   const isFlowDeclared = (binding: Binding) =>
     t.isDeclareVariable(binding.path);
 
-  // $FlowFixMe[deprecated-type]
-  function isGlobalOrFlowDeclared(binding: ?Binding): boolean %checks {
-    return isGlobal(binding) || isFlowDeclared(binding);
+  function isGlobalOrFlowDeclared(binding: ?Binding): boolean {
+    return !binding || isFlowDeclared(binding);
   }
 
   const isLeftHandSideOfAssignmentExpression = (

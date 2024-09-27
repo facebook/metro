@@ -363,8 +363,12 @@ function getNameForPath(path: NodePath<>): string {
   return name;
 }
 
-// $FlowFixMe[deprecated-type]
-function isAnyCallExpression(node: Node): boolean %checks {
+function isAnyCallExpression(
+  node: Node,
+): node is
+  | BabelNodeNewExpression
+  | BabelNodeCallExpression
+  | BabelNodeOptionalCallExpression {
   return (
     node.type === 'CallExpression' ||
     node.type === 'NewExpression' ||
@@ -372,8 +376,12 @@ function isAnyCallExpression(node: Node): boolean %checks {
   );
 }
 
-// $FlowFixMe[deprecated-type]
-function isAnyMemberExpression(node: Node): boolean %checks {
+function isAnyMemberExpression(
+  node: Node,
+): node is
+  | BabelNodeMemberExpression
+  | BabelNodeJSXMemberExpression
+  | BabelNodeOptionalMemberExpression {
   return (
     node.type === 'MemberExpression' ||
     node.type === 'JSXMemberExpression' ||
@@ -381,8 +389,9 @@ function isAnyMemberExpression(node: Node): boolean %checks {
   );
 }
 
-// $FlowFixMe[deprecated-type]
-function isAnyIdentifier(node: Node): boolean %checks {
+function isAnyIdentifier(
+  node: Node,
+): node is BabelNodeIdentifier | BabelNodeJSXIdentifier {
   return isIdentifier(node) || isJSXIdentifier(node);
 }
 
