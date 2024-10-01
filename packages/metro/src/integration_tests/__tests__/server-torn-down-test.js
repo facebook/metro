@@ -28,6 +28,7 @@ describe('Server torn down test', () => {
           'Timeout',
           'TickObject',
           'FSREQCALLBACK',
+          'FSREQPROMISE',
           'FSEVENTWRAP',
           'SIGNALWRAP',
         ].includes(type)
@@ -70,7 +71,8 @@ describe('Server torn down test', () => {
   maybeTest(
     '[macOS (darwin) only] fsevents to be destroyed after 100ms',
     async () => {
-      // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
+      // imported in metro-file-map
+      // eslint-disable-next-line import/no-extraneous-dependencies
       const fsevents = require('fsevents');
 
       const fsEventsWatchStopper = fsevents.watch(__filename, () => {});
