@@ -119,7 +119,9 @@ async function worker(
   }
 
   if (readLink) {
+    console.log('symlinkTarget before');
     symlinkTarget = await fsPromises.readlink(filePath);
+    console.log('symlinkTarget after');
   }
 
   return {dependencies, id, module, sha1, symlinkTarget};

@@ -114,7 +114,11 @@ describe('Server torn down test', () => {
 
     httpServer.close();
 
+    console.log('closePromise before');
+
     await closePromise;
+
+    console.log('closePromise after');
 
     expect(Array.from(active.values())).toEqual([]);
   });
