@@ -168,11 +168,19 @@ The set of file extensions used to identify asset files. Defaults to [`resolver.
 
 `true` if the resolution is for a development bundle, or `false` otherwise.
 
-#### `doesFileExist: string => boolean`
+#### `doesFileExist: string => boolean` <div class="label deprecated">Deprecated</div>
 
 Returns `true` if the file with the given path exists, or `false` otherwise.
 
-By default, Metro implements this by consulting an in-memory map of the filesystem that has been prepared in advance. This approach avoids disk I/O during module resolution.
+The default implementation wraps [`fileSystemLookup`](#filesystemlookup-string--exists-true-type-fd-realpath-string--exists-false) - prefer using that directly.
+
+#### `fileSystemLookup: string => {exists: true, type: 'f'|'d', realPath: string} | {exists: false}`
+
+*Added in v0.81.0*
+
+Return information about the given absolute or project-relative path, following symlinks. A file "exists" if and only if it is watched, and a directory must be non-empty. The returned `realPath` is real and absolute.
+
+By default, Metro implements this by consulting an in-memory map of the filesystem that has been prepared in advance. This approach avoids disk I/O during module resolution and performs realpath resolution at negligible additional cost.
 
 #### `nodeModulesPaths: $ReadOnlyArray<string>`
 
@@ -266,6 +274,8 @@ type Resolution =
   | {type: 'sourceFile', filePath: string}
   | {type: 'assetFiles', filePaths: $ReadOnlyArray<string>};
 ```
+
+Returned paths (`filePath` and `filePaths`) must be *absolute* and *real*, such as the `realPath` returned by  [`fileSystemLookup`](#filesystemlookup-string--exists-true-type-fd-realpath-string--exists-false).
 
 When calling the default resolver with a non-null `resolveRequest` function, it represents a custom resolver and will always be called, fully replacing the default resolution logic.
 
