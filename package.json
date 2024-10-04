@@ -39,7 +39,7 @@
     "jest-watch-typeahead": "^2.2.0",
     "jsonc-eslint-parser": "^2.3.0",
     "metro-babel-register": "*",
-    "micromatch": "^4.0.4",
+    "micromatch": "^4.0.8",
     "prettier": "2.8.8",
     "prettier-plugin-hermes-parser": "0.24.0",
     "progress": "^2.0.0",
