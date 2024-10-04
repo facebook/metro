@@ -110,18 +110,11 @@ export function resolvePackageTargetFromExports(
       }
     }
 
-    if (context.unstable_fileSystemLookup != null) {
-      const lookupResult = context.unstable_fileSystemLookup(filePath);
-      if (lookupResult.exists && lookupResult.type === 'f') {
-        return {
-          type: 'sourceFile',
-          filePath: lookupResult.realPath,
-        };
-      }
-    } else if (context.doesFileExist(filePath)) {
+    const lookupResult = context.fileSystemLookup(filePath);
+    if (lookupResult.exists && lookupResult.type === 'f') {
       return {
         type: 'sourceFile',
-        filePath,
+        filePath: lookupResult.realPath,
       };
     }
 

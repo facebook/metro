@@ -54,20 +54,7 @@ export function createResolutionContext(
       (typeof fileMap[filePath] === 'string' ||
         typeof fileMap[filePath].realPath === 'string'),
     extraNodeModules: null,
-    mainFields: ['browser', 'main'],
-    nodeModulesPaths: [],
-    preferNativePlatform: false,
-    redirectModulePath: (filePath: string) => filePath,
-    resolveAsset: (filePath: string) => null,
-    resolveHasteModule: (name: string) => null,
-    resolveHastePackage: (name: string) => null,
-    sourceExts: ['js', 'jsx', 'json', 'ts', 'tsx'],
-    unstable_conditionNames: ['require'],
-    unstable_conditionsByPlatform: {
-      web: ['browser'],
-    },
-    unstable_enablePackageExports: false,
-    unstable_fileSystemLookup: inputPath => {
+    fileSystemLookup: inputPath => {
       // Normalise and remove any trailing slash.
       const filePath = path.resolve(inputPath);
       const candidate = fileMap[filePath];
@@ -89,6 +76,19 @@ export function createResolutionContext(
         realPath: candidate.realPath,
       };
     },
+    mainFields: ['browser', 'main'],
+    nodeModulesPaths: [],
+    preferNativePlatform: false,
+    redirectModulePath: (filePath: string) => filePath,
+    resolveAsset: (filePath: string) => null,
+    resolveHasteModule: (name: string) => null,
+    resolveHastePackage: (name: string) => null,
+    sourceExts: ['js', 'jsx', 'json', 'ts', 'tsx'],
+    unstable_conditionNames: ['require'],
+    unstable_conditionsByPlatform: {
+      web: ['browser'],
+    },
+    unstable_enablePackageExports: false,
     unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
   };

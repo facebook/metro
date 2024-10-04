@@ -189,6 +189,7 @@ class DependencyGraph extends EventEmitter {
       doesFileExist: this._doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
+      fileSystemLookup,
       getHasteModulePath: (name, platform) =>
         this._hasteMap.getModule(name, platform, true),
       getHastePackagePath: (name, platform) =>
@@ -219,7 +220,6 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
-      unstable_fileSystemLookup: fileSystemLookup,
     });
   }
 

@@ -66,6 +66,7 @@ type Options<TPackage> = $ReadOnly<{
   doesFileExist: DoesFileExist,
   emptyModulePath: string,
   extraNodeModules: ?Object,
+  fileSystemLookup: FileSystemLookup,
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
   mainFields: $ReadOnlyArray<string>,
@@ -82,7 +83,6 @@ type Options<TPackage> = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
-  unstable_fileSystemLookup: ?FileSystemLookup,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -142,6 +142,7 @@ class ModuleResolver<TPackage: Packageish> {
       disableHierarchicalLookup,
       doesFileExist,
       extraNodeModules,
+      fileSystemLookup,
       mainFields,
       nodeModulesPaths,
       preferNativePlatform,
@@ -151,7 +152,6 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionNames,
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
-      unstable_fileSystemLookup,
     } = this._options;
 
     try {
@@ -164,6 +164,7 @@ class ModuleResolver<TPackage: Packageish> {
             disableHierarchicalLookup,
             doesFileExist,
             extraNodeModules,
+            fileSystemLookup,
             mainFields,
             nodeModulesPaths,
             preferNativePlatform,
@@ -173,7 +174,6 @@ class ModuleResolver<TPackage: Packageish> {
             unstable_conditionNames,
             unstable_conditionsByPlatform,
             unstable_enablePackageExports,
-            unstable_fileSystemLookup,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
             originModulePath: fromModule.path,

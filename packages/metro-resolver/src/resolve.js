@@ -135,22 +135,20 @@ function resolve(
   const allDirPaths = nodeModulesPaths
     .map(nodeModulePath => {
       let lookupResult = null;
-      if (context.unstable_fileSystemLookup) {
-        // Insight: The module can only exist if there is a `node_modules` at
-        // this path. Redirections cannot succeed, because we will never look
-        // beyond a node_modules path segment for finding the closest
-        // package.json. Moreover, if the specifier contains a '/' separator,
-        // the first part *must* be a real directory, because it is the
-        // shallowest path that can possibly contain a redirecting package.json.
-        const mustBeDirectory =
-          parsedSpecifier.posixSubpath !== '.' ||
-          parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
-            ? nodeModulePath + path.sep + parsedSpecifier.firstPart
-            : nodeModulePath;
-        lookupResult = context.unstable_fileSystemLookup(mustBeDirectory);
-        if (!lookupResult.exists || lookupResult.type !== 'd') {
-          return null;
-        }
+      // Insight: The module can only exist if there is a `node_modules` at
+      // this path. Redirections cannot succeed, because we will never look
+      // beyond a node_modules path segment for finding the closest
+      // package.json. Moreover, if the specifier contains a '/' separator,
+      // the first part *must* be a real directory, because it is the
+      // shallowest path that can possibly contain a redirecting package.json.
+      const mustBeDirectory =
+        parsedSpecifier.posixSubpath !== '.' ||
+        parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
+          ? nodeModulePath + path.sep + parsedSpecifier.firstPart
+          : nodeModulePath;
+      lookupResult = context.fileSystemLookup(mustBeDirectory);
+      if (!lookupResult.exists || lookupResult.type !== 'd') {
+        return null;
       }
       return path.join(nodeModulePath, realModuleName);
     })
@@ -398,12 +396,8 @@ function resolvePackageEntryPoint(
   packagePath: string,
   platform: string | null,
 ): Result<Resolution, FileCandidates> {
-  const dirLookup = context.unstable_fileSystemLookup?.(packagePath);
-
-  if (
-    dirLookup != null &&
-    (dirLookup.exists === false || dirLookup.type !== 'd')
-  ) {
+  const dirLookup = context.fileSystemLookup(packagePath);
+  if (dirLookup.exists == false || dirLookup.type !== 'd') {
     return failedFor({
       type: 'sourceFile',
       filePathPrefix: packagePath,
@@ -575,13 +569,9 @@ function resolveSourceFileForExt(
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
-  if (context.unstable_fileSystemLookup) {
-    const lookupResult = context.unstable_fileSystemLookup(redirectedPath);
-    if (lookupResult.exists && lookupResult.type === 'f') {
-      return lookupResult.realPath;
-    }
-  } else if (context.doesFileExist(redirectedPath)) {
-    return redirectedPath;
+  const lookupResult = context.fileSystemLookup(redirectedPath);
+  if (lookupResult.exists && lookupResult.type === 'f') {
+    return lookupResult.realPath;
   }
   context.candidateExts.push(extension);
   return null;

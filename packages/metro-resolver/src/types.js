@@ -124,6 +124,12 @@ export type ResolutionContext = $ReadOnly<{
   assetExts: $ReadOnlySet<string>,
   customResolverOptions: CustomResolverOptions,
   disableHierarchicalLookup: boolean,
+
+  /**
+   * Determine whether a regular file exists at the given path.
+   *
+   * @deprecated, prefer `fileSystemLookup`
+   */
   doesFileExist: DoesFileExist,
   extraNodeModules: ?{[string]: string, ...},
 
@@ -150,6 +156,13 @@ export type ResolutionContext = $ReadOnly<{
    * and may not be used for resolution purposes.
    */
   dependency?: TransformResultDependency,
+
+  /**
+   * Synchonously returns information about a given absolute path, including
+   * whether it exists, whether it is a file or directory, and its absolute
+   * real path.
+   */
+  fileSystemLookup: FileSystemLookup,
 
   /**
    * The ordered list of fields to read in `package.json` to resolve a main
@@ -189,7 +202,6 @@ export type ResolutionContext = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
-  unstable_fileSystemLookup?: ?FileSystemLookup,
   unstable_logWarning: (message: string) => void,
 }>;
 
