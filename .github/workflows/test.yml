@@ -14,10 +14,14 @@ on:
         type: string
         required: false
         default: 'false'
+      only-integration-tests:
+        type: string
+        required: false
+        default: 'false'
 
 jobs:
   test:
-    name: "Tests [Node.js ${{ inputs.node-version }}, ${{ inputs.runs-on }}, ${{ inputs.no-lockfile == 'false' && 'Using yarn.lock' || 'Ignoring yarn.lock' }}]"
+    name: "${{inputs.only-integration-tests =='true' && 'Integration' || 'All'}} Tests [Node.js ${{ inputs.node-version }}, ${{ inputs.runs-on }}, ${{ inputs.no-lockfile == 'false' && 'Using yarn.lock' || 'Ignoring yarn.lock' }}]"
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
@@ -26,4 +30,4 @@ jobs:
           node-version: ${{ inputs.node-version }}
           no-lockfile: ${{ inputs.no-lockfile }}
       - name: Run Jest Tests
-        run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
+        run: yarn jest ${{inputs.only-integration-tests == 'true'  && '"integration"' || ''}} --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
