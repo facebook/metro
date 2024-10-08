@@ -18,7 +18,9 @@ const NetworkError = require('./NetworkError');
 const {backOff} = require('exponential-backoff');
 const http = require('http');
 const https = require('https');
-const url = require('url');
+// $FlowFixMe[untyped-import] https-proxy-agent is not flow typed
+// $FlowFixMe[cannot-resolve-module] https-proxy-agent is not flow typed
+const {HttpsProxyAgent} = require('https-proxy-agent');
 const zlib = require('zlib');
 
 export type Options =
@@ -46,6 +48,8 @@ type EndpointOptions = {
   maxAttempts?: number,
   retryNetworkErrors?: boolean,
   retryStatuses?: $ReadOnlySet<number>,
+  socketPath?: string,
+  proxy?: string,
 };
 
 type Endpoint = {
@@ -115,19 +119,29 @@ class HttpStore<T> {
       agentConfig.ca = options.ca;
     }
 
-    const uri = url.parse(options.endpoint);
+    if (options.socketPath != null) {
+      // $FlowFixMe `socketPath` is missing in the Flow definition
+      agentConfig.socketPath = options.socketPath;
+    }
+
+    const uri = new URL(options.endpoint);
     const module = uri.protocol === 'http:' ? http : https;
+
+    let agent = new module.Agent(agentConfig);
+    if (options.proxy != null) {
+      agent = new HttpsProxyAgent(options.proxy, agentConfig);
+    }
 
     if (!uri.hostname || !uri.pathname) {
       throw new TypeError('Invalid endpoint: ' + options.endpoint);
     }
 
     return {
+      agent,
       headers: options.headers,
       host: uri.hostname,
       path: uri.pathname,
       port: +uri.port,
-      agent: new module.Agent(agentConfig),
       params: new URLSearchParams(options.params),
       timeout: options.timeout || 5000,
       module: uri.protocol === 'http:' ? http : https,
