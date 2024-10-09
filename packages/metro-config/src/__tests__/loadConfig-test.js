@@ -18,7 +18,7 @@ const {loadConfig} = require('../loadConfig');
 const cosmiconfig = require('cosmiconfig');
 const path = require('path');
 const prettyFormat = require('pretty-format');
-const stripAnsi = require('strip-ansi');
+const util = require('util');
 
 describe('loadConfig', () => {
   beforeEach(() => {
@@ -182,7 +182,7 @@ describe('loadConfig', () => {
     try {
       await loadConfig({});
     } catch (error) {
-      expect(stripAnsi(error.message)).toMatchSnapshot();
+      expect(util.stripVTControlCharacters(error.message)).toMatchSnapshot();
     }
   });
 
@@ -198,7 +198,7 @@ describe('loadConfig', () => {
     try {
       await loadConfig({});
     } catch (error) {
-      expect(stripAnsi(error.message)).toMatchSnapshot();
+      expect(util.stripVTControlCharacters(error.message)).toMatchSnapshot();
     }
   });
 

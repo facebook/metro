@@ -17,7 +17,6 @@ import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const chalk = require('chalk');
-const stripAnsi = require('strip-ansi');
 const util = require('util');
 
 export type BundleDetails = {
@@ -207,7 +206,7 @@ function logError(
     // in various places outside of where Metro is currently running.
     // If the current terminal does not support color, we'll strip the colors
     // here.
-    util.format(chalk.supportsColor ? format : stripAnsi(format), ...args),
+    util.format(chalk.supportsColor ? format : util.stripVTControlCharacters(format), ...args),
   );
 }
 
