@@ -86,6 +86,9 @@
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/scripts/setupJestAfterEnv.js"
+    ],
     "watchPlugins": [
       "jest-watch-typeahead/filename",
       "jest-watch-typeahead/testname"
