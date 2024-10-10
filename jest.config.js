@@ -9,6 +9,12 @@
  */
 
 module.exports = function jestConfig() {
+  const testPathIgnorePatterns = [];
+  if (process.env.NIGHTLY_TESTS_NO_LOCKFILE) {
+    // flaky babel types test - this should be removed once babel is updated
+    testPathIgnorePatterns.push('__tests__/babel-lib-defs-test.js');
+  }
+
   /** @type {import('jest').Config} **/
   const config = {
     modulePathIgnorePatterns: ['/node_modules/', 'packages/[^/]+/build/'],
@@ -18,6 +24,7 @@ module.exports = function jestConfig() {
     },
     testEnvironment: 'node',
     testRegex: '/__tests__/.*-test\\.js$',
+    testPathIgnorePatterns,
     fakeTimers: {
       enableGlobally: true,
       legacyFakeTimers: false,

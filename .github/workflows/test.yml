@@ -27,3 +27,5 @@ jobs:
           no-lockfile: ${{ inputs.no-lockfile }}
       - name: Run Jest Tests
         run: yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'
+        env:
+          NIGHTLY_TESTS_NO_LOCKFILE: ${{ inputs.no-lockfile }}
