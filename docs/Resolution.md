@@ -158,6 +158,27 @@ Parameters: (*context*, *moduleName*, *platform*)
    2. `'a/b'`, relative path `'./c'`
    3. `'a'`, with relative path `'./b/c'`
 
+#### BROWSER_SPEC_REDIRECTION
+
+Parameters: (*context*, *moduleName*)
+
+Based on [`defunctzombie/package-browser-field-spec`](https://github.com/defunctzombie/package-browser-field-spec), apply redirections to specifiers, based on the closest `package.json` to the origin or target module.
+
+1. Find the closest `package.json` to *moduleName*, if *moduleName* is absolute, or to [`context.originModulePath`](#originmodulepath-string) otherwise, stopping at any `node_modules`. Let *packageScope* be its containing directory.
+2. If none is found, return *moduleName*.
+3. Define *subpath*:
+    1. If *moduleName* begins `'.'`, consider it relative to [`context.originModulePath`](#originmodulepath-string) and let *subpath* be the same path relative to *packageScope*, prefixed `'./'`.
+    2. Else if *moduleName* is absolute, let *subpath* be *moduleName* relative to *packageScope*, prefixed `'./'`.
+    3. Else let *subpath* be *moduleName*.
+4. Taking each of [`context.mainFields`](#mainfields-readonlyarraystring) as a key, let *mainFieldValue* be the value at that key within the `package.json` at *packageScope*.
+    1. If *mainFieldValue* is an object, let *expandedSubPath* range over *subpath*, *subpath* + `'.js'` and *subpath* + `'.json'`.
+        1. If *mainFieldValue* has the key *expandedSubpath*, let *redirectedPath* be its value, else continue.
+        2. If *moduleName* is absolute or begins `'.'`, and *redirectedPath* is a string:
+            1. If *redirectedPath* is an absolute path, return *redirectedPath*.
+            2. Return *packageScope* joined with *redirectedPath*.
+        3. Return *redirectedPath*.
+5. Return *moduleName*.
+
 ### Resolution context
 
 #### `assetExts: $ReadOnlySet<string>`
@@ -198,7 +219,7 @@ Rewrites a module path, or returns `false` to redirect to the special [empty mod
 
 Metro uses this to implement the `package.json` [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), particularly the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files.
 
-The default implementation of this function respects [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
+The default implementation of this function is specified by [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection).
 
 #### `resolveAsset: (dirPath: string, assetName: string, extension: string) => ?$ReadOnlyArray<string>`
 
