@@ -21,6 +21,7 @@ import type {
 
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import FailedToResolveUnsupportedError from './errors/FailedToResolveUnsupportedError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
@@ -55,6 +56,12 @@ function resolve(
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
+  }
+
+  if (moduleName.startsWith('#')) {
+    throw new FailedToResolveUnsupportedError(
+      'Specifier starts with "#" but subpath imports are not currently supported.',
+    );
   }
 
   const realModuleName = redirectModulePath(context, moduleName);

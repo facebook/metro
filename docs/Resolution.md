@@ -63,28 +63,30 @@ Parameters: (*context*, *moduleName*, *platform*)
 
 1. If a [custom resolver](#resolverequest-customresolver) is defined, then
     1. Return the result of the custom resolver.
-2. Otherwise, attempt to resolve *moduleName* as a path
-    1. Let *absoluteModuleName* be the result of prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) with *moduleName*.
+2. If *moduleName* is an absolute path, or equal to `'.'` or `'..'`, or begins `'./'` or `'../'`
+    1. Let *absoluteModuleName* be *moduleName* if it is absolute path, otherwise the result of prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) with *moduleName*.
     2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *absoluteModuleName*, *platform*), or continue.
-3. Apply [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. If this is `false`:
+3. If *moduleName* begins `'#'`
+    1. Throw an error. This will be replaced with subpath imports support in a non-breaking future release.
+4. Apply [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. If this is `false`:
     1. Return the empty module.
-4. If [Haste resolutions are allowed](#allowhaste-boolean), then
+5. If [Haste resolutions are allowed](#allowhaste-boolean), then
     1. Get the result of [**RESOLVE_HASTE**](#resolve_haste)(*context*, *moduleName*, *platform*).
     2. If resolved as a Haste package path, then
         1. Perform the algorithm for resolving a path (step 2 above). Throw an error if this resolution fails.
             For example, if the Haste package path for `'a/b'` is `foo/package.json`, perform step 2 as if _moduleName_ was `foo/c`.
-5. If [`context.disableHierarchicalLookup`](#disableHierarchicalLookup-boolean) is not `true`, then
+6. If [`context.disableHierarchicalLookup`](#disableHierarchicalLookup-boolean) is not `true`, then
     1. Try resolving _moduleName_ under `node_modules` from the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) up to the root directory.
     2. Perform [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*) for each candidate path.
-6. For each element _nodeModulesPath_ of [`context.nodeModulesPaths`](#nodemodulespaths-readonlyarraystring):
+7. For each element _nodeModulesPath_ of [`context.nodeModulesPaths`](#nodemodulespaths-readonlyarraystring):
     1. Try resolving _moduleName_ under _nodeModulesPath_ as if the latter was another `node_modules` directory (similar to step 5 above).
     2. Perform [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*) for each candidate path.
-7. If [`context.extraNodeModules`](#extranodemodules-string-string) is set:
+8. If [`context.extraNodeModules`](#extranodemodules-string-string) is set:
     1. Split _moduleName_ into a package name (including an optional [scope](https://docs.npmjs.com/cli/v8/using-npm/scope)) and relative path.
     2. Look up the package name in [`context.extraNodeModules`](#extranodemodules-string-string). If found, then
         1. Construct a path _modulePath_ by replacing the package name part of _moduleName_ with the value found in [`context.extraNodeModules`](#extranodemodules-string-string)
         2. Return the result of [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *modulePath*, *platform*).
-8. If no valid resolution has been found, throw a resolution failure error.
+9. If no valid resolution has been found, throw a resolution failure error.
 
 #### RESOLVE_MODULE
 

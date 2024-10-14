@@ -210,8 +210,14 @@ class ModuleResolver<TPackage: Packageish> {
             dependency,
           },
         );
-      }
-      if (error instanceof Resolver.FailedToResolveNameError) {
+      } else if (error instanceof Resolver.FailedToResolveUnsupportedError) {
+        throw new UnableToResolveError(
+          fromModule.path,
+          dependency.name,
+          error.message,
+          {cause: error, dependency},
+        );
+      } else if (error instanceof Resolver.FailedToResolveNameError) {
         const dirPaths = error.dirPaths;
         const extraPaths = error.extraPaths;
         const displayDirPaths = dirPaths
