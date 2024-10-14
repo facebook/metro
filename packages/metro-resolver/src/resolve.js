@@ -26,7 +26,7 @@ import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurati
 import InvalidPackageError from './errors/InvalidPackageError';
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
-import {getPackageEntryPoint} from './PackageResolve';
+import {getPackageEntryPoint, redirectModulePath} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import path from 'path';
@@ -57,7 +57,7 @@ function resolve(
     return result.resolution;
   }
 
-  const realModuleName = context.redirectModulePath(moduleName);
+  const realModuleName = redirectModulePath(context, moduleName);
 
   // exclude
   if (realModuleName === false) {
@@ -155,7 +155,7 @@ function resolve(
     .filter(Boolean)
     .concat(extraPaths);
   for (let i = 0; i < allDirPaths.length; ++i) {
-    const candidate = context.redirectModulePath(allDirPaths[i]);
+    const candidate = redirectModulePath(context, allDirPaths[i]);
 
     if (candidate === false) {
       return {type: 'empty'};
@@ -224,7 +224,7 @@ function resolveModulePath(
       ? toModuleName
       : toModuleName.replaceAll('/', '\\')
     : path.join(path.dirname(context.originModulePath), toModuleName);
-  const redirectedPath = context.redirectModulePath(modulePath);
+  const redirectedPath = redirectModulePath(context, modulePath);
   if (redirectedPath === false) {
     return resolvedAs({type: 'empty'});
   }
@@ -565,7 +565,7 @@ function resolveSourceFileForExt(
   const filePath = `${context.filePathPrefix}${extension}`;
   const redirectedPath =
     // Any redirections for the bare path have already happened
-    extension !== '' ? context.redirectModulePath(filePath) : filePath;
+    extension !== '' ? redirectModulePath(context, filePath) : filePath;
   if (redirectedPath === false) {
     return {type: 'empty'};
   }

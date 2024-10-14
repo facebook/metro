@@ -66,7 +66,7 @@ Parameters: (*context*, *moduleName*, *platform*)
 2. Otherwise, attempt to resolve *moduleName* as a path
     1. Let *absoluteModuleName* be the result of prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) with *moduleName*.
     2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *absoluteModuleName*, *platform*), or continue.
-3. Apply [redirections](#redirectmodulepath-string--string--false) to *moduleName*. If this results in an [empty module](#empty-module), then
+3. Apply [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. If this is `false`:
     1. Return the empty module.
 4. If [Haste resolutions are allowed](#allowhaste-boolean), then
     1. Get the result of [**RESOLVE_HASTE**](#resolve_haste)(*context*, *moduleName*, *platform*).
@@ -90,7 +90,7 @@ Parameters: (*context*, *moduleName*, *platform*)
 
 Parameters: (*context*, *moduleName*, *platform*)
 
-1. Let *filePath* be the result of applying [redirections](#redirectmodulepath-string--string--false) to *moduleName*. This may locate a replacement subpath from a containing `package.json` file based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec).
+1. Let *filePath* be the result of applying [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. This may locate a replacement subpath from a containing `package.json` file based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec).
 2. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *filePath*, *platform*), or continue.
 3. Otherwise, let *dirPath* be the directory path of *filePath*.
 4. If a file *dirPath* + `'package.json'` exists, resolve based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec):
@@ -130,7 +130,7 @@ Parameters: (*context*, *filePath*, *platform*)
 1. If the path refers to an [asset](#assetexts-readonlysetstring), then
     1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *filePath*, *platform*).
 2. Otherwise, if the path [exists](#doesfileexist-string--boolean), then
-    1. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean) after applying [redirections](#redirectmodulepath-string--string--false). For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
+    1. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean) after applying [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection). For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
         1. _moduleName_ + `'.android.js'`
         2. _moduleName_ + `'.native.js'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
         3. _moduleName_ + `'.js'`
@@ -213,13 +213,11 @@ By default this is set to [`resolver.nodeModulesPaths`](./Configuration.md#nodem
 
 If `true`, try `.native.${ext}` before `.${ext}` and after `.${platform}.${ext}` during resolution. Metro sets this to `true`.
 
-#### `redirectModulePath: string => string | false`
-
-Rewrites a module path, or returns `false` to redirect to the special [empty module](#empty-module). In the default resolver, the resolution algorithm terminates with an [empty module result](#empty-module) if `redirectModulePath` returns `false`.
-
-Metro uses this to implement the `package.json` [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec), particularly the ability to [replace](https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced) and [ignore](https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module) specific files.
+#### `redirectModulePath: string => string | false` <div class="label deprecated">Deprecated</div>
 
 The default implementation of this function is specified by [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection).
+
+Metro's default resolver does not call this function, instead using the [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) implementation directly. It is exposed here for backwards-compatible use by custom resolvers, but is considered deprecated and will be removed in a future release.
 
 #### `resolveAsset: (dirPath: string, assetName: string, extension: string) => ?$ReadOnlyArray<string>`
 

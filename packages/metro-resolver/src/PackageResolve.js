@@ -69,8 +69,6 @@ export function getPackageEntryPoint(
  *
  * Implements legacy (non-exports) package resolution behaviour based on the
  * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec).
- *
- * This is the default implementation of `context.redirectModulePath`.
  */
 export function redirectModulePath(
   context: $ReadOnly<{

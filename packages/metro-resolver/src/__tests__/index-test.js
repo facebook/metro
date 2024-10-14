@@ -15,8 +15,7 @@ import type {ResolutionContext} from '../index';
 
 import {createResolutionContext} from './utils';
 
-const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
-const Resolver = require('../index');
+let Resolver = require('../index');
 
 const fileMap = {
   '/root/project/foo.js': '',
@@ -107,7 +106,7 @@ test('resolves a relative path in another folder', () => {
 
 test('does not resolve a relative path ending in a slash as a file', () => {
   expect(() => Resolver.resolve(CONTEXT, './bar/', null)).toThrow(
-    new FailedToResolvePathError({
+    new Resolver.FailedToResolvePathError({
       file: null,
       dir: {
         type: 'sourceFile',
@@ -137,7 +136,7 @@ test('fails to resolve a relative path', () => {
     Resolver.resolve(CONTEXT, './apple', null);
     throw new Error('should not reach');
   } catch (error) {
-    if (!(error instanceof FailedToResolvePathError)) {
+    if (!(error instanceof Resolver.FailedToResolvePathError)) {
       throw error;
     }
     expect(error.candidates).toEqual({
@@ -209,7 +208,10 @@ test('does not resolve to additional `node_modules` if `nodeModulesPaths` is not
 });
 
 test('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
-  const context = {...CONTEXT, nodeModulesPaths: ['/other-root/node_modules']};
+  const context = {
+    ...CONTEXT,
+    nodeModulesPaths: ['/other-root/node_modules'],
+  };
   expect(Resolver.resolve(context, 'banana', null)).toEqual({
     type: 'sourceFile',
     filePath: '/other-root/node_modules/banana/main.js',
@@ -339,12 +341,29 @@ test('throws a descriptive error when a file inside a Haste package cannot be re
 });
 
 describe('redirectModulePath', () => {
-  const redirectModulePath = jest.fn();
-  const context = {...CONTEXT, redirectModulePath};
+  const mockRedirectModulePath = jest.fn();
+  const context = CONTEXT;
 
   beforeEach(() => {
-    redirectModulePath.mockReset();
-    redirectModulePath.mockImplementation(filePath => false);
+    mockRedirectModulePath.mockReset();
+    mockRedirectModulePath.mockImplementation(filePath => false);
+
+    jest.resetModules();
+    jest.mock('../PackageResolve', () => {
+      return {
+        ...jest.requireActual('../PackageResolve'),
+        redirectModulePath: (_ctx, specifier) =>
+          mockRedirectModulePath(specifier),
+      };
+    });
+
+    Resolver = require('../index');
+  });
+
+  afterEach(() => {
+    jest.unmock('../PackageResolve');
+    jest.resetModules();
+    Resolver = require('../index');
   });
 
   test('is used for relative path requests', () => {
@@ -353,8 +372,8 @@ describe('redirectModulePath', () => {
         "type": "empty",
       }
     `);
-    expect(redirectModulePath).toBeCalledTimes(1);
-    expect(redirectModulePath).toBeCalledWith('/root/project/bar');
+    expect(mockRedirectModulePath).toBeCalledTimes(1);
+    expect(mockRedirectModulePath).toBeCalledWith('/root/project/bar');
   });
 
   test('is used for absolute path requests', () => {
@@ -363,8 +382,8 @@ describe('redirectModulePath', () => {
         "type": "empty",
       }
     `);
-    expect(redirectModulePath).toBeCalledTimes(1);
-    expect(redirectModulePath).toBeCalledWith('/bar');
+    expect(mockRedirectModulePath).toBeCalledTimes(1);
+    expect(mockRedirectModulePath).toBeCalledWith('/bar');
   });
 
   test('is used for non-Haste package requests', () => {
@@ -374,12 +393,12 @@ describe('redirectModulePath', () => {
         "type": "empty",
       }
     `);
-    expect(redirectModulePath).toBeCalledTimes(1);
-    expect(redirectModulePath).toBeCalledWith('does-not-exist');
+    expect(mockRedirectModulePath).toBeCalledTimes(1);
+    expect(mockRedirectModulePath).toBeCalledWith('does-not-exist');
   });
 
-  test('can be used to redirect to an arbitrary relative module', () => {
-    redirectModulePath
+  test('can redirect to an arbitrary relative module', () => {
+    mockRedirectModulePath
       .mockImplementationOnce(filePath => '../smth/beep')
       .mockImplementation(filePath => filePath);
     expect(Resolver.resolve(context, 'does-not-exist', null))
@@ -389,7 +408,7 @@ describe('redirectModulePath', () => {
         "type": "sourceFile",
       }
     `);
-    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           "does-not-exist",
@@ -405,7 +424,7 @@ describe('redirectModulePath', () => {
   });
 
   test("is called for source extension candidates that don't exist on disk", () => {
-    redirectModulePath.mockImplementation(filePath =>
+    mockRedirectModulePath.mockImplementation(filePath =>
       filePath.replace('.another-fake-ext', '.js'),
     );
     expect(
@@ -420,7 +439,7 @@ describe('redirectModulePath', () => {
         "type": "sourceFile",
       }
     `);
-    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           "/root/smth/beep",
@@ -436,7 +455,7 @@ describe('redirectModulePath', () => {
   });
 
   test('can resolve to empty from a candidate with an added source extension', () => {
-    redirectModulePath.mockImplementation(filePath =>
+    mockRedirectModulePath.mockImplementation(filePath =>
       filePath.endsWith('.fake-ext') ? false : filePath,
     );
     expect(
@@ -450,7 +469,7 @@ describe('redirectModulePath', () => {
         "type": "empty",
       }
     `);
-    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           "/root/smth/beep",
@@ -463,14 +482,14 @@ describe('redirectModulePath', () => {
   });
 
   test('is not called redundantly for a candidate that does exist on disk', () => {
-    redirectModulePath.mockImplementation(filePath => filePath);
+    mockRedirectModulePath.mockImplementation(filePath => filePath);
     expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
       Object {
         "filePath": "/root/project/bar.js",
         "type": "sourceFile",
       }
     `);
-    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           "/root/project/bar",
