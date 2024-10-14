@@ -313,11 +313,67 @@ test('resolves Haste modules', () => {
   });
 });
 
+test('does not call resolveHasteModule for a specifier with separators', () => {
+  const resolveHasteModule = jest.fn();
+  expect(() =>
+    Resolver.resolve(
+      {
+        ...CONTEXT,
+        resolveHasteModule,
+      },
+      'Foo/bar',
+      null,
+    ),
+  ).toThrow();
+  expect(resolveHasteModule).not.toHaveBeenCalled();
+});
+
 test('resolves a Haste package', () => {
   expect(Resolver.resolve(CONTEXT, 'some-package', null)).toEqual({
     type: 'sourceFile',
     filePath: '/haste/some-package/main.js',
   });
+});
+
+test.each([
+  ['simple', 'simple'],
+  ['simple/with/subpath', 'simple'],
+  ['@scoped/package', '@scoped/package'],
+  ['@scoped/with/subpath', '@scoped/with'],
+])(
+  'calls resolveHastePackage for specifier %s with %s',
+  (specifier, expectedHastePackageCandidate) => {
+    const resolveHastePackage = jest.fn();
+    expect(() =>
+      Resolver.resolve(
+        {
+          ...CONTEXT,
+          resolveHastePackage,
+        },
+        specifier,
+        null,
+      ),
+    ).toThrow();
+    expect(resolveHastePackage).toHaveBeenCalledWith(
+      expectedHastePackageCandidate,
+    );
+    expect(resolveHastePackage).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('does not call resolveHastePackage for invalid specifier @notvalid', () => {
+  const resolveHastePackage = jest.fn();
+  expect(() =>
+    Resolver.resolve(
+      {
+        ...CONTEXT,
+        resolveHastePackage,
+      },
+      '@notvalid',
+      null,
+    ),
+  ).toThrow();
+  expect(resolveHastePackage).not.toHaveBeenCalled();
 });
 
 test('resolves a file inside a Haste package', () => {
@@ -333,7 +389,7 @@ test('throws a descriptive error when a file inside a Haste package cannot be re
   expect(() => {
     Resolver.resolve(CONTEXT, 'some-package/subdir/does-not-exist', null);
   }).toThrowErrorMatchingInlineSnapshot(`
-    "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
+    "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the subpath \`./subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
 
       * \`/haste/some-package/subdir/does-not-exist(.js|.jsx|.json|.ts|.tsx)\`
       * \`/haste/some-package/subdir/does-not-exist\`"

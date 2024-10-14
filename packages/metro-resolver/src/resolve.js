@@ -32,6 +32,15 @@ import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import path from 'path';
 
+type ParsedBareSpecifier = $ReadOnly<{
+  isSinglePart: boolean,
+  isValidPackageName: boolean,
+  firstPart: string,
+  normalizedSpecifier: string,
+  packageName: string,
+  posixSubpath: string,
+}>;
+
 function resolve(
   context: ResolutionContext,
   moduleName: string,
@@ -94,14 +103,24 @@ function resolve(
 
   /**
    * At this point, realModuleName is not a "direct" (absolute or relative)
-   * import, so it's either Haste name or a package specifier.
+   * import, so it's a bare specifier - for our purposes either Haste name
+   * or a package specifier.
    */
 
+  const parsedSpecifier = parseBareSpecifier(realModuleName);
+
   if (context.allowHaste) {
-    const normalizedName = normalizePath(realModuleName);
-    const result = resolveHasteName(context, normalizedName, platform);
-    if (result.type === 'resolved') {
-      return result.resolution;
+    if (parsedSpecifier.isSinglePart) {
+      const result = context.resolveHasteModule(parsedSpecifier.firstPart);
+      if (result != null) {
+        return {type: 'sourceFile', filePath: result};
+      }
+    }
+    if (parsedSpecifier.isValidPackageName) {
+      const result = resolveHastePackage(context, parsedSpecifier, platform);
+      if (result.type === 'resolved') {
+        return result.resolution;
+      }
     }
   }
 
@@ -130,8 +149,6 @@ function resolve(
   nodeModulesPaths.push(...context.nodeModulesPaths);
 
   const extraPaths = [];
-
-  const parsedSpecifier = parsePackageSpecifier(realModuleName);
 
   const {extraNodeModules} = context;
   if (extraNodeModules && extraNodeModules[parsedSpecifier.packageName]) {
@@ -179,35 +196,51 @@ function resolve(
   throw new FailedToResolveNameError(nodeModulesPaths, extraPaths);
 }
 
-function parsePackageSpecifier(specifier: string) {
+function parseBareSpecifier(specifier: string): ParsedBareSpecifier {
   const normalized =
     path.sep === '/' ? specifier : specifier.replaceAll('\\', '/');
   const firstSepIdx = normalized.indexOf('/');
   if (normalized.startsWith('@') && firstSepIdx !== -1) {
     const secondSepIdx = normalized.indexOf('/', firstSepIdx + 1);
     if (secondSepIdx === -1) {
+      // @foo/bar (valid scoped, no subpath)
       return {
+        isSinglePart: false,
+        isValidPackageName: true,
         firstPart: normalized.slice(0, firstSepIdx),
+        normalizedSpecifier: normalized,
         packageName: normalized,
         posixSubpath: '.',
       };
     }
+    // @foo/bar[/subpath] (valid scoped with subpath)
     return {
+      isSinglePart: false,
+      isValidPackageName: true,
       firstPart: normalized.slice(0, firstSepIdx),
+      normalizedSpecifier: normalized,
       packageName: normalized.slice(0, secondSepIdx),
       posixSubpath: '.' + normalized.slice(secondSepIdx),
     };
   }
+  // foo or @foo, no subpath. Valid if doesn't start with '@'.
   if (firstSepIdx === -1) {
     return {
+      isSinglePart: true,
+      isValidPackageName: !normalized.startsWith('@'),
       firstPart: normalized,
+      normalizedSpecifier: normalized,
       packageName: normalized,
       posixSubpath: '.',
     };
   }
   const packageName = normalized.slice(0, firstSepIdx);
+  // foo/subpath, valid, not scoped, with subpath
   return {
+    isSinglePart: false,
+    isValidPackageName: true,
     firstPart: packageName,
+    normalizedSpecifier: normalized,
     packageName,
     posixSubpath: '.' + normalized.slice(firstSepIdx),
   };
@@ -260,31 +293,22 @@ function resolveModulePath(
 }
 
 /**
- * Resolve a module as a Haste module or package. For example we might try to
- * resolve `Foo`, that is provided by file `/smth/Foo.js`. Or, in the case of
- * a Haste package, it could be `/smth/Foo/index.js`.
+ * Resolve a specifier as a Haste package.
  */
-function resolveHasteName(
+function resolveHastePackage(
   context: ResolutionContext,
-  moduleName: string,
+  {
+    normalizedSpecifier: moduleName,
+    packageName,
+    posixSubpath: pathInModule,
+  }: ParsedBareSpecifier,
   platform: string | null,
 ): Result<Resolution, void> {
-  const modulePath = context.resolveHasteModule(moduleName);
-  if (modulePath != null) {
-    return resolvedAs({type: 'sourceFile', filePath: modulePath});
-  }
-  let packageName = moduleName;
-  let packageJsonPath = context.resolveHastePackage(packageName);
-  while (packageJsonPath == null && packageName && packageName !== '.') {
-    packageName = path.dirname(packageName);
-    packageJsonPath = context.resolveHastePackage(packageName);
-  }
+  const packageJsonPath = context.resolveHastePackage(packageName);
   if (packageJsonPath == null) {
     return failedFor();
   }
-  const packageDirPath = path.dirname(packageJsonPath);
-  const pathInModule = moduleName.substring(packageName.length + 1);
-  const potentialModulePath = path.join(packageDirPath, pathInModule);
+  const potentialModulePath = path.join(packageJsonPath, '..', pathInModule);
   const result = resolvePackage(context, potentialModulePath, platform);
   if (result.type === 'resolved') {
     return result;
@@ -309,7 +333,7 @@ class MissingFileInHastePackageError extends Error {
     super(
       `While resolving module \`${opts.moduleName}\`, ` +
         `the Haste package \`${opts.packageName}\` was found. However the ` +
-        `module \`${opts.pathInModule}\` could not be found within ` +
+        `subpath \`${opts.pathInModule}\` could not be found within ` +
         'the package. Indeed, none of these files exist:\n\n' +
         [opts.candidates.file, opts.candidates.dir]
           .filter(Boolean)
@@ -586,16 +610,6 @@ function resolveSourceFileForExt(
 
 function isRelativeImport(filePath: string) {
   return /^[.][.]?(?:[/]|$)/.test(filePath);
-}
-
-function normalizePath(modulePath: any | string) {
-  if (path.sep === '/') {
-    modulePath = path.normalize(modulePath);
-  } else if (path.posix) {
-    modulePath = path.posix.normalize(modulePath);
-  }
-
-  return modulePath.replace(/\/$/, '');
 }
 
 function resolvedAs<TResolution, TCandidates>(
