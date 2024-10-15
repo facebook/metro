@@ -26,7 +26,6 @@ jobs:
           'current'  # newest
         ]
         no-lockfile: ['false', 'true']
-    name: "Tests [Node.js ${{ matrix.node-version }}, ${{ matrix.runs-on }}, ${{ matrix.no-lockfile == 'false' && 'Using yarn.lock' || 'Ignoring yarn.lock' }}]"
     uses: ./.github/workflows/test.yml
     with:
       node-version: ${{ matrix.node-version }}

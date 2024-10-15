@@ -65,32 +65,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "jest": {
-    "modulePathIgnorePatterns": [
-      "/node_modules/",
-      "packages/[^/]+/build/"
-    ],
-    "snapshotFormat": {
-      "escapeString": true,
-      "printBasicPrototype": true
-    },
-    "testEnvironment": "node",
-    "testRegex": "/__tests__/.*-test\\.js$",
-    "fakeTimers": {
-      "enableGlobally": true,
-      "legacyFakeTimers": false
-    },
-    "transform": {
-      "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
-    },
-    "setupFiles": [
-      "<rootDir>/scripts/setupJest.js"
-    ],
-    "watchPlugins": [
-      "jest-watch-typeahead/filename",
-      "jest-watch-typeahead/testname"
-    ]
-  },
   "license": "MIT",
   "dependencies": {},
   "engines": {
