@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: ['ubuntu-latest']
+        runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         node-version: [
           '18.18.0', # minimum supported
           'lts/-1',  # pre-latest lts

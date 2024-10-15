@@ -15,6 +15,8 @@ jest.unmock('cosmiconfig');
 
 jest.useRealTimers();
 
+jest.setTimeout(10000);
+
 describe('Server torn down test', () => {
   const active = new Map();
   const hook = asyncHooks.createHook({

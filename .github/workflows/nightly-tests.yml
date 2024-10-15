@@ -18,7 +18,7 @@ jobs:
       max-parallel: 1 # reduces the flakiness of these tests
       fail-fast: false
       matrix:
-        runs-on: ['ubuntu-latest']
+        runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         node-version: [  # https://github.com/nodejs/release#release-schedule
           '18.18.0', # minimum supported
           'lts/-1',  # pre-latest lts
