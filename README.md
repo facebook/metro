@@ -2,7 +2,7 @@
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebook/metro/blob/HEAD/LICENSE)
 [![npm package version](https://img.shields.io/npm/v/metro?color=brightgreen)](https://www.npmjs.com/package/metro)
-[![Build status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
+[![facebook/metro/nightly-tests](https://github.com/facebook/metro/actions/workflows/nightly-tests.yml/badge.svg)](https://github.com/facebook/metro/actions/workflows/nightly-tests.yml)
 [![Code coverage](https://codecov.io/gh/facebook/metro/branch/main/graph/badge.svg?token=oMHdoKhFZB)](https://codecov.io/gh/facebook/metro)
 [![Follow @MetroBundler on Twitter](https://img.shields.io/twitter/follow/MetroBundler?style=social)](https://twitter.com/intent/follow?screen_name=MetroBundler)
 
