@@ -25,8 +25,7 @@
   "devDependencies": {
     "@types/connect": "^3.4.35",
     "metro-babel-register": "0.81.0",
-    "pretty-format": "^29.7.0",
-    "strip-ansi": "^6.0.0"
+    "pretty-format": "^29.7.0"
   },
   "engines": {
     "node": ">=18.18"
