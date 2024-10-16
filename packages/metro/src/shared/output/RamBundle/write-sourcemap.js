@@ -22,7 +22,7 @@ function writeSourcemap(
     return Promise.resolve();
   }
   log('Writing sourcemap output to:', fileName);
-  const writeMap = writeFile(fileName, contents, null);
+  const writeMap = writeFile(fileName, contents);
   // $FlowFixMe[unused-promise]
   writeMap.then(() => log('Done writing sourcemap output'));
   return writeMap;

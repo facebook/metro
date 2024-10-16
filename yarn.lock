@@ -2336,11 +2336,6 @@ define-properties@^1.1.4:
     has-property-descriptors "^1.0.0"
     object-keys "^1.1.1"
 
-denodeify@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/denodeify/-/denodeify-1.2.1.tgz#3a36287f5034e699e7577901052c2e6c94251631"
-  integrity sha1-OjYof1A05pnnV3kBBSwubJQlFjE=
-
 detect-newline@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/detect-newline/-/detect-newline-3.1.0.tgz#576f5dfc63ae1a192ff192d8ad3af6308991b651"

@@ -15,13 +15,9 @@ import type {AssetPath} from './node-haste/lib/AssetPaths';
 
 const AssetPaths = require('./node-haste/lib/AssetPaths');
 const crypto = require('crypto');
-const denodeify = require('denodeify');
 const fs = require('fs');
 const getImageSize = require('image-size');
 const path = require('path');
-
-const readDir = denodeify(fs.readdir);
-const readFile = denodeify(fs.readFile);
 
 export type AssetInfo = {
   +files: Array<string>,
@@ -95,25 +91,6 @@ export type AssetDataPlugin = (
   assetData: AssetData,
 ) => AssetData | Promise<AssetData>;
 
-const hashFiles = denodeify(function hashFilesCb(files, hash, callback): void {
-  if (!files.length) {
-    callback(null);
-    return;
-  }
-
-  const file = files.shift();
-
-  fs.readFile(file, (err, data: Buffer) => {
-    if (err) {
-      callback(err);
-      return;
-    } else {
-      hash.update(data);
-      hashFilesCb(files, hash, callback);
-    }
-  });
-});
-
 function buildAssetMap(
   dir: string,
   files: $ReadOnlyArray<string>,
@@ -168,7 +145,7 @@ async function getAbsoluteAssetRecord(
 ): Promise<{files: Array<string>, scales: Array<number>}> {
   const filename = path.basename(assetPath);
   const dir = path.dirname(assetPath);
-  const files = await readDir(dir);
+  const files = await fs.promises.readdir(dir);
 
   const assetData = AssetPaths.parse(
     filename,
@@ -210,8 +187,12 @@ async function getAbsoluteAssetInfo(
   const {scales, files} = await getAbsoluteAssetRecord(assetPath, platform);
   const hasher = crypto.createHash('md5');
 
-  if (files.length > 0) {
-    await hashFiles(Array.from(files), hasher);
+  const fileData = await Promise.all(
+    files.map(file => fs.promises.readFile(file)),
+  );
+
+  for (const data of fileData) {
+    hasher.update(data);
   }
 
   return {files, hash: hasher.digest('hex'), name, scales, type};
@@ -328,11 +309,11 @@ async function getAsset(
 
   for (let i = 0; i < record.scales.length; i++) {
     if (record.scales[i] >= assetData.resolution) {
-      return readFile(record.files[i]);
+      return fs.promises.readFile(record.files[i]);
     }
   }
 
-  return readFile(record.files[record.files.length - 1]);
+  return fs.promises.readFile(record.files[record.files.length - 1]);
 }
 
 function pathBelongsToRoots(

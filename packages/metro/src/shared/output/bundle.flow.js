@@ -76,7 +76,7 @@ async function saveBundleAndMap(
 
     writeFns.push(async () => {
       log(`Writing sourcemap output to: ${sourcemapOutput}`);
-      await writeFile(sourcemapOutput, map, null);
+      await writeFile(sourcemapOutput, map);
       log('Done writing sourcemap output');
     });
   }

@@ -4,22 +4,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 'use strict';
 
-const denodeify = require('denodeify');
 const fs = require('fs');
 const throat = require('throat');
 
-type WriteFn = (
-  file: string,
-  data: string | Buffer,
-  encoding?: ?string,
-) => Promise<mixed>;
-const writeFile: WriteFn = throat(128, denodeify(fs.writeFile));
+const writeFile: typeof fs.promises.writeFile = throat(
+  128,
+  fs.promises.writeFile,
+);
 
 module.exports = writeFile;
