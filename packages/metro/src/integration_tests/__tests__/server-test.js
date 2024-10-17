@@ -32,11 +32,11 @@ describe('Metro development server serves bundles via HTTP', () => {
   const bundlesDownloaded = new Set();
   let serverClosedPromise;
 
-  async function downloadAndExec(path: string, context = {}): mixed {
+  async function downloadAndExec(pathname: string, context = {}): mixed {
     const response = await fetchAndClose(
-      'http://localhost:' + config.server.port + path,
+      'http://localhost:' + config.server.port + pathname,
     );
-    bundlesDownloaded.add(path);
+    bundlesDownloaded.add(pathname.replaceAll('\\', '/'));
 
     const body = await response.text();
 
