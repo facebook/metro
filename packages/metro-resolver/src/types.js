@@ -78,6 +78,7 @@ export type PackageJson = $ReadOnly<{
   name?: string,
   main?: string,
   exports?: ExportsField,
+  imports?: ExportMap,
   ...
 }>;
 
