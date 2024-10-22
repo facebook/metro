@@ -377,6 +377,7 @@ exports.runBuild = async (
     onComplete,
     onProgress,
     minify = true,
+    // $FlowFixMe[incompatible-variance] frozen objects are readonly
     output = outputBundle,
     out,
     platform = 'web',
