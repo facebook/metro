@@ -143,7 +143,7 @@ If `true`, Metro will use a stable mapping from files to transformer workers, so
 
 Type: `number`
 
-The number of workers to use for parallel processing in Metro. Defaults to approximately half of the number of cores available on the machine, as reported by [`os.cpus()`](https://nodejs.org/api/os.html#oscpus).
+The number of workers to use for parallel processing in Metro. Defaults to approximately half of the number of cores available on the machine, as reported by [`os.availableParallelism()`](https://nodejs.org/api/os.html#availableparallelism).
 
 :::note
 1. Values exceeding the number of available cores have no effect.
