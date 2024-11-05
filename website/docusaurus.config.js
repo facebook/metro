@@ -142,7 +142,12 @@ const siteConfig = {
       indexName: 'metro',
     },
     prism: {
-      additionalLanguages: ['flow'],
+      additionalLanguages: [
+        'flow',
+        'bash',
+        'json',
+        'diff',
+      ],
     },
   },
   scripts: ['https://buttons.github.io/buttons.js'],
