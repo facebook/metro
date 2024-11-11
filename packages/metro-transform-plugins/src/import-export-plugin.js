@@ -495,6 +495,14 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           state.imports = [];
           state.importAll = t.identifier(state.opts.importAll);
           state.importDefault = t.identifier(state.opts.importDefault);
+
+          // Rename declarations at module scope that might otherwise conflict
+          // with arguments we inject into the module factory.
+          // Note that it isn't necessary to rename importAll/importDefault
+          // because Metro already uses generateUid to generate unused names.
+          ['module', 'global', 'exports', 'require'].forEach(name =>
+            path.scope.rename(name),
+          );
         },
 
         exit(path: NodePath<Program>, state: State): void {

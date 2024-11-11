@@ -186,6 +186,61 @@ test('exports named members', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
+test('renames existing `exports` declarations in module scope', () => {
+  const code = `
+    const exports = 'foo';
+    export const bar = 'bar';
+    console.log(exports, bar);
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const _exports = 'foo';
+    const bar = 'bar';
+    console.log(_exports, bar);
+    exports.bar = bar;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+test('handles an export named "exports"', () => {
+  const code = `
+    export const exports = {a: 'foo'};
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const _exports = {
+      a: 'foo',
+    };
+    exports.exports = _exports;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+test('allows mixed esm and cjs exports', () => {
+  const code = `
+    export const foo = 'foo';
+    exports.bar = 'bar';
+    module.exports.baz = 'baz';
+    export default class {}
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const foo = 'foo';
+    exports.bar = 'bar';
+    module.exports.baz = 'baz';
+    class _default {}
+    exports.default = _default;
+    exports.foo = foo;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
 test('exports destructured named object members', () => {
   const code = `
     export const {foo,bar} = {foo: 'bar',bar: 'baz'};
@@ -264,6 +319,24 @@ test('enables module exporting when something is exported', () => {
     > 3 |     import {foo} from 'bar';
         |     ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
   `);
+});
+
+test('renames bindings', () => {
+  const code = `
+    const module = 'foo';
+    let exports = 'bar';
+    var global = 'baz';
+    const require = {};
+  `;
+
+  const expected = `
+    const _module = 'foo';
+    let _exports = 'bar';
+    var _global = 'baz';
+    const _require = {};
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
 });
 
 test('supports `import {default as LocalName}`', () => {
