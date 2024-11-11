@@ -25,13 +25,13 @@ import typeof * as Types from '@babel/types';
 
 const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
-export type Options = {
+export type Options = $ReadOnly<{
   dev: boolean,
   inlinePlatform: boolean,
   isWrapped: boolean,
   requireName?: string,
   platform: string,
-};
+}>;
 
 type State = {opts: Options};
 

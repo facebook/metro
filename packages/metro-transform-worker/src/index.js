@@ -23,6 +23,11 @@ import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+import type {
+  ImportExportPluginOptions,
+  InlinePluginOptions,
+  InlineRequiresPluginOptions,
+} from 'metro-transform-plugins';
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
 import type {
@@ -287,32 +292,43 @@ async function transformJS(
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).
   const plugins: Array<PluginEntry> = [];
-  const babelPluginOpts = {
-    ...options,
-    inlineableCalls: [importDefault, importAll],
-    importDefault,
-    importAll,
-  };
 
   if (options.experimentalImportSupport === true) {
-    plugins.push([metroTransformPlugins.importExportPlugin, babelPluginOpts]);
+    plugins.push([
+      metroTransformPlugins.importExportPlugin,
+      {
+        importAll,
+        importDefault,
+        resolve: false,
+      } as ImportExportPluginOptions,
+    ]);
   }
 
   if (options.inlineRequires) {
     plugins.push([
       metroTransformPlugins.inlineRequiresPlugin,
       {
-        ...babelPluginOpts,
         ignoredRequires: options.nonInlinedRequires,
+        inlineableCalls: [importDefault, importAll],
         memoizeCalls:
+          // $FlowFixMe[incompatible-cast] is this always (?boolean)?
           options.customTransformOptions?.unstable_memoizeInlineRequires ??
           options.unstable_memoizeInlineRequires,
         nonMemoizedModules: options.unstable_nonMemoizedInlineRequires,
-      },
+      } as InlineRequiresPluginOptions,
     ]);
   }
 
-  plugins.push([metroTransformPlugins.inlinePlugin, babelPluginOpts]);
+  plugins.push([
+    metroTransformPlugins.inlinePlugin,
+    {
+      dev: options.dev,
+      inlinePlatform: options.inlinePlatform,
+      isWrapped: false,
+      // $FlowFixMe[incompatible-cast] expects a string if inlinePlatform
+      platform: options.platform,
+    } as InlinePluginOptions,
+  ]);
 
   ast = nullthrows(
     transformFromAstSync(ast, '', {
@@ -345,9 +361,7 @@ async function transformJS(
         configFile: false,
         comments: true,
         filename: file.filename,
-        plugins: [
-          [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
-        ],
+        plugins: [metroTransformPlugins.constantFoldingPlugin],
         sourceMaps: false,
         cloneInputAst: false,
       }).ast,

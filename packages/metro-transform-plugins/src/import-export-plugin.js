@@ -27,6 +27,13 @@ import typeof * as Types from '@babel/types';
 const template = require('@babel/template').default;
 const nullthrows = require('nullthrows');
 
+export type Options = $ReadOnly<{
+  importDefault: string,
+  importAll: string,
+  resolve: boolean,
+  out?: {isESModule: boolean, ...},
+}>;
+
 type State = {
   exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,
   exportDefault: Array<{local: string, loc: ?BabelSourceLocation, ...}>,
@@ -39,13 +46,7 @@ type State = {
   imports: Array<{node: Statement}>,
   importDefault: BabelNode,
   importAll: BabelNode,
-  opts: {
-    importDefault: string,
-    importAll: string,
-    resolve: boolean,
-    out?: {isESModule: boolean, ...},
-    ...
-  },
+  opts: Options,
   ...
 };
 
