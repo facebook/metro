@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -13,6 +13,7 @@
 
 const {compare} = require('../__mocks__/test-helpers');
 const inlinePlugin = require('../inline-plugin');
+// $FlowFixMe[untyped-import] @babel/plugin-transform-flow-strip-types (in OSS only)
 const stripFlow = require('@babel/plugin-transform-flow-strip-types');
 
 describe('inline constants', () => {

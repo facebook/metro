@@ -5,24 +5,30 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
 
 'use strict';
 
+import type {Options} from '../normalizePseudoGlobals';
+
 const normalizePseudoglobals = require('../normalizePseudoGlobals');
 const {transformFromAstSync, transformSync} = require('@babel/core');
+const nullthrows = require('nullthrows');
 
-function normalizePseudoglobalsCall(source, options) {
-  const {ast} = transformSync(source, {
-    ast: true,
-    babelrc: false,
-    browserslistConfigFile: false,
-    code: false,
-    compact: false,
-    configFile: false,
-    sourceType: 'module',
-  });
+function normalizePseudoglobalsCall(source: string, options?: Options) {
+  const ast = nullthrows(
+    transformSync(source, {
+      ast: true,
+      babelrc: false,
+      browserslistConfigFile: false,
+      code: false,
+      compact: false,
+      configFile: false,
+      sourceType: 'module',
+    }).ast,
+  );
 
   const reserved = normalizePseudoglobals(ast, options);
 

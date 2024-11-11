@@ -14,11 +14,9 @@
 import typeof ConstantFoldingPlugin from './constant-folding-plugin';
 import typeof ImportExportPlugin from './import-export-plugin';
 import typeof InlinePlugin from './inline-plugin';
+import typeof InlineRequiresPlugin from './inline-requires-plugin';
 import typeof NormalizePseudoGlobalsFn from './normalizePseudoGlobals';
 export type {Options as InlinePluginOptions} from './inline-plugin';
-
-// TODO: Type this properly
-type InlineRequiresPlugin = $FlowFixMe;
 
 type TransformPlugins = {
   addParamsToDefineCall(string, ...Array<mixed>): string,
@@ -49,7 +47,6 @@ module.exports = ({
   },
   // $FlowIgnore[unsafe-getters-setters]
   get inlineRequiresPlugin() {
-    // $FlowFixMe[untyped-import]
     return require('./inline-requires-plugin');
   },
   // $FlowIgnore[unsafe-getters-setters]

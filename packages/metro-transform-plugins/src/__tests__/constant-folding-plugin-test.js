@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -14,6 +14,7 @@
 const {compare} = require('../__mocks__/test-helpers');
 const constantFoldingPlugin = require('../constant-folding-plugin');
 const nullishCoalescingOperatorPlugin =
+  // $FlowFixMe[untyped-import] @babel/plugin-syntax-nullish-coalescing-operator (in OSS only)
   require('@babel/plugin-syntax-nullish-coalescing-operator').default;
 
 describe('constant expressions', () => {

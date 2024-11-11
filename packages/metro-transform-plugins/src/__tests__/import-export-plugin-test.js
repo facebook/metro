@@ -5,13 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
 
 'use strict';
 
+import type {Dependency} from 'metro/src/ModuleGraph/worker/collectDependencies';
+
 const {compare, transformToAst} = require('../__mocks__/test-helpers');
 const importExportPlugin = require('../import-export-plugin');
+// $FlowFixMe[untyped-import] @babel/code-frame
 const {codeFrameColumns} = require('@babel/code-frame');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 
@@ -298,22 +302,27 @@ test('supports `import {default as LocalName}`', () => {
   `);
 });
 
-function showTransformedDeps(code) {
+function showTransformedDeps(code: string) {
   const {dependencies} = collectDependencies(
     transformToAst([importExportPlugin], code, opts),
     {
       asyncRequireModulePath: 'asyncRequire',
+      dependencyMapName: null,
       dynamicRequires: 'reject',
       inlineableCalls: [opts.importAll, opts.importDefault],
       keepRequireNames: true,
       allowOptionalDependencies: false,
+      unstable_allowRequireContext: false,
     },
   );
 
   return formatDependencyLocs(dependencies, code);
 }
 
-function formatDependencyLocs(dependencies, code) {
+function formatDependencyLocs(
+  dependencies: $ReadOnlyArray<Dependency>,
+  code: string,
+) {
   return (
     '\n' +
     dependencies
@@ -328,18 +337,25 @@ function formatDependencyLocs(dependencies, code) {
   );
 }
 
-function adjustPosForCodeFrame(pos) {
+function adjustPosForCodeFrame(
+  pos: ?(BabelSourceLocation['start'] | BabelSourceLocation['end']),
+) {
   return pos ? {...pos, column: pos.column + 1} : pos;
 }
 
-function adjustLocForCodeFrame(loc) {
+function adjustLocForCodeFrame(loc: BabelSourceLocation) {
   return {
     start: adjustPosForCodeFrame(loc.start),
     end: adjustPosForCodeFrame(loc.end),
   };
 }
 
-function formatLoc(loc, depIndex, dep, code) {
+function formatLoc(
+  loc: BabelSourceLocation,
+  depIndex: number,
+  dep: Dependency,
+  code: string,
+) {
   return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
     message: `dep #${depIndex} (${dep.name})`,
     linesAbove: 0,

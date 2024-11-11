@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  * @oncall react_native
  */
@@ -57,7 +57,7 @@ function inlinePlugin(
   } = t;
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
     t,
-    options.requireName || 'require',
+    options.requireName ?? 'require',
   );
 
   function isGlobal(binding: ?Binding): boolean {
@@ -117,7 +117,7 @@ function inlinePlugin(
 
   function hasStaticProperties(objectExpression: ObjectExpression): boolean {
     return objectExpression.properties.every(p => {
-      if (p.computed || isSpreadElement(p)) {
+      if (p.computed === true || isSpreadElement(p)) {
         return false;
       }
       if (isObjectMethod(p) && p.kind !== 'method') {
