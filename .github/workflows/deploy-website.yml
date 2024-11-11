@@ -22,7 +22,7 @@ jobs:
 
     env:
       working-directory: website
-      node-version: lts
+      node-version: lts/*
 
     steps:
       - name: Checkout code
