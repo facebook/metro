@@ -29,7 +29,7 @@ module.exports = {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
     'consistent-return': 'error',
     'import/no-extraneous-dependencies': 'error',
-    'lint/extra-arrow-initializer': 'off',
+    'fb-www/extra-arrow-initializer': 'off',
     'lint/sort-imports': 'warn',
     'lint/strictly-null': 'warn',
     'max-len': 'off',
