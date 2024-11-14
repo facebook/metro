@@ -62,6 +62,11 @@ export type ReportableEvent =
       ...
     }
   | {
+      type: 'bundle_save_log',
+      message: string,
+      ...
+    }
+  | {
       buildID: string,
       bundleDetails: BundleDetails,
       isPrefetch?: boolean,

@@ -49,7 +49,7 @@ async function saveBundleAndMap(
     ...
   },
   options: OutputOptions,
-  log: (...args: Array<string>) => void,
+  log: string => void,
 ): Promise<mixed> {
   const {
     bundleOutput,

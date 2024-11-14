@@ -237,6 +237,9 @@ class TerminalReporter {
       case 'bundle_build_done':
         this._logBundleBuildDone(event.buildID);
         break;
+      case 'bundle_save_log':
+        this.terminal.log('LOG:' + event.message);
+        break;
       case 'bundle_build_failed':
         this._logBundleBuildFailed(event.buildID);
         break;

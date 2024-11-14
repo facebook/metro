@@ -98,7 +98,7 @@ export type RunBuildOptions = {
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   minify?: boolean,
-  output?: {
+  output?: $ReadOnly<{
     build: (
       MetroServer,
       RequestOptions,
@@ -114,10 +114,10 @@ export type RunBuildOptions = {
         ...
       },
       OutputOptions,
-      (...args: Array<string>) => void,
+      (logMessage: string) => void,
     ) => Promise<mixed>,
     ...
-  },
+  }>,
   platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
@@ -377,7 +377,6 @@ exports.runBuild = async (
     onComplete,
     onProgress,
     minify = true,
-    // $FlowFixMe[incompatible-variance] frozen objects are readonly
     output = outputBundle,
     out,
     platform = 'web',
@@ -429,8 +428,12 @@ exports.runBuild = async (
         platform,
       };
 
-      // eslint-disable-next-line no-console
-      await output.save(metroBundle, outputOptions, console.log);
+      await output.save(metroBundle, outputOptions, message =>
+        config.reporter.update({
+          type: 'bundle_save_log',
+          message,
+        }),
+      );
     }
 
     return metroBundle;
