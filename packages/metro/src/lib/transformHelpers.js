@@ -41,6 +41,7 @@ const baseIgnoredInlineRequires = [
   'react',
   'react/jsx-dev-runtime',
   'react/jsx-runtime',
+  'react-compiler-runtime',
   'react-native',
 ];
 
