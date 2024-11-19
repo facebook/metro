@@ -267,6 +267,8 @@ describe.each(Object.keys(WATCHERS))(
           {rejectUnexpected: true},
         );
       },
+      // We see occasional failures in CI with default 5s timeout.
+      30000,
     );
   },
 );
