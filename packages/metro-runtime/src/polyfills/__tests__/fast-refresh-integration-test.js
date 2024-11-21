@@ -120,6 +120,7 @@ describe('Fast Refresh integration with require()', () => {
 
     // Full refresh: The component does not rerender. Instead, we signal a
     // reload.
+    // $FlowFixMe[incompatible-use]
     expect(rendered.toJSON()).toBe('version1: initialState1');
     expect(events.onFastRefresh).not.toHaveBeenCalled();
     expect(events.onFullReload).toHaveBeenCalled();
