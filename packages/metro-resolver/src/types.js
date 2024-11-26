@@ -52,18 +52,18 @@ export type FileCandidates =
       +candidateExts: $ReadOnlyArray<string>,
     };
 
-export type ExportMap = $ReadOnly<{
-  [subpathOrCondition: string]: string | ExportMap | null,
+export type ExportsLikeMap = $ReadOnly<{
+  [subpathOrCondition: string]: string | ExportsLikeMap | null,
 }>;
 
 /** "exports" mapping where values may be legacy Node.js <13.7 array format. */
 export type ExportMapWithFallbacks = $ReadOnly<{
-  [subpath: string]: $Values<ExportMap> | ExportValueWithFallback,
+  [subpath: string]: $Values<ExportsLikeMap> | ExportValueWithFallback,
 }>;
 
 /** "exports" subpath value when in legacy Node.js <13.7 array format. */
 export type ExportValueWithFallback =
-  | $ReadOnlyArray<ExportMap | string>
+  | $ReadOnlyArray<ExportsLikeMap | string>
   // JSON can also contain exotic nested array structure, which will not be parsed
   | $ReadOnlyArray<$ReadOnlyArray<mixed>>;
 
@@ -71,13 +71,24 @@ export type ExportsField =
   | string
   | $ReadOnlyArray<string>
   | ExportValueWithFallback
-  | ExportMap
+  | ExportsLikeMap
   | ExportMapWithFallbacks;
+
+export type FlattenedExportMap = $ReadOnlyMap<
+  string /* subpath */,
+  string | null,
+>;
+
+export type NormalizedExportsLikeMap = Map<
+  string /* subpath */,
+  null | string | ExportsLikeMap,
+>;
 
 export type PackageJson = $ReadOnly<{
   name?: string,
   main?: string,
   exports?: ExportsField,
+  imports?: ExportsLikeMap,
   ...
 }>;
 
