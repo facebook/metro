@@ -91,7 +91,12 @@ describe('DeltaCalculator + require.context', () => {
               absolutePath: '/ctx?ctx=xxx',
               data: {
                 name: 'ctx',
-                data: {key: 'ctx?ctx=xxx', asyncType: null, locs: []},
+                data: {
+                  key: 'ctx?ctx=xxx',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],
@@ -109,7 +114,12 @@ describe('DeltaCalculator + require.context', () => {
               absolutePath: '/ctx/foo',
               data: {
                 name: 'foo',
-                data: {key: 'foo', asyncType: null, locs: []},
+                data: {
+                  key: 'foo',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],

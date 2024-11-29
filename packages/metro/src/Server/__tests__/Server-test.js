@@ -211,7 +211,12 @@ describe('processRequest', () => {
                   {
                     absolutePath: '/root/foo.js',
                     data: {
-                      data: {asyncType: null, key: 'foo', locs: []},
+                      data: {
+                        asyncType: null,
+                        isESMImport: false,
+                        key: 'foo',
+                        locs: [],
+                      },
                       name: 'foo',
                     },
                   },

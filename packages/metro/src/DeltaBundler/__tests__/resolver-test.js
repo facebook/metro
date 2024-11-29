@@ -47,6 +47,7 @@ function dep(name: string): TransformResultDependency {
     name,
     data: {
       asyncType: null,
+      isESMImport: false,
       key: name,
       locs: [],
     },
