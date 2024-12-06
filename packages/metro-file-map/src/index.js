@@ -385,7 +385,6 @@ export default class FileMap extends EventEmitter {
         await this._takeSnapshotAndPersist(
           fileSystem,
           fileDelta.clocks ?? new Map(),
-          hasteMap,
           mocks,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
@@ -774,7 +773,6 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    hasteMap: MutableHasteMap,
     mockMap: ReadOnlyRawMockMap,
     changed: FileData,
     removed: Set<CanonicalPath>,
