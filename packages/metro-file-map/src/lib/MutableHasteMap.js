@@ -13,12 +13,12 @@ import type {
   Console,
   DuplicatesIndex,
   DuplicatesSet,
+  HasteConflict,
   HasteMap,
   HasteMapItem,
   HasteMapItemMetaData,
   HTypeValue,
   Path,
-  ReadOnlyRawHasteMap,
 } from '../flow-types';
 
 import H from '../constants';
@@ -26,6 +26,7 @@ import {DuplicateError} from './DuplicateError';
 import {DuplicateHasteCandidatesError} from './DuplicateHasteCandidatesError';
 import getPlatformExtension from './getPlatformExtension';
 import {RootPathUtils} from './RootPathUtils';
+import {chainComparators, compareStrings} from './sorting';
 import path from 'path';
 
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
@@ -80,15 +81,6 @@ export default class MutableHasteMap implements HasteMap {
     _supportsNativePlatform?: ?boolean,
   ): ?Path {
     return this.getModule(name, platform, null, H.PACKAGE);
-  }
-
-  // FIXME: This is only used by Meta-internal validation and should be
-  // removed or replaced with a less leaky API.
-  getRawHasteMap(): ReadOnlyRawHasteMap {
-    return {
-      duplicates: this.#duplicates,
-      map: this.#map,
-    };
   }
 
   /**
@@ -298,5 +290,77 @@ export default class MutableHasteMap implements HasteMap {
     if (dupsByPlatform.size === 0) {
       this.#duplicates.delete(moduleName);
     }
+  }
+
+  computeConflicts(): Array<HasteConflict> {
+    const conflicts: Array<HasteConflict> = [];
+
+    // Add duplicates reported by metro-file-map
+    for (const [id, dupsByPlatform] of this.#duplicates.entries()) {
+      for (const [platform, conflictingModules] of dupsByPlatform) {
+        conflicts.push({
+          id,
+          platform: platform === H.GENERIC_PLATFORM ? null : platform,
+          absolutePaths: [...conflictingModules.keys()]
+            .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
+            // Sort for ease of testing
+            .sort(),
+          type: 'duplicate',
+        });
+      }
+    }
+
+    // Add cases of "shadowing at a distance": a module with a platform suffix and
+    // a module with a lower priority platform suffix (or no suffix), in different
+    // directories.
+    for (const [id, data] of this.#map) {
+      const conflictPaths = new Set<string>();
+      const basePaths = [];
+      for (const basePlatform of [H.NATIVE_PLATFORM, H.GENERIC_PLATFORM]) {
+        if (data[basePlatform] == null) {
+          continue;
+        }
+        const basePath = data[basePlatform][0];
+        basePaths.push(basePath);
+        const basePathDir = path.dirname(basePath);
+        // Find all platforms that can shadow basePlatform
+        // Given that X.(specific platform).js > x.native.js > X.js
+        // and basePlatform is either 'native' or generic (no platform).
+        for (const platform of Object.keys(data)) {
+          if (
+            platform === basePlatform ||
+            platform === H.GENERIC_PLATFORM /* lowest priority */
+          ) {
+            continue;
+          }
+          const platformPath = data[platform][0];
+          if (path.dirname(platformPath) !== basePathDir) {
+            conflictPaths.add(platformPath);
+          }
+        }
+      }
+      if (conflictPaths.size) {
+        conflicts.push({
+          id,
+          platform: null,
+          absolutePaths: [...new Set([...conflictPaths, ...basePaths])]
+            .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
+            // Sort for ease of testing
+            .sort(),
+          type: 'shadowing',
+        });
+      }
+    }
+
+    // Sort for ease of testing
+    conflicts.sort(
+      chainComparators(
+        (a, b) => compareStrings(a.type, b.type),
+        (a, b) => compareStrings(a.id, b.id),
+        (a, b) => compareStrings(a.platform, b.platform),
+      ),
+    );
+
+    return conflicts;
   }
 }
