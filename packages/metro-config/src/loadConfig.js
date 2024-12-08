@@ -19,8 +19,16 @@ const cosmiconfig = require('cosmiconfig');
 const fs = require('fs');
 const {validate} = require('jest-validate');
 const MetroCache = require('metro-cache');
+const nullthrows = require('nullthrows');
 const path = require('path');
 const {dirname, join} = require('path');
+const {promisify} = require('util');
+
+const realpath: (absolutePath: string) => Promise<string> = promisify(
+  // Use realpath.native to ensure consistent casing on Windows.
+  // $FlowFixMe[prop-missing] realpath.native
+  fs.realpath.native,
+);
 
 type CosmiConfigResult = {
   filepath: string,
@@ -309,10 +317,49 @@ async function loadConfig(
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
 
-  // Set the watchfolders to include the projectRoot, as Metro assumes that is
-  // the case
+  let realProjectRoot;
+  try {
+    realProjectRoot = await realpath(configWithArgs.projectRoot);
+  } catch (error) {
+    throw new Error(
+      `metro-config: The given projectRoot does not exist or cannot be accessed: ${configWithArgs.projectRoot}`,
+      {cause: error},
+    );
+  }
+  const watchFolderResults = await Promise.allSettled(
+    configWithArgs.watchFolders.map(filePath => realpath(filePath)),
+  );
+  const rejectedWatchFolders = watchFolderResults
+    .map((result, index) => [result, configWithArgs.watchFolders[index]])
+    .filter(([result]) => result.status === 'rejected')
+    .map(([result, folder]) => folder);
+
+  if (rejectedWatchFolders.length > 0) {
+    throw new Error(
+      `metro-config: One or more watchFolders does not exist or cannot be accessed:\n  ${rejectedWatchFolders.join('\n  ')}`,
+    );
+  }
+  const watchFolders = watchFolderResults.map(result =>
+    nullthrows(result.value),
+  );
+
+  // Set watchFolders to include the projectRoot, if no watchFolders
+  // already contain it. Since all paths are absolute and real, we can use
+  // startsWith to determine whether one path contains another.
+  if (
+    !watchFolders.some(
+      folder =>
+        folder === realProjectRoot ||
+        realProjectRoot.startsWith(folder + path.sep),
+    )
+  ) {
+    // Put projectRoot first
+    watchFolders.unshift(realProjectRoot);
+  }
+
   return mergeConfig(configWithArgs, {
-    watchFolders: [configWithArgs.projectRoot, ...configWithArgs.watchFolders],
+    projectRoot: realProjectRoot,
+    watchFolders,
   });
 }
 

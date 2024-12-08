@@ -20,7 +20,8 @@
     "metro": "0.81.0",
     "metro-cache": "0.81.0",
     "metro-core": "0.81.0",
-    "metro-runtime": "0.81.0"
+    "metro-runtime": "0.81.0",
+    "nullthrows": "^1.1.1"
   },
   "devDependencies": {
     "@types/connect": "^3.4.35",

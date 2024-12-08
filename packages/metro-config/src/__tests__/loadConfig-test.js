@@ -20,6 +20,8 @@ const path = require('path');
 const prettyFormat = require('pretty-format');
 const util = require('util');
 
+const FIXTURES_DIR = path.resolve(__dirname, '..', '__fixtures__');
+
 describe('loadConfig', () => {
   beforeEach(() => {
     cosmiconfig.reset();
@@ -165,6 +167,105 @@ describe('loadConfig', () => {
 
     expect(prettyFormat.format(result)).toEqual(
       prettyFormat.format(defaultConfig),
+    );
+  });
+
+  test('adds the real project root if it is not already covered', async () => {
+    cosmiconfig.setReturnNull(true);
+
+    const projectRoot = path.resolve(
+      FIXTURES_DIR,
+      'link-to-workspace-root',
+      'project-root',
+    );
+
+    const result = await loadConfig(
+      {
+        cwd: projectRoot,
+      },
+      {
+        watchFolders: [path.join(FIXTURES_DIR, 'other-watched-folder')],
+      },
+    );
+
+    let defaultConfig = await getDefaultConfig(projectRoot);
+    defaultConfig = {
+      ...defaultConfig,
+      // Expect symlinks in the given project root to be resolved.
+      projectRoot: path.join(FIXTURES_DIR, 'workspace-root', 'project-root'),
+      watchFolders: [
+        // Project root has been added to the watch folders.
+        path.join(FIXTURES_DIR, 'workspace-root', 'project-root'),
+        path.join(FIXTURES_DIR, 'other-watched-folder'),
+      ],
+    };
+
+    expect(prettyFormat.format(result)).toEqual(
+      prettyFormat.format(defaultConfig),
+    );
+  });
+
+  test('does not add the project root if it is already covered', async () => {
+    cosmiconfig.setReturnNull(true);
+
+    const projectRoot = path.resolve(
+      FIXTURES_DIR,
+      'workspace-root',
+      'project-root',
+    );
+
+    const result = await loadConfig(
+      {
+        cwd: projectRoot,
+      },
+      {
+        watchFolders: [
+          path.join(FIXTURES_DIR, 'link-to-workspace-root'),
+          path.join(FIXTURES_DIR, 'other-watched-folder'),
+        ],
+      },
+    );
+
+    let defaultConfig = await getDefaultConfig(projectRoot);
+    defaultConfig = {
+      ...defaultConfig,
+      watchFolders: [
+        // Project root has not been added to the watch folders, but symlinks
+        // in watch folders have been resolved.
+        path.join(FIXTURES_DIR, 'workspace-root'),
+        path.join(FIXTURES_DIR, 'other-watched-folder'),
+      ],
+    };
+
+    expect(prettyFormat.format(result)).toEqual(
+      prettyFormat.format(defaultConfig),
+    );
+  });
+
+  test('throws if the project root does not exist', async () => {
+    cosmiconfig.setReturnNull(true);
+    const projectRoot = path.resolve(FIXTURES_DIR, 'non-existent');
+    await expect(() => loadConfig({cwd: projectRoot})).rejects.toThrowError(
+      'metro-config: The given projectRoot does not exist or cannot be accessed: ' +
+        projectRoot,
+    );
+  });
+
+  test('throws if any watched folder does not exist', async () => {
+    cosmiconfig.setReturnNull(true);
+    const projectRoot = path.resolve(
+      FIXTURES_DIR,
+      'workspace-root',
+      'project-root',
+    );
+    await expect(() =>
+      loadConfig(
+        {cwd: projectRoot},
+        {watchFolders: [path.resolve(FIXTURES_DIR, 'non-existent')]},
+      ),
+    ).rejects.toThrowError(
+      `metro-config: One or more watchFolders does not exist or cannot be accessed:\n  ` +
+        path.resolve(FIXTURES_DIR, 'non-existent'),
     );
   });
 
