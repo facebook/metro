@@ -13,13 +13,12 @@ import type {
   Console,
   DuplicatesIndex,
   DuplicatesSet,
+  HasteConflict,
   HasteMap,
   HasteMapItem,
   HasteMapItemMetaData,
   HTypeValue,
   Path,
-  RawHasteMap,
-  ReadOnlyRawHasteMap,
 } from '../flow-types';
 
 import H from '../constants';
@@ -27,6 +26,7 @@ import {DuplicateError} from './DuplicateError';
 import {DuplicateHasteCandidatesError} from './DuplicateHasteCandidatesError';
 import getPlatformExtension from './getPlatformExtension';
 import {RootPathUtils} from './RootPathUtils';
+import {chainComparators, compareStrings} from './sorting';
 import path from 'path';
 
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
@@ -41,13 +41,13 @@ type HasteMapOptions = $ReadOnly<{
 
 export default class MutableHasteMap implements HasteMap {
   +#rootDir: Path;
-  #map: Map<string, HasteMapItem> = new Map();
-  #duplicates: DuplicatesIndex = new Map();
+  +#map: Map<string, HasteMapItem> = new Map();
+  +#duplicates: DuplicatesIndex = new Map();
 
   +#console: ?Console;
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
-  #throwOnModuleCollision: boolean;
+  +#throwOnModuleCollision: boolean;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
@@ -55,41 +55,6 @@ export default class MutableHasteMap implements HasteMap {
     this.#rootDir = options.rootDir;
     this.#pathUtils = new RootPathUtils(options.rootDir);
     this.#throwOnModuleCollision = options.throwOnModuleCollision;
-  }
-
-  static fromDeserializedSnapshot(
-    deserializedData: RawHasteMap,
-    options: HasteMapOptions,
-  ): MutableHasteMap {
-    const hasteMap = new MutableHasteMap(options);
-    hasteMap.#map = deserializedData.map;
-    hasteMap.#duplicates = deserializedData.duplicates;
-    return hasteMap;
-  }
-
-  getSerializableSnapshot(): RawHasteMap {
-    const mapMap = <K, V1, V2>(
-      map: $ReadOnlyMap<K, V1>,
-      mapFn: (v: V1) => V2,
-    ): Map<K, V2> => {
-      return new Map(
-        Array.from(map.entries(), ([key, val]): [K, V2] => [key, mapFn(val)]),
-      );
-    };
-
-    return {
-      duplicates: mapMap(this.#duplicates, v =>
-        mapMap(v, v2 => new Map(v2.entries())),
-      ),
-      map: mapMap(this.#map, v =>
-        Object.assign(
-          Object.create(null),
-          Object.fromEntries(
-            Array.from(Object.entries(v), ([key, val]) => [key, [...val]]),
-          ),
-        ),
-      ),
-    };
   }
 
   getModule(
@@ -116,15 +81,6 @@ export default class MutableHasteMap implements HasteMap {
     _supportsNativePlatform?: ?boolean,
   ): ?Path {
     return this.getModule(name, platform, null, H.PACKAGE);
-  }
-
-  // FIXME: This is only used by Meta-internal validation and should be
-  // removed or replaced with a less leaky API.
-  getRawHasteMap(): ReadOnlyRawHasteMap {
-    return {
-      duplicates: this.#duplicates,
-      map: this.#map,
-    };
   }
 
   /**
@@ -284,10 +240,6 @@ export default class MutableHasteMap implements HasteMap {
     this._recoverDuplicates(moduleName, relativeFilePath);
   }
 
-  setThrowOnModuleCollision(shouldThrow: boolean) {
-    this.#throwOnModuleCollision = shouldThrow;
-  }
-
   /**
    * This function should be called when the file under `filePath` is removed
    * or changed. When that happens, we want to figure out if that file was
@@ -338,5 +290,77 @@ export default class MutableHasteMap implements HasteMap {
     if (dupsByPlatform.size === 0) {
       this.#duplicates.delete(moduleName);
     }
+  }
+
+  computeConflicts(): Array<HasteConflict> {
+    const conflicts: Array<HasteConflict> = [];
+
+    // Add duplicates reported by metro-file-map
+    for (const [id, dupsByPlatform] of this.#duplicates.entries()) {
+      for (const [platform, conflictingModules] of dupsByPlatform) {
+        conflicts.push({
+          id,
+          platform: platform === H.GENERIC_PLATFORM ? null : platform,
+          absolutePaths: [...conflictingModules.keys()]
+            .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
+            // Sort for ease of testing
+            .sort(),
+          type: 'duplicate',
+        });
+      }
+    }
+
+    // Add cases of "shadowing at a distance": a module with a platform suffix and
+    // a module with a lower priority platform suffix (or no suffix), in different
+    // directories.
+    for (const [id, data] of this.#map) {
+      const conflictPaths = new Set<string>();
+      const basePaths = [];
+      for (const basePlatform of [H.NATIVE_PLATFORM, H.GENERIC_PLATFORM]) {
+        if (data[basePlatform] == null) {
+          continue;
+        }
+        const basePath = data[basePlatform][0];
+        basePaths.push(basePath);
+        const basePathDir = path.dirname(basePath);
+        // Find all platforms that can shadow basePlatform
+        // Given that X.(specific platform).js > x.native.js > X.js
+        // and basePlatform is either 'native' or generic (no platform).
+        for (const platform of Object.keys(data)) {
+          if (
+            platform === basePlatform ||
+            platform === H.GENERIC_PLATFORM /* lowest priority */
+          ) {
+            continue;
+          }
+          const platformPath = data[platform][0];
+          if (path.dirname(platformPath) !== basePathDir) {
+            conflictPaths.add(platformPath);
+          }
+        }
+      }
+      if (conflictPaths.size) {
+        conflicts.push({
+          id,
+          platform: null,
+          absolutePaths: [...new Set([...conflictPaths, ...basePaths])]
+            .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
+            // Sort for ease of testing
+            .sort(),
+          type: 'shadowing',
+        });
+      }
+    }
+
+    // Sort for ease of testing
+    conflicts.sort(
+      chainComparators(
+        (a, b) => compareStrings(a.type, b.type),
+        (a, b) => compareStrings(a.id, b.id),
+        (a, b) => compareStrings(a.platform, b.platform),
+      ),
+    );
+
+    return conflicts;
   }
 }

@@ -240,26 +240,6 @@ describe('worker', () => {
     expect(fs.readFile).not.toHaveBeenCalled();
   });
 
-  test('calls readLink and returns symlink target when readLink=true', async () => {
-    expect(
-      await worker({
-        computeDependencies: false,
-        filePath: path.join('/project', 'fruits', 'LinkToStrawberry.js'),
-        readLink: true,
-        rootDir,
-      }),
-    ).toEqual({
-      dependencies: undefined,
-      id: undefined,
-      module: undefined,
-      sha1: undefined,
-      symlinkTarget: path.join('.', 'Strawberry.js'),
-    });
-
-    expect(fs.readFileSync).not.toHaveBeenCalled();
-    expect(fs.promises.readlink).toHaveBeenCalled();
-  });
-
   test('can be loaded directly without transpilation', async () => {
     const code = await jest
       .requireActual('fs')

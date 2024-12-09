@@ -469,6 +469,16 @@ describe('FileMap', () => {
       }),
     );
 
+    // We should not have read files inside node_modules during a build
+    // if retainAllFiles == false.
+    expect(require('fs').readFileSync.mock.calls).toEqual([
+      ['/project/fruits/Banana.js'],
+      ['/project/fruits/Pear.js'],
+      ['/project/fruits/Strawberry.js'],
+      ['/project/fruits/__mocks__/Pear.js'],
+      ['/project/vegetables/Melon.js'],
+    ]);
+
     expect(hasteMap.getModule('Banana')).toEqual(
       path.join(defaultConfig.rootDir, 'fruits', 'Banana.js'),
     );
@@ -1341,7 +1351,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1353,7 +1362,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1365,7 +1373,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1377,7 +1384,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1389,7 +1395,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],

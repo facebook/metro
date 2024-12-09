@@ -254,6 +254,13 @@ export type LookupResult =
       type: 'd' | 'f';
     };
 
+export type HasteConflict = {
+  id: string;
+  platform: string | null;
+  absolutePaths: Array<string>;
+  type: 'duplicate' | 'shadowing';
+};
+
 export interface HasteMap {
   getModule(
     name: string,
@@ -268,7 +275,7 @@ export interface HasteMap {
     _supportsNativePlatform: boolean | null,
   ): Path | null;
 
-  getRawHasteMap(): ReadOnlyRawHasteMap;
+  computeConflicts(): Array<HasteConflict>;
 }
 
 export type MockData = Map<string, Path>;
@@ -287,21 +294,6 @@ export interface MutableFileSystem extends FileSystem {
 
 export type Path = string;
 
-export interface RawHasteMap {
-  rootDir: Path;
-  duplicates: DuplicatesIndex;
-  map: HasteMapData;
-}
-
-export type ReadOnlyRawHasteMap = Readonly<{
-  rootDir: Path;
-  duplicates: ReadonlyMap<
-    string,
-    ReadonlyMap<string, ReadonlyMap<string, number>>
-  >;
-  map: ReadonlyMap<string, HasteMapItem>;
-}>;
-
 export type WatchmanClockSpec =
   | string
   | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
@@ -312,7 +304,6 @@ export type WorkerMessage = Readonly<{
   computeSha1: boolean;
   dependencyExtractor?: string | null;
   enableHastePackages: boolean;
-  readLink: boolean;
   rootDir: string;
   filePath: string;
   hasteImplModulePath?: string | null;
@@ -323,5 +314,4 @@ export type WorkerMetadata = Readonly<{
   id?: string | null;
   module?: HasteMapItemMetaData | null;
   sha1?: string | null;
-  symlinkTarget?: string | null;
 }>;
