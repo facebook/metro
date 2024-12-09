@@ -326,7 +326,6 @@ export type WorkerMessage = $ReadOnly<{
   computeSha1: boolean,
   dependencyExtractor?: ?string,
   enableHastePackages: boolean,
-  readLink: boolean,
   rootDir: string,
   filePath: string,
   hasteImplModulePath?: ?string,
@@ -337,5 +336,4 @@ export type WorkerMetadata = $ReadOnly<{
   id?: ?string,
   module?: ?HasteMapItemMetaData,
   sha1?: ?string,
-  symlinkTarget?: ?string,
 }>;
