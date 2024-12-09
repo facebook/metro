@@ -2060,6 +2060,61 @@ describe('FileMap', () => {
       }
 
       fm_it(
+        'does not throw on a duplicate created at runtime even if throwOnModuleCollision: true',
+        async hm => {
+          mockFs[path.join('/', 'project', 'fruits', 'Pear.js')] = `
+          // Pear!
+        `;
+          mockFs[path.join('/', 'project', 'fruits', 'another', 'Pear.js')] = `
+          // Pear too!
+        `;
+          const {fileSystem} = await hm.build();
+          const e = mockEmitters[path.join('/', 'project', 'fruits')];
+          e.emit(
+            'all',
+            'change',
+            'Pear.js',
+            path.join('/', 'project', 'fruits'),
+            MOCK_CHANGE_FILE,
+          );
+          e.emit(
+            'all',
+            'add',
+            'Pear.js',
+            path.join('/', 'project', 'fruits', 'another'),
+            MOCK_CHANGE_FILE,
+          );
+          await new Promise((resolve, reject) => {
+            console.error.mockImplementationOnce(() => {
+              reject(new Error('should not print error'));
+            });
+            hm.once('change', resolve);
+          });
+          // Expect a warning to be printed, but no error.
+          expect(console.warn).toHaveBeenCalledWith(
+            expect.stringContaining(
+              'metro-file-map: Haste module naming collision: Pear',
+            ),
+          );
+          // Both files should be added to the fileSystem, despite the Haste
+          // collision
+          expect(
+            fileSystem.exists(path.join('/', 'project', 'fruits', 'Pear.js')),
+          ).toBe(true);
+          expect(
+            fileSystem.exists(
+              path.join('/', 'project', 'fruits', 'another', 'Pear.js'),
+            ),
+          ).toBe(true);
+        },
+        {
+          config: {
+            throwOnModuleCollision: true,
+          },
+        },
+      );
+
+      fm_it(
         'recovers when the oldest version of the duplicates is fixed',
         async hm => {
           const {hasteMap} = await hm.build();
