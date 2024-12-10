@@ -12,21 +12,21 @@
     "serve": "docusaurus serve"
   },
   "dependencies": {
-    "@docusaurus/core": "3.6.0",
-    "@docusaurus/preset-classic": "3.6.0",
+    "@docusaurus/core": "^3.6.3",
+    "@docusaurus/preset-classic": "^3.6.3",
     "@mdx-js/react": "^3.1.0",
-    "classnames": "2.5.1",
-    "docusaurus-plugin-internaldocs-fb": "1.19.0",
-    "docusaurus-plugin-sass": "^0.2.5",
+    "classnames": "^2.5.1",
+    "docusaurus-plugin-internaldocs-fb": "^1.19.1",
+    "docusaurus-plugin-sass": "^0.2.6",
     "prism-react-renderer": "^2.4.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-github-btn": "1.4.0",
-    "sass": "^1.80.6"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-github-btn": "^1.4.0",
+    "sass": "^1.82.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.6.0",
-    "@docusaurus/types": "3.6.0",
-    "prettier": "3.3.3"
+    "@docusaurus/module-type-aliases": "3.6.3",
+    "@docusaurus/types": "3.6.3",
+    "prettier": "3.4.2"
   }
 }
