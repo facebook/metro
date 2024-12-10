@@ -870,6 +870,7 @@ export default class FileMap extends EventEmitter {
     // In watch mode, we'll only warn about module collisions and we'll retain
     // all files, even changes to node_modules.
     this._options.throwOnModuleCollision = false;
+    hasteMap.setThrowOnModuleCollision(false);
     this._options.retainAllFiles = true;
 
     const hasWatchedExtension = (filePath: string) =>
