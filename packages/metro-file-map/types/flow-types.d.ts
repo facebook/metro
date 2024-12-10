@@ -287,12 +287,6 @@ export interface MutableFileSystem extends FileSystem {
 
 export type Path = string;
 
-export interface RawHasteMap {
-  rootDir: Path;
-  duplicates: DuplicatesIndex;
-  map: HasteMapData;
-}
-
 export type ReadOnlyRawHasteMap = Readonly<{
   rootDir: Path;
   duplicates: ReadonlyMap<

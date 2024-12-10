@@ -307,11 +307,6 @@ export type Path = string;
 
 export type RawMockMap = Map<string, Path>;
 
-export type RawHasteMap = {
-  duplicates: DuplicatesIndex,
-  map: HasteMapData,
-};
-
 export type ReadOnlyRawHasteMap = $ReadOnly<{
   duplicates: $ReadOnlyMap<
     string,
