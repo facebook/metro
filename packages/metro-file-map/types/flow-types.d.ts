@@ -254,6 +254,13 @@ export type LookupResult =
       type: 'd' | 'f';
     };
 
+export type HasteConflict = {
+  id: string;
+  platform: string | null;
+  absolutePaths: Array<string>;
+  type: 'duplicate' | 'shadowing';
+};
+
 export interface HasteMap {
   getModule(
     name: string,
@@ -268,7 +275,7 @@ export interface HasteMap {
     _supportsNativePlatform: boolean | null,
   ): Path | null;
 
-  getRawHasteMap(): ReadOnlyRawHasteMap;
+  computeConflicts(): Array<HasteConflict>;
 }
 
 export type MockData = Map<string, Path>;
@@ -286,15 +293,6 @@ export interface MutableFileSystem extends FileSystem {
 }
 
 export type Path = string;
-
-export type ReadOnlyRawHasteMap = Readonly<{
-  rootDir: Path;
-  duplicates: ReadonlyMap<
-    string,
-    ReadonlyMap<string, ReadonlyMap<string, number>>
-  >;
-  map: ReadonlyMap<string, HasteMapItem>;
-}>;
 
 export type WatchmanClockSpec =
   | string

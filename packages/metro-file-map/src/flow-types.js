@@ -272,6 +272,13 @@ export interface MockMap {
   getMockModule(name: string): ?Path;
 }
 
+export type HasteConflict = {
+  id: string,
+  platform: string | null,
+  absolutePaths: Array<string>,
+  type: 'duplicate' | 'shadowing',
+};
+
 export interface HasteMap {
   getModule(
     name: string,
@@ -286,7 +293,7 @@ export interface HasteMap {
     _supportsNativePlatform: ?boolean,
   ): ?Path;
 
-  getRawHasteMap(): ReadOnlyRawHasteMap;
+  computeConflicts(): Array<HasteConflict>;
 }
 
 export type HasteMapData = Map<string, HasteMapItem>;
@@ -306,14 +313,6 @@ export interface MutableFileSystem extends FileSystem {
 export type Path = string;
 
 export type RawMockMap = Map<string, Path>;
-
-export type ReadOnlyRawHasteMap = $ReadOnly<{
-  duplicates: $ReadOnlyMap<
-    string,
-    $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
-  >,
-  map: $ReadOnlyMap<string, HasteMapItem>,
-}>;
 
 export type ReadOnlyRawMockMap = $ReadOnlyMap<string, Path>;
 
