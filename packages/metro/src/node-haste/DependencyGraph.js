@@ -101,7 +101,10 @@ class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const fileMap = createFileMap(config, {watch});
+    const fileMap = createFileMap(config, {
+      throwOnModuleCollision: false,
+      watch,
+    });
 
     // We can have a lot of graphs listening to Haste for changes.
     // Bump this up to silence the max listeners EventEmitter warning.

@@ -16,6 +16,11 @@ import type {TransformResultDependency} from '../types.flow';
 import type {InputConfigT} from 'metro-config/src/configTypes.flow';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
+const {AmbiguousModuleResolutionError} = require('metro-core');
+const {
+  DuplicateHasteCandidatesError,
+  default: {H: Haste},
+} = require('metro-file-map');
 const path = require('path');
 const mockPlatform = process.platform;
 
@@ -31,7 +36,9 @@ jest
     endianness: () => 'LE',
     release: () => '',
   }))
-  .mock('graceful-fs', () => require('fs'));
+  .mock('graceful-fs', () => require('fs'))
+  .spyOn(console, 'warn')
+  .mockImplementation(() => {});
 
 jest.setTimeout(10000);
 
@@ -1793,9 +1800,7 @@ function dep(name: string): TransformResultDependency {
           });
         });
 
-        test('fatals on multiple packages with the same name', async () => {
-          // $FlowFixMe[cannot-write]
-          console.warn = jest.fn();
+        test('resolution throws on multiple packages with the same name', async () => {
           setMockFileSystem({
             'index.js': '',
             aPackage: {
@@ -1807,10 +1812,9 @@ function dep(name: string): TransformResultDependency {
             },
           });
 
-          await expect(createResolver(config)).rejects.toThrow(
-            'Duplicated files or mocks. Please check the console for more info',
-          );
-          expect(console.error).toHaveBeenCalledWith(
+          resolver = await createResolver(config);
+
+          expect(console.warn).toHaveBeenCalledWith(
             [
               'metro-file-map: Haste module naming collision: aPackage',
               '  The following files share their name; please adjust your hasteImpl:',
@@ -1823,9 +1827,26 @@ function dep(name: string): TransformResultDependency {
               '',
             ].join('\n'),
           );
+
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toThrowError(
+            new AmbiguousModuleResolutionError(
+              p('/root/index.js'),
+              new DuplicateHasteCandidatesError(
+                'aPackage',
+                Haste.GENERIC_PLATFORM,
+                false,
+                new Map([
+                  [p('/root/aPackage/package.json'), Haste.PACKAGE],
+                  [p('/root/anotherPackage/package.json'), Haste.PACKAGE],
+                ]),
+              ),
+            ).message,
+          );
         });
 
-        test('does not support multiple global packages for different platforms', async () => {
+        test('resolution throws on multiple global packages for different platforms', async () => {
           setMockFileSystem({
             'index.js': '',
             'aPackage.android.js': {
@@ -1838,10 +1859,9 @@ function dep(name: string): TransformResultDependency {
             },
           });
 
-          await expect(createResolver(config)).rejects.toThrow(
-            'Duplicated files or mocks. Please check the console for more info',
-          );
-          expect(console.error).toHaveBeenCalledWith(
+          resolver = await createResolver(config, 'ios');
+
+          expect(console.warn).toHaveBeenCalledWith(
             [
               'metro-file-map: Haste module naming collision: aPackage',
               '  The following files share their name; please adjust your hasteImpl:',
@@ -1857,6 +1877,23 @@ function dep(name: string): TransformResultDependency {
               )}`,
               '',
             ].join('\n'),
+          );
+
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), dep('aPackage')),
+          ).toThrowError(
+            new AmbiguousModuleResolutionError(
+              p('/root/index.js'),
+              new DuplicateHasteCandidatesError(
+                'aPackage',
+                Haste.GENERIC_PLATFORM,
+                false,
+                new Map([
+                  [p('/root/aPackage.android.js/package.json'), Haste.PACKAGE],
+                  [p('/root/aPackage.ios.js/package.json'), Haste.PACKAGE],
+                ]),
+              ),
+            ).message,
           );
         });
 
@@ -2101,17 +2138,16 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      test('fatals when there are duplicated haste names', async () => {
+      test('resolution throws when there are duplicated haste names', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
           'anotherHasteModule.js': '@providesModule hasteModule',
         });
 
-        await expect(createResolver(config)).rejects.toThrow(
-          'Duplicated files or mocks. Please check the console for more info',
-        );
-        expect(console.error).toHaveBeenCalledWith(
+        resolver = await createResolver(config);
+
+        expect(console.warn).toHaveBeenCalledWith(
           [
             'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
@@ -2119,6 +2155,23 @@ function dep(name: string): TransformResultDependency {
             `    * ${joinPath('<rootDir>', 'anotherHasteModule.js')}`,
             '',
           ].join('\n'),
+        );
+
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toThrowError(
+          new AmbiguousModuleResolutionError(
+            p('/root/index.js'),
+            new DuplicateHasteCandidatesError(
+              'hasteModule',
+              Haste.GENERIC_PLATFORM,
+              false,
+              new Map([
+                [p('/root/anotherHasteModule.js'), Haste.MODULE],
+                [p('/root/hasteModule.js'), Haste.MODULE],
+              ]),
+            ),
+          ).message,
         );
       });
 
@@ -2143,7 +2196,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      test('fatals when a haste module collides with a global package', async () => {
+      test('resolution throws when a haste module collides with a global package', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
@@ -2152,10 +2205,9 @@ function dep(name: string): TransformResultDependency {
           },
         });
 
-        await expect(createResolver(config)).rejects.toThrow(
-          'Duplicated files or mocks. Please check the console for more info',
-        );
-        expect(console.error).toHaveBeenCalledWith(
+        resolver = await createResolver(config);
+
+        expect(console.warn).toHaveBeenCalledWith(
           [
             'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
@@ -2163,6 +2215,23 @@ function dep(name: string): TransformResultDependency {
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
             '',
           ].join('\n'),
+        );
+
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('hasteModule')),
+        ).toThrowError(
+          new AmbiguousModuleResolutionError(
+            p('/root/index.js'),
+            new DuplicateHasteCandidatesError(
+              'hasteModule',
+              Haste.GENERIC_PLATFORM,
+              false,
+              new Map([
+                [p('/root/aPackage/package.json'), Haste.PACKAGE],
+                [p('/root/hasteModule.js'), Haste.MODULE],
+              ]),
+            ),
+          ).message,
         );
       });
 
@@ -2215,17 +2284,16 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      test('fatals when a filename uses a non-supported platform and there are collisions', async () => {
+      test('warns when a filename uses a non-supported platform and there are collisions', async () => {
         setMockFileSystem({
           'index.js': '',
           'hasteModule.js': '@providesModule hasteModule',
           'hasteModule.invalid.js': '@providesModule hasteModule',
         });
 
-        await expect(createResolver(config)).rejects.toThrow(
-          'Duplicated files or mocks. Please check the console for more info',
-        );
-        expect(console.error).toHaveBeenCalledWith(
+        resolver = await createResolver(config);
+
+        expect(console.warn).toHaveBeenCalledWith(
           [
             'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
