@@ -268,7 +268,7 @@ describe.each(Object.keys(WATCHERS))(
         );
       },
       // We see occasional failures in CI with default 5s timeout.
-      30000,
+      45000,
     );
   },
 );
