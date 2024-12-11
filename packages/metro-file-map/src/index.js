@@ -31,8 +31,6 @@ import type {
   Path,
   PerfLogger,
   PerfLoggerFactory,
-  RawMockMap,
-  ReadOnlyRawMockMap,
   WatchmanClocks,
   WorkerMetadata,
 } from './flow-types';
@@ -40,9 +38,7 @@ import type {IJestWorker} from 'jest-worker';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
-import getMockName from './getMockName';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
-import {DuplicateError} from './lib/DuplicateError';
 import MockMapImpl from './lib/MockMap';
 import MutableHasteMap from './lib/MutableHasteMap';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
@@ -367,7 +363,6 @@ export default class FileMap extends EventEmitter {
               })
             : new TreeFS({rootDir});
         this._startupPerfLogger?.point('constructFileSystem_end');
-        const mocks = initialData?.mocks ?? new Map();
 
         // Construct the Haste map from the cached file system state while
         // crawling to build a diff of current state vs cached. `fileSystem`
@@ -380,13 +375,24 @@ export default class FileMap extends EventEmitter {
           this._constructHasteMap(fileSystem),
         ]);
 
+        const mockMap =
+          this._options.mocksPattern != null
+            ? new MockMapImpl({
+                console: this._console,
+                mocksPattern: this._options.mocksPattern,
+                rawMockMap: initialData?.mocks ?? new Map(),
+                rootDir,
+                throwOnModuleCollision: this._options.throwOnModuleCollision,
+              })
+            : null;
+
         // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
-        await this._applyFileDelta(fileSystem, hasteMap, mocks, fileDelta);
+        await this._applyFileDelta(fileSystem, hasteMap, mockMap, fileDelta);
 
         await this._takeSnapshotAndPersist(
           fileSystem,
           fileDelta.clocks ?? new Map(),
-          mocks,
+          mockMap,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
@@ -396,11 +402,11 @@ export default class FileMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, hasteMap, mocks);
+        await this._watch(fileSystem, hasteMap, mockMap);
         return {
           fileSystem,
           hasteMap,
-          mockMap: new MockMapImpl({rootDir, rawMockMap: mocks}),
+          mockMap,
         };
       })();
     }
@@ -521,7 +527,7 @@ export default class FileMap extends EventEmitter {
    */
   _processFile(
     hasteMap: MutableHasteMap,
-    mockMap: RawMockMap,
+    mockMap: ?MockMapImpl,
     filePath: Path,
     fileMetadata: FileMetaData,
     workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
@@ -541,8 +547,6 @@ export default class FileMap extends EventEmitter {
     }
 
     const rootDir = this._options.rootDir;
-
-    const relativeFilePath = this._pathUtils.absoluteToNormal(filePath);
 
     const computeSha1 =
       this._options.computeSha1 && fileMetadata[H.SHA1] == null;
@@ -607,38 +611,7 @@ export default class FileMap extends EventEmitter {
       return null;
     }
 
-    if (
-      this._options.mocksPattern &&
-      this._options.mocksPattern.test(filePath)
-    ) {
-      const mockPath = getMockName(filePath);
-      const existingMockPath = mockMap.get(mockPath);
-
-      if (existingMockPath != null) {
-        const secondMockPath = this._pathUtils.absoluteToNormal(filePath);
-        if (existingMockPath !== secondMockPath) {
-          const method = this._options.throwOnModuleCollision
-            ? 'error'
-            : 'warn';
-
-          this._console[method](
-            [
-              'metro-file-map: duplicate manual mock found: ' + mockPath,
-              '  The following files share their name; please delete one of them:',
-              '    * <rootDir>' + path.sep + existingMockPath,
-              '    * <rootDir>' + path.sep + secondMockPath,
-              '',
-            ].join('\n'),
-          );
-
-          if (this._options.throwOnModuleCollision) {
-            throw new DuplicateError(existingMockPath, secondMockPath);
-          }
-        }
-      }
-
-      mockMap.set(mockPath, relativeFilePath);
-    }
+    mockMap?.onNewOrModifiedFile(filePath);
 
     return this._getWorker(workerOptions)
       .worker({
@@ -656,7 +629,7 @@ export default class FileMap extends EventEmitter {
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
     hasteMap: MutableHasteMap,
-    mockMap: RawMockMap,
+    mockMap: ?MockMapImpl,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -758,7 +731,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    mockMap: ReadOnlyRawMockMap,
+    mockMap: ?MockMapImpl,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -767,7 +740,7 @@ export default class FileMap extends EventEmitter {
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
-        mocks: new Map(mockMap),
+        mocks: mockMap ? mockMap.getSerializableSnapshot() : new Map(),
       },
       {changed, removed},
     );
@@ -809,7 +782,7 @@ export default class FileMap extends EventEmitter {
   _removeIfExists(
     fileSystem: MutableFileSystem,
     hasteMap: MutableHasteMap,
-    mockMap: RawMockMap,
+    mockMap: ?MockMapImpl,
     relativeFilePath: Path,
   ) {
     const fileMetadata = fileSystem.remove(relativeFilePath);
@@ -823,18 +796,10 @@ export default class FileMap extends EventEmitter {
 
     hasteMap.removeModule(moduleName, relativeFilePath);
 
-    if (this._options.mocksPattern) {
-      const absoluteFilePath = path.join(
-        this._options.rootDir,
-        normalizePathSeparatorsToSystem(relativeFilePath),
+    if (mockMap) {
+      mockMap?.onRemovedFile(
+        this._pathUtils.normalToAbsolute(relativeFilePath),
       );
-      if (
-        this._options.mocksPattern &&
-        this._options.mocksPattern.test(absoluteFilePath)
-      ) {
-        const mockName = getMockName(absoluteFilePath);
-        mockMap.delete(mockName);
-      }
     }
   }
 
@@ -844,7 +809,7 @@ export default class FileMap extends EventEmitter {
   async _watch(
     fileSystem: MutableFileSystem,
     hasteMap: MutableHasteMap,
-    mockMap: RawMockMap,
+    mockMap: ?MockMapImpl,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
@@ -854,8 +819,8 @@ export default class FileMap extends EventEmitter {
 
     // In watch mode, we'll only warn about module collisions and we'll retain
     // all files, even changes to node_modules.
-    this._options.throwOnModuleCollision = false;
     hasteMap.setThrowOnModuleCollision(false);
+    mockMap?.setThrowOnModuleCollision(false);
     this._options.retainAllFiles = true;
 
     const hasWatchedExtension = (filePath: string) =>
