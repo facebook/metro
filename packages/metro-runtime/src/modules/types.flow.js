@@ -83,6 +83,7 @@ export type HmrClientMessage =
         | 'debug',
       +data: Array<mixed>,
       +mode: 'BRIDGE' | 'NOBRIDGE',
+      +platform: string,
     }
   | {
       +type: 'log-opt-in',
