@@ -742,6 +742,36 @@ describe('FileMap', () => {
     expect(fs.readFileSync.mock.calls.length).toBe(5);
   });
 
+  test('builds a mock map if mocksPattern is non-null', async () => {
+    const pathToMock = path.join(
+      '/',
+      'project',
+      'fruits1',
+      '__mocks__',
+      'Blueberry.js',
+    );
+    mockFs[pathToMock] = '/* empty */';
+
+    const {mockMap} = await new FileMap({
+      mocksPattern: '__mocks__',
+      throwOnModuleCollision: true,
+      ...defaultConfig,
+    }).build();
+
+    expect(mockMap).not.toBeNull();
+    expect(mockMap.getMockModule('Blueberry')).toEqual(pathToMock);
+  });
+
+  test('returns null mockMap if mocksPattern is empty', async () => {
+    const {mockMap} = await new FileMap({
+      mocksPattern: '',
+      throwOnModuleCollision: true,
+      ...defaultConfig,
+    }).build();
+
+    expect(mockMap).toBeNull();
+  });
+
   test('warns on duplicate mock files', async () => {
     expect.assertions(1);
 
@@ -1341,7 +1371,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1353,7 +1382,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1365,7 +1393,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1377,7 +1404,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],
@@ -1389,7 +1415,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
-          readLink: false,
           rootDir: path.join('/', 'project'),
         },
       ],

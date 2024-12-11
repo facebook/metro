@@ -304,7 +304,6 @@ export type WorkerMessage = Readonly<{
   computeSha1: boolean;
   dependencyExtractor?: string | null;
   enableHastePackages: boolean;
-  readLink: boolean;
   rootDir: string;
   filePath: string;
   hasteImplModulePath?: string | null;
@@ -315,5 +314,4 @@ export type WorkerMetadata = Readonly<{
   id?: string | null;
   module?: HasteMapItemMetaData | null;
   sha1?: string | null;
-  symlinkTarget?: string | null;
 }>;

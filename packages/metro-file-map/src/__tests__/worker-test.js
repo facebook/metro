@@ -54,19 +54,6 @@ jest.mock('fs', () => {
       }
       throw new Error(`Cannot read path '${path}'.`);
     }),
-    promises: {
-      readlink: jest.fn(async path => {
-        const entry = mockFs[path];
-        if (entry) {
-          if (typeof entry.link === 'string') {
-            return entry.link;
-          } else {
-            throw new Error('Tried to call readlink on a non-symlink');
-          }
-        }
-        throw new Error(`Cannot read path '${path}'.`);
-      }),
-    },
   };
 });
 
@@ -238,26 +225,6 @@ describe('worker', () => {
     // Ensure not disk access happened.
     expect(fs.readFileSync).not.toHaveBeenCalled();
     expect(fs.readFile).not.toHaveBeenCalled();
-  });
-
-  test('calls readLink and returns symlink target when readLink=true', async () => {
-    expect(
-      await worker({
-        computeDependencies: false,
-        filePath: path.join('/project', 'fruits', 'LinkToStrawberry.js'),
-        readLink: true,
-        rootDir,
-      }),
-    ).toEqual({
-      dependencies: undefined,
-      id: undefined,
-      module: undefined,
-      sha1: undefined,
-      symlinkTarget: path.join('.', 'Strawberry.js'),
-    });
-
-    expect(fs.readFileSync).not.toHaveBeenCalled();
-    expect(fs.promises.readlink).toHaveBeenCalled();
   });
 
   test('can be loaded directly without transpilation', async () => {
