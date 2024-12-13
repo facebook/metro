@@ -80,6 +80,7 @@ class DependencyGraph extends EventEmitter {
     >,
   >;
   _initializedPromise: Promise<void>;
+  _sha1Promises: Map<string, Promise<string>> = new Map();
 
   constructor(
     config: ConfigT,
@@ -269,6 +270,14 @@ class DependencyGraph extends EventEmitter {
     }
 
     return sha1;
+  }
+
+  async getOrComputeSha1(absoluteFilePath: string): Promise<string> {
+    const existingPromise = this._sha1Promises.get(absoluteFilePath);
+    if (existingPromise) {
+      return existingPromise;
+    }
+    
   }
 
   getWatcher(): EventEmitter {

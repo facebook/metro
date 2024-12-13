@@ -28,6 +28,7 @@ class Bundler {
   _depGraph: DependencyGraph;
   _initializedPromise: Promise<void>;
   _transformer: Transformer;
+  _sha1Promises: Map<string, Promise<Buffer>> = new Map();
 
   constructor(config: ConfigT, options?: BundlerOptions) {
     this._depGraph = new DependencyGraph(config, options);
@@ -36,8 +37,12 @@ class Bundler {
       .ready()
       .then(() => {
         config.reporter.update({type: 'transformer_load_started'});
-        this._transformer = new Transformer(config, (...args) =>
-          this._depGraph.getSha1(...args),
+        this._transformer = new Transformer(
+          config,
+          async (absoluteFilePath: string) => {
+            return
+            this._depGraph.getSha1(absoluteFilePath);
+          };
         );
         config.reporter.update({type: 'transformer_load_done'});
       })

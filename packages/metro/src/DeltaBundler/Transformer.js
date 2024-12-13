@@ -24,14 +24,16 @@ const fs = require('fs');
 const {Cache, stableHash} = require('metro-cache');
 const path = require('path');
 
+type GetSha1Fn = string => string | Promise<{sha1: string, content?: ?Buffer}>;
+
 class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
-  _getSha1: string => string;
+  _getSha1: GetSha1Fn;
   _workerFarm: WorkerFarm;
 
-  constructor(config: ConfigT, getSha1Fn: string => string) {
+  constructor(config: ConfigT, getSha1Fn: GetSha1Fn) {
     this._config = config;
 
     this._config.watchFolders.forEach(verifyRootExists);
@@ -70,7 +72,7 @@ class Transformer {
   async transformFile(
     filePath: string,
     transformerOptions: TransformOptions,
-    fileBuffer?: Buffer,
+    inputFileBuffer?: Buffer,
   ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
@@ -129,11 +131,22 @@ class Transformer {
     ]);
 
     let sha1: string;
-    if (fileBuffer) {
+    let fileBuffer: ?Buffer;
+    if (inputFileBuffer) {
+      fileBuffer = inputFileBuffer;
       // Shortcut for virtual modules which provide the contents with the filename.
       sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
     } else {
-      sha1 = this._getSha1(filePath);
+      const computedSha1 = await this._getSha1(filePath);
+      if (typeof computedSha1 === 'string') {
+        sha1 = computedSha1;
+      } else {
+        sha1 = computedSha1.sha1;
+        // The SHA1 provider may have provided the file content as well.
+        if (computedSha1.content) {
+          fileBuffer = computedSha1.content;
+        }
+      }
     }
 
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
