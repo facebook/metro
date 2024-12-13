@@ -176,6 +176,10 @@ export interface FileSystem {
     removedFiles: Set<string>,
   };
   getModuleName(file: Path): ?string;
+  getOrComputeSha1(
+    file: Path,
+    computeSha1: (absolutePath: string) => Promise<?string>,
+  ): Promise<?string>;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
 

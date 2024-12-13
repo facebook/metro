@@ -859,4 +859,67 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       );
     });
   });
+
+  describe('getOrComputeSha1', () => {
+    const mockCompute = jest.fn().mockResolvedValue('abc123');
+    beforeEach(() => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map([
+          [p('foo.js'), ['', 123, 0, 0, '', 'def456', 0]],
+          [p('bar.js'), ['', 123, 0, 0, '', '', 0]],
+          [p('link-to-bar'), ['', 456, 0, 0, '', '', p('./bar.js')]],
+        ]),
+      });
+      mockCompute.mockClear();
+    });
+
+    test('returns the precomputed SHA-1 of a file if set', async () => {
+      expect(await tfs.getOrComputeSha1(p('foo.js'), mockCompute)).toBe(
+        'def456',
+      );
+      expect(mockCompute).not.toHaveBeenCalled();
+    });
+
+    test('calls computeSha1 exactly once if not initially set', async () => {
+      expect(await tfs.getOrComputeSha1(p('bar.js'), mockCompute)).toBe(
+        'abc123',
+      );
+      expect(mockCompute).toHaveBeenCalledWith(p('/project/bar.js'));
+      mockCompute.mockClear();
+      expect(await tfs.getOrComputeSha1(p('bar.js'), mockCompute)).toBe(
+        'abc123',
+      );
+      expect(mockCompute).not.toHaveBeenCalled();
+    });
+
+    test('calls computeSha1 on resolved symlink targets', async () => {
+      expect(await tfs.getOrComputeSha1(p('link-to-bar'), mockCompute)).toBe(
+        'abc123',
+      );
+      expect(mockCompute).toHaveBeenCalledWith(p('/project/bar.js'));
+    });
+
+    test('clears stored SHA1 on modification', async () => {
+      let resolve: string => void;
+      const computePromise = new Promise(r => {
+        resolve = r;
+      });
+      mockCompute.mockReturnValueOnce(computePromise);
+      const getOrComputePromise = tfs.getOrComputeSha1(
+        p('bar.js'),
+        mockCompute,
+      );
+      expect(mockCompute).toHaveBeenCalledWith(p('/project/bar.js'));
+      // Simulate the file being modified while we're waiting for the SHA1.
+      tfs.addOrModify(p('bar.js'), ['', 123, 0, 0, '', '', 0]);
+      resolve?.('newsha1');
+      expect(await getOrComputePromise).toBe('newsha1');
+      // A second call re-computes
+      expect(await tfs.getOrComputeSha1(p('bar.js'), mockCompute)).toBe(
+        'abc123',
+      );
+      expect(mockCompute).toHaveBeenCalledTimes(2);
+    });
+  });
 });
