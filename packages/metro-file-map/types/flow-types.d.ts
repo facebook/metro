@@ -162,6 +162,10 @@ export interface FileSystem {
   getAllFiles(): Path[];
   getDependencies(file: Path): string[] | null;
   getModuleName(file: Path): string | null;
+  getOrComputeSha1(
+    file: Path,
+    computeSha1: (absolutePath: string) => Promise<string | null>,
+  ): Promise<string | null>;
   getSerializableSnapshot(): FileData;
   getSha1(file: Path): string | null;
 
