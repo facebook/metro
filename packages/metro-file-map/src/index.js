@@ -51,6 +51,7 @@ import TreeFS from './lib/TreeFS';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
 import EventEmitter from 'events';
+import {promises as fsPromises} from 'fs';
 import invariant from 'invariant';
 import {Worker} from 'jest-worker';
 import {AbortController} from 'node-abort-controller';
@@ -525,18 +526,26 @@ export default class FileMap extends EventEmitter {
     fileMetadata: FileMetaData,
     workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
   ): ?Promise<void> {
+    // Symlink Haste modules, Haste packages or mocks are not supported - read
+    // the target if requested and return early.
+    if (fileMetadata[H.SYMLINK] !== 0) {
+      // If we only need to read a link, it's more efficient to do it in-band
+      // (with async file IO) than to have the overhead of worker IO.
+      if (fileMetadata[H.SYMLINK] === 1) {
+        return fsPromises.readlink(filePath).then(symlinkTarget => {
+          fileMetadata[H.VISITED] = 1;
+          fileMetadata[H.SYMLINK] = symlinkTarget;
+        });
+      }
+      return null;
+    }
+
     const rootDir = this._options.rootDir;
 
     const relativeFilePath = this._pathUtils.absoluteToNormal(filePath);
-    const isSymlink = fileMetadata[H.SYMLINK] !== 0;
 
     const computeSha1 =
-      this._options.computeSha1 && !isSymlink && fileMetadata[H.SHA1] == null;
-
-    const readLink =
-      this._options.enableSymlinks &&
-      isSymlink &&
-      typeof fileMetadata[H.SYMLINK] !== 'string';
+      this._options.computeSha1 && fileMetadata[H.SHA1] == null;
 
     // Callback called when the response from the worker is successful.
     const workerReply = (metadata: WorkerMetadata) => {
@@ -557,10 +566,6 @@ export default class FileMap extends EventEmitter {
       if (computeSha1) {
         fileMetadata[H.SHA1] = metadata.sha1;
       }
-
-      if (metadata.symlinkTarget != null) {
-        fileMetadata[H.SYMLINK] = metadata.symlinkTarget;
-      }
     };
 
     // Callback called when the response from the worker is an error.
@@ -579,41 +584,22 @@ export default class FileMap extends EventEmitter {
       throw error;
     };
 
-    // If we retain all files in the virtual HasteFS representation, we avoid
-    // reading them if they aren't important (node_modules).
+    // If we're tracking node_modules (retainAllFiles), use a cheaper worker
+    // configuration for those files, because we never care about extracting
+    // dependencies, and they may never be Haste modules or packages.
+    //
+    // Note that if retainAllFiles==false, no node_modules file should get this
+    // far - it will have been ignored by the crawler.
     if (this._options.retainAllFiles && filePath.includes(NODE_MODULES)) {
-      if (computeSha1 || readLink) {
+      if (computeSha1) {
         return this._getWorker(workerOptions)
           .worker({
             computeDependencies: false,
-            computeSha1,
+            computeSha1: true,
             dependencyExtractor: null,
             enableHastePackages: false,
             filePath,
             hasteImplModulePath: null,
-            readLink,
-            rootDir,
-          })
-          .then(workerReply, workerError);
-      }
-      return null;
-    }
-
-    // Symlink Haste modules, Haste packages or mocks are not supported - read
-    // the target if requested and return early.
-    if (isSymlink) {
-      if (readLink) {
-        // If we only need to read a link, it's more efficient to do it in-band
-        // (with async file IO) than to have the overhead of worker IO.
-        return this._getWorker({forceInBand: true})
-          .worker({
-            computeDependencies: false,
-            computeSha1: false,
-            dependencyExtractor: null,
-            enableHastePackages: false,
-            filePath,
-            hasteImplModulePath: null,
-            readLink,
             rootDir,
           })
           .then(workerReply, workerError);
@@ -662,7 +648,6 @@ export default class FileMap extends EventEmitter {
         enableHastePackages: this._options.enableHastePackages,
         filePath,
         hasteImplModulePath: this._options.hasteImplModulePath,
-        readLink: false,
         rootDir,
       })
       .then(workerReply, workerError);
