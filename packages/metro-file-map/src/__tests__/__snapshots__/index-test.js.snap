@@ -22,14 +22,6 @@ exports[`FileMap tries to crawl using node as a fallback 1`] = `
   Error: watchman error"
 `;
 
-exports[`FileMap warns on duplicate mock files 1`] = `
-"metro-file-map: duplicate manual mock found: subdir/Blueberry
-  The following files share their name; please delete one of them:
-    * <rootDir>/fruits1/__mocks__/subdir/Blueberry.js
-    * <rootDir>/fruits2/__mocks__/subdir/Blueberry.js
-"
-`;
-
 exports[`FileMap warns on duplicate module ids 1`] = `
 "metro-file-map: Haste module naming collision: Strawberry
   The following files share their name; please adjust your hasteImpl:

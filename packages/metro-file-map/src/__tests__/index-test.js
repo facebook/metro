@@ -486,11 +486,10 @@ describe('FileMap', () => {
       path.resolve(defaultConfig.rootDir, 'fruits', '__mocks__', 'Pear.js'),
     );
 
-    expect(cacheContent.mocks).toEqual(
-      createMap({
-        Pear: path.join('fruits', '__mocks__', 'Pear.js'),
-      }),
-    );
+    expect(cacheContent.mocks).toEqual({
+      mocks: new Map([['Pear', path.join('fruits', '__mocks__', 'Pear.js')]]),
+      duplicates: new Map(),
+    });
 
     // The cache file must exactly mirror the data structure returned from a
     // read
@@ -772,9 +771,7 @@ describe('FileMap', () => {
     expect(mockMap).toBeNull();
   });
 
-  test('warns on duplicate mock files', async () => {
-    expect.assertions(1);
-
+  test('throws on duplicate mock files when throwOnModuleCollision', async () => {
     // Duplicate mock files for blueberry
     mockFs[
       path.join(
@@ -801,17 +798,18 @@ describe('FileMap', () => {
       // Blueberry too!
     `;
 
-    try {
-      await new FileMap({
+    expect(() =>
+      new FileMap({
         mocksPattern: '__mocks__',
         throwOnModuleCollision: true,
         ...defaultConfig,
-      }).build();
-    } catch {
-      expect(
-        console.error.mock.calls[0][0].replaceAll('\\', '/'),
-      ).toMatchSnapshot();
-    }
+      }).build(),
+    ).rejects.toThrowError(
+      'Mock map has 1 error:\n' +
+        'Duplicate manual mock found for `subdir/Blueberry`:\n' +
+        '    * <rootDir>/../../fruits1/__mocks__/subdir/Blueberry.js\n' +
+        '    * <rootDir>/../../fruits2/__mocks__/subdir/Blueberry.js\n',
+    );
   });
 
   test('warns on duplicate module ids', async () => {

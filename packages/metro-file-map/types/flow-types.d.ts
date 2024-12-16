@@ -43,7 +43,7 @@ export interface BuildResult {
 
 export interface CacheData {
   readonly clocks: WatchmanClocks;
-  readonly mocks: MockData;
+  readonly mocks: RawMockMap;
   readonly files: FileData;
 }
 
@@ -278,7 +278,11 @@ export interface HasteMap {
   computeConflicts(): Array<HasteConflict>;
 }
 
-export type MockData = Map<string, Path>;
+export type RawMockMap = {
+  readonly mocks: Map<string, string>;
+  readonly duplicates: Map<string, Set<string>>;
+};
+
 export type HasteMapData = Map<string, HasteMapItem>;
 
 export interface HasteMapItem {

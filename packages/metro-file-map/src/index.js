@@ -141,7 +141,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '7';
+const CACHE_BREAKER = '8';
 
 const CHANGE_INTERVAL = 30;
 // Periodically yield to the event loop to allow parallel I/O, etc.
@@ -380,7 +380,7 @@ export default class FileMap extends EventEmitter {
             ? new MockMapImpl({
                 console: this._console,
                 mocksPattern: this._options.mocksPattern,
-                rawMockMap: initialData?.mocks ?? new Map(),
+                rawMockMap: initialData?.mocks,
                 rootDir,
                 throwOnModuleCollision: this._options.throwOnModuleCollision,
               })
@@ -388,6 +388,9 @@ export default class FileMap extends EventEmitter {
 
         // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
         await this._applyFileDelta(fileSystem, hasteMap, mockMap, fileDelta);
+
+        // Validate the state of the mock map before persisting it.
+        mockMap?.assertValid();
 
         await this._takeSnapshotAndPersist(
           fileSystem,
@@ -740,7 +743,7 @@ export default class FileMap extends EventEmitter {
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
-        mocks: mockMap ? mockMap.getSerializableSnapshot() : new Map(),
+        mocks: mockMap ? mockMap.getSerializableSnapshot() : null,
       },
       {changed, removed},
     );
@@ -820,7 +823,6 @@ export default class FileMap extends EventEmitter {
     // In watch mode, we'll only warn about module collisions and we'll retain
     // all files, even changes to node_modules.
     hasteMap.setThrowOnModuleCollision(false);
-    mockMap?.setThrowOnModuleCollision(false);
     this._options.retainAllFiles = true;
 
     const hasWatchedExtension = (filePath: string) =>
