@@ -15,7 +15,10 @@
 
 'use strict';
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {FSWatcher, Stats} from 'fs';
 
@@ -324,11 +327,16 @@ module.exports = class NodeWatcher extends EventEmitter {
           },
           (symlink, stats) => {
             if (this._register(symlink, 'l')) {
-              this._rawEmitEvent(ADD_EVENT, path.relative(this.root, symlink), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'l',
-              });
+              this.emit(ALL_EVENT, {
+                event: ADD_EVENT,
+                relativePath: path.relative(this.root, symlink),
+                root: this.root,
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'l',
+                },
+              } as WatcherBackendChangeEvent);
             }
           },
           function endCallback() {},
@@ -374,21 +382,8 @@ module.exports = class NodeWatcher extends EventEmitter {
    *
    * See also note above for DEBOUNCE_MS.
    */
-  _emitEvent({
-    event,
-    relativePath,
-    metadata,
-  }:
-    | {
-        event: 'change' | 'add',
-        relativePath: string,
-        metadata: ChangeEventMetadata,
-      }
-    | {
-        event: 'delete',
-        relativePath: string,
-        metadata?: void,
-      }) {
+  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
+    const {event, relativePath} = change;
     const key = event + '-' + relativePath;
     const addKey = ADD_EVENT + '-' + relativePath;
     if (event === CHANGE_EVENT && this._changeTimers.has(addKey)) {
@@ -404,21 +399,12 @@ module.exports = class NodeWatcher extends EventEmitter {
       key,
       setTimeout(() => {
         this._changeTimers.delete(key);
-        this._rawEmitEvent(event, relativePath, metadata);
+        this.emit(ALL_EVENT, {
+          ...change,
+          root: this.root,
+        } as WatcherBackendChangeEvent);
       }, DEBOUNCE_MS),
     );
-  }
-
-  /**
-   * Actually emit the events
-   */
-  _rawEmitEvent(
-    eventType: string,
-    file: string,
-    metadata: ?ChangeEventMetadata,
-  ) {
-    this.emit(eventType, file, this.root, metadata);
-    this.emit(ALL_EVENT, eventType, file, this.root, metadata);
   }
 
   getPauseReason(): ?string {

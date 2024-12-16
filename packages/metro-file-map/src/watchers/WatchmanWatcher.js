@@ -9,7 +9,10 @@
  * @oncall react_native
  */
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {
   Client,
@@ -306,23 +309,11 @@ export default class WatchmanWatcher extends EventEmitter {
   /**
    * Dispatches the event.
    */
-  _emitEvent({
-    event,
-    relativePath,
-    metadata,
-  }:
-    | {
-        event: 'change' | 'add',
-        relativePath: string,
-        metadata: ChangeEventMetadata,
-      }
-    | {
-        event: 'delete',
-        relativePath: string,
-        metadata?: void,
-      }) {
-    this.emit(event, relativePath, this.root, metadata);
-    this.emit(ALL_EVENT, event, relativePath, this.root, metadata);
+  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
+    this.emit(ALL_EVENT, {
+      ...change,
+      root: this.root,
+    } as WatcherBackendChangeEvent);
   }
 
   /**
