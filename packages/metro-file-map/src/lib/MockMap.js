@@ -12,8 +12,8 @@
 import type {MockMap as IMockMap, Path, RawMockMap} from '../flow-types';
 
 import getMockName from '../getMockName';
-import {DuplicateError} from './DuplicateError';
 import {RootPathUtils} from './RootPathUtils';
+import nullthrows from 'nullthrows';
 import path from 'path';
 
 export default class MockMap implements IMockMap {
@@ -33,12 +33,12 @@ export default class MockMap implements IMockMap {
   }: {
     console: typeof console,
     mocksPattern: RegExp,
-    rawMockMap: RawMockMap,
+    rawMockMap?: ?RawMockMap,
     rootDir: Path,
     throwOnModuleCollision: boolean,
   }) {
     this.#mocksPattern = mocksPattern;
-    this.#raw = rawMockMap;
+    this.#raw = rawMockMap ?? {mocks: new Map(), duplicates: new Map()};
     this.#rootDir = rootDir;
     this.#console = console;
     this.#pathUtils = new RootPathUtils(rootDir);
@@ -46,8 +46,12 @@ export default class MockMap implements IMockMap {
   }
 
   getMockModule(name: string): ?Path {
-    const mockPath = this.#raw.get(name) || this.#raw.get(name + '/index');
-    return mockPath != null ? this.#pathUtils.normalToAbsolute(mockPath) : null;
+    const mockPath =
+      this.#raw.mocks.get(name) || this.#raw.mocks.get(name + '/index');
+    if (typeof mockPath !== 'string') {
+      return null;
+    }
+    return this.#pathUtils.normalToAbsolute(mockPath);
   }
 
   onNewOrModifiedFile(absoluteFilePath: Path): void {
@@ -56,30 +60,26 @@ export default class MockMap implements IMockMap {
     }
 
     const mockName = getMockName(absoluteFilePath);
-    const existingMockPath = this.#raw.get(mockName);
+    const existingMockPath = this.#raw.mocks.get(mockName);
     const newMockPath = this.#pathUtils.absoluteToNormal(absoluteFilePath);
 
     if (existingMockPath != null) {
       if (existingMockPath !== newMockPath) {
-        const method = this.#throwOnModuleCollision ? 'error' : 'warn';
-
-        this.#console[method](
-          [
-            'metro-file-map: duplicate manual mock found: ' + mockName,
-            '  The following files share their name; please delete one of them:',
-            '    * <rootDir>' + path.sep + existingMockPath,
-            '    * <rootDir>' + path.sep + newMockPath,
-            '',
-          ].join('\n'),
-        );
-
-        if (this.#throwOnModuleCollision) {
-          throw new DuplicateError(existingMockPath, newMockPath);
+        let duplicates = this.#raw.duplicates.get(mockName);
+        if (duplicates == null) {
+          duplicates = new Set([existingMockPath, newMockPath]);
+          this.#raw.duplicates.set(mockName, duplicates);
+        } else {
+          duplicates.add(newMockPath);
         }
+
+        this.#console.warn(this.#getMessageForDuplicates(mockName, duplicates));
       }
     }
 
-    this.#raw.set(mockName, newMockPath);
+    // If there are duplicates and we don't throw, the latest mock wins.
+    // This is to preserve backwards compatibility, but it's unpredictable.
+    this.#raw.mocks.set(mockName, newMockPath);
   }
 
   onRemovedFile(absoluteFilePath: Path): void {
@@ -87,14 +87,63 @@ export default class MockMap implements IMockMap {
       return;
     }
     const mockName = getMockName(absoluteFilePath);
-    this.#raw.delete(mockName);
-  }
-
-  setThrowOnModuleCollision(throwOnModuleCollision: boolean): void {
-    this.#throwOnModuleCollision = throwOnModuleCollision;
+    const duplicates = this.#raw.duplicates.get(mockName);
+    if (duplicates != null) {
+      const relativePath = this.#pathUtils.absoluteToNormal(absoluteFilePath);
+      duplicates.delete(relativePath);
+      if (duplicates.size === 1) {
+        this.#raw.duplicates.delete(mockName);
+      }
+      // Set the mock to a remaining duplicate. Should never be empty.
+      const remaining = nullthrows(duplicates.values().next().value);
+      this.#raw.mocks.set(mockName, remaining);
+    } else {
+      this.#raw.mocks.delete(mockName);
+    }
   }
 
   getSerializableSnapshot(): RawMockMap {
-    return new Map(this.#raw);
+    return {
+      mocks: new Map(this.#raw.mocks),
+      duplicates: new Map(
+        [...this.#raw.duplicates].map(([k, v]) => [k, new Set(v)]),
+      ),
+    };
+  }
+
+  assertValid(): void {
+    if (!this.#throwOnModuleCollision) {
+      return;
+    }
+    // Throw an aggregate error for each duplicate.
+    const errors = [];
+    for (const [mockName, relativePaths] of this.#raw.duplicates) {
+      errors.push(this.#getMessageForDuplicates(mockName, relativePaths));
+    }
+    if (errors.length > 0) {
+      throw new Error(
+        `Mock map has ${errors.length} error${errors.length > 1 ? 's' : ''}:\n${errors.join('\n')}`,
+      );
+    }
+  }
+
+  #getMessageForDuplicates(
+    mockName: string,
+    duplicates: $ReadOnlySet<string>,
+  ): string {
+    return (
+      'Duplicate manual mock found for `' +
+      mockName +
+      '`:\n' +
+      [...duplicates]
+        .map(
+          relativePath =>
+            '    * <rootDir>' +
+            path.sep +
+            this.#pathUtils.absoluteToNormal(relativePath) +
+            '\n',
+        )
+        .join('')
+    );
   }
 }

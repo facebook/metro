@@ -48,7 +48,7 @@ export type BuildResult = {
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
-  mocks: RawMockMap,
+  mocks: ?RawMockMap,
   fileSystemData: mixed,
 }>;
 
@@ -312,9 +312,15 @@ export interface MutableFileSystem extends FileSystem {
 
 export type Path = string;
 
-export type RawMockMap = Map<string, Path>;
+export type RawMockMap = $ReadOnly<{
+  duplicates: Map<string, Set<string>>,
+  mocks: Map<string, Path>,
+}>;
 
-export type ReadOnlyRawMockMap = $ReadOnlyMap<string, Path>;
+export type ReadOnlyRawMockMap = $ReadOnly<{
+  duplicates: $ReadOnlyMap<string, $ReadOnlySet<string>>,
+  mocks: $ReadOnlyMap<string, Path>,
+}>;
 
 export type WatchmanClockSpec =
   | string
