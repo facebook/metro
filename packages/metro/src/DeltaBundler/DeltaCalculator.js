@@ -13,7 +13,7 @@
 
 import type {DeltaResult, Options} from './types.flow';
 import type {RootPerfLogger} from 'metro-config';
-import type {ChangeEventMetadata} from 'metro-file-map';
+import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
 import path from 'path';
@@ -173,9 +173,7 @@ class DeltaCalculator<T> extends EventEmitter {
     return this._graph;
   }
 
-  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
-   * LTI update could not be added via codemod */
-  _handleMultipleFileChanges = changeEvent => {
+  _handleMultipleFileChanges = (changeEvent: ChangeEvent) => {
     changeEvent.eventsQueue.forEach(eventInfo => {
       this._handleFileChange(eventInfo, changeEvent.logger);
     });
@@ -187,16 +185,7 @@ class DeltaCalculator<T> extends EventEmitter {
    * when the delta needs to be calculated.
    */
   _handleFileChange = (
-    {
-      type,
-      filePath,
-      metadata,
-    }: {
-      type: string,
-      filePath: string,
-      metadata: ChangeEventMetadata,
-      ...
-    },
+    {type, filePath, metadata}: ChangeEvent['eventsQueue'][number],
     logger: ?RootPerfLogger,
   ): mixed => {
     debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);

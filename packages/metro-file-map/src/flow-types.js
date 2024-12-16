@@ -125,7 +125,7 @@ export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
 export type EventsQueue = Array<{
   filePath: Path,
-  metadata?: ?ChangeEventMetadata,
+  metadata: ChangeEventMetadata,
   type: string,
 }>;
 
