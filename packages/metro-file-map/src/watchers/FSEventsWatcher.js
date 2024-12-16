@@ -9,23 +9,21 @@
  */
 
 import type {ChangeEventMetadata} from '../flow-types';
-import type {Stats} from 'fs';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, typeFromStat} from './common';
-// $FlowFixMe[untyped-import] - anymatch
-import anymatch from 'anymatch';
+import {
+  isIncluded,
+  posixPathMatchesPattern,
+  recReaddir,
+  typeFromStat,
+} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
-// $FlowFixMe[untyped-import] - walker
-import walker from 'walker';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
-
-type Matcher = typeof anymatch.Matcher;
 
 // $FlowFixMe[value-as-type]
 let fsevents: ?FSEvents = null;
@@ -42,19 +40,13 @@ const DELETE_EVENT = 'delete';
 const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
 
-type FsEventsWatcherEvent =
-  | typeof CHANGE_EVENT
-  | typeof DELETE_EVENT
-  | typeof ADD_EVENT
-  | typeof ALL_EVENT;
-
 /**
  * Export `FSEventsWatcher` class.
  * Watches `dir`.
  */
 export default class FSEventsWatcher extends EventEmitter {
   +root: string;
-  +ignored: ?Matcher;
+  +ignored: ?RegExp;
   +glob: $ReadOnlyArray<string>;
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
@@ -66,38 +58,14 @@ export default class FSEventsWatcher extends EventEmitter {
     return fsevents != null;
   }
 
-  static _normalizeProxy(
-    callback: (normalizedPath: string, stats: Stats) => void,
-  ): (filepath: string, stats: Stats) => void {
-    return (filepath: string, stats: Stats): void =>
-      callback(path.normalize(filepath), stats);
-  }
-
-  static _recReaddir(
-    dir: string,
-    dirCallback: (normalizedPath: string, stats: Stats) => void,
-    fileCallback: (normalizedPath: string, stats: Stats) => void,
-    symlinkCallback: (normalizedPath: string, stats: Stats) => void,
-    endCallback: () => void,
-    // $FlowFixMe[unclear-type] Add types for callback
-    errorCallback: Function,
-    ignored?: Matcher,
-  ) {
-    walker(dir)
-      .filterDir(
-        (currentDir: string) => !ignored || !anymatch(ignored, currentDir),
-      )
-      .on('dir', FSEventsWatcher._normalizeProxy(dirCallback))
-      .on('file', FSEventsWatcher._normalizeProxy(fileCallback))
-      .on('symlink', FSEventsWatcher._normalizeProxy(symlinkCallback))
-      .on('error', errorCallback)
-      .on('end', endCallback);
-  }
-
   constructor(
     dir: string,
-    opts: $ReadOnly<{
-      ignored?: Matcher,
+    {
+      ignored,
+      glob,
+      dot,
+    }: $ReadOnly<{
+      ignored: ?RegExp,
       glob: string | $ReadOnlyArray<string>,
       dot: boolean,
       ...
@@ -111,10 +79,12 @@ export default class FSEventsWatcher extends EventEmitter {
 
     super();
 
-    this.dot = opts.dot || false;
-    this.ignored = opts.ignored;
-    this.glob = Array.isArray(opts.glob) ? opts.glob : [opts.glob];
-    this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
+    this.dot = dot || false;
+    this.ignored = ignored;
+    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.doIgnore = ignored
+      ? (filePath: string) => posixPathMatchesPattern(ignored, filePath)
+      : () => false;
 
     this.root = path.resolve(dir);
 
@@ -128,10 +98,10 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this._tracked = new Set();
     const trackPath = (filePath: string) => {
-      this._tracked.add(filePath);
+      this._tracked.add(path.normalize(filePath));
     };
     this.watcherInitialReaddirPromise = new Promise(resolve => {
-      FSEventsWatcher._recReaddir(
+      recReaddir(
         this.root,
         trackPath,
         trackPath,
@@ -192,10 +162,10 @@ export default class FSEventsWatcher extends EventEmitter {
       };
 
       if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, metadata);
+        this._emit({event: CHANGE_EVENT, relativePath, metadata});
       } else {
         this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, metadata);
+        this._emit({event: ADD_EVENT, relativePath, metadata});
       }
     } catch (error) {
       if (error?.code !== 'ENOENT') {
@@ -208,7 +178,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      this._emit(DELETE_EVENT, relativePath);
+      this._emit({event: DELETE_EVENT, relativePath});
       this._tracked.delete(filepath);
     }
   }
@@ -216,13 +186,23 @@ export default class FSEventsWatcher extends EventEmitter {
   /**
    * Emit events.
    */
-  _emit(
-    type: FsEventsWatcherEvent,
-    file: string,
-    metadata?: ChangeEventMetadata,
-  ) {
-    this.emit(type, file, this.root, metadata);
-    this.emit(ALL_EVENT, type, file, this.root, metadata);
+  _emit({
+    event,
+    relativePath,
+    metadata,
+  }:
+    | {
+        event: 'change' | 'add',
+        relativePath: string,
+        metadata: ChangeEventMetadata,
+      }
+    | {
+        event: 'delete',
+        relativePath: string,
+        metadata?: void,
+      }) {
+    this.emit(event, relativePath, this.root, metadata);
+    this.emit(ALL_EVENT, event, relativePath, this.root, metadata);
   }
 
   getPauseReason(): ?string {

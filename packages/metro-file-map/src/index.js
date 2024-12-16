@@ -33,6 +33,7 @@ import type {
   PerfLoggerFactory,
   WatchmanClocks,
   WorkerMetadata,
+  WatcherBackendChangeEvent,
 } from './flow-types';
 import type {IJestWorker} from 'jest-worker';
 
@@ -862,27 +863,23 @@ export default class FileMap extends EventEmitter {
       nextEmit = null;
     };
 
-    const onChange = (
-      type: string,
-      filePath: Path,
-      root: Path,
-      metadata: ?ChangeEventMetadata,
-    ) => {
+    const onChange = (change: WatcherBackendChangeEvent) => {
       if (
-        metadata &&
+        change.metadata &&
         // Ignore all directory events
-        (metadata.type === 'd' ||
+        (change.metadata.type === 'd' ||
           // Ignore regular files with unwatched extensions
-          (metadata.type === 'f' && !hasWatchedExtension(filePath)) ||
+          (change.metadata.type === 'f' &&
+            !hasWatchedExtension(change.relativePath)) ||
           // Don't emit events relating to symlinks if enableSymlinks: false
-          (!this._options.enableSymlinks && metadata?.type === 'l'))
+          (!this._options.enableSymlinks && change.metadata?.type === 'l'))
       ) {
         return;
       }
 
       const absoluteFilePath = path.join(
-        root,
-        normalizePathSeparatorsToSystem(filePath),
+        change.root,
+        normalizePathSeparatorsToSystem(change.relativePath),
       );
 
       // Ignore files (including symlinks) whose path matches ignorePattern
@@ -899,11 +896,10 @@ export default class FileMap extends EventEmitter {
       // null, then it is assumed that the watcher does not have capabilities
       // to detect modified time, and change processing proceeds.
       if (
-        type === 'change' &&
+        change.event === 'change' &&
         linkStats != null &&
-        metadata &&
-        metadata.modifiedTime != null &&
-        linkStats.modifiedTime === metadata.modifiedTime
+        change.metadata.modifiedTime != null &&
+        linkStats.modifiedTime === change.metadata.modifiedTime
       ) {
         return;
       }
@@ -917,14 +913,15 @@ export default class FileMap extends EventEmitter {
             nextEmit != null &&
             nextEmit.eventsQueue.find(
               event =>
-                event.type === type &&
+                event.type === change.event &&
                 event.filePath === absoluteFilePath &&
-                ((!event.metadata && !metadata) ||
+                ((!event.metadata && !change.metadata) ||
                   (event.metadata &&
-                    metadata &&
+                    change.metadata &&
                     event.metadata.modifiedTime != null &&
-                    metadata.modifiedTime != null &&
-                    event.metadata.modifiedTime === metadata.modifiedTime)),
+                    change.metadata.modifiedTime != null &&
+                    event.metadata.modifiedTime ===
+                      change.metadata.modifiedTime)),
             )
           ) {
             return null;
@@ -936,7 +933,7 @@ export default class FileMap extends EventEmitter {
             const event = {
               filePath: absoluteFilePath,
               metadata,
-              type,
+              type: change.event,
             };
             if (nextEmit == null) {
               nextEmit = {
@@ -963,19 +960,19 @@ export default class FileMap extends EventEmitter {
 
           // If the file was added or changed,
           // parse it and update the haste map.
-          if (type === 'add' || type === 'change') {
+          if (change.event === 'add' || change.event === 'change') {
             invariant(
-              metadata != null && metadata.size != null,
-              'since the file exists or changed, it should have metadata',
+              change.metadata.size != null,
+              'since the file exists or changed, it should have known size',
             );
             const fileMetadata: FileMetaData = [
               '',
-              metadata.modifiedTime,
-              metadata.size,
+              change.metadata.modifiedTime,
+              change.metadata.size,
               0,
               '',
               null,
-              metadata.type === 'l' ? 1 : 0,
+              change.metadata.type === 'l' ? 1 : 0,
             ];
 
             try {
@@ -987,7 +984,7 @@ export default class FileMap extends EventEmitter {
                 {forceInBand: true}, // No need to clean up workers
               );
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
-              enqueueEvent(metadata);
+              enqueueEvent(change.metadata);
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {
                 throw e;
@@ -999,7 +996,7 @@ export default class FileMap extends EventEmitter {
               //   event for it, and we'll clean up in the usual way at that
               //   point.
             }
-          } else if (type === 'delete') {
+          } else if (change.event === 'delete') {
             if (linkStats == null) {
               // Don't emit deletion events for files we weren't retaining.
               // This is expected for deletion of an ignored file.
@@ -1012,7 +1009,7 @@ export default class FileMap extends EventEmitter {
             });
           } else {
             throw new Error(
-              `metro-file-map: Unrecognized event type from watcher: ${type}`,
+              `metro-file-map: Unrecognized event type from watcher: ${change.event}`,
             );
           }
           return null;

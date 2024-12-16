@@ -19,8 +19,6 @@
 import type {ChangeEventMetadata} from '../flow-types';
 import type {Stats} from 'fs';
 
-// $FlowFixMe[untyped-import] - Write libdefs for `anymatch`
-const anymatch = require('anymatch');
 // $FlowFixMe[untyped-import] - Write libdefs for `micromatch`
 const micromatch = require('micromatch');
 const platform = require('os').platform();
@@ -39,7 +37,7 @@ export const ALL_EVENT = 'all';
 export type WatcherOptions = $ReadOnly<{
   glob: $ReadOnlyArray<string>,
   dot: boolean,
-  ignored: boolean | RegExp,
+  ignored: ?RegExp,
   watchmanDeferStates: $ReadOnlyArray<string>,
   watchman?: mixed,
   watchmanPath?: string,
@@ -49,7 +47,7 @@ interface Watcher {
   doIgnore: string => boolean;
   dot: boolean;
   globs: $ReadOnlyArray<string>;
-  ignored?: ?(boolean | RegExp);
+  ignored?: ?RegExp;
   watchmanDeferStates: $ReadOnlyArray<string>;
   watchmanPath?: ?string;
 }
@@ -68,16 +66,16 @@ export const assignOptions = function (
 ): WatcherOptions {
   watcher.globs = opts.glob ?? [];
   watcher.dot = opts.dot ?? false;
-  watcher.ignored = opts.ignored ?? false;
+  watcher.ignored = opts.ignored ?? null;
   watcher.watchmanDeferStates = opts.watchmanDeferStates;
 
   if (!Array.isArray(watcher.globs)) {
     watcher.globs = [watcher.globs];
   }
-  watcher.doIgnore =
-    opts.ignored != null && opts.ignored !== false
-      ? anymatch(opts.ignored)
-      : () => false;
+  const ignored = watcher.ignored;
+  watcher.doIgnore = ignored
+    ? filePath => ignored.test(toPosixSeparators(filePath))
+    : () => false;
 
   if (opts.watchman == true && opts.watchmanPath != null) {
     watcher.watchmanPath = opts.watchmanPath;
@@ -107,6 +105,26 @@ export function isIncluded(
   return micromatch.some(relativePath, globs, {dot});
 }
 
+const toPosixSeparators: (filePath: string) => string =
+  path.sep === '/'
+    ? filePath => filePath
+    : filePath => filePath.replaceAll(path.sep, '/');
+
+/**
+ * Whether the given filePath matches the given RegExp, after converting
+ * (on Windows only) system separators to posix separators.
+ *
+ * Conversion to posix is for backwards compatibility with the previous
+ * anymatch matcher, which normlises all inputs[1]. This may not be consistent
+ * with other parts of metro-file-map.
+ *
+ * [1]: https://github.com/micromatch/anymatch/blob/3.1.1/index.js#L50
+ */
+export const posixPathMatchesPattern = (
+  pattern: RegExp,
+  filePath: string,
+): boolean => pattern.test(toPosixSeparators(filePath));
+
 /**
  * Traverse a directory recursively calling `callback` on every directory.
  */
@@ -117,10 +135,15 @@ export function recReaddir(
   symlinkCallback: (string, Stats) => void,
   endCallback: () => void,
   errorCallback: Error => void,
-  ignored: ?(boolean | RegExp),
+  ignored: ?RegExp,
 ) {
-  walker(dir)
-    .filterDir(currentDir => !anymatch(ignored, currentDir))
+  const walk = walker(dir);
+  if (ignored) {
+    walk.filterDir(
+      (currentDir: string) => !posixPathMatchesPattern(ignored, currentDir),
+    );
+  }
+  walk
     .on('dir', normalizeProxy(dirCallback))
     .on('file', normalizeProxy(fileCallback))
     .on('symlink', normalizeProxy(symlinkCallback))
