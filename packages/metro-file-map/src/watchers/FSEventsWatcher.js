@@ -9,19 +9,16 @@
  */
 
 import type {ChangeEventMetadata} from '../flow-types';
-import type {Stats} from 'fs';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, typeFromStat} from './common';
+import {isIncluded, recReaddir, typeFromStat} from './common';
 // $FlowFixMe[untyped-import] - anymatch
 import anymatch from 'anymatch';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
-// $FlowFixMe[untyped-import] - walker
-import walker from 'walker';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
 
@@ -64,34 +61,6 @@ export default class FSEventsWatcher extends EventEmitter {
     return fsevents != null;
   }
 
-  static _normalizeProxy(
-    callback: (normalizedPath: string, stats: Stats) => void,
-  ): (filepath: string, stats: Stats) => void {
-    return (filepath: string, stats: Stats): void =>
-      callback(path.normalize(filepath), stats);
-  }
-
-  static _recReaddir(
-    dir: string,
-    dirCallback: (normalizedPath: string, stats: Stats) => void,
-    fileCallback: (normalizedPath: string, stats: Stats) => void,
-    symlinkCallback: (normalizedPath: string, stats: Stats) => void,
-    endCallback: () => void,
-    // $FlowFixMe[unclear-type] Add types for callback
-    errorCallback: Function,
-    ignored: ?RegExp,
-  ) {
-    walker(dir)
-      .filterDir(
-        (currentDir: string) => !ignored || !anymatch(ignored, currentDir),
-      )
-      .on('dir', FSEventsWatcher._normalizeProxy(dirCallback))
-      .on('file', FSEventsWatcher._normalizeProxy(fileCallback))
-      .on('symlink', FSEventsWatcher._normalizeProxy(symlinkCallback))
-      .on('error', errorCallback)
-      .on('end', endCallback);
-  }
-
   constructor(
     dir: string,
     opts: $ReadOnly<{
@@ -126,10 +95,10 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this._tracked = new Set();
     const trackPath = (filePath: string) => {
-      this._tracked.add(filePath);
+      this._tracked.add(path.normalize(filePath));
     };
     this.watcherInitialReaddirPromise = new Promise(resolve => {
-      FSEventsWatcher._recReaddir(
+      recReaddir(
         this.root,
         trackPath,
         trackPath,
