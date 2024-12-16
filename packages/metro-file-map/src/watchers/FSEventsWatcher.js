@@ -40,12 +40,6 @@ const DELETE_EVENT = 'delete';
 const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
 
-type FsEventsWatcherEvent =
-  | typeof CHANGE_EVENT
-  | typeof DELETE_EVENT
-  | typeof ADD_EVENT
-  | typeof ALL_EVENT;
-
 /**
  * Export `FSEventsWatcher` class.
  * Watches `dir`.
@@ -168,10 +162,10 @@ export default class FSEventsWatcher extends EventEmitter {
       };
 
       if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, metadata);
+        this._emit({event: CHANGE_EVENT, relativePath, metadata});
       } else {
         this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, metadata);
+        this._emit({event: ADD_EVENT, relativePath, metadata});
       }
     } catch (error) {
       if (error?.code !== 'ENOENT') {
@@ -184,7 +178,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      this._emit(DELETE_EVENT, relativePath);
+      this._emit({event: DELETE_EVENT, relativePath});
       this._tracked.delete(filepath);
     }
   }
@@ -192,13 +186,23 @@ export default class FSEventsWatcher extends EventEmitter {
   /**
    * Emit events.
    */
-  _emit(
-    type: FsEventsWatcherEvent,
-    file: string,
-    metadata?: ChangeEventMetadata,
-  ) {
-    this.emit(type, file, this.root, metadata);
-    this.emit(ALL_EVENT, type, file, this.root, metadata);
+  _emit({
+    event,
+    relativePath,
+    metadata,
+  }:
+    | {
+        event: 'change' | 'add',
+        relativePath: string,
+        metadata: ChangeEventMetadata,
+      }
+    | {
+        event: 'delete',
+        relativePath: string,
+        metadata?: void,
+      }) {
+    this.emit(event, relativePath, this.root, metadata);
+    this.emit(ALL_EVENT, event, relativePath, this.root, metadata);
   }
 
   getPauseReason(): ?string {

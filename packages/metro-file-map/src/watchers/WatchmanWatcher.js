@@ -272,7 +272,7 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     if (!exists) {
-      self._emitEvent(DELETE_EVENT, relativePath, self.root);
+      self._emitEvent({event: DELETE_EVENT, relativePath});
     } else {
       const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
       invariant(
@@ -290,10 +290,14 @@ export default class WatchmanWatcher extends EventEmitter {
         !(type === 'd' && eventType === CHANGE_EVENT)
       ) {
         const mtime = Number(mtime_ms);
-        self._emitEvent(eventType, relativePath, self.root, {
-          modifiedTime: mtime !== 0 ? mtime : null,
-          size,
-          type,
+        self._emitEvent({
+          event: eventType,
+          relativePath,
+          metadata: {
+            modifiedTime: mtime !== 0 ? mtime : null,
+            size,
+            type,
+          },
         });
       }
     }
@@ -302,14 +306,23 @@ export default class WatchmanWatcher extends EventEmitter {
   /**
    * Dispatches the event.
    */
-  _emitEvent(
-    eventType: string,
-    filepath: string,
-    root: string,
-    changeMetadata?: ChangeEventMetadata,
-  ) {
-    this.emit(eventType, filepath, root, changeMetadata);
-    this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
+  _emitEvent({
+    event,
+    relativePath,
+    metadata,
+  }:
+    | {
+        event: 'change' | 'add',
+        relativePath: string,
+        metadata: ChangeEventMetadata,
+      }
+    | {
+        event: 'delete',
+        relativePath: string,
+        metadata?: void,
+      }) {
+    this.emit(event, relativePath, this.root, metadata);
+    this.emit(ALL_EVENT, event, relativePath, this.root, metadata);
   }
 
   /**

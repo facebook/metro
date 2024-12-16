@@ -298,19 +298,27 @@ module.exports = class NodeWatcher extends EventEmitter {
           path.resolve(this.root, relativePath),
           (dir, stats) => {
             if (this._watchdir(dir)) {
-              this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'd',
+              this._emitEvent({
+                event: ADD_EVENT,
+                relativePath: path.relative(this.root, dir),
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'd',
+                },
               });
             }
           },
           (file, stats) => {
             if (this._register(file, 'f')) {
-              this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'f',
+              this._emitEvent({
+                event: ADD_EVENT,
+                relativePath: path.relative(this.root, file),
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'f',
+                },
               });
             }
           },
@@ -338,10 +346,10 @@ module.exports = class NodeWatcher extends EventEmitter {
           type,
         };
         if (registered) {
-          this._emitEvent(CHANGE_EVENT, relativePath, metadata);
+          this._emitEvent({event: CHANGE_EVENT, relativePath, metadata});
         } else {
           if (this._register(fullPath, type)) {
-            this._emitEvent(ADD_EVENT, relativePath, metadata);
+            this._emitEvent({event: ADD_EVENT, relativePath, metadata});
           }
         }
       }
@@ -353,7 +361,7 @@ module.exports = class NodeWatcher extends EventEmitter {
       this._unregister(fullPath);
       this._unregisterDir(fullPath);
       if (registered) {
-        this._emitEvent(DELETE_EVENT, relativePath);
+        this._emitEvent({event: DELETE_EVENT, relativePath});
       }
       await this._stopWatching(fullPath);
     }
@@ -366,10 +374,24 @@ module.exports = class NodeWatcher extends EventEmitter {
    *
    * See also note above for DEBOUNCE_MS.
    */
-  _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
-    const key = type + '-' + file;
-    const addKey = ADD_EVENT + '-' + file;
-    if (type === CHANGE_EVENT && this._changeTimers.has(addKey)) {
+  _emitEvent({
+    event,
+    relativePath,
+    metadata,
+  }:
+    | {
+        event: 'change' | 'add',
+        relativePath: string,
+        metadata: ChangeEventMetadata,
+      }
+    | {
+        event: 'delete',
+        relativePath: string,
+        metadata?: void,
+      }) {
+    const key = event + '-' + relativePath;
+    const addKey = ADD_EVENT + '-' + relativePath;
+    if (event === CHANGE_EVENT && this._changeTimers.has(addKey)) {
       // Ignore the change event that is immediately fired after an add event.
       // (This happens on Linux).
       return;
@@ -382,7 +404,7 @@ module.exports = class NodeWatcher extends EventEmitter {
       key,
       setTimeout(() => {
         this._changeTimers.delete(key);
-        this._rawEmitEvent(type, file, metadata);
+        this._rawEmitEvent(event, relativePath, metadata);
       }, DEBOUNCE_MS),
     );
   }
