@@ -43,7 +43,7 @@ export type BuildParameters = $ReadOnly<{
 export type BuildResult = {
   fileSystem: FileSystem,
   hasteMap: HasteMap,
-  mockMap: MockMap,
+  mockMap: ?MockMap,
 };
 
 export type CacheData = $ReadOnly<{

@@ -742,6 +742,36 @@ describe('FileMap', () => {
     expect(fs.readFileSync.mock.calls.length).toBe(5);
   });
 
+  test('builds a mock map if mocksPattern is non-null', async () => {
+    const pathToMock = path.join(
+      '/',
+      'project',
+      'fruits1',
+      '__mocks__',
+      'Blueberry.js',
+    );
+    mockFs[pathToMock] = '/* empty */';
+
+    const {mockMap} = await new FileMap({
+      mocksPattern: '__mocks__',
+      throwOnModuleCollision: true,
+      ...defaultConfig,
+    }).build();
+
+    expect(mockMap).not.toBeNull();
+    expect(mockMap.getMockModule('Blueberry')).toEqual(pathToMock);
+  });
+
+  test('returns null mockMap if mocksPattern is empty', async () => {
+    const {mockMap} = await new FileMap({
+      mocksPattern: '',
+      throwOnModuleCollision: true,
+      ...defaultConfig,
+    }).build();
+
+    expect(mockMap).toBeNull();
+  });
+
   test('warns on duplicate mock files', async () => {
     expect.assertions(1);
 
