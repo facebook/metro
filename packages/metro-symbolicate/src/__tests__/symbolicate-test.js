@@ -13,6 +13,7 @@
 
 const symbolicate = require('../symbolicate');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const {PassThrough} = require('stream');
 
@@ -53,9 +54,11 @@ const execute = async (
   return stdout.join('');
 };
 
+const TEMP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'symbolicate-'));
+const TEMP_FILE = path.resolve(TEMP_DIR, 'testfile.temp.cpuprofile');
 afterAll(() => {
   try {
-    fs.unlinkSync(resolve('testfile.temp.cpuprofile'));
+    fs.rmdirSync(TEMP_DIR);
   } catch (e) {}
 });
 
@@ -400,32 +403,23 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
 });
 
 test('symbolicating with a cpuprofile', async () => {
-  fs.copyFileSync(
-    resolve('testfile.cpuprofile'),
-    resolve('testfile.temp.cpuprofile'),
-  );
+  fs.copyFileSync(resolve('testfile.cpuprofile'), TEMP_FILE);
 
-  await execute([
-    resolve('testfile.cpuprofile.map'),
-    resolve('testfile.temp.cpuprofile'),
-  ]);
+  await execute([resolve('testfile.cpuprofile.map'), TEMP_FILE]);
 
-  expect(JSON.parse(read('testfile.temp.cpuprofile'))).toMatchSnapshot();
+  expect(JSON.parse(read(TEMP_FILE))).toMatchSnapshot();
 });
 
 test('symbolicating with a cpuprofile ignoring a function map', async () => {
-  fs.copyFileSync(
-    resolve('testfile.cpuprofile'),
-    resolve('testfile.temp.cpuprofile'),
-  );
+  fs.copyFileSync(resolve('testfile.cpuprofile'), TEMP_FILE);
 
   await execute([
     '--no-function-names',
     resolve('testfile.cpuprofile.map'),
-    resolve('testfile.temp.cpuprofile'),
+    TEMP_FILE,
   ]);
 
-  expect(JSON.parse(read('testfile.temp.cpuprofile'))).toMatchSnapshot();
+  expect(JSON.parse(read(TEMP_FILE))).toMatchSnapshot();
 });
 
 test('symbolicating a stack trace with a function map', async () =>
