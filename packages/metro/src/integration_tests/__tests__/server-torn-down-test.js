@@ -103,9 +103,6 @@ describe('Server torn down test', () => {
       config: require.resolve('../metro.config.js'),
     });
 
-    // to prevent a port conflict with other integration tests
-    config.server.port++;
-
     let onCloseResolve;
     const closePromise = new Promise(resolve => (onCloseResolve = resolve));
 

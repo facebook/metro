@@ -20,7 +20,7 @@ module.exports = {
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
   watchFolders: [path.resolve(__dirname, '../../../')],
-  server: {port: 10028},
+  server: {port: 0},
   resolver: {
     blockList: [/excluded_from_file_map\.js$/],
     useWatchman: false,

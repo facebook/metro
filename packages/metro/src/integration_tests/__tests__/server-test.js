@@ -27,14 +27,13 @@ const fetchAndClose = (path: string) =>
   });
 
 describe('Metro development server serves bundles via HTTP', () => {
-  let config;
   let httpServer;
   const bundlesDownloaded = new Set();
   let serverClosedPromise;
 
   async function downloadAndExec(pathname: string, context = {}): mixed {
     const response = await fetchAndClose(
-      'http://localhost:' + config.server.port + pathname,
+      'http://localhost:' + httpServer.address().port + pathname,
     );
     bundlesDownloaded.add(pathname.replaceAll('\\', '/'));
 
@@ -55,7 +54,7 @@ describe('Metro development server serves bundles via HTTP', () => {
   beforeEach(async () => {
     bundlesDownloaded.clear();
 
-    config = await Metro.loadConfig({
+    const config = await Metro.loadConfig({
       config: require.resolve('../metro.config.js'),
     });
 
@@ -126,7 +125,7 @@ describe('Metro development server serves bundles via HTTP', () => {
 
   test('responds with 404 when the bundle cannot be resolved', async () => {
     const response = await fetchAndClose(
-      'http://localhost:' + config.server.port + '/doesnotexist.bundle',
+      'http://localhost:' + httpServer.address().port + '/doesnotexist.bundle',
     );
     expect(response.status).toBe(404);
   });
@@ -134,7 +133,7 @@ describe('Metro development server serves bundles via HTTP', () => {
   test('responds with 500 when an import inside the bundle cannot be resolved', async () => {
     const response = await fetchAndClose(
       'http://localhost:' +
-        config.server.port +
+        httpServer.address().port +
         '/build-errors/inline-requires-cannot-resolve-import.bundle',
     );
     expect(response.status).toBe(500);
@@ -144,7 +143,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('under /[metro-project]/', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/[metro-project]/TestBundle.js',
       );
       expect(response.status).toBe(200);
@@ -159,7 +158,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('under /[metro-watchFolders]/', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/[metro-watchFolders]/1/metro/src/integration_tests/basic_bundle/TestBundle.js',
       );
       expect(response.status).toBe(200);
@@ -174,7 +173,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('under /[metro-project]/', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/[metro-project]/TestBundle.js',
       );
       expect(response.status).toBe(200);
@@ -189,7 +188,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('no access to files without source extensions', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/[metro-project]/not_a_source_file.xyz',
       );
       expect(response.status).toBe(404);
@@ -204,7 +203,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('no access to source files excluded from the file map', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/[metro-project]/excluded_from_file_map.js',
       );
       expect(response.status).toBe(404);
@@ -219,7 +218,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     test('requested with aggressive URL encoding /%5Bmetro-project%5D', async () => {
       const response = await fetchAndClose(
         'http://localhost:' +
-          config.server.port +
+          httpServer.address().port +
           '/%5Bmetro-project%5D/Foo%2Ejs',
       );
       expect(response.status).toBe(200);
