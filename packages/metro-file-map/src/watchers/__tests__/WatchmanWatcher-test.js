@@ -36,7 +36,7 @@ describe('WatchmanWatcher', () => {
   test('initializes with watch-project, clock, subscribe', () => {
     const watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
       dot: true,
-      ignored: false,
+      ignored: null,
       glob: ['**/*.js'],
       watchmanDeferStates: ['busy'],
     });
@@ -86,7 +86,7 @@ describe('WatchmanWatcher', () => {
     beforeEach(() => {
       watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
         dot: true,
-        ignored: false,
+        ignored: null,
         glob: ['**/*.js'],
         watchmanDeferStates: ['busy'],
       });

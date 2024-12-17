@@ -48,7 +48,7 @@ module.exports = class NodeWatcher extends EventEmitter {
   doIgnore: string => boolean;
   dot: boolean;
   globs: $ReadOnlyArray<string>;
-  ignored: ?(boolean | RegExp);
+  ignored: ?RegExp;
   root: string;
   watched: {[key: string]: FSWatcher, __proto__: null};
   watchmanDeferStates: $ReadOnlyArray<string>;

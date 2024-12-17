@@ -39,7 +39,7 @@ export const ALL_EVENT = 'all';
 export type WatcherOptions = $ReadOnly<{
   glob: $ReadOnlyArray<string>,
   dot: boolean,
-  ignored: boolean | RegExp,
+  ignored: ?RegExp,
   watchmanDeferStates: $ReadOnlyArray<string>,
   watchman?: mixed,
   watchmanPath?: string,
@@ -49,7 +49,7 @@ interface Watcher {
   doIgnore: string => boolean;
   dot: boolean;
   globs: $ReadOnlyArray<string>;
-  ignored?: ?(boolean | RegExp);
+  ignored?: ?RegExp;
   watchmanDeferStates: $ReadOnlyArray<string>;
   watchmanPath?: ?string;
 }
@@ -68,16 +68,14 @@ export const assignOptions = function (
 ): WatcherOptions {
   watcher.globs = opts.glob ?? [];
   watcher.dot = opts.dot ?? false;
-  watcher.ignored = opts.ignored ?? false;
+  watcher.ignored = opts.ignored ?? null;
   watcher.watchmanDeferStates = opts.watchmanDeferStates;
 
   if (!Array.isArray(watcher.globs)) {
     watcher.globs = [watcher.globs];
   }
   watcher.doIgnore =
-    opts.ignored != null && opts.ignored !== false
-      ? anymatch(opts.ignored)
-      : () => false;
+    opts.ignored != null ? anymatch(opts.ignored) : () => false;
 
   if (opts.watchman == true && opts.watchmanPath != null) {
     watcher.watchmanPath = opts.watchmanPath;
@@ -117,7 +115,7 @@ export function recReaddir(
   symlinkCallback: (string, Stats) => void,
   endCallback: () => void,
   errorCallback: Error => void,
-  ignored: ?(boolean | RegExp),
+  ignored: ?RegExp,
 ) {
   walker(dir)
     .filterDir(currentDir => !anymatch(ignored, currentDir))

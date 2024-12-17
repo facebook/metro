@@ -25,8 +25,6 @@ import walker from 'walker';
 
 const debug = require('debug')('Metro:FSEventsWatcher');
 
-type Matcher = typeof anymatch.Matcher;
-
 // $FlowFixMe[value-as-type]
 let fsevents: ?FSEvents = null;
 try {
@@ -54,7 +52,7 @@ type FsEventsWatcherEvent =
  */
 export default class FSEventsWatcher extends EventEmitter {
   +root: string;
-  +ignored: ?Matcher;
+  +ignored: ?RegExp;
   +glob: $ReadOnlyArray<string>;
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
@@ -81,7 +79,7 @@ export default class FSEventsWatcher extends EventEmitter {
     endCallback: () => void,
     // $FlowFixMe[unclear-type] Add types for callback
     errorCallback: Function,
-    ignored?: Matcher,
+    ignored: ?RegExp,
   ) {
     walker(dir)
       .filterDir(
@@ -97,7 +95,7 @@ export default class FSEventsWatcher extends EventEmitter {
   constructor(
     dir: string,
     opts: $ReadOnly<{
-      ignored?: Matcher,
+      ignored: ?RegExp,
       glob: string | $ReadOnlyArray<string>,
       dot: boolean,
       ...
