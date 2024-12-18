@@ -858,6 +858,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
@@ -882,6 +883,7 @@ function dep(name: string): TransformResultDependency {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'another.js',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
@@ -905,6 +907,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: 'client',
                   }),
                   'client.js': '',
@@ -929,6 +932,7 @@ function dep(name: string): TransformResultDependency {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {'main.js': 'client.js'},
                   }),
                   'client.js': '',
@@ -961,6 +965,7 @@ function dep(name: string): TransformResultDependency {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {'./main': './client'},
                   }),
                   'client.js': '',
@@ -992,6 +997,7 @@ function dep(name: string): TransformResultDependency {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {
                       './main.js': 'main-client.js',
                       'foo.js': 'foo-client.js',
@@ -1073,6 +1079,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {
                       'left-pad': 'left-pad-browser',
                     },
@@ -1084,6 +1091,7 @@ function dep(name: string): TransformResultDependency {
                 'left-pad-browser': {
                   'package.json': JSON.stringify({
                     name: 'left-pad-browser',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {'./main.js': 'main-client'},
                   }),
                   'index.js': '',
@@ -1118,6 +1126,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {
                       'left-pad': './left-pad-browser',
                     },
@@ -1149,6 +1158,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {
                       'left-pad': false,
                     },
@@ -1199,6 +1209,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {
                       './foo.js': false,
                     },
@@ -1947,6 +1958,7 @@ function dep(name: string): TransformResultDependency {
                 aPackage: {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: 'client.js',
                   }),
                   'client.js': '',
@@ -1969,6 +1981,7 @@ function dep(name: string): TransformResultDependency {
                   'package.json': JSON.stringify({
                     name: 'aPackage',
                     main: 'main.js',
+                    // $FlowFixMe[invalid-computed-prop]
                     [(browserField: string)]: {'./main': './client'},
                   }),
                   'client.js': '',
