@@ -13,9 +13,12 @@ import type {ChangeEventMetadata} from '../flow-types';
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, recReaddir, typeFromStat} from './common';
-// $FlowFixMe[untyped-import] - anymatch
-import anymatch from 'anymatch';
+import {
+  isIncluded,
+  posixPathMatchesPattern,
+  recReaddir,
+  typeFromStat,
+} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -63,7 +66,11 @@ export default class FSEventsWatcher extends EventEmitter {
 
   constructor(
     dir: string,
-    opts: $ReadOnly<{
+    {
+      ignored,
+      glob,
+      dot,
+    }: $ReadOnly<{
       ignored: ?RegExp,
       glob: string | $ReadOnlyArray<string>,
       dot: boolean,
@@ -78,10 +85,12 @@ export default class FSEventsWatcher extends EventEmitter {
 
     super();
 
-    this.dot = opts.dot || false;
-    this.ignored = opts.ignored;
-    this.glob = Array.isArray(opts.glob) ? opts.glob : [opts.glob];
-    this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
+    this.dot = dot || false;
+    this.ignored = ignored;
+    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.doIgnore = ignored
+      ? (filePath: string) => posixPathMatchesPattern(ignored, filePath)
+      : () => false;
 
     this.root = path.resolve(dir);
 
