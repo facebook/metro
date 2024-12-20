@@ -143,6 +143,34 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
+  async getOrComputeSha1(
+    mixedPath: Path,
+    computeSha1: (absolutePath: string) => Promise<?string>,
+  ): Promise<?string> {
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {
+      followLeaf: true,
+    });
+    if (
+      !result.exists ||
+      isDirectory(result.node) ||
+      !isRegularFile(result.node)
+    ) {
+      return null;
+    }
+    const canonicalPath = result.canonicalPath;
+    const fileMetadata = result.node;
+    if (fileMetadata[H.SHA1] === '') {
+      // Mutate the fileMetadata we fetched. This may not be the same tuple
+      // as in the tree if the file has been modified or removed while we were
+      // waiting for computeSha1 - in which case this fileMetadata is detached.
+      // That's good, because it means we won't cache a stale SHA1 in the tree.
+      fileMetadata[H.SHA1] =
+        (await computeSha1(this.#pathUtils.normalToAbsolute(canonicalPath))) ?? '';
+    }
+    return fileMetadata[H.SHA1];
+  }
+
   getDifference(files: FileData): {
     changedFiles: FileData,
     removedFiles: Set<string>,
