@@ -8,14 +8,15 @@
  * @flow strict-local
  */
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../flow-types';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
 import {isIncluded, recReaddir, typeFromStat} from './common';
-// $FlowFixMe[untyped-import] - anymatch
-import anymatch from 'anymatch';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -37,12 +38,6 @@ const DELETE_EVENT = 'delete';
 const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
 
-type FsEventsWatcherEvent =
-  | typeof CHANGE_EVENT
-  | typeof DELETE_EVENT
-  | typeof ADD_EVENT
-  | typeof ALL_EVENT;
-
 /**
  * Export `FSEventsWatcher` class.
  * Watches `dir`.
@@ -63,7 +58,11 @@ export default class FSEventsWatcher extends EventEmitter {
 
   constructor(
     dir: string,
-    opts: $ReadOnly<{
+    {
+      ignored,
+      glob,
+      dot,
+    }: $ReadOnly<{
       ignored: ?RegExp,
       glob: string | $ReadOnlyArray<string>,
       dot: boolean,
@@ -78,10 +77,14 @@ export default class FSEventsWatcher extends EventEmitter {
 
     super();
 
-    this.dot = opts.dot || false;
-    this.ignored = opts.ignored;
-    this.glob = Array.isArray(opts.glob) ? opts.glob : [opts.glob];
-    this.doIgnore = opts.ignored ? anymatch(opts.ignored) : () => false;
+    this.dot = dot || false;
+    this.ignored = ignored;
+    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.doIgnore = ignored
+      ? // No need to normalise Windows paths to posix because this backend
+        // only runs on macOS, and backends always emit system-native paths.
+        (filePath: string) => ignored.test(filePath)
+      : () => false;
 
     this.root = path.resolve(dir);
 
@@ -159,10 +162,10 @@ export default class FSEventsWatcher extends EventEmitter {
       };
 
       if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, metadata);
+        this._emit({event: CHANGE_EVENT, relativePath, metadata});
       } else {
         this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, metadata);
+        this._emit({event: ADD_EVENT, relativePath, metadata});
       }
     } catch (error) {
       if (error?.code !== 'ENOENT') {
@@ -175,7 +178,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      this._emit(DELETE_EVENT, relativePath);
+      this._emit({event: DELETE_EVENT, relativePath});
       this._tracked.delete(filepath);
     }
   }
@@ -183,13 +186,11 @@ export default class FSEventsWatcher extends EventEmitter {
   /**
    * Emit events.
    */
-  _emit(
-    type: FsEventsWatcherEvent,
-    file: string,
-    metadata?: ChangeEventMetadata,
-  ) {
-    this.emit(type, file, this.root, metadata);
-    this.emit(ALL_EVENT, type, file, this.root, metadata);
+  _emit(payload: Omit<WatcherBackendChangeEvent, 'root'>) {
+    this.emit(ALL_EVENT, {
+      ...payload,
+      root: this.root,
+    } as WatcherBackendChangeEvent);
   }
 
   getPauseReason(): ?string {

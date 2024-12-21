@@ -19,8 +19,6 @@
 import type {ChangeEventMetadata} from '../flow-types';
 import type {Stats} from 'fs';
 
-// $FlowFixMe[untyped-import] - Write libdefs for `anymatch`
-const anymatch = require('anymatch');
 // $FlowFixMe[untyped-import] - Write libdefs for `micromatch`
 const micromatch = require('micromatch');
 const platform = require('os').platform();
@@ -74,8 +72,10 @@ export const assignOptions = function (
   if (!Array.isArray(watcher.globs)) {
     watcher.globs = [watcher.globs];
   }
-  watcher.doIgnore =
-    opts.ignored != null ? anymatch(opts.ignored) : () => false;
+  const ignored = watcher.ignored;
+  watcher.doIgnore = ignored
+    ? filePath => posixPathMatchesPattern(ignored, filePath)
+    : () => false;
 
   if (opts.watchman == true && opts.watchmanPath != null) {
     watcher.watchmanPath = opts.watchmanPath;
@@ -106,6 +106,21 @@ export function isIncluded(
 }
 
 /**
+ * Whether the given filePath matches the given RegExp, after converting
+ * (on Windows only) system separators to posix separators.
+ *
+ * Conversion to posix is for backwards compatibility with the previous
+ * anymatch matcher, which normlises all inputs[1]. This may not be consistent
+ * with other parts of metro-file-map.
+ *
+ * [1]: https://github.com/micromatch/anymatch/blob/3.1.1/index.js#L50
+ */
+const posixPathMatchesPattern: (pattern: RegExp, filePath: string) => boolean =
+  path.sep === '/'
+    ? (pattern, filePath) => pattern.test(filePath)
+    : (pattern, filePath) => pattern.test(filePath.replaceAll(path.sep, '/'));
+
+/**
  * Traverse a directory recursively calling `callback` on every directory.
  */
 export function recReaddir(
@@ -117,8 +132,13 @@ export function recReaddir(
   errorCallback: Error => void,
   ignored: ?RegExp,
 ) {
-  walker(dir)
-    .filterDir(currentDir => !anymatch(ignored, currentDir))
+  const walk = walker(dir);
+  if (ignored) {
+    walk.filterDir(
+      (currentDir: string) => !posixPathMatchesPattern(ignored, currentDir),
+    );
+  }
+  walk
     .on('dir', normalizeProxy(dirCallback))
     .on('file', normalizeProxy(fileCallback))
     .on('symlink', normalizeProxy(symlinkCallback))

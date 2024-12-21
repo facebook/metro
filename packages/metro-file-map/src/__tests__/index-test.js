@@ -1528,9 +1528,9 @@ describe('FileMap', () => {
       });
     }
 
-    function mockDeleteFile(dirPath, filePath) {
-      const e = mockEmitters[dirPath];
-      e.emit('all', 'delete', filePath, dirPath, undefined);
+    function mockDeleteFile(root, relativePath) {
+      const e = mockEmitters[root];
+      e.emit('all', {event: 'delete', relativePath, root});
     }
 
     function fm_it(title, fn, options) {
@@ -1620,20 +1620,18 @@ describe('FileMap', () => {
         // Pear!
       `;
       const e = mockEmitters[path.join('/', 'project', 'fruits')];
-      e.emit(
-        'all',
-        'add',
-        'Tomato.js',
-        path.join('/', 'project', 'fruits'),
-        MOCK_CHANGE_FILE,
-      );
-      e.emit(
-        'all',
-        'change',
-        'Pear.js',
-        path.join('/', 'project', 'fruits'),
-        MOCK_CHANGE_FILE,
-      );
+      e.emit('all', {
+        event: 'add',
+        relativePath: 'Tomato.js',
+        root: path.join('/', 'project', 'fruits'),
+        metadata: MOCK_CHANGE_FILE,
+      });
+      e.emit('all', {
+        event: 'change',
+        relativePath: 'Pear.js',
+        root: path.join('/', 'project', 'fruits'),
+        metadata: MOCK_CHANGE_FILE,
+      });
       const {eventsQueue} = await waitForItToChange(hm);
       expect(eventsQueue).toEqual([
         {
@@ -1663,20 +1661,18 @@ describe('FileMap', () => {
       mockFs[path.join('/', 'project', 'fruits', 'Tomato.js')] = `
         // Tomato!
       `;
-      e.emit(
-        'all',
-        'change',
-        'Tomato.js',
-        path.join('/', 'project', 'fruits'),
-        MOCK_CHANGE_FILE,
-      );
-      e.emit(
-        'all',
-        'change',
-        'Tomato.js',
-        path.join('/', 'project', 'fruits'),
-        MOCK_CHANGE_FILE,
-      );
+      e.emit('all', {
+        event: 'change',
+        relativePath: 'Tomato.js',
+        root: path.join('/', 'project', 'fruits'),
+        metadata: MOCK_CHANGE_FILE,
+      });
+      e.emit('all', {
+        event: 'change',
+        relativePath: 'Tomato.js',
+        root: path.join('/', 'project', 'fruits'),
+        metadata: MOCK_CHANGE_FILE,
+      });
       const {eventsQueue} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
     });
@@ -1690,14 +1686,18 @@ describe('FileMap', () => {
         mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
         // Tomato!
       `;
-        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
-        e.emit(
-          'all',
-          'change',
-          'LinkToStrawberry.js',
-          fruitsRoot,
-          MOCK_CHANGE_LINK,
-        );
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'Tomato.js',
+          root: fruitsRoot,
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'LinkToStrawberry.js',
+          root: fruitsRoot,
+          metadata: MOCK_CHANGE_LINK,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toEqual([
           {
@@ -1721,14 +1721,18 @@ describe('FileMap', () => {
         mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
         // Tomato!
       `;
-        e.emit('all', 'change', 'Tomato.js', fruitsRoot, MOCK_CHANGE_FILE);
-        e.emit(
-          'all',
-          'change',
-          'LinkToStrawberry.js',
-          fruitsRoot,
-          MOCK_CHANGE_LINK,
-        );
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'Tomato.js',
+          root: fruitsRoot,
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'LinkToStrawberry.js',
+          root: fruitsRoot,
+          metadata: MOCK_CHANGE_LINK,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toEqual([
           {
@@ -1754,13 +1758,12 @@ describe('FileMap', () => {
       async hm => {
         const {fileSystem} = await hm.build();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        e.emit(
-          'all',
-          'add',
-          'apple.js',
-          path.join('/', 'project', 'fruits', 'node_modules', ''),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'apple.js',
+          root: path.join('/', 'project', 'fruits', 'node_modules', ''),
+          metadata: MOCK_CHANGE_FILE,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         const filePath = path.join(
           '/',
@@ -1784,20 +1787,18 @@ describe('FileMap', () => {
         mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
 
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        e.emit(
-          'all',
-          'add',
-          path.join('Banana.js'),
-          path.join('/', 'project', 'fruits', ''),
-          MOCK_CHANGE_FILE,
-        );
-        e.emit(
-          'all',
-          'add',
-          path.join('Banana.unwatched'),
-          path.join('/', 'project', 'fruits', ''),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'Banana.js',
+          root: path.join('/', 'project', 'fruits', ''),
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'Banana.unwatched',
+          root: path.join('/', 'project', 'fruits', ''),
+          metadata: MOCK_CHANGE_FILE,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
         expect(eventsQueue).toHaveLength(1);
@@ -1813,20 +1814,16 @@ describe('FileMap', () => {
       mockFs[path.join('/', 'project', 'fruits', 'Banana.unwatched')] = '';
 
       const e = mockEmitters[path.join('/', 'project', 'fruits')];
-      e.emit(
-        'all',
-        'delete',
-        path.join('Banana.js'),
-        path.join('/', 'project', 'fruits', ''),
-        null,
-      );
-      e.emit(
-        'all',
-        'delete',
-        path.join('Unknown.ext'),
-        path.join('/', 'project', 'fruits', ''),
-        null,
-      );
+      e.emit('all', {
+        event: 'delete',
+        relativePath: 'Banana.js',
+        root: path.join('/', 'project', 'fruits', ''),
+      });
+      e.emit('all', {
+        event: 'delete',
+        relativePath: 'Unknown.ext',
+        root: path.join('/', 'project', 'fruits', ''),
+      });
       const {eventsQueue} = await waitForItToChange(hm);
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
       expect(eventsQueue).toHaveLength(1);
@@ -1846,13 +1843,12 @@ describe('FileMap', () => {
         mockFs[path.join('/', 'project', 'fruits', 'LinkToStrawberry.ext')] = {
           link: 'Strawberry.js',
         };
-        e.emit(
-          'all',
-          'add',
-          path.join('LinkToStrawberry.ext'),
-          path.join('/', 'project', 'fruits', ''),
-          MOCK_CHANGE_LINK,
-        );
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'LinkToStrawberry.ext',
+          root: path.join('/', 'project', 'fruits', ''),
+          metadata: MOCK_CHANGE_LINK,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         const filePath = path.join(
           '/',
@@ -1895,13 +1891,11 @@ describe('FileMap', () => {
         // Delete the symlink
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         delete mockFs[symlinkPath];
-        e.emit(
-          'all',
-          'delete',
-          'LinkToStrawberry.js',
-          path.join('/', 'project', 'fruits', ''),
-          null,
-        );
+        e.emit('all', {
+          event: 'delete',
+          relativePath: 'LinkToStrawberry.js',
+          root: path.join('/', 'project', 'fruits', ''),
+        });
         const {eventsQueue} = await waitForItToChange(hm);
 
         expect(eventsQueue).toHaveLength(1);
@@ -1926,20 +1920,18 @@ describe('FileMap', () => {
         expect(hasteMap.getModule('Orange', 'ios')).toBeTruthy();
         expect(hasteMap.getModule('Orange', 'android')).toBeTruthy();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        e.emit(
-          'all',
-          'change',
-          'Orange.ios.js',
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FILE,
-        );
-        e.emit(
-          'all',
-          'change',
-          'Orange.android.js',
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'Orange.ios.js',
+          root: path.join('/', 'project', 'fruits'),
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'Orange.android.js',
+          root: path.join('/', 'project', 'fruits'),
+          metadata: MOCK_CHANGE_FILE,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toHaveLength(2);
         expect(eventsQueue).toEqual([
@@ -1996,20 +1988,17 @@ describe('FileMap', () => {
       mockFs[newPath] = mockFs[oldPath];
       mockFs[oldPath] = null;
 
-      mockEmitters[path.join('/', 'project', 'vegetables')].emit(
-        'all',
-        'delete',
-        'Melon.js',
-        path.join('/', 'project', 'vegetables'),
-        null,
-      );
-      mockEmitters[path.join('/', 'project', 'fruits')].emit(
-        'all',
-        'add',
-        'Melon.js',
-        path.join('/', 'project', 'fruits'),
-        MOCK_CHANGE_FILE,
-      );
+      mockEmitters[path.join('/', 'project', 'vegetables')].emit('all', {
+        event: 'delete',
+        relativePath: 'Melon.js',
+        root: path.join('/', 'project', 'vegetables'),
+      });
+      mockEmitters[path.join('/', 'project', 'fruits')].emit('all', {
+        event: 'add',
+        relativePath: 'Melon.js',
+        root: path.join('/', 'project', 'fruits'),
+        metadata: MOCK_CHANGE_FILE,
+      });
 
       const {eventsQueue} = await waitForItToChange(hm);
 
@@ -2043,20 +2032,18 @@ describe('FileMap', () => {
           // Pear too!
         `;
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        e.emit(
-          'all',
-          'change',
-          'Pear.js',
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FILE,
-        );
-        e.emit(
-          'all',
-          'add',
-          'Pear.js',
-          path.join('/', 'project', 'fruits', 'another'),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'Pear.js',
+          root: path.join('/', 'project', 'fruits'),
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'Pear.js',
+          root: path.join('/', 'project', 'fruits', 'another'),
+          metadata: MOCK_CHANGE_FILE,
+        });
         await waitForItToChange(hm);
         expect(
           fileSystem.exists(
@@ -2093,20 +2080,18 @@ describe('FileMap', () => {
         `;
           const {fileSystem} = await hm.build();
           const e = mockEmitters[path.join('/', 'project', 'fruits')];
-          e.emit(
-            'all',
-            'change',
-            'Pear.js',
-            path.join('/', 'project', 'fruits'),
-            MOCK_CHANGE_FILE,
-          );
-          e.emit(
-            'all',
-            'add',
-            'Pear.js',
-            path.join('/', 'project', 'fruits', 'another'),
-            MOCK_CHANGE_FILE,
-          );
+          e.emit('all', {
+            event: 'change',
+            relativePath: 'Pear.js',
+            root: path.join('/', 'project', 'fruits'),
+            metadata: MOCK_CHANGE_FILE,
+          });
+          e.emit('all', {
+            event: 'add',
+            relativePath: 'Pear.js',
+            root: path.join('/', 'project', 'fruits', 'another'),
+            metadata: MOCK_CHANGE_FILE,
+          });
           await new Promise((resolve, reject) => {
             console.error.mockImplementationOnce(() => {
               reject(new Error('should not print error'));
@@ -2147,20 +2132,18 @@ describe('FileMap', () => {
             // Pear!
           `;
           const e = mockEmitters[path.join('/', 'project', 'fruits')];
-          e.emit(
-            'all',
-            'delete',
-            'Pear.js',
-            path.join('/', 'project', 'fruits'),
-            MOCK_CHANGE_FILE,
-          );
-          e.emit(
-            'all',
-            'add',
-            'Pear2.js',
-            path.join('/', 'project', 'fruits'),
-            MOCK_CHANGE_FILE,
-          );
+          e.emit('all', {
+            event: 'delete',
+            relativePath: 'Pear.js',
+            root: path.join('/', 'project', 'fruits'),
+            metadata: MOCK_CHANGE_FILE,
+          });
+          e.emit('all', {
+            event: 'add',
+            relativePath: 'Pear2.js',
+            root: path.join('/', 'project', 'fruits'),
+            metadata: MOCK_CHANGE_FILE,
+          });
           await waitForItToChange(hm);
           expect(hasteMap.getModule('Pear')).toBe(
             path.join('/', 'project', 'fruits', 'another', 'Pear.js'),
@@ -2180,20 +2163,17 @@ describe('FileMap', () => {
           // Pear too!
         `;
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
-        e.emit(
-          'all',
-          'add',
-          'Pear2.js',
-          path.join('/', 'project', 'fruits', 'another'),
-          MOCK_CHANGE_FILE,
-        );
-        e.emit(
-          'all',
-          'delete',
-          'Pear.js',
-          path.join('/', 'project', 'fruits', 'another'),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'add',
+          relativePath: 'Pear2.js',
+          root: path.join('/', 'project', 'fruits', 'another'),
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emit('all', {
+          event: 'delete',
+          relativePath: 'Pear.js',
+          root: path.join('/', 'project', 'fruits', 'another'),
+        });
         await waitForItToChange(hm);
         expect(hasteMap.getModule('Pear')).toBe(
           path.join('/', 'project', 'fruits', 'Pear.js'),
@@ -2208,20 +2188,18 @@ describe('FileMap', () => {
         mockFs[path.join('/', 'project', 'fruits', 'tomato.js', 'index.js')] = `
         // Tomato!
       `;
-        e.emit(
-          'all',
-          'change',
-          'tomato.js',
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FOLDER,
-        );
-        e.emit(
-          'all',
-          'change',
-          path.join('tomato.js', 'index.js'),
-          path.join('/', 'project', 'fruits'),
-          MOCK_CHANGE_FILE,
-        );
+        e.emit('all', {
+          event: 'change',
+          relativePath: 'tomato.js',
+          root: path.join('/', 'project', 'fruits'),
+          metadata: MOCK_CHANGE_FOLDER,
+        });
+        e.emit('all', {
+          event: 'change',
+          relativePath: path.join('tomato.js', 'index.js'),
+          root: path.join('/', 'project', 'fruits'),
+          metadata: MOCK_CHANGE_FILE,
+        });
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toHaveLength(1);
       });
