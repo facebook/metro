@@ -8,12 +8,15 @@
  * @flow strict-local
  */
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../flow-types';
 // $FlowFixMe[cannot-resolve-module] - Optional, Darwin only
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, recReaddir, typeFromStat} from './common';
+import {isIncluded, typeFromStat} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -30,16 +33,9 @@ try {
   // Optional dependency, only supported on Darwin.
 }
 
-const CHANGE_EVENT = 'change';
+const TOUCH_EVENT = 'touch';
 const DELETE_EVENT = 'delete';
-const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
-
-type FsEventsWatcherEvent =
-  | typeof CHANGE_EVENT
-  | typeof DELETE_EVENT
-  | typeof ADD_EVENT
-  | typeof ALL_EVENT;
 
 /**
  * Export `FSEventsWatcher` class.
@@ -52,8 +48,6 @@ export default class FSEventsWatcher extends EventEmitter {
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
-  +watcherInitialReaddirPromise: Promise<void>;
-  _tracked: Set<string>;
 
   static isSupported(): boolean {
     return fsevents != null;
@@ -67,7 +61,7 @@ export default class FSEventsWatcher extends EventEmitter {
       dot,
     }: $ReadOnly<{
       ignored: ?RegExp,
-      glob: string | $ReadOnlyArray<string>,
+      glob: $ReadOnlyArray<string>,
       dot: boolean,
       ...
     }>,
@@ -82,7 +76,7 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this.dot = dot || false;
     this.ignored = ignored;
-    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.glob = glob;
     this.doIgnore = ignored
       ? // No need to normalise Windows paths to posix because this backend
         // only runs on macOS, and backends always emit system-native paths.
@@ -98,40 +92,17 @@ export default class FSEventsWatcher extends EventEmitter {
     });
 
     debug(`Watching ${this.root}`);
-
-    this._tracked = new Set();
-    const trackPath = (filePath: string) => {
-      this._tracked.add(path.normalize(filePath));
-    };
-    this.watcherInitialReaddirPromise = new Promise(resolve => {
-      recReaddir(
-        this.root,
-        trackPath,
-        trackPath,
-        trackPath,
-        () => {
-          this.emit('ready');
-          resolve();
-        },
-        (...args) => {
-          this.emit('error', ...args);
-          resolve();
-        },
-        this.ignored,
-      );
-    });
   }
 
   /**
    * End watching.
    */
   async close(callback?: () => void): Promise<void> {
-    await this.watcherInitialReaddirPromise;
     await this.fsEventsWatchStopper();
     this.removeAllListeners();
 
     await new Promise(resolve => {
-      // it takes around 100ms for fsevents to release its resounces after
+      // it takes around 100ms for fsevents to release its resources after
       // watching is stopped. See __tests__/server-torn-down-test.js
       setTimeout(() => {
         if (typeof callback === 'function') {
@@ -164,37 +135,25 @@ export default class FSEventsWatcher extends EventEmitter {
         size: stat.size,
       };
 
-      if (this._tracked.has(filepath)) {
-        this._emit(CHANGE_EVENT, relativePath, metadata);
-      } else {
-        this._tracked.add(filepath);
-        this._emit(ADD_EVENT, relativePath, metadata);
-      }
+      this._emit({event: TOUCH_EVENT, relativePath, metadata});
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         this.emit('error', error);
         return;
       }
 
-      // Ignore files that aren't tracked and don't exist.
-      if (!this._tracked.has(filepath)) {
-        return;
-      }
-
-      this._emit(DELETE_EVENT, relativePath);
-      this._tracked.delete(filepath);
+      this._emit({event: DELETE_EVENT, relativePath});
     }
   }
 
   /**
    * Emit events.
    */
-  _emit(
-    type: FsEventsWatcherEvent,
-    file: string,
-    metadata?: ChangeEventMetadata,
-  ) {
-    this.emit(ALL_EVENT, type, file, this.root, metadata);
+  _emit(payload: Omit<WatcherBackendChangeEvent, 'root'>) {
+    this.emit(ALL_EVENT, {
+      ...payload,
+      root: this.root,
+    } as WatcherBackendChangeEvent);
   }
 
   getPauseReason(): ?string {

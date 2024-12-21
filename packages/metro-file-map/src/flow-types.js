@@ -322,6 +322,20 @@ export type ReadOnlyRawMockMap = $ReadOnly<{
   mocks: $ReadOnlyMap<string, Path>,
 }>;
 
+export type WatcherBackendChangeEvent =
+  | $ReadOnly<{
+      event: 'touch',
+      relativePath: string,
+      root: string,
+      metadata: ChangeEventMetadata,
+    }>
+  | $ReadOnly<{
+      event: 'delete',
+      relativePath: string,
+      root: string,
+      metadata?: void,
+    }>;
+
 export type WatchmanClockSpec =
   | string
   | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;

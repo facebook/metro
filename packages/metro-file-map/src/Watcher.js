@@ -9,12 +9,12 @@
  */
 
 import type {
-  ChangeEventMetadata,
   Console,
   CrawlerOptions,
   FileData,
   Path,
   PerfLogger,
+  WatcherBackendChangeEvent,
   WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
@@ -22,7 +22,7 @@ import type {AbortSignal} from 'node-abort-controller';
 
 import nodeCrawl from './crawlers/node';
 import watchmanCrawl from './crawlers/watchman';
-import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
+import {TOUCH_EVENT} from './watchers/common';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 import NodeWatcher from './watchers/NodeWatcher';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
@@ -163,14 +163,7 @@ export class Watcher extends EventEmitter {
     }
   }
 
-  async watch(
-    onChange: (
-      type: string,
-      filePath: string,
-      root: string,
-      metadata: ChangeEventMetadata,
-    ) => void,
-  ) {
+  async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
     const {extensions, ignorePattern, useWatchman} = this._options;
 
     // WatchmanWatcher > FSEventsWatcher > sane.NodeWatcher
@@ -214,29 +207,21 @@ export class Watcher extends EventEmitter {
 
         watcher.once('ready', () => {
           clearTimeout(rejectTimeout);
-          watcher.on(
-            'all',
-            (
-              type: string,
-              filePath: string,
-              root: string,
-              metadata: ChangeEventMetadata,
-            ) => {
-              const basename = path.basename(filePath);
-              if (basename.startsWith(this._options.healthCheckFilePrefix)) {
-                if (type === ADD_EVENT || type === CHANGE_EVENT) {
-                  debug(
-                    'Observed possible health check cookie: %s in %s',
-                    filePath,
-                    root,
-                  );
-                  this._handleHealthCheckObservation(basename);
-                }
-                return;
+          watcher.on('all', (change: WatcherBackendChangeEvent) => {
+            const basename = path.basename(change.relativePath);
+            if (basename.startsWith(this._options.healthCheckFilePrefix)) {
+              if (change.event === TOUCH_EVENT) {
+                debug(
+                  'Observed possible health check cookie: %s in %s',
+                  change.relativePath,
+                  root,
+                );
+                this._handleHealthCheckObservation(basename);
               }
-              onChange(type, filePath, root, metadata);
-            },
-          );
+              return;
+            }
+            onChange(change);
+          });
           resolve(watcher);
         });
       });
