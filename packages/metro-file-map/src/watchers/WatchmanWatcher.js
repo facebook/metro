@@ -42,22 +42,30 @@ const SUB_PREFIX = 'metro-file-map';
  */
 export default class WatchmanWatcher extends EventEmitter {
   client: Client;
-  dot: boolean;
-  doIgnore: string => boolean;
-  globs: $ReadOnlyArray<string>;
-  root: string;
-  subscriptionName: string;
+  +dot: boolean;
+  +doIgnore: string => boolean;
+  +globs: $ReadOnlyArray<string>;
+  +root: string;
+  +subscriptionName: string;
   watchProjectInfo: ?$ReadOnly<{
     relativePath: string,
     root: string,
   }>;
-  watchmanDeferStates: $ReadOnlyArray<string>;
+  +watchmanDeferStates: $ReadOnlyArray<string>;
   #deferringStates: ?Set<string> = null;
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
 
-    common.assignOptions(this, opts);
+    this.globs = opts.glob;
+    this.dot = opts.dot;
+    this.watchmanDeferStates = opts.watchmanDeferStates;
+
+    const ignored = opts.ignored;
+    this.doIgnore = ignored
+      ? filePath => common.posixPathMatchesPattern(ignored, filePath)
+      : () => false;
+
     this.root = path.resolve(dir);
 
     // Use a unique subscription name per process per watched directory

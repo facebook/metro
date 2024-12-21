@@ -61,7 +61,7 @@ export default class FSEventsWatcher extends EventEmitter {
       dot,
     }: $ReadOnly<{
       ignored: ?RegExp,
-      glob: string | $ReadOnlyArray<string>,
+      glob: $ReadOnlyArray<string>,
       dot: boolean,
       ...
     }>,
@@ -76,7 +76,7 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this.dot = dot || false;
     this.ignored = ignored;
-    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.glob = glob;
     this.doIgnore = ignored
       ? // No need to normalise Windows paths to posix because this backend
         // only runs on macOS, and backends always emit system-native paths.
