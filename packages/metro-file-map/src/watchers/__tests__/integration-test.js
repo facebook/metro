@@ -52,7 +52,7 @@ describe.each(Object.keys(WATCHERS))(
         symlink('target', join(watchRoot, 'existing', 'symlink-to-delete')),
       ]);
 
-      // Short delay to ensure that 'add' events for the files above are not
+      // Short delay to ensure that 'touch' events for the files above are not
       // reported by the OS to the watcher we haven't established yet.
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -77,7 +77,7 @@ describe.each(Object.keys(WATCHERS))(
     beforeEach(async () => {
       expect(await eventHelpers.nextEvent(() => mkdir(appRoot))).toStrictEqual({
         path: 'app',
-        eventType: 'add',
+        eventType: 'touch',
         metadata: expect.any(Object),
       });
     });
@@ -90,7 +90,7 @@ describe.each(Object.keys(WATCHERS))(
         await eventHelpers.nextEvent(() =>
           writeFile(join(watchRoot, cookieName), ''),
         ),
-      ).toMatchObject({path: cookieName, eventType: 'add'});
+      ).toMatchObject({path: cookieName, eventType: 'touch'});
       // Cleanup and wait until the app root deletion is reported - this should
       // be the last cleanup event emitted.
       await eventHelpers.untilEvent(
@@ -112,7 +112,7 @@ describe.each(Object.keys(WATCHERS))(
         await eventHelpers.nextEvent(() => writeFile(testFile, 'hello world')),
       ).toStrictEqual({
         path: relativePath,
-        eventType: 'add',
+        eventType: 'touch',
         metadata: {
           type: 'f',
           modifiedTime: expect.any(Number),
@@ -128,7 +128,7 @@ describe.each(Object.keys(WATCHERS))(
         ),
       ).toStrictEqual({
         path: relativePath,
-        eventType: 'change',
+        eventType: 'touch',
         metadata: expect.any(Object),
       });
       expect(
@@ -151,7 +151,7 @@ describe.each(Object.keys(WATCHERS))(
         await eventHelpers.nextEvent(() => symlink(target, newLink)),
       ).toStrictEqual({
         path: relativePath,
-        eventType: 'add',
+        eventType: 'touch',
         metadata: {
           type: 'l',
           modifiedTime: expect.any(Number),
@@ -201,7 +201,7 @@ describe.each(Object.keys(WATCHERS))(
         ),
       ).toStrictEqual({
         path: join('existing', 'file-to-modify.js'),
-        eventType: 'change',
+        eventType: 'touch',
         metadata: expect.any(Object),
       });
     });
@@ -211,7 +211,7 @@ describe.each(Object.keys(WATCHERS))(
         await eventHelpers.nextEvent(() => mkdir(join(watchRoot, 'newdir'))),
       ).toStrictEqual({
         path: join('newdir'),
-        eventType: 'add',
+        eventType: 'touch',
         metadata: {
           modifiedTime: expect.any(Number),
           size: expect.any(Number),
@@ -224,7 +224,7 @@ describe.each(Object.keys(WATCHERS))(
         ),
       ).toStrictEqual({
         path: join('newdir', 'file-in-new-dir.js'),
-        eventType: 'add',
+        eventType: 'touch',
         metadata: {
           modifiedTime: expect.any(Number),
           size: expect.any(Number),
@@ -246,10 +246,10 @@ describe.each(Object.keys(WATCHERS))(
             ]);
           },
           [
-            [join('app', 'subdir'), 'add'],
-            [join('app', 'subdir', 'subdir2'), 'add'],
-            [join('app', 'subdir', 'deep.js'), 'add'],
-            [join('app', 'subdir', 'subdir2', 'deeper.js'), 'add'],
+            [join('app', 'subdir'), 'touch'],
+            [join('app', 'subdir', 'subdir2'), 'touch'],
+            [join('app', 'subdir', 'deep.js'), 'touch'],
+            [join('app', 'subdir', 'subdir2', 'deeper.js'), 'touch'],
           ],
           {rejectUnexpected: true},
         );

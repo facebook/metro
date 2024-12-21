@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {WatcherBackendChangeEvent} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {
   Client,
@@ -32,9 +32,8 @@ import path from 'path';
 
 const debug = require('debug')('Metro:WatchmanWatcher');
 
-const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
-const ADD_EVENT = common.ADD_EVENT;
+const TOUCH_EVENT = common.TOUCH_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
 const SUB_PREFIX = 'metro-file-map';
 
@@ -272,9 +271,8 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     if (!exists) {
-      self._emitEvent(DELETE_EVENT, relativePath, self.root);
+      self._emitEvent({event: DELETE_EVENT, relativePath});
     } else {
-      const eventType = isNew ? ADD_EVENT : CHANGE_EVENT;
       invariant(
         type != null && mtime_ms != null && size != null,
         'Watchman file change event for "%s" missing some requested metadata. ' +
@@ -287,13 +285,17 @@ export default class WatchmanWatcher extends EventEmitter {
 
       if (
         // Change event on dirs are mostly useless.
-        !(type === 'd' && eventType === CHANGE_EVENT)
+        !(type === 'd' && !isNew)
       ) {
         const mtime = Number(mtime_ms);
-        self._emitEvent(eventType, relativePath, self.root, {
-          modifiedTime: mtime !== 0 ? mtime : null,
-          size,
-          type,
+        self._emitEvent({
+          event: TOUCH_EVENT,
+          relativePath,
+          metadata: {
+            modifiedTime: mtime !== 0 ? mtime : null,
+            size,
+            type,
+          },
         });
       }
     }
@@ -302,13 +304,11 @@ export default class WatchmanWatcher extends EventEmitter {
   /**
    * Dispatches the event.
    */
-  _emitEvent(
-    eventType: string,
-    filepath: string,
-    root: string,
-    changeMetadata?: ChangeEventMetadata,
-  ) {
-    this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
+  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
+    this.emit(ALL_EVENT, {
+      ...change,
+      root: this.root,
+    } as WatcherBackendChangeEvent);
   }
 
   /**
