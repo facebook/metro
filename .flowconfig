@@ -1,5 +1,6 @@
 [ignore]
 <PROJECT_ROOT>/packages/.*/build/.*
+<PROJECT_ROOT>/\.hg/.*
 # this transient dep bundles tests with their package, which flow attempts to parse
 # and crashes out as the test includes purposely malformed json
 <PROJECT_ROOT>\(/.*\)?/node_modules/resolve/test/.*

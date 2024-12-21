@@ -9,7 +9,10 @@
  * @oncall react_native
  */
 
-import type {ChangeEventMetadata} from '../../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../../flow-types';
 import type {WatcherOptions} from '../common';
 
 import FSEventsWatcher from '../FSEventsWatcher';
@@ -117,23 +120,24 @@ export const startWatching = async (
           metadata?: ChangeEventMetadata,
           path: string,
         }>((resolve, reject) => {
-          const listener = (
-            eventType: string,
-            path: string,
-            root: string,
-            metadata?: ChangeEventMetadata,
-          ) => {
-            if (path === '') {
+          const listener = (change: WatcherBackendChangeEvent) => {
+            if (change.relativePath === '') {
               // FIXME: FSEventsWatcher sometimes reports 'change' events to
               // the watch root.
               return;
             }
             watcherInstance.removeListener('all', listener);
-            if (root !== watchRoot) {
-              reject(new Error(`Expected root ${watchRoot}, got ${root}`));
+            if (change.root !== watchRoot) {
+              reject(
+                new Error(`Expected root ${watchRoot}, got ${change.root}`),
+              );
             }
 
-            resolve({eventType, path, metadata});
+            resolve({
+              eventType: change.event,
+              path: change.relativePath,
+              metadata: change.metadata,
+            });
           };
           watcherInstance.on('all', listener);
         }),
@@ -154,13 +158,13 @@ export const startWatching = async (
           const allEventKeys = new Set(
             expectedEvents.map(tuple => tupleToKey(tuple)),
           );
-          const listener = (eventType: string, path: string) => {
-            if (path === '') {
+          const listener = (change: WatcherBackendChangeEvent) => {
+            if (change.relativePath === '') {
               // FIXME: FSEventsWatcher sometimes reports 'change' events to
               // the watch root.
               return;
             }
-            const receivedKey = tupleToKey([path, eventType]);
+            const receivedKey = tupleToKey([change.relativePath, change.event]);
             if (allEventKeys.has(receivedKey)) {
               allEventKeys.delete(receivedKey);
               if (allEventKeys.size === 0) {
@@ -169,7 +173,11 @@ export const startWatching = async (
               }
             } else if (rejectUnexpected) {
               watcherInstance.removeListener('all', listener);
-              reject(new Error(`Unexpected event: ${eventType} ${path}.`));
+              reject(
+                new Error(
+                  `Unexpected event: ${change.event} ${change.relativePath}.`,
+                ),
+              );
             }
           };
           watcherInstance.on('all', listener);
