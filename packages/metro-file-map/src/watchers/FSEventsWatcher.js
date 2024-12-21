@@ -33,9 +33,8 @@ try {
   // Optional dependency, only supported on Darwin.
 }
 
-const CHANGE_EVENT = 'change';
+const TOUCH_EVENT = 'touch';
 const DELETE_EVENT = 'delete';
-const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
 
 /**
@@ -161,12 +160,7 @@ export default class FSEventsWatcher extends EventEmitter {
         size: stat.size,
       };
 
-      if (this._tracked.has(filepath)) {
-        this._emit({event: CHANGE_EVENT, relativePath, metadata});
-      } else {
-        this._tracked.add(filepath);
-        this._emit({event: ADD_EVENT, relativePath, metadata});
-      }
+      this._emit({event: TOUCH_EVENT, relativePath, metadata});
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         this.emit('error', error);
