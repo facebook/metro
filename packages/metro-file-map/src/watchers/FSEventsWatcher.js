@@ -194,7 +194,6 @@ export default class FSEventsWatcher extends EventEmitter {
     file: string,
     metadata?: ChangeEventMetadata,
   ) {
-    this.emit(type, file, this.root, metadata);
     this.emit(ALL_EVENT, type, file, this.root, metadata);
   }
 
