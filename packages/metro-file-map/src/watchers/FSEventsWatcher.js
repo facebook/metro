@@ -16,7 +16,7 @@ import type {
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, recReaddir, typeFromStat} from './common';
+import {isIncluded, typeFromStat} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -48,8 +48,6 @@ export default class FSEventsWatcher extends EventEmitter {
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
-  +watcherInitialReaddirPromise: Promise<void>;
-  _tracked: Set<string>;
 
   static isSupported(): boolean {
     return fsevents != null;
@@ -94,40 +92,17 @@ export default class FSEventsWatcher extends EventEmitter {
     });
 
     debug(`Watching ${this.root}`);
-
-    this._tracked = new Set();
-    const trackPath = (filePath: string) => {
-      this._tracked.add(path.normalize(filePath));
-    };
-    this.watcherInitialReaddirPromise = new Promise(resolve => {
-      recReaddir(
-        this.root,
-        trackPath,
-        trackPath,
-        trackPath,
-        () => {
-          this.emit('ready');
-          resolve();
-        },
-        (...args) => {
-          this.emit('error', ...args);
-          resolve();
-        },
-        this.ignored,
-      );
-    });
   }
 
   /**
    * End watching.
    */
   async close(callback?: () => void): Promise<void> {
-    await this.watcherInitialReaddirPromise;
     await this.fsEventsWatchStopper();
     this.removeAllListeners();
 
     await new Promise(resolve => {
-      // it takes around 100ms for fsevents to release its resounces after
+      // it takes around 100ms for fsevents to release its resources after
       // watching is stopped. See __tests__/server-torn-down-test.js
       setTimeout(() => {
         if (typeof callback === 'function') {
@@ -167,13 +142,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      // Ignore files that aren't tracked and don't exist.
-      if (!this._tracked.has(filepath)) {
-        return;
-      }
-
       this._emit({event: DELETE_EVENT, relativePath});
-      this._tracked.delete(filepath);
     }
   }
 
