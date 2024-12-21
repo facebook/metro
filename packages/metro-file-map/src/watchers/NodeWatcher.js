@@ -15,7 +15,10 @@
 
 'use strict';
 
-import type {ChangeEventMetadata} from '../flow-types';
+import type {
+  ChangeEventMetadata,
+  WatcherBackendChangeEvent,
+} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {FSWatcher, Stats} from 'fs';
 
@@ -27,9 +30,8 @@ const path = require('path');
 
 const fsPromises = fs.promises;
 
-const CHANGE_EVENT = common.CHANGE_EVENT;
+const TOUCH_EVENT = common.TOUCH_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
-const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
 
 /**
@@ -40,23 +42,29 @@ const ALL_EVENT = common.ALL_EVENT;
 const DEBOUNCE_MS = 100;
 
 module.exports = class NodeWatcher extends EventEmitter {
-  _changeTimers: Map<string, TimeoutID> = new Map();
-  _dirRegistry: {
+  +_changeTimers: Map<string, TimeoutID> = new Map();
+  +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
     __proto__: null,
   };
-  doIgnore: string => boolean;
-  dot: boolean;
-  globs: $ReadOnlyArray<string>;
-  ignored: ?RegExp;
-  root: string;
-  watched: {[key: string]: FSWatcher, __proto__: null};
-  watchmanDeferStates: $ReadOnlyArray<string>;
+  +doIgnore: string => boolean;
+  +dot: boolean;
+  +globs: $ReadOnlyArray<string>;
+  +ignored: ?RegExp;
+  +root: string;
+  +watched: {[key: string]: FSWatcher, __proto__: null};
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
 
-    common.assignOptions(this, opts);
+    this.globs = opts.glob;
+    this.dot = opts.dot;
+    this.ignored = opts.ignored;
+
+    const ignored = opts.ignored;
+    this.doIgnore = ignored
+      ? filePath => common.posixPathMatchesPattern(ignored, filePath)
+      : () => false;
 
     this.watched = Object.create(null);
     this._dirRegistry = Object.create(null);
@@ -298,29 +306,42 @@ module.exports = class NodeWatcher extends EventEmitter {
           path.resolve(this.root, relativePath),
           (dir, stats) => {
             if (this._watchdir(dir)) {
-              this._emitEvent(ADD_EVENT, path.relative(this.root, dir), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'd',
+              this._emitEvent({
+                event: TOUCH_EVENT,
+                relativePath: path.relative(this.root, dir),
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'd',
+                },
               });
             }
           },
           (file, stats) => {
             if (this._register(file, 'f')) {
-              this._emitEvent(ADD_EVENT, path.relative(this.root, file), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'f',
+              this._emitEvent({
+                event: TOUCH_EVENT,
+                relativePath: path.relative(this.root, file),
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'f',
+                },
               });
             }
           },
           (symlink, stats) => {
             if (this._register(symlink, 'l')) {
-              this._rawEmitEvent(ADD_EVENT, path.relative(this.root, symlink), {
-                modifiedTime: stats.mtime.getTime(),
-                size: stats.size,
-                type: 'l',
-              });
+              this.emit(ALL_EVENT, {
+                event: TOUCH_EVENT,
+                relativePath: path.relative(this.root, symlink),
+                root: this.root,
+                metadata: {
+                  modifiedTime: stats.mtime.getTime(),
+                  size: stats.size,
+                  type: 'l',
+                },
+              } as WatcherBackendChangeEvent);
             }
           },
           function endCallback() {},
@@ -338,10 +359,10 @@ module.exports = class NodeWatcher extends EventEmitter {
           type,
         };
         if (registered) {
-          this._emitEvent(CHANGE_EVENT, relativePath, metadata);
+          this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
         } else {
           if (this._register(fullPath, type)) {
-            this._emitEvent(ADD_EVENT, relativePath, metadata);
+            this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
           }
         }
       }
@@ -353,27 +374,22 @@ module.exports = class NodeWatcher extends EventEmitter {
       this._unregister(fullPath);
       this._unregisterDir(fullPath);
       if (registered) {
-        this._emitEvent(DELETE_EVENT, relativePath);
+        this._emitEvent({event: DELETE_EVENT, relativePath});
       }
       await this._stopWatching(fullPath);
     }
   }
 
   /**
-   * Emits the given event after debouncing, to 1) suppress 'change' events
-   * immediately following an 'add', and 2) to only emit the latest 'change'
-   * event when received in quick succession for a given file.
+   * Emits the given event after debouncing, to emit only the latest
+   * information when we receive several events in quick succession. E.g.,
+   * Linux emits two events for every new file.
    *
    * See also note above for DEBOUNCE_MS.
    */
-  _emitEvent(type: string, file: string, metadata?: ChangeEventMetadata) {
-    const key = type + '-' + file;
-    const addKey = ADD_EVENT + '-' + file;
-    if (type === CHANGE_EVENT && this._changeTimers.has(addKey)) {
-      // Ignore the change event that is immediately fired after an add event.
-      // (This happens on Linux).
-      return;
-    }
+  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
+    const {event, relativePath} = change;
+    const key = event + '-' + relativePath;
     const existingTimer = this._changeTimers.get(key);
     if (existingTimer) {
       clearTimeout(existingTimer);
@@ -382,20 +398,12 @@ module.exports = class NodeWatcher extends EventEmitter {
       key,
       setTimeout(() => {
         this._changeTimers.delete(key);
-        this._rawEmitEvent(type, file, metadata);
+        this.emit(ALL_EVENT, {
+          ...change,
+          root: this.root,
+        } as WatcherBackendChangeEvent);
       }, DEBOUNCE_MS),
     );
-  }
-
-  /**
-   * Actually emit the events
-   */
-  _rawEmitEvent(
-    eventType: string,
-    file: string,
-    metadata: ?ChangeEventMetadata,
-  ) {
-    this.emit(ALL_EVENT, eventType, file, this.root, metadata);
   }
 
   getPauseReason(): ?string {
