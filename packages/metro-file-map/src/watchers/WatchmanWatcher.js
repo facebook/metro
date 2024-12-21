@@ -308,7 +308,6 @@ export default class WatchmanWatcher extends EventEmitter {
     root: string,
     changeMetadata?: ChangeEventMetadata,
   ) {
-    this.emit(eventType, filepath, root, changeMetadata);
     this.emit(ALL_EVENT, eventType, filepath, root, changeMetadata);
   }
 

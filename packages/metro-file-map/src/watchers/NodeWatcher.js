@@ -395,7 +395,6 @@ module.exports = class NodeWatcher extends EventEmitter {
     file: string,
     metadata: ?ChangeEventMetadata,
   ) {
-    this.emit(eventType, file, this.root, metadata);
     this.emit(ALL_EVENT, eventType, file, this.root, metadata);
   }
 
