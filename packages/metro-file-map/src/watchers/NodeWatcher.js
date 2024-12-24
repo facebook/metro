@@ -30,9 +30,8 @@ const path = require('path');
 
 const fsPromises = fs.promises;
 
-const CHANGE_EVENT = common.CHANGE_EVENT;
+const TOUCH_EVENT = common.TOUCH_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
-const ADD_EVENT = common.ADD_EVENT;
 const ALL_EVENT = common.ALL_EVENT;
 
 /**
@@ -302,7 +301,7 @@ module.exports = class NodeWatcher extends EventEmitter {
           (dir, stats) => {
             if (this._watchdir(dir)) {
               this._emitEvent({
-                event: ADD_EVENT,
+                event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, dir),
                 metadata: {
                   modifiedTime: stats.mtime.getTime(),
@@ -315,7 +314,7 @@ module.exports = class NodeWatcher extends EventEmitter {
           (file, stats) => {
             if (this._register(file, 'f')) {
               this._emitEvent({
-                event: ADD_EVENT,
+                event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, file),
                 metadata: {
                   modifiedTime: stats.mtime.getTime(),
@@ -328,7 +327,7 @@ module.exports = class NodeWatcher extends EventEmitter {
           (symlink, stats) => {
             if (this._register(symlink, 'l')) {
               this.emit(ALL_EVENT, {
-                event: ADD_EVENT,
+                event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, symlink),
                 root: this.root,
                 metadata: {
@@ -354,10 +353,10 @@ module.exports = class NodeWatcher extends EventEmitter {
           type,
         };
         if (registered) {
-          this._emitEvent({event: CHANGE_EVENT, relativePath, metadata});
+          this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
         } else {
           if (this._register(fullPath, type)) {
-            this._emitEvent({event: ADD_EVENT, relativePath, metadata});
+            this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
           }
         }
       }
@@ -376,21 +375,15 @@ module.exports = class NodeWatcher extends EventEmitter {
   }
 
   /**
-   * Emits the given event after debouncing, to 1) suppress 'change' events
-   * immediately following an 'add', and 2) to only emit the latest 'change'
-   * event when received in quick succession for a given file.
+   * Emits the given event after debouncing, to emit only the latest
+   * information when we receive several events in quick succession. E.g.,
+   * Linux emits two events for every new file.
    *
    * See also note above for DEBOUNCE_MS.
    */
   _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
     const {event, relativePath} = change;
     const key = event + '-' + relativePath;
-    const addKey = ADD_EVENT + '-' + relativePath;
-    if (event === CHANGE_EVENT && this._changeTimers.has(addKey)) {
-      // Ignore the change event that is immediately fired after an add event.
-      // (This happens on Linux).
-      return;
-    }
     const existingTimer = this._changeTimers.get(key);
     if (existingTimer) {
       clearTimeout(existingTimer);

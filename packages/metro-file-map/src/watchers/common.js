@@ -29,9 +29,8 @@ const walker = require('walker');
 /**
  * Constants
  */
-export const CHANGE_EVENT = 'change';
 export const DELETE_EVENT = 'delete';
-export const ADD_EVENT = 'add';
+export const TOUCH_EVENT = 'touch';
 export const ALL_EVENT = 'all';
 
 export type WatcherOptions = $ReadOnly<{

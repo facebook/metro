@@ -898,13 +898,22 @@ export default class FileMap extends EventEmitter {
       // null, then it is assumed that the watcher does not have capabilities
       // to detect modified time, and change processing proceeds.
       if (
-        change.event === 'change' &&
+        change.event === 'touch' &&
         linkStats != null &&
         change.metadata.modifiedTime != null &&
         linkStats.modifiedTime === change.metadata.modifiedTime
       ) {
         return;
       }
+
+      // Emitted events, unlike memoryless backend events, specify 'add' or
+      // 'change' instead of 'touch'.
+      const eventTypeToEmit =
+        change.event === 'touch'
+          ? linkStats == null
+            ? 'add'
+            : 'change'
+          : 'delete';
 
       const onChangeStartTime = performance.timeOrigin + performance.now();
 
@@ -915,7 +924,7 @@ export default class FileMap extends EventEmitter {
             nextEmit != null &&
             nextEmit.eventsQueue.find(
               event =>
-                event.type === change.event &&
+                event.type === eventTypeToEmit &&
                 event.filePath === absoluteFilePath &&
                 ((!event.metadata && !change.metadata) ||
                   (event.metadata &&
@@ -935,7 +944,7 @@ export default class FileMap extends EventEmitter {
             const event = {
               filePath: absoluteFilePath,
               metadata,
-              type: change.event,
+              type: eventTypeToEmit,
             };
             if (nextEmit == null) {
               nextEmit = {
@@ -960,9 +969,9 @@ export default class FileMap extends EventEmitter {
             );
           }
 
-          // If the file was added or changed,
+          // If the file was added or modified,
           // parse it and update the haste map.
-          if (change.event === 'add' || change.event === 'change') {
+          if (change.event === 'touch') {
             invariant(
               change.metadata.size != null,
               'since the file exists or changed, it should have known size',

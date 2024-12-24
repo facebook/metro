@@ -1621,13 +1621,13 @@ describe('FileMap', () => {
       `;
       const e = mockEmitters[path.join('/', 'project', 'fruits')];
       e.emit('all', {
-        event: 'add',
+        event: 'touch',
         relativePath: 'Tomato.js',
         root: path.join('/', 'project', 'fruits'),
         metadata: MOCK_CHANGE_FILE,
       });
       e.emit('all', {
-        event: 'change',
+        event: 'touch',
         relativePath: 'Pear.js',
         root: path.join('/', 'project', 'fruits'),
         metadata: MOCK_CHANGE_FILE,
@@ -1662,13 +1662,13 @@ describe('FileMap', () => {
         // Tomato!
       `;
       e.emit('all', {
-        event: 'change',
+        event: 'touch',
         relativePath: 'Tomato.js',
         root: path.join('/', 'project', 'fruits'),
         metadata: MOCK_CHANGE_FILE,
       });
       e.emit('all', {
-        event: 'change',
+        event: 'touch',
         relativePath: 'Tomato.js',
         root: path.join('/', 'project', 'fruits'),
         metadata: MOCK_CHANGE_FILE,
@@ -1683,17 +1683,14 @@ describe('FileMap', () => {
         const {fileSystem} = await hm.build();
         const fruitsRoot = path.join('/', 'project', 'fruits');
         const e = mockEmitters[fruitsRoot];
-        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
-        // Tomato!
-      `;
         e.emit('all', {
-          event: 'change',
-          relativePath: 'Tomato.js',
+          event: 'touch',
+          relativePath: 'Strawberry.js',
           root: fruitsRoot,
           metadata: MOCK_CHANGE_FILE,
         });
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'LinkToStrawberry.js',
           root: fruitsRoot,
           metadata: MOCK_CHANGE_LINK,
@@ -1701,7 +1698,7 @@ describe('FileMap', () => {
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toEqual([
           {
-            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            filePath: path.join(fruitsRoot, 'Strawberry.js'),
             metadata: MOCK_CHANGE_FILE,
             type: 'change',
           },
@@ -1718,17 +1715,14 @@ describe('FileMap', () => {
         const {fileSystem} = await hm.build();
         const fruitsRoot = path.join('/', 'project', 'fruits');
         const e = mockEmitters[fruitsRoot];
-        mockFs[path.join(fruitsRoot, 'Tomato.js')] = `
-        // Tomato!
-      `;
         e.emit('all', {
-          event: 'change',
-          relativePath: 'Tomato.js',
+          event: 'touch',
+          relativePath: 'Strawberry.js',
           root: fruitsRoot,
           metadata: MOCK_CHANGE_FILE,
         });
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'LinkToStrawberry.js',
           root: fruitsRoot,
           metadata: MOCK_CHANGE_LINK,
@@ -1736,7 +1730,7 @@ describe('FileMap', () => {
         const {eventsQueue} = await waitForItToChange(hm);
         expect(eventsQueue).toEqual([
           {
-            filePath: path.join(fruitsRoot, 'Tomato.js'),
+            filePath: path.join(fruitsRoot, 'Strawberry.js'),
             metadata: MOCK_CHANGE_FILE,
             type: 'change',
           },
@@ -1759,7 +1753,7 @@ describe('FileMap', () => {
         const {fileSystem} = await hm.build();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'apple.js',
           root: path.join('/', 'project', 'fruits', 'node_modules', ''),
           metadata: MOCK_CHANGE_FILE,
@@ -1788,13 +1782,13 @@ describe('FileMap', () => {
 
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'Banana.js',
           root: path.join('/', 'project', 'fruits', ''),
           metadata: MOCK_CHANGE_FILE,
         });
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'Banana.unwatched',
           root: path.join('/', 'project', 'fruits', ''),
           metadata: MOCK_CHANGE_FILE,
@@ -1803,7 +1797,7 @@ describe('FileMap', () => {
         const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
         expect(eventsQueue).toHaveLength(1);
         expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
+          {filePath, metadata: MOCK_CHANGE_FILE, type: 'change'},
         ]);
         expect(fileSystem.getModuleName(filePath)).toBeDefined();
       },
@@ -1844,7 +1838,7 @@ describe('FileMap', () => {
           link: 'Strawberry.js',
         };
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'LinkToStrawberry.ext',
           root: path.join('/', 'project', 'fruits', ''),
           metadata: MOCK_CHANGE_LINK,
@@ -1921,13 +1915,13 @@ describe('FileMap', () => {
         expect(hasteMap.getModule('Orange', 'android')).toBeTruthy();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'Orange.ios.js',
           root: path.join('/', 'project', 'fruits'),
           metadata: MOCK_CHANGE_FILE,
         });
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'Orange.android.js',
           root: path.join('/', 'project', 'fruits'),
           metadata: MOCK_CHANGE_FILE,
@@ -1994,7 +1988,7 @@ describe('FileMap', () => {
         root: path.join('/', 'project', 'vegetables'),
       });
       mockEmitters[path.join('/', 'project', 'fruits')].emit('all', {
-        event: 'add',
+        event: 'touch',
         relativePath: 'Melon.js',
         root: path.join('/', 'project', 'fruits'),
         metadata: MOCK_CHANGE_FILE,
@@ -2033,13 +2027,13 @@ describe('FileMap', () => {
         `;
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'Pear.js',
           root: path.join('/', 'project', 'fruits'),
           metadata: MOCK_CHANGE_FILE,
         });
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'Pear.js',
           root: path.join('/', 'project', 'fruits', 'another'),
           metadata: MOCK_CHANGE_FILE,
@@ -2081,13 +2075,13 @@ describe('FileMap', () => {
           const {fileSystem} = await hm.build();
           const e = mockEmitters[path.join('/', 'project', 'fruits')];
           e.emit('all', {
-            event: 'change',
+            event: 'touch',
             relativePath: 'Pear.js',
             root: path.join('/', 'project', 'fruits'),
             metadata: MOCK_CHANGE_FILE,
           });
           e.emit('all', {
-            event: 'add',
+            event: 'touch',
             relativePath: 'Pear.js',
             root: path.join('/', 'project', 'fruits', 'another'),
             metadata: MOCK_CHANGE_FILE,
@@ -2139,7 +2133,7 @@ describe('FileMap', () => {
             metadata: MOCK_CHANGE_FILE,
           });
           e.emit('all', {
-            event: 'add',
+            event: 'touch',
             relativePath: 'Pear2.js',
             root: path.join('/', 'project', 'fruits'),
             metadata: MOCK_CHANGE_FILE,
@@ -2164,7 +2158,7 @@ describe('FileMap', () => {
         `;
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
         e.emit('all', {
-          event: 'add',
+          event: 'touch',
           relativePath: 'Pear2.js',
           root: path.join('/', 'project', 'fruits', 'another'),
           metadata: MOCK_CHANGE_FILE,
@@ -2189,13 +2183,13 @@ describe('FileMap', () => {
         // Tomato!
       `;
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: 'tomato.js',
           root: path.join('/', 'project', 'fruits'),
           metadata: MOCK_CHANGE_FOLDER,
         });
         e.emit('all', {
-          event: 'change',
+          event: 'touch',
           relativePath: path.join('tomato.js', 'index.js'),
           root: path.join('/', 'project', 'fruits'),
           metadata: MOCK_CHANGE_FILE,
