@@ -613,6 +613,12 @@ Type: `number`
 
 Which port to listen on.
 
+#### `host`
+
+Type: `string`
+
+Which host to use.
+
 #### `useGlobalHotkey`
 
 Type: `boolean`

@@ -169,6 +169,7 @@ export interface ServerConfigT {
   ) => Middleware | Server;
   forwardClientLogs: boolean;
   port: number;
+  host: string;
   rewriteRequestUrl: (url: string) => string;
   unstable_serverRoot: string | null;
   useGlobalHotkey: boolean;
