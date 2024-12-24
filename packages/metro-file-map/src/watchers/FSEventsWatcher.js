@@ -16,7 +16,7 @@ import type {
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {isIncluded, recReaddir, typeFromStat} from './common';
+import {includedByGlob, recReaddir, typeFromStat} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -146,6 +146,10 @@ export default class FSEventsWatcher extends EventEmitter {
 
   async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
+    if (this.doIgnore(relativePath)) {
+      debug('Ignoring event on %s (root: %s)', relativePath, this.root);
+      return;
+    }
     debug('Handling event on %s (root: %s)', relativePath, this.root);
 
     try {
@@ -157,7 +161,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      if (!isIncluded(type, this.glob, this.dot, this.doIgnore, relativePath)) {
+      if (!includedByGlob(type, this.glob, this.dot, relativePath)) {
         return;
       }
 

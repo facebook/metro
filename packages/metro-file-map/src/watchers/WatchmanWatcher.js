@@ -259,13 +259,8 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     if (
-      !common.isIncluded(
-        type,
-        this.globs,
-        this.dot,
-        this.doIgnore,
-        relativePath,
-      )
+      this.doIgnore(relativePath) ||
+      !common.includedByGlob(type, this.globs, this.dot, relativePath)
     ) {
       return;
     }
