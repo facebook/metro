@@ -34,54 +34,13 @@ export const TOUCH_EVENT = 'touch';
 export const ALL_EVENT = 'all';
 
 export type WatcherOptions = $ReadOnly<{
-  glob: $ReadOnlyArray<string>,
+  globs: $ReadOnlyArray<string>,
   dot: boolean,
   ignored: ?RegExp,
   watchmanDeferStates: $ReadOnlyArray<string>,
   watchman?: mixed,
   watchmanPath?: string,
 }>;
-
-interface Watcher {
-  doIgnore: string => boolean;
-  dot: boolean;
-  globs: $ReadOnlyArray<string>;
-  ignored?: ?RegExp;
-  watchmanDeferStates: $ReadOnlyArray<string>;
-  watchmanPath?: ?string;
-}
-
-/**
- * Assigns options to the watcher.
- *
- * @param {NodeWatcher|PollWatcher|WatchmanWatcher} watcher
- * @param {?object} opts
- * @return {boolean}
- * @public
- */
-export const assignOptions = function (
-  watcher: Watcher,
-  opts: WatcherOptions,
-): WatcherOptions {
-  watcher.globs = opts.glob ?? [];
-  watcher.dot = opts.dot ?? false;
-  watcher.ignored = opts.ignored ?? null;
-  watcher.watchmanDeferStates = opts.watchmanDeferStates;
-
-  if (!Array.isArray(watcher.globs)) {
-    watcher.globs = [watcher.globs];
-  }
-  const ignored = watcher.ignored;
-  watcher.doIgnore = ignored
-    ? filePath => posixPathMatchesPattern(ignored, filePath)
-    : () => false;
-
-  if (opts.watchman == true && opts.watchmanPath != null) {
-    watcher.watchmanPath = opts.watchmanPath;
-  }
-
-  return opts;
-};
 
 /**
  * Checks a file relative path against the globs array.
@@ -110,7 +69,10 @@ export function includedByGlob(
  *
  * [1]: https://github.com/micromatch/anymatch/blob/3.1.1/index.js#L50
  */
-const posixPathMatchesPattern: (pattern: RegExp, filePath: string) => boolean =
+export const posixPathMatchesPattern: (
+  pattern: RegExp,
+  filePath: string,
+) => boolean =
   path.sep === '/'
     ? (pattern, filePath) => pattern.test(filePath)
     : (pattern, filePath) => pattern.test(filePath.replaceAll(path.sep, '/'));

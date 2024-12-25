@@ -42,23 +42,29 @@ const ALL_EVENT = common.ALL_EVENT;
 const DEBOUNCE_MS = 100;
 
 module.exports = class NodeWatcher extends EventEmitter {
-  _changeTimers: Map<string, TimeoutID> = new Map();
-  _dirRegistry: {
+  +_changeTimers: Map<string, TimeoutID> = new Map();
+  +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
     __proto__: null,
   };
-  doIgnore: string => boolean;
-  dot: boolean;
-  globs: $ReadOnlyArray<string>;
-  ignored: ?RegExp;
-  root: string;
-  watched: {[key: string]: FSWatcher, __proto__: null};
-  watchmanDeferStates: $ReadOnlyArray<string>;
+  +doIgnore: string => boolean;
+  +dot: boolean;
+  +globs: $ReadOnlyArray<string>;
+  +ignored: ?RegExp;
+  +root: string;
+  +watched: {[key: string]: FSWatcher, __proto__: null};
 
   constructor(dir: string, opts: WatcherOptions) {
     super();
 
-    common.assignOptions(this, opts);
+    this.globs = opts.globs;
+    this.dot = opts.dot;
+    this.ignored = opts.ignored;
+
+    const ignored = opts.ignored;
+    this.doIgnore = ignored
+      ? filePath => common.posixPathMatchesPattern(ignored, filePath)
+      : () => false;
 
     this.watched = Object.create(null);
     this._dirRegistry = Object.create(null);

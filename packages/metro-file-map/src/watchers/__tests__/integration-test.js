@@ -58,7 +58,7 @@ describe.each(Object.keys(WATCHERS))(
 
       const opts: WatcherOptions = {
         dot: true,
-        glob: ['**/package.json', '**/*.js', '**/cookie-*'],
+        globs: ['**/package.json', '**/*.js', '**/cookie-*'],
         // We need to ignore `.watchmanconfig` to keep these tests stable.
         // Even though we write it before initialising watchers, OS-level
         // delays/debouncing(?) can mean the write is *sometimes* reported by
