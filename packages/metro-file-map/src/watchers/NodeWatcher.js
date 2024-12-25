@@ -19,11 +19,10 @@ import type {
   ChangeEventMetadata,
   WatcherBackendChangeEvent,
 } from '../flow-types';
-import type {WatcherOptions} from './common';
 import type {FSWatcher, Stats} from 'fs';
 
+const {AbstractWatcher} = require('./AbstractWatcher');
 const common = require('./common');
-const {EventEmitter} = require('events');
 const fs = require('fs');
 const platform = require('os').platform();
 const path = require('path');
@@ -32,7 +31,6 @@ const fsPromises = fs.promises;
 
 const TOUCH_EVENT = common.TOUCH_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
-const ALL_EVENT = common.ALL_EVENT;
 
 /**
  * This setting delays all events. It suppresses 'change' events that
@@ -41,53 +39,36 @@ const ALL_EVENT = common.ALL_EVENT;
  */
 const DEBOUNCE_MS = 100;
 
-module.exports = class NodeWatcher extends EventEmitter {
+module.exports = class NodeWatcher extends AbstractWatcher {
   +_changeTimers: Map<string, TimeoutID> = new Map();
   +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
     __proto__: null,
-  };
-  +doIgnore: string => boolean;
-  +dot: boolean;
-  +globs: $ReadOnlyArray<string>;
-  +ignored: ?RegExp;
-  +root: string;
-  +watched: {[key: string]: FSWatcher, __proto__: null};
+  } = Object.create(null);
+  +watched: {[key: string]: FSWatcher, __proto__: null} = Object.create(null);
 
-  constructor(dir: string, opts: WatcherOptions) {
-    super();
-
-    this.globs = opts.globs;
-    this.dot = opts.dot;
-    this.ignored = opts.ignored;
-
-    const ignored = opts.ignored;
-    this.doIgnore = ignored
-      ? filePath => common.posixPathMatchesPattern(ignored, filePath)
-      : () => false;
-
-    this.watched = Object.create(null);
-    this._dirRegistry = Object.create(null);
-    this.root = path.resolve(dir);
-
+  async startWatching() {
     this._watchdir(this.root);
-    common.recReaddir(
-      this.root,
-      dir => {
-        this._watchdir(dir);
-      },
-      filename => {
-        this._register(filename, 'f');
-      },
-      symlink => {
-        this._register(symlink, 'l');
-      },
-      () => {
-        this.emit('ready');
-      },
-      this._checkedEmitError,
-      this.ignored,
-    );
+
+    await new Promise(resolve => {
+      common.recReaddir(
+        this.root,
+        dir => {
+          this._watchdir(dir);
+        },
+        filename => {
+          this._register(filename, 'f');
+        },
+        symlink => {
+          this._register(symlink, 'l');
+        },
+        () => {
+          resolve();
+        },
+        this._checkedEmitError,
+        this.ignored,
+      );
+    });
   }
 
   /**
@@ -166,7 +147,7 @@ module.exports = class NodeWatcher extends EventEmitter {
    */
   _checkedEmitError: (error: Error) => void = error => {
     if (!isIgnorableFileError(error)) {
-      this.emit('error', error);
+      this.emitError(error);
     }
   };
 
@@ -206,12 +187,12 @@ module.exports = class NodeWatcher extends EventEmitter {
   /**
    * End watching.
    */
-  async close(): Promise<void> {
+  async stopWatching(): Promise<void> {
+    await super.stopWatching();
     const promises = Object.keys(this.watched).map(dir =>
       this._stopWatching(dir),
     );
     await Promise.all(promises);
-    this.removeAllListeners();
   }
 
   /**
@@ -242,7 +223,7 @@ module.exports = class NodeWatcher extends EventEmitter {
             found = true;
             callback(file);
           } else {
-            this.emit('error', error);
+            this.emitError(error);
           }
         } else {
           if (closest == null || stat.mtime > closest.mtime) {
@@ -264,13 +245,13 @@ module.exports = class NodeWatcher extends EventEmitter {
       this._detectChangedFile(dir, event, actualFile => {
         if (actualFile) {
           this._processChange(dir, event, actualFile).catch(error =>
-            this.emit('error', error),
+            this.emitError(error),
           );
         }
       });
     } else {
       this._processChange(dir, event, path.normalize(file)).catch(error =>
-        this.emit('error', error),
+        this.emitError(error),
       );
     }
   }
@@ -328,16 +309,15 @@ module.exports = class NodeWatcher extends EventEmitter {
           },
           (symlink, stats) => {
             if (this._register(symlink, 'l')) {
-              this.emit(ALL_EVENT, {
+              this.emitFileEvent({
                 event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, symlink),
-                root: this.root,
                 metadata: {
                   modifiedTime: stats.mtime.getTime(),
                   size: stats.size,
                   type: 'l',
                 },
-              } as WatcherBackendChangeEvent);
+              });
             }
           },
           function endCallback() {},
@@ -364,7 +344,7 @@ module.exports = class NodeWatcher extends EventEmitter {
       }
     } catch (error) {
       if (!isIgnorableFileError(error)) {
-        this.emit('error', error);
+        this.emitError(error);
         return;
       }
       this._unregister(fullPath);
@@ -394,10 +374,7 @@ module.exports = class NodeWatcher extends EventEmitter {
       key,
       setTimeout(() => {
         this._changeTimers.delete(key);
-        this.emit(ALL_EVENT, {
-          ...change,
-          root: this.root,
-        } as WatcherBackendChangeEvent);
+        this.emitFileEvent(change);
       }, DEBOUNCE_MS),
     );
   }

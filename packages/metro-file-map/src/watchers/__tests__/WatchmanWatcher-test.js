@@ -40,8 +40,10 @@ describe('WatchmanWatcher', () => {
       globs: ['**/*.js'],
       watchmanDeferStates: ['busy'],
     });
-    const readyListener = jest.fn();
-    watchmanWatcher.on('ready', readyListener);
+    let isSettled = false;
+    const startPromise = watchmanWatcher
+      .startWatching()
+      .finally(() => (isSettled = true));
 
     expect(mockClient.command).toHaveBeenCalledWith(
       ['watch-project', '/project/subdir/js'],
@@ -75,23 +77,33 @@ describe('WatchmanWatcher', () => {
       expect.any(Function),
     );
 
-    expect(readyListener).not.toHaveBeenCalled();
+    // Promise should not settle until we get a subscribe response.
+    expect(isSettled).toBe(false);
+
     cmdCallback<WatchmanSubscribeResponse>(null, {});
-    expect(readyListener).toHaveBeenCalled();
+
+    // Return to assert promise resolves, not rejects
+    return startPromise;
   });
 
   describe('getPauseReason', () => {
     let watchmanWatcher: WatchmanWatcher;
+    let startPromise: Promise<void>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
         dot: true,
         ignored: null,
         globs: ['**/*.js'],
         watchmanDeferStates: ['busy'],
       });
+      startPromise = watchmanWatcher.startWatching();
       cmdCallback<WatchmanWatchResponse>(null, {});
       cmdCallback<WatchmanClockResponse>(null, {});
+    });
+
+    afterEach(() => {
+      return startPromise;
     });
 
     test('subscribe response is initally deferred', () => {

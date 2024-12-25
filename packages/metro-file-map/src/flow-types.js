@@ -322,6 +322,14 @@ export type ReadOnlyRawMockMap = $ReadOnly<{
   mocks: $ReadOnlyMap<string, Path>,
 }>;
 
+export interface WatcherBackend {
+  getPauseReason(): ?string;
+  onError((error: Error) => void): () => void;
+  onFileEvent((event: WatcherBackendChangeEvent) => void): () => void;
+  startWatching(): Promise<void>;
+  stopWatching(): Promise<void>;
+}
+
 export type WatcherBackendChangeEvent =
   | $ReadOnly<{
       event: 'touch',

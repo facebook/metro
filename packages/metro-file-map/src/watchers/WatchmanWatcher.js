@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {WatcherBackendChangeEvent} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {
   Client,
@@ -21,31 +20,25 @@ import type {
   WatchmanWatchResponse,
 } from 'fb-watchman';
 
+import {AbstractWatcher} from './AbstractWatcher';
 import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
 import assert from 'assert';
 import {createHash} from 'crypto';
-import EventEmitter from 'events';
 import watchman from 'fb-watchman';
 import invariant from 'invariant';
-import path from 'path';
 
 const debug = require('debug')('Metro:WatchmanWatcher');
 
 const DELETE_EVENT = common.DELETE_EVENT;
 const TOUCH_EVENT = common.TOUCH_EVENT;
-const ALL_EVENT = common.ALL_EVENT;
 const SUB_PREFIX = 'metro-file-map';
 
 /**
  * Watches `dir`.
  */
-export default class WatchmanWatcher extends EventEmitter {
+export default class WatchmanWatcher extends AbstractWatcher {
   client: Client;
-  +dot: boolean;
-  +doIgnore: string => boolean;
-  +globs: $ReadOnlyArray<string>;
-  +root: string;
   +subscriptionName: string;
   watchProjectInfo: ?$ReadOnly<{
     relativePath: string,
@@ -54,19 +47,10 @@ export default class WatchmanWatcher extends EventEmitter {
   +watchmanDeferStates: $ReadOnlyArray<string>;
   #deferringStates: ?Set<string> = null;
 
-  constructor(dir: string, opts: WatcherOptions) {
-    super();
+  constructor(dir: string, {watchmanDeferStates, ...opts}: WatcherOptions) {
+    super(dir, opts);
 
-    this.globs = opts.globs;
-    this.dot = opts.dot;
-    this.watchmanDeferStates = opts.watchmanDeferStates;
-
-    const ignored = opts.ignored;
-    this.doIgnore = ignored
-      ? filePath => common.posixPathMatchesPattern(ignored, filePath)
-      : () => false;
-
-    this.root = path.resolve(dir);
+    this.watchmanDeferStates = watchmanDeferStates;
 
     // Use a unique subscription name per process per watched directory
     const watchKey = createHash('md5').update(this.root).digest('hex');
@@ -74,14 +58,16 @@ export default class WatchmanWatcher extends EventEmitter {
       .replace(/[\/\\]/g, '-') // \ and / to -
       .replace(/[^\-\w]/g, ''); // Remove non-word/hyphen
     this.subscriptionName = `${SUB_PREFIX}-${process.pid}-${readablePath}-${watchKey}`;
+  }
 
-    this._init();
+  async startWatching() {
+    await new Promise((resolve, reject) => this._init(resolve, reject));
   }
 
   /**
    * Run the watchman `watch` command on the root and subscribe to changes.
    */
-  _init() {
+  _init(onReady: () => void, onError: (error: Error) => void) {
     if (this.client) {
       this.client.removeAllListeners();
     }
@@ -89,7 +75,7 @@ export default class WatchmanWatcher extends EventEmitter {
     const self = this;
     this.client = new watchman.Client();
     this.client.on('error', error => {
-      self.emit('error', error);
+      this.emitError(error);
     });
     this.client.on('subscription', changeEvent =>
       this._handleChangeEvent(changeEvent),
@@ -98,7 +84,10 @@ export default class WatchmanWatcher extends EventEmitter {
       console.warn(
         '[metro-file-map] Warning: Lost connection to Watchman, reconnecting..',
       );
-      self._init();
+      self._init(
+        () => {},
+        error => self.emitError(error),
+      );
     });
 
     this.watchProjectInfo = null;
@@ -108,7 +97,8 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     function onWatchProject(error: ?Error, resp: WatchmanWatchResponse) {
-      if (handleError(self, error)) {
+      if (error) {
+        onError(error);
         return;
       }
       debug('Received watch-project response: %s', resp.relative_path);
@@ -124,7 +114,8 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     function onClock(error: ?Error, resp: WatchmanClockResponse) {
-      if (handleError(self, error)) {
+      if (error) {
+        onError(error);
         return;
       }
 
@@ -164,7 +155,8 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     const onSubscribe = (error: ?Error, resp: WatchmanSubscribeResponse) => {
-      if (handleError(self, error)) {
+      if (error) {
+        onError(error);
         return;
       }
       debug('Received subscribe response: %s', resp.subscribe);
@@ -175,7 +167,7 @@ export default class WatchmanWatcher extends EventEmitter {
         this.#deferringStates = new Set(resp['asserted-states']);
       }
 
-      self.emit('ready');
+      onReady();
     };
 
     self.client.command(['watch-project', getWatchRoot()], onWatchProject);
@@ -200,12 +192,6 @@ export default class WatchmanWatcher extends EventEmitter {
       'Invalid subscription event.',
     );
 
-    if (resp.is_fresh_instance) {
-      this.emit('fresh_instance');
-    }
-    if (resp.is_fresh_instance) {
-      this.emit('fresh_instance');
-    }
     if (Array.isArray(resp.files)) {
       resp.files.forEach(change => this._handleFileChange(change));
     }
@@ -274,7 +260,7 @@ export default class WatchmanWatcher extends EventEmitter {
     }
 
     if (!exists) {
-      self._emitEvent({event: DELETE_EVENT, relativePath});
+      self.emitFileEvent({event: DELETE_EVENT, relativePath});
     } else {
       invariant(
         type != null && mtime_ms != null && size != null,
@@ -291,7 +277,7 @@ export default class WatchmanWatcher extends EventEmitter {
         !(type === 'd' && !isNew)
       ) {
         const mtime = Number(mtime_ms);
-        self._emitEvent({
+        self.emitFileEvent({
           event: TOUCH_EVENT,
           relativePath,
           metadata: {
@@ -305,21 +291,14 @@ export default class WatchmanWatcher extends EventEmitter {
   }
 
   /**
-   * Dispatches the event.
-   */
-  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
-    this.emit(ALL_EVENT, {
-      ...change,
-      root: this.root,
-    } as WatcherBackendChangeEvent);
-  }
-
-  /**
    * Closes the watcher.
    */
-  async close() {
-    this.client.removeAllListeners();
-    this.client.end();
+  async stopWatching() {
+    await super.stopWatching();
+    if (this.client) {
+      this.client.removeAllListeners();
+      this.client.end();
+    }
     this.#deferringStates = null;
   }
 
@@ -335,18 +314,6 @@ export default class WatchmanWatcher extends EventEmitter {
       .slice(0, -1)
       .map(s => `'${s}'`)
       .join(', ')} and '${states[states.length - 1]}' states.`;
-  }
-}
-
-/**
- * Handles an error and returns true if exists.
- */
-function handleError(emitter: EventEmitter, error: ?Error) {
-  if (error != null) {
-    emitter.emit('error', error);
-    return true;
-  } else {
-    return false;
   }
 }
 

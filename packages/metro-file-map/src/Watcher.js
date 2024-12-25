@@ -14,6 +14,7 @@ import type {
   FileData,
   Path,
   PerfLogger,
+  WatcherBackend,
   WatcherBackendChangeEvent,
   WatchmanClocks,
 } from './flow-types';
@@ -60,11 +61,6 @@ type WatcherOptions = {
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
 };
-
-interface WatcherBackend {
-  getPauseReason(): ?string;
-  close(): Promise<void>;
-}
 
 let nextInstanceId = 0;
 
@@ -197,33 +193,32 @@ export class Watcher extends EventEmitter {
         ignored: ignorePattern,
         watchmanDeferStates: this._options.watchmanDeferStates,
       };
-      const watcher = new WatcherImpl(root, watcherOptions);
+      const watcher: WatcherBackend = new WatcherImpl(root, watcherOptions);
 
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         const rejectTimeout = setTimeout(
           () => reject(new Error('Failed to start watch mode.')),
           MAX_WAIT_TIME,
         );
 
-        watcher.once('ready', () => {
-          clearTimeout(rejectTimeout);
-          watcher.on('all', (change: WatcherBackendChangeEvent) => {
-            const basename = path.basename(change.relativePath);
-            if (basename.startsWith(this._options.healthCheckFilePrefix)) {
-              if (change.event === TOUCH_EVENT) {
-                debug(
-                  'Observed possible health check cookie: %s in %s',
-                  change.relativePath,
-                  root,
-                );
-                this._handleHealthCheckObservation(basename);
-              }
-              return;
+        watcher.onFileEvent(change => {
+          const basename = path.basename(change.relativePath);
+          if (basename.startsWith(this._options.healthCheckFilePrefix)) {
+            if (change.event === TOUCH_EVENT) {
+              debug(
+                'Observed possible health check cookie: %s in %s',
+                change.relativePath,
+                root,
+              );
+              this._handleHealthCheckObservation(basename);
             }
-            onChange(change);
-          });
-          resolve(watcher);
+            return;
+          }
+          onChange(change);
         });
+        await watcher.startWatching();
+        clearTimeout(rejectTimeout);
+        resolve(watcher);
       });
     };
 
@@ -241,7 +236,7 @@ export class Watcher extends EventEmitter {
   }
 
   async close() {
-    await Promise.all(this._backends.map(watcher => watcher.close()));
+    await Promise.all(this._backends.map(watcher => watcher.stopWatching()));
     this._activeWatcher = null;
   }
 

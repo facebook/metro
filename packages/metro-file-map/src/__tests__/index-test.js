@@ -8,6 +8,7 @@
  * @oncall react_native
  */
 
+import {AbstractWatcher} from '../watchers/AbstractWatcher';
 import crypto from 'crypto';
 import * as path from 'path';
 import {serialize} from 'v8';
@@ -90,22 +91,15 @@ jest.mock('../crawlers/watchman', () =>
   }),
 );
 
-const mockWatcherConstructor = jest.fn(root => {
-  const EventEmitter = require('events').EventEmitter;
-  mockEmitters[root] = new EventEmitter();
-  mockEmitters[root].close = jest.fn();
-  mockEmitters[root].emitFileEvent = event => {
-    mockEmitters[root].emit('all', {
-      ...event,
-      root,
-    });
-  };
-  setTimeout(() => mockEmitters[root].emit('ready'), 0);
-  return mockEmitters[root];
-});
+class MockWatcher extends AbstractWatcher {
+  constructor(root, opts) {
+    super(root, opts);
+    mockEmitters[root] = this;
+  }
+}
 
-jest.mock('../watchers/NodeWatcher', () => mockWatcherConstructor);
-jest.mock('../watchers/WatchmanWatcher', () => mockWatcherConstructor);
+jest.mock('../watchers/NodeWatcher', () => MockWatcher);
+jest.mock('../watchers/WatchmanWatcher', () => MockWatcher);
 
 let mockChangedFiles;
 let mockFs;
