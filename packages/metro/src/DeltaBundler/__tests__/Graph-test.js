@@ -369,6 +369,7 @@ beforeEach(async () => {
           name: dep.name,
           data: {
             asyncType: null,
+            isESMImport: false,
             // $FlowFixMe[missing-empty-array-annot]
             locs: [],
             // $FlowFixMe[incompatible-call]
@@ -3498,6 +3499,7 @@ describe('reorderGraph', () => {
       data: {
         data: {
           asyncType: null,
+          isESMImport: false,
           locs: [],
           key: path.substr(1),
         },

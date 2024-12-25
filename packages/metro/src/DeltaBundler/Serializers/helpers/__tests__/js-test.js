@@ -30,14 +30,20 @@ beforeEach(() => {
         'bar',
         {
           absolutePath: '/bar.js',
-          data: {data: {asyncType: null, locs: [], key: 'bar'}, name: 'bar'},
+          data: {
+            data: {asyncType: null, isESMImport: false, locs: [], key: 'bar'},
+            name: 'bar',
+          },
         },
       ],
       [
         'baz',
         {
           absolutePath: '/baz.js',
-          data: {data: {asyncType: null, locs: [], key: 'baz'}, name: 'baz'},
+          data: {
+            data: {asyncType: null, isESMImport: false, locs: [], key: 'baz'},
+            name: 'baz',
+          },
         },
       ],
     ]),
