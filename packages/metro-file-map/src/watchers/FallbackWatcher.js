@@ -26,6 +26,8 @@ const common = require('./common');
 const fs = require('fs');
 const platform = require('os').platform();
 const path = require('path');
+// $FlowFixMe[untyped-import] - Write libdefs for `walker`
+const walker = require('walker');
 
 const fsPromises = fs.promises;
 
@@ -39,7 +41,7 @@ const DELETE_EVENT = common.DELETE_EVENT;
  */
 const DEBOUNCE_MS = 100;
 
-module.exports = class NodeWatcher extends AbstractWatcher {
+module.exports = class FallbackWatcher extends AbstractWatcher {
   +_changeTimers: Map<string, TimeoutID> = new Map();
   +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
@@ -51,7 +53,7 @@ module.exports = class NodeWatcher extends AbstractWatcher {
     this._watchdir(this.root);
 
     await new Promise(resolve => {
-      common.recReaddir(
+      recReaddir(
         this.root,
         dir => {
           this._watchdir(dir);
@@ -279,7 +281,7 @@ module.exports = class NodeWatcher extends AbstractWatcher {
         ) {
           return;
         }
-        common.recReaddir(
+        recReaddir(
           path.resolve(this.root, relativePath),
           (dir, stats) => {
             if (this._watchdir(dir)) {
@@ -397,4 +399,48 @@ function isIgnorableFileError(error: Error | {code: string}) {
     // https://github.com/nodejs/node-v0.x-archive/issues/4337
     (error.code === 'EPERM' && platform === 'win32')
   );
+}
+
+/**
+ * Traverse a directory recursively calling `callback` on every directory.
+ */
+function recReaddir(
+  dir: string,
+  dirCallback: (string, Stats) => void,
+  fileCallback: (string, Stats) => void,
+  symlinkCallback: (string, Stats) => void,
+  endCallback: () => void,
+  errorCallback: Error => void,
+  ignored: ?RegExp,
+) {
+  const walk = walker(dir);
+  if (ignored) {
+    walk.filterDir(
+      (currentDir: string) =>
+        !common.posixPathMatchesPattern(ignored, currentDir),
+    );
+  }
+  walk
+    .on('dir', normalizeProxy(dirCallback))
+    .on('file', normalizeProxy(fileCallback))
+    .on('symlink', normalizeProxy(symlinkCallback))
+    .on('error', errorCallback)
+    .on('end', () => {
+      if (platform === 'win32') {
+        setTimeout(endCallback, 1000);
+      } else {
+        endCallback();
+      }
+    });
+}
+
+/**
+ * Returns a callback that when called will normalize a path and call the
+ * original callback
+ */
+function normalizeProxy<T>(
+  callback: (filepath: string, stats: Stats) => T,
+): (string, Stats) => T {
+  return (filepath: string, stats: Stats) =>
+    callback(path.normalize(filepath), stats);
 }

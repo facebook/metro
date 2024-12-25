@@ -12,8 +12,8 @@
 import type {ChangeEventMetadata} from '../../flow-types';
 import type {WatcherOptions} from '../common';
 
+import FallbackWatcher from '../FallbackWatcher';
 import FSEventsWatcher from '../FSEventsWatcher';
-import NodeWatcher from '../NodeWatcher';
 import WatchmanWatcher from '../WatchmanWatcher';
 import {execSync} from 'child_process';
 import {promises as fsPromises} from 'fs';
@@ -43,14 +43,14 @@ const isWatchmanOnPath = () => {
 // `null` Watchers will be marked as skipped tests.
 export const WATCHERS: $ReadOnly<{
   [key: string]:
-    | Class<NodeWatcher>
+    | Class<FallbackWatcher>
     | Class<FSEventsWatcher>
     | Class<WatchmanWatcher>
     | null,
 }> = {
-  Node: NodeWatcher,
   Watchman: isWatchmanOnPath() ? WatchmanWatcher : null,
   FSEvents: FSEventsWatcher.isSupported() ? FSEventsWatcher : null,
+  Fallback: FallbackWatcher,
 };
 
 export type EventHelpers = {

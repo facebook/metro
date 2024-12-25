@@ -98,7 +98,7 @@ class MockWatcher extends AbstractWatcher {
   }
 }
 
-jest.mock('../watchers/NodeWatcher', () => MockWatcher);
+jest.mock('../watchers/FallbackWatcher', () => MockWatcher);
 jest.mock('../watchers/WatchmanWatcher', () => MockWatcher);
 
 let mockChangedFiles;
