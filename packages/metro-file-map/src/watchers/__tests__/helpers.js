@@ -13,7 +13,7 @@ import type {ChangeEventMetadata} from '../../flow-types';
 import type {WatcherOptions} from '../common';
 
 import FallbackWatcher from '../FallbackWatcher';
-import FSEventsWatcher from '../FSEventsWatcher';
+import NativeWatcher from '../NativeWatcher';
 import WatchmanWatcher from '../WatchmanWatcher';
 import {execSync} from 'child_process';
 import {promises as fsPromises} from 'fs';
@@ -44,12 +44,12 @@ const isWatchmanOnPath = () => {
 export const WATCHERS: $ReadOnly<{
   [key: string]:
     | Class<FallbackWatcher>
-    | Class<FSEventsWatcher>
+    | Class<NativeWatcher>
     | Class<WatchmanWatcher>
     | null,
 }> = {
   Watchman: isWatchmanOnPath() ? WatchmanWatcher : null,
-  FSEvents: FSEventsWatcher.isSupported() ? FSEventsWatcher : null,
+  Native: NativeWatcher.isSupported() ? NativeWatcher : null,
   Fallback: FallbackWatcher,
 };
 

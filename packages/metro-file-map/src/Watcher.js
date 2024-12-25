@@ -25,7 +25,7 @@ import nodeCrawl from './crawlers/node';
 import watchmanCrawl from './crawlers/watchman';
 import {TOUCH_EVENT} from './watchers/common';
 import FallbackWatcher from './watchers/FallbackWatcher';
-import FSEventsWatcher from './watchers/FSEventsWatcher';
+import NativeWatcher from './watchers/NativeWatcher';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import EventEmitter from 'events';
 import * as fs from 'fs';
@@ -162,18 +162,18 @@ export class Watcher extends EventEmitter {
   async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
     const {extensions, ignorePattern, useWatchman} = this._options;
 
-    // WatchmanWatcher > FSEventsWatcher > FallbackWatcheraa
+    // WatchmanWatcher > NativeWatcher > FallbackWatcher
     const WatcherImpl = useWatchman
       ? WatchmanWatcher
-      : FSEventsWatcher.isSupported()
-        ? FSEventsWatcher
+      : NativeWatcher.isSupported()
+        ? NativeWatcher
         : FallbackWatcher;
 
     let watcher = 'fallback';
     if (WatcherImpl === WatchmanWatcher) {
       watcher = 'watchman';
-    } else if (WatcherImpl === FSEventsWatcher) {
-      watcher = 'fsevents';
+    } else if (WatcherImpl === NativeWatcher) {
+      watcher = 'native';
     }
     debug(`Using watcher: ${watcher}`);
     this._options.perfLogger?.annotate({string: {watcher}});

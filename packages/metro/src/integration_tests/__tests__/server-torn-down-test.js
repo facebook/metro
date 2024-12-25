@@ -66,38 +66,6 @@ describe('Server torn down test', () => {
     expect(active).toEqual(new Map());
   });
 
-  // only for macOS env.
-  // if this fails it means that there's no reason anymore to wait for 100ms after fsevents stopped
-  // for it's resournces to be destroyed properly and the code that does it in FSEventsWatcher can be removed
-  const maybeTest = process.platform === 'darwin' ? test : test.skip;
-  maybeTest(
-    '[macOS (darwin) only] fsevents to be destroyed after 100ms',
-    async () => {
-      // imported in metro-file-map
-      // eslint-disable-next-line import/no-extraneous-dependencies
-      const fsevents = require('fsevents');
-
-      const fsEventsWatchStopper = fsevents.watch(__filename, () => {});
-
-      await fsEventsWatchStopper();
-
-      // does it clear resounces properly after stopping it?
-      expect(Array.from(active.values())).toEqual([
-        expect.objectContaining({type: 'fsevents'}),
-      ]);
-
-      // does it clear resounces properly after a tick?
-      await new Promise(resolve => process.nextTick(resolve));
-      expect(Array.from(active.values())).toEqual([
-        expect.objectContaining({type: 'fsevents'}),
-      ]);
-
-      // does it clear resounces properly after 100ms?
-      await new Promise(resolve => setTimeout(resolve, 100));
-      expect(Array.from(active.values())).toEqual([]);
-    },
-  );
-
   test('closing should close all handlers', async () => {
     const config = await Metro.loadConfig({
       config: require.resolve('../metro.config.js'),
