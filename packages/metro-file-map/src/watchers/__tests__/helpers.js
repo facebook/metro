@@ -65,11 +65,11 @@ export type EventHelpers = {
   untilEvent: (
     afterFn: () => Promise<void>,
     expectedPath: string,
-    expectedEvent: 'add' | 'delete' | 'change',
+    expectedEvent: 'touch' | 'delete',
   ) => Promise<void>,
   allEvents: (
     afterFn: () => Promise<void>,
-    events: $ReadOnlyArray<[string, 'add' | 'delete' | 'change']>,
+    events: $ReadOnlyArray<[string, 'touch' | 'delete']>,
     opts?: {rejectUnexpected: boolean},
   ) => Promise<void>,
 };
@@ -122,7 +122,7 @@ export const startWatching = async (
         }>((resolve, reject) => {
           const listener = (change: WatcherBackendChangeEvent) => {
             if (change.relativePath === '') {
-              // FIXME: FSEventsWatcher sometimes reports 'change' events to
+              // FIXME: FSEventsWatcher sometimes reports 'touch' events to
               // the watch root.
               return;
             }
@@ -160,7 +160,7 @@ export const startWatching = async (
           );
           const listener = (change: WatcherBackendChangeEvent) => {
             if (change.relativePath === '') {
-              // FIXME: FSEventsWatcher sometimes reports 'change' events to
+              // FIXME: FSEventsWatcher sometimes reports 'touch' events to
               // the watch root.
               return;
             }

@@ -33,9 +33,8 @@ try {
   // Optional dependency, only supported on Darwin.
 }
 
-const CHANGE_EVENT = 'change';
+const TOUCH_EVENT = 'touch';
 const DELETE_EVENT = 'delete';
-const ADD_EVENT = 'add';
 const ALL_EVENT = 'all';
 
 /**
@@ -94,7 +93,8 @@ export default class FSEventsWatcher extends EventEmitter {
       });
     });
 
-    debug(`Watching ${this.root}`);
+    const startTime = performance.now();
+    debug('Watching %s', this.root);
 
     this._tracked = new Set();
     const trackPath = (filePath: string) => {
@@ -108,6 +108,11 @@ export default class FSEventsWatcher extends EventEmitter {
         trackPath,
         () => {
           this.emit('ready');
+          debug(
+            'Scanned %s in %d',
+            this.root,
+            (performance.now() - startTime) / 1000,
+          );
           resolve();
         },
         (...args) => {
@@ -141,6 +146,7 @@ export default class FSEventsWatcher extends EventEmitter {
 
   async _handleEvent(filepath: string) {
     const relativePath = path.relative(this.root, filepath);
+    debug('Handling event on %s (root: %s)', relativePath, this.root);
 
     try {
       const stat = await fsPromises.lstat(filepath);
@@ -161,12 +167,8 @@ export default class FSEventsWatcher extends EventEmitter {
         size: stat.size,
       };
 
-      if (this._tracked.has(filepath)) {
-        this._emit({event: CHANGE_EVENT, relativePath, metadata});
-      } else {
-        this._tracked.add(filepath);
-        this._emit({event: ADD_EVENT, relativePath, metadata});
-      }
+      this._emit({event: TOUCH_EVENT, relativePath, metadata});
+      this._tracked.add(filepath);
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         this.emit('error', error);

@@ -22,7 +22,7 @@ import type {AbortSignal} from 'node-abort-controller';
 
 import nodeCrawl from './crawlers/node';
 import watchmanCrawl from './crawlers/watchman';
-import {ADD_EVENT, CHANGE_EVENT} from './watchers/common';
+import {TOUCH_EVENT} from './watchers/common';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 import NodeWatcher from './watchers/NodeWatcher';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
@@ -210,7 +210,7 @@ export class Watcher extends EventEmitter {
           watcher.on('all', (change: WatcherBackendChangeEvent) => {
             const basename = path.basename(change.relativePath);
             if (basename.startsWith(this._options.healthCheckFilePrefix)) {
-              if (change.event === ADD_EVENT || change.event === CHANGE_EVENT) {
+              if (change.event === TOUCH_EVENT) {
                 debug(
                   'Observed possible health check cookie: %s in %s',
                   change.relativePath,

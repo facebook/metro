@@ -324,7 +324,7 @@ export type ReadOnlyRawMockMap = $ReadOnly<{
 
 export type WatcherBackendChangeEvent =
   | $ReadOnly<{
-      event: 'change' | 'add',
+      event: 'touch',
       relativePath: string,
       root: string,
       metadata: ChangeEventMetadata,
