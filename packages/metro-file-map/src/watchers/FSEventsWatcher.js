@@ -16,7 +16,7 @@ import type {
 // $FlowFixMe[untyped-type-import]
 import type {FSEvents} from 'fsevents';
 
-import {includedByGlob, recReaddir, typeFromStat} from './common';
+import {includedByGlob, typeFromStat} from './common';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import * as path from 'path';
@@ -48,8 +48,6 @@ export default class FSEventsWatcher extends EventEmitter {
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
-  +watcherInitialReaddirPromise: Promise<void>;
-  _tracked: Set<string>;
 
   static isSupported(): boolean {
     return fsevents != null;
@@ -93,34 +91,14 @@ export default class FSEventsWatcher extends EventEmitter {
       });
     });
 
-    const startTime = performance.now();
     debug('Watching %s', this.root);
 
-    this._tracked = new Set();
-    const trackPath = (filePath: string) => {
-      this._tracked.add(path.normalize(filePath));
-    };
-    this.watcherInitialReaddirPromise = new Promise(resolve => {
-      recReaddir(
-        this.root,
-        trackPath,
-        trackPath,
-        trackPath,
-        () => {
-          this.emit('ready');
-          debug(
-            'Scanned %s in %d',
-            this.root,
-            (performance.now() - startTime) / 1000,
-          );
-          resolve();
-        },
-        (...args) => {
-          this.emit('error', ...args);
-          resolve();
-        },
-        this.ignored,
-      );
+    // We can't fire this synchronously because we're inside the constructor -
+    // consumers would have no chance to attach event listeners.
+    //
+    // TODO: Refactor this work out of the constructor into an async method.
+    process.nextTick(() => {
+      this.emit('ready');
     });
   }
 
@@ -128,12 +106,11 @@ export default class FSEventsWatcher extends EventEmitter {
    * End watching.
    */
   async close(callback?: () => void): Promise<void> {
-    await this.watcherInitialReaddirPromise;
     await this.fsEventsWatchStopper();
     this.removeAllListeners();
 
     await new Promise(resolve => {
-      // it takes around 100ms for fsevents to release its resounces after
+      // it takes around 100ms for fsevents to release its resources after
       // watching is stopped. See __tests__/server-torn-down-test.js
       setTimeout(() => {
         if (typeof callback === 'function') {
@@ -172,20 +149,13 @@ export default class FSEventsWatcher extends EventEmitter {
       };
 
       this._emit({event: TOUCH_EVENT, relativePath, metadata});
-      this._tracked.add(filepath);
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         this.emit('error', error);
         return;
       }
 
-      // Ignore files that aren't tracked and don't exist.
-      if (!this._tracked.has(filepath)) {
-        return;
-      }
-
       this._emit({event: DELETE_EVENT, relativePath});
-      this._tracked.delete(filepath);
     }
   }
 
