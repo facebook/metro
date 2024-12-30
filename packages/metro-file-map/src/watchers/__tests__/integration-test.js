@@ -12,15 +12,15 @@
 import type {WatcherOptions} from '../common';
 import type {EventHelpers} from './helpers';
 
-import FSEventsWatcher from '../FSEventsWatcher';
+import NativeWatcher from '../NativeWatcher';
 import {WATCHERS, createTempWatchRoot, startWatching} from './helpers';
 import {promises as fsPromises} from 'fs';
 import os from 'os';
 import {join} from 'path';
 const {mkdir, writeFile, rm, symlink, unlink} = fsPromises;
 
-test('FSEventsWatcher is supported if and only if darwin', () => {
-  expect(FSEventsWatcher.isSupported()).toBe(os.platform() === 'darwin');
+test('NativeWatcher is supported if and only if darwin', () => {
+  expect(NativeWatcher.isSupported()).toBe(os.platform() === 'darwin');
 });
 
 describe.each(Object.keys(WATCHERS))(
