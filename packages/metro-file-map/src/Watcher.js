@@ -24,8 +24,8 @@ import type {AbortSignal} from 'node-abort-controller';
 import nodeCrawl from './crawlers/node';
 import watchmanCrawl from './crawlers/watchman';
 import {TOUCH_EVENT} from './watchers/common';
+import FallbackWatcher from './watchers/FallbackWatcher';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
-import NodeWatcher from './watchers/NodeWatcher';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import EventEmitter from 'events';
 import * as fs from 'fs';
@@ -162,14 +162,14 @@ export class Watcher extends EventEmitter {
   async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
     const {extensions, ignorePatternForWatch, useWatchman} = this._options;
 
-    // WatchmanWatcher > FSEventsWatcher > sane.NodeWatcher
+    // WatchmanWatcher > FSEventsWatcher > FallbackWatcheraa
     const WatcherImpl = useWatchman
       ? WatchmanWatcher
       : FSEventsWatcher.isSupported()
         ? FSEventsWatcher
-        : NodeWatcher;
+        : FallbackWatcher;
 
-    let watcher = 'node';
+    let watcher = 'fallback';
     if (WatcherImpl === WatchmanWatcher) {
       watcher = 'watchman';
     } else if (WatcherImpl === FSEventsWatcher) {

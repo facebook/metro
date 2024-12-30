@@ -21,10 +21,7 @@ import type {Stats} from 'fs';
 
 // $FlowFixMe[untyped-import] - Write libdefs for `micromatch`
 const micromatch = require('micromatch');
-const platform = require('os').platform();
 const path = require('path');
-// $FlowFixMe[untyped-import] - Write libdefs for `walker`
-const walker = require('walker');
 
 /**
  * Constants
@@ -76,49 +73,6 @@ export const posixPathMatchesPattern: (
   path.sep === '/'
     ? (pattern, filePath) => pattern.test(filePath)
     : (pattern, filePath) => pattern.test(filePath.replaceAll(path.sep, '/'));
-
-/**
- * Traverse a directory recursively calling `callback` on every directory.
- */
-export function recReaddir(
-  dir: string,
-  dirCallback: (string, Stats) => void,
-  fileCallback: (string, Stats) => void,
-  symlinkCallback: (string, Stats) => void,
-  endCallback: () => void,
-  errorCallback: Error => void,
-  ignored: ?RegExp,
-) {
-  const walk = walker(dir);
-  if (ignored) {
-    walk.filterDir(
-      (currentDir: string) => !posixPathMatchesPattern(ignored, currentDir),
-    );
-  }
-  walk
-    .on('dir', normalizeProxy(dirCallback))
-    .on('file', normalizeProxy(fileCallback))
-    .on('symlink', normalizeProxy(symlinkCallback))
-    .on('error', errorCallback)
-    .on('end', () => {
-      if (platform === 'win32') {
-        setTimeout(endCallback, 1000);
-      } else {
-        endCallback();
-      }
-    });
-}
-
-/**
- * Returns a callback that when called will normalize a path and call the
- * original callback
- */
-function normalizeProxy<T>(
-  callback: (filepath: string, stats: Stats) => T,
-): (string, Stats) => T {
-  return (filepath: string, stats: Stats) =>
-    callback(path.normalize(filepath), stats);
-}
 
 export function typeFromStat(stat: Stats): ?ChangeEventMetadata['type'] {
   // Note: These tests are not mutually exclusive - a symlink passes isFile

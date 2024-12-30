@@ -117,7 +117,7 @@ describe.each(Object.keys(WATCHERS))(
           type: 'f',
           modifiedTime: expect.any(Number),
 
-          // T138670812 Reported inconsistently by NodeWatcher as 0 or 11
+          // T138670812 Reported inconsistently by FallbackWatcher as 0 or 11
           // due to write/stat race. Should either fix, document, or remove.
           size: expect.any(Number),
         },
