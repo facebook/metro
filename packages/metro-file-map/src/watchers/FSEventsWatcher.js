@@ -44,7 +44,7 @@ const ALL_EVENT = 'all';
 export default class FSEventsWatcher extends EventEmitter {
   +root: string;
   +ignored: ?RegExp;
-  +glob: $ReadOnlyArray<string>;
+  +globs: $ReadOnlyArray<string>;
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
   +fsEventsWatchStopper: () => Promise<void>;
@@ -57,11 +57,11 @@ export default class FSEventsWatcher extends EventEmitter {
     dir: string,
     {
       ignored,
-      glob,
+      globs,
       dot,
     }: $ReadOnly<{
       ignored: ?RegExp,
-      glob: string | $ReadOnlyArray<string>,
+      globs: $ReadOnlyArray<string>,
       dot: boolean,
       ...
     }>,
@@ -76,7 +76,7 @@ export default class FSEventsWatcher extends EventEmitter {
 
     this.dot = dot || false;
     this.ignored = ignored;
-    this.glob = Array.isArray(glob) ? glob : [glob];
+    this.globs = globs;
     this.doIgnore = ignored
       ? // No need to normalise Windows paths to posix because this backend
         // only runs on macOS, and backends always emit system-native paths.
@@ -138,7 +138,7 @@ export default class FSEventsWatcher extends EventEmitter {
         return;
       }
 
-      if (!includedByGlob(type, this.glob, this.dot, relativePath)) {
+      if (!includedByGlob(type, this.globs, this.dot, relativePath)) {
         return;
       }
 

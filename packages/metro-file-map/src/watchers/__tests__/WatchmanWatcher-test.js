@@ -37,7 +37,7 @@ describe('WatchmanWatcher', () => {
     const watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
       dot: true,
       ignored: null,
-      glob: ['**/*.js'],
+      globs: ['**/*.js'],
       watchmanDeferStates: ['busy'],
     });
     const readyListener = jest.fn();
@@ -87,7 +87,7 @@ describe('WatchmanWatcher', () => {
       watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
         dot: true,
         ignored: null,
-        glob: ['**/*.js'],
+        globs: ['**/*.js'],
         watchmanDeferStates: ['busy'],
       });
       cmdCallback<WatchmanWatchResponse>(null, {});

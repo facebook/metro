@@ -186,7 +186,7 @@ export class Watcher extends EventEmitter {
     const createWatcherBackend = (root: Path): Promise<WatcherBackend> => {
       const watcherOptions: WatcherBackendOptions = {
         dot: true,
-        glob: [
+        globs: [
           // Ensure we always include package.json files, which are crucial for
           /// module resolution.
           '**/package.json',
