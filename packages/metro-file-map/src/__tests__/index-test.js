@@ -187,6 +187,7 @@ let defaultConfig;
 let DuplicateHasteCandidatesError;
 let fs;
 let H;
+let HasteConflictsError;
 let FileMap;
 let mockCacheManager;
 let mockClocks;
@@ -240,7 +241,11 @@ describe('FileMap', () => {
     console.warn = jest.fn();
     console.error = jest.fn();
 
-    ({default: FileMap, DuplicateHasteCandidatesError} = require('../'));
+    ({
+      default: FileMap,
+      DuplicateHasteCandidatesError,
+      HasteConflictsError,
+    } = require('../'));
 
     mockCacheManager = {
       read: jest.fn().mockImplementation(async () => cacheContent),
@@ -829,7 +834,7 @@ describe('FileMap', () => {
   });
 
   test('throws on duplicate module ids if "throwOnModuleCollision" is set to true', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     // Raspberry thinks it is a Strawberry
     mockFs[path.join('/', 'project', 'fruits', 'another', 'Strawberry.js')] = `
       const Banana = require("Banana");
@@ -841,9 +846,8 @@ describe('FileMap', () => {
         ...defaultConfig,
       }).build();
     } catch (err) {
-      expect(err.message).toBe(
-        'Duplicated files or mocks. Please check the console for more info',
-      );
+      expect(err).toBeInstanceOf(HasteConflictsError);
+      expect(err.getDetailedMessage()).toMatchSnapshot();
     }
   });
 

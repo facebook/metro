@@ -127,6 +127,7 @@ type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
+export {HasteConflictsError} from './lib/HasteConflictsError';
 export {default as MutableHasteMap} from './lib/MutableHasteMap';
 
 export type {HasteMap} from './flow-types';
@@ -390,8 +391,9 @@ export default class FileMap extends EventEmitter {
         // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
         await this._applyFileDelta(fileSystem, hasteMap, mockMap, fileDelta);
 
-        // Validate the state of the mock map before persisting it.
+        // Validate the mock and Haste maps before persisting them.
         mockMap?.assertValid();
+        hasteMap.assertValid();
 
         await this._takeSnapshotAndPersist(
           fileSystem,
@@ -426,7 +428,7 @@ export default class FileMap extends EventEmitter {
       console: this._console,
       platforms: new Set(this._options.platforms),
       rootDir: this._options.rootDir,
-      throwOnModuleCollision: this._options.throwOnModuleCollision,
+      failValidationOnConflicts: this._options.throwOnModuleCollision,
     });
     let hasteFiles = 0;
     for (const {
@@ -827,10 +829,6 @@ export default class FileMap extends EventEmitter {
       this._startupPerfLogger?.point('watch_end');
       return;
     }
-
-    // In watch mode, we'll only warn about module collisions and we'll retain
-    // all files, even changes to node_modules.
-    hasteMap.setThrowOnModuleCollision(false);
 
     const hasWatchedExtension = (filePath: string) =>
       this._options.extensions.some(ext => filePath.endsWith(ext));

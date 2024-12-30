@@ -22,9 +22,9 @@ import type {
 } from '../flow-types';
 
 import H from '../constants';
-import {DuplicateError} from './DuplicateError';
 import {DuplicateHasteCandidatesError} from './DuplicateHasteCandidatesError';
 import getPlatformExtension from './getPlatformExtension';
+import {HasteConflictsError} from './HasteConflictsError';
 import {RootPathUtils} from './RootPathUtils';
 import {chainComparators, compareStrings} from './sorting';
 import path from 'path';
@@ -36,7 +36,7 @@ type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   platforms: $ReadOnlySet<string>,
   rootDir: Path,
-  throwOnModuleCollision: boolean,
+  failValidationOnConflicts: boolean,
 }>;
 
 export default class MutableHasteMap implements HasteMap {
@@ -47,14 +47,14 @@ export default class MutableHasteMap implements HasteMap {
   +#console: ?Console;
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
-  #throwOnModuleCollision: boolean;
+  +#failValidationOnConflicts: boolean;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
     this.#pathUtils = new RootPathUtils(options.rootDir);
-    this.#throwOnModuleCollision = options.throwOnModuleCollision;
+    this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
   getModule(
@@ -171,9 +171,7 @@ export default class MutableHasteMap implements HasteMap {
 
     if (existingModule && existingModule[H.PATH] !== module[H.PATH]) {
       if (this.#console) {
-        const method = this.#throwOnModuleCollision ? 'error' : 'warn';
-
-        this.#console[method](
+        this.#console.warn(
           [
             'metro-file-map: Haste module naming collision: ' + id,
             '  The following files share their name; please adjust your hasteImpl:',
@@ -182,10 +180,6 @@ export default class MutableHasteMap implements HasteMap {
             '',
           ].join('\n'),
         );
-      }
-
-      if (this.#throwOnModuleCollision) {
-        throw new DuplicateError(existingModule[H.PATH], module[H.PATH]);
       }
 
       // We do NOT want consumers to use a module that is ambiguous.
@@ -240,8 +234,14 @@ export default class MutableHasteMap implements HasteMap {
     this._recoverDuplicates(moduleName, relativeFilePath);
   }
 
-  setThrowOnModuleCollision(shouldThrow: boolean) {
-    this.#throwOnModuleCollision = shouldThrow;
+  assertValid(): void {
+    if (!this.#failValidationOnConflicts) {
+      return;
+    }
+    const conflicts = this.computeConflicts();
+    if (conflicts.length > 0) {
+      throw new HasteConflictsError(conflicts);
+    }
   }
 
   /**
@@ -299,7 +299,7 @@ export default class MutableHasteMap implements HasteMap {
   computeConflicts(): Array<HasteConflict> {
     const conflicts: Array<HasteConflict> = [];
 
-    // Add duplicates reported by metro-file-map
+    // Add literal duplicates tracked in the #duplicates map
     for (const [id, dupsByPlatform] of this.#duplicates.entries()) {
       for (const [platform, conflictingModules] of dupsByPlatform) {
         conflicts.push({

@@ -17,6 +17,7 @@ import type {
   Console,
   FileData,
   FileSystem,
+  HasteConflict,
   HasteMapData,
   HasteMapItem,
   PerfLoggerFactory,
@@ -90,4 +91,7 @@ export default class FileMap extends EventEmitter {
   read(): Promise<CacheData | null>;
 }
 
-export class DuplicateError extends Error {}
+export class HasteConflictsError extends Error {
+  constructor(conflicts: ReadonlyArray<HasteConflict>);
+  getDetailedMessage(pathsRelativeToRoot?: string): string;
+}
