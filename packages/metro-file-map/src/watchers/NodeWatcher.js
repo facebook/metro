@@ -107,8 +107,9 @@ module.exports = class NodeWatcher extends EventEmitter {
 
     const relativePath = path.relative(this.root, filepath);
     if (
-      type === 'f' &&
-      !common.isIncluded('f', this.globs, this.dot, this.doIgnore, relativePath)
+      this.doIgnore(relativePath) ||
+      (type === 'f' &&
+        !common.includedByGlob('f', this.globs, this.dot, relativePath))
     ) {
       return false;
     }
@@ -286,13 +287,8 @@ module.exports = class NodeWatcher extends EventEmitter {
         }
 
         if (
-          !common.isIncluded(
-            'd',
-            this.globs,
-            this.dot,
-            this.doIgnore,
-            relativePath,
-          )
+          this.doIgnore(relativePath) ||
+          !common.includedByGlob('d', this.globs, this.dot, relativePath)
         ) {
           return;
         }
