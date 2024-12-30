@@ -9,10 +9,7 @@
  * @oncall react_native
  */
 
-import type {
-  ChangeEventMetadata,
-  WatcherBackendChangeEvent,
-} from '../../flow-types';
+import type {ChangeEventMetadata} from '../../flow-types';
 import type {WatcherOptions} from '../common';
 
 import FSEventsWatcher from '../FSEventsWatcher';
@@ -108,9 +105,7 @@ export const startWatching = async (
   invariant(Watcher != null, `Watcher ${watcherName} is not supported`);
   const watcherInstance = new Watcher(watchRoot, opts);
 
-  await new Promise(resolve => {
-    watcherInstance.once('ready', resolve);
-  });
+  await watcherInstance.startWatching();
 
   const eventHelpers: EventHelpers = {
     nextEvent: afterFn =>
@@ -120,26 +115,27 @@ export const startWatching = async (
           metadata?: ChangeEventMetadata,
           path: string,
         }>((resolve, reject) => {
-          const listener = (change: WatcherBackendChangeEvent) => {
-            if (change.relativePath === '') {
-              // FIXME: FSEventsWatcher sometimes reports 'touch' events to
-              // the watch root.
-              return;
-            }
-            watcherInstance.removeListener('all', listener);
-            if (change.root !== watchRoot) {
-              reject(
-                new Error(`Expected root ${watchRoot}, got ${change.root}`),
-              );
-            }
+          const unsubscribe: () => void = watcherInstance.onFileEvent(
+            change => {
+              if (change.relativePath === '') {
+                // FIXME: FSEventsWatcher sometimes reports 'touch' events to
+                // the watch root.
+                return;
+              }
+              unsubscribe();
+              if (change.root !== watchRoot) {
+                reject(
+                  new Error(`Expected root ${watchRoot}, got ${change.root}`),
+                );
+              }
 
-            resolve({
-              eventType: change.event,
-              path: change.relativePath,
-              metadata: change.metadata,
-            });
-          };
-          watcherInstance.on('all', listener);
+              resolve({
+                eventType: change.event,
+                path: change.relativePath,
+                metadata: change.metadata,
+              });
+            },
+          );
         }),
         afterFn(),
       ]).then(([event]) => event),
@@ -158,29 +154,33 @@ export const startWatching = async (
           const allEventKeys = new Set(
             expectedEvents.map(tuple => tupleToKey(tuple)),
           );
-          const listener = (change: WatcherBackendChangeEvent) => {
-            if (change.relativePath === '') {
-              // FIXME: FSEventsWatcher sometimes reports 'touch' events to
-              // the watch root.
-              return;
-            }
-            const receivedKey = tupleToKey([change.relativePath, change.event]);
-            if (allEventKeys.has(receivedKey)) {
-              allEventKeys.delete(receivedKey);
-              if (allEventKeys.size === 0) {
-                watcherInstance.removeListener('all', listener);
-                resolve();
+          const unsubscribe: () => void = watcherInstance.onFileEvent(
+            change => {
+              if (change.relativePath === '') {
+                // FIXME: FSEventsWatcher sometimes reports 'touch' events to
+                // the watch root.
+                return;
               }
-            } else if (rejectUnexpected) {
-              watcherInstance.removeListener('all', listener);
-              reject(
-                new Error(
-                  `Unexpected event: ${change.event} ${change.relativePath}.`,
-                ),
-              );
-            }
-          };
-          watcherInstance.on('all', listener);
+              const receivedKey = tupleToKey([
+                change.relativePath,
+                change.event,
+              ]);
+              if (allEventKeys.has(receivedKey)) {
+                allEventKeys.delete(receivedKey);
+                if (allEventKeys.size === 0) {
+                  unsubscribe();
+                  resolve();
+                }
+              } else if (rejectUnexpected) {
+                unsubscribe();
+                reject(
+                  new Error(
+                    `Unexpected event: ${change.event} ${change.relativePath}.`,
+                  ),
+                );
+              }
+            },
+          );
         }),
         afterFn(),
       ]).then(() => {}),
@@ -189,7 +189,7 @@ export const startWatching = async (
   return {
     eventHelpers,
     stopWatching: async () => {
-      await watcherInstance.close();
+      await watcherInstance.stopWatching();
     },
   };
 };
