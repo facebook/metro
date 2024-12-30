@@ -109,7 +109,7 @@ type HealthCheckOptions = $ReadOnly<{
   filePrefix: string,
 }>;
 
-type InternalOptions = {
+type InternalOptions = $ReadOnly<{
   ...BuildParameters,
   enableWorkerThreads: boolean,
   healthCheck: HealthCheckOptions,
@@ -120,7 +120,7 @@ type InternalOptions = {
   useWatchman: boolean,
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
-};
+}>;
 
 type WorkerObj = {worker: typeof worker};
 type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
@@ -492,6 +492,7 @@ export default class FileMap extends EventEmitter {
       extensions,
       forceNodeFilesystemAPI,
       ignorePattern,
+      retainAllFiles,
       roots,
       rootDir,
       watch,
@@ -506,8 +507,14 @@ export default class FileMap extends EventEmitter {
       extensions,
       forceNodeFilesystemAPI,
       healthCheckFilePrefix: this._options.healthCheck.filePrefix,
-      ignore: path => this._ignore(path),
-      ignorePattern,
+      // TODO: Refactor out the two different ignore strategies here.
+      ignoreForCrawl: filePath => {
+        const ignoreMatched = ignorePattern.test(filePath);
+        return (
+          ignoreMatched || (!retainAllFiles && filePath.includes(NODE_MODULES))
+        );
+      },
+      ignorePatternForWatch: ignorePattern,
       perfLogger: this._startupPerfLogger,
       previousState,
       roots,
@@ -592,13 +599,13 @@ export default class FileMap extends EventEmitter {
       throw error;
     };
 
-    // If we're tracking node_modules (retainAllFiles), use a cheaper worker
-    // configuration for those files, because we never care about extracting
-    // dependencies, and they may never be Haste modules or packages.
+    // Use a cheaper worker configuration for node_modules files, because we
+    // never care about extracting dependencies, and they may never be Haste
+    // modules or packages.
     //
-    // Note that if retainAllFiles==false, no node_modules file should get this
-    // far - it will have been ignored by the crawler.
-    if (this._options.retainAllFiles && filePath.includes(NODE_MODULES)) {
+    // Note that we'd only expect node_modules files to reach this point if
+    // retainAllFiles is true, or they're touched during watch mode.
+    if (filePath.includes(NODE_MODULES)) {
       if (computeSha1) {
         return this._getWorker(workerOptions)
           .worker({
@@ -824,7 +831,6 @@ export default class FileMap extends EventEmitter {
     // In watch mode, we'll only warn about module collisions and we'll retain
     // all files, even changes to node_modules.
     hasteMap.setThrowOnModuleCollision(false);
-    this._options.retainAllFiles = true;
 
     const hasWatchedExtension = (filePath: string) =>
       this._options.extensions.some(ext => filePath.endsWith(ext));
@@ -1074,17 +1080,6 @@ export default class FileMap extends EventEmitter {
     this._crawlerAbortController.abort();
 
     await this._watcher?.close();
-  }
-
-  /**
-   * Helpers
-   */
-  _ignore(filePath: Path): boolean {
-    const ignoreMatched = this._options.ignorePattern.test(filePath);
-    return (
-      ignoreMatched ||
-      (!this._options.retainAllFiles && filePath.includes(NODE_MODULES))
-    );
   }
 
   async _shouldUseWatchman(): Promise<boolean> {

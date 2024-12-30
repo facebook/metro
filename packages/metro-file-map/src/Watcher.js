@@ -50,8 +50,8 @@ type WatcherOptions = {
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   healthCheckFilePrefix: string,
-  ignore: string => boolean,
-  ignorePattern: RegExp,
+  ignoreForCrawl: string => boolean,
+  ignorePatternForWatch: RegExp,
   previousState: CrawlerOptions['previousState'],
   perfLogger: ?PerfLogger,
   roots: $ReadOnlyArray<string>,
@@ -92,8 +92,8 @@ export class Watcher extends EventEmitter {
     this._options.perfLogger?.point('crawl_start');
 
     const options = this._options;
-    const ignore = (filePath: string) =>
-      options.ignore(filePath) ||
+    const ignoreForCrawl = (filePath: string) =>
+      options.ignoreForCrawl(filePath) ||
       path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
@@ -107,7 +107,7 @@ export class Watcher extends EventEmitter {
       includeSymlinks: options.enableSymlinks,
       extensions: options.extensions,
       forceNodeFilesystemAPI: options.forceNodeFilesystemAPI,
-      ignore,
+      ignore: ignoreForCrawl,
       onStatus: status => {
         this.emit('status', status);
       },
@@ -164,7 +164,7 @@ export class Watcher extends EventEmitter {
   }
 
   async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
-    const {extensions, ignorePattern, useWatchman} = this._options;
+    const {extensions, ignorePatternForWatch, useWatchman} = this._options;
 
     // WatchmanWatcher > FSEventsWatcher > sane.NodeWatcher
     const WatcherImpl = useWatchman
@@ -194,7 +194,7 @@ export class Watcher extends EventEmitter {
           '**/' + this._options.healthCheckFilePrefix + '*',
           ...extensions.map(extension => '**/*.' + extension),
         ],
-        ignored: ignorePattern,
+        ignored: ignorePatternForWatch,
         watchmanDeferStates: this._options.watchmanDeferStates,
       };
       const watcher = new WatcherImpl(root, watcherOptions);
