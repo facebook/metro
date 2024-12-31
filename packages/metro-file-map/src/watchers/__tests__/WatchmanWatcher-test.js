@@ -28,13 +28,27 @@ const cmdCallback = <T>(err: ?Error, result: Partial<T>): void => {
   mockClient.command.mock.lastCall[1](err, result);
 };
 
+// Convenience function to write paths with posix separators but convert them
+// to system separators, and prepend a mock drive letter to absolute paths on
+// Windows.
+const p: string => string = filePath =>
+  process.platform === 'win32'
+    ? filePath.replaceAll('/', '\\').replace(/^\\/, 'C:\\')
+    : filePath;
+
+// Format a posix path as a Watchman-native path on the current platform, i.e.,
+// on Windows, drive letters on absolute paths, but posix-style separators.
+// This should be used for mocking Watchman *output*.
+const wp: string => string = filePath =>
+  process.platform === 'win32' ? filePath.replace(/^\//, 'C:/') : filePath;
+
 jest.mock('fb-watchman', () => ({
   Client: jest.fn().mockImplementation(() => mockClient),
 }));
 
 describe('WatchmanWatcher', () => {
   test('initializes with watch-project, clock, subscribe', () => {
-    const watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
+    const watchmanWatcher = new WatchmanWatcher(p('/project/subdir/js'), {
       dot: true,
       ignored: null,
       globs: ['**/*.js'],
@@ -46,16 +60,16 @@ describe('WatchmanWatcher', () => {
       .finally(() => (isSettled = true));
 
     expect(mockClient.command).toHaveBeenCalledWith(
-      ['watch-project', '/project/subdir/js'],
+      ['watch-project', p('/project/subdir/js')],
       expect.any(Function),
     );
     cmdCallback<WatchmanWatchResponse>(null, {
-      watch: '/project',
-      relative_path: 'subdir/js',
+      watch: wp('/project'),
+      relative_path: wp('subdir/js'),
     });
 
     expect(mockClient.command).toHaveBeenCalledWith(
-      ['clock', '/project'],
+      ['clock', p('/project')],
       expect.any(Function),
     );
     cmdCallback<WatchmanClockResponse>(null, {
@@ -65,12 +79,12 @@ describe('WatchmanWatcher', () => {
     expect(mockClient.command).toHaveBeenCalledWith(
       [
         'subscribe',
-        '/project',
+        p('/project'),
         watchmanWatcher.subscriptionName,
         {
           defer: ['busy'],
           fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
-          relative_root: 'subdir/js',
+          relative_root: p('subdir/js'),
           since: 'c:1629095304.251049',
         },
       ],
@@ -91,15 +105,20 @@ describe('WatchmanWatcher', () => {
     let startPromise: Promise<void>;
 
     beforeEach(async () => {
-      watchmanWatcher = new WatchmanWatcher('/project/subdir/js', {
+      watchmanWatcher = new WatchmanWatcher(p('/project/subdir/js'), {
         dot: true,
         ignored: null,
         globs: ['**/*.js'],
         watchmanDeferStates: ['busy'],
       });
       startPromise = watchmanWatcher.startWatching();
-      cmdCallback<WatchmanWatchResponse>(null, {});
-      cmdCallback<WatchmanClockResponse>(null, {});
+      cmdCallback<WatchmanWatchResponse>(null, {
+        watch: wp('/project'),
+        relative_path: wp('subdir/js'),
+      });
+      cmdCallback<WatchmanClockResponse>(null, {
+        clock: 'c:123',
+      });
     });
 
     afterEach(() => {

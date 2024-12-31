@@ -35,7 +35,9 @@ describe.each(Object.keys(WATCHERS))(
     // If all tests are skipped, Jest will not run before/after hooks either.
     const maybeTest = WATCHERS[watcherName] ? test : test.skip;
     const maybeTestOn = (...platforms: $ReadOnlyArray<string>) =>
-      platforms.includes(os.platform()) ? test : test.skip;
+      platforms.includes(os.platform()) && WATCHERS[watcherName]
+        ? test
+        : test.skip;
 
     beforeAll(async () => {
       watchRoot = await createTempWatchRoot(watcherName);
