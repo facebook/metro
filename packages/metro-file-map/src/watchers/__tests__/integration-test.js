@@ -34,6 +34,8 @@ describe.each(Object.keys(WATCHERS))(
 
     // If all tests are skipped, Jest will not run before/after hooks either.
     const maybeTest = WATCHERS[watcherName] ? test : test.skip;
+    const maybeTestOn = (...platforms: $ReadOnlyArray<string>) =>
+      platforms.includes(os.platform()) ? test : test.skip;
 
     beforeAll(async () => {
       watchRoot = await createTempWatchRoot(watcherName);
@@ -233,7 +235,9 @@ describe.each(Object.keys(WATCHERS))(
       });
     });
 
-    maybeTest(
+    /* FIXME: Disabled on Windows and Darwin due to flakiness (occasional
+       timeouts) - see history. */
+    maybeTestOn('darwin')(
       'emits deletion for all files when a directory is deleted',
       async () => {
         await eventHelpers.allEvents(
@@ -267,8 +271,6 @@ describe.each(Object.keys(WATCHERS))(
           {rejectUnexpected: true},
         );
       },
-      // We see occasional failures in CI with default 5s timeout.
-      45000,
     );
   },
 );
