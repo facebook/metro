@@ -20,6 +20,7 @@ import type {
   WatchmanWatchResponse,
 } from 'fb-watchman';
 
+import normalizePathSeparatorsToSystem from '../lib/normalizePathSeparatorsToSystem';
 import {AbstractWatcher} from './AbstractWatcher';
 import * as common from './common';
 import RecrawlWarning from './RecrawlWarning';
@@ -105,9 +106,13 @@ export default class WatchmanWatcher extends AbstractWatcher {
 
       handleWarning(resp);
 
+      // NB: Watchman outputs posix-separated paths even on Windows, convert
+      // them to system-native separators.
       self.watchProjectInfo = {
-        relativePath: resp.relative_path ? resp.relative_path : '',
-        root: resp.watch,
+        relativePath: resp.relative_path
+          ? normalizePathSeparatorsToSystem(resp.relative_path)
+          : '',
+        root: normalizePathSeparatorsToSystem(resp.watch),
       };
 
       self.client.command(['clock', getWatchRoot()], onClock);
@@ -231,13 +236,17 @@ export default class WatchmanWatcher extends AbstractWatcher {
     );
 
     const {
-      name: relativePath,
+      name: relativePosixPath,
       new: isNew = false,
       exists = false,
       type,
       mtime_ms,
       size,
     } = changeDescriptor;
+
+    // Watchman emits posix-separated paths on Windows, which is inconsistent
+    // with other watchers. Normalize to system-native separators.
+    const relativePath = normalizePathSeparatorsToSystem(relativePosixPath);
 
     debug(
       'Handling change to: %s (new: %s, exists: %s, type: %s)',

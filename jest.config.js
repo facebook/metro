@@ -28,9 +28,7 @@ if (process.platform === 'win32') {
       'packages/metro-config/src/__tests__/loadConfig-test.js',
       'packages/metro-symbolicate/src/__tests__/symbolicate-test.js',
       'packages/metro-file-map/src/__tests__/index-test.js',
-      'packages/metro-file-map/src/watchers/__tests__/WatchmanWatcher-test.js',
       'packages/metro-file-map/src/crawlers/__tests__/node-test.js',
-      'packages/metro-file-map/src/watchers/__tests__/integration-test.js',
 
       // resolveModulePath failed
       'packages/metro-cache/src/stores/__tests__/FileStore-test.js',
