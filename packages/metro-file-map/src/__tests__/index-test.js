@@ -62,9 +62,10 @@ jest.mock('../crawlers/watchman', () =>
       ) {
         const relativeFilePath = path.relative(rootDir, file);
         if (list[file]) {
-          const hash = computeSha1 ? mockHashContents(list[file]) : null;
           const isSymlink = typeof list[file].link === 'string';
           if (!isSymlink || includeSymlinks) {
+            const hash =
+              !isSymlink && computeSha1 ? mockHashContents(list[file]) : null;
             changedFiles.set(relativeFilePath, [
               '',
               32,
@@ -152,6 +153,16 @@ jest.mock('fs', () => ({
     }),
   },
 }));
+
+jest.mock('../worker.js', () => ({
+  worker: mockWorkerFn,
+}));
+
+const mockWorkerFn = jest
+  .fn()
+  .mockImplementation((...args) =>
+    jest.requireActual('../worker').worker(...args),
+  );
 
 const object = data => Object.assign(Object.create(null), data);
 const createMap = obj => new Map(Object.entries(obj));
@@ -1676,6 +1687,61 @@ describe('FileMap', () => {
       const {eventsQueue} = await waitForItToChange(hm);
       expect(eventsQueue).toHaveLength(1);
     });
+
+    fm_it(
+      'file data is still available during processing',
+      async hm => {
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        const {fileSystem, hasteMap} = await hm.build();
+        // Pre-existing file
+        const bananaPath = path.join('/', 'project', 'fruits', 'Banana.js');
+        expect(fileSystem.linkStats(bananaPath)).toEqual({
+          fileType: 'f',
+          modifiedTime: 32,
+        });
+        const originalHash = fileSystem.getSha1(bananaPath);
+        expect(typeof originalHash).toBe('string');
+
+        mockFs[bananaPath] = `
+        // Modified banana!
+      `;
+        e.emitFileEvent({
+          event: 'touch',
+          relativePath: 'Banana.js',
+          metadata: {
+            type: 'f',
+            modifiedTime: 33,
+            size: 500,
+          },
+        });
+
+        // Wait for the a worker job to be enqueued, but not yet resolved
+        const initialWorkerCalls = mockWorkerFn.mock.calls.length;
+        await null;
+        expect(mockWorkerFn).toHaveBeenCalledTimes(initialWorkerCalls + 1);
+
+        // Initially, expect same data as before
+        expect(fileSystem.linkStats(bananaPath)).toEqual({
+          fileType: 'f',
+          modifiedTime: 32,
+        });
+        expect(fileSystem.getSha1(bananaPath)).toBe(originalHash);
+        expect(hasteMap.getModule('Banana')).toBe(bananaPath);
+
+        const {eventsQueue} = await waitForItToChange(hm);
+        expect(eventsQueue).toHaveLength(1);
+
+        // After the 'change' event is emitted, we should have new data
+        expect(fileSystem.linkStats(bananaPath)).toEqual({
+          fileType: 'f',
+          modifiedTime: 33,
+        });
+        const newHash = fileSystem.getSha1(bananaPath);
+        expect(typeof newHash).toBe('string');
+        expect(newHash).not.toBe(originalHash);
+      },
+      {config: {computeSha1: true}},
+    );
 
     fm_it(
       'suppresses backend symlink events if enableSymlinks: false',

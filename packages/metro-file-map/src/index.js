@@ -963,16 +963,6 @@ export default class FileMap extends EventEmitter {
             return null;
           };
 
-          // If it's not an addition, delete the file and all its metadata
-          if (linkStats != null) {
-            this._removeIfExists(
-              fileSystem,
-              hasteMap,
-              mockMap,
-              relativeFilePath,
-            );
-          }
-
           // If the file was added or modified,
           // parse it and update the haste map.
           if (change.event === 'touch') {
@@ -1017,6 +1007,12 @@ export default class FileMap extends EventEmitter {
               // This is expected for deletion of an ignored file.
               return null;
             }
+            this._removeIfExists(
+              fileSystem,
+              hasteMap,
+              mockMap,
+              relativeFilePath,
+            );
             enqueueEvent({
               modifiedTime: null,
               size: null,
