@@ -945,10 +945,12 @@ export default class TreeFS implements MutableFileSystem {
     return null;
   }
 
-  *metadataIterator(opts: {
-    includeSymlinks: boolean,
-    includeNodeModules: boolean,
-  }): Iterable<{
+  *metadataIterator(
+    opts: $ReadOnly<{
+      includeSymlinks: boolean,
+      includeNodeModules: boolean,
+    }>,
+  ): Iterable<{
     baseName: string,
     canonicalPath: string,
     metadata: FileMetaData,
@@ -958,7 +960,7 @@ export default class TreeFS implements MutableFileSystem {
 
   *_metadataIterator(
     rootNode: DirectoryNode,
-    opts: {includeSymlinks: boolean, includeNodeModules: boolean},
+    opts: $ReadOnly<{includeSymlinks: boolean, includeNodeModules: boolean}>,
     prefix: string = '',
   ): Iterable<{
     baseName: string,

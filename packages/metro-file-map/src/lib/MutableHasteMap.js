@@ -13,12 +13,14 @@ import type {
   Console,
   DuplicatesIndex,
   DuplicatesSet,
+  FileMetaData,
   HasteConflict,
   HasteMap,
   HasteMapItem,
   HasteMapItemMetaData,
   HTypeValue,
   Path,
+  PerfLogger,
 } from '../flow-types';
 
 import H from '../constants';
@@ -32,12 +34,34 @@ import path from 'path';
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
 const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
 
+// Periodically yield to the event loop to allow parallel I/O, etc.
+// Based on 200k files taking up to 800ms => max 40ms between yields.
+const YIELD_EVERY_NUM_HASTE_FILES = 10000;
+
 type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
+  enableHastePackages: boolean,
+  perfLogger: ?PerfLogger,
   platforms: $ReadOnlySet<string>,
   rootDir: Path,
   failValidationOnConflicts: boolean,
 }>;
+
+/**
+ * Low-level, read-only access to the in-memory FileSystem.
+ */
+interface InitialState {
+  metadataIterator(
+    opts: $ReadOnly<{
+      includeNodeModules: boolean,
+      includeSymlinks: boolean,
+    }>,
+  ): Iterable<{
+    baseName: string,
+    canonicalPath: string,
+    metadata: FileMetaData,
+  }>;
+}
 
 export default class MutableHasteMap implements HasteMap {
   +#rootDir: Path;
@@ -45,16 +69,46 @@ export default class MutableHasteMap implements HasteMap {
   +#duplicates: DuplicatesIndex = new Map();
 
   +#console: ?Console;
+  +#enableHastePackages: boolean;
+  +#perfLogger: ?PerfLogger;
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
   +#failValidationOnConflicts: boolean;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
+    this.#enableHastePackages = options.enableHastePackages;
+    this.#perfLogger = options.perfLogger;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
     this.#pathUtils = new RootPathUtils(options.rootDir);
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
+  }
+
+  async initialize(fileSystemState: InitialState): Promise<void> {
+    let hasteFiles = 0;
+    for (const {
+      baseName,
+      canonicalPath,
+      metadata,
+    } of fileSystemState.metadataIterator({
+      // Symlinks and node_modules are never Haste modules or packages.
+      includeNodeModules: false,
+      includeSymlinks: false,
+    })) {
+      if (metadata[H.ID]) {
+        this.setModule(metadata[H.ID], [
+          canonicalPath,
+          this.#enableHastePackages && baseName === 'package.json'
+            ? H.PACKAGE
+            : H.MODULE,
+        ]);
+        if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
+          await new Promise(setImmediate);
+        }
+      }
+    }
+    this.#perfLogger?.annotate({int: {hasteFiles}});
   }
 
   getModule(

@@ -146,9 +146,6 @@ export type {
 const CACHE_BREAKER = '8';
 
 const CHANGE_INTERVAL = 30;
-// Periodically yield to the event loop to allow parallel I/O, etc.
-// Based on 200k files taking up to 800ms => max 40ms between yields.
-const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const PACKAGE_JSON = path.sep + 'package.json';
@@ -426,31 +423,13 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('constructHasteMap_start');
     const hasteMap = new MutableHasteMap({
       console: this._console,
+      enableHastePackages: this._options.enableHastePackages,
+      perfLogger: this._startupPerfLogger,
       platforms: new Set(this._options.platforms),
       rootDir: this._options.rootDir,
       failValidationOnConflicts: this._options.throwOnModuleCollision,
     });
-    let hasteFiles = 0;
-    for (const {
-      baseName,
-      canonicalPath,
-      metadata,
-    } of fileSystem.metadataIterator({
-      // Symlinks and node_modules are never Haste modules or packages.
-      includeNodeModules: false,
-      includeSymlinks: false,
-    })) {
-      if (metadata[H.ID]) {
-        hasteMap.setModule(metadata[H.ID], [
-          canonicalPath,
-          baseName === 'package.json' ? H.PACKAGE : H.MODULE,
-        ]);
-        if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
-          await new Promise(setImmediate);
-        }
-      }
-    }
-    this._startupPerfLogger?.annotate({int: {hasteFiles}});
+    await hasteMap.initialize(fileSystem);
     this._startupPerfLogger?.point('constructHasteMap_end');
     return hasteMap;
   }
