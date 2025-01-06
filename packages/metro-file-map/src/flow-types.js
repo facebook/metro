@@ -12,7 +12,6 @@
 'use strict';
 
 import type {PerfLogger, PerfLoggerFactory, RootPerfLogger} from 'metro-config';
-import type {AbortSignal} from 'node-abort-controller';
 
 export type {PerfLoggerFactory, PerfLogger};
 

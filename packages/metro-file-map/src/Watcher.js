@@ -19,7 +19,6 @@ import type {
   WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
-import type {AbortSignal} from 'node-abort-controller';
 
 import nodeCrawl from './crawlers/node';
 import watchmanCrawl from './crawlers/watchman';

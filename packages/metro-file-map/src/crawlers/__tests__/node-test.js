@@ -9,7 +9,6 @@
  */
 
 import TreeFS from '../../lib/TreeFS';
-import {AbortController} from 'node-abort-controller';
 
 jest.useRealTimers();
 
@@ -404,7 +403,7 @@ describe('node crawler', () => {
     await expect(
       nodeCrawl({
         console: global.console,
-        abortSignal: abortSignalWithReason(err),
+        abortSignal: AbortSignal.abort(err),
         previousState: {fileSystem: emptyFS},
         extensions: ['js', 'json'],
         ignore: pearMatcher,
@@ -446,10 +445,3 @@ describe('node crawler', () => {
     ).rejects.toThrow(err);
   });
 });
-
-function abortSignalWithReason(reason) {
-  // TODO: use AbortSignal.abort when node-abort-controller supports it
-  const controller = new AbortController();
-  controller.abort(reason);
-  return controller.signal;
-}

@@ -9,7 +9,6 @@
  */
 
 import TreeFS from '../../lib/TreeFS';
-import {AbortController} from 'node-abort-controller';
 
 const path = require('path');
 
@@ -554,7 +553,7 @@ describe('watchman watch', () => {
     const err = new Error('aborted for test');
     await expect(
       watchmanCrawl({
-        abortSignal: abortSignalWithReason(err),
+        abortSignal: AbortSignal.abort(err),
         previousState: {
           clocks: new Map(),
           files: new Map(),
@@ -600,10 +599,3 @@ describe('watchman watch', () => {
     ).rejects.toThrow(err);
   });
 });
-
-function abortSignalWithReason(reason) {
-  // TODO: use AbortSignal.abort when node-abort-controller supports it
-  const controller = new AbortController();
-  controller.abort(reason);
-  return controller.signal;
-}

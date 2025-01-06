@@ -51,7 +51,6 @@ import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import invariant from 'invariant';
 import {Worker} from 'jest-worker';
-import {AbortController} from 'node-abort-controller';
 import nullthrows from 'nullthrows';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
