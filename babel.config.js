@@ -14,7 +14,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
-// eslint-disable-next-line prettier/prettier
 /*::
 import type {BabelCoreOptions} from '@babel/core';
 */

@@ -22,8 +22,8 @@ module.exports = {
     node: true,
   },
   root: true,
-  extends: ['eslint-config-fb-strict', 'plugin:prettier/recommended'],
-  plugins: ['babel', 'ft-flow', 'import', 'lint', 'prettier'],
+  extends: ['eslint-config-fb-strict', 'prettier'],
+  plugins: ['babel', 'ft-flow', 'import', 'lint'],
   parser: 'hermes-eslint',
   rules: {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
@@ -40,6 +40,13 @@ module.exports = {
     'prefer-const': ['warn', {destructuring: 'all'}],
     quotes: 'off',
     'sort-keys': 'off',
+
+    // TODO: This was added after migrating from `eslint-plugin-prettier` to
+    // `eslint-config-prettier`. The former used to disable this rule, so this
+    // was added to avoid introducing lint errors during the migration. Either
+    // this needs to be properly configured or lint errors need to be fixed so
+    // this override can be removed.
+    'prefer-arrow-callback': 'off',
 
     // prettier handles this
     'flowtype/object-type-delimiter': 'off',
