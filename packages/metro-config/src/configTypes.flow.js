@@ -31,7 +31,11 @@ export type ExtraTransformOptions = $ReadOnly<{
   preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
   ramGroups?: $ReadOnlyArray<string>,
   transform?: $ReadOnly<{
-    experimentalImportSupport?: boolean,
+    experimentalImportSupport?:
+      | boolean
+      | $ReadOnly<{
+          importAsObjects?: boolean,
+        }>,
     inlineRequires?:
       | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
       | boolean,

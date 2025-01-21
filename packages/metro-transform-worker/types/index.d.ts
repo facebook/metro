@@ -77,7 +77,7 @@ export {CustomTransformOptions} from 'metro-babel-transformer';
 export type JsTransformOptions = Readonly<{
   customTransformOptions?: CustomTransformOptions;
   dev: boolean;
-  experimentalImportSupport?: boolean;
+  experimentalImportSupport?: boolean | Readonly<{importAsObjects?: boolean}>;
   hot: boolean;
   inlinePlatform: boolean;
   inlineRequires: boolean;

@@ -20,7 +20,9 @@ export interface BabelTransformerOptions {
   readonly enableBabelRCLookup?: boolean;
   readonly enableBabelRuntime: boolean | string;
   readonly extendsBabelConfigPath?: string;
-  readonly experimentalImportSupport?: boolean;
+  readonly experimentalImportSupport?:
+    | boolean
+    | Readonly<{importAsObjects?: boolean}>;
   readonly hermesParser?: boolean;
   readonly hot: boolean;
   readonly minify: boolean;
