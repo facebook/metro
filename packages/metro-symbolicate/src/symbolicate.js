@@ -23,8 +23,7 @@ const Symbolication = require('./Symbolication.js');
 const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
-// flowlint-next-line untyped-import:off
-const through2 = require('through2');
+const {Transform} = require('stream');
 
 function printHelp() {
   const usages = [
@@ -167,35 +166,34 @@ async function main(
         ),
       );
     } else if (argv[0] === '--attribution') {
-      let buffer = '';
+      let lineBuffer = '';
+
+      const streamToLines: Transform = new Transform({
+        transform(data, _enc, callback) {
+          // Take arbitrary strings, output single lines
+          lineBuffer += data.toString();
+          const lines = lineBuffer.split('\n');
+          for (let i = 0, e = lines.length - 1; i < e; i++) {
+            streamToLines.push(lines[i]);
+          }
+          lineBuffer = lines[lines.length - 1];
+          callback();
+        },
+      });
+
+      const symbolicateLines: Transform = new Transform({
+        transform(data, enc, callback) {
+          // This is JSONL, so each line is a separate JSON object
+          const obj = JSON.parse(data.toString());
+          context.symbolicateAttribution(obj);
+          symbolicateLines.push(JSON.stringify(obj) + '\n');
+          callback();
+        },
+        objectMode: true,
+      });
+
       await waitForStream(
-        stdin
-          .pipe(
-            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
-             * required by Flow's LTI update could not be added via codemod */
-            through2(function (data, enc, callback) {
-              // Take arbitrary strings, output single lines
-              buffer += data;
-              const lines = buffer.split('\n');
-              for (let i = 0, e = lines.length - 1; i < e; i++) {
-                this.push(lines[i]);
-              }
-              buffer = lines[lines.length - 1];
-              callback();
-            }),
-          )
-          .pipe(
-            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
-             * required by Flow's LTI update could not be added via codemod */
-            through2.obj(function (data, enc, callback) {
-              // This is JSONL, so each line is a separate JSON object
-              const obj = JSON.parse(data);
-              context.symbolicateAttribution(obj);
-              this.push(JSON.stringify(obj) + '\n');
-              callback();
-            }),
-          )
-          .pipe(stdout),
+        stdin.pipe(streamToLines).pipe(symbolicateLines).pipe(stdout),
       );
     } else if (argv[0].endsWith('.cpuprofile')) {
       // NOTE: synchronous
