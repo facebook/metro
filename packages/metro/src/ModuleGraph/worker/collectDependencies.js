@@ -94,6 +94,8 @@ export type Options = $ReadOnly<{
   dependencyTransformer?: DependencyTransformer,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
+
+  unstable_disableModuleWrapping?: ?boolean,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -198,6 +200,13 @@ function collectDependencies(
         !path.scope.getBinding('require')
       ) {
         processRequireContextCall(path, state);
+        // If module wrapping is disabled then we shouldn't mutate the AST,
+        // this enables calling collectDependencies multiple times on the same
+        // AST.
+        if (!options.unstable_disableModuleWrapping) {
+          // require() the generated module representing this context
+          path.get('callee').replaceWith(types.identifier('require'));
+        }
         visited.add(path.node);
         return;
       }
@@ -413,8 +422,6 @@ function processRequireContextCall(
     path,
   );
 
-  // require() the generated module representing this context
-  path.get('callee').replaceWith(types.identifier('require'));
   transformer.transformSyncRequire(path, dep, state);
 }
 
