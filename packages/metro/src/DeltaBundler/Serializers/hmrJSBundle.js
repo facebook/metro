@@ -41,7 +41,12 @@ function generateModules(
     if (isJsModule(module)) {
       // Construct a bundle URL for this specific module only
       const getURL = (extension: 'bundle' | 'map') => {
-        options.clientUrl.pathname = path.relative(
+        const moduleUrl = url.parse(url.format(options.clientUrl), true);
+        // the legacy url object is parsed with both "search" and "query" fields.
+        // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
+        // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
+        moduleUrl.search = '';
+        moduleUrl.pathname = path.relative(
           options.serverRoot ?? options.projectRoot,
           path.join(
             path.dirname(module.path),
@@ -50,7 +55,8 @@ function generateModules(
               extension,
           ),
         );
-        return url.format(options.clientUrl);
+        delete moduleUrl.query.excludeSource;
+        return url.format(moduleUrl);
       };
 
       const sourceMappingURL = getURL('map');

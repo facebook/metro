@@ -169,6 +169,9 @@ class HmrServer<TClient: Client> {
         runModule: runModule || 'false',
         shallow: 'true',
       };
+      // the legacy url object is parsed with both "search" and "query" fields.
+      // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
+      // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
       clientUrl.search = '';
 
       clientGroup = {
