@@ -12,6 +12,7 @@
 import type {
   FileMapDelta,
   FileMapPlugin,
+  FileMapPluginInitOptions,
   MockMap as IMockMap,
   Path,
   RawMockMap,
@@ -22,9 +23,13 @@ import getMockName from './mocks/getMockName';
 import nullthrows from 'nullthrows';
 import path from 'path';
 
-export default class MockPlugin implements FileMapPlugin, IMockMap {
+export const CACHE_VERSION = 1;
+
+export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
+  +name = 'mocks';
+
   +#mocksPattern: RegExp;
-  +#raw: RawMockMap;
+  #raw: RawMockMap;
   +#rootDir: Path;
   +#pathUtils: RootPathUtils;
   +#console: typeof console;
@@ -44,11 +49,36 @@ export default class MockPlugin implements FileMapPlugin, IMockMap {
     throwOnModuleCollision: boolean,
   }) {
     this.#mocksPattern = mocksPattern;
-    this.#raw = rawMockMap ?? {mocks: new Map(), duplicates: new Map()};
+    this.#raw = {
+      mocks: new Map(),
+      duplicates: new Map(),
+      version: CACHE_VERSION,
+    };
     this.#rootDir = rootDir;
     this.#console = console;
     this.#pathUtils = new RootPathUtils(rootDir);
     this.#throwOnModuleCollision = throwOnModuleCollision;
+  }
+
+  async initialize({
+    files,
+    pluginState,
+  }: FileMapPluginInitOptions<RawMockMap>): Promise<void> {
+    if (pluginState != null && pluginState.version === this.#raw.version) {
+      // Use cached state directly if available
+      this.#raw = pluginState;
+    } else {
+      // Otherwise, traverse all files to rebuild
+      await this.bulkUpdate({
+        addedOrModified: [
+          ...files.metadataIterator({
+            includeNodeModules: false,
+            includeSymlinks: false,
+          }),
+        ].map(({canonicalPath, metadata}) => [canonicalPath, metadata]),
+        removed: [],
+      });
+    }
   }
 
   getMockModule(name: string): ?Path {
@@ -124,6 +154,7 @@ export default class MockPlugin implements FileMapPlugin, IMockMap {
       duplicates: new Map(
         [...this.#raw.duplicates].map(([k, v]) => [k, new Set(v)]),
       ),
+      version: this.#raw.version,
     };
   }
 

@@ -75,6 +75,7 @@ Duplicate manual mock found for \`foo\`:
       duplicates: new Map([
         ['foo', new Set([p('other/__mocks__/foo.js'), p('__mocks__/foo.js')])],
       ]),
+      version: 1,
     });
 
     mockMap.onRemovedFile(p('other/__mocks__/foo.js'));
@@ -87,6 +88,7 @@ Duplicate manual mock found for \`foo\`:
     expect(mockMap.getSerializableSnapshot()).toEqual({
       mocks: new Map([['foo', p('__mocks__/foo.js')]]),
       duplicates: new Map(),
+      version: 1,
     });
   });
 });

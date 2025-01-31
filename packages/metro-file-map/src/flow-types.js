@@ -47,8 +47,8 @@ export type BuildResult = {
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
-  mocks: ?RawMockMap,
   fileSystemData: mixed,
+  plugins: $ReadOnlyMap<string, mixed>,
 }>;
 
 export type CacheDelta = $ReadOnly<{
@@ -133,9 +133,34 @@ export type FileMapDelta = $ReadOnly<{
   addedOrModified: Iterable<[CanonicalPath, FileMetaData]>,
 }>;
 
-export interface FileMapPlugin {
+interface FileSystemState {
+  metadataIterator(
+    opts: $ReadOnly<{
+      includeNodeModules: boolean,
+      includeSymlinks: boolean,
+    }>,
+  ): Iterable<{
+    baseName: string,
+    canonicalPath: string,
+    metadata: FileMetaData,
+  }>;
+}
+
+export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
+  files: FileSystemState,
+  pluginState: ?SerializableState,
+}>;
+
+type V8Serializable = interface {};
+
+export interface FileMapPlugin<SerializableState = V8Serializable> {
+  +name: string;
+  initialize(
+    initOptions: FileMapPluginInitOptions<SerializableState>,
+  ): Promise<void>;
   assertValid(): void;
   bulkUpdate(delta: FileMapDelta): Promise<void>;
+  getSerializableSnapshot(): SerializableState;
   onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData): void;
   onNewOrModifiedFile(
     relativeFilePath: string,
@@ -329,11 +354,13 @@ export type Path = string;
 export type RawMockMap = $ReadOnly<{
   duplicates: Map<string, Set<string>>,
   mocks: Map<string, Path>,
+  version: number,
 }>;
 
 export type ReadOnlyRawMockMap = $ReadOnly<{
   duplicates: $ReadOnlyMap<string, $ReadOnlySet<string>>,
   mocks: $ReadOnlyMap<string, Path>,
+  version: number,
 }>;
 
 export interface WatcherBackend {

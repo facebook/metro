@@ -502,9 +502,10 @@ describe('FileMap', () => {
       path.resolve(defaultConfig.rootDir, 'fruits', '__mocks__', 'Pear.js'),
     );
 
-    expect(cacheContent.mocks).toEqual({
+    expect(cacheContent.plugins.get(mockMap.name)).toEqual({
       mocks: new Map([['Pear', path.join('fruits', '__mocks__', 'Pear.js')]]),
       duplicates: new Map(),
+      version: 1,
     });
 
     // The cache file must exactly mirror the data structure returned from a

@@ -68,16 +68,19 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
   test('initialize', async () => {
     const hasteMap = new HasteMap(opts);
     const initialState = {
-      metadataIterator: jest.fn().mockReturnValue([
-        {
-          canonicalPath: p('project/Foo.js'),
-          baseName: 'Foo.js',
-          metadata: hasteMetadata('NameForFoo'),
-        },
-      ]),
+      files: {
+        metadataIterator: jest.fn().mockReturnValue([
+          {
+            canonicalPath: p('project/Foo.js'),
+            baseName: 'Foo.js',
+            metadata: hasteMetadata('NameForFoo'),
+          },
+        ]),
+      },
+      pluginState: null,
     };
     await hasteMap.initialize(initialState);
-    expect(initialState.metadataIterator).toHaveBeenCalledWith({
+    expect(initialState.files.metadataIterator).toHaveBeenCalledWith({
       includeNodeModules: false,
       includeSymlinks: false,
     });
@@ -90,7 +93,8 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
       await hasteMap.initialize({
-        metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+        files: {metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES)},
+        pluginState: null,
       });
     });
 
@@ -121,7 +125,8 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
       await hasteMap.initialize({
-        metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+        files: {metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES)},
+        pluginState: null,
       });
     });
 

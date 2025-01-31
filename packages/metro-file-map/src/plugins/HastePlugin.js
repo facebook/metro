@@ -15,6 +15,7 @@ import type {
   DuplicatesSet,
   FileMapDelta,
   FileMapPlugin,
+  FileMapPluginInitOptions,
   FileMetaData,
   HasteConflict,
   HasteMap,
@@ -49,23 +50,9 @@ type HasteMapOptions = $ReadOnly<{
   failValidationOnConflicts: boolean,
 }>;
 
-/**
- * Low-level, read-only access to the in-memory FileSystem.
- */
-interface InitialState {
-  metadataIterator(
-    opts: $ReadOnly<{
-      includeNodeModules: boolean,
-      includeSymlinks: boolean,
-    }>,
-  ): Iterable<{
-    baseName: string,
-    canonicalPath: string,
-    metadata: FileMetaData,
-  }>;
-}
+export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
+  +name = 'haste';
 
-export default class HastePlugin implements HasteMap, FileMapPlugin {
   +#rootDir: Path;
   +#map: Map<string, HasteMapItem> = new Map();
   +#duplicates: DuplicatesIndex = new Map();
@@ -76,6 +63,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin {
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
   +#failValidationOnConflicts: boolean;
+  +#cacheKey: string;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
@@ -87,13 +75,10 @@ export default class HastePlugin implements HasteMap, FileMapPlugin {
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize(fileSystemState: InitialState): Promise<void> {
+  async initialize({files}: FileMapPluginInitOptions<null>): Promise<void> {
+    this.#perfLogger?.point('constructHasteMap_start');
     let hasteFiles = 0;
-    for (const {
-      baseName,
-      canonicalPath,
-      metadata,
-    } of fileSystemState.metadataIterator({
+    for (const {baseName, canonicalPath, metadata} of files.metadataIterator({
       // Symlinks and node_modules are never Haste modules or packages.
       includeNodeModules: false,
       includeSymlinks: false,
@@ -110,7 +95,16 @@ export default class HastePlugin implements HasteMap, FileMapPlugin {
         }
       }
     }
+    this.#perfLogger?.point('constructHasteMap_end');
     this.#perfLogger?.annotate({int: {hasteFiles}});
+  }
+
+  getSerializableSnapshot(): null {
+    // Haste is not serialised, but built from traversing the file metadata
+    // on each run. This turns out to have comparable performance to
+    // serialisation, at least when Haste is dense, and makes for a much
+    // smaller cache.
+    return null;
   }
 
   getModule(

@@ -143,7 +143,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '8';
+const CACHE_BREAKER = '9';
 
 const CHANGE_INTERVAL = 30;
 
@@ -363,32 +363,47 @@ export default class FileMap extends EventEmitter {
             : new TreeFS({rootDir});
         this._startupPerfLogger?.point('constructFileSystem_end');
 
-        // Construct the Haste map from the cached file system state while
-        // crawling to build a diff of current state vs cached. `fileSystem`
-        // is not mutated during either operation.
-        const [fileDelta, hasteMap] = await Promise.all([
-          this._buildFileDelta({
-            fileSystem,
-            clocks: initialData?.clocks ?? new Map(),
-          }),
-          this._constructHasteMap(fileSystem),
-        ]);
+        const hastePlugin = new HastePlugin({
+          console: this._console,
+          enableHastePackages: this._options.enableHastePackages,
+          perfLogger: this._startupPerfLogger,
+          platforms: new Set(this._options.platforms),
+          rootDir: this._options.rootDir,
+          failValidationOnConflicts: this._options.throwOnModuleCollision,
+        });
 
-        const mockMap =
+        const mockPlugin =
           this._options.mocksPattern != null
             ? new MockPlugin({
                 console: this._console,
                 mocksPattern: this._options.mocksPattern,
-                rawMockMap: initialData?.mocks,
                 rootDir,
                 throwOnModuleCollision: this._options.throwOnModuleCollision,
               })
             : null;
 
-        const plugins: Array<FileMapPlugin> = [hasteMap];
-        if (mockMap) {
-          plugins.push(mockMap);
+        const plugins: Array<FileMapPlugin<$FlowFixMe>> = [hastePlugin];
+        if (mockPlugin) {
+          plugins.push(mockPlugin);
         }
+
+        // Initialize plugins from cached file system and plugin state while
+        // crawling to build a diff of current state vs cached. `fileSystem`
+        // is not mutated during either operation.
+        const [fileDelta] = await Promise.all([
+          this._buildFileDelta({
+            fileSystem,
+            clocks: initialData?.clocks ?? new Map(),
+          }),
+          Promise.all(
+            plugins.map(plugin =>
+              plugin.initialize({
+                files: fileSystem,
+                pluginState: initialData?.plugins.get(plugin.name),
+              }),
+            ),
+          ),
+        ]);
 
         // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
         await this._applyFileDelta(fileSystem, plugins, fileDelta);
@@ -399,7 +414,7 @@ export default class FileMap extends EventEmitter {
         await this._takeSnapshotAndPersist(
           fileSystem,
           fileDelta.clocks ?? new Map(),
-          mockMap,
+          plugins,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
         );
@@ -412,8 +427,8 @@ export default class FileMap extends EventEmitter {
         await this._watch(fileSystem, plugins);
         return {
           fileSystem,
-          hasteMap,
-          mockMap,
+          hasteMap: hastePlugin,
+          mockMap: mockPlugin,
         };
       })();
     }
@@ -421,21 +436,6 @@ export default class FileMap extends EventEmitter {
       this._startupPerfLogger?.point('build_end');
       return result;
     });
-  }
-
-  async _constructHasteMap(fileSystem: TreeFS): Promise<HastePlugin> {
-    this._startupPerfLogger?.point('constructHasteMap_start');
-    const hasteMap = new HastePlugin({
-      console: this._console,
-      enableHastePackages: this._options.enableHastePackages,
-      perfLogger: this._startupPerfLogger,
-      platforms: new Set(this._options.platforms),
-      rootDir: this._options.rootDir,
-      failValidationOnConflicts: this._options.throwOnModuleCollision,
-    });
-    await hasteMap.initialize(fileSystem);
-    this._startupPerfLogger?.point('constructHasteMap_end');
-    return hasteMap;
   }
 
   /**
@@ -614,7 +614,7 @@ export default class FileMap extends EventEmitter {
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    plugins: $ReadOnlyArray<FileMapPlugin>,
+    plugins: $ReadOnlyArray<FileMapPlugin<>>,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -729,7 +729,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    mockMap: ?MockPlugin,
+    plugins: $ReadOnlyArray<FileMapPlugin<>>,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -738,7 +738,12 @@ export default class FileMap extends EventEmitter {
       {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
-        mocks: mockMap ? mockMap.getSerializableSnapshot() : null,
+        plugins: new Map(
+          plugins.map(plugin => [
+            plugin.name,
+            plugin.getSerializableSnapshot(),
+          ]),
+        ),
       },
       {changed, removed},
     );
@@ -782,7 +787,7 @@ export default class FileMap extends EventEmitter {
    */
   async _watch(
     fileSystem: MutableFileSystem,
-    plugins: $ReadOnlyArray<FileMapPlugin>,
+    plugins: $ReadOnlyArray<FileMapPlugin<>>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
