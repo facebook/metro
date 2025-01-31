@@ -9,10 +9,21 @@
  * @oncall react_native
  */
 
-import type {BuildParameters} from '../../flow-types';
+import type {BuildParameters, CacheData} from '../../flow-types';
 
 import {DiskCacheManager} from '../DiskCacheManager';
 import * as path from 'path';
+import {serialize} from 'v8';
+
+const mockReadFile = jest.fn();
+const mockWriteFile = jest.fn();
+
+jest.mock('fs', () => ({
+  promises: {
+    readFile: (...args) => mockReadFile(...args),
+    writeFile: (...args) => mockWriteFile(...args),
+  },
+}));
 
 const buildParameters: BuildParameters = {
   cacheBreaker: '',
@@ -42,6 +53,10 @@ const defaultConfig = {
 };
 
 describe('cacheManager', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('creates valid cache file paths', () => {
     expect(
       DiskCacheManager.getCacheFilePath(buildParameters, 'file-prefix', '/'),
@@ -157,5 +172,44 @@ describe('cacheManager', () => {
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
+  });
+
+  test('reads a cache file and deserialises its contents', async () => {
+    const cacheManager = new DiskCacheManager({buildParameters}, defaultConfig);
+    mockReadFile.mockResolvedValueOnce(serialize({foo: 'bar'}));
+    const cache = await cacheManager.read();
+    expect(mockReadFile).toHaveBeenCalledWith(cacheManager.getCacheFilePath());
+    expect(cache).toEqual({foo: 'bar'});
+  });
+
+  test('serialises and writes a cache file', async () => {
+    const cacheManager = new DiskCacheManager({buildParameters}, defaultConfig);
+    const data: CacheData = {
+      clocks: new Map([['foo', 'bar']]),
+      fileSystemData: new Map(),
+      plugins: new Map(),
+    };
+    await cacheManager.write(data, {
+      changed: new Map(),
+      removed: new Set(['foo']),
+    });
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      cacheManager.getCacheFilePath(),
+      serialize(data),
+    );
+  });
+
+  test('does not write when there have been no changes', async () => {
+    const cacheManager = new DiskCacheManager({buildParameters}, defaultConfig);
+    await cacheManager.write(
+      {
+        clocks: new Map([['foo', 'bar']]),
+        fileSystemData: new Map(),
+        plugins: new Map(),
+      },
+      // Empty delta
+      {changed: new Map(), removed: new Set()},
+    );
+    expect(mockWriteFile).not.toHaveBeenCalled();
   });
 });

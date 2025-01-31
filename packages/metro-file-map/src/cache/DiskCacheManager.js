@@ -18,7 +18,7 @@ import type {
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
-import {readFileSync, writeFileSync} from 'graceful-fs';
+import {promises as fsPromises} from 'fs';
 import {tmpdir} from 'os';
 import path from 'path';
 import {deserialize, serialize} from 'v8';
@@ -67,7 +67,7 @@ export class DiskCacheManager implements CacheManager {
 
   async read(): Promise<?CacheData> {
     try {
-      return deserialize(readFileSync(this._cachePath));
+      return deserialize(await fsPromises.readFile(this._cachePath));
     } catch (e) {
       if (e?.code === 'ENOENT') {
         // Cache file not found - not considered an error.
@@ -83,7 +83,7 @@ export class DiskCacheManager implements CacheManager {
     {changed, removed}: CacheDelta,
   ): Promise<void> {
     if (changed.size > 0 || removed.size > 0) {
-      writeFileSync(this._cachePath, serialize(dataSnapshot));
+      await fsPromises.writeFile(this._cachePath, serialize(dataSnapshot));
     }
   }
 }

@@ -29,6 +29,8 @@ describe('Server torn down test', () => {
           'RANDOMBYTESREQUEST',
           'Timeout',
           'TickObject',
+          'FILEHANDLE',
+          'FILEHANDLECLOSEREQ',
           'FSREQCALLBACK',
           'FSREQPROMISE',
           'FSEVENTWRAP',
