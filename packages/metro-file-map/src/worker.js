@@ -14,7 +14,6 @@ import type {WorkerMessage, WorkerMetadata} from './flow-types';
 
 'use strict';
 
-const H = require('./constants');
 const dependencyExtractor = require('./lib/dependencyExtractor');
 const excludedExtensions = require('./workerExclusionList');
 const {createHash} = require('crypto');
@@ -51,16 +50,10 @@ async function worker(
   let content /*: ?Buffer */;
   let dependencies /*: WorkerMetadata['dependencies'] */;
   let id /*: WorkerMetadata['id'] */;
-  let module /*: WorkerMetadata['module'] */;
   let sha1 /*: WorkerMetadata['sha1'] */;
 
-  const {
-    computeDependencies,
-    computeSha1,
-    enableHastePackages,
-    rootDir,
-    filePath,
-  } = data;
+  const {computeDependencies, computeSha1, enableHastePackages, filePath} =
+    data;
 
   const getContent = () /*: Buffer */ => {
     if (content == null) {
@@ -76,9 +69,7 @@ async function worker(
       const fileData = JSON.parse(getContent().toString());
 
       if (fileData.name) {
-        const relativeFilePath = path.relative(rootDir, filePath);
         id = fileData.name;
-        module = [relativeFilePath, H.PACKAGE];
       }
     } catch (err) {
       throw new Error(`Cannot parse ${filePath} as JSON: ${err.message}`);
@@ -90,10 +81,6 @@ async function worker(
     // Process a random file that is returned as a MODULE.
     if (data.hasteImplModulePath != null) {
       id = getHasteImpl(data.hasteImplModulePath).getHasteName(filePath);
-      if (id != null) {
-        const relativeFilePath = path.relative(rootDir, filePath);
-        module = [relativeFilePath, H.MODULE];
-      }
     }
 
     if (computeDependencies) {
@@ -115,7 +102,7 @@ async function worker(
     sha1 = sha1hex(getContent());
   }
 
-  return {dependencies, id, module, sha1};
+  return {dependencies, id, sha1};
 }
 
 module.exports = {

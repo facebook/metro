@@ -1384,7 +1384,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
-          rootDir: path.join('/', 'project'),
         },
       ],
       [
@@ -1395,7 +1394,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
-          rootDir: path.join('/', 'project'),
         },
       ],
       [
@@ -1406,7 +1404,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
-          rootDir: path.join('/', 'project'),
         },
       ],
       [
@@ -1417,7 +1414,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
-          rootDir: path.join('/', 'project'),
         },
       ],
       [
@@ -1428,7 +1424,6 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
-          rootDir: path.join('/', 'project'),
         },
       ],
     ]);

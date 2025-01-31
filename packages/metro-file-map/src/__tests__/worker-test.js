@@ -8,7 +8,6 @@
  * @oncall react_native
  */
 
-import H from '../constants';
 import {worker} from '../worker';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -57,8 +56,6 @@ jest.mock('fs', () => {
   };
 });
 
-const rootDir = '/project';
-
 describe('worker', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,7 +66,6 @@ describe('worker', () => {
       await worker({
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry'],
@@ -79,7 +75,6 @@ describe('worker', () => {
       await worker({
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: [],
@@ -92,7 +87,6 @@ describe('worker', () => {
         computeDependencies: true,
         dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry', 'Lime'],
@@ -105,12 +99,10 @@ describe('worker', () => {
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         hasteImplModulePath: require.resolve('./haste_impl.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry'],
       id: 'Pear',
-      module: [path.join('fruits', 'Pear.js'), H.MODULE],
     });
 
     expect(
@@ -118,12 +110,10 @@ describe('worker', () => {
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
         hasteImplModulePath: require.resolve('./haste_impl.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: [],
       id: 'Strawberry',
-      module: [path.join('fruits', 'Strawberry.js'), H.MODULE],
     });
   });
 
@@ -133,12 +123,10 @@ describe('worker', () => {
         computeDependencies: true,
         enableHastePackages: true,
         filePath: path.join('/project', 'package.json'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: undefined,
       id: 'haste-package',
-      module: ['package.json', H.PACKAGE],
     });
   });
 
@@ -148,12 +136,10 @@ describe('worker', () => {
         computeDependencies: true,
         enableHastePackages: false,
         filePath: path.join('/project', 'package.json'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: undefined,
       id: undefined,
-      module: undefined,
     });
   });
 
@@ -161,7 +147,7 @@ describe('worker', () => {
     let error = null;
 
     try {
-      await worker({computeDependencies: true, filePath: '/kiwi.js', rootDir});
+      await worker({computeDependencies: true, filePath: '/kiwi.js'});
     } catch (err) {
       error = err;
     }
@@ -174,7 +160,6 @@ describe('worker', () => {
       await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'apple.png'),
-        rootDir,
       }),
     ).toEqual({sha1: '4caece539b039b16e16206ea2478f8c5ffb2ca05'});
 
@@ -182,7 +167,6 @@ describe('worker', () => {
       await worker({
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
-        rootDir,
       }),
     ).toEqual({sha1: undefined});
 
@@ -190,7 +174,6 @@ describe('worker', () => {
       await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
-        rootDir,
       }),
     ).toEqual({sha1: '7772b628e422e8cf59c526be4bb9f44c0898e3d1'});
 
@@ -198,12 +181,11 @@ describe('worker', () => {
       await worker({
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        rootDir,
       }),
     ).toEqual({sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552'});
 
     await expect(
-      worker({computeSha1: true, filePath: '/i/dont/exist.js', rootDir}),
+      worker({computeSha1: true, filePath: '/i/dont/exist.js'}),
     ).rejects.toThrow();
   });
 
@@ -213,12 +195,10 @@ describe('worker', () => {
         computeDependencies: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
-        rootDir,
       }),
     ).toEqual({
       dependencies: undefined,
       id: 'Pear',
-      module: [path.join('fruits', 'Pear.js'), H.MODULE],
       sha1: undefined,
     });
 

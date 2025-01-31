@@ -358,7 +358,6 @@ export type WorkerMessage = $ReadOnly<{
   computeSha1: boolean,
   dependencyExtractor?: ?string,
   enableHastePackages: boolean,
-  rootDir: string,
   filePath: string,
   hasteImplModulePath?: ?string,
 }>;
@@ -366,6 +365,5 @@ export type WorkerMessage = $ReadOnly<{
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
   id?: ?string,
-  module?: ?HasteMapItemMetaData,
   sha1?: ?string,
 }>;

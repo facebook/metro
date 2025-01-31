@@ -535,8 +535,6 @@ export default class FileMap extends EventEmitter {
       return null;
     }
 
-    const rootDir = this._options.rootDir;
-
     const computeSha1 =
       this._options.computeSha1 && fileMetadata[H.SHA1] == null;
 
@@ -591,7 +589,6 @@ export default class FileMap extends EventEmitter {
             enableHastePackages: false,
             filePath,
             hasteImplModulePath: null,
-            rootDir,
           })
           .then(workerReply, workerError);
       }
@@ -606,7 +603,6 @@ export default class FileMap extends EventEmitter {
         enableHastePackages: this._options.enableHastePackages,
         filePath,
         hasteImplModulePath: this._options.hasteImplModulePath,
-        rootDir,
       })
       .then(workerReply, workerError);
   }
