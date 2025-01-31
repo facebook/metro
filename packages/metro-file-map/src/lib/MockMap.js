@@ -82,15 +82,15 @@ export default class MockMap implements IMockMap {
     this.#raw.mocks.set(mockName, newMockPath);
   }
 
-  onRemovedFile(absoluteFilePath: Path): void {
+  onRemovedFile(relativeFilePath: Path): void {
+    const absoluteFilePath = this.#pathUtils.normalToAbsolute(relativeFilePath);
     if (!this.#mocksPattern.test(absoluteFilePath)) {
       return;
     }
     const mockName = getMockName(absoluteFilePath);
     const duplicates = this.#raw.duplicates.get(mockName);
     if (duplicates != null) {
-      const relativePath = this.#pathUtils.absoluteToNormal(absoluteFilePath);
-      duplicates.delete(relativePath);
+      duplicates.delete(relativeFilePath);
       if (duplicates.size === 1) {
         this.#raw.duplicates.delete(mockName);
       }

@@ -270,7 +270,12 @@ export default class MutableHasteMap implements HasteMap {
     hasteMapItem[platform] = module;
   }
 
-  removeModule(moduleName: string, relativeFilePath: string) {
+  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData) {
+    const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
+    if (moduleName == null) {
+      return;
+    }
+
     const platform =
       getPlatformExtension(relativeFilePath, this.#platforms) ||
       H.GENERIC_PLATFORM;

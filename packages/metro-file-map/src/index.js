@@ -780,18 +780,9 @@ export default class FileMap extends EventEmitter {
     if (fileMetadata == null) {
       return;
     }
-    const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
-    if (moduleName == null) {
-      return;
-    }
 
-    hasteMap.removeModule(moduleName, relativeFilePath);
-
-    if (mockMap) {
-      mockMap?.onRemovedFile(
-        this._pathUtils.normalToAbsolute(relativeFilePath),
-      );
-    }
+    hasteMap.onRemovedFile(relativeFilePath, fileMetadata);
+    mockMap?.onRemovedFile(relativeFilePath);
   }
 
   /**

@@ -77,7 +77,7 @@ Duplicate manual mock found for \`foo\`:
       ]),
     });
 
-    mockMap.onRemovedFile(p('/root/other/__mocks__/foo.js'));
+    mockMap.onRemovedFile(p('other/__mocks__/foo.js'));
 
     expect(() => mockMap.assertValid()).not.toThrow();
 
