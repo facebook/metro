@@ -13,6 +13,7 @@ import type {
   Console,
   DuplicatesIndex,
   DuplicatesSet,
+  FileMapDelta,
   FileMetaData,
   HasteConflict,
   HasteMap,
@@ -210,7 +211,34 @@ export default class MutableHasteMap implements HasteMap {
     );
   }
 
-  setModule(id: string, module: HasteMapItemMetaData): void {
+  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+    // Process removals first so that moves aren't treated as duplicates.
+    for (const [normalPath, metadata] of delta.removed) {
+      this.onRemovedFile(normalPath, metadata);
+    }
+    for (const [normalPath, metadata] of delta.addedOrModified) {
+      this.onNewOrModifiedFile(normalPath, metadata);
+    }
+  }
+
+  onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetaData) {
+    const id = fileMetadata[H.ID] || null; // Empty string indicates no module
+    if (id == null) {
+      return;
+    }
+
+    const module = [
+      relativeFilePath,
+      this.#enableHastePackages &&
+      path.basename(relativeFilePath) === 'package.json'
+        ? H.PACKAGE
+        : H.MODULE,
+    ];
+
+    this.setModule(id, module);
+  }
+
+  setModule(id: string, module: HasteMapItemMetaData) {
     let hasteMapItem = this.#map.get(id);
     if (!hasteMapItem) {
       // $FlowFixMe[unclear-type] - Add type coverage

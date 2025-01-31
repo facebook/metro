@@ -128,6 +128,11 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
+export type FileMapDelta = $ReadOnly<{
+  removed: Iterable<[CanonicalPath, FileMetaData]>,
+  addedOrModified: Iterable<[CanonicalPath, FileMetaData]>,
+}>;
+
 export type HType = {
   ID: 0,
   MTIME: 1,

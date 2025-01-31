@@ -21,6 +21,29 @@ describe.each([['win32'], ['posix']])('HasteMap on %s', platform => {
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
       : filePath;
 
+  const INITIAL_FILES = [
+    {
+      canonicalPath: p('project/Foo.js'),
+      baseName: 'Foo.js',
+      metadata: hasteMetadata('NameForFoo'),
+    },
+    {
+      canonicalPath: p('project/Bar.js'),
+      baseName: 'Bar.js',
+      metadata: hasteMetadata('Bar'),
+    },
+    {
+      canonicalPath: p('project/Duplicate.js'),
+      baseName: 'Duplicate.js',
+      metadata: hasteMetadata('Duplicate'),
+    },
+    {
+      canonicalPath: p('project/other/Duplicate.js'),
+      baseName: 'Duplicate.js',
+      metadata: hasteMetadata('Duplicate'),
+    },
+  ];
+
   let HasteMap: Class<HasteMapType>;
   let DuplicateHasteCandidatesError;
 
@@ -67,28 +90,7 @@ describe.each([['win32'], ['posix']])('HasteMap on %s', platform => {
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
       await hasteMap.initialize({
-        metadataIterator: jest.fn().mockReturnValue([
-          {
-            canonicalPath: p('project/Foo.js'),
-            baseName: 'Foo.js',
-            metadata: hasteMetadata('NameForFoo'),
-          },
-          {
-            canonicalPath: p('project/Bar.js'),
-            baseName: 'Bar.js',
-            metadata: hasteMetadata('Bar'),
-          },
-          {
-            canonicalPath: p('project/Duplicate.js'),
-            baseName: 'Duplicate.js',
-            metadata: hasteMetadata('Duplicate'),
-          },
-          {
-            canonicalPath: p('project/other/Duplicate.js'),
-            baseName: 'Duplicate.js',
-            metadata: hasteMetadata('Duplicate'),
-          },
-        ]),
+        metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
       });
     });
 
@@ -109,6 +111,48 @@ describe.each([['win32'], ['posix']])('HasteMap on %s', platform => {
       );
       expect(hasteMap.getModule('Duplicate')).toBe(
         p('/root/project/other/Duplicate.js'),
+      );
+    });
+  });
+
+  describe('bulkUpdate', () => {
+    let hasteMap: HasteMapType;
+
+    beforeEach(async () => {
+      hasteMap = new HasteMap(opts);
+      await hasteMap.initialize({
+        metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+      });
+    });
+
+    test('removes a module, without affecting others', () => {
+      expect(hasteMap.getModule('NameForFoo')).not.toBeNull();
+      hasteMap.onRemovedFile(p('project/Foo.js'), hasteMetadata('NameForFoo'));
+      expect(hasteMap.getModule('NameForFoo')).toBeNull();
+      expect(hasteMap.getModule('Bar')).not.toBeNull();
+    });
+
+    test('fixes duplicates, adds and removes modules', async () => {
+      expect(() => hasteMap.getModule('Duplicate')).toThrow(
+        DuplicateHasteCandidatesError,
+      );
+      await hasteMap.bulkUpdate({
+        removed: [
+          [p('project/Duplicate.js'), hasteMetadata('Duplicate')],
+          [p('project/Foo.js'), hasteMetadata('NameForFoo')],
+        ],
+        addedOrModified: [
+          [p('project/Baz.js'), hasteMetadata('Baz')], // New
+          [p('project/other/Bar.js'), hasteMetadata('Bar')], // New duplicate
+        ],
+      });
+      expect(hasteMap.getModule('Duplicate')).toBe(
+        p('/root/project/other/Duplicate.js'),
+      );
+      expect(hasteMap.getModule('NameForFoo')).toBeNull();
+      expect(hasteMap.getModule('Baz')).toBe(p('/root/project/Baz.js'));
+      expect(() => hasteMap.getModule('Bar')).toThrow(
+        DuplicateHasteCandidatesError,
       );
     });
   });

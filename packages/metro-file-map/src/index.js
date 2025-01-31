@@ -517,8 +517,6 @@ export default class FileMap extends EventEmitter {
    * 3. parse and extract metadata from changed files.
    */
   _processFile(
-    hasteMap: MutableHasteMap,
-    mockMap: ?MockMapImpl,
     filePath: Path,
     fileMetadata: FileMetaData,
     workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
@@ -547,11 +545,9 @@ export default class FileMap extends EventEmitter {
       fileMetadata[H.VISITED] = 1;
 
       const metadataId = metadata.id;
-      const metadataModule = metadata.module;
 
-      if (metadataId != null && metadataModule) {
+      if (metadataId != null) {
         fileMetadata[H.ID] = metadataId;
-        hasteMap.setModule(metadataId, metadataModule);
       }
 
       fileMetadata[H.DEPENDENCIES] = metadata.dependencies
@@ -602,8 +598,6 @@ export default class FileMap extends EventEmitter {
       return null;
     }
 
-    mockMap?.onNewOrModifiedFile(filePath);
-
     return this._getWorker(workerOptions)
       .worker({
         computeDependencies: this._options.computeDependencies,
@@ -636,8 +630,12 @@ export default class FileMap extends EventEmitter {
     // Remove files first so that we don't mistake moved mocks or Haste
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
+    const removed: Array<[string, FileMetaData]> = [];
     for (const relativeFilePath of removedFiles) {
-      this._removeIfExists(fileSystem, hasteMap, mockMap, relativeFilePath);
+      const metadata = fileSystem.remove(relativeFilePath);
+      if (metadata) {
+        removed.push([relativeFilePath, metadata]);
+      }
     }
     this._startupPerfLogger?.point('applyFileDelta_remove_end');
 
@@ -657,13 +655,9 @@ export default class FileMap extends EventEmitter {
 
       // SHA-1, if requested, should already be present thanks to the crawler.
       const filePath = this._pathUtils.normalToAbsolute(relativeFilePath);
-      const maybePromise = this._processFile(
-        hasteMap,
-        mockMap,
-        filePath,
-        fileData,
-        {perfLogger: this._startupPerfLogger},
-      );
+      const maybePromise = this._processFile(filePath, fileData, {
+        perfLogger: this._startupPerfLogger,
+      });
       if (maybePromise) {
         promises.push(
           maybePromise.catch(e => {
@@ -699,10 +693,23 @@ export default class FileMap extends EventEmitter {
       // it if it already exists. We're not emitting events at this point in
       // startup, so there's nothing more to do.
       changedFiles.delete(relativeFilePath);
-      this._removeIfExists(fileSystem, hasteMap, mockMap, relativeFilePath);
+      const metadata = fileSystem.remove(relativeFilePath);
+      if (metadata) {
+        removed.push([relativeFilePath, metadata]);
+      }
     }
     fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_add_end');
+    this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
+    const fileMapDelta = {
+      addedOrModified: changedFiles,
+      removed,
+    };
+    await Promise.all([
+      hasteMap.bulkUpdate(fileMapDelta),
+      mockMap?.bulkUpdate(fileMapDelta),
+    ]);
+    this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this._startupPerfLogger?.point('applyFileDelta_end');
   }
 
@@ -768,21 +775,6 @@ export default class FileMap extends EventEmitter {
       }
     }
     return nullthrows(this._worker);
-  }
-
-  _removeIfExists(
-    fileSystem: MutableFileSystem,
-    hasteMap: MutableHasteMap,
-    mockMap: ?MockMapImpl,
-    relativeFilePath: Path,
-  ) {
-    const fileMetadata = fileSystem.remove(relativeFilePath);
-    if (fileMetadata == null) {
-      return;
-    }
-
-    hasteMap.onRemovedFile(relativeFilePath, fileMetadata);
-    mockMap?.onRemovedFile(relativeFilePath);
   }
 
   /**
@@ -951,13 +943,13 @@ export default class FileMap extends EventEmitter {
 
             try {
               await this._processFile(
-                hasteMap,
-                mockMap,
                 absoluteFilePath,
                 fileMetadata,
                 {forceInBand: true}, // No need to clean up workers
               );
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
+              hasteMap.onNewOrModifiedFile(relativeFilePath, fileMetadata);
+              mockMap?.onNewOrModifiedFile(relativeFilePath);
               enqueueEvent(change.metadata);
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {
@@ -976,12 +968,12 @@ export default class FileMap extends EventEmitter {
               // This is expected for deletion of an ignored file.
               return null;
             }
-            this._removeIfExists(
-              fileSystem,
-              hasteMap,
-              mockMap,
-              relativeFilePath,
-            );
+            // We've already checked linkStats != null above, so the file
+            // exists in the file map and remove should always return metadata.
+            const metadata = nullthrows(fileSystem.remove(relativeFilePath));
+            hasteMap.onRemovedFile(relativeFilePath, metadata);
+            mockMap?.onRemovedFile(relativeFilePath);
+
             enqueueEvent({
               modifiedTime: null,
               size: null,

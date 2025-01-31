@@ -39,14 +39,14 @@ describe.each([['win32'], ['posix']])('MockMap on %s', platform => {
 
   test('set and get a mock module', () => {
     const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('/root/__mocks__/foo.js'));
+    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
     expect(mockMap.getMockModule('foo')).toBe(p('/root/__mocks__/foo.js'));
   });
 
   test('assertValid throws on duplicates', () => {
     const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('/root/__mocks__/foo.js'));
-    mockMap.onNewOrModifiedFile(p('/root/other/__mocks__/foo.js'));
+    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
+    mockMap.onNewOrModifiedFile(p('other/__mocks__/foo.js'));
 
     expect(console.warn).toHaveBeenCalledTimes(1);
     expect(() => mockMap.assertValid()).toThrowError(
@@ -60,8 +60,8 @@ Duplicate manual mock found for \`foo\`:
 
   test('recovers from duplicates', () => {
     const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('/root/__mocks__/foo.js'));
-    mockMap.onNewOrModifiedFile(p('/root/other/__mocks__/foo.js'));
+    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
+    mockMap.onNewOrModifiedFile(p('other/__mocks__/foo.js'));
 
     expect(() => mockMap.assertValid()).toThrow();
 

@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {MockMap as IMockMap, Path, RawMockMap} from '../flow-types';
+import type {
+  FileMapDelta,
+  MockMap as IMockMap,
+  Path,
+  RawMockMap,
+} from '../flow-types';
 
 import getMockName from '../getMockName';
 import {RootPathUtils} from './RootPathUtils';
@@ -54,23 +59,33 @@ export default class MockMap implements IMockMap {
     return this.#pathUtils.normalToAbsolute(mockPath);
   }
 
-  onNewOrModifiedFile(absoluteFilePath: Path): void {
+  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+    // Process removals first so that moves aren't treated as duplicates.
+    for (const [relativeFilePath] of delta.removed) {
+      this.onRemovedFile(relativeFilePath);
+    }
+    for (const [relativeFilePath] of delta.addedOrModified) {
+      this.onNewOrModifiedFile(relativeFilePath);
+    }
+  }
+
+  onNewOrModifiedFile(relativeFilePath: Path): void {
+    const absoluteFilePath = this.#pathUtils.normalToAbsolute(relativeFilePath);
     if (!this.#mocksPattern.test(absoluteFilePath)) {
       return;
     }
 
     const mockName = getMockName(absoluteFilePath);
     const existingMockPath = this.#raw.mocks.get(mockName);
-    const newMockPath = this.#pathUtils.absoluteToNormal(absoluteFilePath);
 
     if (existingMockPath != null) {
-      if (existingMockPath !== newMockPath) {
+      if (existingMockPath !== relativeFilePath) {
         let duplicates = this.#raw.duplicates.get(mockName);
         if (duplicates == null) {
-          duplicates = new Set([existingMockPath, newMockPath]);
+          duplicates = new Set([existingMockPath, relativeFilePath]);
           this.#raw.duplicates.set(mockName, duplicates);
         } else {
-          duplicates.add(newMockPath);
+          duplicates.add(relativeFilePath);
         }
 
         this.#console.warn(this.#getMessageForDuplicates(mockName, duplicates));
@@ -79,7 +94,7 @@ export default class MockMap implements IMockMap {
 
     // If there are duplicates and we don't throw, the latest mock wins.
     // This is to preserve backwards compatibility, but it's unpredictable.
-    this.#raw.mocks.set(mockName, newMockPath);
+    this.#raw.mocks.set(mockName, relativeFilePath);
   }
 
   onRemovedFile(relativeFilePath: Path): void {
