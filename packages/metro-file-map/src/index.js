@@ -17,6 +17,7 @@ import type {
   CacheManagerFactory,
   CanonicalPath,
   ChangeEvent,
+  ChangeEventClock,
   ChangeEventMetadata,
   Console,
   CrawlerOptions,
@@ -41,6 +42,7 @@ import type {IJestWorker} from 'jest-worker';
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
+import normalizePathSeparatorsToPosix from './lib/normalizePathSeparatorsToPosix';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './lib/RootPathUtils';
 import TreeFS from './lib/TreeFS';
@@ -411,9 +413,10 @@ export default class FileMap extends EventEmitter {
         // Validate the mock and Haste maps before persisting them.
         plugins.forEach(plugin => plugin.assertValid());
 
+        const watchmanClocks = new Map(fileDelta.clocks ?? []);
         await this._takeSnapshotAndPersist(
           fileSystem,
-          fileDelta.clocks ?? new Map(),
+          watchmanClocks,
           plugins,
           fileDelta.changedFiles,
           fileDelta.removedFiles,
@@ -424,7 +427,7 @@ export default class FileMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, plugins);
+        await this._watch(fileSystem, watchmanClocks, plugins);
         return {
           fileSystem,
           hasteMap: hastePlugin,
@@ -787,6 +790,7 @@ export default class FileMap extends EventEmitter {
    */
   async _watch(
     fileSystem: MutableFileSystem,
+    clocks: WatchmanClocks,
     plugins: $ReadOnlyArray<FileMapPlugin<>>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
@@ -952,6 +956,7 @@ export default class FileMap extends EventEmitter {
                 {forceInBand: true}, // No need to clean up workers
               );
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
+              this._updateClock(clocks, change.clock);
               plugins.forEach(plugin =>
                 plugin.onNewOrModifiedFile(relativeFilePath, fileMetadata),
               );
@@ -976,6 +981,7 @@ export default class FileMap extends EventEmitter {
             // We've already checked linkStats != null above, so the file
             // exists in the file map and remove should always return metadata.
             const metadata = nullthrows(fileSystem.remove(relativeFilePath));
+            this._updateClock(clocks, change.clock);
             plugins.forEach(plugin =>
               plugin.onRemovedFile(relativeFilePath, metadata),
             );
@@ -1078,6 +1084,15 @@ export default class FileMap extends EventEmitter {
       this._changeID = 0;
     }
     return ++this._changeID;
+  }
+
+  _updateClock(clocks: WatchmanClocks, newClock?: ?ChangeEventClock): void {
+    if (newClock == null) {
+      return;
+    }
+    const [absoluteWatchRoot, clockSpec] = newClock;
+    const relativeFsRoot = this._pathUtils.absoluteToNormal(absoluteWatchRoot);
+    clocks.set(normalizePathSeparatorsToPosix(relativeFsRoot), clockSpec);
   }
 
   static H: HType = H;

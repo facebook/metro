@@ -183,12 +183,13 @@ export default class WatchmanWatcher extends AbstractWatcher {
    */
   _handleChangeEvent(resp: WatchmanSubscriptionEvent) {
     debug(
-      'Received subscription response: %s (fresh: %s, files: %s, enter: %s, leave: %s)',
+      'Received subscription response: %s (fresh: %s, files: %s, enter: %s, leave: %s, clock: %s)',
       resp.subscription,
       resp.is_fresh_instance,
       resp.files?.length,
       resp['state-enter'],
       resp['state-leave'],
+      resp.clock,
     );
 
     assert.equal(
@@ -198,7 +199,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
     );
 
     if (Array.isArray(resp.files)) {
-      resp.files.forEach(change => this._handleFileChange(change));
+      resp.files.forEach(change => this._handleFileChange(change, resp.clock));
     }
     const {'state-enter': stateEnter, 'state-leave': stateLeave} = resp;
     if (
@@ -226,7 +227,10 @@ export default class WatchmanWatcher extends AbstractWatcher {
   /**
    * Handles a single change event record.
    */
-  _handleFileChange(changeDescriptor: WatchmanFileChange) {
+  _handleFileChange(
+    changeDescriptor: WatchmanFileChange,
+    rawClock: WatchmanSubscriptionEvent['clock'],
+  ) {
     const self = this;
     const watchProjectInfo = self.watchProjectInfo;
 
@@ -268,8 +272,13 @@ export default class WatchmanWatcher extends AbstractWatcher {
       return;
     }
 
+    const clock =
+      typeof rawClock === 'string' && this.watchProjectInfo != null
+        ? [this.watchProjectInfo.root, rawClock]
+        : undefined;
+
     if (!exists) {
-      self.emitFileEvent({event: DELETE_EVENT, relativePath});
+      self.emitFileEvent({event: DELETE_EVENT, clock, relativePath});
     } else {
       invariant(
         type != null && mtime_ms != null && size != null,
@@ -288,6 +297,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
         const mtime = Number(mtime_ms);
         self.emitFileEvent({
           event: TOUCH_EVENT,
+          clock,
           relativePath,
           metadata: {
             modifiedTime: mtime !== 0 ? mtime : null,

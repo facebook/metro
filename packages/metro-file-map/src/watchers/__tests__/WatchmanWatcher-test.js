@@ -100,6 +100,60 @@ describe('WatchmanWatcher', () => {
     return startPromise;
   });
 
+  describe('change handling', () => {
+    let watchmanWatcher: WatchmanWatcher;
+    beforeEach(async () => {
+      watchmanWatcher = new WatchmanWatcher(p('/project/subdir/js'), {
+        dot: true,
+        ignored: null,
+        globs: ['**/*.js'],
+        watchmanDeferStates: ['busy'],
+      });
+      const startPromise = watchmanWatcher.startWatching();
+      cmdCallback<WatchmanWatchResponse>(null, {
+        watch: wp('/project'),
+        relative_path: wp('subdir/js'),
+      });
+      cmdCallback<WatchmanClockResponse>(null, {
+        clock: 'c:123',
+      });
+      cmdCallback<WatchmanSubscribeResponse>(null, {
+        'asserted-states': [],
+      });
+      return startPromise;
+    });
+
+    test('calls back onFileEvent when client emits subscription events', () => {
+      const handler = jest.fn();
+      watchmanWatcher.onFileEvent(handler);
+      mockClient.emit('subscription', {
+        since: 'c:123',
+        unilateral: true,
+        is_fresh_instance: false,
+        files: [
+          {
+            name: 'Foo.js',
+            type: 'f',
+            exists: true,
+            new: false,
+            mtime_ms: 1,
+            size: 10,
+          },
+        ],
+        clock: 'c:124',
+        root: '/project',
+        subscription: watchmanWatcher.subscriptionName,
+      });
+      expect(handler).toHaveBeenCalledWith({
+        event: 'touch',
+        relativePath: p('Foo.js'),
+        root: p('/project/subdir/js'),
+        clock: [p('/project'), 'c:124'],
+        metadata: expect.any(Object),
+      });
+    });
+  });
+
   describe('getPauseReason', () => {
     let watchmanWatcher: WatchmanWatcher;
     let startPromise: Promise<void>;

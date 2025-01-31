@@ -371,15 +371,22 @@ export interface WatcherBackend {
   stopWatching(): Promise<void>;
 }
 
+export type ChangeEventClock = [
+  string /* absolute watch root */,
+  string /* opaque clock */,
+];
+
 export type WatcherBackendChangeEvent =
   | $ReadOnly<{
       event: 'touch',
+      clock?: ChangeEventClock,
       relativePath: string,
       root: string,
       metadata: ChangeEventMetadata,
     }>
   | $ReadOnly<{
       event: 'delete',
+      clock?: ChangeEventClock,
       relativePath: string,
       root: string,
       metadata?: void,
