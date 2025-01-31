@@ -9,13 +9,13 @@
  * @oncall react_native
  */
 
-import type {FileMetaData} from '../../flow-types';
-import type HasteMapType from '../MutableHasteMap';
+import type {FileMetaData} from '../../../flow-types';
+import type HasteMapType from '../../HastePlugin';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
-describe.each([['win32'], ['posix']])('HasteMap on %s', platform => {
+describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
   const p: string => string = filePath =>
     platform === 'win32'
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
@@ -58,7 +58,7 @@ describe.each([['win32'], ['posix']])('HasteMap on %s', platform => {
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
-    HasteMap = require('../MutableHasteMap').default;
+    HasteMap = require('../../HastePlugin').default;
     DuplicateHasteCandidatesError =
       require('../DuplicateHasteCandidatesError').DuplicateHasteCandidatesError;
     jest.spyOn(console, 'warn').mockImplementation(() => {});

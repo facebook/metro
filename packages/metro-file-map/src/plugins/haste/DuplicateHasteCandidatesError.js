@@ -9,9 +9,9 @@
  * @oncall react_native
  */
 
-import type {DuplicatesSet} from '../flow-types';
+import type {DuplicatesSet} from '../../flow-types';
 
-import H from '../constants';
+import H from '../../constants';
 
 export class DuplicateHasteCandidatesError extends Error {
   hasteName: string;

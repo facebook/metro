@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type MockMapType from '../MockMap';
+import type MockMapType from '../../MockPlugin';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
@@ -32,7 +32,7 @@ describe.each([['win32'], ['posix']])('MockMap on %s', platform => {
   beforeEach(() => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
-    MockMap = require('../MockMap').default;
+    MockMap = require('../../MockPlugin').default;
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.clearAllMocks();
   });

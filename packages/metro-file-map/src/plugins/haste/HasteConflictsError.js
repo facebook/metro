@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {HasteConflict} from '../flow-types';
+import type {HasteConflict} from '../../flow-types';
 
 import path from 'path';
 

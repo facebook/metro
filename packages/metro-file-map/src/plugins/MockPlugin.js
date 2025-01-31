@@ -11,17 +11,18 @@
 
 import type {
   FileMapDelta,
+  FileMapPlugin,
   MockMap as IMockMap,
   Path,
   RawMockMap,
 } from '../flow-types';
 
-import getMockName from '../getMockName';
-import {RootPathUtils} from './RootPathUtils';
+import {RootPathUtils} from '../lib/RootPathUtils';
+import getMockName from './mocks/getMockName';
 import nullthrows from 'nullthrows';
 import path from 'path';
 
-export default class MockMap implements IMockMap {
+export default class MockPlugin implements FileMapPlugin, IMockMap {
   +#mocksPattern: RegExp;
   +#raw: RawMockMap;
   +#rootDir: Path;

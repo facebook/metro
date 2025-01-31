@@ -133,6 +133,16 @@ export type FileMapDelta = $ReadOnly<{
   addedOrModified: Iterable<[CanonicalPath, FileMetaData]>,
 }>;
 
+export interface FileMapPlugin {
+  assertValid(): void;
+  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData): void;
+  onNewOrModifiedFile(
+    relativeFilePath: string,
+    fileMetadata: FileMetaData,
+  ): void;
+}
+
 export type HType = {
   ID: 0,
   MTIME: 1,

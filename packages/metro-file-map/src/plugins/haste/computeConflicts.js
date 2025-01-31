@@ -8,10 +8,10 @@
  * @format
  */
 
-import type {HasteMapItem} from '../flow-types';
+import type {HasteMapItem} from '../../flow-types';
 
-import H from '../constants';
-import {chainComparators, compareStrings} from './sorting';
+import H from '../../constants';
+import {chainComparators, compareStrings} from '../../lib/sorting';
 import path from 'path';
 
 type Conflict = {

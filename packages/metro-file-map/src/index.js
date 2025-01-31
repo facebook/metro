@@ -22,6 +22,7 @@ import type {
   CrawlerOptions,
   EventsQueue,
   FileData,
+  FileMapPlugin,
   FileMetaData,
   FileSystem,
   HasteMapData,
@@ -40,11 +41,11 @@ import type {IJestWorker} from 'jest-worker';
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
-import MockMapImpl from './lib/MockMap';
-import MutableHasteMap from './lib/MutableHasteMap';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './lib/RootPathUtils';
 import TreeFS from './lib/TreeFS';
+import HastePlugin from './plugins/HastePlugin';
+import MockPlugin from './plugins/MockPlugin';
 import {Watcher} from './Watcher';
 import {worker} from './worker';
 import EventEmitter from 'events';
@@ -125,9 +126,9 @@ type WorkerObj = {worker: typeof worker};
 type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
-export {DuplicateHasteCandidatesError} from './lib/DuplicateHasteCandidatesError';
-export {HasteConflictsError} from './lib/HasteConflictsError';
-export {default as MutableHasteMap} from './lib/MutableHasteMap';
+export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
+export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
+export {default as HastePlugin} from './plugins/HastePlugin';
 
 export type {HasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
@@ -375,7 +376,7 @@ export default class FileMap extends EventEmitter {
 
         const mockMap =
           this._options.mocksPattern != null
-            ? new MockMapImpl({
+            ? new MockPlugin({
                 console: this._console,
                 mocksPattern: this._options.mocksPattern,
                 rawMockMap: initialData?.mocks,
@@ -384,12 +385,16 @@ export default class FileMap extends EventEmitter {
               })
             : null;
 
+        const plugins: Array<FileMapPlugin> = [hasteMap];
+        if (mockMap) {
+          plugins.push(mockMap);
+        }
+
         // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
-        await this._applyFileDelta(fileSystem, hasteMap, mockMap, fileDelta);
+        await this._applyFileDelta(fileSystem, plugins, fileDelta);
 
         // Validate the mock and Haste maps before persisting them.
-        mockMap?.assertValid();
-        hasteMap.assertValid();
+        plugins.forEach(plugin => plugin.assertValid());
 
         await this._takeSnapshotAndPersist(
           fileSystem,
@@ -404,7 +409,7 @@ export default class FileMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, hasteMap, mockMap);
+        await this._watch(fileSystem, plugins);
         return {
           fileSystem,
           hasteMap,
@@ -418,9 +423,9 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  async _constructHasteMap(fileSystem: TreeFS): Promise<MutableHasteMap> {
+  async _constructHasteMap(fileSystem: TreeFS): Promise<HastePlugin> {
     this._startupPerfLogger?.point('constructHasteMap_start');
-    const hasteMap = new MutableHasteMap({
+    const hasteMap = new HastePlugin({
       console: this._console,
       enableHastePackages: this._options.enableHastePackages,
       perfLogger: this._startupPerfLogger,
@@ -609,8 +614,7 @@ export default class FileMap extends EventEmitter {
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    hasteMap: MutableHasteMap,
-    mockMap: ?MockMapImpl,
+    plugins: $ReadOnlyArray<FileMapPlugin>,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -697,13 +701,13 @@ export default class FileMap extends EventEmitter {
     fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_add_end');
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
-    const fileMapDelta = {
-      addedOrModified: changedFiles,
-      removed,
-    };
     await Promise.all([
-      hasteMap.bulkUpdate(fileMapDelta),
-      mockMap?.bulkUpdate(fileMapDelta),
+      plugins.map(plugin =>
+        plugin.bulkUpdate({
+          addedOrModified: changedFiles,
+          removed,
+        }),
+      ),
     ]);
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this._startupPerfLogger?.point('applyFileDelta_end');
@@ -725,7 +729,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    mockMap: ?MockMapImpl,
+    mockMap: ?MockPlugin,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -778,8 +782,7 @@ export default class FileMap extends EventEmitter {
    */
   async _watch(
     fileSystem: MutableFileSystem,
-    hasteMap: MutableHasteMap,
-    mockMap: ?MockMapImpl,
+    plugins: $ReadOnlyArray<FileMapPlugin>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
@@ -944,8 +947,9 @@ export default class FileMap extends EventEmitter {
                 {forceInBand: true}, // No need to clean up workers
               );
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
-              hasteMap.onNewOrModifiedFile(relativeFilePath, fileMetadata);
-              mockMap?.onNewOrModifiedFile(relativeFilePath);
+              plugins.forEach(plugin =>
+                plugin.onNewOrModifiedFile(relativeFilePath, fileMetadata),
+              );
               enqueueEvent(change.metadata);
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {
@@ -967,8 +971,9 @@ export default class FileMap extends EventEmitter {
             // We've already checked linkStats != null above, so the file
             // exists in the file map and remove should always return metadata.
             const metadata = nullthrows(fileSystem.remove(relativeFilePath));
-            hasteMap.onRemovedFile(relativeFilePath, metadata);
-            mockMap?.onRemovedFile(relativeFilePath);
+            plugins.forEach(plugin =>
+              plugin.onRemovedFile(relativeFilePath, metadata),
+            );
 
             enqueueEvent({
               modifiedTime: null,

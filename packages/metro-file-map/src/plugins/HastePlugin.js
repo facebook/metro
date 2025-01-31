@@ -14,6 +14,7 @@ import type {
   DuplicatesIndex,
   DuplicatesSet,
   FileMapDelta,
+  FileMapPlugin,
   FileMetaData,
   HasteConflict,
   HasteMap,
@@ -25,11 +26,11 @@ import type {
 } from '../flow-types';
 
 import H from '../constants';
-import {DuplicateHasteCandidatesError} from './DuplicateHasteCandidatesError';
-import getPlatformExtension from './getPlatformExtension';
-import {HasteConflictsError} from './HasteConflictsError';
-import {RootPathUtils} from './RootPathUtils';
-import {chainComparators, compareStrings} from './sorting';
+import {RootPathUtils} from '../lib/RootPathUtils';
+import {chainComparators, compareStrings} from '../lib/sorting';
+import {DuplicateHasteCandidatesError} from './haste/DuplicateHasteCandidatesError';
+import getPlatformExtension from './haste/getPlatformExtension';
+import {HasteConflictsError} from './haste/HasteConflictsError';
 import path from 'path';
 
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
@@ -64,7 +65,7 @@ interface InitialState {
   }>;
 }
 
-export default class MutableHasteMap implements HasteMap {
+export default class HastePlugin implements HasteMap, FileMapPlugin {
   +#rootDir: Path;
   +#map: Map<string, HasteMapItem> = new Map();
   +#duplicates: DuplicatesIndex = new Map();
