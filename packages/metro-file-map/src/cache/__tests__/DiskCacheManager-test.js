@@ -37,7 +37,6 @@ const buildParameters: BuildParameters = {
 };
 
 const defaultConfig = {
-  buildParameters,
   cacheFilePrefix: 'default-label',
   cacheDirectory: '/tmp/cache',
 };
@@ -54,20 +53,24 @@ describe('cacheManager', () => {
   });
 
   test('creates different cache file paths for different roots', () => {
-    const cacheManager1 = new DiskCacheManager({
-      ...defaultConfig,
-      buildParameters: {
-        ...buildParameters,
-        rootDir: '/root1',
+    const cacheManager1 = new DiskCacheManager(
+      {
+        buildParameters: {
+          ...buildParameters,
+          rootDir: '/root1',
+        },
       },
-    });
-    const cacheManager2 = new DiskCacheManager({
-      ...defaultConfig,
-      buildParameters: {
-        ...buildParameters,
-        rootDir: '/root2',
+      defaultConfig,
+    );
+    const cacheManager2 = new DiskCacheManager(
+      {
+        buildParameters: {
+          ...buildParameters,
+          rootDir: '/root2',
+        },
       },
-    });
+      defaultConfig,
+    );
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
@@ -75,8 +78,7 @@ describe('cacheManager', () => {
 
   test('creates different cache file paths for different dependency extractor cache keys', () => {
     const dependencyExtractor = require('../../__tests__/dependencyExtractor');
-    const config = {
-      ...defaultConfig,
+    const options = {
       buildParameters: {
         ...buildParameters,
         dependencyExtractor: require.resolve(
@@ -84,30 +86,37 @@ describe('cacheManager', () => {
         ),
       },
     };
+    const config = {
+      ...defaultConfig,
+    };
     dependencyExtractor.setCacheKey('foo');
-    const cacheManager1 = new DiskCacheManager(config);
+    const cacheManager1 = new DiskCacheManager(options, config);
     dependencyExtractor.setCacheKey('bar');
-    const cacheManager2 = new DiskCacheManager(config);
+    const cacheManager2 = new DiskCacheManager(options, config);
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
   });
 
   test('creates different cache file paths for different values of computeDependencies', () => {
-    const cacheManager1 = new DiskCacheManager({
-      ...defaultConfig,
-      buildParameters: {
-        ...buildParameters,
-        computeDependencies: true,
+    const cacheManager1 = new DiskCacheManager(
+      {
+        buildParameters: {
+          ...buildParameters,
+          computeDependencies: true,
+        },
       },
-    });
-    const cacheManager2 = new DiskCacheManager({
-      ...defaultConfig,
-      buildParameters: {
-        ...buildParameters,
-        computeDependencies: false,
+      defaultConfig,
+    );
+    const cacheManager2 = new DiskCacheManager(
+      {
+        buildParameters: {
+          ...buildParameters,
+          computeDependencies: false,
+        },
       },
-    });
+      defaultConfig,
+    );
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
@@ -116,23 +125,35 @@ describe('cacheManager', () => {
   test('creates different cache file paths for different hasteImplModulePath cache keys', () => {
     const hasteImpl = require('../../__tests__/haste_impl');
     hasteImpl.setCacheKey('foo');
-    const cacheManager1 = new DiskCacheManager(defaultConfig);
+    const cacheManager1 = new DiskCacheManager(
+      {buildParameters},
+      defaultConfig,
+    );
     hasteImpl.setCacheKey('bar');
-    const cacheManager2 = new DiskCacheManager(defaultConfig);
+    const cacheManager2 = new DiskCacheManager(
+      {buildParameters},
+      defaultConfig,
+    );
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
   });
 
   test('creates different cache file paths for different projects', () => {
-    const cacheManager1 = new DiskCacheManager({
-      ...defaultConfig,
-      cacheFilePrefix: 'package-a',
-    });
-    const cacheManager2 = new DiskCacheManager({
-      ...defaultConfig,
-      cacheFilePrefix: 'package-b',
-    });
+    const cacheManager1 = new DiskCacheManager(
+      {buildParameters},
+      {
+        ...defaultConfig,
+        cacheFilePrefix: 'package-a',
+      },
+    );
+    const cacheManager2 = new DiskCacheManager(
+      {buildParameters},
+      {
+        ...defaultConfig,
+        cacheFilePrefix: 'package-b',
+      },
+    );
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );

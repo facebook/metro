@@ -71,9 +71,8 @@ function createFileMap(
   return MetroFileMap.create({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
-      (buildParameters =>
-        new DiskCacheManager({
-          buildParameters,
+      (factoryParams =>
+        new DiskCacheManager(factoryParams, {
           cacheDirectory:
             config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
           cacheFilePrefix: options?.cacheFilePrefix,

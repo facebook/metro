@@ -15,6 +15,7 @@ import type {
   CacheData,
   CacheManager,
   CacheManagerFactory,
+  CacheManagerFactoryOptions,
   CanonicalPath,
   ChangeEvent,
   ChangeEventClock,
@@ -138,6 +139,7 @@ export type {
   CacheDelta,
   CacheManager,
   CacheManagerFactory,
+  CacheManagerFactoryOptions,
   ChangeEvent,
   WatcherStatus,
 } from './flow-types';
@@ -322,11 +324,12 @@ export default class FileMap extends EventEmitter {
     };
 
     this._console = options.console || global.console;
+    const cacheFactoryOptions: CacheManagerFactoryOptions = {
+      buildParameters,
+    };
     this._cacheManager = options.cacheManagerFactory
-      ? options.cacheManagerFactory.call(null, buildParameters)
-      : new DiskCacheManager({
-          buildParameters,
-        });
+      ? options.cacheManagerFactory.call(null, cacheFactoryOptions)
+      : new DiskCacheManager(cacheFactoryOptions, {});
 
     this._buildPromise = null;
     this._pathUtils = new RootPathUtils(options.rootDir);

@@ -62,8 +62,12 @@ export interface CacheManager {
 }
 
 export type CacheManagerFactory = (
-  buildParameters: BuildParameters,
+  options: CacheManagerFactoryOptions,
 ) => CacheManager;
+
+export type CacheManagerFactoryOptions = $ReadOnly<{
+  buildParameters: BuildParameters,
+}>;
 
 // A path that is
 //  - Relative to the contextual `rootDir`

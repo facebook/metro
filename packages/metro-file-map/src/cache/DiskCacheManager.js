@@ -14,6 +14,7 @@ import type {
   CacheData,
   CacheDelta,
   CacheManager,
+  CacheManagerFactoryOptions,
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
@@ -23,7 +24,6 @@ import path from 'path';
 import {deserialize, serialize} from 'v8';
 
 type DiskCacheConfig = {
-  buildParameters: BuildParameters,
   cacheFilePrefix?: ?string,
   cacheDirectory?: ?string,
 };
@@ -34,11 +34,10 @@ const DEFAULT_DIRECTORY = tmpdir();
 export class DiskCacheManager implements CacheManager {
   _cachePath: string;
 
-  constructor({
-    buildParameters,
-    cacheDirectory,
-    cacheFilePrefix,
-  }: DiskCacheConfig) {
+  constructor(
+    {buildParameters}: CacheManagerFactoryOptions,
+    {cacheDirectory, cacheFilePrefix}: DiskCacheConfig,
+  ) {
     this._cachePath = DiskCacheManager.getCacheFilePath(
       buildParameters,
       cacheFilePrefix,
