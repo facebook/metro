@@ -194,6 +194,8 @@ describe('cacheManager', () => {
     );
     await cacheManager.write(getSnapshot, {
       changedSinceCacheRead: true,
+      eventSource: {onChange: () => () => {}},
+      onWriteError: () => {},
     });
     expect(getSnapshot).toHaveBeenCalled();
     expect(mockWriteFile).toHaveBeenCalledWith(
@@ -215,7 +217,11 @@ describe('cacheManager', () => {
     await cacheManager.write(
       getSnapshot,
       // No changes
-      {changedSinceCacheRead: false},
+      {
+        changedSinceCacheRead: false,
+        eventSource: {onChange: () => () => {}},
+        onWriteError: () => {},
+      },
     );
     expect(getSnapshot).not.toHaveBeenCalled();
     expect(mockWriteFile).not.toHaveBeenCalled();

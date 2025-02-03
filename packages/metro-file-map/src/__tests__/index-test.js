@@ -263,6 +263,7 @@ describe('FileMap', () => {
       write: jest.fn().mockImplementation(async getSnapshot => {
         cacheContent = getSnapshot();
       }),
+      end: jest.fn(),
     };
 
     H = FileMap.H;

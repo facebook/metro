@@ -12,7 +12,7 @@ import type {
   BuildParameters,
   CacheData,
   CacheManager,
-  FileData,
+  CacheManagerWriteOptions,
 } from '../flow-types';
 
 export interface DiskCacheConfig {
@@ -31,7 +31,8 @@ export class DiskCacheManager implements CacheManager {
   getCacheFilePath(): string;
   read(): Promise<CacheData | null>;
   write(
-    dataSnapshot: CacheData,
-    {changed, removed}: Readonly<{changed: FileData; removed: FileData}>,
+    getSnapshot: () => CacheData,
+    opts: CacheManagerWriteOptions,
   ): Promise<void>;
+  end(): Promise<void>;
 }

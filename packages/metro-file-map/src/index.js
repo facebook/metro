@@ -753,6 +753,17 @@ export default class FileMap extends EventEmitter {
       }),
       {
         changedSinceCacheRead: changed.size + removed.size > 0,
+        eventSource: {
+          onChange: cb => {
+            this.on('change', cb);
+            return () => {
+              this.removeListener('change', cb);
+            };
+          },
+        },
+        onWriteError: error => {
+          this._console.warn('[metro-file-map] Cache write error\n:', error);
+        },
       },
     );
     this._startupPerfLogger?.point('persist_end');
@@ -1047,11 +1058,13 @@ export default class FileMap extends EventEmitter {
       clearInterval(this._healthCheckInterval);
     }
 
-    await this._cleanup();
-
     this._crawlerAbortController.abort();
 
-    await this._watcher?.close();
+    await Promise.all([
+      this._cleanup(),
+      this._watcher?.close(),
+      this._cacheManager.end(),
+    ]);
   }
 
   async _shouldUseWatchman(): Promise<boolean> {
