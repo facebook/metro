@@ -136,10 +136,10 @@ export {default as HastePlugin} from './plugins/HastePlugin';
 export type {HasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
 export type {
-  CacheDelta,
   CacheManager,
   CacheManagerFactory,
   CacheManagerFactoryOptions,
+  CacheManagerWriteOptions,
   ChangeEvent,
   WatcherStatus,
 } from './flow-types';
@@ -741,7 +741,7 @@ export default class FileMap extends EventEmitter {
   ) {
     this._startupPerfLogger?.point('persist_start');
     await this._cacheManager.write(
-      {
+      () => ({
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
         plugins: new Map(
@@ -750,8 +750,10 @@ export default class FileMap extends EventEmitter {
             plugin.getSerializableSnapshot(),
           ]),
         ),
+      }),
+      {
+        changedSinceCacheRead: changed.size + removed.size > 0,
       },
-      {changed, removed},
     );
     this._startupPerfLogger?.point('persist_end');
   }

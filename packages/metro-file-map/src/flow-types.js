@@ -51,14 +51,21 @@ export type CacheData = $ReadOnly<{
   plugins: $ReadOnlyMap<string, mixed>,
 }>;
 
-export type CacheDelta = $ReadOnly<{
-  changed: $ReadOnlyMap<CanonicalPath, FileMetaData>,
-  removed: $ReadOnlySet<CanonicalPath>,
-}>;
-
 export interface CacheManager {
+  /**
+   * Called during startup to load initial state, if available. Provided to
+   * a crawler, which will return the delta between the initial state and the
+   * current file system state.
+   */
   read(): Promise<?CacheData>;
-  write(dataSnapshot: CacheData, delta: CacheDelta): Promise<void>;
+  /**
+   * Called when metro-file-map `build()` has applied changes returned by the
+   * crawler - i.e. internal state reflects the current file system state.
+   */
+  write(
+    getSnapshot: () => CacheData,
+    opts: CacheManagerWriteOptions,
+  ): Promise<void>;
 }
 
 export type CacheManagerFactory = (
@@ -67,6 +74,10 @@ export type CacheManagerFactory = (
 
 export type CacheManagerFactoryOptions = $ReadOnly<{
   buildParameters: BuildParameters,
+}>;
+
+export type CacheManagerWriteOptions = $ReadOnly<{
+  changedSinceCacheRead: boolean,
 }>;
 
 // A path that is

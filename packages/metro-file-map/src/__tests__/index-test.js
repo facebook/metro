@@ -260,8 +260,8 @@ describe('FileMap', () => {
 
     mockCacheManager = {
       read: jest.fn().mockImplementation(async () => cacheContent),
-      write: jest.fn().mockImplementation(async dataSnapshot => {
-        cacheContent = dataSnapshot;
+      write: jest.fn().mockImplementation(async getSnapshot => {
+        cacheContent = getSnapshot();
       }),
     };
 

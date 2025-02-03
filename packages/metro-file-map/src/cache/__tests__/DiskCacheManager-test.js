@@ -184,32 +184,40 @@ describe('cacheManager', () => {
 
   test('serialises and writes a cache file', async () => {
     const cacheManager = new DiskCacheManager({buildParameters}, defaultConfig);
-    const data: CacheData = {
-      clocks: new Map([['foo', 'bar']]),
-      fileSystemData: new Map(),
-      plugins: new Map(),
-    };
-    await cacheManager.write(data, {
-      changed: new Map(),
-      removed: new Set(['foo']),
+    const getSnapshot = jest.fn(
+      () =>
+        ({
+          clocks: new Map([['foo', 'bar']]),
+          fileSystemData: new Map(),
+          plugins: new Map(),
+        }) as CacheData,
+    );
+    await cacheManager.write(getSnapshot, {
+      changedSinceCacheRead: true,
     });
+    expect(getSnapshot).toHaveBeenCalled();
     expect(mockWriteFile).toHaveBeenCalledWith(
       cacheManager.getCacheFilePath(),
-      serialize(data),
+      serialize(getSnapshot()),
     );
   });
 
   test('does not write when there have been no changes', async () => {
     const cacheManager = new DiskCacheManager({buildParameters}, defaultConfig);
-    await cacheManager.write(
-      {
-        clocks: new Map([['foo', 'bar']]),
-        fileSystemData: new Map(),
-        plugins: new Map(),
-      },
-      // Empty delta
-      {changed: new Map(), removed: new Set()},
+    const getSnapshot = jest.fn(
+      () =>
+        ({
+          clocks: new Map([['foo', 'bar']]),
+          fileSystemData: new Map(),
+          plugins: new Map(),
+        }) as CacheData,
     );
+    await cacheManager.write(
+      getSnapshot,
+      // No changes
+      {changedSinceCacheRead: false},
+    );
+    expect(getSnapshot).not.toHaveBeenCalled();
     expect(mockWriteFile).not.toHaveBeenCalled();
   });
 });
