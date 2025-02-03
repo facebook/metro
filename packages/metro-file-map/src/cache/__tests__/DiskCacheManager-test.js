@@ -9,9 +9,14 @@
  * @oncall react_native
  */
 
-import type {BuildParameters, CacheData} from '../../flow-types';
+import type {
+  BuildParameters,
+  CacheData,
+  CacheManagerEventSource,
+} from '../../flow-types';
 
 import {DiskCacheManager} from '../DiskCacheManager';
+import EventEmitter from 'events';
 import * as path from 'path';
 import {serialize} from 'v8';
 
@@ -23,6 +28,13 @@ jest.mock('fs', () => ({
     readFile: (...args) => mockReadFile(...args),
     writeFile: (...args) => mockWriteFile(...args),
   },
+}));
+
+// We're explicitly using node:timers, which Jest doesn't automatically mock
+// with useFakeTimers. Global timers are mocked.
+jest.mock('timers', () => ({
+  setTimeout: globalThis.setTimeout,
+  clearTimeout: globalThis.clearTimeout,
 }));
 
 const buildParameters: BuildParameters = {
@@ -225,5 +237,70 @@ describe('cacheManager', () => {
     );
     expect(getSnapshot).not.toHaveBeenCalled();
     expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  describe('autoSave', () => {
+    let getSnapshot;
+    let cacheManager: DiskCacheManager;
+    let emitter: EventEmitter;
+    let eventSource: CacheManagerEventSource;
+
+    beforeEach(async () => {
+      jest.clearAllMocks();
+      getSnapshot = jest.fn();
+      emitter = new EventEmitter();
+      eventSource = {
+        onChange: jest.fn().mockImplementation(cb => {
+          emitter.on('change', cb);
+          return () => emitter.removeListener('change', cb);
+        }),
+      };
+      cacheManager = new DiskCacheManager(
+        {buildParameters},
+        {
+          ...defaultConfig,
+          autoSave: {
+            debounceMs: 1000,
+          },
+        },
+      );
+      await cacheManager.write(getSnapshot, {
+        changedSinceCacheRead: false,
+        eventSource,
+        onWriteError: () => {},
+      });
+    });
+
+    test('subscribes to change events during write(), even on empty delta', async () => {
+      expect(eventSource.onChange).toHaveBeenCalledWith(expect.any(Function));
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    test('gets a snapshot and saves the cache after debounceMs', async () => {
+      emitter.emit('change');
+      await jest.advanceTimersByTime(999);
+      expect(getSnapshot).not.toHaveBeenCalled();
+      await jest.advanceTimersByTime(1);
+      expect(getSnapshot).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        cacheManager.getCacheFilePath(),
+        expect.any(Buffer),
+      );
+    });
+
+    test('successive changes within debounceMs are debounced', async () => {
+      emitter.emit('change');
+      await jest.advanceTimersByTime(500);
+      emitter.emit('change');
+      await jest.advanceTimersByTime(999);
+      expect(getSnapshot).not.toHaveBeenCalled();
+      await jest.advanceTimersByTime(1);
+      expect(getSnapshot).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        cacheManager.getCacheFilePath(),
+        expect.any(Buffer),
+      );
+      expect(mockWriteFile).toHaveBeenCalledTimes(1);
+    });
   });
 });
