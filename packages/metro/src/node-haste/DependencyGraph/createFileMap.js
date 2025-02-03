@@ -68,6 +68,11 @@ function createFileMap(
       : config.resolver.dependencyExtractor;
   const computeDependencies = dependencyExtractor != null;
 
+  const watch = options?.watch == null ? !ci.isCI : options.watch;
+  const {enabled: autoSaveEnabled, ...autoSaveOpts} =
+    config.watcher.unstable_autoSaveCache ?? {};
+  const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
+
   return MetroFileMap.create({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
@@ -76,6 +81,7 @@ function createFileMap(
           cacheDirectory:
             config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
           cacheFilePrefix: options?.cacheFilePrefix,
+          autoSave,
         })),
     perfLoggerFactory: config.unstable_perfLoggerFactory,
     computeDependencies,
@@ -104,7 +110,7 @@ function createFileMap(
     roots: config.watchFolders,
     throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
     useWatchman: config.resolver.useWatchman,
-    watch: options?.watch == null ? !ci.isCI : options.watch,
+    watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
 }

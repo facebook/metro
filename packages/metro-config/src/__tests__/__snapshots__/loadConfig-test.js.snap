@@ -173,6 +173,10 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_autoSaveCache": Object {
+      "debounceMs": 5000,
+      "enabled": true,
+    },
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
@@ -355,6 +359,10 @@ Object {
       "filePrefix": ".metro-health-check",
       "interval": 30000,
       "timeout": 5000,
+    },
+    "unstable_autoSaveCache": Object {
+      "debounceMs": 5000,
+      "enabled": true,
     },
     "unstable_workerThreads": false,
     "watchman": Object {
@@ -539,6 +547,10 @@ Object {
       "interval": 30000,
       "timeout": 5000,
     },
+    "unstable_autoSaveCache": Object {
+      "debounceMs": 5000,
+      "enabled": true,
+    },
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
@@ -721,6 +733,10 @@ Object {
       "filePrefix": ".metro-health-check",
       "interval": 30000,
       "timeout": 5000,
+    },
+    "unstable_autoSaveCache": Object {
+      "debounceMs": 5000,
+      "enabled": true,
     },
     "unstable_workerThreads": false,
     "watchman": Object {

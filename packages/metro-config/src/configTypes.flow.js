@@ -201,6 +201,10 @@ type WatcherConfigT = {
     timeout: number,
     filePrefix: string,
   }>,
+  unstable_autoSaveCache: $ReadOnly<{
+    enabled: boolean,
+    debounceMs?: number,
+  }>,
   unstable_workerThreads: boolean,
   watchman: $ReadOnly<{
     deferStates: $ReadOnlyArray<string>,
@@ -223,6 +227,9 @@ export type InputConfigT = $ReadOnly<
         Partial<{
           ...WatcherConfigT,
           healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
+          unstable_autoSaveCache?: $ReadOnly<
+            Partial<WatcherConfigT['unstable_autoSaveCache']>,
+          >,
         }>,
       >,
     }>,
