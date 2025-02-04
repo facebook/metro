@@ -21,28 +21,50 @@ import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
 import {promises as fsPromises} from 'fs';
 import {tmpdir} from 'os';
 import path from 'path';
+import {Timeout, clearTimeout, setTimeout} from 'timers';
 import {deserialize, serialize} from 'v8';
 
+const debug = require('debug')('Metro:FileMapCache');
+
+type AutoSaveOptions = $ReadOnly<{
+  debounceMs: number,
+}>;
+
 type DiskCacheConfig = {
+  autoSave?: Partial<AutoSaveOptions> | boolean,
   cacheFilePrefix?: ?string,
   cacheDirectory?: ?string,
 };
 
 const DEFAULT_PREFIX = 'metro-file-map';
 const DEFAULT_DIRECTORY = tmpdir();
+const DEFAULT_AUTO_SAVE_DEBOUNCE_MS = 5000;
 
 export class DiskCacheManager implements CacheManager {
-  _cachePath: string;
+  +#autoSaveOpts: ?AutoSaveOptions;
+  +#cachePath: string;
+  #debounceTimeout: ?Timeout = null;
+  #writePromise: Promise<void> = Promise.resolve();
+  #hasUnwrittenChanges: boolean = false;
+  #tryWrite: ?() => Promise<void>;
+  #stopListening: ?() => void;
 
   constructor(
     {buildParameters}: CacheManagerFactoryOptions,
-    {cacheDirectory, cacheFilePrefix}: DiskCacheConfig,
+    {autoSave = {}, cacheDirectory, cacheFilePrefix}: DiskCacheConfig,
   ) {
-    this._cachePath = DiskCacheManager.getCacheFilePath(
+    this.#cachePath = DiskCacheManager.getCacheFilePath(
       buildParameters,
       cacheFilePrefix,
       cacheDirectory,
     );
+
+    // Normalise auto-save options.
+    if (autoSave) {
+      const {debounceMs = DEFAULT_AUTO_SAVE_DEBOUNCE_MS} =
+        autoSave === true ? {} : autoSave;
+      this.#autoSaveOpts = {debounceMs};
+    }
   }
 
   static getCacheFilePath(
@@ -62,12 +84,12 @@ export class DiskCacheManager implements CacheManager {
   }
 
   getCacheFilePath(): string {
-    return this._cachePath;
+    return this.#cachePath;
   }
 
   async read(): Promise<?CacheData> {
     try {
-      return deserialize(await fsPromises.readFile(this._cachePath));
+      return deserialize(await fsPromises.readFile(this.#cachePath));
     } catch (e) {
       if (e?.code === 'ENOENT') {
         // Cache file not found - not considered an error.
@@ -80,12 +102,63 @@ export class DiskCacheManager implements CacheManager {
 
   async write(
     getSnapshot: () => CacheData,
-    {changedSinceCacheRead}: CacheManagerWriteOptions,
+    {
+      changedSinceCacheRead,
+      eventSource,
+      onWriteError,
+    }: CacheManagerWriteOptions,
   ): Promise<void> {
+    // Initialise a writer function using a promise queue to ensure writes are
+    // sequenced.
+    const tryWrite = (this.#tryWrite = () => {
+      this.#writePromise = this.#writePromise
+        .then(async () => {
+          if (!this.#hasUnwrittenChanges) {
+            return;
+          }
+          const data = getSnapshot();
+          this.#hasUnwrittenChanges = false;
+          await fsPromises.writeFile(this.#cachePath, serialize(data));
+          debug('Written cache to %s', this.#cachePath);
+        })
+        .catch(onWriteError);
+      return this.#writePromise;
+    });
+
+    // Set up auto-save on changes, if enabled.
+    if (this.#autoSaveOpts) {
+      const autoSave = this.#autoSaveOpts;
+      this.#stopListening?.();
+      this.#stopListening = eventSource.onChange(() => {
+        this.#hasUnwrittenChanges = true;
+        if (this.#debounceTimeout) {
+          this.#debounceTimeout.refresh();
+        } else {
+          this.#debounceTimeout = setTimeout(
+            () => tryWrite(),
+            autoSave.debounceMs,
+          ).unref();
+        }
+      });
+    }
+
+    // Write immediately if state has changed since the cache was read.
     if (changedSinceCacheRead) {
-      await fsPromises.writeFile(this._cachePath, serialize(getSnapshot()));
+      this.#hasUnwrittenChanges = true;
+      await tryWrite();
     }
   }
 
-  async end() {}
+  async end() {
+    // Clear any timers
+    if (this.#debounceTimeout) {
+      clearTimeout(this.#debounceTimeout);
+    }
+
+    // Remove event listeners
+    this.#stopListening?.();
+
+    // Flush unwritten changes to disk (no-op if no changes)
+    await this.#tryWrite?.();
+  }
 }
