@@ -12,9 +12,9 @@
 import type {
   BuildParameters,
   CacheData,
-  CacheDelta,
   CacheManager,
   CacheManagerFactoryOptions,
+  CacheManagerWriteOptions,
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
@@ -79,11 +79,11 @@ export class DiskCacheManager implements CacheManager {
   }
 
   async write(
-    dataSnapshot: CacheData,
-    {changed, removed}: CacheDelta,
+    getSnapshot: () => CacheData,
+    {changedSinceCacheRead}: CacheManagerWriteOptions,
   ): Promise<void> {
-    if (changed.size > 0 || removed.size > 0) {
-      await fsPromises.writeFile(this._cachePath, serialize(dataSnapshot));
+    if (changedSinceCacheRead) {
+      await fsPromises.writeFile(this._cachePath, serialize(getSnapshot()));
     }
   }
 }
