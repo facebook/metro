@@ -176,6 +176,11 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
           // $FlowFixMe: Spreading shapes creates an explosion of union types
           ...nextConfig.watcher?.healthCheck,
         },
+        unstable_autoSaveCache: {
+          // $FlowFixMe[exponential-spread]
+          ...totalConfig.watcher?.unstable_autoSaveCache,
+          ...nextConfig.watcher?.unstable_autoSaveCache,
+        },
       },
     }),
     defaultConfig,

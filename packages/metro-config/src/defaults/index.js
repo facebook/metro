@@ -148,6 +148,10 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       timeout: 5000,
     },
     unstable_workerThreads: false,
+    unstable_autoSaveCache: {
+      enabled: true,
+      debounceMs: 5000,
+    },
     watchman: {
       deferStates: ['hg.update'],
     },

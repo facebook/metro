@@ -200,11 +200,18 @@ export interface WatcherConfigT {
     timeout: number;
     filePrefix: string;
   };
+  unstable_autoSaveCache: {
+    enabled: boolean;
+    debounceMs?: number;
+  };
 }
 
 export interface WatcherInputConfigT
-  extends Partial<Omit<WatcherConfigT, 'healthCheck'>> {
+  extends Partial<
+    Omit<WatcherConfigT, 'healthCheck' | 'unstable_autoSaveCache'>
+  > {
   healthCheck?: Partial<WatcherConfigT['healthCheck']>;
+  unstable_autoSaveCache?: Partial<WatcherConfigT['unstable_autoSaveCache']>;
 }
 
 export interface InputConfigT
