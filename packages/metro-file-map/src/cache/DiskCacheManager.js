@@ -86,4 +86,6 @@ export class DiskCacheManager implements CacheManager {
       await fsPromises.writeFile(this._cachePath, serialize(getSnapshot()));
     }
   }
+
+  async end() {}
 }

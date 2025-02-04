@@ -58,14 +58,28 @@ export interface CacheManager {
    * current file system state.
    */
   read(): Promise<?CacheData>;
+
   /**
    * Called when metro-file-map `build()` has applied changes returned by the
    * crawler - i.e. internal state reflects the current file system state.
+   *
+   * getSnapshot may be retained and called at any time before end(), such as
+   * in response to eventSource 'change' events.
    */
   write(
     getSnapshot: () => CacheData,
     opts: CacheManagerWriteOptions,
   ): Promise<void>;
+
+  /**
+   * The last call that will be made to this CacheManager. Any handles should
+   * be closed by the time this settles.
+   */
+  end(): Promise<void>;
+}
+
+export interface CacheManagerEventSource {
+  onChange(listener: () => void): () => void /* unsubscribe */;
 }
 
 export type CacheManagerFactory = (
@@ -78,6 +92,8 @@ export type CacheManagerFactoryOptions = $ReadOnly<{
 
 export type CacheManagerWriteOptions = $ReadOnly<{
   changedSinceCacheRead: boolean,
+  eventSource: CacheManagerEventSource,
+  onWriteError: Error => void,
 }>;
 
 // A path that is
