@@ -10,6 +10,11 @@
 
 'use strict';
 
-module.exports =
-  (namespace: string): ((...Array<mixed>) => void) =>
-  () => {};
+function debug(namespace: string): (...Array<mixed>) => void {
+  return () => {};
+}
+
+debug.enable = (match: string) => {};
+debug.disable = () => {};
+
+module.exports = debug;
