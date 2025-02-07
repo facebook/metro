@@ -18,7 +18,7 @@
     "flow-enums-runtime": "^0.0.6",
     "graceful-fs": "^4.2.4",
     "invariant": "^2.2.4",
-    "jest-worker": "^29.6.3",
+    "jest-worker": "^29.7.0",
     "micromatch": "^4.0.4",
     "nullthrows": "^1.1.1",
     "walker": "^1.0.7"
