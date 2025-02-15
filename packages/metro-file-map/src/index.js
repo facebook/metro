@@ -522,32 +522,16 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  /**
-   * 3. parse and extract metadata from changed files.
-   */
-  _processFile(
-    filePath: Path,
-    fileMetadata: FileMetaData,
-    workerOptions?: {forceInBand?: ?boolean},
-  ): ?Promise<void> {
-    // Symlink Haste modules, Haste packages or mocks are not supported - read
-    // the target if requested and return early.
-    if (fileMetadata[H.SYMLINK] !== 0) {
-      // If we only need to read a link, it's more efficient to do it in-band
-      // (with async file IO) than to have the overhead of worker IO.
-      if (fileMetadata[H.SYMLINK] === 1) {
-        return fsPromises.readlink(filePath).then(symlinkTarget => {
-          fileMetadata[H.VISITED] = 1;
-          fileMetadata[H.SYMLINK] = symlinkTarget;
-        });
-      }
-      return null;
+  _maybeReadLink(filePath: Path, fileMetadata: FileMetaData): ?Promise<void> {
+    // If we only need to read a link, it's more efficient to do it in-band
+    // (with async file IO) than to have the overhead of worker IO.
+    if (fileMetadata[H.SYMLINK] === 1) {
+      return fsPromises.readlink(filePath).then(symlinkTarget => {
+        fileMetadata[H.VISITED] = 1;
+        fileMetadata[H.SYMLINK] = symlinkTarget;
+      });
     }
-    return this._fileProcessor.processRegularFile(filePath, fileMetadata, {
-      computeSha1: this._options.computeSha1,
-      computeDependencies: this._options.computeDependencies,
-      forceInBand: workerOptions?.forceInBand ?? false,
-    });
+    return null;
   }
 
   async _applyFileDelta(
@@ -562,7 +546,6 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_start');
     const {changedFiles, removedFiles} = delta;
     this._startupPerfLogger?.point('applyFileDelta_preprocess_start');
-    const promises = [];
     const missingFiles: Set<string> = new Set();
 
     // Remove files first so that we don't mistake moved mocks or Haste
@@ -576,6 +559,13 @@ export default class FileMap extends EventEmitter {
       }
     }
     this._startupPerfLogger?.point('applyFileDelta_remove_end');
+
+    const readLinkPromises = [];
+    const readLinkErrors: Array<{
+      absolutePath: string,
+      error: Error & {code?: string},
+    }> = [];
+    const filesToProcess: Array<[string, FileMetaData]> = [];
 
     for (const [relativeFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
@@ -591,51 +581,83 @@ export default class FileMap extends EventEmitter {
         continue;
       }
 
+      if (
+        fileData[H.SYMLINK] === 0 &&
+        !this._options.computeDependencies &&
+        !this._options.computeSha1 &&
+        this._options.hasteImplModulePath == null
+      ) {
+        // Nothing to process
+        continue;
+      }
+
       // SHA-1, if requested, should already be present thanks to the crawler.
-      const filePath = this._pathUtils.normalToAbsolute(relativeFilePath);
-      const maybePromise = this._processFile(filePath, fileData);
-      if (maybePromise) {
-        promises.push(
-          maybePromise.catch(e => {
-            if (['ENOENT', 'EACCESS'].includes(e.code)) {
-              missingFiles.add(relativeFilePath);
-            } else {
-              throw e;
-            }
-          }),
-        );
+      const absolutePath = this._pathUtils.normalToAbsolute(relativeFilePath);
+
+      if (fileData[H.SYMLINK] === 0) {
+        filesToProcess.push([absolutePath, fileData]);
+      } else {
+        const maybeReadLink = this._maybeReadLink(absolutePath, fileData);
+        if (maybeReadLink) {
+          readLinkPromises.push(
+            maybeReadLink.catch(error =>
+              readLinkErrors.push({absolutePath, error}),
+            ),
+          );
+        }
       }
     }
     this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
 
-    debug('Visiting %d added/modified files.', promises.length);
+    debug(
+      'Visiting %d added/modified files and %d symlinks.',
+      filesToProcess.length,
+      readLinkPromises.length,
+    );
 
     this._startupPerfLogger?.point('applyFileDelta_process_start');
-    try {
-      await Promise.all(promises);
-    } finally {
-      await this._fileProcessor.freeWorkers();
-    }
+    const [batchResult] = await Promise.all([
+      this._fileProcessor.processBatch(filesToProcess, {
+        computeSha1: this._options.computeSha1,
+        computeDependencies: this._options.computeDependencies,
+      }),
+      Promise.all(readLinkPromises),
+    ]);
     this._startupPerfLogger?.point('applyFileDelta_process_end');
-    this._startupPerfLogger?.point('applyFileDelta_add_start');
+
+    // It's possible that a file could be deleted between being seen by the
+    // crawler and our attempt to process it. For our purposes, this is
+    // equivalent to the file being deleted before the crawl, being absent
+    // from `changedFiles`, and (if we loaded from cache, and the file
+    // existed previously) possibly being reported in `removedFiles`.
+    //
+    // Treat the file accordingly - don't add it to `FileSystem`, and remove
+    // it if it already exists. We're not emitting events at this point in
+    // startup, so there's nothing more to do.
+    this._startupPerfLogger?.point('applyFileDelta_missing_start');
+    for (const {absolutePath, error} of batchResult.errors.concat(
+      readLinkErrors,
+    )) {
+      if (['ENOENT', 'EACCESS'].includes(error.code)) {
+        missingFiles.add(this._pathUtils.absoluteToNormal(absolutePath));
+      } else {
+        // Anything else is fatal.
+        throw error;
+      }
+    }
     for (const relativeFilePath of missingFiles) {
-      // It's possible that a file could be deleted between being seen by the
-      // crawler and our attempt to process it. For our purposes, this is
-      // equivalent to the file being deleted before the crawl, being absent
-      // from `changedFiles`, and (if we loaded from cache, and the file
-      // existed previously) possibly being reported in `removedFiles`.
-      //
-      // Treat the file accordingly - don't add it to `FileSystem`, and remove
-      // it if it already exists. We're not emitting events at this point in
-      // startup, so there's nothing more to do.
       changedFiles.delete(relativeFilePath);
       const metadata = fileSystem.remove(relativeFilePath);
       if (metadata) {
         removed.push([relativeFilePath, metadata]);
       }
     }
+    this._startupPerfLogger?.point('applyFileDelta_missing_end');
+
+    this._startupPerfLogger?.point('applyFileDelta_add_start');
     fileSystem.bulkAddOrModify(changedFiles);
     this._startupPerfLogger?.point('applyFileDelta_add_end');
+
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
     await Promise.all([
       plugins.map(plugin =>
@@ -854,11 +876,18 @@ export default class FileMap extends EventEmitter {
             ];
 
             try {
-              await this._processFile(
-                absoluteFilePath,
-                fileMetadata,
-                {forceInBand: true}, // No need to clean up workers
-              );
+              if (change.metadata.type === 'l') {
+                await this._maybeReadLink(absoluteFilePath, fileMetadata);
+              } else {
+                await this._fileProcessor.processRegularFile(
+                  absoluteFilePath,
+                  fileMetadata,
+                  {
+                    computeSha1: this._options.computeSha1,
+                    computeDependencies: this._options.computeDependencies,
+                  },
+                );
+              }
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
               this._updateClock(clocks, change.clock);
               plugins.forEach(plugin =>
@@ -949,7 +978,7 @@ export default class FileMap extends EventEmitter {
     this._crawlerAbortController.abort();
 
     await Promise.all([
-      this._fileProcessor.freeWorkers(),
+      this._fileProcessor.end(),
       this._watcher?.close(),
       this._cacheManager.end(),
     ]);

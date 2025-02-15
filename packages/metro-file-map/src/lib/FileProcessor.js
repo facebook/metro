@@ -15,7 +15,6 @@ import type {IJestWorker} from 'jest-worker';
 import H from '../constants';
 import {worker} from '../worker';
 import {Worker} from 'jest-worker';
-import nullthrows from 'nullthrows';
 import {sep} from 'path';
 
 const debug = require('debug')('Metro:FileMap');
@@ -23,7 +22,6 @@ const debug = require('debug')('Metro:FileMap');
 type ProcessFileRequest = $ReadOnly<{
   computeSha1: boolean,
   computeDependencies: boolean,
-  forceInBand: boolean,
 }>;
 
 type WorkerObj = {worker: typeof worker};
@@ -38,7 +36,6 @@ export class FileProcessor {
   #enableWorkerThreads: boolean;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
-  #worker: ?WorkerInterface;
 
   constructor(
     opts: $ReadOnly<{
@@ -58,10 +55,50 @@ export class FileProcessor {
     this.#perfLogger = opts.perfLogger;
   }
 
+  async processBatch(
+    files: $ReadOnlyArray<[string /*absolutePath*/, FileMetaData]>,
+    req: ProcessFileRequest,
+  ): Promise<{
+    errors: Array<{absolutePath: string, error: Error & {code: string}}>,
+  }> {
+    const errors = [];
+    const batchWorker = this.#getBatchWorker();
+
+    await Promise.all(
+      files.map(([absolutePath, fileMetadata]) =>
+        this.#processWithWorker(
+          absolutePath,
+          fileMetadata,
+          req,
+          batchWorker.worker,
+        )?.catch(error => {
+          errors.push({absolutePath, error});
+        }),
+      ),
+    );
+
+    if (typeof batchWorker.end === 'function') {
+      await batchWorker.end();
+      debug('Ended worker farm');
+    }
+
+    return {errors};
+  }
+
   processRegularFile(
     absolutePath: string,
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
+  ): ?Promise<void> {
+    // Use in-band worker directly for single files.
+    return this.#processWithWorker(absolutePath, fileMetadata, req, worker);
+  }
+
+  #processWithWorker(
+    absolutePath: string,
+    fileMetadata: FileMetaData,
+    req: ProcessFileRequest,
+    worker: WorkerInterface['worker'],
   ): ?Promise<void> {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
 
@@ -108,75 +145,59 @@ export class FileProcessor {
     // retainAllFiles is true, or they're touched during watch mode.
     if (absolutePath.includes(NODE_MODULES)) {
       if (computeSha1) {
-        return this.#getWorker(req.forceInBand)
-          .worker({
-            computeDependencies: false,
-            computeSha1: true,
-            dependencyExtractor: null,
-            enableHastePackages: false,
-            filePath: absolutePath,
-            hasteImplModulePath: null,
-          })
-          .then(workerReply, workerError);
+        return worker({
+          computeDependencies: false,
+          computeSha1: true,
+          dependencyExtractor: null,
+          enableHastePackages: false,
+          filePath: absolutePath,
+          hasteImplModulePath: null,
+        }).then(workerReply, workerError);
       }
       return null;
     }
 
-    return this.#getWorker(req.forceInBand)
-      .worker({
-        computeDependencies: req.computeDependencies,
-        computeSha1,
-        dependencyExtractor: this.#dependencyExtractor,
-        enableHastePackages: this.#enableHastePackages,
-        filePath: absolutePath,
-        hasteImplModulePath: this.#hasteImplModulePath,
-      })
-      .then(workerReply, workerError);
+    return worker({
+      computeDependencies: req.computeDependencies,
+      computeSha1,
+      dependencyExtractor: this.#dependencyExtractor,
+      enableHastePackages: this.#enableHastePackages,
+      filePath: absolutePath,
+      hasteImplModulePath: this.#hasteImplModulePath,
+    }).then(workerReply, workerError);
   }
 
   /**
    * Creates workers or parses files and extracts metadata in-process.
    */
-  #getWorker(forceInBand: boolean): WorkerInterface {
-    if (!this.#worker) {
-      if (forceInBand || this.#maxWorkers <= 1) {
-        this.#worker = {worker};
-      } else {
-        const workerPath = require.resolve('../worker');
-        debug(
-          'Creating worker farm of %d worker %s',
-          this.#maxWorkers,
-          this.#enableWorkerThreads ? 'threads' : 'processes',
-        );
-        this.#perfLogger?.point('initWorkers_start');
-        this.#worker = new Worker<WorkerObj>(workerPath, {
-          exposedMethods: ['worker'],
-          maxRetries: 3,
-          numWorkers: this.#maxWorkers,
-          enableWorkerThreads: this.#enableWorkerThreads,
-          forkOptions: {
-            // Don't pass Node arguments down to workers. In particular, avoid
-            // unnecessarily registering Babel when we're running Metro from
-            // source (our worker is plain CommonJS).
-            execArgv: [],
-          },
-        });
-        this.#perfLogger?.point('initWorkers_end');
-        // Only log worker init once
-        this.#perfLogger = null;
-      }
+  #getBatchWorker(): WorkerInterface {
+    if (this.#maxWorkers <= 1) {
+      return {worker};
     }
-    return nullthrows(this.#worker);
+    const workerPath = require.resolve('../worker');
+    debug(
+      'Creating worker farm of %d worker %s',
+      this.#maxWorkers,
+      this.#enableWorkerThreads ? 'threads' : 'processes',
+    );
+    this.#perfLogger?.point('initWorkers_start');
+    const jestWorker = new Worker<WorkerObj>(workerPath, {
+      exposedMethods: ['worker'],
+      maxRetries: 3,
+      numWorkers: this.#maxWorkers,
+      enableWorkerThreads: this.#enableWorkerThreads,
+      forkOptions: {
+        // Don't pass Node arguments down to workers. In particular, avoid
+        // unnecessarily registering Babel when we're running Metro from
+        // source (our worker is plain CommonJS).
+        execArgv: [],
+      },
+    });
+    this.#perfLogger?.point('initWorkers_end');
+    // Only log worker init once
+    this.#perfLogger = null;
+    return jestWorker;
   }
 
-  async freeWorkers(): Promise<void> {
-    const worker = this.#worker;
-
-    if (worker && typeof worker.end === 'function') {
-      await worker.end();
-      debug('Worker farm ended');
-    }
-
-    this.#worker = null;
-  }
+  async end(): Promise<void> {}
 }
