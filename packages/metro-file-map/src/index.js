@@ -36,13 +36,12 @@ import type {
   PerfLoggerFactory,
   WatcherBackendChangeEvent,
   WatchmanClocks,
-  WorkerMetadata,
 } from './flow-types';
-import type {IJestWorker} from 'jest-worker';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
+import {FileProcessor} from './lib/FileProcessor';
 import normalizePathSeparatorsToPosix from './lib/normalizePathSeparatorsToPosix';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './lib/RootPathUtils';
@@ -50,11 +49,9 @@ import TreeFS from './lib/TreeFS';
 import HastePlugin from './plugins/HastePlugin';
 import MockPlugin from './plugins/MockPlugin';
 import {Watcher} from './Watcher';
-import {worker} from './worker';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import invariant from 'invariant';
-import {Worker} from 'jest-worker';
 import nullthrows from 'nullthrows';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
@@ -114,19 +111,14 @@ type HealthCheckOptions = $ReadOnly<{
 
 type InternalOptions = $ReadOnly<{
   ...BuildParameters,
-  enableWorkerThreads: boolean,
   healthCheck: HealthCheckOptions,
   perfLoggerFactory: ?PerfLoggerFactory,
   resetCache: ?boolean,
-  maxWorkers: number,
   throwOnModuleCollision: boolean,
   useWatchman: boolean,
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
 }>;
-
-type WorkerObj = {worker: typeof worker};
-type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
@@ -244,11 +236,11 @@ export default class FileMap extends EventEmitter {
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
   _changeInterval: ?IntervalID;
+  _fileProcessor: FileProcessor;
   _console: Console;
   _options: InternalOptions;
   _pathUtils: RootPathUtils;
   _watcher: ?Watcher;
-  _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
   _crawlerAbortController: AbortController;
   _healthCheckInterval: ?IntervalID;
@@ -312,9 +304,7 @@ export default class FileMap extends EventEmitter {
 
     this._options = {
       ...buildParameters,
-      enableWorkerThreads: options.enableWorkerThreads ?? false,
       healthCheck: options.healthCheck,
-      maxWorkers: options.maxWorkers,
       perfLoggerFactory: options.perfLoggerFactory,
       resetCache: options.resetCache,
       throwOnModuleCollision: !!options.throwOnModuleCollision,
@@ -331,9 +321,17 @@ export default class FileMap extends EventEmitter {
       ? options.cacheManagerFactory.call(null, cacheFactoryOptions)
       : new DiskCacheManager(cacheFactoryOptions, {});
 
+    this._fileProcessor = new FileProcessor({
+      dependencyExtractor: buildParameters.dependencyExtractor,
+      enableHastePackages: buildParameters.enableHastePackages,
+      enableWorkerThreads: options.enableWorkerThreads ?? false,
+      hasteImplModulePath: buildParameters.hasteImplModulePath,
+      maxWorkers: options.maxWorkers,
+      perfLogger: this._startupPerfLogger,
+    });
+
     this._buildPromise = null;
     this._pathUtils = new RootPathUtils(options.rootDir);
-    this._worker = null;
     this._startupPerfLogger?.point('constructor_end');
     this._crawlerAbortController = new AbortController();
     this._changeID = 0;
@@ -530,7 +528,7 @@ export default class FileMap extends EventEmitter {
   _processFile(
     filePath: Path,
     fileMetadata: FileMetaData,
-    workerOptions?: {forceInBand?: ?boolean, perfLogger?: ?PerfLogger},
+    workerOptions?: {forceInBand?: ?boolean},
   ): ?Promise<void> {
     // Symlink Haste modules, Haste packages or mocks are not supported - read
     // the target if requested and return early.
@@ -545,77 +543,11 @@ export default class FileMap extends EventEmitter {
       }
       return null;
     }
-
-    const computeSha1 =
-      this._options.computeSha1 && fileMetadata[H.SHA1] == null;
-
-    // Callback called when the response from the worker is successful.
-    const workerReply = (metadata: WorkerMetadata) => {
-      fileMetadata[H.VISITED] = 1;
-
-      const metadataId = metadata.id;
-
-      if (metadataId != null) {
-        fileMetadata[H.ID] = metadataId;
-      }
-
-      fileMetadata[H.DEPENDENCIES] = metadata.dependencies
-        ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
-        : '';
-
-      if (computeSha1) {
-        fileMetadata[H.SHA1] = metadata.sha1;
-      }
-    };
-
-    // Callback called when the response from the worker is an error.
-    const workerError = (error: mixed) => {
-      if (
-        error == null ||
-        typeof error !== 'object' ||
-        error.message == null ||
-        error.stack == null
-      ) {
-        // $FlowFixMe[reassign-const] - Refactor this
-        error = new Error(error);
-        // $FlowFixMe[incompatible-use] - error is mixed
-        error.stack = ''; // Remove stack for stack-less errors.
-      }
-      throw error;
-    };
-
-    // Use a cheaper worker configuration for node_modules files, because we
-    // never care about extracting dependencies, and they may never be Haste
-    // modules or packages.
-    //
-    // Note that we'd only expect node_modules files to reach this point if
-    // retainAllFiles is true, or they're touched during watch mode.
-    if (filePath.includes(NODE_MODULES)) {
-      if (computeSha1) {
-        return this._getWorker(workerOptions)
-          .worker({
-            computeDependencies: false,
-            computeSha1: true,
-            dependencyExtractor: null,
-            enableHastePackages: false,
-            filePath,
-            hasteImplModulePath: null,
-          })
-          .then(workerReply, workerError);
-      }
-      return null;
-    }
-
-    return this._getWorker(workerOptions)
-      .worker({
-        computeDependencies: this._options.computeDependencies,
-        computeSha1,
-        dependencyExtractor: this._options.dependencyExtractor,
-        enableHastePackages: this._options.enableHastePackages,
-        filePath,
-        hasteImplModulePath: this._options.hasteImplModulePath,
-      })
-      .then(workerReply, workerError);
+    return this._fileProcessor.processRegularFile(filePath, fileMetadata, {
+      computeSha1: this._options.computeSha1,
+      computeDependencies: this._options.computeDependencies,
+      forceInBand: workerOptions?.forceInBand ?? false,
+    });
   }
 
   async _applyFileDelta(
@@ -661,9 +593,7 @@ export default class FileMap extends EventEmitter {
 
       // SHA-1, if requested, should already be present thanks to the crawler.
       const filePath = this._pathUtils.normalToAbsolute(relativeFilePath);
-      const maybePromise = this._processFile(filePath, fileData, {
-        perfLogger: this._startupPerfLogger,
-      });
+      const maybePromise = this._processFile(filePath, fileData);
       if (maybePromise) {
         promises.push(
           maybePromise.catch(e => {
@@ -684,7 +614,7 @@ export default class FileMap extends EventEmitter {
     try {
       await Promise.all(promises);
     } finally {
-      await this._cleanup();
+      await this._fileProcessor.freeWorkers();
     }
     this._startupPerfLogger?.point('applyFileDelta_process_end');
     this._startupPerfLogger?.point('applyFileDelta_add_start');
@@ -717,16 +647,6 @@ export default class FileMap extends EventEmitter {
     ]);
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this._startupPerfLogger?.point('applyFileDelta_end');
-  }
-
-  async _cleanup() {
-    const worker = this._worker;
-
-    if (worker && typeof worker.end === 'function') {
-      await worker.end();
-    }
-
-    this._worker = null;
   }
 
   /**
@@ -767,38 +687,6 @@ export default class FileMap extends EventEmitter {
       },
     );
     this._startupPerfLogger?.point('persist_end');
-  }
-
-  /**
-   * Creates workers or parses files and extracts metadata in-process.
-   */
-  _getWorker(options?: {
-    forceInBand?: ?boolean,
-    perfLogger?: ?PerfLogger,
-  }): WorkerInterface {
-    if (!this._worker) {
-      const {forceInBand, perfLogger} = options ?? {};
-      if (forceInBand === true || this._options.maxWorkers <= 1) {
-        this._worker = {worker};
-      } else {
-        const workerPath = require.resolve('./worker');
-        perfLogger?.point('initWorkers_start');
-        this._worker = new Worker<WorkerObj>(workerPath, {
-          exposedMethods: ['worker'],
-          maxRetries: 3,
-          numWorkers: this._options.maxWorkers,
-          enableWorkerThreads: this._options.enableWorkerThreads,
-          forkOptions: {
-            // Don't pass Node arguments down to workers. In particular, avoid
-            // unnecessarily registering Babel when we're running Metro from
-            // source (our worker is plain CommonJS).
-            execArgv: [],
-          },
-        });
-        perfLogger?.point('initWorkers_end');
-      }
-    }
-    return nullthrows(this._worker);
   }
 
   /**
@@ -1061,7 +949,7 @@ export default class FileMap extends EventEmitter {
     this._crawlerAbortController.abort();
 
     await Promise.all([
-      this._cleanup(),
+      this._fileProcessor.freeWorkers(),
       this._watcher?.close(),
       this._cacheManager.end(),
     ]);
