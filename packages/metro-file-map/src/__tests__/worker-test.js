@@ -207,6 +207,35 @@ describe('worker', () => {
     expect(fs.readFile).not.toHaveBeenCalled();
   });
 
+  test('returns content if requested and content is read', async () => {
+    expect(
+      await worker({
+        computeSha1: true,
+        filePath: path.join('/project', 'fruits', 'Pear.js'),
+        maybeReturnContent: true,
+      }),
+    ).toEqual({
+      content: expect.any(Buffer),
+      sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552',
+    });
+  });
+
+  test('does not return content if maybeReturnContent but content is not read', async () => {
+    expect(
+      await worker({
+        computeSha1: false,
+        filePath: path.join('/project', 'fruits', 'Pear.js'),
+        hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
+        maybeReturnContent: true,
+      }),
+    ).toEqual({
+      content: undefined,
+      dependencies: undefined,
+      id: 'Pear',
+      sha1: undefined,
+    });
+  });
+
   test('can be loaded directly without transpilation', async () => {
     const code = await jest
       .requireActual('fs')

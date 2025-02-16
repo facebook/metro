@@ -102,7 +102,9 @@ async function worker(
     sha1 = sha1hex(getContent());
   }
 
-  return {dependencies, id, sha1};
+  return content && data.maybeReturnContent
+    ? {content, dependencies, id, sha1}
+    : {dependencies, id, sha1};
 }
 
 module.exports = {

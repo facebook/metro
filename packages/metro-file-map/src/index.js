@@ -622,6 +622,7 @@ export default class FileMap extends EventEmitter {
       this._fileProcessor.processBatch(filesToProcess, {
         computeSha1: this._options.computeSha1,
         computeDependencies: this._options.computeDependencies,
+        maybeReturnContent: false,
       }),
       Promise.all(readLinkPromises),
     ]);
@@ -887,6 +888,7 @@ export default class FileMap extends EventEmitter {
                   {
                     computeSha1: this._options.computeSha1,
                     computeDependencies: this._options.computeDependencies,
+                    maybeReturnContent: false,
                   },
                 );
               }
