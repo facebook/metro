@@ -93,6 +93,7 @@ export type InputOptions = $ReadOnly<{
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
   healthCheck: HealthCheckOptions,
+  maxFilesPerWorker?: ?number,
   maxWorkers: number,
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
@@ -326,6 +327,7 @@ export default class FileMap extends EventEmitter {
       enableHastePackages: buildParameters.enableHastePackages,
       enableWorkerThreads: options.enableWorkerThreads ?? false,
       hasteImplModulePath: buildParameters.hasteImplModulePath,
+      maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
     });

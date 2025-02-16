@@ -28,12 +28,14 @@ type WorkerObj = {worker: typeof worker};
 type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 const NODE_MODULES = sep + 'node_modules' + sep;
+const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
   #enableHastePackages: boolean;
   #hasteImplModulePath: ?string;
   #enableWorkerThreads: boolean;
+  #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
 
@@ -43,6 +45,7 @@ export class FileProcessor {
       enableHastePackages: boolean,
       enableWorkerThreads: boolean,
       hasteImplModulePath: ?string,
+      maxFilesPerWorker?: ?number,
       maxWorkers: number,
       perfLogger: ?PerfLogger,
     }>,
@@ -51,6 +54,7 @@ export class FileProcessor {
     this.#enableHastePackages = opts.enableHastePackages;
     this.#enableWorkerThreads = opts.enableWorkerThreads;
     this.#hasteImplModulePath = opts.hasteImplModulePath;
+    this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#perfLogger = opts.perfLogger;
   }
@@ -62,7 +66,11 @@ export class FileProcessor {
     errors: Array<{absolutePath: string, error: Error & {code: string}}>,
   }> {
     const errors = [];
-    const batchWorker = this.#getBatchWorker();
+    const numWorkers = Math.min(
+      this.#maxWorkers,
+      Math.ceil(files.length / this.#maxFilesPerWorker),
+    );
+    const batchWorker = this.#getBatchWorker(numWorkers);
 
     await Promise.all(
       files.map(([absolutePath, fileMetadata]) =>
@@ -170,21 +178,21 @@ export class FileProcessor {
   /**
    * Creates workers or parses files and extracts metadata in-process.
    */
-  #getBatchWorker(): WorkerInterface {
-    if (this.#maxWorkers <= 1) {
+  #getBatchWorker(numWorkers: number): WorkerInterface {
+    if (numWorkers <= 1) {
       return {worker};
     }
     const workerPath = require.resolve('../worker');
     debug(
       'Creating worker farm of %d worker %s',
-      this.#maxWorkers,
+      numWorkers,
       this.#enableWorkerThreads ? 'threads' : 'processes',
     );
     this.#perfLogger?.point('initWorkers_start');
     const jestWorker = new Worker<WorkerObj>(workerPath, {
       exposedMethods: ['worker'],
       maxRetries: 3,
-      numWorkers: this.#maxWorkers,
+      numWorkers,
       enableWorkerThreads: this.#enableWorkerThreads,
       forkOptions: {
         // Don't pass Node arguments down to workers. In particular, avoid
