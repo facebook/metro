@@ -12,6 +12,8 @@
 import type {FileData} from '../../flow-types';
 import type TreeFSType from '../TreeFS';
 
+import H from '../../constants';
+
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
@@ -49,6 +51,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('node_modules/pkg/a.js'), ['a', 123, 0, 0, '', '', 0]],
         [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
       ]),
+      processFile: () => {
+        throw new Error('Not implemented');
+      },
     });
   });
 
@@ -182,6 +187,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           [p('foo/index.js'), ['', 123, 0, 0, '', '', 0]],
           [p('link-up'), ['', 123, 0, 0, '', '', p('..')]],
         ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
       });
       expect(tfs.lookup(p('/deep/missing/bar.js'))).toMatchObject({
         exists: false,
@@ -339,6 +347,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
             ].map(posixPath => [p(posixPath), ['', 0, 0, 0, '', '', 0]]),
           ),
         ),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
       });
     });
 
@@ -857,6 +868,98 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           },
         ]),
       );
+    });
+  });
+
+  describe('getOrComputeSha1', () => {
+    const mockProcessFile = jest.fn();
+
+    beforeEach(() => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map([
+          [p('foo.js'), ['', 123, 0, 0, '', 'def456', 0]],
+          [p('bar.js'), ['', 123, 0, 0, '', '', 0]],
+          [p('link-to-bar'), ['', 456, 0, 0, '', '', p('./bar.js')]],
+        ]),
+        processFile: mockProcessFile,
+      });
+      mockProcessFile.mockImplementation(async (filePath, metadata) => {
+        metadata[H.SHA1] = 'abc123';
+        return;
+      });
+      mockProcessFile.mockClear();
+    });
+
+    test('returns the precomputed SHA-1 of a file if set', async () => {
+      expect(await tfs.getOrComputeSha1(p('foo.js'))).toEqual({sha1: 'def456'});
+      expect(mockProcessFile).not.toHaveBeenCalled();
+    });
+
+    test('calls processFile exactly once if SHA-1 not initially set', async () => {
+      expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
+      expect(mockProcessFile).toHaveBeenCalledWith(
+        p('/project/bar.js'),
+        expect.any(Array),
+        {computeSha1: true},
+      );
+      mockProcessFile.mockClear();
+      expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
+      expect(mockProcessFile).not.toHaveBeenCalled();
+    });
+
+    test('returns file contents alongside SHA-1 if processFile provides it', async () => {
+      mockProcessFile.mockImplementationOnce(async (filePath, metadata) => {
+        metadata[H.SHA1] = 'bcd234';
+        return Buffer.from('content');
+      });
+      expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({
+        sha1: 'bcd234',
+        content: Buffer.from('content'),
+      });
+      expect(mockProcessFile).toHaveBeenCalledWith(
+        p('/project/bar.js'),
+        expect.any(Array),
+        {computeSha1: true},
+      );
+      mockProcessFile.mockClear();
+      expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({
+        sha1: 'bcd234',
+        content: undefined,
+      });
+      expect(mockProcessFile).not.toHaveBeenCalled();
+    });
+
+    test('calls processFile on resolved symlink targets', async () => {
+      expect(await tfs.getOrComputeSha1(p('link-to-bar'))).toEqual({
+        sha1: 'abc123',
+      });
+      expect(mockProcessFile).toHaveBeenCalledWith(
+        p('/project/bar.js'),
+        expect.any(Array),
+        {computeSha1: true},
+      );
+    });
+
+    test('clears stored SHA-1 on modification', async () => {
+      let resolve: (sha1: string) => void;
+      const processPromise = new Promise(r => (resolve = r));
+      mockProcessFile.mockImplementationOnce(async (filePath, metadata) => {
+        metadata[H.SHA1] = await processPromise;
+      });
+      const getOrComputePromise = tfs.getOrComputeSha1(p('bar.js'));
+      expect(mockProcessFile).toHaveBeenCalledWith(
+        p('/project/bar.js'),
+        expect.any(Array),
+        {computeSha1: true},
+      );
+      // Simulate the file being modified while we're waiting for the SHA1.
+      tfs.addOrModify(p('bar.js'), ['', 123, 0, 0, '', '', 0]);
+      resolve?.('newsha1');
+      expect(await getOrComputePromise).toEqual({sha1: 'newsha1'});
+      // A second call re-computes
+      expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
+      expect(mockProcessFile).toHaveBeenCalledTimes(2);
     });
   });
 });

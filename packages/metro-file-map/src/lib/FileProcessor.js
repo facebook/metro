@@ -20,20 +20,34 @@ import {sep} from 'path';
 const debug = require('debug')('Metro:FileMap');
 
 type ProcessFileRequest = $ReadOnly<{
+  /**
+   * Populate metadata[H.SHA1] with the SHA1 of the file's contents.
+   */
   computeSha1: boolean,
+  /**
+   * Populate metadata[H.DEPENDENCIES] with unresolved dependency specifiers
+   * using the dependencyExtractor provided to the constructor.
+   */
   computeDependencies: boolean,
+  /**
+   * Only if processing has already required reading the file's contents, return
+   * the contents as a Buffer - null otherwise. Not supported for batches.
+   */
+  maybeReturnContent: boolean,
 }>;
 
 type WorkerObj = {worker: typeof worker};
 type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
 
 const NODE_MODULES = sep + 'node_modules' + sep;
+const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
   #enableHastePackages: boolean;
   #hasteImplModulePath: ?string;
   #enableWorkerThreads: boolean;
+  #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
 
@@ -43,6 +57,7 @@ export class FileProcessor {
       enableHastePackages: boolean,
       enableWorkerThreads: boolean,
       hasteImplModulePath: ?string,
+      maxFilesPerWorker?: ?number,
       maxWorkers: number,
       perfLogger: ?PerfLogger,
     }>,
@@ -51,6 +66,7 @@ export class FileProcessor {
     this.#enableHastePackages = opts.enableHastePackages;
     this.#enableWorkerThreads = opts.enableWorkerThreads;
     this.#hasteImplModulePath = opts.hasteImplModulePath;
+    this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#perfLogger = opts.perfLogger;
   }
@@ -62,7 +78,17 @@ export class FileProcessor {
     errors: Array<{absolutePath: string, error: Error & {code: string}}>,
   }> {
     const errors = [];
-    const batchWorker = this.#getBatchWorker();
+    const numWorkers = Math.min(
+      this.#maxWorkers,
+      Math.ceil(files.length / this.#maxFilesPerWorker),
+    );
+    const batchWorker = this.#getBatchWorker(numWorkers);
+
+    if (req.maybeReturnContent) {
+      throw new Error(
+        'Batch processing does not support returning file contents',
+      );
+    }
 
     await Promise.all(
       files.map(([absolutePath, fileMetadata]) =>
@@ -89,9 +115,17 @@ export class FileProcessor {
     absolutePath: string,
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
-  ): ?Promise<void> {
+  ): ?Promise<{content: ?Buffer}> {
     // Use in-band worker directly for single files.
-    return this.#processWithWorker(absolutePath, fileMetadata, req, worker);
+    const result = this.#processWithWorker(
+      absolutePath,
+      fileMetadata,
+      req,
+      worker,
+    );
+    return result
+      ? result.then(maybeContent => ({content: maybeContent}))
+      : null;
   }
 
   #processWithWorker(
@@ -99,7 +133,7 @@ export class FileProcessor {
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
     worker: WorkerInterface['worker'],
-  ): ?Promise<void> {
+  ): ?Promise<?Buffer> {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
 
     // Callback called when the response from the worker is successful.
@@ -137,6 +171,8 @@ export class FileProcessor {
       throw error;
     };
 
+    const {computeDependencies, maybeReturnContent} = req;
+
     // Use a cheaper worker configuration for node_modules files, because we
     // never care about extracting dependencies, and they may never be Haste
     // modules or packages.
@@ -152,39 +188,41 @@ export class FileProcessor {
           enableHastePackages: false,
           filePath: absolutePath,
           hasteImplModulePath: null,
+          maybeReturnContent,
         }).then(workerReply, workerError);
       }
       return null;
     }
 
     return worker({
-      computeDependencies: req.computeDependencies,
+      computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
       enableHastePackages: this.#enableHastePackages,
       filePath: absolutePath,
       hasteImplModulePath: this.#hasteImplModulePath,
+      maybeReturnContent,
     }).then(workerReply, workerError);
   }
 
   /**
    * Creates workers or parses files and extracts metadata in-process.
    */
-  #getBatchWorker(): WorkerInterface {
-    if (this.#maxWorkers <= 1) {
+  #getBatchWorker(numWorkers: number): WorkerInterface {
+    if (numWorkers <= 1) {
       return {worker};
     }
     const workerPath = require.resolve('../worker');
     debug(
       'Creating worker farm of %d worker %s',
-      this.#maxWorkers,
+      numWorkers,
       this.#enableWorkerThreads ? 'threads' : 'processes',
     );
     this.#perfLogger?.point('initWorkers_start');
     const jestWorker = new Worker<WorkerObj>(workerPath, {
       exposedMethods: ['worker'],
       maxRetries: 3,
-      numWorkers: this.#maxWorkers,
+      numWorkers,
       enableWorkerThreads: this.#enableWorkerThreads,
       forkOptions: {
         // Don't pass Node arguments down to workers. In particular, avoid

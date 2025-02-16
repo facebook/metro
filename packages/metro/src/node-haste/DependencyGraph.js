@@ -55,6 +55,14 @@ function getOrCreateMap<T>(
   return subMap;
 }
 
+const missingSha1Error = (mixedPath: string) =>
+  new Error(`Failed to get the SHA-1 for: ${mixedPath}.
+  Potential causes:
+    1) The file is not watched. Ensure it is under the configured \`projectRoot\` or \`watchFolders\`.
+    2) Check \`blockList\` in your metro.config.js and make sure it isn't excluding the file path.
+    3) The file may have been deleted since it was resolved - try refreshing your app.
+    4) Otherwise, this is a bug in Metro or the configured resolver - please report it.`);
+
 class DependencyGraph extends EventEmitter {
   _config: ConfigT;
   _haste: MetroFileMap;
@@ -258,17 +266,23 @@ class DependencyGraph extends EventEmitter {
 
   getSha1(filename: string): string {
     const sha1 = this._fileSystem.getSha1(filename);
-
     if (!sha1) {
-      throw new ReferenceError(
-        `SHA-1 for file ${filename} is not computed.
-         Potential causes:
-           1) You have symlinks in your project - watchman does not follow symlinks.
-           2) Check \`blockList\` in your metro.config.js and make sure it isn't excluding the file path.`,
-      );
+      throw missingSha1Error(filename);
     }
-
     return sha1;
+  }
+
+  /**
+   * Used when watcher.unstable_lazySha1 is true
+   */
+  async unstable_getOrComputeSha1(
+    mixedPath: string,
+  ): Promise<{content?: Buffer, sha1: string}> {
+    const result = await this._fileSystem.getOrComputeSha1(mixedPath);
+    if (!result || !result.sha1) {
+      throw missingSha1Error(mixedPath);
+    }
+    return result;
   }
 
   getWatcher(): EventEmitter {

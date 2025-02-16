@@ -1371,9 +1371,18 @@ describe('FileMap', () => {
       dependencyExtractor,
       hasteImplModulePath: undefined,
       maxWorkers: 4,
+      maxFilesPerWorker: 2,
     }).build();
 
-    expect(jestWorker.mock.calls.length).toBe(1);
+    expect(jestWorker).toHaveBeenCalledTimes(1);
+
+    expect(jestWorker).toHaveBeenCalledWith(
+      expect.stringContaining('worker.js'),
+      expect.objectContaining({
+        // With maxFilesPerWorker = 2 and 5 files, we should have 3 workers.
+        numWorkers: 3,
+      }),
+    );
 
     expect(mockWorker.mock.calls.length).toBe(5);
 
@@ -1386,6 +1395,7 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           hasteImplModulePath: undefined,
+          maybeReturnContent: false,
         },
       ],
       [
@@ -1396,6 +1406,7 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           hasteImplModulePath: undefined,
+          maybeReturnContent: false,
         },
       ],
       [
@@ -1406,6 +1417,7 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           hasteImplModulePath: undefined,
+          maybeReturnContent: false,
         },
       ],
       [
@@ -1416,6 +1428,7 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           hasteImplModulePath: undefined,
+          maybeReturnContent: false,
         },
       ],
       [
@@ -1426,6 +1439,7 @@ describe('FileMap', () => {
           enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           hasteImplModulePath: undefined,
+          maybeReturnContent: false,
         },
       ],
     ]);
