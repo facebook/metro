@@ -25,10 +25,10 @@ function getPreludeCode({
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime
     // require.js
-    '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now()',
+    '__BUNDLE_START_TIME__=globalThis.nativePerformanceNow?nativePerformanceNow():Date.now()',
     `__DEV__=${String(isDev)}`,
     ...formatExtraVars(extraVars),
-    'process=this.process||{}',
+    'process=globalThis.process||{}',
     `__METRO_GLOBAL_PREFIX__='${globalPrefix}'`,
   ];
 
