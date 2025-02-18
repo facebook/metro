@@ -10,10 +10,11 @@
  */
 
 import type {
-  ExportMap,
   ExportMapWithFallbacks,
   ExportsField,
+  ExportsLikeMap,
   FileResolution,
+  NormalizedExportsLikeMap,
   ResolutionContext,
 } from './types';
 
@@ -21,13 +22,10 @@ import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurati
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
+import {isSubpathDefinedInExportsLike} from './utils/isSubpathDefinedInExportsLike';
+import {matchSubpathFromExportsLike} from './utils/matchSubpathFromExportsLike';
 import toPosixPath from './utils/toPosixPath';
 import path from 'path';
-
-type NormalizedExporthMap = Map<
-  string /* subpath */,
-  null | string | ExportMap,
->;
 
 /**
  * Resolve a package subpath based on the entry points defined in the package's
@@ -70,7 +68,7 @@ export function resolvePackageTargetFromExports(
   const subpath = getExportsSubpath(packageRelativePath);
   const exportMap = normalizeExportsField(exportsField, createConfigError);
 
-  if (!isSubpathDefinedInExports(exportMap, subpath)) {
+  if (!isSubpathDefinedInExportsLike(exportMap, subpath)) {
     throw new PackagePathNotExportedError(
       `Attempted to import the module "${modulePath}" which is not listed ` +
         `in the "exports" of "${packagePath}" under the requested subpath ` +
@@ -78,7 +76,7 @@ export function resolvePackageTargetFromExports(
     );
   }
 
-  const {target, patternMatch} = matchSubpathFromExports(
+  const {target, patternMatch} = matchSubpathFromExportsLike(
     context,
     subpath,
     exportMap,
@@ -155,7 +153,7 @@ function getExportsSubpath(packageSubpath: string): string {
 type ExcludeString<T> = T extends string ? empty : T;
 const _normalizedExportsFields: WeakMap<
   ExcludeString<ExportsField>,
-  NormalizedExporthMap,
+  NormalizedExportsLikeMap,
 > = new WeakMap();
 
 /**
@@ -167,7 +165,7 @@ const _normalizedExportsFields: WeakMap<
 function normalizeExportsField(
   exportsField: ExportsField,
   createConfigError: (reason: string) => Error,
-): NormalizedExporthMap {
+): NormalizedExportsLikeMap {
   let rootValue;
 
   if (typeof exportsField === 'string') {
@@ -199,18 +197,17 @@ function normalizeExportsField(
   }
 
   if (typeof rootValue === 'string') {
-    const result: NormalizedExporthMap = new Map([['.', rootValue]]);
+    const result: NormalizedExportsLikeMap = new Map([['.', rootValue]]);
     _normalizedExportsFields.set(exportsField, result);
     return result;
   }
 
   const firstLevelKeys = Object.keys(rootValue);
-  const subpathKeys = firstLevelKeys.filter(subpathOrCondition =>
-    subpathOrCondition.startsWith('.'),
-  );
+  const subpathKeys = firstLevelKeys.filter(key => key.startsWith('.'));
+  const importKeys = firstLevelKeys.filter(key => key.startsWith('#'));
 
-  if (subpathKeys.length === firstLevelKeys.length) {
-    const result: NormalizedExporthMap = new Map(
+  if (importKeys.length + subpathKeys.length === firstLevelKeys.length) {
+    const result: NormalizedExportsLikeMap = new Map(
       Object.entries(flattenLegacySubpathValues(rootValue, createConfigError)),
     );
     _normalizedExportsFields.set(exportsField, result);
@@ -224,7 +221,7 @@ function normalizeExportsField(
     );
   }
 
-  const result: NormalizedExporthMap = new Map([
+  const result: NormalizedExportsLikeMap = new Map([
     ['.', flattenLegacySubpathValues(rootValue, createConfigError)],
   ]);
   _normalizedExportsFields.set(exportsField, result);
@@ -235,9 +232,9 @@ function normalizeExportsField(
  * Flatten legacy Node.js <13.7 array subpath values in an exports mapping.
  */
 function flattenLegacySubpathValues(
-  exportMap: ExportMap | ExportMapWithFallbacks,
+  exportMap: ExportsLikeMap | ExportMapWithFallbacks,
   createConfigError: (reason: string) => Error,
-): ExportMap {
+): ExportsLikeMap {
   return Object.entries(exportMap).reduce(
     (result, [subpath, value]) => {
       // We do not support empty or nested arrays (non-standard)
@@ -253,197 +250,8 @@ function flattenLegacySubpathValues(
       }
       return result;
     },
-    {} as {[subpathOrCondition: string]: string | ExportMap | null},
+    {} as {[subpathOrCondition: string]: string | ExportsLikeMap | null},
   );
-}
-
-/**
- * Identifies whether the given subpath is defined in the given "exports"-like
- * mapping. Does not reduce exports conditions (therefore does not identify
- * whether the subpath is mapped to a value).
- */
-export function isSubpathDefinedInExports(
-  exportMap: NormalizedExporthMap,
-  subpath: string,
-): boolean {
-  if (exportMap.has(subpath)) {
-    return true;
-  }
-
-  // Attempt to match after expanding any subpath pattern keys
-  for (const key of exportMap.keys()) {
-    if (
-      key.split('*').length === 2 &&
-      matchSubpathPattern(key, subpath) != null
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Get the mapped replacement for the given subpath.
- *
- * Implements modern package resolution behaviour based on the [Package Entry
- * Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points).
- */
-function matchSubpathFromExports(
-  context: ResolutionContext,
-  /**
-   * The package-relative subpath (beginning with '.') to match against either
-   * an exact subpath key or subpath pattern key in "exports".
-   */
-  subpath: string,
-  exportMap: NormalizedExporthMap,
-  platform: string | null,
-  createConfigError: (reason: string) => Error,
-): $ReadOnly<{
-  target: string | null,
-  patternMatch: string | null,
-}> {
-  const conditionNames = new Set([
-    'default',
-    ...context.unstable_conditionNames,
-    ...(platform != null
-      ? context.unstable_conditionsByPlatform[platform] ?? []
-      : []),
-  ]);
-
-  const exportMapAfterConditions = reduceExportMap(
-    exportMap,
-    conditionNames,
-    createConfigError,
-  );
-
-  let target = exportMapAfterConditions.get(subpath);
-  let patternMatch = null;
-
-  // Attempt to match after expanding any subpath pattern keys
-  if (target == null) {
-    // Gather keys which are subpath patterns in descending order of specificity
-    const expansionKeys = [...exportMapAfterConditions.keys()]
-      .filter(key => key.includes('*'))
-      .sort(key => key.split('*')[0].length)
-      .reverse();
-
-    for (const key of expansionKeys) {
-      const value = exportMapAfterConditions.get(key);
-
-      // Skip invalid values (must include a single '*' or be `null`)
-      if (typeof value === 'string' && value.split('*').length !== 2) {
-        break;
-      }
-
-      patternMatch = matchSubpathPattern(key, subpath);
-
-      if (patternMatch != null) {
-        target = value;
-        break;
-      }
-    }
-  }
-
-  return {target: target ?? null, patternMatch};
-}
-
-type FlattenedExportMap = $ReadOnlyMap<string /* subpath */, string | null>;
-
-/**
- * Reduce an "exports"-like mapping to a flat subpath mapping after resolving
- * conditional exports.
- */
-function reduceExportMap(
-  exportMap: NormalizedExporthMap,
-  conditionNames: $ReadOnlySet<string>,
-  createConfigError: (reason: string) => Error,
-): FlattenedExportMap {
-  const result = new Map<string, string | null>();
-
-  for (const [subpath, value] of exportMap) {
-    const subpathValue = reduceConditionalExport(value, conditionNames);
-
-    // If a subpath has no resolution for the passed `conditionNames`, do not
-    // include it in the result. (This includes only explicit `null` values,
-    // which may conditionally hide higher-specificity subpath patterns.)
-    if (subpathValue !== 'no-match') {
-      result.set(subpath, subpathValue);
-    }
-  }
-
-  for (const value of result.values()) {
-    if (value != null && !value.startsWith('./')) {
-      throw createConfigError(
-        'One or more mappings for subpaths defined in "exports" are invalid. ' +
-          'All values must begin with "./".',
-      );
-    }
-  }
-
-  return result;
-}
-
-/**
- * Reduce an "exports"-like subpath value after asserting the passed
- * `conditionNames` in any nested conditions.
- *
- * Returns `'no-match'` in the case that none of the asserted `conditionNames`
- * are matched.
- *
- * See https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports.
- */
-function reduceConditionalExport(
-  subpathValue: $Values<ExportMap>,
-  conditionNames: $ReadOnlySet<string>,
-): string | null | 'no-match' {
-  let reducedValue = subpathValue;
-
-  while (reducedValue != null && typeof reducedValue !== 'string') {
-    let match: typeof subpathValue | 'no-match';
-
-    // when conditions are present and default is not specified
-    // the default condition is implicitly set to null, to allow
-    // for restricting access to unexported internals of a package.
-    if ('default' in reducedValue) {
-      match = 'no-match';
-    } else {
-      match = null;
-    }
-
-    for (const conditionName in reducedValue) {
-      if (conditionNames.has(conditionName)) {
-        match = reducedValue[conditionName];
-        break;
-      }
-    }
-
-    reducedValue = match;
-  }
-
-  return reducedValue;
-}
-
-/**
- * If a subpath pattern expands to the passed subpath, return the subpath match
- * (value to substitute for '*'). Otherwise, return `null`.
- *
- * See https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns.
- */
-function matchSubpathPattern(
-  subpathPattern: string,
-  subpath: string,
-): string | null {
-  const [patternBase, patternTrailer] = subpathPattern.split('*');
-
-  if (subpath.startsWith(patternBase) && subpath.endsWith(patternTrailer)) {
-    return subpath.substring(
-      patternBase.length,
-      subpath.length - patternTrailer.length,
-    );
-  }
-
-  return null;
 }
 
 function findInvalidPathSegment(subpath: string): ?string {
