@@ -125,6 +125,7 @@ class HmrServer<TClient: Client> {
         data: {
           key: entryFile,
           asyncType: null,
+          isESMImport: false,
           locs: [],
         },
       },

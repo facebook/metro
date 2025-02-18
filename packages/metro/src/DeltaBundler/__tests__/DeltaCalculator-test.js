@@ -94,7 +94,12 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/foo'),
               data: {
                 name: 'foo',
-                data: {key: 'foo', asyncType: null, locs: []},
+                data: {
+                  key: 'foo',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],
@@ -104,7 +109,12 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/bar'),
               data: {
                 name: 'bar',
-                data: {key: 'bar', asyncType: null, locs: []},
+                data: {
+                  key: 'bar',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],
@@ -114,7 +124,12 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/baz'),
               data: {
                 name: 'baz',
-                data: {key: 'baz', asyncType: null, locs: []},
+                data: {
+                  key: 'baz',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],
@@ -132,7 +147,12 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
               absolutePath: p('/qux'),
               data: {
                 name: 'qux',
-                data: {key: 'qux', asyncType: null, locs: []},
+                data: {
+                  key: 'qux',
+                  asyncType: null,
+                  isESMImport: false,
+                  locs: [],
+                },
               },
             },
           ],
