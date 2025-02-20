@@ -60,21 +60,24 @@ async function dependencies(args: Args, config: ConfigT) {
     args.output != null ? fs.createWriteStream(args.output) : process.stdout;
 
   const server = new Server(config);
-  const deps = await server.getOrderedDependencyPaths(options);
-  deps.forEach(modulePath => {
-    // Temporary hack to disable listing dependencies not under this directory.
-    // Long term, we need either
-    // (a) JS code to not depend on anything outside this directory, or
-    // (b) Come up with a way to declare this dependency in Buck.
-    const isInsideProjectRoots =
-      config.watchFolders.filter(root => modulePath.startsWith(root)).length >
-      0;
-    if (isInsideProjectRoots) {
-      outStream.write(modulePath + '\n');
-    }
-  });
+  try {
+    const deps = await server.getOrderedDependencyPaths(options);
+    deps.forEach(modulePath => {
+      // Temporary hack to disable listing dependencies not under this directory.
+      // Long term, we need either
+      // (a) JS code to not depend on anything outside this directory, or
+      // (b) Come up with a way to declare this dependency in Buck.
+      const isInsideProjectRoots =
+        config.watchFolders.filter(root => modulePath.startsWith(root)).length >
+        0;
+      if (isInsideProjectRoots) {
+        outStream.write(modulePath + '\n');
+      }
+    });
+  } finally {
+    await server.end();
+  }
 
-  await server.end();
   return args.output != null
     ? // $FlowFixMe[method-unbinding]
       promisify(outStream.end).bind(outStream)()
