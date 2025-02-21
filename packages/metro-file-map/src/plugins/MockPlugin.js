@@ -18,12 +18,14 @@ import type {
   RawMockMap,
 } from '../flow-types';
 
+import normalizePathSeparatorsToPosix from '../lib/normalizePathSeparatorsToPosix';
+import normalizePathSeparatorsToSystem from '../lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from '../lib/RootPathUtils';
 import getMockName from './mocks/getMockName';
 import nullthrows from 'nullthrows';
 import path from 'path';
 
-export const CACHE_VERSION = 1;
+export const CACHE_VERSION = 2;
 
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   +name = 'mocks';
@@ -82,12 +84,14 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   }
 
   getMockModule(name: string): ?Path {
-    const mockPath =
+    const mockPosixRelativePath =
       this.#raw.mocks.get(name) || this.#raw.mocks.get(name + '/index');
-    if (typeof mockPath !== 'string') {
+    if (typeof mockPosixRelativePath !== 'string') {
       return null;
     }
-    return this.#pathUtils.normalToAbsolute(mockPath);
+    return this.#pathUtils.normalToAbsolute(
+      normalizePathSeparatorsToSystem(mockPosixRelativePath),
+    );
   }
 
   async bulkUpdate(delta: FileMapDelta): Promise<void> {
@@ -107,16 +111,17 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     }
 
     const mockName = getMockName(absoluteFilePath);
-    const existingMockPath = this.#raw.mocks.get(mockName);
+    const posixRelativePath = normalizePathSeparatorsToPosix(relativeFilePath);
 
-    if (existingMockPath != null) {
-      if (existingMockPath !== relativeFilePath) {
+    const existingMockPosixPath = this.#raw.mocks.get(mockName);
+    if (existingMockPosixPath != null) {
+      if (existingMockPosixPath !== posixRelativePath) {
         let duplicates = this.#raw.duplicates.get(mockName);
         if (duplicates == null) {
-          duplicates = new Set([existingMockPath, relativeFilePath]);
+          duplicates = new Set([existingMockPosixPath, posixRelativePath]);
           this.#raw.duplicates.set(mockName, duplicates);
         } else {
-          duplicates.add(relativeFilePath);
+          duplicates.add(posixRelativePath);
         }
 
         this.#console.warn(this.#getMessageForDuplicates(mockName, duplicates));
@@ -125,7 +130,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
 
     // If there are duplicates and we don't throw, the latest mock wins.
     // This is to preserve backwards compatibility, but it's unpredictable.
-    this.#raw.mocks.set(mockName, relativeFilePath);
+    this.#raw.mocks.set(mockName, posixRelativePath);
   }
 
   onRemovedFile(relativeFilePath: Path): void {
@@ -136,7 +141,9 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     const mockName = getMockName(absoluteFilePath);
     const duplicates = this.#raw.duplicates.get(mockName);
     if (duplicates != null) {
-      duplicates.delete(relativeFilePath);
+      const posixRelativePath =
+        normalizePathSeparatorsToPosix(relativeFilePath);
+      duplicates.delete(posixRelativePath);
       if (duplicates.size === 1) {
         this.#raw.duplicates.delete(mockName);
       }
@@ -164,8 +171,8 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     }
     // Throw an aggregate error for each duplicate.
     const errors = [];
-    for (const [mockName, relativePaths] of this.#raw.duplicates) {
-      errors.push(this.#getMessageForDuplicates(mockName, relativePaths));
+    for (const [mockName, relativePosixPaths] of this.#raw.duplicates) {
+      errors.push(this.#getMessageForDuplicates(mockName, relativePosixPaths));
     }
     if (errors.length > 0) {
       throw new Error(
@@ -176,18 +183,20 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
 
   #getMessageForDuplicates(
     mockName: string,
-    duplicates: $ReadOnlySet<string>,
+    relativePosixPaths: $ReadOnlySet<string>,
   ): string {
     return (
       'Duplicate manual mock found for `' +
       mockName +
       '`:\n' +
-      [...duplicates]
+      [...relativePosixPaths]
         .map(
-          relativePath =>
+          relativePosixPath =>
             '    * <rootDir>' +
             path.sep +
-            this.#pathUtils.absoluteToNormal(relativePath) +
+            this.#pathUtils.absoluteToNormal(
+              normalizePathSeparatorsToSystem(relativePosixPath),
+            ) +
             '\n',
         )
         .join('')

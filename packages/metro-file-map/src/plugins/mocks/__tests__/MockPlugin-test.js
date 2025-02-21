@@ -14,7 +14,7 @@ import type MockMapType from '../../MockPlugin';
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
-describe.each([['win32'], ['posix']])('MockMap on %s', platform => {
+describe.each([['win32'], ['posix']])('MockPlugin on %s', platform => {
   const p: string => string = filePath =>
     platform === 'win32'
       ? filePath.replace(/\//g, '\\').replace(/^\\/, 'C:\\')
@@ -70,12 +70,13 @@ Duplicate manual mock found for \`foo\`:
       p('/root/other/__mocks__/foo.js'),
     );
 
+    // All serializable data is platform-agnostic, using posix separators.
     expect(mockMap.getSerializableSnapshot()).toEqual({
-      mocks: new Map([['foo', p('other/__mocks__/foo.js')]]),
+      mocks: new Map([['foo', 'other/__mocks__/foo.js']]),
       duplicates: new Map([
-        ['foo', new Set([p('other/__mocks__/foo.js'), p('__mocks__/foo.js')])],
+        ['foo', new Set(['other/__mocks__/foo.js', '__mocks__/foo.js'])],
       ]),
-      version: 1,
+      version: 2,
     });
 
     mockMap.onRemovedFile(p('other/__mocks__/foo.js'));
@@ -86,9 +87,36 @@ Duplicate manual mock found for \`foo\`:
     expect(mockMap.getMockModule('foo')).toBe(p('/root/__mocks__/foo.js'));
 
     expect(mockMap.getSerializableSnapshot()).toEqual({
-      mocks: new Map([['foo', p('__mocks__/foo.js')]]),
+      mocks: new Map([['foo', '__mocks__/foo.js']]),
       duplicates: new Map(),
-      version: 1,
+      version: 2,
     });
+  });
+
+  test('loads from a snapshot', async () => {
+    const mockMap = new MockMap(opts);
+    await mockMap.initialize({
+      files: {
+        metadataIterator: () => {
+          throw new Error('should not be used');
+        },
+      },
+      pluginState: {
+        mocks: new Map([
+          ['bar', 'some/__mocks__/bar.js'],
+          ['foo', 'other/__mocks__/foo.js'],
+        ]),
+        duplicates: new Map([
+          ['foo', new Set(['other/__mocks__/foo.js', '__mocks__/foo.js'])],
+        ]),
+        version: 2,
+      },
+    });
+    expect(mockMap.getMockModule('bar')).toEqual(
+      p('/root/some/__mocks__/bar.js'),
+    );
+    expect(mockMap.getMockModule('foo')).toEqual(
+      p('/root/other/__mocks__/foo.js'),
+    );
   });
 });

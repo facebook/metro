@@ -383,8 +383,14 @@ export interface MutableFileSystem extends FileSystem {
 export type Path = string;
 
 export type RawMockMap = $ReadOnly<{
-  duplicates: Map<string, Set<string>>,
-  mocks: Map<string, Path>,
+  duplicates: Map<
+    string, // posix-separated mock name
+    Set<string>, // posix-separated, project-relative paths
+  >,
+  mocks: Map<
+    string, // posix-separated mock name
+    Path, // posix-separated, project-relative path
+  >,
   version: number,
 }>;
 
