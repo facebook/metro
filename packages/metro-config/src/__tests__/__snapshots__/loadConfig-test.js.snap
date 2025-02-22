@@ -177,6 +177,7 @@ Object {
       "debounceMs": 5000,
       "enabled": true,
     },
+    "unstable_lazySha1": false,
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
@@ -364,6 +365,7 @@ Object {
       "debounceMs": 5000,
       "enabled": true,
     },
+    "unstable_lazySha1": false,
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
@@ -551,6 +553,7 @@ Object {
       "debounceMs": 5000,
       "enabled": true,
     },
+    "unstable_lazySha1": false,
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
@@ -738,6 +741,7 @@ Object {
       "debounceMs": 5000,
       "enabled": true,
     },
+    "unstable_lazySha1": false,
     "unstable_workerThreads": false,
     "watchman": Object {
       "deferStates": Array [
