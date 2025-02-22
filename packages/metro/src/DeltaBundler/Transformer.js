@@ -24,19 +24,30 @@ const fs = require('fs');
 const {Cache, stableHash} = require('metro-cache');
 const path = require('path');
 
+type LazySha1Fn = string => Promise<{content?: Buffer, sha1: string}>;
+type EagerSha1Fn = string => string;
+
 class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
-  _getSha1: string => string;
+  _getSha1: EagerSha1Fn | LazySha1Fn;
   _workerFarm: WorkerFarm;
 
-  constructor(config: ConfigT, getSha1Fn: string => string) {
+  constructor(
+    config: ConfigT,
+    getSha1FnOrOpts:
+      | $ReadOnly<{unstable_getOrComputeSha1: LazySha1Fn}>
+      | EagerSha1Fn,
+  ) {
     this._config = config;
 
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
-    this._getSha1 = getSha1Fn;
+    this._getSha1 =
+      typeof getSha1FnOrOpts === 'function'
+        ? getSha1FnOrOpts
+        : getSha1FnOrOpts.unstable_getOrComputeSha1;
 
     // Remove the transformer config params that we don't want to pass to the
     // transformer. We should change the config object and move them away so we
@@ -129,11 +140,21 @@ class Transformer {
     ]);
 
     let sha1: string;
+    let content: ?Buffer;
     if (fileBuffer) {
       // Shortcut for virtual modules which provide the contents with the filename.
       sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+      content = fileBuffer;
     } else {
-      sha1 = this._getSha1(filePath);
+      const result = await this._getSha1(filePath);
+      if (typeof result === 'string') {
+        sha1 = result;
+      } else {
+        sha1 = result.sha1;
+        if (result.content) {
+          content = result.content;
+        }
+      }
     }
 
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
@@ -158,7 +179,7 @@ class Transformer {
       : await this._workerFarm.transform(
           localPath,
           transformerOptions,
-          fileBuffer,
+          content,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

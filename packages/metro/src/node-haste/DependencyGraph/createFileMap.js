@@ -85,7 +85,7 @@ function createFileMap(
         })),
     perfLoggerFactory: config.unstable_perfLoggerFactory,
     computeDependencies,
-    computeSha1: true,
+    computeSha1: !config.watcher.unstable_lazySha1,
     dependencyExtractor: config.resolver.dependencyExtractor,
     enableHastePackages: config?.resolver.enableGlobalPackages,
     enableSymlinks: true,
