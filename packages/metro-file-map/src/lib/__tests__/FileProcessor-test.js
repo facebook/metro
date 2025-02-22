@@ -50,6 +50,7 @@ describe('processBatch', () => {
     await processor.processBatch(getNMockFiles(100), {
       computeDependencies: false,
       computeSha1: true,
+      maybeReturnContent: false,
     });
 
     expect(MockJestWorker).toHaveBeenCalledWith(
@@ -70,6 +71,7 @@ describe('processBatch', () => {
     await processor.processBatch(getNMockFiles(50), {
       computeDependencies: false,
       computeSha1: true,
+      maybeReturnContent: false,
     });
 
     expect(MockJestWorker).not.toHaveBeenCalled();
