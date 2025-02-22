@@ -441,10 +441,12 @@ export type WorkerMessage = $ReadOnly<{
   enableHastePackages: boolean,
   filePath: string,
   hasteImplModulePath?: ?string,
+  maybeReturnContent: boolean,
 }>;
 
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
   id?: ?string,
   sha1?: ?string,
+  content?: ?Buffer,
 }>;

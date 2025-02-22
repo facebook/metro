@@ -20,8 +20,20 @@ import {sep} from 'path';
 const debug = require('debug')('Metro:FileMap');
 
 type ProcessFileRequest = $ReadOnly<{
+  /**
+   * Populate metadata[H.SHA1] with the SHA1 of the file's contents.
+   */
   computeSha1: boolean,
+  /**
+   * Populate metadata[H.DEPENDENCIES] with unresolved dependency specifiers
+   * using the dependencyExtractor provided to the constructor.
+   */
   computeDependencies: boolean,
+  /**
+   * Only if processing has already required reading the file's contents, return
+   * the contents as a Buffer - null otherwise. Not supported for batches.
+   */
+  maybeReturnContent: boolean,
 }>;
 
 type WorkerObj = {worker: typeof worker};
@@ -72,6 +84,12 @@ export class FileProcessor {
     );
     const batchWorker = this.#getBatchWorker(numWorkers);
 
+    if (req.maybeReturnContent) {
+      throw new Error(
+        'Batch processing does not support returning file contents',
+      );
+    }
+
     await Promise.all(
       files.map(([absolutePath, fileMetadata]) =>
         this.#processWithWorker(
@@ -97,9 +115,17 @@ export class FileProcessor {
     absolutePath: string,
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
-  ): ?Promise<void> {
+  ): ?Promise<{content: ?Buffer}> {
     // Use in-band worker directly for single files.
-    return this.#processWithWorker(absolutePath, fileMetadata, req, worker);
+    const result = this.#processWithWorker(
+      absolutePath,
+      fileMetadata,
+      req,
+      worker,
+    );
+    return result
+      ? result.then(maybeContent => ({content: maybeContent}))
+      : null;
   }
 
   #processWithWorker(
@@ -107,7 +133,7 @@ export class FileProcessor {
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
     worker: WorkerInterface['worker'],
-  ): ?Promise<void> {
+  ): ?Promise<?Buffer> {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
 
     // Callback called when the response from the worker is successful.
@@ -127,6 +153,8 @@ export class FileProcessor {
       if (computeSha1) {
         fileMetadata[H.SHA1] = metadata.sha1;
       }
+
+      return metadata.content;
     };
 
     // Callback called when the response from the worker is an error.
@@ -145,6 +173,8 @@ export class FileProcessor {
       throw error;
     };
 
+    const {computeDependencies, maybeReturnContent} = req;
+
     // Use a cheaper worker configuration for node_modules files, because we
     // never care about extracting dependencies, and they may never be Haste
     // modules or packages.
@@ -160,18 +190,20 @@ export class FileProcessor {
           enableHastePackages: false,
           filePath: absolutePath,
           hasteImplModulePath: null,
+          maybeReturnContent,
         }).then(workerReply, workerError);
       }
       return null;
     }
 
     return worker({
-      computeDependencies: req.computeDependencies,
+      computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
       enableHastePackages: this.#enableHastePackages,
       filePath: absolutePath,
       hasteImplModulePath: this.#hasteImplModulePath,
+      maybeReturnContent,
     }).then(workerReply, workerError);
   }
 
