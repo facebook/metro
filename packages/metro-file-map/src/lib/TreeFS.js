@@ -16,6 +16,7 @@ import type {
   LookupResult,
   MutableFileSystem,
   Path,
+  ProcessFileFunction,
 } from '../flow-types';
 
 import H from '../constants';
@@ -96,10 +97,20 @@ export default class TreeFS implements MutableFileSystem {
   +#rootDir: Path;
   #rootNode: DirectoryNode = new Map();
   #pathUtils: RootPathUtils;
+  #processFile: ProcessFileFunction;
 
-  constructor({rootDir, files}: {rootDir: Path, files?: FileData}) {
+  constructor({
+    rootDir,
+    files,
+    processFile,
+  }: {
+    rootDir: Path,
+    files?: FileData,
+    processFile: ProcessFileFunction,
+  }) {
     this.#rootDir = rootDir;
     this.#pathUtils = new RootPathUtils(rootDir);
+    this.#processFile = processFile;
     if (files != null) {
       this.bulkAddOrModify(files);
     }
@@ -112,11 +123,13 @@ export default class TreeFS implements MutableFileSystem {
   static fromDeserializedSnapshot({
     rootDir,
     fileSystemData,
+    processFile,
   }: {
     rootDir: string,
     fileSystemData: DirectoryNode,
+    processFile: ProcessFileFunction,
   }): TreeFS {
-    const tfs = new TreeFS({rootDir});
+    const tfs = new TreeFS({rootDir, processFile});
     tfs.#rootNode = fileSystemData;
     return tfs;
   }
@@ -190,6 +203,47 @@ export default class TreeFS implements MutableFileSystem {
   getSha1(mixedPath: Path): ?string {
     const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SHA1]) ?? null;
+  }
+
+  async getOrComputeSha1(
+    mixedPath: Path,
+  ): Promise<?{sha1: string, content?: Buffer}> {
+    const normalPath = this._normalizePath(mixedPath);
+    const result = this._lookupByNormalPath(normalPath, {
+      followLeaf: true,
+    });
+    if (!result.exists || isDirectory(result.node)) {
+      return null;
+    }
+    const {canonicalPath, node: fileMetadata} = result;
+
+    // Empty strings
+    const existing = fileMetadata[H.SHA1];
+    if (existing != null && existing.length > 0) {
+      return {sha1: existing};
+    }
+    const absolutePath = this.#pathUtils.normalToAbsolute(canonicalPath);
+
+    // Mutate the metadata we first retrieved. This may be orphaned or about
+    // to be overwritten if the file changes while we are processing it -
+    // by only mutating the original metadata, we don't risk caching a stale
+    // SHA-1 after a change event.
+    const maybeContent = await this.#processFile(absolutePath, fileMetadata, {
+      computeSha1: true,
+    });
+    const sha1 = fileMetadata[H.SHA1];
+    invariant(
+      sha1 != null && sha1.length > 0,
+      "File processing didn't populate a SHA-1 hash for %s",
+      absolutePath,
+    );
+
+    return maybeContent
+      ? {
+          sha1,
+          content: maybeContent,
+        }
+      : {sha1};
   }
 
   exists(mixedPath: Path): boolean {

@@ -34,6 +34,7 @@ import type {
   Path,
   PerfLogger,
   PerfLoggerFactory,
+  ProcessFileFunction,
   WatcherBackendChangeEvent,
   WatchmanClocks,
 } from './flow-types';
@@ -355,6 +356,25 @@ export default class FileMap extends EventEmitter {
 
         const rootDir = this._options.rootDir;
         this._startupPerfLogger?.point('constructFileSystem_start');
+        const processFile: ProcessFileFunction = async (
+          absolutePath,
+          metadata,
+          opts,
+        ) => {
+          const result = await this._fileProcessor.processRegularFile(
+            absolutePath,
+            metadata,
+            {
+              computeSha1: opts.computeSha1,
+              computeDependencies: false,
+              maybeReturnContent: true,
+            },
+          );
+          debug('Lazily processed file: %s', absolutePath);
+          // Emit an event to inform caches that there is new data to save.
+          this.emit('metadata');
+          return result?.content;
+        };
         const fileSystem =
           initialData != null
             ? TreeFS.fromDeserializedSnapshot({
@@ -364,8 +384,9 @@ export default class FileMap extends EventEmitter {
                 // trust our cache manager that this is correct.
                 // $FlowIgnore
                 fileSystemData: initialData.fileSystemData,
+                processFile,
               })
-            : new TreeFS({rootDir});
+            : new TreeFS({rootDir, processFile});
         this._startupPerfLogger?.point('constructFileSystem_end');
 
         const hastePlugin = new HastePlugin({
@@ -700,9 +721,14 @@ export default class FileMap extends EventEmitter {
         changedSinceCacheRead: changed.size + removed.size > 0,
         eventSource: {
           onChange: cb => {
+            // Inform the cache about changes to internal state, including:
+            //  - File system changes
             this.on('change', cb);
+            //  - Changes to stored metadata, e.g. on lazy processing.
+            this.on('metadata', cb);
             return () => {
               this.removeListener('change', cb);
+              this.removeListener('metadata', cb);
             };
           },
         },

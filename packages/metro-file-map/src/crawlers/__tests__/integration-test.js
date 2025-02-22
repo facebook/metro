@@ -125,6 +125,9 @@ describe.each(Object.keys(CRAWLERS))(
             fileSystem: new TreeFS({
               rootDir: FIXTURES_DIR,
               files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+              processFile: () => {
+                throw new Error('Not implemented');
+              },
             }),
             clocks: new Map(),
           },

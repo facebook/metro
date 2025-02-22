@@ -248,6 +248,7 @@ export interface FileSystem {
   getModuleName(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
+  getOrComputeSha1(file: Path): Promise<?{sha1: string, content?: Buffer}>;
 
   /**
    * Given a start path (which need not exist), a subpath and type, and
@@ -381,6 +382,12 @@ export interface MutableFileSystem extends FileSystem {
 }
 
 export type Path = string;
+
+export type ProcessFileFunction = (
+  absolutePath: string,
+  metadata: FileMetaData,
+  request: $ReadOnly<{computeSha1: boolean}>,
+) => Promise<?Buffer>;
 
 export type RawMockMap = $ReadOnly<{
   duplicates: Map<
