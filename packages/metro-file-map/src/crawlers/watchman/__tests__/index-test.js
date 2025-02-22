@@ -46,7 +46,12 @@ const DEFAULT_OPTIONS: CrawlerOptions = {
   perfLogger: null,
   previousState: {
     clocks: new Map(),
-    fileSystem: new TreeFS({rootDir: systemPath('/roots')}),
+    fileSystem: new TreeFS({
+      rootDir: systemPath('/roots'),
+      processFile: () => {
+        throw new Error('Not implemented');
+      },
+    }),
   },
   rootDir: systemPath('/roots'),
   roots: [
