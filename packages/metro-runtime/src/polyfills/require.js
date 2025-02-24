@@ -888,6 +888,7 @@ if (__DEV__) {
     if (
       typeof window !== 'undefined' &&
       window.location != null &&
+      // $FlowFixMe[method-unbinding]
       typeof window.location.reload === 'function'
     ) {
       window.location.reload();
