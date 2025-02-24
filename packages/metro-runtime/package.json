@@ -4,6 +4,11 @@
   "description": "🚇 Module required for evaluating Metro bundles.",
   "exports": {
     "./package.json": "./package.json",
+    "./modules/asyncRequire": "./src/modules/asyncRequire.js",
+    "./modules/empty-module": "./src/modules/empty-module.js",
+    "./modules/HMRClient": "./src/modules/HMRClient.js",
+    "./modules/null-module": "./src/modules/null-module.js",
+    "./polyfills/require": "./src/polyfills/require.js",
     "./private/*": "./src/*.js",
     "./src/*.js": "./src/*.js",
     "./src/*": "./src/*.js"
