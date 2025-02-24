@@ -106,3 +106,32 @@ test('forces all packages to have an .npmignore with expected entries', () => {
     );
   });
 });
+
+test('use package.json#exports, exporting a main and package.json', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    const packageJson = readPackageJson(packagePath);
+    expect(packageJson.exports).toEqual(
+      expect.objectContaining({
+        ...(packageJson.main != null
+          ? {
+              '.': packageJson.main.startsWith('./')
+                ? packageJson.main
+                : './' + packageJson.main,
+            }
+          : null),
+        ...(packageJson.main?.endsWith('src/index.js')
+          ? {
+              // For backward compatibility, allow importing src as a directory
+              './src': './src/index.js',
+            }
+          : null),
+        './package.json': './package.json',
+        './private/*': './src/*.js',
+        // If an import specifies .js, keep it
+        './src/*.js': './src/*.js',
+        // Add .js to extensionless imports
+        './src/*': './src/*.js',
+      }),
+    );
+  });
+});

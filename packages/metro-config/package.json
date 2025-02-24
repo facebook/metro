@@ -3,6 +3,15 @@
   "version": "0.81.1",
   "description": "🚇 Config parser for Metro.",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json",
+    "./private/*": "./src/*.js",
+    "./src": "./src/index.js",
+    "./src/*.js": "./src/*.js",
+    "./src/*": "./src/*.js",
+    "./src/defaults": "./src/defaults/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"

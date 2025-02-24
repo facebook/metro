@@ -3,6 +3,14 @@
   "version": "0.81.1",
   "description": "🚇 Source map generator for Metro.",
   "main": "src/source-map.js",
+  "exports": {
+    ".": "./src/source-map.js",
+    "./package.json": "./package.json",
+    "./private/*": "./src/*.js",
+    "./src/*.js": "./src/*.js",
+    "./src/*": "./src/*.js",
+    "./src/Consumer": "./src/Consumer/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"

@@ -5,6 +5,14 @@
   "license": "MIT",
   "main": "./src/index.js",
   "bin": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json",
+    "./private/*": "./src/*.js",
+    "./src": "./src/index.js",
+    "./src/*.js": "./src/*.js",
+    "./src/*": "./src/*.js"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
