@@ -2,7 +2,6 @@
   "name": "metro-runtime",
   "version": "0.81.1",
   "description": "🚇 Module required for evaluating Metro bundles.",
-  "main": "src",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
