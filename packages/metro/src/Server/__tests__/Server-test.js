@@ -19,14 +19,16 @@ import type {
 } from '../../DeltaBundler/types.flow';
 
 import CountingSet from '../../lib/CountingSet';
-import {mergeConfig} from 'metro-config/src';
+import {mergeConfig} from 'metro-config';
 // $FlowFixMe[untyped-import]
 import MockRequest from 'mock-req';
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
-const {getDefaultValues} = require('metro-config/src/defaults');
+const {
+  getDefaultConfig: {getDefaultValues},
+} = require('metro-config');
 const path = require('path');
 
 jest

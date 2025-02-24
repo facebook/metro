@@ -20,7 +20,9 @@ import {mergeConfig} from 'metro-config';
 
 const HmrServer = require('../HmrServer');
 const getGraphId = require('../lib/getGraphId');
-const {getDefaultValues} = require('metro-config/src/defaults');
+const {
+  getDefaultConfig: {getDefaultValues},
+} = require('metro-config');
 
 jest.mock('../lib/transformHelpers', () => ({
   getResolveDependencyFn:
