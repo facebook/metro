@@ -2,7 +2,7 @@
   "name": "metro-resolver",
   "version": "0.81.1",
   "description": "🚇 Implementation of Metro's resolution logic.",
-  "main": "src",
+  "main": "src/index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
