@@ -3,6 +3,14 @@
   "version": "0.81.1",
   "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json",
+    "./private/*": "./src/*.js",
+    "./src": "./src/index.js",
+    "./src/*.js": "./src/*.js",
+    "./src/*": "./src/*.js"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
