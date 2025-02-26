@@ -40,22 +40,25 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   constructor({
     console,
     mocksPattern,
-    rawMockMap,
+    rawMockMap = {
+      mocks: new Map(),
+      duplicates: new Map(),
+      version: CACHE_VERSION,
+    },
     rootDir,
     throwOnModuleCollision,
   }: {
     console: typeof console,
     mocksPattern: RegExp,
-    rawMockMap?: ?RawMockMap,
+    rawMockMap?: RawMockMap,
     rootDir: Path,
     throwOnModuleCollision: boolean,
   }) {
     this.#mocksPattern = mocksPattern;
-    this.#raw = {
-      mocks: new Map(),
-      duplicates: new Map(),
-      version: CACHE_VERSION,
-    };
+    if (rawMockMap.version !== CACHE_VERSION) {
+      throw new Error('Incompatible state passed to MockPlugin');
+    }
+    this.#raw = rawMockMap;
     this.#rootDir = rootDir;
     this.#console = console;
     this.#pathUtils = new RootPathUtils(rootDir);

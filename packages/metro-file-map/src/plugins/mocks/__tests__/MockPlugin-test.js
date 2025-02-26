@@ -119,4 +119,24 @@ Duplicate manual mock found for \`foo\`:
       p('/root/other/__mocks__/foo.js'),
     );
   });
+
+  test('loads from a raw data passed to the constructor', async () => {
+    const rawMockMap = {
+      mocks: new Map([
+        ['bar', 'some/__mocks__/bar.js'],
+        ['foo', 'other/__mocks__/foo.js'],
+      ]),
+      duplicates: new Map([
+        ['foo', new Set(['other/__mocks__/foo.js', '__mocks__/foo.js'])],
+      ]),
+      version: 2,
+    };
+    const mockMap = new MockMap({...opts, rawMockMap});
+    expect(mockMap.getMockModule('bar')).toEqual(
+      p('/root/some/__mocks__/bar.js'),
+    );
+    expect(mockMap.getMockModule('foo')).toEqual(
+      p('/root/other/__mocks__/foo.js'),
+    );
+  });
 });
