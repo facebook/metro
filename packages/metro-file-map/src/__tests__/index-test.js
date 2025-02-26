@@ -67,11 +67,11 @@ jest.mock('../crawlers/watchman', () =>
             const hash =
               !isSymlink && computeSha1 ? mockHashContents(list[file]) : null;
             changedFiles.set(relativeFilePath, [
-              '',
-              32,
-              42,
-              0,
-              [],
+              '', // Haste name
+              32, // mtime
+              42, // size
+              0, // visited
+              [], // dependencies
               hash,
               isSymlink ? 1 : 0,
             ]);
@@ -724,6 +724,7 @@ describe('FileMap', () => {
     expect(fileSystem.linkStats(path.join('video', 'video.mp4'))).toEqual({
       fileType: 'f',
       modifiedTime: 32,
+      size: 42,
     });
     expect(fs.readFileSync.mock.calls.map(call => call[0])).not.toContain(
       path.join('video', 'video.mp4'),
@@ -751,7 +752,7 @@ describe('FileMap', () => {
       fileSystem.linkStats(
         path.join('fruits', 'node_modules', 'fbjs', 'fbjs.js'),
       ),
-    ).toEqual({fileType: 'f', modifiedTime: 32});
+    ).toEqual({fileType: 'f', modifiedTime: 32, size: 42});
 
     expect(hasteMap.getModule('fbjs')).toBeNull();
 
@@ -1709,6 +1710,7 @@ describe('FileMap', () => {
         expect(fileSystem.linkStats(bananaPath)).toEqual({
           fileType: 'f',
           modifiedTime: 32,
+          size: 42,
         });
         const originalHash = fileSystem.getSha1(bananaPath);
         expect(typeof originalHash).toBe('string');
@@ -1735,6 +1737,7 @@ describe('FileMap', () => {
         expect(fileSystem.linkStats(bananaPath)).toEqual({
           fileType: 'f',
           modifiedTime: 32,
+          size: 42,
         });
         expect(fileSystem.getSha1(bananaPath)).toBe(originalHash);
         expect(hasteMap.getModule('Banana')).toBe(bananaPath);
@@ -1746,6 +1749,7 @@ describe('FileMap', () => {
         expect(fileSystem.linkStats(bananaPath)).toEqual({
           fileType: 'f',
           modifiedTime: 33,
+          size: 500,
         });
         const newHash = fileSystem.getSha1(bananaPath);
         expect(typeof newHash).toBe('string');
@@ -1815,7 +1819,7 @@ describe('FileMap', () => {
         ]);
         expect(
           fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
-        ).toEqual({fileType: 'l', modifiedTime: 46});
+        ).toEqual({fileType: 'l', modifiedTime: 46, size: 5});
       },
       {config: {enableSymlinks: true}},
     );
@@ -1925,6 +1929,7 @@ describe('FileMap', () => {
         expect(linkStats).toEqual({
           fileType: 'l',
           modifiedTime: 46,
+          size: 5,
         });
         // getModuleName traverses the symlink, verifying the link is read.
         expect(fileSystem.getModuleName(filePath)).toEqual('Strawberry');

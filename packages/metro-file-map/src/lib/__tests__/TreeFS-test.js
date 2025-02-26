@@ -35,12 +35,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     tfs = new TreeFS({
       rootDir: p('/project'),
       files: new Map([
-        [p('foo/another.js'), ['another', 123, 0, 0, '', '', 0]],
+        [p('foo/another.js'), ['another', 123, 2, 0, '', '', 0]],
         [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
         [p('foo/link-to-bar.js'), ['', 0, 0, 0, '', '', p('../bar.js')]],
         [p('foo/link-to-another.js'), ['', 0, 0, 0, '', '', p('another.js')]],
         [p('../outside/external.js'), ['', 0, 0, 0, '', '', 0]],
-        [p('bar.js'), ['bar', 234, 0, 0, '', '', 0]],
+        [p('bar.js'), ['bar', 234, 3, 0, '', '', 0]],
         [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./../project/foo')]],
         [p('abs-link-out'), ['', 456, 0, 0, '', '', p('/outside/./baz/..')]],
         [p('root'), ['', 0, 0, 0, '', '', '..']],
@@ -89,14 +89,17 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     expect(tfs.linkStats(p('/project/link-to-foo/another.js'))).toEqual({
       fileType: 'f',
       modifiedTime: 123,
+      size: 2,
     });
     expect(tfs.linkStats(p('bar.js'))).toEqual({
       fileType: 'f',
       modifiedTime: 234,
+      size: 3,
     });
     expect(tfs.linkStats(p('./link-to-foo'))).toEqual({
       fileType: 'l',
       modifiedTime: 456,
+      size: 0,
     });
   });
 
@@ -733,7 +736,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               ['', 0, 0, 0, '', '', p('../foo/link-to-bar.js')],
             ],
             [p('foo/baz.js'), ['', 0, 0, 0, '', '', 0]],
-            [p('bar.js'), ['', 999, 0, 0, '', '', 0]],
+            [p('bar.js'), ['', 999, 1, 0, '', '', 0]],
           ]),
         );
 
@@ -753,6 +756,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.linkStats('bar.js')).toEqual({
           modifiedTime: 999,
           fileType: 'f',
+          size: 1,
         });
       });
     });
@@ -821,7 +825,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         {
           baseName: 'another.js',
           canonicalPath: p('foo/another.js'),
-          metadata: ['another', 123, 0, 0, '', '', 0],
+          metadata: ['another', 123, 2, 0, '', '', 0],
         },
         {
           baseName: 'external.js',
@@ -831,7 +835,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         {
           baseName: 'bar.js',
           canonicalPath: p('bar.js'),
-          metadata: ['bar', 234, 0, 0, '', '', 0],
+          metadata: ['bar', 234, 3, 0, '', '', 0],
         },
       ]);
     });

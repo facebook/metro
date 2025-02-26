@@ -298,10 +298,10 @@ export default class TreeFS implements MutableFileSystem {
       return null;
     }
     const fileType = isRegularFile(fileMetadata) ? 'f' : 'l';
-    const modifiedTime = fileMetadata[H.MTIME];
     return {
       fileType,
-      modifiedTime,
+      modifiedTime: fileMetadata[H.MTIME],
+      size: fileMetadata[H.SIZE],
     };
   }
 

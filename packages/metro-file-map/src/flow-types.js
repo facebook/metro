@@ -235,6 +235,7 @@ export type FileMetaData = [
 export type FileStats = $ReadOnly<{
   fileType: 'f' | 'l',
   modifiedTime: ?number,
+  size: ?number,
 }>;
 
 export interface FileSystem {
