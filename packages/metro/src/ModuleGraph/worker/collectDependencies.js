@@ -29,6 +29,7 @@ const {isImport} = types;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
+  isESMImport: boolean,
 }>;
 
 export type Dependency = $ReadOnly<{
@@ -56,6 +57,11 @@ type DependencyData = $ReadOnly<{
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
+  // If true, the dependency is declared using an ESM import, e.g.
+  // "import x from 'y'" or "await import('z')". A resolver should typically
+  // use this to assert either "import" or "require" for conditional exports
+  // and subpath imports.
+  isESMImport: boolean,
   isOptional?: boolean,
   locs: $ReadOnlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
@@ -82,6 +88,7 @@ export type State = {
   allowOptionalDependencies: AllowOptionalDependencies,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
+  unstable_isESMImportAtSource: ?(BabelSourceLocation) => boolean,
 };
 
 export type Options = $ReadOnly<{
@@ -94,6 +101,7 @@ export type Options = $ReadOnly<{
   dependencyTransformer?: DependencyTransformer,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
+  unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -154,6 +162,7 @@ function collectDependencies(
     keepRequireNames: options.keepRequireNames,
     allowOptionalDependencies: options.allowOptionalDependencies,
     unstable_allowRequireContext: options.unstable_allowRequireContext,
+    unstable_isESMImportAtSource: options.unstable_isESMImportAtSource ?? null,
   };
 
   const visitor = {
@@ -171,6 +180,7 @@ function collectDependencies(
       if (isImport(callee)) {
         processImportCall(path, state, {
           asyncType: 'async',
+          isESMImport: true,
         });
         return;
       }
@@ -178,6 +188,7 @@ function collectDependencies(
       if (name === '__prefetchImport' && !path.scope.getBinding(name)) {
         processImportCall(path, state, {
           asyncType: 'prefetch',
+          isESMImport: true,
         });
         return;
       }
@@ -235,6 +246,10 @@ function collectDependencies(
       ) {
         processImportCall(path, state, {
           asyncType: 'maybeSync',
+          // Treat require.unstable_importMaybeSync as an ESM import, like its
+          // async "await import()" counterpart. Subject to change while
+          // unstable_.
+          isESMImport: true,
         });
         visited.add(path.node);
         return;
@@ -408,6 +423,7 @@ function processRequireContextCall(
       // Capture the matching context
       contextParams,
       asyncType: null,
+      isESMImport: false,
       optional: isOptionalDependency(directory, path, state),
     },
     path,
@@ -433,6 +449,7 @@ function processResolveWeakCall(
     {
       name,
       asyncType: 'weak',
+      isESMImport: false,
       optional: isOptionalDependency(name, path, state),
     },
     path,
@@ -458,6 +475,7 @@ See: https://github.com/facebook/metro/pull/1343`,
       {
         name: path.node.source.value,
         asyncType: null,
+        isESMImport: true,
         optional: false,
       },
       path,
@@ -481,6 +499,7 @@ function processImportCall(
     {
       name,
       asyncType: options.asyncType,
+      isESMImport: options.isESMImport,
       optional: isOptionalDependency(name, path, state),
     },
     path,
@@ -523,11 +542,21 @@ function processRequireCall(
     return;
   }
 
+  let isESMImport = false;
+  if (state.unstable_isESMImportAtSource) {
+    const isImport = state.unstable_isESMImportAtSource;
+    const loc = getNearestLocFromPath(path);
+    if (loc) {
+      isESMImport = isImport(loc);
+    }
+  }
+
   const dep = registerDependency(
     state,
     {
       name,
       asyncType: null,
+      isESMImport,
       optional: isOptionalDependency(name, path, state),
     },
     path,
@@ -555,6 +584,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
 export type ImportQualifier = $ReadOnly<{
   name: string,
   asyncType: AsyncDependencyType | null,
+  isESMImport: boolean,
   optional: boolean,
   contextParams?: RequireContextParams,
 }>;
@@ -801,13 +831,16 @@ function createModuleNameLiteral(dependency: InternalDependency) {
 
 /**
  * Given an import qualifier, return a key used to register the dependency.
- * Generally this return the `ImportQualifier.name` property, but more
- * attributes can be appended to distinguish various combinations that would
- * otherwise conflict.
+ * Attributes can be appended to distinguish various combinations that would
+ * otherwise be considered the same dependency edge.
  *
- * For example, the following case would have collision issues if they all utilized the `name` property:
+ * For example, the following dependencies would collapse into a single edge
+ * if they simply utilized the `name` property:
+ *
  * ```
  * require('./foo');
+ * import foo from './foo'
+ * await import('./foo')
  * require.context('./foo');
  * require.context('./foo', true, /something/);
  * require.context('./foo', false, /something/);
@@ -817,14 +850,13 @@ function createModuleNameLiteral(dependency: InternalDependency) {
  * This method should be utilized by `registerDependency`.
  */
 function getKeyForDependency(qualifier: ImportQualifier): string {
-  let key = qualifier.name;
+  const {asyncType, contextParams, isESMImport, name} = qualifier;
 
-  const {asyncType} = qualifier;
-  if (asyncType) {
-    key += ['', asyncType].join('\0');
+  let key = [name, isESMImport ? 'import' : 'require'].join('\0');
+  if (asyncType != null) {
+    key += '\0' + asyncType;
   }
 
-  const {contextParams} = qualifier;
   // Add extra qualifiers when using `require.context` to prevent collisions.
   if (contextParams) {
     // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
@@ -854,6 +886,7 @@ class DependencyRegistry {
       const newDependency: MutableInternalDependency = {
         name: qualifier.name,
         asyncType: qualifier.asyncType,
+        isESMImport: qualifier.isESMImport,
         locs: [],
         index: this._dependencies.size,
         key: crypto.createHash('sha1').update(key).digest('base64'),

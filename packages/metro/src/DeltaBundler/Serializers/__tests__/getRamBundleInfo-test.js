@@ -32,7 +32,10 @@ function createModule(
           dep,
           {
             absolutePath: `/root/${dep}.js`,
-            data: {data: {asyncType: null, locs: [], key: dep}, name: dep},
+            data: {
+              data: {asyncType: null, isESMImport: false, locs: [], key: dep},
+              name: dep,
+            },
           },
         ]),
       ),

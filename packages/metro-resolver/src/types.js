@@ -158,6 +158,17 @@ export type ResolutionContext = $ReadOnly<{
   dependency?: TransformResultDependency,
 
   /**
+   * Whether the dependency to be resolved was declared with an ESM import,
+   * ("import x from 'y'" or "await import('z')"), or a CommonJS "require".
+   * Corresponds to the criteria Node.js uses to assert an "import"
+   * resolution condition, vs "require".
+   *
+   * Always equal to dependency.data.isESMImport where dependency is provided,
+   * but may be used for resolution.
+   */
+  isESMImport?: boolean,
+
+  /**
    * Synchonously returns information about a given absolute path, including
    * whether it exists, whether it is a file or directory, and its absolute
    * real path.

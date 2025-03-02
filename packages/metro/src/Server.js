@@ -1420,7 +1420,7 @@ class Server {
         : this._config.projectRoot;
     return resolutionFn(`${rootDir}/.`, {
       name: filePath,
-      data: {key: filePath, locs: [], asyncType: null},
+      data: {key: filePath, locs: [], asyncType: null, isESMImport: false},
     }).filePath;
   }
 

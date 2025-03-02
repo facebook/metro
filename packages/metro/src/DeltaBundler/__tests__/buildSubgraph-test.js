@@ -17,10 +17,17 @@ import nullthrows from 'nullthrows';
 const makeTransformDep = (
   name: string,
   asyncType: null | 'weak' | 'async' = null,
+  isESMImport: boolean = false,
   contextParams?: RequireContextParams,
 ): TransformResultDependency => ({
   name,
-  data: {key: 'key-' + name, asyncType, locs: [], contextParams},
+  data: {
+    key: 'key-' + name + (isESMImport ? '-import' : ''),
+    asyncType,
+    isESMImport,
+    locs: [],
+    contextParams,
+  },
 });
 
 class BadTransformError extends Error {}
@@ -40,7 +47,7 @@ describe('GraphTraversal', () => {
       [
         '/entryWithContext',
         [
-          makeTransformDep('virtual', null, {
+          makeTransformDep('virtual', null, false, {
             filter: {
               pattern: 'contextMatch.*',
               flags: 'i',

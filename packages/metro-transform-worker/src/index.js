@@ -54,6 +54,10 @@ const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
 } = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
+const {
+  importLocationsPlugin,
+  locToKey,
+} = require('metro/src/ModuleGraph/worker/importLocationsPlugin');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 const nullthrows = require('nullthrows');
 
@@ -148,6 +152,7 @@ type JSFile = $ReadOnly<{
   ast?: ?BabelNodeFile,
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
+  unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
 }>;
 
 type JSONFile = {
@@ -381,6 +386,7 @@ async function transformJS(
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
   } else {
     try {
+      const importDeclarationLocs = file.unstable_importDeclarationLocs ?? null;
       const opts = {
         asyncRequireModulePath: config.asyncRequireModulePath,
         dependencyTransformer:
@@ -396,6 +402,11 @@ async function transformJS(
         allowOptionalDependencies: config.allowOptionalDependencies,
         dependencyMapName: config.unstable_dependencyMapReservedName,
         unstable_allowRequireContext: config.unstable_allowRequireContext,
+        unstable_isESMImportAtSource:
+          importDeclarationLocs != null
+            ? (loc: BabelSourceLocation) =>
+                importDeclarationLocs.has(locToKey(loc))
+            : null,
       };
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -531,8 +542,12 @@ async function transformJSWithBabel(
   const transformer: BabelTransformer = require(babelTransformerPath);
 
   const transformResult = await transformer.transform(
-    // functionMapBabelPlugin populates metadata.metro.functionMap
-    getBabelTransformArgs(file, context, [functionMapBabelPlugin]),
+    getBabelTransformArgs(file, context, [
+      // functionMapBabelPlugin populates metadata.metro.functionMap
+      functionMapBabelPlugin,
+      // importLocationsPlugin populates metadata.metro.unstable_importDeclarationLocs
+      importLocationsPlugin,
+    ]),
   );
 
   const jsFile: JSFile = {
@@ -543,6 +558,8 @@ async function transformJSWithBabel(
       // Fallback to deprecated explicitly-generated `functionMap`
       transformResult.functionMap ??
       null,
+    unstable_importDeclarationLocs:
+      transformResult.metadata?.metro?.unstable_importDeclarationLocs,
   };
 
   return await transformJS(jsFile, context);

@@ -339,7 +339,8 @@ class DependencyGraph extends EventEmitter {
     const resolverOptionsKey =
       JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
     const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
-    const targetKey = to;
+    const targetKey =
+      to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
     const platformKey = platform ?? NULL_PLATFORM;
 
     // Traverse the resolver cache, which is a tree of maps

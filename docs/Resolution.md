@@ -243,6 +243,12 @@ Given the path to a `package.json` file, returns the parsed file contents.
 
 Given a candidate absolute module path that may exist under a package, locates and returns the closest package root (working upwards from the given path, stopping at the nearest `node_modules`), parsed `package.json` contents, and the package-relative path of the given path.
 
+#### `isESMImport?: boolean`
+
+Whether the dependency to be resolved was declared with an ESM import, ("import x from 'y'" or "await import('z')"), or a CommonJS "require". Corresponds to the criteria Node.js uses to assert an "import" resolution condition, vs "require".
+
+Always equal to dependency.data.isESMImport where dependency is provided, but may be used for resolution.
+
 #### `resolveHasteModule: string => ?string`
 
 Resolves a Haste module name to an absolute path. Returns `null` if no such module exists.

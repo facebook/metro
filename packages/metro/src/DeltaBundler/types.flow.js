@@ -45,6 +45,11 @@ export type TransformResultDependency = $ReadOnly<{
      */
     asyncType: AsyncDependencyType | null,
     /**
+     * True if the dependency is declared with a static "import x from 'y'" or
+     * an import() call.
+     */
+    isESMImport: boolean,
+    /**
      * The dependency is enclosed in a try/catch block.
      */
     isOptional?: boolean,

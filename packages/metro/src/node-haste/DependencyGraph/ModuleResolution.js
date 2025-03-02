@@ -118,6 +118,7 @@ class ModuleResolver<TPackage: Packageish> {
           data: {
             key: this._options.emptyModulePath,
             asyncType: null,
+            isESMImport: false,
             locs: [],
           },
         },
@@ -165,6 +166,7 @@ class ModuleResolver<TPackage: Packageish> {
             doesFileExist,
             extraNodeModules,
             fileSystemLookup,
+            isESMImport: dependency.data.isESMImport,
             mainFields,
             nodeModulesPaths,
             preferNativePlatform,

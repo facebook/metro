@@ -1416,6 +1416,48 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 4);
   });
+
+  describe('isESMImport', () => {
+    test('distinguishes require calls, static imports and async imports', () => {
+      const ast = astFromCode(`
+        import anImport from '.';
+        const aRequire = require('.');
+        const asyncImport = await import('.');
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      expect(dependencies).toEqual([
+        {
+          // Static import
+          name: '.',
+          data: objectContaining({
+            asyncType: null,
+            isESMImport: true,
+          }),
+        },
+        {
+          // require call
+          name: '.',
+          data: objectContaining({
+            asyncType: null,
+            isESMImport: false,
+          }),
+        },
+        {
+          // await import call
+          name: '.',
+          data: objectContaining({
+            asyncType: 'async',
+            isESMImport: true,
+          }),
+        },
+        objectContaining({
+          // asyncRequire helper
+          name: 'asyncRequire',
+        }),
+      ]);
+    });
+  });
+
   test('can handle single-line statement', () => {
     const ast = astFromCode(
       "try { const a = require('optional-a') } catch (e) {}",

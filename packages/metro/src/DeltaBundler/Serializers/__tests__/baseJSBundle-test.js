@@ -41,7 +41,10 @@ const fooModule: Module<> = {
       './bar',
       {
         absolutePath: '/root/bar',
-        data: {data: {asyncType: null, locs: [], key: './bar'}, name: './bar'},
+        data: {
+          data: {asyncType: null, isESMImport: false, locs: [], key: './bar'},
+          name: './bar',
+        },
       },
     ],
   ]),
