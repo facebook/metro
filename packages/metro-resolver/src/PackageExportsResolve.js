@@ -305,6 +305,7 @@ function matchSubpathFromExports(
 }> {
   const conditionNames = new Set([
     'default',
+    context.isESMImport === true ? 'import' : 'require',
     ...context.unstable_conditionNames,
     ...(platform != null
       ? context.unstable_conditionsByPlatform[platform] ?? []
