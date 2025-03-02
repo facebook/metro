@@ -56,10 +56,13 @@ export type BabelFileFunctionMapMetadata = $ReadOnly<{
   mappings: string,
 }>;
 
+export type BabelFileImportLocsMetadata = $ReadOnlySet<string>;
+
 export type MetroBabelFileMetadata = {
   ...BabelFileMetadata,
   metro?: ?{
     functionMap?: ?BabelFileFunctionMapMetadata,
+    unstable_importDeclarationLocs?: ?BabelFileImportLocsMetadata,
     ...
   },
   ...

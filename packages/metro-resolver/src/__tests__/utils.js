@@ -76,6 +76,7 @@ export function createResolutionContext(
         realPath: candidate.realPath,
       };
     },
+    isESMImport: false,
     mainFields: ['browser', 'main'],
     nodeModulesPaths: [],
     preferNativePlatform: false,
