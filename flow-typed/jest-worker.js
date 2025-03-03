@@ -88,7 +88,7 @@ declare module 'jest-worker' {
     getStderr(): stream$Readable;
     getStdout(): stream$Readable;
     getWorkers(): Array<WorkerInterface>;
-    createWorker(options: WorkerOptions): WorkerInterface;
+    createWorker(options: {...}): WorkerInterface;
     send(
       workerId: number,
       request: ChildMessage,
