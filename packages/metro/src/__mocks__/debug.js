@@ -10,8 +10,15 @@
 
 'use strict';
 
-function debug(namespace: string): (...Array<mixed>) => void {
-  return () => {};
+interface DebugFN {
+  (...args: Array<mixed>): void;
+  enabled: () => boolean;
+}
+
+function debug(namespace: string): DebugFN {
+  const fn = (...args: Array<mixed>) => {};
+  fn.enabled = () => false;
+  return fn;
 }
 
 debug.enable = (match: string) => {};
