@@ -608,7 +608,11 @@ export default class FileMap extends EventEmitter {
         fileData[H.SYMLINK] === 0 &&
         !this._options.computeDependencies &&
         !this._options.computeSha1 &&
-        this._options.hasteImplModulePath == null
+        this._options.hasteImplModulePath == null &&
+        !(
+          this._options.enableHastePackages &&
+          relativeFilePath.endsWith(PACKAGE_JSON)
+        )
       ) {
         // Nothing to process
         continue;
