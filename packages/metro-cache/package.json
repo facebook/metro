@@ -1,6 +1,6 @@
 {
   "name": "metro-cache",
-  "version": "0.81.2",
+  "version": "0.81.3",
   "description": "🚇 Cache layers for Metro.",
   "main": "src/index.js",
   "exports": {
@@ -22,10 +22,10 @@
   "dependencies": {
     "exponential-backoff": "^3.1.1",
     "flow-enums-runtime": "^0.0.6",
-    "metro-core": "0.81.2"
+    "metro-core": "0.81.3"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.81.2"
+    "metro-memory-fs": "0.81.3"
   },
   "license": "MIT",
   "engines": {

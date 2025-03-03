@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.81.2",
+  "version": "0.81.3",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "exports": {
     "./package.json": "./package.json",
