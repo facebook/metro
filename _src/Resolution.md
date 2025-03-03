@@ -120,7 +120,7 @@ Parameters: (*context*, *packagePath*, *filePath*, *exportsField*, *platform*)
 2. If *exportsField* contains an invalid configuration or values, raise an `InvalidPackageConfigurationError`.
 3. If *subpath* is not defined by *exportsField*, raise a `PackagePathNotExportedError`.
 4. Let *target* be the result of matching *subpath* in *exportsField* after applying any [conditional exports](https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports) and/or substituting a [subpath pattern match](https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns).
-    1. Condition names will be asserted from the union of `context.unstable_conditionNames` and `context.unstable_conditionNamesByPlatform` for *platform*, in the order defined by *exportsField*.
+    1. Condition names will be asserted from the union of `'default'`, `'import'` OR `'require'` according to `context.isESMImport`, `context.unstable_conditionNames` and `context.unstable_conditionNamesByPlatform` for *platform*, in the order defined by *exportsField*.
 5. If *target* refers to an [asset](#assetexts-readonlysetstring), then
     1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *target*, *platform*).
 6. Return *target* as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
