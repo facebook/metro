@@ -149,3 +149,8 @@ export function createPackageAccessors(
     getPackageForModule,
   };
 }
+
+export const posixToSystemPath: string => string =
+  process.platform === 'win32'
+    ? filePath => filePath.replaceAll('/', '\\').replace(/^\\/, 'C:\\')
+    : filePath => filePath;
