@@ -355,9 +355,13 @@ class TerminalReporter {
   }
 
   /**
-   * We use Math.pow(ratio, 2) to as a conservative measure of progress because
-   * we know the `totalCount` is going to progressively increase as well. We
-   * also prevent the ratio from going backwards.
+   * Since `totalCount` progressively increases, we don't allow
+   * the progress bar to raise above 15% before 30 files are transformed,
+   * by which point in most cases there will be a relatively realistic ratio
+   * calculated compared with the rates in the beginning of the process
+   * where 1/2 files already gets us to 50%.
+   * Also, for better progress indication, don't allow the progress
+   * to go backwards.
    */
   _updateBundleProgress({
     buildID,
@@ -373,9 +377,12 @@ class TerminalReporter {
     if (currentProgress == null) {
       return;
     }
-    const rawRatio = transformedFileCount / totalFileCount;
-    const conservativeRatio = Math.pow(rawRatio, 2);
-    const ratio = Math.max(conservativeRatio, currentProgress.ratio);
+
+    const ratio = Math.max(
+      transformedFileCount / totalFileCount,
+      transformedFileCount < 30 ? 0.15 : currentProgress.ratio,
+    );
+
     Object.assign(currentProgress, {
       ratio,
       transformedFileCount,
