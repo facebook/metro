@@ -34,7 +34,7 @@ export default class DependencyGraph extends EventEmitter {
   ): Promise<DependencyGraph>;
 
   getAllFiles(): string[];
-  getSha1(filename: string): string;
+  getOrComputeSha1(filename: string): Promise<{sha1: string; content?: Buffer}>;
   getWatcher(): EventEmitter;
   end(): void;
 

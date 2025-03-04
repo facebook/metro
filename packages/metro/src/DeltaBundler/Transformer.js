@@ -24,30 +24,24 @@ const fs = require('fs');
 const {Cache, stableHash} = require('metro-cache');
 const path = require('path');
 
-type LazySha1Fn = string => Promise<{content?: Buffer, sha1: string}>;
-type EagerSha1Fn = string => string;
+type GetOrComputeSha1Fn = string => Promise<{content?: Buffer, sha1: string}>;
 
 class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
-  _getSha1: EagerSha1Fn | LazySha1Fn;
+  _getSha1: GetOrComputeSha1Fn;
   _workerFarm: WorkerFarm;
 
   constructor(
     config: ConfigT,
-    getSha1FnOrOpts:
-      | $ReadOnly<{unstable_getOrComputeSha1: LazySha1Fn}>
-      | EagerSha1Fn,
+    opts: $ReadOnly<{getOrComputeSha1: GetOrComputeSha1Fn}>,
   ) {
     this._config = config;
 
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
-    this._getSha1 =
-      typeof getSha1FnOrOpts === 'function'
-        ? getSha1FnOrOpts
-        : getSha1FnOrOpts.unstable_getOrComputeSha1;
+    this._getSha1 = opts.getOrComputeSha1;
 
     // Remove the transformer config params that we don't want to pass to the
     // transformer. We should change the config object and move them away so we
@@ -147,13 +141,9 @@ class Transformer {
       content = fileBuffer;
     } else {
       const result = await this._getSha1(filePath);
-      if (typeof result === 'string') {
-        sha1 = result;
-      } else {
-        sha1 = result.sha1;
-        if (result.content) {
-          content = result.content;
-        }
+      sha1 = result.sha1;
+      if (result.content) {
+        content = result.content;
       }
     }
 

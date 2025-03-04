@@ -27,7 +27,9 @@ describe('Transformer', function () {
   let watchFolders;
   let projectRoot;
   let commonOptions;
-  const getSha1 = jest.fn(() => '0123456789012345678901234567890123456789');
+  const getOrComputeSha1 = jest.fn(() => ({
+    sha1: '0123456789012345678901234567890123456789',
+  }));
 
   beforeEach(function () {
     const baseConfig = {
@@ -69,7 +71,7 @@ describe('Transformer', function () {
         cacheStores: [{get, set}],
         watchFolders,
       },
-      getSha1,
+      {getOrComputeSha1},
     );
 
     require('../WorkerFarm').prototype.transform.mockReturnValue({
@@ -80,7 +82,7 @@ describe('Transformer', function () {
     await transformerInstance.transformFile('./foo.js', {});
 
     // We got the SHA-1 of the file from the dependency graph.
-    expect(getSha1).toBeCalledWith('./foo.js');
+    expect(getOrComputeSha1).toBeCalledWith('./foo.js');
 
     // Only one get, with the original SHA-1.
     expect(get).toHaveBeenCalledTimes(1);
@@ -118,7 +120,7 @@ describe('Transformer', function () {
         cacheStores: [{get, set}],
         watchFolders,
       },
-      getSha1,
+      {getOrComputeSha1},
     );
 
     require('../WorkerFarm').prototype.transform.mockReturnValue({
@@ -158,7 +160,7 @@ describe('Transformer', function () {
         cacheStores: [store],
         watchFolders,
       },
-      getSha1,
+      {getOrComputeSha1},
     );
 
     require('../WorkerFarm').prototype.transform.mockReturnValue({
@@ -199,7 +201,7 @@ describe('Transformer', function () {
         cacheStores: [],
         watchFolders,
       },
-      getSha1,
+      {getOrComputeSha1},
     );
 
     require('../WorkerFarm').prototype.transform.mockReturnValue({
