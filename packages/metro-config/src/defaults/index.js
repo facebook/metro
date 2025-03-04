@@ -53,7 +53,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_conditionsByPlatform: {
       web: ['browser'],
     },
-    unstable_enablePackageExports: false,
+    unstable_enablePackageExports: true,
     useWatchman: true,
     requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
