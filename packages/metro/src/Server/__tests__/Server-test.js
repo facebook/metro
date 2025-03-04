@@ -688,7 +688,7 @@ describe('processRequest', () => {
         unstable_transformProfile: 'default',
       },
       unstable_allowRequireContext: false,
-      unstable_enablePackageExports: false,
+      unstable_enablePackageExports: true,
     });
   });
 
@@ -750,7 +750,7 @@ describe('processRequest', () => {
         unstable_transformProfile: 'hermes-stable',
       },
       unstable_allowRequireContext: false,
-      unstable_enablePackageExports: false,
+      unstable_enablePackageExports: true,
     });
   });
 
@@ -981,7 +981,7 @@ describe('processRequest', () => {
           unstable_transformProfile: 'default',
         },
         unstable_allowRequireContext: false,
-        unstable_enablePackageExports: false,
+        unstable_enablePackageExports: true,
       });
     });
   });

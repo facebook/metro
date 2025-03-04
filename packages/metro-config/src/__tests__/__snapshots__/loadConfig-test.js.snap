@@ -81,7 +81,7 @@ Object {
         "browser",
       ],
     },
-    "unstable_enablePackageExports": false,
+    "unstable_enablePackageExports": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -266,7 +266,7 @@ Object {
         "browser",
       ],
     },
-    "unstable_enablePackageExports": false,
+    "unstable_enablePackageExports": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -451,7 +451,7 @@ Object {
         "browser",
       ],
     },
-    "unstable_enablePackageExports": false,
+    "unstable_enablePackageExports": true,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -636,7 +636,7 @@ Object {
         "browser",
       ],
     },
-    "unstable_enablePackageExports": false,
+    "unstable_enablePackageExports": true,
     "useWatchman": true,
   },
   "serializer": Object {
