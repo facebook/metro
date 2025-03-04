@@ -29,7 +29,6 @@ if (process.platform === 'win32') {
       'packages/metro-symbolicate/src/__tests__/symbolicate-test.js',
       'packages/metro-file-map/src/__tests__/index-test.js',
       'packages/metro-file-map/src/crawlers/__tests__/node-test.js',
-      'packages/metro-resolver/src/__tests__/package-imports-test.js',
 
       // resolveModulePath failed
       'packages/metro-cache/src/stores/__tests__/FileStore-test.js',
