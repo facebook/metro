@@ -630,7 +630,7 @@ class Server {
     const depGraph = await this._bundler.getBundler().getDependencyGraph();
     const filePath = path.join(rootDir, relativePathname);
     try {
-      depGraph.getSha1(filePath);
+      await depGraph.getOrComputeSha1(filePath);
     } catch {
       res.writeHead(404);
       res.end();

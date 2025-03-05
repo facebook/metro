@@ -36,17 +36,10 @@ class Bundler {
       .ready()
       .then(() => {
         config.reporter.update({type: 'transformer_load_started'});
-        this._transformer = new Transformer(
-          config,
-          config.watcher.unstable_lazySha1
-            ? // This object-form API is expected to replace passing a function
-              // once lazy SHA1 is stable. This will be a breaking change.
-              {
-                unstable_getOrComputeSha1: filePath =>
-                  this._depGraph.unstable_getOrComputeSha1(filePath),
-              }
-            : (...args) => this._depGraph.getSha1(...args),
-        );
+        this._transformer = new Transformer(config, {
+          getOrComputeSha1: filePath =>
+            this._depGraph.getOrComputeSha1(filePath),
+        });
         config.reporter.update({type: 'transformer_load_done'});
       })
       .catch(error => {
