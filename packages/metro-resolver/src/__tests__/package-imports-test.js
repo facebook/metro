@@ -10,41 +10,45 @@
  */
 
 import Resolver from '../index';
-import {createResolutionContext} from './utils';
-import {createPackageAccessors} from './utils';
+import {
+  createPackageAccessors,
+  createResolutionContext,
+  posixToSystemPath as p,
+} from './utils';
 
 // Implementation of PACKAGE_IMPORTS_RESOLVE described in https://nodejs.org/api/esm.html
 describe('subpath imports resolution support', () => {
   const baseContext = {
     ...createResolutionContext({
-      '/root/src/main.js': '',
-      '/root/node_modules/test-pkg/package.json': '',
-      '/root/node_modules/test-pkg/index.js': '',
-      '/root/node_modules/test-pkg/index-main.js': '',
-      '/root/node_modules/test-pkg/symlink.js': {
-        realPath: '/root/node_modules/test-pkg/symlink-target.js',
+      [p('/root/src/main.js')]: '',
+      [p('/root/node_modules/test-pkg/package.json')]: '',
+      [p('/root/node_modules/test-pkg/index.js')]: '',
+      [p('/root/node_modules/test-pkg/index-main.js')]: '',
+      // $FlowFixMe[incompatible-type] Flow wants a string for some reason
+      [p('/root/node_modules/test-pkg/symlink.js')]: {
+        realPath: p('/root/node_modules/test-pkg/symlink-target.js'),
       },
     }),
-    originModulePath: '/root/src/main.js',
+    originModulePath: p('/root/src/main.js'),
   };
 
   test('"imports" subpath that maps directly to a file', () => {
     const context = {
       ...baseContext,
       ...createPackageAccessors({
-        '/root/node_modules/test-pkg/package.json': {
+        [p('/root/node_modules/test-pkg/package.json')]: {
           main: 'index-main.js',
           imports: {
             '#foo': './index.js',
           },
         },
       }),
-      originModulePath: '/root/node_modules/test-pkg/lib/foo.js',
+      originModulePath: p('/root/node_modules/test-pkg/lib/foo.js'),
     };
 
     expect(Resolver.resolve(context, '#foo', null)).toEqual({
       type: 'sourceFile',
-      filePath: '/root/node_modules/test-pkg/index.js',
+      filePath: p('/root/node_modules/test-pkg/index.js'),
     });
   });
 });
@@ -52,32 +56,32 @@ describe('subpath imports resolution support', () => {
 describe('import subpath patterns resolution support', () => {
   const baseContext = {
     ...createResolutionContext({
-      '/root/src/main.js': '',
-      '/root/node_modules/test-pkg/package.json': JSON.stringify({
+      [p('/root/src/main.js')]: '',
+      [p('/root/node_modules/test-pkg/package.json')]: JSON.stringify({
         name: 'test-pkg',
         main: 'index.js',
         imports: {
           '#features/*': './src/features/*.js',
         },
       }),
-      '/root/node_modules/test-pkg/src/index.js': '',
-      '/root/node_modules/test-pkg/src/features/foo.js': '',
-      '/root/node_modules/test-pkg/src/features/foo.js.js': '',
-      '/root/node_modules/test-pkg/src/features/bar/Bar.js': '',
-      '/root/node_modules/test-pkg/src/features/baz.native.js': '',
+      [p('/root/node_modules/test-pkg/src/index.js')]: '',
+      [p('/root/node_modules/test-pkg/src/features/foo.js')]: '',
+      [p('/root/node_modules/test-pkg/src/features/foo.js.js')]: '',
+      [p('/root/node_modules/test-pkg/src/features/bar/Bar.js')]: '',
+      [p('/root/node_modules/test-pkg/src/features/baz.native.js')]: '',
     }),
-    originModulePath: '/root/node_modules/test-pkg/src/index.js',
+    originModulePath: p('/root/node_modules/test-pkg/src/index.js'),
   };
 
   test('resolving subpath patterns in "imports" matching import specifier', () => {
     expect(Resolver.resolve(baseContext, '#features/foo', null)).toEqual({
       type: 'sourceFile',
-      filePath: '/root/node_modules/test-pkg/src/features/foo.js',
+      filePath: p('/root/node_modules/test-pkg/src/features/foo.js'),
     });
 
     expect(Resolver.resolve(baseContext, '#features/foo.js', null)).toEqual({
       type: 'sourceFile',
-      filePath: '/root/node_modules/test-pkg/src/features/foo.js.js',
+      filePath: p('/root/node_modules/test-pkg/src/features/foo.js.js'),
     });
   });
 });
@@ -85,8 +89,8 @@ describe('import subpath patterns resolution support', () => {
 describe('import subpath conditional imports resolution', () => {
   const baseContext = {
     ...createResolutionContext({
-      '/root/src/main.js': '',
-      '/root/node_modules/test-pkg/package.json': JSON.stringify({
+      [p('/root/src/main.js')]: '',
+      [p('/root/node_modules/test-pkg/package.json')]: JSON.stringify({
         name: 'test-pkg',
         main: 'index.js',
         imports: {
@@ -104,18 +108,18 @@ describe('import subpath conditional imports resolution', () => {
           },
         },
       }),
-      '/root/node_modules/test-pkg/index.js': '',
-      '/root/node_modules/test-pkg/lib/foo.js': '',
-      '/root/node_modules/test-pkg/lib/foo-require.cjs': '',
-      '/root/node_modules/test-pkg/lib/foo-module.mjs': '',
-      '/root/node_modules/test-pkg/lib/foo-dev.js': '',
-      '/root/node_modules/test-pkg/lib/foo-browser.js': '',
-      '/root/node_modules/test-pkg/lib/foo-react-native.cjs': '',
-      '/root/node_modules/test-pkg/lib/foo-react-native.mjs': '',
-      '/root/node_modules/test-pkg/lib/foo-react-native.js': '',
-      '/root/node_modules/test-pkg/lib/foo.web.js': '',
+      [p('/root/node_modules/test-pkg/index.js')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo.js')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-require.cjs')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-module.mjs')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-dev.js')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-browser.js')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-react-native.cjs')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-react-native.mjs')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo-react-native.js')]: '',
+      [p('/root/node_modules/test-pkg/lib/foo.web.js')]: '',
     }),
-    originModulePath: '/root/node_modules/test-pkg/src/index.js',
+    originModulePath: p('/root/node_modules/test-pkg/src/index.js'),
   };
 
   test('resolving imports subpath with conditions', () => {
@@ -128,14 +132,14 @@ describe('import subpath conditional imports resolution', () => {
       Resolver.resolve({...context, isESMImport: false}, '#foo', null),
     ).toEqual({
       type: 'sourceFile',
-      filePath: '/root/node_modules/test-pkg/lib/foo-react-native.cjs',
+      filePath: p('/root/node_modules/test-pkg/lib/foo-react-native.cjs'),
     });
 
     expect(
       Resolver.resolve({...context, isESMImport: true}, '#foo', null),
     ).toEqual({
       type: 'sourceFile',
-      filePath: '/root/node_modules/test-pkg/lib/foo-react-native.mjs',
+      filePath: p('/root/node_modules/test-pkg/lib/foo-react-native.mjs'),
     });
   });
 });
