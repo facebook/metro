@@ -32,7 +32,7 @@
     "chalk": "^4.0.0",
     "ci-info": "^2.0.0",
     "connect": "^3.6.5",
-    "debug": "^2.2.0",
+    "debug": "^4.4.0",
     "error-stack-parser": "^2.0.6",
     "flow-enums-runtime": "^0.0.6",
     "graceful-fs": "^4.2.4",
