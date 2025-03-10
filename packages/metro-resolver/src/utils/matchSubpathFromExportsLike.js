@@ -55,12 +55,21 @@ export function matchSubpathFromExportsLike(
   // Attempt to match after expanding any subpath pattern keys
   if (target == null) {
     // Gather keys which are subpath patterns in descending order of specificity
+    // For ordering, see `PATTERN_KEY_COMPARE` in:
+    // https://nodejs.org/api/esm.html#resolution-algorithm-specification
     const expansionKeys = [...exportsLikeMapAfterConditions.keys()]
-      .filter(key => key.includes('*'))
-      .sort(key => key.split('*')[0].length)
-      .reverse();
+      .map(key => ({key, baseLength: key.indexOf('*')}))
+      .filter(data => data.baseLength !== -1)
+      .sort((a, b) => {
+        if (a.baseLength === b.baseLength) {
+          // If wildcards are in equal positions, the longer key is more
+          // specific
+          return b.key.length - a.key.length;
+        }
+        return b.baseLength - a.baseLength;
+      });
 
-    for (const key of expansionKeys) {
+    for (const {key} of expansionKeys) {
       const value = exportsLikeMapAfterConditions.get(key);
 
       // Skip invalid values (must include a single '*' or be `null`)
