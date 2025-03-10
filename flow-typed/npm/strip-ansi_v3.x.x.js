@@ -9,7 +9,3 @@
 declare module 'strip-ansi' {
   declare module.exports: (string: string) => string;
 }
-
-declare module 'strip-ansi' {
-  declare export default function stripAnsi(string: string): string;
-}
