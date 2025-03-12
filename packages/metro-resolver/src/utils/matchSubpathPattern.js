@@ -21,7 +21,12 @@ export function matchSubpathPattern(
 ): string | null {
   const [patternBase, patternTrailer] = subpathPattern.split('*');
 
-  if (subpath.startsWith(patternBase) && subpath.endsWith(patternTrailer)) {
+  if (
+    subpath.startsWith(patternBase) &&
+    (patternTrailer.length === 0 ||
+      (subpath.endsWith(patternTrailer) &&
+        subpath.length >= subpathPattern.length))
+  ) {
     return subpath.substring(
       patternBase.length,
       subpath.length - patternTrailer.length,
