@@ -84,7 +84,7 @@ export function resolvePackageTargetFromImports(
 
   const filePath = path.join(
     packagePath,
-    patternMatch != null ? target.replace('*', patternMatch) : target,
+    patternMatch != null ? target.replaceAll('*', patternMatch) : target,
   );
 
   if (isAssetFile(filePath, context.assetExts)) {
