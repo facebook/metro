@@ -278,6 +278,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
               const temp = path.scope.generateUidIdentifier(local.name);
 
               // $FlowFixMe[incompatible-type]
+              // $FlowFixMe[incompatible-use]
               if (local.name === 'default') {
                 path.insertBefore(
                   withLocation(
@@ -432,6 +433,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
 
               case 'ImportSpecifier':
                 // $FlowFixMe[incompatible-type]
+                // $FlowFixMe[incompatible-use]
                 if (imported.name === 'default') {
                   state.imports.push({
                     node: withLocation(
