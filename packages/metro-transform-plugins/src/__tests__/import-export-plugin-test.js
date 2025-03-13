@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {Options} from '../import-export-plugin';
 import type {Dependency} from 'metro/src/ModuleGraph/worker/collectDependencies';
 
 const {compare, transformToAst} = require('../__mocks__/test-helpers');
@@ -19,9 +20,10 @@ const importExportPlugin = require('../import-export-plugin');
 const {codeFrameColumns} = require('@babel/code-frame');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 
-const opts = {
+const opts: Options = {
   importAll: '_$$_IMPORT_ALL',
   importDefault: '_$$_IMPORT_DEFAULT',
+  resolve: false,
 };
 
 test('correctly transforms and extracts "import" statements', () => {
@@ -373,6 +375,141 @@ test('supports `import {default as LocalName}`', () => {
     > 5 |     } from 'react-native';
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)"
   `);
+});
+
+describe('importAsObjects == true', () => {
+  const innerOpts: Options = {...opts, importAsObjects: true};
+  test('named import refs transform to object property access', () => {
+    const code = `
+      import {'foo-bar' as fooBar, baz} from 'qux';
+      const obj = {fooBar, baz};
+      console.log(fooBar, baz);
+    `;
+    const expected = `
+      var _qux = require('qux');
+      const obj = {
+        fooBar: _qux["foo-bar"],
+        baz: _qux.baz
+      };
+      console.log(_qux["foo-bar"], _qux.baz);
+    `;
+    compare([importExportPlugin], code, expected, innerOpts);
+  });
+
+  test('re-exporting named imports', () => {
+    const code = `
+      import {'foo-bar' as fooBar, baz} from 'qux';
+      export {fooBar, baz as myBaz};
+    `;
+    const expected = `
+      Object.defineProperty(exports, '__esModule', {
+        value: true
+      });
+      var _qux = require('qux');
+      exports.fooBar = _qux["foo-bar"];
+      exports.myBaz = _qux.baz;
+    `;
+    compare([importExportPlugin], code, expected, innerOpts);
+  });
+
+  test('namespace import refs maintain property access', () => {
+    const code = `
+      import * as Foo from 'foo';
+      console.log(Foo.bar, Foo.baz);
+    `;
+    const expected = `
+      var Foo = _$$_IMPORT_ALL('foo');
+      console.log(Foo.bar, Foo.baz);
+    `;
+    compare([importExportPlugin], code, expected, innerOpts);
+  });
+
+  test('mixed default, default-by-name and named imports`', () => {
+    const code = `
+    import RN, {
+      View,
+      Platform as RNPlatform,
+      default as ReactNative
+    } from 'react-native';
+    import ReactNative2 from 'react-native';
+
+    console.log(View, RNPlatform, ReactNative, RN);
+
+    function myFunc() {
+      const RNPlatform = 'foo';
+      RN.bar();
+      React.foo();
+      return RNPlatform;
+    }
+
+    function myOtherFunc() {
+      return RNPlatform;
+    }
+  `;
+
+    const expected = `
+    var _reactNative = require('react-native');
+    var RN = _$$_IMPORT_DEFAULT('react-native');
+    var ReactNative = RN;
+    var ReactNative2 = _$$_IMPORT_DEFAULT('react-native');
+    console.log(_reactNative.View, _reactNative.Platform, ReactNative, RN);
+    function myFunc() {
+      const RNPlatform = 'foo';
+      RN.bar();
+      React.foo();
+      return RNPlatform;
+    }
+    function myOtherFunc() {
+      return _reactNative.Platform;
+    }
+  `;
+
+    compare([importExportPlugin], code, expected, innerOpts);
+
+    // Expect three dependencies mapping to the first import declaration...
+    //   1. RN (import default)
+    //   2. View and Platform (import named)
+    //   3. ReactNative (import default as)
+    // ...and one mapping to the second import declaration
+    //   4. ReactNative2 (import default)
+    // All should share the same dependency key (at 0) because all are resolved
+    // identically.
+    expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+      "
+      > 2 |     import RN, {
+          |     ^^^^^^^^^^^^
+      > 3 |       View,
+          | ^^^^^^^^^^^
+      > 4 |       Platform as RNPlatform,
+          | ^^^^^^^^^^^
+      > 5 |       default as ReactNative
+          | ^^^^^^^^^^^
+      > 6 |     } from 'react-native';
+          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)
+      > 2 |     import RN, {
+          |     ^^^^^^^^^^^^
+      > 3 |       View,
+          | ^^^^^^^^^^^
+      > 4 |       Platform as RNPlatform,
+          | ^^^^^^^^^^^
+      > 5 |       default as ReactNative
+          | ^^^^^^^^^^^
+      > 6 |     } from 'react-native';
+          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)
+      > 2 |     import RN, {
+          |     ^^^^^^^^^^^^
+      > 3 |       View,
+          | ^^^^^^^^^^^
+      > 4 |       Platform as RNPlatform,
+          | ^^^^^^^^^^^
+      > 5 |       default as ReactNative
+          | ^^^^^^^^^^^
+      > 6 |     } from 'react-native';
+          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)
+      > 7 |     import ReactNative2 from 'react-native';
+          |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)"
+    `);
+  });
 });
 
 function showTransformedDeps(code: string) {
