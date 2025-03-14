@@ -12,6 +12,7 @@
 
 type TextEncodeOptions = {options?: boolean, ...};
 
+// $FlowFixMe[libdef-override]
 declare class TextEncoder {
   encode(buffer: string, options?: TextEncodeOptions): Uint8Array;
 }

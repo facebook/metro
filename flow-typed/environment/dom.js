@@ -1251,6 +1251,7 @@ type TransitionEvent$Init = {
   ...
 };
 
+// $FlowFixMe[libdef-override]
 declare class TransitionEvent extends Event {
   constructor(
     type: TransitionEventTypes,

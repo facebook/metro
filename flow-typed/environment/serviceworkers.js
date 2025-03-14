@@ -254,4 +254,5 @@ declare var onactivate: ?EventHandler;
 declare var oninstall: ?EventHandler;
 declare var onfetch: ?EventHandler;
 declare var onforeignfetch: ?EventHandler;
+// $FlowFixMe[libdef-override]
 declare var onmessage: ?EventHandler;
