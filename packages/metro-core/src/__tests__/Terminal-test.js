@@ -11,12 +11,13 @@
 'use strict';
 
 jest.mock('readline', () => ({
-  moveCursor: (stream, dx, dy) => {
+  moveCursor: (stream, dx, dy, callback = () => {}) => {
     const {cursor, columns} = stream;
     stream.cursor =
       Math.max(cursor - (cursor % columns), cursor + dx) + dy * columns;
+    setTimeout(callback, 33);
   },
-  clearLine: (stream, dir) => {
+  clearLine: (stream, dir, callback = () => {}) => {
     if (dir !== 0) {
       throw new Error('unsupported');
     }
@@ -26,6 +27,15 @@ jest.mock('readline', () => ({
     for (var i = curLine; i < nextLine; ++i) {
       stream.buffer[i] = ' ';
     }
+    setTimeout(callback, 33);
+  },
+  clearScreenDown: (stream, callback = () => {}) => {
+    const {cursor, columns, lines} = stream;
+    const curLine = cursor - (cursor % columns);
+    for (var i = curLine; i < columns * lines; ++i) {
+      stream.buffer[i] = ' ';
+    }
+    setTimeout(callback, 33);
   },
 }));
 
@@ -46,7 +56,7 @@ describe('Terminal', () => {
       buffer: ' '.repeat(columns * lines).split(''),
       columns,
       lines,
-      write(str) {
+      write(str, callback = () => {}) {
         for (let i = 0; i < str.length; ++i) {
           if (str[i] === '\n') {
             this.cursor = this.cursor - (this.cursor % columns) + columns;
@@ -55,63 +65,94 @@ describe('Terminal', () => {
             ++this.cursor;
           }
         }
+        setTimeout(callback, 33);
       },
     });
     return {stream, terminal: new Terminal(stream)};
   }
 
-  test('is not printing status to non-interactive terminal', () => {
+  jest.useRealTimers();
+
+  test('is not printing status to non-interactive terminal', async () => {
     const {stream, terminal} = prepare(false);
     terminal.log('foo %s', 'smth');
     terminal.status('status');
     terminal.log('bar');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual('foo smth  bar');
   });
 
-  test('print status', () => {
+  test('print status', async () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual('foo       status');
   });
 
-  test('updates status when logging, single line', () => {
+  test('updates status when logging, single line', async () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');
     terminal.status('status2');
     terminal.log('bar');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual(
       'foo       bar       status2',
     );
     terminal.log('beep');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual(
       'foo       bar       beep      status2',
     );
   });
 
-  test('updates status when logging, multi-line', () => {
+  test('updates status when logging, multi-line', async () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status\nanother');
     terminal.log('bar');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual(
       'foo       bar       status    another',
     );
   });
 
-  test('persists status', () => {
+  test('persists status', async () => {
     const {stream, terminal} = prepare(true);
     terminal.log('foo');
     terminal.status('status');
     terminal.persistStatus();
     terminal.log('bar');
-    jest.runAllTimers();
+    await terminal.waitForUpdates();
     expect(stream.buffer.join('').trim()).toEqual('foo       status    bar');
+  });
+
+  test('flush- single line', async () => {
+    const {stream, terminal} = prepare(true);
+    terminal.log('foo');
+    terminal.status('status');
+    terminal.status('status2');
+    terminal.log('bar');
+    await terminal.flush();
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       status2',
+    );
+    terminal.log('beep');
+    await terminal.flush();
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       beep      status2',
+    );
+  });
+
+  test('flush- multi-line', async () => {
+    const {stream, terminal} = prepare(true);
+    terminal.log('foo');
+    terminal.status('status\nanother');
+    terminal.log('bar');
+    await terminal.flush();
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       status    another',
+    );
   });
 });

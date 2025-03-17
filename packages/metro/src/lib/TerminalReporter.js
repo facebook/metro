@@ -146,8 +146,7 @@ class TerminalReporter {
       chalk.reset.dim(` ${path.dirname(localPath)}/`) +
       chalk.bold(path.basename(localPath)) +
       ' ' +
-      progress +
-      '\n'
+      progress
     );
   }
 

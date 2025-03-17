@@ -11,28 +11,26 @@
 
 'use strict';
 
-const throttle = require('lodash.throttle');
 const readline = require('readline');
 const tty = require('tty');
 const util = require('util');
 
+const {promisify} = util;
+
 type UnderlyingStream = net$Socket | stream$Writable;
 
-/**
- * Clear some text that was previously printed on an interactive stream,
- * without trailing newline character (so we have to move back to the
- * beginning of the line).
- */
-function clearStringBackwards(stream: tty.WriteStream, str: string): void {
-  readline.moveCursor(stream, -stream.columns, 0);
-  readline.clearLine(stream, 0);
-  let lineCount = (str.match(/\n/g) || []).length;
-  while (lineCount > 0) {
-    readline.moveCursor(stream, 0, -1);
-    readline.clearLine(stream, 0);
-    --lineCount;
-  }
-}
+// use "readline/promises" instead when not experimental anymore
+const moveCursor = promisify(readline.moveCursor);
+const clearScreenDown = promisify(readline.clearScreenDown);
+const streamWrite = promisify(
+  (
+    stream: UnderlyingStream,
+    chunk: Buffer | Uint8Array | string,
+    callback?: (data: any) => void,
+  ) => {
+    return stream.write(chunk, callback);
+  },
+);
 
 /**
  * Cut a string into an array of string of the specific maximum size. A newline
@@ -94,17 +92,64 @@ function getTTYStream(stream: UnderlyingStream): ?tty.WriteStream {
 class Terminal {
   _logLines: Array<string>;
   _nextStatusStr: string;
-  _scheduleUpdate: () => void;
   _statusStr: string;
   _stream: UnderlyingStream;
+  _updatePromise: Promise<void> | null;
+  _isUpdating: boolean;
+  _isPendingUpdate: boolean;
+  _shouldFlush: boolean;
 
   constructor(stream: UnderlyingStream) {
     this._logLines = [];
     this._nextStatusStr = '';
-    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-    this._scheduleUpdate = throttle(this._update, 33);
     this._statusStr = '';
     this._stream = stream;
+    this._updatePromise = null;
+    this._isUpdating = false;
+    this._isPendingUpdate = false;
+    this._shouldFlush = false;
+  }
+
+  /**
+   * Schedule an update of the status and log lines.
+   * If there's an ongoing update, schedule another one after the current one.
+   * If there are two updates scheduled, do nothing, as the second update will
+   * take care of the latest status and log lines.
+   */
+  _scheduleUpdate() {
+    if (this._isUpdating) {
+      this._isPendingUpdate = true;
+      return;
+    }
+
+    this._isUpdating = true;
+    this._updatePromise = this._update().then(async () => {
+      while (this._isPendingUpdate) {
+        if (!this._shouldFlush) {
+          await new Promise(resolve => setTimeout(resolve, 33));
+        }
+        this._isPendingUpdate = false;
+        await this._update();
+      }
+      this._isUpdating = false;
+      this._shouldFlush = false;
+    });
+  }
+
+  async waitForUpdates(): Promise<void> {
+    await (this._updatePromise || Promise.resolve());
+  }
+
+  /**
+   * Useful for calling console/stdout directly after terminal logs
+   * Otherwise, you could end up with mangled output when the queued
+   * update starts writing to stream after a delay.
+   */
+  async flush(): Promise<void> {
+    if (this._isUpdating) {
+      this._shouldFlush = true;
+      await this._updatePromise;
+    }
   }
 
   /**
@@ -113,28 +158,35 @@ class Terminal {
    * `status()`) prevents us from repeatedly rewriting the status in case
    * `terminal.log()` is called several times.
    */
-  _update(): void {
-    const {_statusStr, _stream} = this;
-    const ttyStream = getTTYStream(_stream);
-    if (_statusStr === this._nextStatusStr && this._logLines.length === 0) {
+  async _update(): Promise<void> {
+    const ttyStream = getTTYStream(this._stream);
+
+    const nextStatusStr = this._nextStatusStr;
+    const statusStr = this._statusStr;
+    const logLines = this._logLines;
+
+    // reset these here to not have them changed while updating
+    this._statusStr = nextStatusStr;
+    this._logLines = [];
+
+    if (statusStr === nextStatusStr && logLines.length === 0) {
       return;
     }
-    if (ttyStream != null) {
-      clearStringBackwards(ttyStream, _statusStr);
+
+    if (ttyStream != null && statusStr.length > 0) {
+      const statusLinesCount = statusStr.split('\n').length - 1;
+      // extra -1 because we print the status with a trailing new line
+      await moveCursor(ttyStream, -ttyStream.columns, -statusLinesCount - 1);
+      await clearScreenDown(ttyStream);
     }
-    this._logLines.forEach(line => {
-      _stream.write(line);
-      _stream.write('\n');
-    });
-    this._logLines = [];
-    if (ttyStream != null) {
-      this._nextStatusStr = chunkString(
-        this._nextStatusStr,
-        ttyStream.columns,
-      ).join('\n');
-      _stream.write(this._nextStatusStr);
+
+    if (logLines.length > 0) {
+      await streamWrite(this._stream, logLines.join('\n') + '\n');
     }
-    this._statusStr = this._nextStatusStr;
+
+    if (ttyStream != null && nextStatusStr.length > 0) {
+      await streamWrite(this._stream, nextStatusStr + '\n');
+    }
   }
 
   /**
@@ -146,8 +198,15 @@ class Terminal {
    */
   status(format: string, ...args: Array<mixed>): string {
     const {_nextStatusStr} = this;
-    this._nextStatusStr = util.format(format, ...args);
+    const ttyStream = getTTYStream(this._stream);
+
+    const statusStr = util.format(format, ...args);
+    this._nextStatusStr = ttyStream
+      ? chunkString(statusStr, ttyStream.columns).join('\n')
+      : statusStr;
+
     this._scheduleUpdate();
+
     return _nextStatusStr;
   }
 
@@ -168,16 +227,6 @@ class Terminal {
   persistStatus(): void {
     this.log(this._nextStatusStr);
     this._nextStatusStr = '';
-  }
-
-  flush(): void {
-    // Useful if you're going to start calling console.log/console.error directly
-    // again; otherwise you could end up with mangled output when the queued
-    // update starts writing to stream after a delay.
-    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.99 was deployed. To see the error, delete this
-     * comment and run Flow. */
-    this._scheduleUpdate.flush();
   }
 }
 
