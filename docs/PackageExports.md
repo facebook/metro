@@ -191,9 +191,9 @@ We chose not to introduce `"android"` and `"ios"` conditions, due to the prevale
 // src/FooComponent.js
 
 const FooComponent = Platform.select({
-  android: require('./FooComponentAndroid.js'),
-  ios: require('FooComponentIOS.js'),
-});
+  android: () => require('./FooComponentAndroid.js'),
+  ios: () => require('FooComponentIOS.js'),
+})();
 
 export default FooComponent;
 ```
