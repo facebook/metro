@@ -403,9 +403,30 @@ function resolvePackage(
     const exportsField = pkg?.packageJson.exports;
 
     if (pkg != null && exportsField != null) {
+      // HACK!: Do not assert the "import" condition for `@babel/runtime`. This
+      // is a workaround for ESM <-> CJS interop, as we need the CJS versions of
+      // `@babel/runtime` helpers.
+      //
+      // This is not necessary when Metro is correctly configured, but we're
+      // restoring this hack that pre-dates isESMImport to accommodate the
+      // defaults in @react-native/metro-config <0.78.2 / <0.77.2, and possibly
+      // Expo SDK 52: https://github.com/facebook/metro/issues/1464.
+      let contextWithOverrides = context;
+      if (
+        pkg.packageJson.name === '@babel/runtime' &&
+        context.isESMImport !== true
+      ) {
+        contextWithOverrides = {
+          ...context,
+          unstable_conditionNames: context.unstable_conditionNames.filter(
+            condition => condition !== 'import',
+          ),
+        };
+      }
+
       try {
         const packageExportsResult = resolvePackageTargetFromExports(
-          context,
+          contextWithOverrides,
           pkg.rootPath,
           absoluteCandidatePath,
           pkg.packageRelativePath,
