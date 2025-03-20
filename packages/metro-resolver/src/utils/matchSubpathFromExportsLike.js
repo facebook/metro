@@ -72,11 +72,6 @@ export function matchSubpathFromExportsLike(
     for (const {key} of expansionKeys) {
       const value = exportsLikeMapAfterConditions.get(key);
 
-      // Skip invalid values (must include a single '*' or be `null`)
-      if (typeof value === 'string' && value.split('*').length !== 2) {
-        break;
-      }
-
       patternMatch = matchSubpathPattern(key, subpath);
 
       if (patternMatch != null) {

@@ -515,6 +515,8 @@ describe('with package exports resolution enabled', () => {
             './node/*/types': './types/*/types.d.ts',
             './assets/*': './assets/*',
             './repeated*/repeated': './repeated*/repeated.js',
+            './*/private': './src/forbidden.js',
+            './data.*': './data/*/data.*',
           },
         }),
         '/root/node_modules/test-pkg/lib/node/test.js': '',
@@ -526,11 +528,14 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/src/features/baz.native.js': '',
         '/root/node_modules/test-pkg/src/features/node_modules/foo/index.js':
           '',
+        '/root/node_modules/test-pkg/src/forbidden.js': '',
         '/root/node_modules/test-pkg/misc/repeated.js': '',
         '/root/node_modules/test-pkg/repeated/repeated.js': '',
         '/root/node_modules/test-pkg/repeated/repeated/repeated.js': '',
         '/root/node_modules/test-pkg/types/foo/types.d.ts': '',
         '/root/node_modules/test-pkg/assets/Logo.js': '',
+        '/root/node_modules/test-pkg/data/json/data.json': '',
+        '/root/node_modules/test-pkg/data/csv/data.csv': '',
       }),
       originModulePath: '/root/src/main.js',
       unstable_enablePackageExports: true,
@@ -626,6 +631,27 @@ describe('with package exports resolution enabled', () => {
       expect(Resolver.resolve(baseContext, 'test-pkg/repeated', null)).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/misc/repeated.js',
+      });
+    });
+
+    test('patterns can resolve to static targets', () => {
+      const context = baseContext;
+      expect(Resolver.resolve(context, 'test-pkg/foo/private', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/src/forbidden.js',
+      });
+    });
+
+    test('patterns can resolve to targets with multiple *', () => {
+      const context = baseContext;
+      expect(Resolver.resolve(context, 'test-pkg/data.json', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/data/json/data.json',
+      });
+
+      expect(Resolver.resolve(context, 'test-pkg/data.csv', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/data/csv/data.csv',
       });
     });
 
