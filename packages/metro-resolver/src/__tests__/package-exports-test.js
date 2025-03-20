@@ -514,6 +514,7 @@ describe('with package exports resolution enabled', () => {
             './*': './misc/*.js',
             './node/*/types': './types/*/types.d.ts',
             './assets/*': './assets/*',
+            './repeated*/repeated': './repeated*/repeated.js',
           },
         }),
         '/root/node_modules/test-pkg/lib/node/test.js': '',
@@ -525,6 +526,9 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/src/features/baz.native.js': '',
         '/root/node_modules/test-pkg/src/features/node_modules/foo/index.js':
           '',
+        '/root/node_modules/test-pkg/misc/repeated.js': '',
+        '/root/node_modules/test-pkg/repeated/repeated.js': '',
+        '/root/node_modules/test-pkg/repeated/repeated/repeated.js': '',
         '/root/node_modules/test-pkg/types/foo/types.d.ts': '',
         '/root/node_modules/test-pkg/assets/Logo.js': '',
       }),
@@ -606,6 +610,22 @@ describe('with package exports resolution enabled', () => {
       ).toEqual({
         type: 'sourceFile',
         filePath: '/root/node_modules/test-pkg/types/foo/types.d.ts',
+      });
+    });
+
+    test('patternBase and patternTrailer must match non-overlapping ends of matchKey', () => {
+      // ./repeated/repeated *should* match ./repeated*/repeated
+      expect(
+        Resolver.resolve(baseContext, 'test-pkg/repeated/repeated', null),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/repeated/repeated.js',
+      });
+
+      // ./repeated should *not* match ./repeated*/repeated
+      expect(Resolver.resolve(baseContext, 'test-pkg/repeated', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/misc/repeated.js',
       });
     });
 
