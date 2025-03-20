@@ -510,9 +510,14 @@ describe('with package exports resolution enabled', () => {
             './features/bar/*.js': {
               'react-native': null,
             },
+            './node/*': './lib/node/*.js',
+            './*': './misc/*.js',
+            './node/*/types': './types/*/types.d.ts',
             './assets/*': './assets/*',
           },
         }),
+        '/root/node_modules/test-pkg/lib/node/test.js': '',
+        '/root/node_modules/test-pkg/lib/node/foo/public.js': '',
         '/root/node_modules/test-pkg/src/index.js': '',
         '/root/node_modules/test-pkg/src/features/foo.js': '',
         '/root/node_modules/test-pkg/src/features/foo.js.js': '',
@@ -520,6 +525,7 @@ describe('with package exports resolution enabled', () => {
         '/root/node_modules/test-pkg/src/features/baz.native.js': '',
         '/root/node_modules/test-pkg/src/features/node_modules/foo/index.js':
           '',
+        '/root/node_modules/test-pkg/types/foo/types.d.ts': '',
         '/root/node_modules/test-pkg/assets/Logo.js': '',
       }),
       originModulePath: '/root/src/main.js',
@@ -575,6 +581,32 @@ describe('with package exports resolution enabled', () => {
           /node_modules
         "
       `);
+    });
+
+    test('should resolve prefixed wildcard export, using the most specific export path', () => {
+      const context = baseContext;
+
+      expect(Resolver.resolve(context, 'test-pkg/node/test', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/node/test.js',
+      });
+    });
+
+    test('longer patterns have higher specificity if bases are equal', () => {
+      const context = baseContext;
+      expect(
+        Resolver.resolve(context, 'test-pkg/node/foo/public', null),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/node/foo/public.js',
+      });
+
+      expect(
+        Resolver.resolve(context, 'test-pkg/node/foo/types', null),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/types/foo/types.d.ts',
+      });
     });
 
     describe('package encapsulation', () => {
