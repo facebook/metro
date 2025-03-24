@@ -11,6 +11,7 @@
 
 'use strict';
 
+const throttle = require('lodash.throttle');
 const readline = require('readline');
 const tty = require('tty');
 const util = require('util');
@@ -94,20 +95,30 @@ class Terminal {
   _nextStatusStr: string;
   _statusStr: string;
   _stream: UnderlyingStream;
+  _ttyStream: ?tty.WriteStream;
   _updatePromise: Promise<void> | null;
   _isUpdating: boolean;
   _isPendingUpdate: boolean;
   _shouldFlush: boolean;
+  _writeStatusThrottled: string => void;
 
-  constructor(stream: UnderlyingStream) {
+  constructor(
+    stream: UnderlyingStream,
+    {ttyPrint = true}: {ttyPrint?: boolean} = {},
+  ) {
     this._logLines = [];
     this._nextStatusStr = '';
     this._statusStr = '';
     this._stream = stream;
+    this._ttyStream = ttyPrint ? getTTYStream(stream) : null;
     this._updatePromise = null;
     this._isUpdating = false;
     this._isPendingUpdate = false;
     this._shouldFlush = false;
+    this._writeStatusThrottled = throttle(
+      status => this._stream.write(status),
+      3500,
+    );
   }
 
   /**
@@ -148,8 +159,10 @@ class Terminal {
   async flush(): Promise<void> {
     if (this._isUpdating) {
       this._shouldFlush = true;
-      await this._updatePromise;
     }
+    await this.waitForUpdates();
+    // $FlowIgnore[prop-missing]
+    this._writeStatusThrottled.flush();
   }
 
   /**
@@ -159,7 +172,7 @@ class Terminal {
    * `terminal.log()` is called several times.
    */
   async _update(): Promise<void> {
-    const ttyStream = getTTYStream(this._stream);
+    const ttyStream = this._ttyStream;
 
     const nextStatusStr = this._nextStatusStr;
     const statusStr = this._statusStr;
@@ -173,7 +186,7 @@ class Terminal {
       return;
     }
 
-    if (ttyStream != null && statusStr.length > 0) {
+    if (ttyStream && statusStr.length > 0) {
       const statusLinesCount = statusStr.split('\n').length - 1;
       // extra -1 because we print the status with a trailing new line
       await moveCursor(ttyStream, -ttyStream.columns, -statusLinesCount - 1);
@@ -184,8 +197,14 @@ class Terminal {
       await streamWrite(this._stream, logLines.join('\n') + '\n');
     }
 
-    if (ttyStream != null && nextStatusStr.length > 0) {
-      await streamWrite(this._stream, nextStatusStr + '\n');
+    if (ttyStream) {
+      if (nextStatusStr.length > 0) {
+        await streamWrite(this._stream, nextStatusStr + '\n');
+      }
+    } else {
+      this._writeStatusThrottled(
+        nextStatusStr.length > 0 ? nextStatusStr + '\n' : '',
+      );
     }
   }
 
@@ -198,11 +217,10 @@ class Terminal {
    */
   status(format: string, ...args: Array<mixed>): string {
     const {_nextStatusStr} = this;
-    const ttyStream = getTTYStream(this._stream);
 
     const statusStr = util.format(format, ...args);
-    this._nextStatusStr = ttyStream
-      ? chunkString(statusStr, ttyStream.columns).join('\n')
+    this._nextStatusStr = this._ttyStream
+      ? chunkString(statusStr, this._ttyStream.columns).join('\n')
       : statusStr;
 
     this._scheduleUpdate();
