@@ -98,7 +98,7 @@ export type SplitBundleOptions = {
   +transformOptions: TransformInputOptions,
   +serializerOptions: SerializerOptions,
   +graphOptions: GraphOptions,
-  +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+  +onProgress: DeltaBundlerOptions<>['onProgress'],
 };
 
 export type ModuleGroups = {

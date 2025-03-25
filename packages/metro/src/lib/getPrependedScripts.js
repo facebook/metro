@@ -26,10 +26,7 @@ const defaults = require('metro-config/src/defaults/defaults');
 
 async function getPrependedScripts(
   config: ConfigT,
-  options: $Diff<
-    TransformInputOptions,
-    {type: $PropertyType<TransformInputOptions, 'type'>, ...},
-  >,
+  options: Omit<TransformInputOptions, 'type'>,
   resolverOptions: ResolverInputOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,

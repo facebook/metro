@@ -36,7 +36,7 @@ export opaque type RevisionId: string = string;
 export type OutputGraph = Graph<>;
 
 type OtherOptions = $ReadOnly<{
-  onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+  onProgress: DeltaBundlerOptions<>['onProgress'],
   shallow: boolean,
   lazy: boolean,
 }>;

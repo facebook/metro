@@ -38,7 +38,7 @@ export type StackFrameOutput = $ReadOnly<{
   ...IntermediateStackFrame,
   ...
 }>;
-type ExplodedSourceMapModule = $ElementType<ExplodedSourceMap, number>;
+type ExplodedSourceMapModule = ExplodedSourceMap[number];
 type Position = {+line1Based: number, column0Based: number};
 
 function createFunctionNameGetter(

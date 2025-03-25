@@ -47,7 +47,7 @@ type BabelTransformerOptions = $ReadOnly<{
 export type BabelTransformerArgs = $ReadOnly<{
   filename: string,
   options: BabelTransformerOptions,
-  plugins?: $PropertyType<BabelCoreOptions, 'plugins'>,
+  plugins?: BabelCoreOptions['plugins'],
   src: string,
 }>;
 
