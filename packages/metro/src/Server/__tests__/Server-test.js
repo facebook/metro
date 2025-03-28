@@ -167,24 +167,21 @@ describe('processRequest', () => {
     options?: ?$ReadOnly<{
       method?: string,
       headers?: $ReadOnly<{[string]: string}>,
-      rawBody?: string,
+      data?: string,
     }>,
   ) =>
     new Promise<$FlowFixMe>((resolve, reject) => {
-      const {rawBody, method, ...reqOptions} = options ?? {};
-      const actualMethod = method ?? (rawBody != null ? 'POST' : 'GET');
+      const {data, method, headers, ...reqOptions} = options ?? {};
+      const actualMethod = method ?? (data != null ? 'POST' : 'GET');
       const req = new MockRequest({
         url: requrl,
         method: actualMethod,
-        headers: {host: 'localhost:8081'},
+        headers: {...headers, host: 'localhost:8081'},
         ...reqOptions,
       });
-      if (rawBody != null) {
-        req.write(rawBody);
+      if (data != null) {
+        req.write(data);
         req.end();
-
-        // We implicitly depend on a body parser within `connect` that sets this
-        req.rawBody = rawBody;
       }
       const res: $FlowFixMe = new MockResponse(() => {
         resolve(res);
@@ -999,7 +996,8 @@ describe('processRequest', () => {
 
       test('should symbolicate given stack trace', async () => {
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1052,7 +1050,8 @@ describe('processRequest', () => {
           };
 
           const response = await makeRequest('/symbolicate', {
-            rawBody: JSON.stringify({
+            headers: {'content-type': 'application/json'},
+            data: JSON.stringify({
               stack: [
                 {
                   file: `http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle${queryDelimiter}runModule=true`,
@@ -1066,7 +1065,8 @@ describe('processRequest', () => {
             JSON.parse(
               (
                 await makeRequest('/symbolicate', {
-                  rawBody: JSON.stringify({
+                  headers: {'content-type': 'application/json'},
+                  data: JSON.stringify({
                     stack: [
                       {
                         file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1089,7 +1089,8 @@ describe('processRequest', () => {
           };
 
           const response = await makeRequest('/symbolicate', {
-            rawBody: JSON.stringify({
+            headers: {'content-type': 'application/json'},
+            data: JSON.stringify({
               stack: [
                 {
                   file: `http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle${queryDelimiter}runModule=true`,
@@ -1107,7 +1108,8 @@ describe('processRequest', () => {
 
       test('should update the graph when symbolicating a second time', async () => {
         const requestData = {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1144,7 +1146,8 @@ describe('processRequest', () => {
 
       test('supports the `modulesOnly` option', async () => {
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&modulesOnly=true`,
@@ -1168,7 +1171,8 @@ describe('processRequest', () => {
 
       test('supports the `shallow` option', async () => {
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&shallow=true`,
@@ -1209,7 +1213,8 @@ describe('processRequest', () => {
 
       test('should symbolicate function name if available', async () => {
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1233,7 +1238,8 @@ describe('processRequest', () => {
         // NOTE: See implementation of symbolicator.customizeFrame above.
 
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1258,7 +1264,8 @@ describe('processRequest', () => {
         // NOTE: See implementation of symbolicator.customizeStack above.
 
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
@@ -1287,7 +1294,8 @@ describe('processRequest', () => {
       // or normalisation.
       test('should leave original file and position when cannot symbolicate (after normalisation and rewriting?)', async () => {
         const response = await makeRequest('/symbolicate', {
-          rawBody: JSON.stringify({
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
             stack: [
               {
                 file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true&foo__REMOVE_THIS_WHEN_REWRITING__=bar`,
@@ -1325,7 +1333,8 @@ describe('processRequest', () => {
       console.error = jest.fn();
 
       const response = await makeRequest('/symbolicate', {
-        rawBody: body,
+        headers: {'content-type': 'application/json'},
+        data: body,
       });
       expect(response.statusCode).toEqual(500);
       expect(response._getJSON()).toEqual({
