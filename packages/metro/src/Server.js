@@ -24,7 +24,7 @@ import type {
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
-import type {StackFrameOutput} from './Server/symbolicate';
+import type {StackFrameInput, StackFrameOutput} from './Server/symbolicate';
 import type {
   BundleOptions,
   GraphOptions,
@@ -61,6 +61,7 @@ const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundErro
 const bundleToString = require('./lib/bundleToString');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
+const parseJsonBody = require('./lib/parseJsonBody');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
@@ -1262,9 +1263,20 @@ class Server {
         createActionStartEntry('Symbolicating'),
       );
       debug('Start symbolication');
-      /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
-      const body = await req.rawBody;
-      const parsedBody = JSON.parse(body);
+
+      let parsedBody;
+      if ('rawBody' in req) {
+        // TODO: Remove this branch once we are no longer targeting React Native
+        // < 0.80 and Expo SDK < 53
+        // $FlowFixMe[prop-missing] - rawBody assigned by legacy CLI integrations
+        const body = await req.rawBody;
+        parsedBody = JSON.parse(body);
+      } else {
+        parsedBody = (await parseJsonBody(req)) as {
+          stack: $ReadOnlyArray<StackFrameInput>,
+          extraData: {[string]: mixed},
+        };
+      }
 
       const rewriteAndNormalizeStackFrame = <T>(
         frame: T,
