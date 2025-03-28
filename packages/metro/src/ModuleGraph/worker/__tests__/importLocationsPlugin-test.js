@@ -23,6 +23,7 @@ function parse(code: string) {
   return hermesParse(code, {
     babel: true,
     sourceType: 'module',
+    reactRuntimeTarget: '18',
   }) as BabelNodeFile;
 }
 
