@@ -139,6 +139,8 @@ class SymbolicationContext<ModuleIdsT> {
         'outputColumnStart',
       ]) {
         if (options[option] != null) {
+          /* $FlowFixMe[incompatible-type] error found during natural inference
+           * roll-out. See https://fburl.com/workplace/tc9m3tcf */
           this.options[option] = options[option];
         }
       }
