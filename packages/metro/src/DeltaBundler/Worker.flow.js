@@ -66,6 +66,9 @@ function asDeserializedBuffer(value: any): Buffer | null {
   if (value && value.type === 'Buffer') {
     return Buffer.from(value.data);
   }
+  if (ArrayBuffer.isView(value)) {
+    return Buffer.from(value.buffer, value.byteOffset, value.byteLength);
+  }
   return null;
 }
 
