@@ -444,7 +444,7 @@ type EffectTiming = {
   ...
 };
 
-type OptionalEffectTiming = $Rest<EffectTiming, {...}>;
+type OptionalEffectTiming = Partial<EffectTiming>;
 
 type ComputedEffectTiming = EffectTiming & {
   activeDuration: number,
@@ -492,7 +492,7 @@ type PropertyIndexedKeyframes = {
   ...
 };
 
-type KeyframeEffectOptions = $Rest<EffectTiming, {...}> & {
+type KeyframeEffectOptions = Partial<EffectTiming> & {
   composite?: CompositeOperation,
   iterationComposite?: IterationCompositeOperation,
   ...
