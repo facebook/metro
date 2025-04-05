@@ -128,6 +128,12 @@ class WorkerFarm {
       enableWorkerThreads: this._config.transformer.unstable_workerThreads,
       forkOptions: {env},
       numWorkers,
+      // Prefer using lower numbered available workers repeatedly rather than
+      // spreading jobs over the whole pool evenly (round-robin). This is more
+      // likely to use faster, hot workers earlier in graph traversal, when
+      // we want to be able to fan out as quickly as possible, and therefore
+      // gets us to full speed faster.
+      workerSchedulingPolicy: 'in-order',
     });
   }
 
