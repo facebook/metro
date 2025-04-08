@@ -38,7 +38,6 @@ import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
-  LogEntry,
 } from 'metro-core/src/Logger';
 import type {CustomResolverOptions} from 'metro-resolver/src/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
@@ -662,7 +661,7 @@ class Server {
     +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
     +createEndEntry: (
       context: ProcessEndContext<T>,
-    ) => $Rest<ActionStartLogEntry, LogEntry>,
+    ) => Partial<ActionStartLogEntry>,
     +build: (context: ProcessStartContext) => Promise<T>,
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
