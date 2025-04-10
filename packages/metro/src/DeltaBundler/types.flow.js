@@ -89,13 +89,9 @@ export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
   Module<T>,
 >;
 
-export type TransformInputOptions = $Diff<
+export type TransformInputOptions = Omit<
   JsTransformOptions,
-  {
-    inlinePlatform: boolean,
-    inlineRequires: boolean,
-    ...
-  },
+  'inlinePlatform' | 'inlineRequires',
 >;
 
 export type GraphInputOptions = $ReadOnly<{

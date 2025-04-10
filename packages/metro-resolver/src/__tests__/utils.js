@@ -29,7 +29,7 @@ type MockFileMap = $ReadOnly<{
  */
 export function createResolutionContext(
   fileMap: MockFileMap = {},
-): $Diff<ResolutionContext, {originModulePath: string}> {
+): Omit<ResolutionContext, 'originModulePath'> {
   const directorySet = new Set<string>();
   for (const filePath of Object.keys(fileMap)) {
     let currentDir = filePath;
