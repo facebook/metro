@@ -11,21 +11,24 @@
 
 import type {FileMetaData} from '../../flow-types';
 
+import H from '../../constants';
+
 const MockJestWorker = jest.fn().mockImplementation(() => ({
   worker: async () => ({}),
+  end: async () => {},
 }));
 const mockWorkerFn = jest.fn().mockResolvedValue({});
 
-describe('processBatch', () => {
-  const defaultOptions = {
-    dependencyExtractor: null,
-    enableHastePackages: false,
-    enableWorkerThreads: true,
-    hasteImplModulePath: null,
-    maxWorkers: 5,
-    perfLogger: null,
-  };
+const defaultOptions = {
+  dependencyExtractor: null,
+  enableHastePackages: false,
+  enableWorkerThreads: true,
+  hasteImplModulePath: null,
+  maxWorkers: 5,
+  perfLogger: null,
+};
 
+describe('processBatch', () => {
   let FileProcessor;
 
   beforeEach(() => {
@@ -79,11 +82,49 @@ describe('processBatch', () => {
   });
 });
 
+describe('processRegularFile', () => {
+  let FileProcessor;
+  const mockReadFileSync = jest.fn();
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
+    jest.unmock('../../worker.js');
+    jest.mock('fs', () => ({
+      readFileSync: mockReadFileSync,
+    }));
+    FileProcessor = require('../FileProcessor').FileProcessor;
+  });
+
+  test('synchronously populates metadata', () => {
+    const processor = new FileProcessor(defaultOptions);
+    const [filename, metadata] = getNMockFiles(1)[0];
+    expect(metadata[H.SHA1]).toBeFalsy();
+
+    const fileContent = Buffer.from('hello world');
+    mockReadFileSync.mockReturnValue(fileContent);
+
+    const result = processor.processRegularFile(filename, metadata, {
+      computeSha1: true,
+      computeDependencies: false,
+      maybeReturnContent: true,
+    });
+
+    expect(mockReadFileSync).toHaveBeenCalledWith(filename);
+
+    expect(result).toEqual({
+      content: fileContent,
+    });
+
+    expect(metadata[H.SHA1]).toMatch(/^[a-f0-9]{40}$/);
+  });
+});
+
 function getNMockFiles(numFiles: number): Array<[string, FileMetaData]> {
   return new Array<?[string, FileMetaData]>(numFiles)
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      ['', 123, 234, 0, '', '', 0] as FileMetaData,
+      ['', 123, 234, 0, '', null, 0] as FileMetaData,
     ]);
 }

@@ -184,9 +184,9 @@ describe('worker', () => {
       }),
     ).toEqual({sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552'});
 
-    await expect(
+    await expect(() =>
       worker({computeSha1: true, filePath: '/i/dont/exist.js'}),
-    ).rejects.toThrow();
+    ).toThrow();
   });
 
   test('avoids computing dependencies if not requested and Haste does not need it', async () => {

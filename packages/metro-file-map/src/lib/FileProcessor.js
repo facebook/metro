@@ -9,8 +9,12 @@
  * @oncall react_native
  */
 
-import type {FileMetaData, PerfLogger, WorkerMetadata} from '../flow-types';
-import type {IJestWorker} from 'jest-worker';
+import type {
+  FileMetaData,
+  PerfLogger,
+  WorkerMessage,
+  WorkerMetadata,
+} from '../flow-types';
 
 import H from '../constants';
 import {worker} from '../worker';
@@ -36,8 +40,14 @@ type ProcessFileRequest = $ReadOnly<{
   maybeReturnContent: boolean,
 }>;
 
-type WorkerObj = {worker: typeof worker};
-type WorkerInterface = IJestWorker<WorkerObj> | WorkerObj;
+interface AsyncWorker {
+  +worker: WorkerMessage => Promise<WorkerMetadata>;
+  +end: () => Promise<void>;
+}
+
+interface MaybeCodedError extends Error {
+  code?: string;
+}
 
 const NODE_MODULES = sep + 'node_modules' + sep;
 const MAX_FILES_PER_WORKER = 100;
@@ -75,7 +85,10 @@ export class FileProcessor {
     files: $ReadOnlyArray<[string /*absolutePath*/, FileMetaData]>,
     req: ProcessFileRequest,
   ): Promise<{
-    errors: Array<{absolutePath: string, error: Error & {code: string}}>,
+    errors: Array<{
+      absolutePath: string,
+      error: MaybeCodedError,
+    }>,
   }> {
     const errors = [];
     const numWorkers = Math.min(
@@ -91,23 +104,24 @@ export class FileProcessor {
     }
 
     await Promise.all(
-      files.map(([absolutePath, fileMetadata]) =>
-        this.#processWithWorker(
+      files.map(([absolutePath, fileMetadata]) => {
+        const maybeWorkerInput = this.#getWorkerInput(
           absolutePath,
           fileMetadata,
           req,
-          batchWorker.worker,
-        )?.catch(error => {
-          errors.push({absolutePath, error});
-        }),
-      ),
+        );
+        if (!maybeWorkerInput) {
+          return null;
+        }
+        return batchWorker
+          .worker(maybeWorkerInput)
+          .then(reply => processWorkerReply(reply, fileMetadata))
+          .catch(error =>
+            errors.push({absolutePath, error: normalizeWorkerError(error)}),
+          );
+      }),
     );
-
-    if (typeof batchWorker.end === 'function') {
-      await batchWorker.end();
-      debug('Ended worker farm');
-    }
-
+    await batchWorker.end();
     return {errors};
   }
 
@@ -115,63 +129,19 @@ export class FileProcessor {
     absolutePath: string,
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
-  ): ?Promise<{content: ?Buffer}> {
-    // Use in-band worker directly for single files.
-    const result = this.#processWithWorker(
-      absolutePath,
-      fileMetadata,
-      req,
-      worker,
-    );
-    return result
-      ? result.then(maybeContent => ({content: maybeContent}))
+  ): ?{content: ?Buffer} {
+    const workerInput = this.#getWorkerInput(absolutePath, fileMetadata, req);
+    return workerInput
+      ? {content: processWorkerReply(worker(workerInput), fileMetadata)}
       : null;
   }
 
-  #processWithWorker(
+  #getWorkerInput(
     absolutePath: string,
     fileMetadata: FileMetaData,
     req: ProcessFileRequest,
-    worker: WorkerInterface['worker'],
-  ): ?Promise<?Buffer> {
+  ): ?WorkerMessage {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-
-    // Callback called when the response from the worker is successful.
-    const workerReply = (metadata: WorkerMetadata) => {
-      fileMetadata[H.VISITED] = 1;
-
-      const metadataId = metadata.id;
-
-      if (metadataId != null) {
-        fileMetadata[H.ID] = metadataId;
-      }
-
-      fileMetadata[H.DEPENDENCIES] = metadata.dependencies
-        ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
-        : '';
-
-      if (computeSha1) {
-        fileMetadata[H.SHA1] = metadata.sha1;
-      }
-
-      return metadata.content;
-    };
-
-    // Callback called when the response from the worker is an error.
-    const workerError = (error: mixed) => {
-      if (
-        error == null ||
-        typeof error !== 'object' ||
-        error.message == null ||
-        error.stack == null
-      ) {
-        // $FlowFixMe[reassign-const] - Refactor this
-        error = new Error(error);
-        // $FlowFixMe[incompatible-use] - error is mixed
-        error.stack = ''; // Remove stack for stack-less errors.
-      }
-      throw error;
-    };
 
     const {computeDependencies, maybeReturnContent} = req;
 
@@ -183,7 +153,7 @@ export class FileProcessor {
     // retainAllFiles is true, or they're touched during watch mode.
     if (absolutePath.includes(NODE_MODULES)) {
       if (computeSha1) {
-        return worker({
+        return {
           computeDependencies: false,
           computeSha1: true,
           dependencyExtractor: null,
@@ -191,12 +161,12 @@ export class FileProcessor {
           filePath: absolutePath,
           hasteImplModulePath: null,
           maybeReturnContent,
-        }).then(workerReply, workerError);
+        };
       }
       return null;
     }
 
-    return worker({
+    return {
       computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
@@ -204,15 +174,16 @@ export class FileProcessor {
       filePath: absolutePath,
       hasteImplModulePath: this.#hasteImplModulePath,
       maybeReturnContent,
-    }).then(workerReply, workerError);
+    };
   }
 
   /**
    * Creates workers or parses files and extracts metadata in-process.
    */
-  #getBatchWorker(numWorkers: number): WorkerInterface {
+  #getBatchWorker(numWorkers: number): AsyncWorker {
     if (numWorkers <= 1) {
-      return {worker};
+      // In-band worker with the same interface as a Jest worker farm
+      return {worker: async message => worker(message), end: async () => {}};
     }
     const workerPath = require.resolve('../worker');
     debug(
@@ -221,7 +192,9 @@ export class FileProcessor {
       this.#enableWorkerThreads ? 'threads' : 'processes',
     );
     this.#perfLogger?.point('initWorkers_start');
-    const jestWorker = new Worker<WorkerObj>(workerPath, {
+    const jestWorker = new Worker<{
+      worker: WorkerMessage => Promise<WorkerMetadata>,
+    }>(workerPath, {
       exposedMethods: ['worker'],
       maxRetries: 3,
       numWorkers,
@@ -240,4 +213,41 @@ export class FileProcessor {
   }
 
   async end(): Promise<void> {}
+}
+
+function processWorkerReply(
+  metadata: WorkerMetadata,
+  fileMetadata: FileMetaData,
+) {
+  fileMetadata[H.VISITED] = 1;
+
+  const metadataId = metadata.id;
+
+  if (metadataId != null) {
+    fileMetadata[H.ID] = metadataId;
+  }
+
+  fileMetadata[H.DEPENDENCIES] = metadata.dependencies
+    ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
+    : '';
+
+  if (metadata.sha1 != null) {
+    fileMetadata[H.SHA1] = metadata.sha1;
+  }
+
+  return metadata.content;
+}
+
+function normalizeWorkerError(mixedError: ?Error | string): MaybeCodedError {
+  if (
+    mixedError == null ||
+    typeof mixedError !== 'object' ||
+    mixedError.message == null ||
+    mixedError.stack == null
+  ) {
+    const error = new Error(mixedError);
+    error.stack = ''; // Remove stack for stack-less errors.
+    return error;
+  }
+  return mixedError;
 }

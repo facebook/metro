@@ -44,9 +44,7 @@ function sha1hex(content /*: string | Buffer */) /*: string */ {
   return createHash('sha1').update(content).digest('hex');
 }
 
-async function worker(
-  data /*: WorkerMessage */,
-) /*: Promise<WorkerMetadata> */ {
+function worker(data /*: WorkerMessage */) /*: WorkerMetadata */ {
   let content /*: ?Buffer */;
   let dependencies /*: WorkerMetadata['dependencies'] */;
   let id /*: WorkerMetadata['id'] */;

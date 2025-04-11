@@ -388,7 +388,7 @@ export type ProcessFileFunction = (
   absolutePath: string,
   metadata: FileMetaData,
   request: $ReadOnly<{computeSha1: boolean}>,
-) => Promise<?Buffer>;
+) => ?Buffer;
 
 export type RawMockMap = $ReadOnly<{
   duplicates: Map<
@@ -397,7 +397,7 @@ export type RawMockMap = $ReadOnly<{
   >,
   mocks: Map<
     string, // posix-separated mock name
-    Path, // posix-separated, project-relative path
+    Path, // posix-separated, project-relative pathf
   >,
   version: number,
 }>;

@@ -888,7 +888,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]),
         processFile: mockProcessFile,
       });
-      mockProcessFile.mockImplementation(async (filePath, metadata) => {
+      mockProcessFile.mockImplementation((filePath, metadata) => {
         metadata[H.SHA1] = 'abc123';
         return;
       });
@@ -913,7 +913,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
 
     test('returns file contents alongside SHA-1 if processFile provides it', async () => {
-      mockProcessFile.mockImplementationOnce(async (filePath, metadata) => {
+      mockProcessFile.mockImplementationOnce((filePath, metadata) => {
         metadata[H.SHA1] = 'bcd234';
         return Buffer.from('content');
       });

@@ -26,7 +26,7 @@ jest.mock('../lib/checkWatchmanCapabilities', () => ({
 
 jest.mock('jest-worker', () => ({
   Worker: jest.fn(worker => {
-    mockWorker = jest.fn((...args) => require(worker).worker(...args));
+    mockWorker = jest.fn(async (...args) => require(worker).worker(...args));
     mockEnd = jest.fn();
 
     return {
