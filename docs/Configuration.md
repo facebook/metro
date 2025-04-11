@@ -389,7 +389,7 @@ When no match is found in `"exports"`, Metro will log a warning and fall back to
 - If a module is matched in `"exports"`, [`sourceExts`](#sourceexts) and [`platforms`](#platforms) will not be considered (i.e. platform-specific extensions will not be used). This is done for compatibility with Node.
 - If a module exists at a file path that is also listed in `"exports"`, and the `"exports"` entry maps to a different file, the `"exports"` entry will be preferred.
 
-Defaults to `true`.
+Defaults to `true` since Metro 0.82.0.
 
 :::note
 
