@@ -5,8 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
+
+import type {WorkerMessage} from '../flow-types';
+import typeof FS from 'fs';
 
 import {worker} from '../worker';
 import * as fs from 'fs';
@@ -18,7 +22,7 @@ jest.mock('fs', () => {
   const mockFs = {
     [path.join('/project', 'fruits', 'Banana.js')]: `
         const Strawberry = require("Strawberry");
-      `,
+      ` as Buffer | string | $ReadOnly<{link: string}>,
     [path.join('/project', 'fruits', 'Pear.js')]: `
         const Banana = require("Banana");
         const Strawberry = require('Strawberry');
@@ -46,10 +50,13 @@ jest.mock('fs', () => {
     readFileSync: jest.fn((path, options) => {
       const entry = mockFs[path];
       if (entry) {
-        if (typeof entry.link === 'string') {
-          throw new Error('Tried to call readFile on a symlink');
+        if (typeof entry === 'string') {
+          return options === 'utf8' ? entry : Buffer.from(entry);
         }
-        return options === 'utf8' ? entry : Buffer.from(entry);
+        if (entry instanceof Buffer) {
+          return options === 'utf8' ? entry.toString('utf8') : entry;
+        }
+        throw new Error('Tried to call readFile on a symlink');
       }
       throw new Error(`Cannot read path '${path}'.`);
     }),
@@ -61,9 +68,18 @@ describe('worker', () => {
     jest.clearAllMocks();
   });
 
+  const defaults: WorkerMessage = {
+    computeDependencies: false,
+    computeSha1: false,
+    enableHastePackages: false,
+    filePath: path.join('/project', 'notexist.js'),
+    maybeReturnContent: false,
+  };
+
   test('parses JavaScript files and extracts module information', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
@@ -73,6 +89,7 @@ describe('worker', () => {
 
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
       }),
@@ -84,6 +101,7 @@ describe('worker', () => {
   test('accepts a custom dependency extractor', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
         filePath: path.join('/project', 'fruits', 'Pear.js'),
@@ -96,6 +114,7 @@ describe('worker', () => {
   test('delegates to hasteImplModulePath for getting the id', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         hasteImplModulePath: require.resolve('./haste_impl.js'),
@@ -107,6 +126,7 @@ describe('worker', () => {
 
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
         hasteImplModulePath: require.resolve('./haste_impl.js'),
@@ -120,6 +140,7 @@ describe('worker', () => {
   test('parses package.json files as haste packages when enableHastePackages=true', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         enableHastePackages: true,
         filePath: path.join('/project', 'package.json'),
@@ -133,6 +154,7 @@ describe('worker', () => {
   test('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: true,
         enableHastePackages: false,
         filePath: path.join('/project', 'package.json'),
@@ -147,17 +169,22 @@ describe('worker', () => {
     let error = null;
 
     try {
-      await worker({computeDependencies: true, filePath: '/kiwi.js'});
+      await worker({
+        ...defaults,
+        computeDependencies: true,
+        filePath: '/kiwi.js',
+      });
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toEqual(`Cannot read path '/kiwi.js'.`);
+    expect(error?.message).toEqual(`Cannot read path '/kiwi.js'.`);
   });
 
   test('simply computes SHA-1s when requested (works well with binary data)', async () => {
     expect(
       await worker({
+        ...defaults,
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'apple.png'),
       }),
@@ -165,6 +192,7 @@ describe('worker', () => {
 
     expect(
       await worker({
+        ...defaults,
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
       }),
@@ -172,6 +200,7 @@ describe('worker', () => {
 
     expect(
       await worker({
+        ...defaults,
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
       }),
@@ -179,19 +208,21 @@ describe('worker', () => {
 
     expect(
       await worker({
+        ...defaults,
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
     ).toEqual({sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552'});
 
     await expect(() =>
-      worker({computeSha1: true, filePath: '/i/dont/exist.js'}),
+      worker({...defaults, computeSha1: true, filePath: '/i/dont/exist.js'}),
     ).toThrow();
   });
 
   test('avoids computing dependencies if not requested and Haste does not need it', async () => {
     expect(
       await worker({
+        ...defaults,
         computeDependencies: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
@@ -210,6 +241,7 @@ describe('worker', () => {
   test('returns content if requested and content is read', async () => {
     expect(
       await worker({
+        ...defaults,
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         maybeReturnContent: true,
@@ -223,6 +255,7 @@ describe('worker', () => {
   test('does not return content if maybeReturnContent but content is not read', async () => {
     expect(
       await worker({
+        ...defaults,
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
@@ -238,7 +271,7 @@ describe('worker', () => {
 
   test('can be loaded directly without transpilation', async () => {
     const code = await jest
-      .requireActual('fs')
+      .requireActual<FS>('fs')
       .promises.readFile(require.resolve('../worker.js'), 'utf8');
     expect(() => new vm.Script(code)).not.toThrow();
   });
