@@ -38,6 +38,7 @@ export type LogEntry = {
   action_result?: string,
   duration_ms?: number,
   entry_point?: string,
+  file_name?: string,
   log_entry_label: string,
   log_session?: string,
   start_timestamp?: [number, number],
