@@ -53,9 +53,9 @@ const siteConfig = {
   favicon: 'img/favicon.png',
   themeConfig: {
     announcementBar: {
-      id: 'support_ukraine',
+      id: 'react_conf',
       content:
-        'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" href="https://opensource.facebook.com/support-ukraine"> Help Provide Humanitarian Aid to Ukraine</a>.',
+        'Join us for React Conf on Oct 7-8. <a target="_blank" rel="noopener noreferrer" href="https://conf.react.dev">Learn more</a>.',
       backgroundColor: '#20232a',
       textColor: '#fff',
       isCloseable: false,
