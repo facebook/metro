@@ -346,7 +346,7 @@ Type: `Array<string>`
 
 :::note
 
-This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true` (the default). It may not behave as described while this feature is experimental.
 
 :::
 
@@ -368,7 +368,7 @@ Type: `{[platform: string]: Array<string>}`
 
 :::note
 
-This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true`. It may not behave as described while this feature is experimental.
+This setting will take effect when [`unstable_enablePackageExports`](#unstable_enablepackageexports-experimental)  is `true` (the default). It may not behave as described while this feature is experimental.
 
 :::
 
@@ -389,11 +389,11 @@ When no match is found in `"exports"`, Metro will log a warning and fall back to
 - If a module is matched in `"exports"`, [`sourceExts`](#sourceexts) and [`platforms`](#platforms) will not be considered (i.e. platform-specific extensions will not be used). This is done for compatibility with Node.
 - If a module exists at a file path that is also listed in `"exports"`, and the `"exports"` entry maps to a different file, the `"exports"` entry will be preferred.
 
-Defaults to `false`.
+Defaults to `true` since Metro 0.82.0.
 
 :::note
 
-In a future release of Metro, this option will become `true` by default.
+In a future release of Metro, this option will be removed.
 
 :::
 
