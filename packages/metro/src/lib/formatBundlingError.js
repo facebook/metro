@@ -62,15 +62,18 @@ function formatBundlingError(error: CustomError): FormattedError {
     (error instanceof Error &&
       (error.type === 'TransformError' || error.type === 'NotFoundError'))
   ) {
-    error.errors = [
-      {
-        description: error.message,
-        filename: error.filename,
-        lineNumber: error.lineNumber,
-      },
-    ];
-
-    return serializeError(error);
+    return {
+      ...serializeError(error),
+      // Ensure the type is passed to the client.
+      type: error.type,
+      errors: [
+        {
+          description: error.message,
+          filename: error.filename,
+          lineNumber: error.lineNumber,
+        },
+      ],
+    };
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
