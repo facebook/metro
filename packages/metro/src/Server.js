@@ -1220,11 +1220,17 @@ class Server {
       urls: Set<string>,
       symbolicatedStack: $ReadOnlyArray<StackFrameOutput>,
     ) => {
+      const allFramesCollapsed = symbolicatedStack.every(
+        ({collapse}) => collapse,
+      );
+
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
 
         if (
-          collapse ||
+          // If all the frames are collapsed then we should ignore the collapse flag
+          // and always show the first valid frame.
+          (!allFramesCollapsed && collapse) ||
           lineNumber == null ||
           (file != null && urls.has(file))
         ) {
