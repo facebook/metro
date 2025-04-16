@@ -10,15 +10,12 @@
 
 'use strict';
 
-import type {Agent as HttpAgent} from 'http';
-import type {Agent as HttpsAgent} from 'https';
-
 const HttpError = require('./HttpError');
 const NetworkError = require('./NetworkError');
 const {backOff} = require('exponential-backoff');
 const http = require('http');
 const https = require('https');
-const url = require('url');
+const {HttpsProxyAgent} = require('https-proxy-agent');
 const zlib = require('zlib');
 
 export type Options =
@@ -46,6 +43,8 @@ type EndpointOptions = {
   maxAttempts?: number,
   retryNetworkErrors?: boolean,
   retryStatuses?: $ReadOnlySet<number>,
+  socketPath?: string,
+  proxy?: string,
 };
 
 type Endpoint = {
@@ -53,7 +52,7 @@ type Endpoint = {
   host: string,
   path: string,
   port: number,
-  agent: HttpAgent | HttpsAgent,
+  agent: http$Agent<tls$TLSSocket> | http$Agent<net$Socket>,
   params: URLSearchParams,
   headers?: {[string]: string},
   timeout: number,
@@ -92,7 +91,7 @@ class HttpStore<T> {
   }
 
   createEndpointConfig(options: EndpointOptions): Endpoint {
-    const agentConfig: http$agentOptions = {
+    const agentConfig = {
       family: options.family,
       keepAlive: true,
       keepAliveMsecs: options.timeout || 5000,
@@ -115,19 +114,29 @@ class HttpStore<T> {
       agentConfig.ca = options.ca;
     }
 
-    const uri = url.parse(options.endpoint);
+    if (options.socketPath != null) {
+      // $FlowFixMe `socketPath` is missing in the Flow definition
+      agentConfig.socketPath = options.socketPath;
+    }
+
+    const uri = new URL(options.endpoint);
     const module = uri.protocol === 'http:' ? http : https;
+
+    const agent =
+      options.proxy != null
+        ? new HttpsProxyAgent(options.proxy, agentConfig)
+        : new module.Agent(agentConfig);
 
     if (!uri.hostname || !uri.pathname) {
       throw new TypeError('Invalid endpoint: ' + options.endpoint);
     }
 
     return {
+      agent,
       headers: options.headers,
       host: uri.hostname,
       path: uri.pathname,
       port: +uri.port,
-      agent: new module.Agent(agentConfig),
       params: new URLSearchParams(options.params),
       timeout: options.timeout || 5000,
       module: uri.protocol === 'http:' ? http : https,
