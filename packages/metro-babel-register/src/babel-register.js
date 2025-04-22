@@ -15,17 +15,16 @@
 import type {BabelCoreOptions} from '@babel/core';
 */
 
-const debug = require('debug')('Metro:BabelRegister');
 const escapeRegExp = require('escape-string-regexp');
 const fs = require('fs');
 const path = require('path');
-const {Script} = require('vm');
-
-const MIN_FILE_SIZE_TO_WARN_ABOUT /*: number */ = 50000;
 
 let _only /*: $ReadOnlyArray<RegExp | string> */ = [];
 
-function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
+function register(
+  onlyList /*: $ReadOnlyArray<RegExp | string> */,
+  opts /*: ?$ReadOnly<{earlyPlugins?: BabelCoreOptions['plugins']}> */ = {},
+) {
   // NB: `require('@babel/register')` registers Babel as a side-effect, and
   // also returns a register function that overrides the first registration
   // when called.
@@ -38,7 +37,7 @@ function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
   // these plugins to be compiled with an arbitrary Babel config, we must
   // prepare the config object before calling `require('@babel/register')`.
   const registerConfig = {
-    ...config(onlyList),
+    ...config(onlyList, opts),
     extensions: [
       '.ts',
       '.tsx',
@@ -54,43 +53,11 @@ function register(onlyList /*: $ReadOnlyArray<RegExp | string> */) {
   require('@babel/register')(registerConfig);
 }
 
-function warnIfFileCouldSkipRegistration(
-  {opts: {filename}, code} /*: {opts: {filename: string}, code: string} */,
-) /*: void*/ {
-  if (!filename.endsWith('.js')) {
-    return;
-  }
-
-  const fileSize = Buffer.byteLength(code, 'utf8');
-  if (
-    fileSize < MIN_FILE_SIZE_TO_WARN_ABOUT ||
-    code.includes('\x40flow') ||
-    !isFileValidJS(code)
-  ) {
-    return;
-  }
-
-  debug(
-    `[metro-babel-register] A large, non flow, valid JS of size ${fileSize / 1000}kb that can be read by node.js witout a transpilation was transpiled using @babel/register:
-${filename}.
-Consider removing that file from the files being registered in "xplat/js/tools/babel-register/index.js" to speed up the import of that file.
-${'\n'.repeat(8)}`, // 8 new lines to ensure that a terminal status update won't erase the warning
-  );
-}
-
-function isFileValidJS(contents /*: string*/) /*: boolean*/ {
-  try {
-    void new Script(contents);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
-
 function config(
   onlyList /*: $ReadOnlyArray<RegExp | string> */,
   options /*: ?$ReadOnly<{
     lazy?: boolean,
+    earlyPlugins?: BabelCoreOptions['plugins'],
   }> */,
 ) /*: BabelCoreOptions */ {
   _only = _only.concat(onlyList);
@@ -103,18 +70,7 @@ function config(
     ignore: [/\/node_modules\//],
     only: [..._only],
     plugins: [
-      function BabelPluginDetectTranspiledFiles() {
-        const pluginObj = {
-          name: 'detect-transpiled-files',
-        };
-
-        if (debug.enabled) {
-          // $FlowIgnore
-          pluginObj.pre = warnIfFileCouldSkipRegistration;
-        }
-
-        return pluginObj;
-      },
+      ...(options?.earlyPlugins ?? []),
       [require('@babel/plugin-proposal-export-namespace-from').default],
       [
         require('@babel/plugin-transform-modules-commonjs').default,
