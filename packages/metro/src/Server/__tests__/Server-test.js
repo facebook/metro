@@ -992,6 +992,7 @@ describe('processRequest', () => {
           '/root/mybundle.js',
           'this\nis\njust an example and it is all fake data, yay!',
         );
+        fs.writeFileSync('/root/foo.js', 'mock data');
       });
 
       test('should symbolicate given stack trace', async () => {
