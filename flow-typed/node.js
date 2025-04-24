@@ -47,3 +47,30 @@ declare module 'timers' {
   declare export function clearInterval(timeout: Timeout): void;
   declare export function clearImmediate(immediate: Immediate): void;
 }
+
+declare module 'timers/promises' {
+  type TimerOptions = $ReadOnly<{
+    ref?: boolean,
+    signal?: AbortSignal,
+  }>;
+
+  declare export function setTimeout<T>(
+    delay: number,
+    value: T,
+    options?: TimerOptions,
+  ): Promise<T>;
+  declare export function setImmediate<T>(
+    value: T,
+    options?: TimerOptions,
+  ): Promise<T>;
+  declare export function setInterval<T>(
+    delay: number,
+    value: T,
+    options?: TimerOptions,
+  ): Promise<T>;
+
+  declare export const scheduler: {
+    wait(delay: number, options: TimerOptions): Promise<void>,
+    yield(): Promise<void>,
+  };
+}
