@@ -92,6 +92,13 @@ describe('Metro development server serves bundles via HTTP', () => {
   test('should serve lazy bundles', async () => {
     const object = await downloadAndExec(
       '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true',
+      {
+        __getImportMetaProperties: module => {
+          return {
+            url: new URL(`metro://module/${module.id}`),
+          };
+        },
+      },
     );
     await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
     await expect(object.asyncImportESM).resolves.toMatchSnapshot();
@@ -111,6 +118,13 @@ describe('Metro development server serves bundles via HTTP', () => {
   test('should serve non-lazy bundles by default', async () => {
     const object = await downloadAndExec(
       '/import-export/index.bundle?platform=ios&dev=true&minify=false',
+      {
+        __getImportMetaProperties: module => {
+          return {
+            url: new URL(`metro://module/${module.id}`),
+          };
+        },
+      },
     );
     await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
     await expect(object.asyncImportESM).resolves.toMatchSnapshot();
