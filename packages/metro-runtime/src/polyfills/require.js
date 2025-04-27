@@ -467,6 +467,22 @@ function loadModuleImplementation(
     }
     moduleObject.id = moduleId;
 
+    if (!moduleObject.importMeta) {
+      let importMeta;
+      Object.defineProperty(moduleObject, 'importMeta', {
+        enumerable: false,
+        configurable: false,
+        get: () =>
+          importMeta ??
+          (importMeta = {
+            __proto__: null,
+            ...global[`${__METRO_GLOBAL_PREFIX__}__getImportMetaProperties`]?.(
+              moduleObject,
+            ),
+          }),
+      });
+    }
+
     // keep args in sync with with defineModuleCode in
     // metro/src/Resolver/index.js
     // and metro/src/ModuleGraph/worker.js

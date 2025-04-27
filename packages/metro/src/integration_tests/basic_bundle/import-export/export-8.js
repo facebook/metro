@@ -13,3 +13,4 @@
 export default 'export-8: DEFAULT';
 
 export const foo = 'export-8: FOO';
+export const url = import.meta.url;
