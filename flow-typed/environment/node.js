@@ -197,6 +197,7 @@ declare module 'buffer' {
     fromEnc: buffer$Encoding,
     toEnc: buffer$Encoding,
   ): Node$Buffer;
+  // eslint-disable-next-line no-shadow
   declare var Buffer: Node$Buffer;
 }
 
