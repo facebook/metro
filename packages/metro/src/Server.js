@@ -469,6 +469,7 @@ class Server {
         urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
       );
       if (secondaryQuery) {
+        // $FlowFixMe[unsafe-object-assign]
         Object.assign(urlObj.query, querystring.parse(secondaryQuery));
       }
       assetPath = actualPath;

@@ -151,6 +151,7 @@ class WorkerFarm {
   _formatGenericError(err: any, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
+    // $FlowFixMe[unsafe-object-assign]
     return Object.assign(error, {
       stack: (err.stack || '').split('\n').slice(0, -1).join('\n'),
       lineNumber: 0,

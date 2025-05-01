@@ -378,6 +378,7 @@ class MissingFileInHastePackageError extends Error {
           .map(candidates => `  * \`${formatFileCandidates(candidates)}\``)
           .join('\n'),
     );
+    // $FlowFixMe[unsafe-object-assign]
     Object.assign(this, opts);
   }
 }

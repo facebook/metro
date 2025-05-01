@@ -154,6 +154,7 @@ class SourceMetadataMapConsumer {
     // eslint-disable-next-line lint/strictly-null
     if (map.mappings === undefined) {
       const indexMap: IndexMap = map;
+      // $FlowFixMe[unsafe-object-assign]
       return Object.assign(
         {},
         ...indexMap.sections.map(section =>
