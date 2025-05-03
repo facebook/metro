@@ -12,11 +12,12 @@
 
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
-import { isProgram } from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
+
+import {isProgram} from '@babel/types';
 
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;

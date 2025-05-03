@@ -28,7 +28,10 @@ const {transformFromAstSync} = require('@babel/core');
 const babylon = require('@babel/parser');
 const t = require('@babel/types');
 const dedent = require('dedent');
-const {importLocationsPlugin, locToKey} = require('metro/private/ModuleGraph/worker/importLocationsPlugin');
+const {
+  importLocationsPlugin,
+  locToKey,
+} = require('metro/private/ModuleGraph/worker/importLocationsPlugin');
 const nullthrows = require('nullthrows');
 
 const {any, objectContaining} = expect;
@@ -1458,27 +1461,36 @@ describe('optional dependencies', () => {
         }),
       ]);
     });
-    test('distinguishes ESM imports in single-line files from generated CJS babel runtime helpers', () =>{
+    test('distinguishes ESM imports in single-line files from generated CJS babel runtime helpers', () => {
       const code = `export { default } from './test'`;
-      const ast = astFromCode(code);
 
       // Transform the code to make sure `@babel/runtime` helpers are added,
       // and import locations are collected
-      const transform = transformFromAstSync<MetroBabelFileMetadata>(ast, code, {
-        ast: true,
-        plugins: [
-          importLocationsPlugin,
-          '@babel/plugin-transform-runtime',
-          '@babel/plugin-transform-modules-commonjs',
-        ],
-      });
-      const importDeclarations = transform.metadata.metro?.unstable_importDeclarationLocs;
+      const {ast, metadata} = transformFromAstSync<MetroBabelFileMetadata>(
+        astFromCode(code),
+        code,
+        {
+          ast: true,
+          plugins: [
+            importLocationsPlugin,
+            '@babel/plugin-transform-runtime',
+            '@babel/plugin-transform-modules-commonjs',
+          ],
+        },
+      );
+      if (!ast) {
+        throw new Error(
+          `Transformed AST missing, can't test location-based ESM import detection`,
+        );
+      }
+
+      const importDeclarations = metadata.metro?.unstable_importDeclarationLocs;
       expect(importDeclarations).toBeTruthy();
 
       // Collect the dependencies of the generated code
-      const {dependencies} = collectDependencies(transform.ast, {
+      const {dependencies} = collectDependencies(ast, {
         ...opts,
-        unstable_isESMImportAtSource: (loc) =>
+        unstable_isESMImportAtSource: loc =>
           !!importDeclarations?.has(locToKey(loc)),
       });
       expect(dependencies).toEqual([
