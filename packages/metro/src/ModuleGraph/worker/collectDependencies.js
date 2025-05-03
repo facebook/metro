@@ -12,6 +12,7 @@
 
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
+import { isProgram } from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
@@ -574,6 +575,10 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
     !current.node.METRO_INLINE_REQUIRES_INIT_LOC
   ) {
     current = current.parentPath;
+  }
+  // Do not use the location of the `Program` node
+  if (current && isProgram(current.node)) {
+    current = null;
   }
   return (
     // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
