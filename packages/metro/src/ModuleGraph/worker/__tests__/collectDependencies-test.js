@@ -1476,7 +1476,7 @@ describe('optional dependencies', () => {
       expect(importDeclarations).toBeTruthy();
 
       // Collect the dependencies of the generated code
-      const {dependencies} = collectDependencies(ast, {
+      const {dependencies} = collectDependencies(transform.ast, {
         ...opts,
         unstable_isESMImportAtSource: (loc) =>
           !!importDeclarations?.has(locToKey(loc)),
@@ -1493,7 +1493,7 @@ describe('optional dependencies', () => {
           // Original ESM import
           name: './test',
           data: objectContaining({
-            isESMImport: false,
+            isESMImport: true,
           }),
         },
       ]);
