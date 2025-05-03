@@ -19,6 +19,7 @@ import type {
   State,
 } from '../collectDependencies';
 import type {NodePath} from '@babel/traverse';
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 const collectDependencies = require('../collectDependencies');
@@ -27,6 +28,7 @@ const {transformFromAstSync} = require('@babel/core');
 const babylon = require('@babel/parser');
 const t = require('@babel/types');
 const dedent = require('dedent');
+const {importLocationsPlugin, locToKey} = require('metro/private/ModuleGraph/worker/importLocationsPlugin');
 const nullthrows = require('nullthrows');
 
 const {any, objectContaining} = expect;
@@ -1454,6 +1456,46 @@ describe('optional dependencies', () => {
           // asyncRequire helper
           name: 'asyncRequire',
         }),
+      ]);
+    });
+    test('distinguishes ESM imports in single-line files from generated CJS babel runtime helpers', () =>{
+      const code = `export { default } from './test'`;
+      const ast = astFromCode(code);
+
+      // Transform the code to make sure `@babel/runtime` helpers are added,
+      // and import locations are collected
+      const transform = transformFromAstSync<MetroBabelFileMetadata>(ast, code, {
+        ast: true,
+        plugins: [
+          importLocationsPlugin,
+          '@babel/plugin-transform-runtime',
+          '@babel/plugin-transform-modules-commonjs',
+        ],
+      });
+      const importDeclarations = transform.metadata.metro?.unstable_importDeclarationLocs;
+      expect(importDeclarations).toBeTruthy();
+
+      // Collect the dependencies of the generated code
+      const {dependencies} = collectDependencies(ast, {
+        ...opts,
+        unstable_isESMImportAtSource: (loc) =>
+          !!importDeclarations?.has(locToKey(loc)),
+      });
+      expect(dependencies).toEqual([
+        {
+          // Generated Babel runtime helper
+          name: '@babel/runtime/helpers/interopRequireDefault',
+          data: objectContaining({
+            isESMImport: false,
+          }),
+        },
+        {
+          // Original ESM import
+          name: './test',
+          data: objectContaining({
+            isESMImport: false,
+          }),
+        },
       ]);
     });
   });
