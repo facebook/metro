@@ -20,7 +20,7 @@ const invariant = require('invariant');
 type ImportDeclarationLocs = Set<string>;
 
 function importLocationsPlugin({types: t}: {types: Types, ...}): PluginObj<> {
-  const importDeclarationLocs: ImportDeclarationLocs = new Set();
+  let importDeclarationLocs: ImportDeclarationLocs;
   return {
     visitor: {
       ImportDeclaration(path) {
@@ -54,6 +54,8 @@ function importLocationsPlugin({types: t}: {types: Types, ...}): PluginObj<> {
         path && t.isProgram(path.node),
         'path missing or not a program node',
       );
+
+      importDeclarationLocs = new Set();
 
       // $FlowFixMe[prop-missing] Babel `File` is not generically typed
       const metroMetadata: MetroBabelFileMetadata = metadata;
