@@ -119,6 +119,7 @@ export type ReportableEvent =
     }
   | {
       type: 'client_log',
+      platform: string,
       level:
         | 'trace'
         | 'info'

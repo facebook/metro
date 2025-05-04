@@ -238,6 +238,7 @@ class HmrServer<TClient: Client> {
               level: data.level,
               data: data.data,
               mode: data.mode,
+              platform: data.platform,
             });
           }
           break;
