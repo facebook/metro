@@ -65,6 +65,7 @@
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.25.2",
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
+    "@babel/plugin-transform-runtime": "^7.24.7",
     "@react-native/babel-preset": "0.73.16",
     "@react-native/metro-babel-transformer": "0.73.11",
     "babel-jest": "^29.7.0",

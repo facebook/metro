@@ -17,6 +17,8 @@ import type {
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
+import {isProgram} from '@babel/types';
+
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
@@ -574,6 +576,10 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
     !current.node.METRO_INLINE_REQUIRES_INIT_LOC
   ) {
     current = current.parentPath;
+  }
+  // Do not use the location of the `Program` node
+  if (current && isProgram(current.node)) {
+    current = null;
   }
   return (
     // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
