@@ -16,7 +16,10 @@ import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
-import type {JsTransformerConfig} from 'metro-transform-worker';
+import type {
+  CustomTransformOptions,
+  JsTransformerConfig,
+} from 'metro-transform-worker';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
   DeltaResult,
@@ -135,7 +138,11 @@ type SerializerConfigT = {
     delta: DeltaResult<>,
   ) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
+  getPolyfills: ({
+    platform: ?string,
+    customTransformOptions: ?CustomTransformOptions,
+    ...
+  }) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
