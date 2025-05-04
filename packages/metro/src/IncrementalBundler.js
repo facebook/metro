@@ -19,7 +19,7 @@ import type {
 } from './DeltaBundler/types.flow';
 import type {GraphId} from './lib/getGraphId';
 import type {ResolverInputOptions} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');

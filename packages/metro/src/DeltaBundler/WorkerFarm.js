@@ -13,7 +13,7 @@
 
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
 
 const {Worker: JestWorker} = require('jest-worker');

@@ -21,7 +21,7 @@ import type {
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ResolverInputOptions} from '../shared/types.flow';
 import type {RequireContext} from './contextModule';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type {Type} from 'metro-transform-worker';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';

@@ -22,7 +22,7 @@ import type {
   InputConfigT,
   MetroConfig,
   Middleware,
-} from 'metro-config/src/configTypes.flow';
+} from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';

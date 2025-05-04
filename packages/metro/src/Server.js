@@ -34,7 +34,7 @@ import type {
 import type {IncomingMessage} from 'connect';
 import type {ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
-import type {ConfigT, RootPerfLogger} from 'metro-config/src/configTypes.flow';
+import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,

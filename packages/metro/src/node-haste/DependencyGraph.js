@@ -15,7 +15,7 @@ import type {
 } from '../DeltaBundler/types.flow';
 import type {ResolverInputOptions} from '../shared/types.flow';
 import type Package from './Package';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type MetroFileMap, {
   ChangeEvent,
   FileSystem,
