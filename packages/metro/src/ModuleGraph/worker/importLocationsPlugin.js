@@ -11,19 +11,27 @@
 
 'use strict';
 
-import type {PluginObj} from '@babel/core';
+import type {File, PluginObj} from '@babel/core';
 import typeof * as Types from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
-const invariant = require('invariant');
-
 type ImportDeclarationLocs = Set<string>;
 
-function importLocationsPlugin({types: t}: {types: Types, ...}): PluginObj<> {
-  const importDeclarationLocs: ImportDeclarationLocs = new Set();
+type State = {
+  importDeclarationLocs: ImportDeclarationLocs,
+  file: File,
+  ...
+};
+
+function importLocationsPlugin({
+  types: t,
+}: {
+  types: Types,
+  ...
+}): PluginObj<State> {
   return {
     visitor: {
-      ImportDeclaration(path) {
+      ImportDeclaration(path, {importDeclarationLocs}) {
         if (
           // Ignore type imports
           path.node.importKind !== 'type' &&
@@ -35,7 +43,7 @@ function importLocationsPlugin({types: t}: {types: Types, ...}): PluginObj<> {
           importDeclarationLocs.add(locToKey(path.node.loc));
         }
       },
-      ExportDeclaration(path) {
+      ExportDeclaration(path, {importDeclarationLocs}) {
         if (
           // If `source` is set, this is a re-export, so it declares an ESM
           // dependency.
@@ -48,25 +56,23 @@ function importLocationsPlugin({types: t}: {types: Types, ...}): PluginObj<> {
           importDeclarationLocs.add(locToKey(path.node.loc));
         }
       },
-    },
-    pre: ({path, metadata}) => {
-      invariant(
-        path && t.isProgram(path.node),
-        'path missing or not a program node',
-      );
+      Program(path, state) {
+        // Initialise state
+        state.importDeclarationLocs = new Set();
 
-      // $FlowFixMe[prop-missing] Babel `File` is not generically typed
-      const metroMetadata: MetroBabelFileMetadata = metadata;
+        // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+        const metroMetadata: MetroBabelFileMetadata = state.file.metadata;
 
-      // Set the result on a metadata property
-      if (!metroMetadata.metro) {
-        metroMetadata.metro = {
-          unstable_importDeclarationLocs: importDeclarationLocs,
-        };
-      } else {
-        metroMetadata.metro.unstable_importDeclarationLocs =
-          importDeclarationLocs;
-      }
+        // Set the result on a metadata property
+        if (!metroMetadata.metro) {
+          metroMetadata.metro = {
+            unstable_importDeclarationLocs: state.importDeclarationLocs,
+          };
+        } else {
+          metroMetadata.metro.unstable_importDeclarationLocs =
+            state.importDeclarationLocs;
+        }
+      },
     },
   };
 }
