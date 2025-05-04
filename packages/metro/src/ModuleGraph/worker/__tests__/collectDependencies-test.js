@@ -19,9 +19,11 @@ import type {
   State,
 } from '../collectDependencies';
 import type {NodePath} from '@babel/traverse';
+import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 const collectDependencies = require('../collectDependencies');
+const {importLocationsPlugin, locToKey} = require('../importLocationsPlugin');
 const {codeFrameColumns} = require('@babel/code-frame');
 const {transformFromAstSync} = require('@babel/core');
 const babylon = require('@babel/parser');
@@ -1454,6 +1456,57 @@ describe('optional dependencies', () => {
           // asyncRequire helper
           name: 'asyncRequire',
         }),
+      ]);
+    });
+    test('distinguishes ESM imports in single-line files from generated CJS babel runtime helpers', () => {
+      const code = `export { default } from './test'`;
+
+      // Transform the code to make sure `@babel/runtime` helpers are added,
+      // and import locations are collected
+      const {ast, metadata} = transformFromAstSync<MetroBabelFileMetadata>(
+        astFromCode(code),
+        code,
+        {
+          ast: true,
+          plugins: [
+            importLocationsPlugin,
+            // $FlowFixMe[cannot-resolve-module] Untyped Babel plugin
+            require('@babel/plugin-transform-runtime'),
+            // $FlowFixMe[cannot-resolve-module] Untyped Babel plugin in OSS
+            require('@babel/plugin-transform-modules-commonjs'),
+          ],
+        },
+      );
+      if (!ast) {
+        throw new Error(
+          `Transformed AST missing, can't test location-based ESM import detection`,
+        );
+      }
+
+      const importDeclarations = metadata.metro?.unstable_importDeclarationLocs;
+      expect(importDeclarations).toBeTruthy();
+
+      // Collect the dependencies of the generated code
+      const {dependencies} = collectDependencies(ast, {
+        ...opts,
+        unstable_isESMImportAtSource: loc =>
+          !!importDeclarations?.has(locToKey(loc)),
+      });
+      expect(dependencies).toEqual([
+        {
+          // Generated Babel runtime helper
+          name: '@babel/runtime/helpers/interopRequireDefault',
+          data: objectContaining({
+            isESMImport: false,
+          }),
+        },
+        {
+          // Original ESM import
+          name: './test',
+          data: objectContaining({
+            isESMImport: true,
+          }),
+        },
       ]);
     });
   });
