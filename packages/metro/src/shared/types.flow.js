@@ -139,6 +139,7 @@ export type RequestOptions = {
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   +customResolverOptions?: CustomResolverOptions,
   +customTransformOptions?: CustomTransformOptions,
+  +unstable_transformProfile?: TransformProfile,
 };
 
 export type {MinifierOptions};

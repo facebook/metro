@@ -89,3 +89,23 @@ test('build a simple bundle with assets', async () => {
     },
   ]);
 });
+
+test('(unstable) allows specifying a transform profile', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+  const hermesResult = await Metro.runBuild(config, {
+    entry: 'TestBundle.js',
+    minify: true,
+    unstable_transformProfile: 'hermes-stable',
+  });
+  const defaultResult = await Metro.runBuild(config, {
+    entry: 'TestBundle.js',
+    minify: true,
+    unstable_transformProfile: 'default',
+  });
+
+  // Assumption: We won't minify JS for Hermes targets. Use this to infer that
+  // transform profile passes through to the transformer.
+  expect(hermesResult.code.length).toBeGreaterThan(defaultResult.code.length);
+});
