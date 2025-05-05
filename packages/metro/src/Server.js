@@ -404,7 +404,6 @@ class Server {
     } = splitBundleOptions({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
-      bundleType: 'bundle',
     });
 
     const {prepend, graph} = await this._bundler.buildGraph(
@@ -525,7 +524,11 @@ class Server {
   };
 
   _parseOptions(url: string): BundleOptions {
-    return parseOptionsFromUrl(url, new Set(this._config.resolver.platforms));
+    const {bundleType: _bundleType, ...bundleOptions} = parseOptionsFromUrl(
+      url,
+      new Set(this._config.resolver.platforms),
+    );
+    return bundleOptions;
   }
 
   _rewriteAndNormalizeUrl(requestUrl: string): string {
@@ -653,12 +656,14 @@ class Server {
   }
 
   _createRequestProcessor<T>({
+    bundleType,
     createStartEntry,
     createEndEntry,
     build,
     delete: deleteFn,
     finish,
   }: {
+    +bundleType: 'assets' | 'bundle' | 'map',
     +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
     +createEndEntry: (
       context: ProcessEndContext<T>,
@@ -797,7 +802,7 @@ class Server {
       this._reporter.update({
         buildID: getBuildID(buildNumber),
         bundleDetails: {
-          bundleType: bundleOptions.bundleType,
+          bundleType,
           customResolverOptions: bundleOptions.customResolverOptions,
           customTransformOptions: bundleOptions.customTransformOptions,
           dev: transformOptions.dev,
@@ -896,6 +901,7 @@ class Server {
       bundlePerfLogger: RootPerfLogger,
     }>,
   ) => Promise<void> = this._createRequestProcessor({
+    bundleType: 'bundle',
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting bundle',
@@ -1105,6 +1111,7 @@ class Server {
       bundlePerfLogger: RootPerfLogger,
     }>,
   ) => Promise<void> = this._createRequestProcessor({
+    bundleType: 'map',
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting sourcemap',
@@ -1176,6 +1183,7 @@ class Server {
       bundlePerfLogger: RootPerfLogger,
     }>,
   ) => Promise<void> = this._createRequestProcessor({
+    bundleType: 'assets',
     createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting assets',

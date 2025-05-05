@@ -101,7 +101,7 @@ class HmrServer<TClient: Client> {
   ): Promise<void> {
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
     const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const options = parseOptionsFromUrl(
+    const {bundleType: _bundleType, ...options} = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
     );

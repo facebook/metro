@@ -940,7 +940,6 @@ describe('processRequest', () => {
       await server.build({
         ...Server.DEFAULT_BUNDLE_OPTIONS,
         entryFile: 'foo file',
-        bundleType: 'bundle',
         platform: undefined,
       });
 
