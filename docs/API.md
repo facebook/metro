@@ -60,9 +60,9 @@ Creates a Metro server based on the config and returns it. You can use this as a
 
 **Required options:** `entry`, `out`
 
-**Basic options:** `dev`, `minify`, `platform`, `sourceMap`, `sourceMapUrl`
+**Basic options:** `dev`, `minify`, `platform`, `sourceMap`, `sourceMapUrl`, `assets`
 
-Bundles `entry` for the given `platform`, and saves it to location `out`. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined. In the latter case, a new file will be generated with the basename of the `sourceMapUrl` parameter.
+Bundles `entry` for the given `platform`, and saves it to location `out`. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined. In the latter case, a new file will be generated with the basename of the `sourceMapUrl` parameter. If `assets` is `true`, an array of `AssetData` will be generated and returned in the `assets` property of the result object.
 
 ### `async runServer(config, <options>)`
 
