@@ -131,6 +131,9 @@ type ServeCommandOptions = {} | null;
 exports.Terminal = Terminal;
 exports.TerminalReporter = TerminalReporter;
 
+export type {AssetData} from './Assets';
+export type {Reporter, ReportableEvent} from './lib/reporting';
+export type {TerminalReportableEvent} from './lib/TerminalReporter';
 export type {MetroConfig};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
