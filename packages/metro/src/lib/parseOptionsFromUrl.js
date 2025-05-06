@@ -44,7 +44,11 @@ const getTransformProfile = (transformProfile: string): TransformProfile =>
 module.exports = function parseOptionsFromUrl(
   normalizedRequestUrl: string,
   platforms: Set<string>,
-): BundleOptions {
+): {
+  ...BundleOptions,
+  // Retained for backwards compatibility, unused in Metro, to be removed.
+  bundleType: string,
+} {
   const parsedURL = nullthrows(url.parse(normalizedRequestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
