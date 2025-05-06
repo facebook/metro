@@ -18,6 +18,7 @@ import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
@@ -125,6 +126,7 @@ export type RunBuildOptions = {
   sourceMapUrl?: string,
   customResolverOptions?: CustomResolverOptions,
   customTransformOptions?: CustomTransformOptions,
+  unstable_transformProfile?: TransformProfile,
 };
 
 export type RunBuildResult = {
@@ -395,6 +397,7 @@ exports.runBuild = async (
     platform = 'web',
     sourceMap = false,
     sourceMapUrl,
+    unstable_transformProfile,
   }: RunBuildOptions,
 ): Promise<RunBuildResult> => {
   const metroServer = await runMetro(config, {
@@ -413,6 +416,7 @@ exports.runBuild = async (
       onProgress,
       customResolverOptions,
       customTransformOptions,
+      unstable_transformProfile,
     };
 
     if (onBegin) {
