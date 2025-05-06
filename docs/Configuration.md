@@ -475,7 +475,7 @@ type ExtraTransformOptions = {
 * **`ramGroups`**: An array of absolute paths. When serializing an [indexed RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires#enable-the-ram-format), each of the listed modules will be serialized along with its transitive dependencies. At runtime, the modules will all be parsed together as soon as any one of them is evaluated.
 * **`transform`**: Advanced options for the transformer.
   * **`inlineRequires`**:
-    * If `inlineRequires` is a boolean, it controls whether [inline requires](https://reactnative.dev/docs/ram-bundles-inline-requires#inline-requires) are enabled in this bundle.
+    * If `inlineRequires` is a boolean, it controls whether [inline requires](https://reactnative.dev/docs/optimizing-javascript-loading#advanced-automatically-inline-require-calls) are enabled in this bundle.
     * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
   * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
 
