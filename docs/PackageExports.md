@@ -1,35 +1,83 @@
 ---
 id: package-exports
-title: Package Exports Support (Experimental)
+title: Package Exports Support (New)
 ---
 
 ## Background
 
-Introduced in Node.js 12.7.0, Package Exports is a modern approach for npm packages to specify **entry points** — the mapping of package subpaths which can be externally imported and which file(s) they should resolve to.
+Introduced in Node.js 12.7.0, Package Exports is a modern approach for npm packages to specify **entry points** — the mapping of package subpaths which can be externally imported and which file(s) they should resolve to, via the `exports` field in `package.json` files. 
 
-When Package Exports support is enabled via [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental), Metro's [module resolution algorithm](/docs/resolution#algorithm) will consider the `"exports"` field in `package.json` files.
+`exports` also supports different targets for a given subpath dependent on [*conditions*](https://nodejs.org/api/packages.html#conditional-exports), such as whether building for a browser or Node.js, and whether `import` or `require` is used by the consumer.
+
+Package Exports support has been enabled by default in Metro since [0.82](https://github.com/facebook/metro/releases/tag/v0.82.0) (or React Native 0.79).
 
 - [Node.js spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points)
 - [RFC for Package Exports in Metro](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md)
-- React Native announcement post (coming soon!)
+- [React Native 0.79 release blog](https://reactnative.dev/blog/2025/04/08/react-native-0.79#metro-faster-startup-and-package-exports-support)
 
 ## Configuration options
 
 | Option | Description |
 | --- | --- |
-| [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental) | Enable Package Exports support. |
+| [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental) | Enable/disable Package Exports support. |
 | [`resolver.unstable_conditionNames`](/docs/configuration/#unstable_conditionnames-experimental) | The set of condition names to assert when resolving conditional exports. |
 | [`resolver.unstable_conditionsByPlatform`](/docs/configuration/#unstable_conditionsbyplatform-experimental) | The additional condition names to assert when resolving for a given platform target. |
+
+## How Metro applies `import`/`require` exports conditions
+
+Like Node.js, Metro will always assert `'import'` or `'require'` condition, but never both. It does that based on whether the dependency being resolved uses `import` (or `await import()`), vs `require()` in your source file. 
+
+Unlike Node.js, Metro allows `import .. from` and `require()` to appear in the same file. So if you need the CommonJS version of a dependency, you may simply change the `import` to a `require()`.
+
+:::info
+Metro does this by collecting the source locations of your `import`s before any transforms, applying transforms that convert `import`s to `require`s for bundling, and then checking whether a `require` is source mapped to what used to be an `import`. If you're using `import` and Metro resolves as if you used `require`, it's possible you have a custom Babel transform that's dropping the source mapping of your dependency - check your Babel configuration to see which transforms you're using.
+:::
 
 ## Summary of breaking changes
 
 :::info
-**Package Exports resolution is available since Metro 0.76.1 and is disabled by default**. We will provide the option to disable it for a long time yet, and have no plans to remove existing non-`"exports"` resolution behaviour.
+**Package Exports resolution was introduced as an opt-in in Metro 0.76.1 and opt-out from Metro 0.82.0**. We will provide the option to disable it for several further releases, and have no plans to remove existing non-`"exports"` resolution behaviour.
 :::
 
 Since Package Exports features overlap with existing React Native concepts (such as [platform-specific extensions](https://reactnative.dev/docs/platform-specific-code)), and since `"exports"` had been live in the npm ecosystem for some time, we reached out to the React Native community to make sure our implementation would meet developers' needs ([PR](https://github.com/react-native-community/discussions-and-proposals/pull/534), [final RFC](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md)).
 
 This led us to create an implementation of Package Exports in Metro that is spec-compliant (necessitating some breaking changes), but backwards compatible otherwise (helping apps with existing imports to migrate gradually).
+
+### Breaking: If an `"exports"` match is found, it is preferred
+
+In common with other resolvers, the `exports` field takes precedence over `main`, etc. In some cases this will mean existing dependencies resolve differently (commonly, a package that previously resolved to a CommonJS version via `main` could now resolve to an ESM version via `exports`), which changes the content of your bundle.
+
+If the package author has not designed the newly-preferred implementation to work with Metro or React Native, this may appear as an issue at runtime.
+
+#### Example
+
+If your dependency `some-pkg` has the following `package.json`
+
+```json
+{
+  "name": "some-pkg",
+  "version": "1.0.0",
+  "main": "./dist/cjs/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.js"
+    }
+  }
+}
+```
+
+Metro would previously have bundled `./dist/cjs/index.js` via `main`. But now, if your code uses:
+```js
+import Foo from 'some-pkg';
+```
+Metro will bundle `'./dist/esm/index.mjs'` via `exports`, applying the `import` condition.
+
+If you write:
+```js
+const Foo = require('some-pkg');
+```
+It would (in this case, and commonly) apply the `'require'` condition instead and resolve the same file as before `exports` support.
 
 ### Breaking: Match `"exports"` first, then fall back to legacy resolution
 
@@ -211,3 +259,69 @@ Using subpath patterns can be a convenient method to export many assets. We reco
   }
 }
 ```
+
+## Troubleshooting
+
+### Package/ESM incompatibilites
+Some issues that can come from Metro resolving to a file not designed for React Native include:
+ - *"`import.meta` can not be used outside a module"*. `import.meta` support is coming.
+ - Errors relating to `document` or other web globals in your mobile app.
+
+In these cases, **React Native developers** can:
+ - Use `require()` for that dependency to try to get the CommonJS version.
+ - Disable `exports` support entirely by setting [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental) to `false` in your Metro config.
+ - (Advanced) use a custom resolver to tweak the behaviour for specific packages, see below.
+
+#### Example: Custom resolver
+:::note
+Expo users should follow Expo-specific guidance in [this GitHub discussion](https://github.com/expo/expo/discussions/36551#discussion-8271245)
+:::
+
+For example, to follow the `browser` condition for a particular dependency `some-pkg` and its subpaths:
+
+```js
+// metro.config.js
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('@react-native/metro-config').MetroConfig}
+ */
+const config = {
+  resolver: {
+    resolveRequest: () => {
+      (context, moduleImport, platform) {
+        // Use the browser version of the package for React Native 
+        if (moduleImport === 'some-pkg' || moduleImport.startsWith('some-pkg/')) {
+          return context.resolveRequest(
+            {
+              ...context,
+              unstable_conditionNames: ['browser'],
+              // Alternatively, disable exports for this package
+              // unstable_enablePackageExports: false
+            },
+            moduleImport,
+            platform,
+          );
+        }
+
+        // Fall back to normal resolution for everything else.
+        return context.resolveRequest(context, moduleImport, platform);
+    }
+  }
+};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+```
+
+ **Package maintainers** are recommended to use the `react-native` condition to specify the best version of their package for React Native users. Note that this should appear above `import`, `require` or `default`.
+
+#### Previous Metro bugs
+Additionally, Metro bugs in earlier implementations may result in:
+ - *"`_interopRequireDefault` is not a function"*.
+ - Non-deterministic builds that may sometimes result in ESM-related errors.
+
+These should be fixed in Metro 0.82.3 (for React Native 0.79) or Metro 0.81.5 (if opting in `exports` support in older React Native versions). 
+
