@@ -32,6 +32,9 @@ test('builds a simple bundle', async () => {
   });
 
   expect(execBundle(result.code)).toMatchSnapshot();
+
+  // Assets are not returned by default
+  expect(result.assets).toBeUndefined();
 });
 
 test('build a simple bundle with polyfills', async () => {
@@ -61,4 +64,28 @@ test('builds a bundle with BigInt and exponentiation syntax', async () => {
 
   const BI = BigInt;
   expect(execBundle(result.code)).toBe(BI(8));
+});
+
+test('build a simple bundle with assets', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+  const result = await Metro.runBuild(config, {
+    assets: true,
+    entry: 'TestBundle.js',
+  });
+  expect(result.assets).toEqual([
+    {
+      __packager_asset: true,
+      fileSystemLocation: expect.stringMatching(/basic_bundle$/),
+      files: [expect.stringMatching(/test.png$/)],
+      hash: '77d45c1f7fa73c0f6c444a830dc42f67',
+      height: 8,
+      httpServerLocation: '/assets',
+      name: 'test',
+      scales: [1],
+      type: 'png',
+      width: 8,
+    },
+  ]);
 });

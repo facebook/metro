@@ -122,12 +122,13 @@ await Metro.runServer(config, {
 
 ### Method `runBuild(config, options)`
 
-Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
+Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with `code`, `map`, and optionally `assets`. This is useful at build time.
 
 #### Options
 
 <!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
 
+* `assets (boolean)`: Whether to include the assets in the result.
 * `dev (boolean)`: Create a development version of the build (`process.env.NODE_ENV = 'development'`).
 * `entry (string)`: Pointing to the entry file to bundle.
 * `onBegin (Function)`: Called when the bundling starts.

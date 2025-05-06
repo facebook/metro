@@ -11,6 +11,7 @@
 
 'use strict';
 
+import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
@@ -92,6 +93,7 @@ type BuildGraphOptions = {
 
 export type RunBuildOptions = {
   entry: string,
+  assets?: boolean,
   dev?: boolean,
   out?: string,
   onBegin?: () => void,
@@ -123,6 +125,13 @@ export type RunBuildOptions = {
   sourceMapUrl?: string,
   customResolverOptions?: CustomResolverOptions,
   customTransformOptions?: CustomTransformOptions,
+};
+
+export type RunBuildResult = {
+  code: string,
+  map: string,
+  assets?: $ReadOnlyArray<AssetData>,
+  ...
 };
 
 type BuildCommandOptions = {} | null;
@@ -372,6 +381,7 @@ exports.runServer = async (
 exports.runBuild = async (
   config: ConfigT,
   {
+    assets = false,
     customResolverOptions,
     customTransformOptions,
     dev = false,
@@ -386,11 +396,7 @@ exports.runBuild = async (
     sourceMap = false,
     sourceMapUrl,
   }: RunBuildOptions,
-): Promise<{
-  code: string,
-  map: string,
-  ...
-}> => {
+): Promise<RunBuildResult> => {
   const metroServer = await runMetro(config, {
     watch: false,
   });
@@ -414,6 +420,14 @@ exports.runBuild = async (
     }
 
     const metroBundle = await output.build(metroServer, requestOptions);
+    const result: RunBuildResult = {...metroBundle};
+
+    if (assets) {
+      result.assets = await metroServer.getAssets({
+        ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+        ...requestOptions,
+      });
+    }
 
     if (onComplete) {
       onComplete();
@@ -439,7 +453,7 @@ exports.runBuild = async (
       );
     }
 
-    return metroBundle;
+    return result;
   } finally {
     await metroServer.end();
   }
