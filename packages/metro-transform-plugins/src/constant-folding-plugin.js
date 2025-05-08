@@ -26,7 +26,7 @@ function constantFoldingPlugin(context: {
   ...
 }): PluginObj<State> {
   const t = context.types;
-  const {isVariableDeclarator} = t;
+  const {isLiteral, isVariableDeclarator, isUnaryExpression} = t;
 
   const traverse = context.traverse;
 
@@ -44,6 +44,18 @@ function constantFoldingPlugin(context: {
     ) => {
       state.safe = false;
     };
+
+    if (isUnaryExpression(path.node) && path.node.operator === 'void') {
+      // Void expressions always evaluate to undefined but would rarely be used
+      // to express a constant (with the exception of `void 0`). More often,
+      // they are used to discard the value of a side-effectful expression, so
+      // are unsafe to fold. Conservatively, evaluate to undefined only if the
+      // argument is a literal.
+      if (isLiteral(path.node.argument)) {
+        return {confident: true, value: undefined};
+      }
+      return {confident: false, value: null};
+    }
 
     path.traverse(
       {
