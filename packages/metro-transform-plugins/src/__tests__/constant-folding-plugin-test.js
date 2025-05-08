@@ -128,6 +128,24 @@ describe('constant expressions', () => {
     compare([constantFoldingPlugin], code, '');
   });
 
+  test('does not fold non-literal void expressions', () => {
+    const code = `
+      void obj.prop;
+    `;
+
+    compare([constantFoldingPlugin], code, code);
+  });
+
+  test('folds literal void expressions', () => {
+    const code = `
+      if (void 0) {
+        foo();
+      }
+    `;
+
+    compare([constantFoldingPlugin], code, '');
+  });
+
   test('can optimize if-else-branches with constant conditions', () => {
     const code = `
       if ('production' == 'development') {
