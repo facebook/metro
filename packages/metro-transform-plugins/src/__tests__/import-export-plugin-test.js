@@ -22,6 +22,10 @@ const collectDependencies = require('metro/src/ModuleGraph/worker/collectDepende
 const opts = {
   importAll: '_$$_IMPORT_ALL',
   importDefault: '_$$_IMPORT_DEFAULT',
+  transformImportMeta: {
+    objectName: 'module',
+    propertyName: '_importMeta',
+  },
 };
 
 test('correctly transforms and extracts "import" statements', () => {
@@ -373,6 +377,26 @@ test('supports `import {default as LocalName}`', () => {
     > 5 |     } from 'react-native';
         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)"
   `);
+});
+
+test('transforms import.meta', () => {
+  const code = `
+    function foo() {
+      const module = 'bar';
+      console.log(import.meta.url);
+      return module;
+    }
+  `;
+
+  const expected = `
+    function foo() {
+      const _module = 'bar';
+      console.log(module._importMeta.url);
+      return _module;
+    }
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
 });
 
 function showTransformedDeps(code: string) {
