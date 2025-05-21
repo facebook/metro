@@ -50,6 +50,7 @@ const {
 } = require('metro-config');
 const {Terminal} = require('metro-core');
 const net = require('net');
+const nullthrows = require('nullthrows');
 const {parse} = require('url');
 
 type MetroMiddleWare = {
@@ -97,6 +98,8 @@ export type RunBuildOptions = {
   assets?: boolean,
   dev?: boolean,
   out?: string,
+  bundleOut?: string,
+  sourceMapOut?: string,
   onBegin?: () => void,
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
@@ -394,6 +397,8 @@ exports.runBuild = async (
     minify = true,
     output = outputBundle,
     out,
+    bundleOut,
+    sourceMapOut,
     platform = 'web',
     sourceMap = false,
     sourceMapUrl,
@@ -437,10 +442,14 @@ exports.runBuild = async (
       onComplete();
     }
 
-    if (out) {
-      const bundleOutput = out.replace(/(\.js)?$/, '.js');
+    if (out || bundleOut) {
+      const bundleOutput =
+        bundleOut ?? nullthrows(out).replace(/(\.js)?$/, '.js');
+
       const sourcemapOutput =
-        sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+        sourceMap === false
+          ? undefined
+          : sourceMapOut ?? out?.replace(/(\.js)?$/, '.map');
 
       const outputOptions: OutputOptions = {
         bundleOutput,

@@ -90,6 +90,36 @@ test('build a simple bundle with assets', async () => {
   ]);
 });
 
+test('allows specifying paths to save bundle and maps', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+  const mockSave = jest.fn();
+
+  await Metro.runBuild(config, {
+    entry: 'TestBundle.js',
+    output: {
+      ...require('../../shared/output/bundle'),
+      save: mockSave,
+    },
+    sourceMapOut: 'TestBundle.custommap',
+    sourceMap: true,
+    bundleOut: 'TestBundle.jsbundle',
+  });
+
+  expect(mockSave).toBeCalledWith(
+    {
+      code: expect.any(String),
+      map: expect.any(String),
+    },
+    expect.objectContaining({
+      bundleOutput: 'TestBundle.jsbundle',
+      sourcemapOutput: 'TestBundle.custommap',
+    }),
+    expect.any(Function),
+  );
+});
+
 test('(unstable) allows specifying a transform profile', async () => {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
