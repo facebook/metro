@@ -171,12 +171,12 @@ class DependencyGraph extends EventEmitter {
       const result = this._fileSystem.lookup(path);
       if (result.exists) {
         return {
-          exists: true as const,
+          exists: true,
           realPath: result.realPath,
           type: result.type,
         };
       }
-      return {exists: false as const};
+      return {exists: false};
     };
 
     this._moduleResolver = new ModuleResolver({

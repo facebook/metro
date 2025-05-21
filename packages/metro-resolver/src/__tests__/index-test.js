@@ -668,7 +668,7 @@ describe('resolveRequest', () => {
     }));
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: (filePath: string) => false as const,
+      redirectModulePath: (filePath: string) => false,
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`

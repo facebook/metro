@@ -52,8 +52,8 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       hot: false,
       minify: false,
       platform: null,
-      type: 'module' as const,
-      unstable_transformProfile: 'default' as const,
+      type: 'module',
+      unstable_transformProfile: 'default',
     },
   };
 

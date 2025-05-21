@@ -115,9 +115,7 @@ async function main(
     // Read the source map.
     const sourceMapFileName = argv.shift();
     const options = {
-      nameSource: noFunctionNames
-        ? ('identifier_names' as const)
-        : ('function_names' as const),
+      nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
       inputLineStart,
       inputColumnStart,
       outputLineStart,
