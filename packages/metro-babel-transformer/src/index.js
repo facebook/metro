@@ -97,7 +97,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       highlightCode: true,
       filename,
       plugins,
-      sourceType: 'module',
+      sourceType: 'module' as const,
 
       // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
       // Hermes parsing, but this defaults to cloning the AST which increases

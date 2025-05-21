@@ -1231,7 +1231,7 @@ class MemoryFs {
         id: this._getId(),
         mode,
         uid: getuid(),
-        type: 'file',
+        type: 'file' as const,
         watchers: [],
       };
       dirNode.entries.set(basename, node);

@@ -70,7 +70,7 @@ describe('GraphTraversal', () => {
         }
         return {
           filePath: `/${dependency.name}`,
-          type: 'sourceFile',
+          type: 'sourceFile' as const,
         };
       }),
       transform: jest.fn(async (path, requireContext) => {

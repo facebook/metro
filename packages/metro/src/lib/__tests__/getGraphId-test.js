@@ -204,9 +204,9 @@ describe('getGraphId', () => {
       dev: true,
       hot: true,
       minify: true,
-      type: 'module',
+      type: 'module' as const,
       platform: 'web',
-      unstable_transformProfile: 'default',
+      unstable_transformProfile: 'default' as const,
     };
     expect(
       getGraphId('/root/waddup', transformOptions, {
@@ -241,9 +241,9 @@ describe('getGraphId', () => {
       dev: true,
       hot: true,
       minify: true,
-      type: 'module',
+      type: 'module' as const,
       platform: 'web',
-      unstable_transformProfile: 'default',
+      unstable_transformProfile: 'default' as const,
     };
     expect(
       getGraphId('/root/waddup', transformOptions, {
