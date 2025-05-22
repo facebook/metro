@@ -23,6 +23,7 @@ import type MetroFileMap, {
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
+import type {FileSystemLookup} from 'metro-resolver';
 
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
@@ -167,7 +168,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
-    const fileSystemLookup = (path: string) => {
+    const fileSystemLookup = (path: string): ReturnType<FileSystemLookup> => {
       const result = this._fileSystem.lookup(path);
       if (result.exists) {
         return {

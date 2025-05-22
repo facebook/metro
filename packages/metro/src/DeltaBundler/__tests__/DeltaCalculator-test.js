@@ -34,7 +34,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let traverseDependencies;
   let initialTraverseDependencies;
 
-  const options = {
+  const options: Options<> = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: true,
     lazy: false,

@@ -521,7 +521,7 @@ async function transformAsset(
 
   const jsFile = {
     ...file,
-    type: 'js/module/asset',
+    type: 'js/module/asset' as const,
     ast: result.ast,
     functionMap: null,
   };

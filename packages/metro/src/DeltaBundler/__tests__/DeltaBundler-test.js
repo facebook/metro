@@ -11,7 +11,11 @@
 
 'use strict';
 
-import type {TransformResultDependency} from '../types.flow';
+import type {
+  MixedOutput,
+  Options,
+  TransformResultDependency,
+} from '../types.flow';
 
 const DeltaBundler = require('../../DeltaBundler');
 const DeltaCalculator = require('../DeltaCalculator');
@@ -30,7 +34,7 @@ describe('DeltaBundler', () => {
     entryPoints: ['/entry'],
   };
 
-  const options = {
+  const options: Options<MixedOutput> = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: false,
     lazy: false,

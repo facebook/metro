@@ -37,7 +37,7 @@ describe('DeltaCalculator + require.context', () => {
   let deltaCalculator;
   let fileWatcher;
 
-  const options = {
+  const options: Options<> = {
     unstable_allowRequireContext: true,
     unstable_enablePackageExports: false,
     lazy: false,
