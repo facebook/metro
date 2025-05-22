@@ -167,6 +167,8 @@ test('should use the preloadedModules and ramGroup configs to build a RAM bundle
       dev: true,
       excludeSource: false,
       getRunModuleStatement,
+      /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+       * https://fburl.com/workplace/6291gfvu */
       getTransformOptions,
       includeAsyncPaths: false,
       inlineSourceMap: null,

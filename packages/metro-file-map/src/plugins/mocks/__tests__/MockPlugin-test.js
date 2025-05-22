@@ -131,6 +131,8 @@ Duplicate manual mock found for \`foo\`:
       ]),
       version: 2,
     };
+    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+     * https://fburl.com/workplace/6291gfvu */
     const mockMap = new MockMap({...opts, rawMockMap});
     expect(mockMap.getMockModule('bar')).toEqual(
       p('/root/some/__mocks__/bar.js'),
