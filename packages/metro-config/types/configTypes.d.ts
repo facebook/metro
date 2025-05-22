@@ -32,7 +32,6 @@ export interface ExtraTransformOptions {
       | boolean;
     nonInlinedRequires?: ReadonlyArray<string>;
     unstable_disableES6Transforms?: boolean;
-    unstable_inlinePlatform?: boolean;
     unstable_memoizeInlineRequires?: boolean;
   }>;
 }

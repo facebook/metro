@@ -113,10 +113,6 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    inlinePlatform:
-      transform?.unstable_inlinePlatform != null
-        ? transform.unstable_inlinePlatform
-        : true,
     inlineRequires: transform?.inlineRequires || false,
     experimentalImportSupport: transform?.experimentalImportSupport || false,
     unstable_disableES6Transforms:
