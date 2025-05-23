@@ -13,6 +13,7 @@ Object {
   "asyncImportMaybeSyncESM": Object {
     "default": "export-8: DEFAULT",
     "foo": "export-8: FOO",
+    "url": "metro:///11",
   },
   "default": "export-4: FOO",
   "extraData": Object {
