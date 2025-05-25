@@ -112,6 +112,7 @@ export interface ResolverConfigT {
     [platform: string]: ReadonlyArray<string>;
   }>;
   unstable_enablePackageExports: boolean;
+  unstable_incrementalResolution: boolean;
   useWatchman: boolean;
   requireCycleIgnorePatterns: ReadonlyArray<RegExp>;
 }

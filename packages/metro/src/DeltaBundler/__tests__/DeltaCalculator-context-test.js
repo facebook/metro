@@ -40,6 +40,7 @@ describe('DeltaCalculator + require.context', () => {
   const options: Options<> = {
     unstable_allowRequireContext: true,
     unstable_enablePackageExports: false,
+    unstable_incrementalResolution: false,
     lazy: false,
     onProgress: null,
     resolve: (from: string, to: TransformResultDependency) => {
