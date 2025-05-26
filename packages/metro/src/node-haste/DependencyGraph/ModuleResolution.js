@@ -345,6 +345,10 @@ class UnableToResolveError extends Error {
    * Original error that causes this error
    */
   cause: ?Error;
+  /**
+   * Fixed type field in common with other Metro build errors.
+   */
+  +type: 'UnableToResolveError' = 'UnableToResolveError';
 
   constructor(
     originModulePath: string,
