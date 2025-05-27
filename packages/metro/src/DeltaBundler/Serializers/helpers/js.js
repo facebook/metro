@@ -60,15 +60,18 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
         // Construct a server-relative URL for the split bundle, propagating
         // most parameters from the main bundle's URL.
 
-        let searchParamsString = '';
-        if (options.dev) {
-          const {searchParams} = new URL(
-            jscSafeUrl.toNormalUrl(options.sourceUrl),
-          );
+        const {searchParams} = new URL(
+          jscSafeUrl.toNormalUrl(options.sourceUrl),
+        );
+        if (searchParams.has('modulesOnly')) {
           searchParams.set('modulesOnly', 'true');
-          searchParams.set('runModule', 'false');
-          searchParamsString = '?' + searchParams.toString();
         }
+        if (searchParams.has('runModule')) {
+          searchParams.set('runModule', 'false');
+        }
+
+        const searchParamsString =
+          searchParams.size > 0 ? '?' + searchParams.toString() : '';
 
         const bundlePath = path.relative(
           options.serverRoot,
@@ -81,7 +84,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
             // Strip the file extension
             path.basename(bundlePath, path.extname(bundlePath)),
           ) +
-          '.bundle?' +
+          '.bundle' +
           searchParamsString;
       }
       return id;
