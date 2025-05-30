@@ -80,10 +80,10 @@ export type DefineFn = (
 type VerboseModuleNameForDev = string;
 type ModuleDefiner = (moduleId: ModuleID) => void;
 
-global.__r = (metroRequire: RequireFn);
+global[`${__METRO_GLOBAL_PREFIX__}__r`] = (metroRequire: RequireFn);
 global[`${__METRO_GLOBAL_PREFIX__}__d`] = (define: DefineFn);
-global.__c = clear;
-global.__registerSegment = registerSegment;
+global[`${__METRO_GLOBAL_PREFIX__}__c`] = clear;
+global[`${__METRO_GLOBAL_PREFIX__}__registerSegment`] = registerSegment;
 
 var modules = clear();
 
@@ -133,7 +133,12 @@ function define(
       // If the module has already been defined and the define method has been
       // called with inverseDependencies, we can hot reload it.
       if (inverseDependencies) {
-        global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
+        global[`${__METRO_GLOBAL_PREFIX__}__accept`](
+          moduleId,
+          factory,
+          dependencyMap,
+          inverseDependencies,
+        );
       }
     }
 
@@ -1006,7 +1011,7 @@ if (__DEV__) {
     }
   };
 
-  global.__accept = metroHotUpdateModule;
+  global[`${__METRO_GLOBAL_PREFIX__}__accept`] = metroHotUpdateModule;
 }
 
 if (__DEV__) {
