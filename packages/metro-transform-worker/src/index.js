@@ -667,17 +667,6 @@ module.exports = {
       }
     }
 
-    if (filename.endsWith('.json')) {
-      const jsonFile: JSONFile = {
-        filename,
-        inputFileSize: data.length,
-        code: sourceCode,
-        type: options.type,
-      };
-
-      return await transformJSON(jsonFile, context);
-    }
-
     if (options.type === 'asset') {
       const file: AssetFile = {
         filename,
@@ -687,6 +676,17 @@ module.exports = {
       };
 
       return await transformAsset(file, context);
+    }
+
+    if (filename.endsWith('.json')) {
+      const jsonFile: JSONFile = {
+        filename,
+        inputFileSize: data.length,
+        code: sourceCode,
+        type: options.type,
+      };
+
+      return await transformJSON(jsonFile, context);
     }
 
     const file: JSFile = {
