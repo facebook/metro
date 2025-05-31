@@ -94,8 +94,8 @@ const CYCLE_DETECTED = {};
 const {hasOwnProperty} = {};
 
 if (__DEV__) {
-  global.$RefreshReg$ = () => {};
-  global.$RefreshSig$ = () => type => type;
+  global.$RefreshReg$ = global.$RefreshReg$ ?? (() => {});
+  global.$RefreshSig$ = global.$RefreshReg$ ?? (() => type => type);
 }
 
 function clear(): ModuleList {
