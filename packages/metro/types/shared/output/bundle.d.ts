@@ -8,6 +8,7 @@
  * @oncall react_native
  */
 
+import {ReadOnlyGraph} from '../../DeltaBundler/types.flow';
 import Server from '../../Server';
 import {OutputOptions, RequestOptions} from '../../shared/types';
 
@@ -17,6 +18,7 @@ export function build(
 ): Promise<{
   code: string;
   map: string;
+  graph?: ReadOnlyGraph;
 }>;
 
 export function save(

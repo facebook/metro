@@ -214,7 +214,7 @@ class Server {
   async build(options: BundleOptions): Promise<{
     code: string,
     map: string,
-    graph: ReadOnlyGraph,
+    graph?: ReadOnlyGraph<>,
     ...
   }> {
     const {
@@ -370,7 +370,7 @@ class Server {
 
   async getAssets(
     options: BundleOptions,
-    graph?: ReadOnlyGraph,
+    graph?: ReadOnlyGraph<>,
   ): Promise<$ReadOnlyArray<AssetData>> {
     const {entryFile, onProgress, resolverOptions, transformOptions} =
       splitBundleOptions(options);

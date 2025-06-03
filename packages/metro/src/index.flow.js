@@ -111,6 +111,7 @@ export type RunBuildOptions = {
     ) => Promise<{
       code: string,
       map: string,
+      graph?: ReadOnlyGraph<>,
       ...
     }>,
     save: (
