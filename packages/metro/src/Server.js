@@ -214,6 +214,7 @@ class Server {
   async build(options: BundleOptions): Promise<{
     code: string,
     map: string,
+    graph: ReadOnlyGraph,
     ...
   }> {
     const {
@@ -304,6 +305,7 @@ class Server {
     return {
       code: bundleCode,
       map: bundleMap,
+      graph,
     };
   }
 
@@ -366,16 +368,21 @@ class Server {
     });
   }
 
-  async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
+  async getAssets(
+    options: BundleOptions,
+    graph?: ReadOnlyGraph,
+  ): Promise<$ReadOnlyArray<AssetData>> {
     const {entryFile, onProgress, resolverOptions, transformOptions} =
       splitBundleOptions(options);
 
-    const dependencies = await this._bundler.getDependencies(
-      [entryFile],
-      transformOptions,
-      resolverOptions,
-      {onProgress, shallow: false, lazy: false},
-    );
+    const dependencies =
+      graph?.dependencies ??
+      (await this._bundler.getDependencies(
+        [entryFile],
+        transformOptions,
+        resolverOptions,
+        {onProgress, shallow: false, lazy: false},
+      ));
 
     return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,

@@ -432,10 +432,13 @@ exports.runBuild = async (
     const result: RunBuildResult = {...metroBundle};
 
     if (assets) {
-      result.assets = await metroServer.getAssets({
-        ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
-        ...requestOptions,
-      });
+      result.assets = await metroServer.getAssets(
+        {
+          ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+          ...requestOptions,
+        },
+        metroBundle.graph,
+      );
     }
 
     if (onComplete) {
