@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-import {ReadOnlyGraph} from '../../DeltaBundler/types.flow';
+import {ReadOnlyGraph} from '../../DeltaBundler/types';
 import Server from '../../Server';
 import {OutputOptions, RequestOptions} from '../../shared/types';
 
