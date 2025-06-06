@@ -111,6 +111,7 @@ export type RunBuildOptions = {
     ) => Promise<{
       code: string,
       map: string,
+      graph?: ReadOnlyGraph<>,
       ...
     }>,
     save: (
@@ -432,10 +433,13 @@ exports.runBuild = async (
     const result: RunBuildResult = {...metroBundle};
 
     if (assets) {
-      result.assets = await metroServer.getAssets({
-        ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
-        ...requestOptions,
-      });
+      result.assets = await metroServer.getAssets(
+        {
+          ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+          ...requestOptions,
+        },
+        metroBundle.graph,
+      );
     }
 
     if (onComplete) {

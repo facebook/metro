@@ -111,6 +111,7 @@ test('allows specifying paths to save bundle and maps', async () => {
     {
       code: expect.any(String),
       map: expect.any(String),
+      graph: expect.any(Object),
     },
     expect.objectContaining({
       bundleOutput: 'TestBundle.jsbundle',
