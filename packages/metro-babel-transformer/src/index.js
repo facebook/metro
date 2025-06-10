@@ -88,7 +88,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
     : process.env.BABEL_ENV || 'production';
 
   try {
-    const babelConfig = {
+    const babelConfig: BabelCoreOptions = {
       caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
       babelrc: options.enableBabelRCLookup,

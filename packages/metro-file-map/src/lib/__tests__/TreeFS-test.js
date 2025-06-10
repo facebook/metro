@@ -307,6 +307,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       tfs = new TreeFS({
         rootDir: p('/A/B/C'),
         files: new Map(
+          /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+           * https://fburl.com/workplace/6291gfvu */
           [
             [
               p('a/1/package.json'),

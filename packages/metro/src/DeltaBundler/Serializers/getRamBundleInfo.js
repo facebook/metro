@@ -17,7 +17,7 @@ import type {
 } from '../../shared/types.flow';
 import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
-import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
+import type {GetTransformOptions} from 'metro-config';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const getAppendScripts = require('../../lib/getAppendScripts');

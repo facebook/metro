@@ -32,7 +32,6 @@ export interface ExtraTransformOptions {
       | boolean;
     nonInlinedRequires?: ReadonlyArray<string>;
     unstable_disableES6Transforms?: boolean;
-    unstable_inlinePlatform?: boolean;
     unstable_memoizeInlineRequires?: boolean;
   }>;
 }
@@ -113,6 +112,7 @@ export interface ResolverConfigT {
     [platform: string]: ReadonlyArray<string>;
   }>;
   unstable_enablePackageExports: boolean;
+  unstable_incrementalResolution: boolean;
   useWatchman: boolean;
   requireCycleIgnorePatterns: ReadonlyArray<RegExp>;
 }

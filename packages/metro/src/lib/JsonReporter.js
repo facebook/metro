@@ -46,6 +46,7 @@ class JsonReporter<TEvent: {[string]: any, ...}> {
   update(event: TEvent): void {
     if (event.error instanceof Error) {
       const {message, stack} = event.error;
+      // $FlowFixMe[unsafe-object-assign]
       event = Object.assign(event, {
         error: serializeError(event.error),
         // TODO: Preexisting issue - this writes message, stack, etc. as

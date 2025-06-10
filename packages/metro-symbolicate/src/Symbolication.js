@@ -137,7 +137,7 @@ class SymbolicationContext<ModuleIdsT> {
         'inputColumnStart',
         'outputLineStart',
         'outputColumnStart',
-      ]) {
+      ] as const) {
         if (options[option] != null) {
           /* $FlowFixMe[incompatible-type] error found during natural inference
            * roll-out. See https://fburl.com/workplace/tc9m3tcf */

@@ -26,17 +26,6 @@ import type {
   MinifierOptions,
 } from 'metro-transform-worker';
 
-type BundleType =
-  | 'bundle'
-  | 'delta'
-  | 'meta'
-  | 'map'
-  | 'ram'
-  | 'cli'
-  | 'hmr'
-  | 'todo'
-  | 'graph';
-
 type MetroSourceMapOrMappings =
   | MixedSourceMap
   | Array<MetroSourceMapSegmentTuple>;
@@ -49,7 +38,6 @@ export enum SourcePathsMode {
 }
 
 export type BundleOptions = {
-  bundleType: BundleType,
   +customResolverOptions: CustomResolverOptions,
   customTransformOptions: CustomTransformOptions,
   dev: boolean,
@@ -151,6 +139,7 @@ export type RequestOptions = {
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   +customResolverOptions?: CustomResolverOptions,
   +customTransformOptions?: CustomTransformOptions,
+  +unstable_transformProfile?: TransformProfile,
 };
 
 export type {MinifierOptions};

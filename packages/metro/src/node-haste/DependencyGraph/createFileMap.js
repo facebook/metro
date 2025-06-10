@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 
 import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
 

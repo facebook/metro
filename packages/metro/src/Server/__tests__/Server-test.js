@@ -686,6 +686,7 @@ describe('processRequest', () => {
       },
       unstable_allowRequireContext: false,
       unstable_enablePackageExports: true,
+      unstable_incrementalResolution: false,
     });
   });
 
@@ -748,6 +749,7 @@ describe('processRequest', () => {
       },
       unstable_allowRequireContext: false,
       unstable_enablePackageExports: true,
+      unstable_incrementalResolution: false,
     });
   });
 
@@ -940,7 +942,6 @@ describe('processRequest', () => {
       await server.build({
         ...Server.DEFAULT_BUNDLE_OPTIONS,
         entryFile: 'foo file',
-        bundleType: 'bundle',
         platform: undefined,
       });
 
@@ -979,6 +980,7 @@ describe('processRequest', () => {
         },
         unstable_allowRequireContext: false,
         unstable_enablePackageExports: true,
+        unstable_incrementalResolution: false,
       });
     });
   });

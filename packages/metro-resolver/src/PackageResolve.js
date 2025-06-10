@@ -183,6 +183,7 @@ function matchSubpathFromMainFields(
     return null;
   }
 
+  // $FlowFixMe[unsafe-object-assign]
   const replacements = Object.assign({}, ...fieldValues.reverse());
   const variants = Array.isArray(subpath)
     ? subpath

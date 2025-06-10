@@ -11,18 +11,20 @@
 
 'use strict';
 
+import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
   MetroConfig,
   Middleware,
-} from 'metro-config/src/configTypes.flow';
+} from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
@@ -48,6 +50,7 @@ const {
 } = require('metro-config');
 const {Terminal} = require('metro-core');
 const net = require('net');
+const nullthrows = require('nullthrows');
 const {parse} = require('url');
 
 type MetroMiddleWare = {
@@ -92,8 +95,11 @@ type BuildGraphOptions = {
 
 export type RunBuildOptions = {
   entry: string,
+  assets?: boolean,
   dev?: boolean,
   out?: string,
+  bundleOut?: string,
+  sourceMapOut?: string,
   onBegin?: () => void,
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
@@ -123,6 +129,14 @@ export type RunBuildOptions = {
   sourceMapUrl?: string,
   customResolverOptions?: CustomResolverOptions,
   customTransformOptions?: CustomTransformOptions,
+  unstable_transformProfile?: TransformProfile,
+};
+
+export type RunBuildResult = {
+  code: string,
+  map: string,
+  assets?: $ReadOnlyArray<AssetData>,
+  ...
 };
 
 type BuildCommandOptions = {} | null;
@@ -131,6 +145,9 @@ type ServeCommandOptions = {} | null;
 exports.Terminal = Terminal;
 exports.TerminalReporter = TerminalReporter;
 
+export type {AssetData} from './Assets';
+export type {Reporter, ReportableEvent} from './lib/reporting';
+export type {TerminalReportableEvent} from './lib/TerminalReporter';
 export type {MetroConfig};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
@@ -369,6 +386,7 @@ exports.runServer = async (
 exports.runBuild = async (
   config: ConfigT,
   {
+    assets = false,
     customResolverOptions,
     customTransformOptions,
     dev = false,
@@ -379,15 +397,14 @@ exports.runBuild = async (
     minify = true,
     output = outputBundle,
     out,
+    bundleOut,
+    sourceMapOut,
     platform = 'web',
     sourceMap = false,
     sourceMapUrl,
+    unstable_transformProfile,
   }: RunBuildOptions,
-): Promise<{
-  code: string,
-  map: string,
-  ...
-}> => {
+): Promise<RunBuildResult> => {
   const metroServer = await runMetro(config, {
     watch: false,
   });
@@ -404,6 +421,7 @@ exports.runBuild = async (
       onProgress,
       customResolverOptions,
       customTransformOptions,
+      unstable_transformProfile,
     };
 
     if (onBegin) {
@@ -411,15 +429,27 @@ exports.runBuild = async (
     }
 
     const metroBundle = await output.build(metroServer, requestOptions);
+    const result: RunBuildResult = {...metroBundle};
+
+    if (assets) {
+      result.assets = await metroServer.getAssets({
+        ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+        ...requestOptions,
+      });
+    }
 
     if (onComplete) {
       onComplete();
     }
 
-    if (out) {
-      const bundleOutput = out.replace(/(\.js)?$/, '.js');
+    if (out || bundleOut) {
+      const bundleOutput =
+        bundleOut ?? nullthrows(out).replace(/(\.js)?$/, '.js');
+
       const sourcemapOutput =
-        sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+        sourceMap === false
+          ? undefined
+          : sourceMapOut ?? out?.replace(/(\.js)?$/, '.map');
 
       const outputOptions: OutputOptions = {
         bundleOutput,
@@ -436,7 +466,7 @@ exports.runBuild = async (
       );
     }
 
-    return metroBundle;
+    return result;
   } finally {
     await metroServer.end();
   }

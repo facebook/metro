@@ -54,6 +54,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       web: ['browser'],
     },
     unstable_enablePackageExports: true,
+    unstable_incrementalResolution: false,
     useWatchman: true,
     requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },

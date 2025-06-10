@@ -13,13 +13,14 @@
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 
 import crypto from 'crypto';
 
 const getTransformCacheKey = require('./getTransformCacheKey');
 const WorkerFarm = require('./WorkerFarm');
 const assert = require('assert');
+const debug = require('debug')('Metro:Transformer');
 const fs = require('fs');
 const {Cache, stableHash} = require('metro-cache');
 const path = require('path');
@@ -69,7 +70,9 @@ class Transformer {
           transformerConfig: transformerOptions,
         });
 
-    this._baseHash = stableHash([globalCacheKey]).toString('binary');
+    const baseHashBuffer = stableHash([globalCacheKey]);
+    this._baseHash = baseHashBuffer.toString('binary');
+    debug('Base hash: %s', baseHashBuffer.toString('hex'));
   }
 
   async transformFile(

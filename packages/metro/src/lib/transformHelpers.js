@@ -21,7 +21,7 @@ import type {
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ResolverInputOptions} from '../shared/types.flow';
 import type {RequireContext} from './contextModule';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type {Type} from 'metro-transform-worker';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
@@ -99,6 +99,8 @@ async function calcTransformerOptions(
         config.transformer.unstable_allowRequireContext,
       unstable_enablePackageExports:
         config.resolver.unstable_enablePackageExports,
+      unstable_incrementalResolution:
+        config.resolver.unstable_incrementalResolution,
       shallow: false,
     });
 
@@ -113,10 +115,6 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    inlinePlatform:
-      transform?.unstable_inlinePlatform != null
-        ? transform.unstable_inlinePlatform
-        : true,
     inlineRequires: transform?.inlineRequires || false,
     experimentalImportSupport: transform?.experimentalImportSupport || false,
     unstable_disableES6Transforms:

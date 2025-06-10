@@ -122,21 +122,24 @@ await Metro.runServer(config, {
 
 ### Method `runBuild(config, options)`
 
-Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
+Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with `code`, `map`, and optionally `assets`. This is useful at build time.
 
 #### Options
 
 <!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
 
+* `assets (boolean)`: Whether to include the assets in the result.
+* `bundleOut (string)`: Path to save the bundle. No extension will be added.
 * `dev (boolean)`: Create a development version of the build (`process.env.NODE_ENV = 'development'`).
 * `entry (string)`: Pointing to the entry file to bundle.
 * `onBegin (Function)`: Called when the bundling starts.
 * `onComplete (Function)`: Called when the bundling finishes.
 * `onProgress (Function)`: Called during the bundle, every time there's new information available about the module count/progress.
 * `minify (boolean)`: Whether Metro should minify the bundle.
-* `out (string)`: Path to the output bundle.
+* `out (string)`: Shorthand path to the output bundle and source map. A `.js` extension will be added (if not given) for the bundle and `.map` for the source map. Customize with `bundleOut` / `sourceMapOut`.
 * `platform ('web' | 'android' | 'ios')`: Which platform to bundle for if a list of platforms is provided.
 * `sourceMap (boolean)`: Whether Metro should generate source maps.
+* `sourceMapOut (string)`: Where to save the source map, if `sourceMap == true`. No extension will be added.
 * `sourceMapUrl (string)`: URL where the source map can be found. It defaults to the same same URL as the bundle, but changing the extension from `.bundle` to `.map`. When `inlineSourceMap` is `true`, this property has no effect.
 
 ```js

@@ -23,21 +23,9 @@ import type {
   MinifierOptions,
 } from 'metro-transform-worker';
 
-export type BundleType =
-  | 'bundle'
-  | 'delta'
-  | 'meta'
-  | 'map'
-  | 'ram'
-  | 'cli'
-  | 'hmr'
-  | 'todo'
-  | 'graph';
-
 type MetroSourceMapOrMappings = MixedSourceMap | MetroSourceMapSegmentTuple[];
 
 export interface BundleOptions {
-  bundleType: BundleType;
   readonly customResolverOptions: CustomResolverOptions;
   customTransformOptions: CustomTransformOptions;
   dev: boolean;

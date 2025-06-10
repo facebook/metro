@@ -181,8 +181,8 @@ function handshakeResponse(message: IncomingMessage) {
 
   return {
     id: message.id,
-    type: 'handshake',
-    protocol_version: '0',
+    type: 'handshake' as const,
+    protocol_version: '0' as const,
     capabilities: ([]: []),
   };
 }
@@ -281,13 +281,17 @@ function shouldDebugCommand(argsString: string) {
 }
 
 const error = (id: number, exitCode: number) => ({
-  type: 'error',
+  type: 'error' as const,
   id,
   exit_code: exitCode,
 });
 const unknownMessage = (id: number) => error(id, 1);
 const invalidMessage = (id: number) => error(id, 2);
 const commandError = (id: number) => error(id, 3);
-const success = (id: number) => ({type: 'result', id, exit_code: 0});
+const success = (id: number) => ({
+  type: 'result' as const,
+  id,
+  exit_code: 0 as const,
+});
 
 module.exports = buckWorker;

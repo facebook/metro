@@ -33,6 +33,7 @@
  */
 
 import type {RequireContext} from '../../lib/contextModule';
+import type {RequireContextParams} from '../../ModuleGraph/worker/collectDependencies';
 import type {Result} from '../Graph';
 import type {
   Dependency,
@@ -81,7 +82,7 @@ const files = new CountingSet<string>();
 let transformOverrides: Map<string, TransformFn<MixedOutput>>;
 
 let graph: TestGraph;
-let options;
+let options: Options<>;
 
 let entryModule;
 let moduleFoo;
@@ -396,6 +397,7 @@ beforeEach(async () => {
   options = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: false,
+    unstable_incrementalResolution: false,
     lazy: false,
     onProgress: null,
     resolve: (from: string, to: TransformResultDependency) => {
@@ -2934,7 +2936,7 @@ describe('require.context', () => {
     };
   });
 
-  const ctxParams = {
+  const ctxParams: RequireContextParams = {
     recursive: true,
     mode: 'sync',
     filter: {pattern: '.*', flags: ''},
@@ -3268,7 +3270,7 @@ describe('require.context', () => {
   });
 
   describe('when two distinct contexts match the same file', () => {
-    const narrowCtxParams = {
+    const narrowCtxParams: RequireContextParams = {
       recursive: true,
       mode: 'sync',
       filter: {pattern: '\\./narrow/.*', flags: ''},

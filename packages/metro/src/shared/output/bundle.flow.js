@@ -29,7 +29,6 @@ function buildBundle(
   return packagerClient.build({
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
-    bundleType: 'bundle',
   });
 }
 

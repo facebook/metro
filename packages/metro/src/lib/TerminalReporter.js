@@ -384,6 +384,7 @@ class TerminalReporter {
       0.999, // make sure not to go above 99.9% to not get rounded to 100%,
     );
 
+    // $FlowFixMe[unsafe-object-assign]
     Object.assign(currentProgress, {
       ratio,
       transformedFileCount,

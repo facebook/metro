@@ -19,7 +19,7 @@ import type {
 } from './DeltaBundler/types.flow';
 import type {GraphId} from './lib/getGraphId';
 import type {ResolverInputOptions} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
@@ -133,6 +133,8 @@ class IncrementalBundler {
         this._config.transformer.unstable_allowRequireContext,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
+      unstable_incrementalResolution:
+        this._config.resolver.unstable_incrementalResolution,
       shallow: otherOptions.shallow,
     });
 
@@ -181,6 +183,8 @@ class IncrementalBundler {
           this._config.transformer.unstable_allowRequireContext,
         unstable_enablePackageExports:
           this._config.resolver.unstable_enablePackageExports,
+        unstable_incrementalResolution:
+          this._config.resolver.unstable_incrementalResolution,
         shallow: otherOptions.shallow,
       },
     );

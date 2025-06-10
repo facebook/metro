@@ -20,6 +20,7 @@ describe('Cache', () => {
     // eslint-disable-next-line no-eval
     const TempClass = eval(`(class ${name} {})`);
 
+    // $FlowFixMe[unsafe-object-assign]
     return Object.assign(new TempClass(), {
       get: jest.fn().mockImplementation(() => null),
       set: jest.fn(),

@@ -128,6 +128,8 @@ async function main(
         SourceMapConsumer,
         // $FlowFixMe[incompatible-call]
         sourceMapFileName,
+        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+         * https://fburl.com/workplace/6291gfvu */
         options,
       );
     } else {
@@ -136,6 +138,8 @@ async function main(
       context = Symbolication.createContext(
         SourceMapConsumer,
         content,
+        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+         * https://fburl.com/workplace/6291gfvu */
         options,
       );
     }

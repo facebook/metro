@@ -35,6 +35,7 @@ export default class InvalidPackageConfigurationError extends Error {
         'maintainer(s).\nReason: ' +
         opts.reason,
     );
+    // $FlowFixMe[unsafe-object-assign]
     Object.assign(this, opts);
   }
 }

@@ -13,7 +13,7 @@
 
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
 
 const {Worker: JestWorker} = require('jest-worker');
@@ -151,6 +151,7 @@ class WorkerFarm {
   _formatGenericError(err: any, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
+    // $FlowFixMe[unsafe-object-assign]
     return Object.assign(error, {
       stack: (err.stack || '').split('\n').slice(0, -1).join('\n'),
       lineNumber: 0,

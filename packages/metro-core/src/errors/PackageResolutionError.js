@@ -36,6 +36,7 @@ class PackageResolutionError extends Error {
         `  * ${formatFileCandidates(perr.fileCandidates)}\n` +
         `  * ${formatFileCandidates(perr.indexCandidates)}`,
     );
+    // $FlowFixMe[unsafe-object-assign]
     Object.assign(this, opts);
   }
 }

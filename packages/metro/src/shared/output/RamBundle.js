@@ -25,7 +25,6 @@ async function build(
   const options = {
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
-    bundleType: 'ram',
   };
   return await packagerClient.getRamBundleInfo(options);
 }

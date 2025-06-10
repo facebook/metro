@@ -15,7 +15,7 @@ import type {
 } from '../DeltaBundler/types.flow';
 import type {ResolverInputOptions} from '../shared/types.flow';
 import type Package from './Package';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 import type MetroFileMap, {
   ChangeEvent,
   FileSystem,
@@ -23,6 +23,7 @@ import type MetroFileMap, {
   HealthCheckResult,
   WatcherStatus,
 } from 'metro-file-map';
+import type {FileSystemLookup} from 'metro-resolver';
 
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
@@ -167,7 +168,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
-    const fileSystemLookup = (path: string) => {
+    const fileSystemLookup = (path: string): ReturnType<FileSystemLookup> => {
       const result = this._fileSystem.lookup(path);
       if (result.exists) {
         return {
@@ -223,6 +224,8 @@ class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
+      unstable_incrementalResolution:
+        this._config.resolver.unstable_incrementalResolution,
     });
   }
 

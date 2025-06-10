@@ -13,7 +13,7 @@
 
 import type {ResolverInputOptions} from '../../shared/types.flow';
 import type {TransformResultDependency} from '../types.flow';
-import type {InputConfigT} from 'metro-config/src/configTypes.flow';
+import type {InputConfigT} from 'metro-config';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
 const {AmbiguousModuleResolutionError} = require('metro-core');

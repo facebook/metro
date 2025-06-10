@@ -15,7 +15,7 @@ import type {
   MetroSourceMapSegmentTuple,
 } from '../../../metro-source-map/src/source-map';
 import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config';
 
 const {greatestLowerBound} = require('metro-source-map/src/Consumer/search');
 const {

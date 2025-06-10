@@ -27,6 +27,14 @@ function parse(code: string) {
   }) as BabelNodeFile;
 }
 
+function transformString(code: string) {
+  return transformFromAstSync<MetroBabelFileMetadata>(parse(code), code, {
+    filename: 'file.js',
+    cwd: '/my/root',
+    plugins: [importLocationsPlugin],
+  });
+}
+
 test('gathers source locs of static ESM imports and re-exports', () => {
   const code = `
   // ESM imports that will be transformed by any ESM->CJS transform, we must
@@ -51,18 +59,22 @@ test('gathers source locs of static ESM imports and re-exports', () => {
   }
   `;
 
-  const result = transformFromAstSync<MetroBabelFileMetadata>(
-    parse(code),
-    code,
-    {
-      filename: 'file.js',
-      cwd: '/my/root',
-      plugins: [importLocationsPlugin],
-    },
-  );
+  const result = transformString(code);
   expect(result.metadata.metro?.unstable_importDeclarationLocs).toEqual(
     new Set(['4,2:4,26', '5,2:5,28', '6,2:6,28']),
   );
+});
+
+test('multiple uses of the plugin do not conflate', () => {
+  expect(
+    transformString('import foo from "./foo";').metadata.metro
+      ?.unstable_importDeclarationLocs,
+  ).toEqual(new Set(['1,0:1,24']));
+
+  expect(
+    transformString('require("foo")').metadata.metro
+      ?.unstable_importDeclarationLocs,
+  ).toEqual(new Set([]));
 });
 
 test('works end-to-end with collectDependencies to distinguish source ESM imports despite ESM->CJS', () => {
@@ -75,15 +87,7 @@ test('works end-to-end with collectDependencies to distinguish source ESM import
     await import("./async");
   };
   `;
-  const {metadata} = transformFromAstSync<MetroBabelFileMetadata>(
-    parse(code),
-    code,
-    {
-      filename: 'file.js',
-      cwd: '/my/root',
-      plugins: [importLocationsPlugin],
-    },
-  );
+  const {metadata} = transformString(code);
   const importDeclarationLocs = metadata.metro?.unstable_importDeclarationLocs;
 
   const cjsAst = nullthrows(

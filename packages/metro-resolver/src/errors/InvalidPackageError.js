@@ -51,6 +51,7 @@ class InvalidPackageError extends Error {
         `  * ${formatFileCandidates(opts.fileCandidates)}\n` +
         `  * ${formatFileCandidates(opts.indexCandidates)}`,
     );
+    // $FlowFixMe[unsafe-object-assign]
     Object.assign(this, opts);
   }
 }
