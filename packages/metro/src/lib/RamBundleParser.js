@@ -11,6 +11,7 @@
 'use strict';
 
 const MAGIC_NUMBER = require('../shared/output/RamBundle/magic-number');
+
 const SIZEOF_UINT32 = 4;
 const HEADER_SIZE = 3;
 

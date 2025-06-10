@@ -26,7 +26,7 @@ const serializeError = require('serialize-error');
 
 export type CustomError = Error &
   interface {
-    type?: string,
+    +type?: string,
     filename?: string,
     lineNumber?: number,
     errors?: Array<{

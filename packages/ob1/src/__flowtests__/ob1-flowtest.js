@@ -14,6 +14,7 @@
 import type {Number0, Number1} from '../ob1';
 
 const {add, add0, add1, get0, get1, inc, neg, sub, sub1} = require('../ob1');
+
 const FORTY_TWO_0 = add0(42);
 const FORTY_TWO_1 = add1(42);
 

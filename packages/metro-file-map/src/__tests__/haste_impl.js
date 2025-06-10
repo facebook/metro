@@ -11,6 +11,7 @@
 'use strict';
 
 const path = require('path');
+
 let cacheKey;
 
 module.exports = {
