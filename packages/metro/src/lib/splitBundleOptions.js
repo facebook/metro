@@ -46,6 +46,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       lazy: options.lazy,
     },
     onProgress: options.onProgress,
+    withAssets: options.withAssets,
   };
 }
 

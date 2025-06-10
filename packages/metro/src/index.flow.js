@@ -111,7 +111,7 @@ export type RunBuildOptions = {
     ) => Promise<{
       code: string,
       map: string,
-      graph?: ReadOnlyGraph<>,
+      assets?: ?$ReadOnlyArray<AssetData>,
       ...
     }>,
     save: (
@@ -422,6 +422,7 @@ exports.runBuild = async (
       onProgress,
       customResolverOptions,
       customTransformOptions,
+      withAssets: assets,
       unstable_transformProfile,
     };
 
@@ -432,14 +433,11 @@ exports.runBuild = async (
     const metroBundle = await output.build(metroServer, requestOptions);
     const result: RunBuildResult = {...metroBundle};
 
-    if (assets) {
-      result.assets = await metroServer.getAssets(
-        {
-          ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
-          ...requestOptions,
-        },
-        metroBundle.graph,
-      );
+    if (assets && result.assets == null) {
+      result.assets = await metroServer.getAssets({
+        ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+        ...requestOptions,
+      });
     }
 
     if (onComplete) {

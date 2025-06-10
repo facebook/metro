@@ -44,6 +44,7 @@ export interface BundleOptions {
   sourceMapUrl?: string;
   sourceUrl?: string;
   createModuleIdFactory?: () => (path: string) => number;
+  readonly withAssets: boolean;
   readonly unstable_transformProfile: TransformProfile;
 }
 
@@ -122,6 +123,7 @@ export interface RequestOptions {
   platform: string;
   createModuleIdFactory?: () => (path: string) => number;
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
+  withAssets?: boolean;
 }
 
 export type {MinifierOptions};

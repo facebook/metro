@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {ReadOnlyGraph} from '../../DeltaBundler/types.flow';
+import type {AssetData} from '../../Assets';
 import type {OutputOptions, RequestOptions} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
 
@@ -25,7 +25,7 @@ function buildBundle(
 ): Promise<{
   code: string,
   map: string,
-  graph?: ReadOnlyGraph<>,
+  assets?: $ReadOnlyArray<AssetData>,
   ...
 }> {
   return packagerClient.build({

@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-import {ReadOnlyGraph} from '../../DeltaBundler/types';
+import type {AssetData} from '../../Assets';
 import Server from '../../Server';
 import {OutputOptions, RequestOptions} from '../../shared/types';
 
@@ -18,7 +18,7 @@ export function build(
 ): Promise<{
   code: string;
   map: string;
-  graph?: ReadOnlyGraph;
+  assets?: ReadonlyArray<AssetData>;
 }>;
 
 export function save(

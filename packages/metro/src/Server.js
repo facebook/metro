@@ -17,6 +17,7 @@ import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   MixedOutput,
   Module,
+  ReadOnlyDependencies,
   ReadOnlyGraph,
   TransformInputOptions,
   TransformResult,
@@ -211,31 +212,22 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(options: BundleOptions): Promise<{
-    code: string,
-    map: string,
-    graph?: ReadOnlyGraph<>,
-    ...
-  }> {
+  async _serializeGraph({
+    splitOptions,
+    prepend,
+    graph,
+  }: $ReadOnly<{
+    splitOptions: SplitBundleOptions,
+    prepend: $ReadOnlyArray<Module<>>,
+    graph: ReadOnlyGraph<>,
+  }>): Promise<{code: string, map: string}> {
     const {
       entryFile,
       graphOptions,
-      onProgress,
       resolverOptions,
       serializerOptions,
       transformOptions,
-    } = splitBundleOptions(options);
-
-    const {prepend, graph} = await this._bundler.buildGraph(
-      entryFile,
-      transformOptions,
-      resolverOptions,
-      {
-        onProgress,
-        shallow: graphOptions.shallow,
-        lazy: graphOptions.lazy,
-      },
-    );
+    } = splitOptions;
 
     const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
@@ -305,7 +297,53 @@ class Server {
     return {
       code: bundleCode,
       map: bundleMap,
-      graph,
+    };
+  }
+
+  async build(options: BundleOptions): Promise<{
+    code: string,
+    map: string,
+    assets?: $ReadOnlyArray<AssetData>,
+    ...
+  }> {
+    const splitOptions = splitBundleOptions(options);
+    const {
+      entryFile,
+      graphOptions,
+      onProgress,
+      resolverOptions,
+      transformOptions,
+      withAssets,
+    } = splitOptions;
+
+    const {prepend, graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      resolverOptions,
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
+      },
+    );
+
+    const [{code, map}, assets] = await Promise.all([
+      this._serializeGraph({
+        splitOptions,
+        prepend,
+        graph,
+      }),
+      withAssets
+        ? this._getAssetsFromDependencies(graph.dependencies, {
+            platform: options.platform,
+          })
+        : null,
+    ]);
+
+    return {
+      code,
+      map,
+      ...(withAssets ? {assets: nullthrows(assets)} : null),
     };
   }
 
@@ -368,26 +406,28 @@ class Server {
     });
   }
 
-  async getAssets(
-    options: BundleOptions,
-    graph?: ReadOnlyGraph<>,
-  ): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, onProgress, resolverOptions, transformOptions} =
+  async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
+    const {entryFile, onProgress, resolverOptions, transformOptions, platform} =
       splitBundleOptions(options);
 
-    const dependencies =
-      graph?.dependencies ??
-      (await this._bundler.getDependencies(
-        [entryFile],
-        transformOptions,
-        resolverOptions,
-        {onProgress, shallow: false, lazy: false},
-      ));
+    const dependencies = await this._bundler.getDependencies(
+      [entryFile],
+      transformOptions,
+      resolverOptions,
+      {onProgress, shallow: false, lazy: false},
+    );
 
+    return this._getAssetsFromDependencies(dependencies, {platform});
+  }
+
+  async _getAssetsFromDependencies(
+    dependencies: ReadOnlyDependencies<>,
+    {platform}: $ReadOnly<{platform: ?string}>,
+  ): Promise<$ReadOnlyArray<AssetData>> {
     return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
-      platform: transformOptions.platform,
+      platform,
       projectRoot: this._getServerRootDir(),
       publicPath: this._config.transformer.publicPath,
     });
@@ -1497,6 +1537,7 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
     sourcePaths: SourcePathsMode,
+    withAssets: false,
   } = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
@@ -1509,6 +1550,7 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
     sourcePaths: SourcePathsMode.Absolute,
+    withAssets: false,
   };
 
   _getServerRootDir(): string {

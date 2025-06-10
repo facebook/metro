@@ -14,6 +14,7 @@ export * from './ModuleGraph/worker/collectDependencies';
 export * from './Server';
 export * from './lib/reporting';
 
+import type {AssetData} from './Asset';
 import type {ReadOnlyGraph} from './DeltaBundler/types';
 import type {ServerOptions, default as MetroServer} from './Server';
 import type {OutputOptions, RequestOptions} from './shared/types';
@@ -97,6 +98,7 @@ export interface RunBuildOptions {
     ) => Promise<{
       code: string;
       map: string;
+      assets?: ReadonlyArray<AssetData>;
     }>;
     save: (
       entry: {

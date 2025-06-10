@@ -85,6 +85,7 @@ export interface DefaultBundleOptions extends DefaultGraphOptions {
   shallow: false;
   sourceMapUrl: null;
   sourceUrl: null;
+  withAssets: false,
 }
 
 export default class Server {
@@ -97,6 +98,7 @@ export default class Server {
   build(options: BundleOptions): Promise<{
     code: string;
     map: string;
+    asset?: ReadonlyArray<AssetData>;
   }>;
   getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo>;
   getAssets(options: BundleOptions): Promise<ReadonlyArray<AssetData>>;
