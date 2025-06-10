@@ -42,7 +42,7 @@
     "prettier": "2.8.8",
     "prettier-plugin-hermes-parser": "0.28.1",
     "progress": "^2.0.0",
-    "typescript": "5.0.4"
+    "typescript": "5.8.3"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
