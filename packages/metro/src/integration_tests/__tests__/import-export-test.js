@@ -26,7 +26,14 @@ test('builds a simple bundle', async () => {
     entry: 'import-export/index.js',
   });
 
-  const object = execBundle(result.code);
+  const object = execBundle(result.code, {
+    // Framework/host-defined props
+    __getImportMetaProperties: module => {
+      return {
+        url: new URL(String(module.id), 'metro://'),
+      };
+    },
+  });
   const cjs = await object.asyncImportCJS;
 
   expect(object).toMatchSnapshot();
