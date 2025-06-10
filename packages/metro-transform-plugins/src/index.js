@@ -16,6 +16,7 @@ import typeof ImportExportPlugin from './import-export-plugin';
 import typeof InlinePlugin from './inline-plugin';
 import typeof InlineRequiresPlugin from './inline-requires-plugin';
 import typeof NormalizePseudoGlobalsFn from './normalizePseudoGlobals';
+
 export type {Options as ImportExportPluginOptions} from './import-export-plugin';
 export type {Options as InlinePluginOptions} from './inline-plugin';
 export type {PluginOptions as InlineRequiresPluginOptions} from './inline-requires-plugin';

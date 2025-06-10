@@ -22,6 +22,7 @@ const {
   default: {H: Haste},
 } = require('metro-file-map');
 const path = require('path');
+
 const mockPlatform = process.platform;
 
 jest.useRealTimers();
