@@ -337,9 +337,10 @@ class Server {
         graph,
       }),
       withAssets
-        ? this._getAssetsFromDependencies(graph.dependencies, {
-            platform: bundleOptions.platform,
-          })
+        ? this._getAssetsFromDependencies(
+            graph.dependencies,
+            bundleOptions.platform,
+          )
         : null,
     ]);
 
@@ -420,15 +421,15 @@ class Server {
       {onProgress, shallow: false, lazy: false},
     );
 
-    return this._getAssetsFromDependencies(dependencies, {
-      platform: transformOptions.platform,
-    });
+    return this._getAssetsFromDependencies(
+      dependencies,
+      transformOptions.platform,
+    );
   }
 
   async _getAssetsFromDependencies(
     dependencies: ReadOnlyDependencies<>,
-    
-    {platform}: $ReadOnly<{platform: ?string}>,
+    platform: ?string,
   ): Promise<$ReadOnlyArray<AssetData>> {
     return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,
