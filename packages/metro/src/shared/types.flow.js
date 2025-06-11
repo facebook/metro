@@ -57,8 +57,11 @@ export type BundleOptions = {
   createModuleIdFactory?: () => (path: string) => number,
   +unstable_transformProfile: TransformProfile,
   +sourcePaths: SourcePathsMode,
-  withAssets: boolean,
 };
+
+export type BuildOptions = $ReadOnly<{
+  withAssets?: boolean,
+}>;
 
 export type ResolverInputOptions = $ReadOnly<{
   customResolverOptions?: CustomResolverOptions,
@@ -88,7 +91,6 @@ export type SplitBundleOptions = $ReadOnly<{
   serializerOptions: SerializerOptions,
   graphOptions: GraphOptions,
   onProgress: DeltaBundlerOptions<>['onProgress'],
-  withAssets: boolean,
 }>;
 
 export type ModuleGroups = {
@@ -142,7 +144,6 @@ export type RequestOptions = {
   +customResolverOptions?: CustomResolverOptions,
   +customTransformOptions?: CustomTransformOptions,
   +unstable_transformProfile?: TransformProfile,
-  +withAssets?: boolean,
 };
 
 export type {MinifierOptions};

@@ -27,6 +27,7 @@ import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
 import type {StackFrameInput, StackFrameOutput} from './Server/symbolicate';
 import type {
+  BuildOptions,
   BundleOptions,
   GraphOptions,
   ResolverInputOptions,
@@ -300,20 +301,22 @@ class Server {
     };
   }
 
-  async build(options: BundleOptions): Promise<{
+  async build(
+    bundleOptions: BundleOptions,
+    {withAssets}: BuildOptions = {},
+  ): Promise<{
     code: string,
     map: string,
     assets?: $ReadOnlyArray<AssetData>,
     ...
   }> {
-    const splitOptions = splitBundleOptions(options);
+    const splitOptions = splitBundleOptions(bundleOptions);
     const {
       entryFile,
       graphOptions,
       onProgress,
       resolverOptions,
       transformOptions,
-      withAssets,
     } = splitOptions;
 
     const {prepend, graph} = await this._bundler.buildGraph(
@@ -335,7 +338,7 @@ class Server {
       }),
       withAssets
         ? this._getAssetsFromDependencies(graph.dependencies, {
-            platform: options.platform,
+            platform: bundleOptions.platform,
           })
         : null,
     ]);
@@ -407,7 +410,7 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, onProgress, resolverOptions, transformOptions, platform} =
+    const {entryFile, onProgress, resolverOptions, transformOptions} =
       splitBundleOptions(options);
 
     const dependencies = await this._bundler.getDependencies(
@@ -417,11 +420,14 @@ class Server {
       {onProgress, shallow: false, lazy: false},
     );
 
-    return this._getAssetsFromDependencies(dependencies, {platform});
+    return this._getAssetsFromDependencies(dependencies, {
+      platform: transformOptions.platform,
+    });
   }
 
   async _getAssetsFromDependencies(
     dependencies: ReadOnlyDependencies<>,
+    
     {platform}: $ReadOnly<{platform: ?string}>,
   ): Promise<$ReadOnlyArray<AssetData>> {
     return await getAssets(dependencies, {
@@ -1537,7 +1543,6 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
     sourcePaths: SourcePathsMode,
-    withAssets: false,
   } = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
@@ -1550,7 +1555,6 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
     sourcePaths: SourcePathsMode.Absolute,
-    withAssets: false,
   };
 
   _getServerRootDir(): string {

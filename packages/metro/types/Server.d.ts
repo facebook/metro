@@ -13,6 +13,7 @@ import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {GraphId} from './lib/getGraphId';
 import type MultipartResponse from './Server/MultipartResponse';
 import type {
+  BuildOptions,
   BundleOptions,
   GraphOptions,
   SplitBundleOptions,
@@ -85,7 +86,6 @@ export interface DefaultBundleOptions extends DefaultGraphOptions {
   shallow: false;
   sourceMapUrl: null;
   sourceUrl: null;
-  withAssets: false,
 }
 
 export default class Server {
@@ -95,10 +95,13 @@ export default class Server {
   end(): void;
   getBundler(): IncrementalBundler;
   getCreateModuleId(): (path: string) => number;
-  build(options: BundleOptions): Promise<{
+  build(
+    bundleOptions: BundleOptions,
+    buildOptions?: BuildOptions,
+  ): Promise<{
     code: string;
     map: string;
-    asset?: ReadonlyArray<AssetData>;
+    assets?: ReadonlyArray<AssetData>;
   }>;
   getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo>;
   getAssets(options: BundleOptions): Promise<ReadonlyArray<AssetData>>;

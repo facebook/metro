@@ -12,7 +12,7 @@
 'use strict';
 
 import type {AssetData} from '../../Assets';
-import type {OutputOptions, RequestOptions} from '../types.flow';
+import type {BuildOptions, OutputOptions, RequestOptions} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
 
 const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
@@ -22,16 +22,20 @@ const writeFile = require('./writeFile');
 function buildBundle(
   packagerClient: Server,
   requestOptions: RequestOptions,
+  buildOptions?: BuildOptions = {},
 ): Promise<{
   code: string,
   map: string,
   assets?: $ReadOnlyArray<AssetData>,
   ...
 }> {
-  return packagerClient.build({
-    ...Server.DEFAULT_BUNDLE_OPTIONS,
-    ...requestOptions,
-  });
+  return packagerClient.build(
+    {
+      ...Server.DEFAULT_BUNDLE_OPTIONS,
+      ...requestOptions,
+    },
+    buildOptions,
+  );
 }
 
 function relativateSerializedMap(
