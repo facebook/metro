@@ -91,7 +91,7 @@ describe('Metro development server serves bundles via HTTP', () => {
 
   test('should serve lazy bundles', async () => {
     const object = await downloadAndExec(
-      '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true',
+      '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=false&runModule=true',
     );
     await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
     await expect(object.asyncImportESM).resolves.toMatchSnapshot();
@@ -99,7 +99,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     await expect(object.asyncImportMaybeSyncESM).resolves.toMatchSnapshot();
     expect(bundlesDownloaded).toEqual(
       new Set([
-        '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true',
+        '/import-export/index.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=false&runModule=true',
         '/import-export/export-5.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
         '/import-export/export-6.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',
         '/import-export/export-7.bundle?platform=ios&dev=true&minify=false&lazy=true&modulesOnly=true&runModule=false',

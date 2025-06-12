@@ -63,8 +63,15 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
         const {searchParams} = new URL(
           jscSafeUrl.toNormalUrl(options.sourceUrl),
         );
-        searchParams.set('modulesOnly', 'true');
-        searchParams.set('runModule', 'false');
+        if (searchParams.has('modulesOnly')) {
+          searchParams.set('modulesOnly', 'true');
+        }
+        if (searchParams.has('runModule')) {
+          searchParams.set('runModule', 'false');
+        }
+
+        const searchParamsString =
+          searchParams.size > 0 ? '?' + searchParams.toString() : '';
 
         const bundlePath = path.relative(
           options.serverRoot,
@@ -77,8 +84,8 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
             // Strip the file extension
             path.basename(bundlePath, path.extname(bundlePath)),
           ) +
-          '.bundle?' +
-          searchParams.toString();
+          '.bundle' +
+          searchParamsString;
       }
       return id;
     },
