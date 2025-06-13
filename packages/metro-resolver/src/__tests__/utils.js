@@ -90,6 +90,7 @@ export function createResolutionContext(
       web: ['browser'],
     },
     unstable_enablePackageExports: false,
+    unstable_incrementalResolution: false,
     unstable_logWarning: () => {},
     ...createPackageAccessors(fileMap),
   };

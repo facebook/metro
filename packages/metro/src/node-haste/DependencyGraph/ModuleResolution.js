@@ -83,6 +83,7 @@ type Options<TPackage> = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
+  unstable_incrementalResolution: boolean,
 }>;
 
 class ModuleResolver<TPackage: Packageish> {
@@ -153,6 +154,7 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionNames,
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
+      unstable_incrementalResolution,
     } = this._options;
 
     try {
@@ -176,6 +178,7 @@ class ModuleResolver<TPackage: Packageish> {
             unstable_conditionNames,
             unstable_conditionsByPlatform,
             unstable_enablePackageExports,
+            unstable_incrementalResolution,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
             originModulePath: fromModule.path,
