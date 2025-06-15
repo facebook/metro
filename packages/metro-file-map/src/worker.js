@@ -9,12 +9,16 @@
  */
 
 /*::
-import type {WorkerMessage, WorkerMetadata} from './flow-types';
+import type {
+  DependencyExtractor,
+  WorkerMessage,
+  WorkerMetadata,
+} from './flow-types';
 */
 
 'use strict';
 
-const dependencyExtractor = require('./lib/dependencyExtractor');
+const defaultDependencyExtractor = require('./lib/dependencyExtractor');
 const excludedExtensions = require('./workerExclusionList');
 const {createHash} = require('crypto');
 const fs = require('graceful-fs');
@@ -82,15 +86,20 @@ function worker(data /*: WorkerMessage */) /*: WorkerMetadata */ {
     }
 
     if (computeDependencies) {
-      dependencies = Array.from(
+      const dependencyExtractor /*: ?DependencyExtractor */ =
         data.dependencyExtractor != null
           ? // $FlowFixMe[unsupported-syntax] - dynamic require
-            require(data.dependencyExtractor).extract(
+            require(data.dependencyExtractor)
+          : null;
+
+      dependencies = Array.from(
+        dependencyExtractor != null
+          ? dependencyExtractor.extract(
               getContent().toString(),
               filePath,
-              dependencyExtractor.extract,
+              defaultDependencyExtractor.extract,
             )
-          : dependencyExtractor.extract(getContent().toString()),
+          : defaultDependencyExtractor.extract(getContent().toString()),
       );
     }
   }
