@@ -59,6 +59,10 @@ export type BundleOptions = {
   +sourcePaths: SourcePathsMode,
 };
 
+export type BuildOptions = $ReadOnly<{
+  withAssets?: boolean,
+}>;
+
 export type ResolverInputOptions = $ReadOnly<{
   customResolverOptions?: CustomResolverOptions,
   dev: boolean,
@@ -80,14 +84,14 @@ export type GraphOptions = {
 };
 
 // Stricter representation of BundleOptions.
-export type SplitBundleOptions = {
-  +entryFile: string,
-  +resolverOptions: ResolverInputOptions,
-  +transformOptions: TransformInputOptions,
-  +serializerOptions: SerializerOptions,
-  +graphOptions: GraphOptions,
-  +onProgress: DeltaBundlerOptions<>['onProgress'],
-};
+export type SplitBundleOptions = $ReadOnly<{
+  entryFile: string,
+  resolverOptions: ResolverInputOptions,
+  transformOptions: TransformInputOptions,
+  serializerOptions: SerializerOptions,
+  graphOptions: GraphOptions,
+  onProgress: DeltaBundlerOptions<>['onProgress'],
+}>;
 
 export type ModuleGroups = {
   groups: Map<number, Set<number>>,
