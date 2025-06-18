@@ -14,6 +14,7 @@
 import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
+import type {BuildOptions} from './shared/types.flow';
 import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
@@ -108,9 +109,11 @@ export type RunBuildOptions = {
     build: (
       MetroServer,
       RequestOptions,
+      void | BuildOptions,
     ) => Promise<{
       code: string,
       map: string,
+      assets?: $ReadOnlyArray<AssetData>,
       ...
     }>,
     save: (
@@ -428,10 +431,12 @@ exports.runBuild = async (
       onBegin();
     }
 
-    const metroBundle = await output.build(metroServer, requestOptions);
+    const metroBundle = await output.build(metroServer, requestOptions, {
+      withAssets: assets,
+    });
     const result: RunBuildResult = {...metroBundle};
 
-    if (assets) {
+    if (assets && result.assets == null) {
       result.assets = await metroServer.getAssets({
         ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
         ...requestOptions,
