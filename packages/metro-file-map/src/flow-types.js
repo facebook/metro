@@ -133,6 +133,15 @@ export type CrawlerOptions = {
   onStatus: (status: WatcherStatus) => void,
 };
 
+export type DependencyExtractor = {
+  extract: (
+    content: string,
+    absoluteFilePath: string,
+    defaultExtractor?: DependencyExtractor['extract'],
+  ) => Set<string>,
+  getCacheKey: () => string,
+};
+
 export type WatcherStatus =
   | {
       type: 'watchman_slow_command',

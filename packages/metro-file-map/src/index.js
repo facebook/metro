@@ -135,6 +135,7 @@ export type {
   CacheManagerFactoryOptions,
   CacheManagerWriteOptions,
   ChangeEvent,
+  DependencyExtractor,
   WatcherStatus,
 } from './flow-types';
 

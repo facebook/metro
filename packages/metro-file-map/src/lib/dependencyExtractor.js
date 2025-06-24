@@ -76,7 +76,7 @@ const JEST_EXTENSIONS_RE = createRegExp(
   'g',
 );
 
-function extract(code /*: string */) /*: $ReadOnlySet<string> */ {
+function extract(code /*: string */) /*: Set<string> */ {
   const dependencies /*: Set<string> */ = new Set();
 
   const addDependency = (
