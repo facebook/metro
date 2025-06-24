@@ -47,6 +47,11 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
   let hasPaths = false;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {
+      if (dependency.absolutePath == null) {
+        // An unresolved dependency, which should cause a runtime error
+        // when required.
+        return null;
+      }
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;
