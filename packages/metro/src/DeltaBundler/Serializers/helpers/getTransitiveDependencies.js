@@ -44,6 +44,10 @@ function _getDeps<T>(
   deps.add(path);
 
   for (const dependency of module.dependencies.values()) {
+    if (dependency.absolutePath == null) {
+      // Skip unresolved dependencies, as they cannot be traversed.
+      continue;
+    }
     _getDeps(dependency.absolutePath, graph, deps);
   }
 
