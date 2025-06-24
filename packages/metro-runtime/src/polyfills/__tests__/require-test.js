@@ -136,7 +136,7 @@ describe('require', () => {
 
       createModuleSystem(moduleSystem, true, prefix);
 
-      expect(moduleSystem[property]).not.toBeUndefined();
+      expect(moduleSystem[property]).toBeUndefined();
       expect(moduleSystem[`${prefix}${property}`]).not.toBeUndefined();
     },
   );
