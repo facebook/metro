@@ -327,7 +327,7 @@ class TestGraph extends Graph<> {
       options,
     );
     const actualInverseDependencies = new Map<string, Set<string>>();
-    for (const [path, module] of graph.dependencies) {
+    for (const [path, module] of this.dependencies) {
       actualInverseDependencies.set(path, new Set(module.inverseDependencies));
     }
     expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
@@ -3662,6 +3662,105 @@ describe('optional dependencies', () => {
     await expect(
       localGraph.initialTraverseDependencies(localOptions),
     ).rejects.toThrow();
+  });
+
+  test('deleting an optional dependency will not throw', async () => {
+    localOptions = {
+      ...options,
+      transform: createMockTransform(),
+    };
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┌─────────────┐     ┌────────────┐
+    │ /optional-b │ ──▶ │ /regular-c │
+    └─────────────┘     └────────────┘
+    */
+    Actions.createFile('/optional-b');
+    Actions.addDependency('/optional-b', '/regular-c');
+
+    expect(
+      getPaths(await localGraph.initialTraverseDependencies(localOptions)),
+    ).toEqual({
+      added: new Set(['/bundle-o', '/regular-a', '/optional-b', '/regular-c']),
+      modified: new Set(),
+      deleted: new Set(),
+    });
+
+    Actions.deleteFile('/optional-b', localGraph);
+
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┌────╲──╱─────┐     ┌────────────┐
+    │ /optional-b │ ──▶ │ /regular-c │
+    └────╱──╲─────┘     └────────────┘
+    */
+
+    expect(
+      getPaths(await localGraph.traverseDependencies([...files], localOptions)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle-o']),
+      deleted: new Set(['/optional-b', '/regular-c']),
+    });
+  });
+
+  test('creating a file satisfying an unresolved optional dependency', async () => {
+    localOptions = {
+      ...options,
+      transform: createMockTransform(),
+    };
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          ┊
+          ┊
+          ▽
+    ┌┈┈┈┈┈┈┈┈┈┈┈┈┈┐
+    ┊ /optional-b ┊ (not yet created)
+    └┈┈┈┈┈┈┈┈┈┈┈┈┈┘
+    */
+
+    expect(
+      getPaths(await localGraph.initialTraverseDependencies(localOptions)),
+    ).toEqual({
+      added: new Set(['/bundle-o', '/regular-a']),
+      modified: new Set(),
+      deleted: new Set(),
+    });
+
+    Actions.createFile('/optional-b');
+    Actions.addDependency('/optional-b', '/regular-c');
+
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┏━━━━━━━━━━━━━┓     ┏━━━━━━━━━━━━┓
+    ┃ /optional-b ┃ ──▶ ┃ /regular-c ┃
+    ┗━━━━━━━━━━━━━┛     ┗━━━━━━━━━━━━┛
+    */
+
+    expect(
+      getPaths(await localGraph.traverseDependencies([...files], localOptions)),
+    ).toEqual({
+      added: new Set(['/optional-b', '/regular-c']),
+      modified: new Set(['/bundle-o']),
+      deleted: new Set(),
+    });
   });
 });
 
