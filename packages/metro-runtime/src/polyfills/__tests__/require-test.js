@@ -128,11 +128,18 @@ describe('require', () => {
     expect(mockFactory.mock.calls[0][6]).toEqual([2, 3]);
   });
 
-  test('properly prefixes __d with global prefix', () => {
-    createModuleSystem(moduleSystem, false, '__metro');
-    expect(moduleSystem.__d).toBeUndefined();
-    expect(moduleSystem.__metro__d).not.toBeUndefined();
-  });
+  test.each(
+    [['__r'], ['__d'], ['__c'], ['__registerSegment'], ['__accept']],
+    'properly prefixes %s with global prefix',
+    property => {
+      const prefix = '__metro';
+
+      createModuleSystem(moduleSystem, true, prefix);
+
+      expect(moduleSystem[property]).not.toBeUndefined();
+      expect(moduleSystem[`${prefix}${property}`]).not.toBeUndefined();
+    },
+  );
 
   test('works with Random Access Modules (RAM) bundles', () => {
     const mockExports = {foo: 'bar'};
@@ -677,8 +684,8 @@ describe('require', () => {
     });
 
     test('does not log warning for cyclic dependency in ignore list', () => {
-      moduleSystem.__customPrefix__requireCycleIgnorePatterns = [/foo/];
-      createModuleSystem(moduleSystem, true, '__customPrefix');
+      moduleSystem.__requireCycleIgnorePatterns = [/foo/];
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(
         moduleSystem,
@@ -688,7 +695,6 @@ describe('require', () => {
           require(1);
         },
         [],
-        '__customPrefix',
       );
 
       createModule(
@@ -699,7 +705,6 @@ describe('require', () => {
           require(2);
         },
         [],
-        '__customPrefix',
       );
 
       createModule(
@@ -710,7 +715,6 @@ describe('require', () => {
           require(0);
         },
         [],
-        '__customPrefix',
       );
 
       const warn = console.warn;
