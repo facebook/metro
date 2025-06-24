@@ -513,14 +513,10 @@ export class Graph<T = MixedOutput> {
     delta: Delta<T>,
     options: InternalOptions<T>,
   ): void {
-    const path = dependency.absolutePath;
-
-    // The module may already exist, in which case we just need to update some
-    // bookkeeping instead of adding a new node to the graph.
-    let module = this.dependencies.get(path);
-
     if (options.shallow) {
       // Don't add a node for the module if the graph is shallow (single-module).
+    } else if (!isResolvedDependency(dependency)) {
+      // If the dependency is not a missing optional dependency, it has no
     } else if (dependency.data.data.asyncType === 'weak') {
       // Exclude weak dependencies from the bundle.
     } else if (options.lazy && dependency.data.data.asyncType != null) {
@@ -529,6 +525,11 @@ export class Graph<T = MixedOutput> {
       // importBundleNodes.
       this._incrementImportBundleReference(dependency, parentModule);
     } else {
+      // The module may already exist, in which case we just need to update some
+      // bookkeeping instead of adding a new node to the graph.
+      const path = dependency.absolutePath;
+      let module = this.dependencies.get(path);
+
       if (!module) {
         try {
           module = this._recursivelyCommitModule(path, delta, options);
@@ -553,12 +554,15 @@ export class Graph<T = MixedOutput> {
       this._markModuleInUse(module);
     }
 
-    if (requireContext) {
-      this.#resolvedContexts.set(path, requireContext);
-    } else {
-      // This dependency may have existed previously as a require.context -
-      // clean it up.
-      this.#resolvedContexts.delete(path);
+    if (isResolvedDependency(dependency)) {
+      const path = dependency.absolutePath;
+      if (requireContext) {
+        this.#resolvedContexts.set(path, requireContext);
+      } else {
+        // This dependency may have existed previously as a require.context -
+        // clean it up.
+        this.#resolvedContexts.delete(path);
+      }
     }
 
     // Update the parent's dependency map unless we failed to add a dependency.
