@@ -308,12 +308,12 @@ When calling the default resolver with a non-null `resolveRequest` function, it 
 
 Inside a custom resolver, `resolveRequest` is set to the default resolver function, for easy chaining and customization.
 
-#### `dependency: ?Dependency`
+#### `dependency: ?ResolvedDependency`
 
 A dependency descriptor corresponding to the current resolution request. This is provided for diagnostic purposes *only* and may not be used for semantic purposes. See the [Caching](#caching) section for more information.
 
 ```flow
-type Dependency = {
+type ResolvedDependency = {
   // The literal name provided to a require or import call. For example 'foo' in
   // case of `require('foo')`.
   name: string,

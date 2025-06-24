@@ -42,6 +42,7 @@ import type {
   Options,
   ReadOnlyDependencies,
   ReadOnlyGraph,
+  ResolvedDependency,
   TransformFn,
   TransformResultDependency,
   TransformResultWithSource,
@@ -283,7 +284,10 @@ function computeInverseDependencies(
   }
   for (const module of graph.dependencies.values()) {
     for (const dependency of module.dependencies.values()) {
-      if (options.lazy && dependency.data.data.asyncType != null) {
+      if (
+        dependency.absolutePath == null ||
+        (options.lazy && dependency.data.data.asyncType != null)
+      ) {
         // Async deps aren't tracked in inverseDependencies
         continue;
       }
@@ -3496,7 +3500,7 @@ describe('require.context', () => {
 
 describe('reorderGraph', () => {
   test('should reorder any unordered graph in DFS order', async () => {
-    const dep = (path: string): Dependency => ({
+    const dep = (path: string): ResolvedDependency => ({
       absolutePath: path,
       data: {
         data: {
@@ -3554,31 +3558,7 @@ describe('reorderGraph', () => {
 describe('optional dependencies', () => {
   let localGraph;
   let localOptions;
-  const getAllDependencies = () => {
-    const all = new Set<string>();
-    mockedDependencyTree.forEach(deps => {
-      deps.forEach(r => all.add(r.name));
-    });
-    return all;
-  };
-  const assertResults = (
-    dependencies: Map<string, Module<>>,
-    expectedMissing: Array<string>,
-  ) => {
-    let count = 0;
-    const allDependency = getAllDependencies();
-    allDependency.forEach(m => {
-      const data = dependencies.get(`/${m}`);
-      if (expectedMissing.includes(m)) {
-        expect(data).toBeUndefined();
-      } else {
-        expect(data).not.toBeUndefined();
-      }
-      count += 1;
-    });
-    expect(count).toBeGreaterThan(0);
-    expect(count).toBe(allDependency.size);
-  };
+  let dependencyKeys: Map<string, string>;
 
   const createMockTransform = (notOptional?: string[]) => {
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
@@ -3609,11 +3589,18 @@ describe('optional dependencies', () => {
   beforeEach(() => {
     mockedDependencies = new Set();
     mockedDependencyTree = new Map();
+    dependencyKeys = new Map();
 
     entryModule = Actions.createFile('/bundle-o');
 
-    Actions.addDependency('/bundle-o', '/regular-a');
-    Actions.addDependency('/bundle-o', '/optional-b');
+    dependencyKeys.set(
+      '/regular-a',
+      Actions.addDependency('/bundle-o', '/regular-a'),
+    );
+    dependencyKeys.set(
+      '/optional-b',
+      Actions.addDependency('/bundle-o', '/optional-b'),
+    );
 
     localGraph = new TestGraph({
       entryPoints: new Set(['/bundle-o']),
@@ -3631,8 +3618,41 @@ describe('optional dependencies', () => {
 
     const result = await localGraph.initialTraverseDependencies(localOptions);
 
-    const dependencies = result.added;
-    assertResults(dependencies, ['optional-b']);
+    expect(result.added).toEqual(
+      new Map([
+        [
+          '/bundle-o',
+          expect.objectContaining({
+            dependencies: new Map([
+              [
+                dependencyKeys.get('/regular-a'),
+                expect.objectContaining({
+                  absolutePath: '/regular-a',
+                  data: expect.objectContaining({
+                    isOptional: false,
+                  }),
+                }),
+              ],
+              [
+                dependencyKeys.get('/optional-b'),
+                expect.objectContaining({
+                  absolutePath: null,
+                  data: expect.objectContaining({
+                    isOptional: true,
+                  }),
+                }),
+              ],
+            ]),
+          }),
+        ],
+        [
+          '/regular-a',
+          expect.objectContaining({
+            dependencies: new Map(),
+          }),
+        ],
+      ]),
+    );
   });
   test('missing non-optional dependency will throw', async () => {
     localOptions = {
