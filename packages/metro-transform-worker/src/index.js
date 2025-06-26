@@ -306,6 +306,10 @@ async function transformJS(
         importAll,
         importDefault,
         resolve: false,
+        transformImportMeta: {
+          objectName: 'module',
+          propertyName: 'importMeta',
+        },
       } as ImportExportPluginOptions,
     ]);
   }
