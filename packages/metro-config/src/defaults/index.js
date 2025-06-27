@@ -76,6 +76,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     enhanceMiddleware: (middleware, _) => middleware,
     forwardClientLogs: true,
     port: 8081,
+    host: 'localhost',
     rewriteRequestUrl: url => url,
     unstable_serverRoot: null,
     useGlobalHotkey: true,

@@ -239,6 +239,10 @@ function overrideConfigWithArguments(
     output.server.port = Number(argv.port);
   }
 
+  if (argv.host != null) {
+    output.server.host = argv.host;
+  }
+
   if (argv.projectRoot != null) {
     output.projectRoot = argv.projectRoot;
   }

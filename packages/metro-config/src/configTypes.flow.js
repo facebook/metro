@@ -172,6 +172,7 @@ type ServerConfigT = {
   enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
   forwardClientLogs: boolean,
   port: number,
+  host: string,
   rewriteRequestUrl: string => string,
   unstable_serverRoot: ?string,
   useGlobalHotkey: boolean,
