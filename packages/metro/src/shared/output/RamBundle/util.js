@@ -83,7 +83,7 @@ function combineMaps(
   moduleGroups: ?ModuleGroups,
   options: ?CombineOptions,
 ): Array<IndexMapSection> {
-  const sections = [];
+  const sections: Array<IndexMapSection> = [];
 
   let line = 0;
   modules.forEach((moduleTransport: ModuleTransportLike) => {

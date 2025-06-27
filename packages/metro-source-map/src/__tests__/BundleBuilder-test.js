@@ -13,6 +13,7 @@
 const {BundleBuilder} = require('../BundleBuilder');
 const {Consumer} = require('../source-map');
 const {add0, add1} = require('ob1');
+
 const {objectContaining} = expect;
 
 let builder;

@@ -8,15 +8,19 @@
  * @oncall react_native
  */
 
+import type {AssetData} from '../../Asset';
+
 import Server from '../../Server';
-import {OutputOptions, RequestOptions} from '../../shared/types';
+import {BuildOptions, OutputOptions, RequestOptions} from '../../shared/types';
 
 export function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
+  buildOptions?: BuildOptions,
 ): Promise<{
   code: string;
   map: string;
+  assets?: ReadonlyArray<AssetData>;
 }>;
 
 export function save(

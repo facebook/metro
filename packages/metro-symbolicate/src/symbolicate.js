@@ -49,18 +49,16 @@ function printHelp() {
 
 async function main(
   argvInput: Array<string> = process.argv.slice(2),
-  // prettier-ignore
   {
     stdin,
     stderr,
     stdout,
-  }: {
+  }: $ReadOnly<{
     stdin: stream$Readable | tty$ReadStream,
     stderr: stream$Writable,
     stdout: stream$Writable,
     ...
-    // $FlowFixMe[class-object-subtyping]
-  } = process,
+  }> = (process: $FlowFixMe),
 ): Promise<number> {
   const argv = argvInput.slice();
   function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {

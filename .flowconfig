@@ -12,6 +12,7 @@ format.bracket_spacing=false
 
 munge_underscores=true
 enums=true
+experimental.pattern_matching=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
 
@@ -43,4 +44,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.272.2
+^0.274.1

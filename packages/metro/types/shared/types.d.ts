@@ -47,6 +47,10 @@ export interface BundleOptions {
   readonly unstable_transformProfile: TransformProfile;
 }
 
+export interface BuildOptions {
+  readonly withAssets?: boolean;
+}
+
 export interface ResolverInputOptions {
   readonly customResolverOptions?: CustomResolverOptions;
 }
