@@ -169,7 +169,19 @@ function define(
   }
 }
 
-function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
+function metroRequire(
+  moduleId: ModuleID | VerboseModuleNameForDev | null,
+  maybeNameForDev?: string,
+): Exports {
+  // Unresolved optional dependencies are nulls in dependency maps
+  // eslint-disable-next-line lint/strictly-null
+  if (moduleId === null) {
+    if (__DEV__ && typeof maybeNameForDev === 'string') {
+      throw new Error("Cannot find module '" + maybeNameForDev + "'");
+    }
+    throw new Error('Cannot find module');
+  }
+
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = getModuleIdForVerboseName(verboseName);

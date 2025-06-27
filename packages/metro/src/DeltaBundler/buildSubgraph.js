@@ -12,18 +12,20 @@ import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
   ModuleData,
+  ResolvedDependency,
   ResolveFn,
   TransformFn,
   TransformResultDependency,
 } from './types.flow';
 
 import {deriveAbsolutePathFromContext} from '../lib/contextModule';
+import {isResolvedDependency} from '../lib/isResolvedDependency';
 import path from 'path';
 
 type Parameters<T> = $ReadOnly<{
   resolve: ResolveFn,
   transform: TransformFn<T>,
-  shouldTraverse: Dependency => boolean,
+  shouldTraverse: ResolvedDependency => boolean,
 }>;
 
 function resolveDependencies(
@@ -34,7 +36,7 @@ function resolveDependencies(
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
 } {
-  const maybeResolvedDeps = new Map<string, void | Dependency>();
+  const maybeResolvedDeps = new Map<string, Dependency>();
   const resolvedContexts = new Map<string, RequireContext>();
 
   for (const dep of dependencies) {
@@ -77,6 +79,10 @@ function resolveDependencies(
         if (dep.data.isOptional !== true) {
           throw error;
         }
+        resolvedDep = {
+          absolutePath: null,
+          data: dep,
+        };
       }
     }
 
@@ -88,18 +94,10 @@ function resolveDependencies(
     maybeResolvedDeps.set(key, resolvedDep);
   }
 
-  const resolvedDeps = new Map<string, Dependency>();
-  // Return just the dependencies we successfully resolved.
-  // FIXME: This has a bad bug affecting all dependencies *after* an unresolved
-  // optional dependency. We'll need to propagate the nulls all the way to the
-  // serializer and the require() runtime to keep the dependency map from being
-  // desynced from the contents of the module.
-  for (const [key, resolvedDep] of maybeResolvedDeps) {
-    if (resolvedDep) {
-      resolvedDeps.set(key, resolvedDep);
-    }
-  }
-  return {dependencies: resolvedDeps, resolvedContexts};
+  return {
+    dependencies: maybeResolvedDeps,
+    resolvedContexts,
+  };
 }
 
 export async function buildSubgraph<T>(
@@ -137,16 +135,22 @@ export async function buildSubgraph<T>(
       ...resolutionResult,
     });
 
-    await Promise.all(
-      [...resolutionResult.dependencies]
-        .filter(([key, dependency]) => shouldTraverse(dependency))
-        .map(([key, dependency]) =>
+    const promises: Array<Promise<void>> = [];
+    for (const dependency of resolutionResult.dependencies.values()) {
+      if (isResolvedDependency(dependency) && shouldTraverse(dependency)) {
+        const {absolutePath, data} = dependency;
+        promises.push(
           visit(
-            dependency.absolutePath,
-            resolutionResult.resolvedContexts.get(dependency.data.data.key),
-          ).catch(error => errors.set(dependency.absolutePath, error)),
-        ),
-    );
+            absolutePath,
+            resolutionResult.resolvedContexts.get(data.data.key),
+          ).catch(error => {
+            errors.set(absolutePath, error);
+          }),
+        );
+      }
+    }
+
+    await Promise.all(promises);
   }
 
   await Promise.all(
