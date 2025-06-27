@@ -17,7 +17,10 @@ import {WATCHERS, createTempWatchRoot, startWatching} from './helpers';
 import {promises as fsPromises} from 'fs';
 import os from 'os';
 import {join} from 'path';
+
 const {mkdir, writeFile, rm, symlink, unlink} = fsPromises;
+
+jest.setTimeout(10 * 1000);
 
 test('NativeWatcher is supported if and only if darwin', () => {
   expect(NativeWatcher.isSupported()).toBe(os.platform() === 'darwin');

@@ -10,6 +10,7 @@
  */
 
 import ws from 'ws';
+
 type WebsocketServiceInterface<T> = interface {
   +onClientConnect: (
     url: string,

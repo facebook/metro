@@ -13,7 +13,7 @@ declare module 'https-proxy-agent' {
 
   declare export type HttpsProxyAgentOptions = tls$connectOptions &
     http$agentOptions & {
-      headers?: HttpHeaders | (() => HttpHeaders),
+      +headers?: HttpHeaders | (() => HttpHeaders),
       ...
     };
 

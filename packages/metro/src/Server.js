@@ -17,6 +17,7 @@ import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   MixedOutput,
   Module,
+  ReadOnlyDependencies,
   ReadOnlyGraph,
   TransformInputOptions,
   TransformResult,
@@ -26,6 +27,7 @@ import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
 import type {StackFrameInput, StackFrameOutput} from './Server/symbolicate';
 import type {
+  BuildOptions,
   BundleOptions,
   GraphOptions,
   ResolverInputOptions,
@@ -211,30 +213,22 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(options: BundleOptions): Promise<{
-    code: string,
-    map: string,
-    ...
-  }> {
+  async _serializeGraph({
+    splitOptions,
+    prepend,
+    graph,
+  }: $ReadOnly<{
+    splitOptions: SplitBundleOptions,
+    prepend: $ReadOnlyArray<Module<>>,
+    graph: ReadOnlyGraph<>,
+  }>): Promise<{code: string, map: string}> {
     const {
       entryFile,
       graphOptions,
-      onProgress,
       resolverOptions,
       serializerOptions,
       transformOptions,
-    } = splitBundleOptions(options);
-
-    const {prepend, graph} = await this._bundler.buildGraph(
-      entryFile,
-      transformOptions,
-      resolverOptions,
-      {
-        onProgress,
-        shallow: graphOptions.shallow,
-        lazy: graphOptions.lazy,
-      },
-    );
+    } = splitOptions;
 
     const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
@@ -304,6 +298,56 @@ class Server {
     return {
       code: bundleCode,
       map: bundleMap,
+    };
+  }
+
+  async build(
+    bundleOptions: BundleOptions,
+    {withAssets}: BuildOptions = {},
+  ): Promise<{
+    code: string,
+    map: string,
+    assets?: $ReadOnlyArray<AssetData>,
+    ...
+  }> {
+    const splitOptions = splitBundleOptions(bundleOptions);
+    const {
+      entryFile,
+      graphOptions,
+      onProgress,
+      resolverOptions,
+      transformOptions,
+    } = splitOptions;
+
+    const {prepend, graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      resolverOptions,
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+        lazy: graphOptions.lazy,
+      },
+    );
+
+    const [{code, map}, assets] = await Promise.all([
+      this._serializeGraph({
+        splitOptions,
+        prepend,
+        graph,
+      }),
+      withAssets
+        ? this._getAssetsFromDependencies(
+            graph.dependencies,
+            bundleOptions.platform,
+          )
+        : null,
+    ]);
+
+    return {
+      code,
+      map,
+      ...(withAssets ? {assets: nullthrows(assets)} : null),
     };
   }
 
@@ -377,10 +421,20 @@ class Server {
       {onProgress, shallow: false, lazy: false},
     );
 
+    return this._getAssetsFromDependencies(
+      dependencies,
+      transformOptions.platform,
+    );
+  }
+
+  async _getAssetsFromDependencies(
+    dependencies: ReadOnlyDependencies<>,
+    platform: ?string,
+  ): Promise<$ReadOnlyArray<AssetData>> {
     return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
-      platform: transformOptions.platform,
+      platform,
       projectRoot: this._getServerRootDir(),
       publicPath: this._config.transformer.publicPath,
     });

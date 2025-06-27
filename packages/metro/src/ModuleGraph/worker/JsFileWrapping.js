@@ -33,6 +33,9 @@ function wrapModule(
   dependencyMapName: string,
   globalPrefix: string,
   skipRequireRename: boolean,
+  {
+    unstable_useStaticHermesModuleFactory = false,
+  }: $ReadOnly<{unstable_useStaticHermesModuleFactory?: boolean}> = {},
 ): {
   ast: BabelNodeFile,
   requireName: string,
@@ -43,7 +46,19 @@ function wrapModule(
     dependencyMapName,
   );
   const factory = functionFromProgram(fileAst.program, params);
-  const def = t.callExpression(t.identifier(`${globalPrefix}__d`), [factory]);
+
+  const def = t.callExpression(t.identifier(`${globalPrefix}__d`), [
+    unstable_useStaticHermesModuleFactory
+      ? t.callExpression(
+          t.memberExpression(
+            t.identifier('$SHBuiltin'),
+            t.identifier('moduleFactory'),
+          ),
+          [t.identifier('_$$_METRO_MODULE_ID'), factory],
+        )
+      : factory,
+  ]);
+
   const ast = t.file(t.program([t.expressionStatement(def)]));
 
   // `require` doesn't need to be scoped when Metro serializes to iife because the local function
@@ -64,7 +79,11 @@ function jsonToCommonJS(source: string): string {
   return `module.exports = ${source};`;
 }
 
-function wrapJson(source: string, globalPrefix: string): string {
+function wrapJson(
+  source: string,
+  globalPrefix: string,
+  unstable_useStaticHermesModuleFactory?: boolean = false,
+): string {
   // Unused parameters; remember that's wrapping JSON.
   const moduleFactoryParameters = buildParameters(
     '_importDefaultUnused',
@@ -72,11 +91,19 @@ function wrapJson(source: string, globalPrefix: string): string {
     '_dependencyMapUnused',
   );
 
-  return [
-    `${globalPrefix}__d(function(${moduleFactoryParameters.join(', ')}) {`,
+  const factory = [
+    `function(${moduleFactoryParameters.join(', ')}) {`,
     `  ${jsonToCommonJS(source)}`,
-    '});',
+    '}',
   ].join('\n');
+
+  return (
+    `${globalPrefix}__d(` +
+    (unstable_useStaticHermesModuleFactory
+      ? '$SHBuiltin.moduleFactory(_$$_METRO_MODULE_ID, ' + factory + ')'
+      : factory) +
+    ');'
+  );
 }
 
 function functionFromProgram(
