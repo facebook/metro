@@ -331,7 +331,7 @@ module.exports = class FallbackWatcher extends AbstractWatcher {
         if (type == null) {
           return;
         }
-        const metadata = {
+        const metadata: ChangeEventMetadata = {
           modifiedTime: stat.mtime.getTime(),
           size: stat.size,
           type,

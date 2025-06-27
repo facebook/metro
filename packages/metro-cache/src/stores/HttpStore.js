@@ -10,6 +10,8 @@
 
 'use strict';
 
+import type {HttpsProxyAgentOptions} from 'https-proxy-agent';
+
 const HttpError = require('./HttpError');
 const NetworkError = require('./NetworkError');
 const {backOff} = require('exponential-backoff');
@@ -91,7 +93,7 @@ class HttpStore<T> {
   }
 
   createEndpointConfig(options: EndpointOptions): Endpoint {
-    const agentConfig = {
+    const agentConfig: http$agentOptions & HttpsProxyAgentOptions = {
       family: options.family,
       keepAlive: true,
       keepAliveMsecs: options.timeout || 5000,

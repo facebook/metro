@@ -109,7 +109,7 @@ async function transformFile(
     transformerConfig.transformerPath,
   );
 
-  const transformFileStartLogEntry = {
+  const transformFileStartLogEntry: LogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
     file_name: filename,

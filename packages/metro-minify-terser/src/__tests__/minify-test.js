@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {MinifierOptions} from '../../../metro-transform-worker/src/index';
 
 import type {BasicSourceMap} from 'metro-source-map';
 
@@ -34,7 +35,7 @@ function getFakeMap(): BasicSourceMap {
   };
 }
 
-const baseOptions = {
+const baseOptions: MinifierOptions = {
   code: '',
   map: getFakeMap(),
   filename: '',

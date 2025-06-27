@@ -129,6 +129,7 @@ export type JsTransformOptions = $ReadOnly<{
   unstable_disableES6Transforms?: boolean,
   unstable_memoizeInlineRequires?: boolean,
   unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
+  unstable_staticHermesOptimizedRequire?: boolean,
   unstable_transformProfile: TransformProfile,
 }>;
 
@@ -429,6 +430,12 @@ async function transformJS(
         // release. It should be made non-optional in ConfigT or removed in
         // future.
         config.unstable_renameRequire === false,
+        {
+          unstable_useStaticHermesModuleFactory: Boolean(
+            options.customTransformOptions
+              ?.unstable_staticHermesOptimizedRequire,
+          ),
+        },
       ));
     }
   }
@@ -572,7 +579,14 @@ async function transformJSON(
   let code =
     config.unstable_disableModuleWrapping === true
       ? JsFileWrapping.jsonToCommonJS(file.code)
-      : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
+      : JsFileWrapping.wrapJson(
+          file.code,
+          config.globalPrefix,
+          Boolean(
+            options.customTransformOptions
+              ?.unstable_staticHermesOptimizedRequire,
+          ),
+        );
   let map: Array<MetroSourceMapSegmentTuple> = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
@@ -654,13 +668,22 @@ module.exports = {
     };
     const sourceCode = data.toString('utf8');
 
-    const {unstable_dependencyMapReservedName} = config;
-    if (unstable_dependencyMapReservedName != null) {
-      const position = sourceCode.indexOf(unstable_dependencyMapReservedName);
+    const reservedStrings = [];
+    if (
+      options.customTransformOptions?.unstable_staticHermesOptimizedRequire ==
+      true
+    ) {
+      reservedStrings.push('_$$_METRO_MODULE_ID');
+    }
+    if (config.unstable_dependencyMapReservedName != null) {
+      reservedStrings.push(config.unstable_dependencyMapReservedName);
+    }
+    for (const reservedString of reservedStrings) {
+      const position = sourceCode.indexOf(reservedString);
       if (position > -1) {
         throw new SyntaxError(
           'Source code contains the reserved string `' +
-            unstable_dependencyMapReservedName +
+            reservedString +
             '` at character offset ' +
             position,
         );

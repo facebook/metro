@@ -47,13 +47,13 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     },
     rootDir,
     throwOnModuleCollision,
-  }: {
+  }: $ReadOnly<{
     console: typeof console,
     mocksPattern: RegExp,
     rawMockMap?: RawMockMap,
     rootDir: Path,
     throwOnModuleCollision: boolean,
-  }) {
+  }>) {
     this.#mocksPattern = mocksPattern;
     if (rawMockMap.version !== CACHE_VERSION) {
       throw new Error('Incompatible state passed to MockPlugin');
