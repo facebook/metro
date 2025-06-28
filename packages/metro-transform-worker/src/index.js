@@ -118,7 +118,7 @@ export type {CustomTransformOptions} from 'metro-babel-transformer';
 export type JsTransformOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
-  experimentalImportSupport?: boolean,
+  experimentalImportSupport?: boolean | $ReadOnly<{importAsObjects?: boolean}>,
   hot: boolean,
   inlinePlatform: boolean,
   inlineRequires: boolean,
@@ -299,13 +299,18 @@ async function transformJS(
   // fold requires and perform constant folding (if in dev).
   const plugins: Array<PluginEntry> = [];
 
-  if (options.experimentalImportSupport === true) {
+  if (
+    options.experimentalImportSupport != null &&
+    options.experimentalImportSupport !== false
+  ) {
     plugins.push([
       metroTransformPlugins.importExportPlugin,
       {
         importAll,
         importDefault,
         resolve: false,
+        importAsObjects: false, // Off by default, expected to change
+        ...options.experimentalImportSupport,
       } as ImportExportPluginOptions,
     ]);
   }
