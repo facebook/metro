@@ -39,11 +39,13 @@ import type {
   Module,
   ModuleData,
   Options,
+  ResolvedDependency,
   TransformInputOptions,
 } from './types.flow';
 
 import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
+import {isResolvedDependency} from '../lib/isResolvedDependency';
 import {buildSubgraph} from './buildSubgraph';
 
 const invariant = require('invariant');
@@ -121,7 +123,7 @@ function getInternalOptions<T>({
 }
 
 function isWeakOrLazy<T>(
-  dependency: Dependency,
+  dependency: ResolvedDependency,
   options: InternalOptions<T>,
 ): boolean {
   const asyncType = dependency.data.data.asyncType;
@@ -355,7 +357,7 @@ export class Graph<T = MixedOutput> {
         options.onDependencyAdded();
         return result;
       },
-      shouldTraverse: (dependency: Dependency) => {
+      shouldTraverse: (dependency: ResolvedDependency) => {
         if (options.shallow || isWeakOrLazy(dependency, options)) {
           return false;
         }
@@ -510,14 +512,11 @@ export class Graph<T = MixedOutput> {
     delta: Delta<T>,
     options: InternalOptions<T>,
   ): void {
-    const path = dependency.absolutePath;
-
-    // The module may already exist, in which case we just need to update some
-    // bookkeeping instead of adding a new node to the graph.
-    let module = this.dependencies.get(path);
-
     if (options.shallow) {
       // Don't add a node for the module if the graph is shallow (single-module).
+    } else if (!isResolvedDependency(dependency)) {
+      // If the dependency is a missing optional dependency, it has no node of
+      // its own. We just need to add it to the parent's dependency map.
     } else if (dependency.data.data.asyncType === 'weak') {
       // Exclude weak dependencies from the bundle.
     } else if (options.lazy && dependency.data.data.asyncType != null) {
@@ -526,6 +525,11 @@ export class Graph<T = MixedOutput> {
       // importBundleNodes.
       this._incrementImportBundleReference(dependency, parentModule);
     } else {
+      // The module may already exist, in which case we just need to update some
+      // bookkeeping instead of adding a new node to the graph.
+      const path = dependency.absolutePath;
+      let module = this.dependencies.get(path);
+
       if (!module) {
         try {
           module = this._recursivelyCommitModule(path, delta, options);
@@ -550,12 +554,15 @@ export class Graph<T = MixedOutput> {
       this._markModuleInUse(module);
     }
 
-    if (requireContext) {
-      this.#resolvedContexts.set(path, requireContext);
-    } else {
-      // This dependency may have existed previously as a require.context -
-      // clean it up.
-      this.#resolvedContexts.delete(path);
+    if (isResolvedDependency(dependency)) {
+      const path = dependency.absolutePath;
+      if (requireContext) {
+        this.#resolvedContexts.set(path, requireContext);
+      } else {
+        // This dependency may have existed previously as a require.context -
+        // clean it up.
+        this.#resolvedContexts.delete(path);
+      }
     }
 
     // Update the parent's dependency map unless we failed to add a dependency.
@@ -574,12 +581,15 @@ export class Graph<T = MixedOutput> {
   ): void {
     parentModule.dependencies.delete(key);
 
-    const {absolutePath} = dependency;
-
-    if (dependency.data.data.asyncType === 'weak') {
-      // Weak dependencies are excluded from the bundle.
+    if (
+      !isResolvedDependency(dependency) ||
+      dependency.data.data.asyncType === 'weak'
+    ) {
+      // Weak and unresolved dependencies are excluded from the bundle.
       return;
     }
+
+    const {absolutePath} = dependency;
 
     const module = this.dependencies.get(absolutePath);
 
@@ -671,8 +681,12 @@ export class Graph<T = MixedOutput> {
       orderedDependencies.set(module.path, module);
     }
 
-    module.dependencies.forEach((dependency: Dependency) => {
+    module.dependencies.forEach(dependency => {
       const path = dependency.absolutePath;
+      if (path == null) {
+        // If the dependency is not a missing optional dependency, it has no children to reorder.
+        return;
+      }
       const childModule = this.dependencies.get(path);
 
       if (!childModule) {
@@ -691,7 +705,7 @@ export class Graph<T = MixedOutput> {
 
   // Add an entry to importBundleNodes (or record an inverse dependency of an existing one)
   _incrementImportBundleReference(
-    dependency: Dependency,
+    dependency: ResolvedDependency,
     parentModule: Module<T>,
   ) {
     const {absolutePath} = dependency;
@@ -704,7 +718,7 @@ export class Graph<T = MixedOutput> {
 
   // Decrease the reference count of an entry in importBundleNodes (and delete it if necessary)
   _decrementImportBundleReference(
-    dependency: Dependency,
+    dependency: ResolvedDependency,
     parentModule: Module<T>,
   ) {
     const {absolutePath} = dependency;
@@ -734,7 +748,10 @@ export class Graph<T = MixedOutput> {
     options: InternalOptions<T>,
   ): Iterator<Module<T>> {
     for (const dependency of module.dependencies.values()) {
-      if (isWeakOrLazy(dependency, options)) {
+      if (
+        !isResolvedDependency(dependency) ||
+        isWeakOrLazy(dependency, options)
+      ) {
         continue;
       }
       yield nullthrows(this.dependencies.get(dependency.absolutePath));
@@ -747,6 +764,9 @@ export class Graph<T = MixedOutput> {
 
     const resolvedContexts: Map<string, RequireContext> = new Map();
     for (const [key, dependency] of dependencies) {
+      if (!isResolvedDependency(dependency)) {
+        continue;
+      }
       const resolvedContext = this.#resolvedContexts.get(
         dependency.absolutePath,
       );
@@ -783,6 +803,10 @@ export class Graph<T = MixedOutput> {
     }
 
     for (const [key, dependency] of module.dependencies) {
+      if (!isResolvedDependency(dependency)) {
+        // If the dependency is not a missing optional dependency, it has no children to remove.
+        continue;
+      }
       this._removeDependency(module, key, dependency, delta, options);
     }
     this.#gc.color.set(module.path, 'black');
@@ -894,6 +918,9 @@ export class Graph<T = MixedOutput> {
     if (color === 'white' && !this.#gc.possibleCycleRoots.has(module.path)) {
       this.#gc.color.set(module.path, 'black');
       for (const dependency of module.dependencies.values()) {
+        if (!isResolvedDependency(dependency)) {
+          continue;
+        }
         const childModule = this.dependencies.get(dependency.absolutePath);
         // The child may already have been collected.
         if (childModule) {
