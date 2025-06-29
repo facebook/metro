@@ -142,7 +142,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
       decodeVlq(mappingRaw);
       invariant(generatedColumnDelta != null, 'Invalid generated column delta');
       generatedColumn = add(generatedColumn, generatedColumnDelta);
-      const mapping: Mapping = {
+      const mapping: {...Mapping, ...} = {
         generatedLine,
         generatedColumn,
         source: null,

@@ -25,7 +25,9 @@ const fs = require('fs');
 const {Cache, stableHash} = require('metro-cache');
 const path = require('path');
 
-type GetOrComputeSha1Fn = string => Promise<{content?: Buffer, sha1: string}>;
+type GetOrComputeSha1Fn = string => Promise<
+  $ReadOnly<{content?: Buffer, sha1: string}>,
+>;
 
 class Transformer {
   _config: ConfigT;
