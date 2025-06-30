@@ -242,6 +242,8 @@ describe('composeSourceMaps', () => {
       mappings: 'AAAAA;AACAA;AACAA',
     };
 
+    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+     * https://fburl.com/gdoc/y8dn025u */
     const mergedMap = composeSourceMaps([map1, map2]);
 
     expect(mergedMap).toEqual(
@@ -354,6 +356,8 @@ describe('composeSourceMaps', () => {
       x_hermes_function_offsets: {[0]: [20, 25, 36], [1]: [47, 220, 300]},
     };
 
+    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+     * https://fburl.com/gdoc/y8dn025u */
     const mergedMap = composeSourceMaps([map1, map2]);
     expect(mergedMap.x_hermes_function_offsets).toEqual({
       [0]: [20, 25, 36],

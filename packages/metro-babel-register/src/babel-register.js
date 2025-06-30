@@ -50,6 +50,8 @@ function register(
     ],
   };
 
+  /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+   * https://fburl.com/gdoc/y8dn025u */
   require('@babel/register')(registerConfig);
 }
 
