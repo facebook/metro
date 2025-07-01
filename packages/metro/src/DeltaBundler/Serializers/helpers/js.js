@@ -81,7 +81,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
             // Strip the file extension
             path.basename(bundlePath, path.extname(bundlePath)),
           ) +
-          '.bundle?' +
+          '.bundle' +
           searchParamsString;
       }
       return id;
