@@ -464,7 +464,10 @@ function loadModuleImplementation(
       if (Refresh != null) {
         const RefreshRuntime = Refresh;
         global.$RefreshReg$ = (type, id) => {
-          RefreshRuntime.register(type, moduleId + ' ' + id);
+          // prefix the id with global prefix to enable multiple HMR clients
+          const prefixedModuleId =
+            __METRO_GLOBAL_PREFIX__ + ' ' + moduleId + ' ' + id;
+          RefreshRuntime.register(type, prefixedModuleId);
         };
         global.$RefreshSig$ =
           RefreshRuntime.createSignatureFunctionForTransform;
@@ -497,7 +500,13 @@ function loadModuleImplementation(
       Systrace.endEvent();
 
       if (Refresh != null) {
-        registerExportsForReactRefresh(Refresh, moduleObject.exports, moduleId);
+        // prefix the id with global prefix to enable multiple HMR clients
+        const prefixedModuleId = __METRO_GLOBAL_PREFIX__ + ' ' + moduleId;
+        registerExportsForReactRefresh(
+          Refresh,
+          moduleObject.exports,
+          prefixedModuleId,
+        );
       }
     }
 
@@ -991,7 +1000,7 @@ if (__DEV__) {
   var registerExportsForReactRefresh = (
     Refresh: any,
     moduleExports: Exports,
-    moduleID: ModuleID,
+    moduleID: string,
   ) => {
     Refresh.register(moduleExports, moduleID + ' %exports%');
     if (moduleExports == null || typeof moduleExports !== 'object') {
@@ -1029,9 +1038,16 @@ if (__DEV__) {
   };
 
   var requireRefresh = function requireRefresh() {
+    // __METRO_GLOBAL_PREFIX__ and global.__METRO_GLOBAL_PREFIX__ differ from
+    // each other when multiple module systems are used - e.g, in the context
+    // of Module Federation, the first one would refer to the local prefix
+    // defined at the top of the bundle, while the other always refers to the
+    // one coming from the Host
     return (
+      global[__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] ||
+      global[global.__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] ||
       // $FlowFixMe[prop-missing]
-      global[__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] || metroRequire.Refresh
+      metroRequire.Refresh
     );
   };
 }

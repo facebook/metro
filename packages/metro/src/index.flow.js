@@ -36,6 +36,7 @@ const makeServeCommand = require('./commands/serve');
 const MetroHmrServer = require('./HmrServer');
 const IncrementalBundler = require('./IncrementalBundler');
 const createWebsocketServer = require('./lib/createWebsocketServer');
+const JsonReporter = require('./lib/JsonReporter');
 const TerminalReporter = require('./lib/TerminalReporter');
 const MetroServer = require('./Server');
 const outputBundle = require('./shared/output/bundle');
@@ -146,6 +147,7 @@ type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
 
 exports.Terminal = Terminal;
+exports.JsonReporter = JsonReporter;
 exports.TerminalReporter = TerminalReporter;
 
 export type {AssetData} from './Assets';

@@ -121,6 +121,8 @@ function combineMaps(
       'Random Access Bundle source maps cannot be built from raw mappings',
     );
     sections.push(
+      /* $FlowFixMe[incompatible-exact] Natural Inference rollout. See
+       * https://fburl.com/gdoc/y8dn025u */
       Section(line, column, map || lineToLineSourceMap(code, name)),
     );
     if (offsets != null && id != null) {
