@@ -198,4 +198,26 @@ describe('wrapModule()', () => {
       `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/../bar.bundle?modulesOnly=true&runModule=false"}},"foo.js");`,
     );
   });
+
+  test('async dependency paths do not add query params when dev is false', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: '/root',
+          serverRoot: '/root',
+          sourceUrl: 'http://localhost/Main.bundle?param1=true&param2=1234',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/../bar.bundle"}});`,
+    );
+  });
 });
