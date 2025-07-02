@@ -684,8 +684,8 @@ describe('require', () => {
     });
 
     test('does not log warning for cyclic dependency in ignore list', () => {
-      moduleSystem.__requireCycleIgnorePatterns = [/foo/];
-      createModuleSystem(moduleSystem, true, '');
+      moduleSystem.__customPrefix__requireCycleIgnorePatterns = [/foo/];
+      createModuleSystem(moduleSystem, true, '__customPrefix');
 
       createModule(
         moduleSystem,
@@ -695,6 +695,7 @@ describe('require', () => {
           require(1);
         },
         [],
+        '__customPrefix',
       );
 
       createModule(
@@ -705,6 +706,7 @@ describe('require', () => {
           require(2);
         },
         [],
+        '__customPrefix',
       );
 
       createModule(
@@ -715,12 +717,13 @@ describe('require', () => {
           require(0);
         },
         [],
+        '__customPrefix',
       );
 
       const warn = console.warn;
       console.warn = jest.fn();
 
-      moduleSystem.__r(0);
+      moduleSystem.__customPrefix__r(0);
       expect(console.warn).toHaveBeenCalledTimes(0);
       console.warn = warn;
     });
