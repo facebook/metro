@@ -14,6 +14,7 @@
 import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
 
+const {isResolvedDependency} = require('../../../lib/isResolvedDependency');
 const invariant = require('invariant');
 const jscSafeUrl = require('jsc-safe-url');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
@@ -47,6 +48,11 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
   let hasPaths = false;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {
+      if (!isResolvedDependency(dependency)) {
+        // An unresolved dependency, which should cause a runtime error
+        // when required.
+        return null;
+      }
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;

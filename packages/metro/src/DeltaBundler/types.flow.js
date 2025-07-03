@@ -61,10 +61,16 @@ export type TransformResultDependency = $ReadOnly<{
   }>,
 }>;
 
-export type Dependency = $ReadOnly<{
+export type ResolvedDependency = $ReadOnly<{
   absolutePath: string,
   data: TransformResultDependency,
 }>;
+
+export type Dependency =
+  | ResolvedDependency
+  | $ReadOnly<{
+      data: TransformResultDependency,
+    }>;
 
 export type Module<T = MixedOutput> = $ReadOnly<{
   dependencies: Map<string, Dependency>,

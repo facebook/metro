@@ -392,6 +392,8 @@ class MemoryFs {
     flags?: number = 0,
   ) => {
     const options = flags & constants.COPYFILE_EXCL ? {flag: 'wx'} : {};
+    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+     * https://fburl.com/gdoc/y8dn025u */
     this.writeFileSync(dest, this.readFileSync(src), options);
   };
 
@@ -896,8 +898,15 @@ class MemoryFs {
     }
     const ffd = fd;
     const {readSync} = this;
-    const ropt = {filePath, encoding, fd, highWaterMark, start, end, readSync};
-    const rst = new ReadFileSteam(ropt);
+    const rst = new ReadFileSteam({
+      filePath,
+      encoding,
+      fd,
+      highWaterMark,
+      start,
+      end,
+      readSync,
+    });
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
@@ -1121,15 +1130,14 @@ class MemoryFs {
       process.nextTick(() => (st: any).emit('open', fd));
     }
     const ffd = fd;
-    const ropt = {
+    const rst = new WriteFileStream({
       fd,
       // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       writeSync: this._write.bind(this),
       filePath,
       start,
       emitClose: emitClose ?? false,
-    };
-    const rst = new WriteFileStream(ropt);
+    });
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
@@ -1597,7 +1605,8 @@ class ReadFileSteam extends stream.Readable {
     ...
   }) {
     const {highWaterMark, fd} = options;
-    const superOptions = highWaterMark != null ? {highWaterMark} : {};
+    const superOptions: readableStreamOptions =
+      highWaterMark != null ? {highWaterMark} : {};
     super(superOptions);
     this.bytesRead = 0;
     this.path = options.filePath;
