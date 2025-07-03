@@ -58,6 +58,7 @@ exports[`Metro development server serves bundles via HTTP should serve lazy bund
 Object {
   "default": "export-8: DEFAULT",
   "foo": "export-8: FOO",
+  "url": "metro://module/11",
 }
 `;
 
@@ -90,6 +91,7 @@ exports[`Metro development server serves bundles via HTTP should serve non-lazy 
 Object {
   "default": "export-8: DEFAULT",
   "foo": "export-8: FOO",
+  "url": "metro://module/11",
 }
 `;
 

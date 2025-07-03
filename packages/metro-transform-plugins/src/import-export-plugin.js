@@ -31,6 +31,10 @@ export type Options = $ReadOnly<{
   importDefault: string,
   importAll: string,
   resolve: boolean,
+  transformImportMeta: ?{
+    objectName: string,
+    propertyName: string,
+  },
   out?: {isESModule: boolean, ...},
 }>;
 
@@ -46,6 +50,10 @@ type State = {
   imports: Array<{node: Statement}>,
   importDefault: BabelNode,
   importAll: BabelNode,
+  transformImportMeta: ?{
+    renameBinding: string,
+    node: BabelNode,
+  },
   opts: Options,
   ...
 };
@@ -138,8 +146,6 @@ declare function withLocation<TNode: BabelNode>(
 ): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
-/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
- * LTI update could not be added via codemod */
 function withLocation(node, loc) {
   if (Array.isArray(node)) {
     return node.map(n => withLocation(n, loc));
@@ -155,6 +161,15 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
 
   return {
     visitor: {
+      MetaProperty(path, state): void {
+        if (
+          state.transformImportMeta != null &&
+          path.node.meta.name === 'import'
+        ) {
+          path.scope.rename(state.transformImportMeta.renameBinding);
+          path.replaceWith(t.cloneNode(state.transformImportMeta.node));
+        }
+      },
       ExportAllDeclaration(
         path: NodePath<BabelNodeExportAllDeclaration>,
         state: State,
@@ -497,6 +512,15 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           state.imports = [];
           state.importAll = t.identifier(state.opts.importAll);
           state.importDefault = t.identifier(state.opts.importDefault);
+          state.transformImportMeta = state.opts.transformImportMeta
+            ? {
+                renameBinding: state.opts.transformImportMeta.objectName,
+                node: t.memberExpression(
+                  t.identifier(state.opts.transformImportMeta.objectName),
+                  t.identifier(state.opts.transformImportMeta.propertyName),
+                ),
+              }
+            : null;
 
           // Rename declarations at module scope that might otherwise conflict
           // with arguments we inject into the module factory.
