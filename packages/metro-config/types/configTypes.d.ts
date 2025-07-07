@@ -26,7 +26,7 @@ export interface ExtraTransformOptions {
   readonly preloadedModules: Readonly<{[path: string]: true}> | false;
   readonly ramGroups: ReadonlyArray<string>;
   readonly transform: Readonly<{
-    experimentalImportSupport: boolean;
+    experimentalImportSupport: boolean | Readonly<{importAsObjects?: boolean}>;
     inlineRequires:
       | Readonly<{blockList: Readonly<{[path: string]: true}>}>
       | boolean;

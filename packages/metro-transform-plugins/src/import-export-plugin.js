@@ -31,6 +31,7 @@ export type Options = $ReadOnly<{
   importDefault: string,
   importAll: string,
   resolve: boolean,
+  importAsObjects?: boolean,
   out?: {isESModule: boolean, ...},
 }>;
 
@@ -38,14 +39,15 @@ type State = {
   exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,
   exportDefault: Array<{local: string, loc: ?BabelSourceLocation, ...}>,
   exportNamed: Array<{
-    local: string,
+    local: string | BabelNodeMemberExpression,
     remote: string,
     loc: ?BabelSourceLocation,
     ...
   }>,
+  exportSpecifiersToRemap: Map<BabelNode, BabelNodeMemberExpression>,
   imports: Array<{node: Statement}>,
-  importDefault: BabelNode,
-  importAll: BabelNode,
+  importDefault: BabelNodeExpression,
+  importAll: BabelNodeExpression,
   opts: Options,
   ...
 };
@@ -344,7 +346,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
               } else {
                 state.exportNamed.push({
                   // $FlowFixMe[incompatible-use]
-                  local: local.name,
+                  local: state.exportSpecifiersToRemap.get(local) ?? local.name,
                   remote: remote.name,
                   loc,
                 });
@@ -374,6 +376,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
               loc,
             ),
           });
+        } else if (state.opts.importAsObjects === true) {
+          transformImportsAsObjects(path, state, specifiers, t);
         } else {
           let sharedModuleImport;
           let sharedModuleVariableDeclaration = null;
@@ -494,6 +498,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           state.exportAll = [];
           state.exportDefault = [];
           state.exportNamed = [];
+          state.exportSpecifiersToRemap = new Map();
 
           state.imports = [];
           state.importAll = t.identifier(state.opts.importAll);
@@ -552,7 +557,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
 
           state.exportNamed.forEach(
             (e: {
-              local: string,
+              local: string | BabelNodeMemberExpression,
               remote: string,
               loc: ?BabelSourceLocation,
               ...
@@ -560,7 +565,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
               body.push(
                 withLocation(
                   exportTemplate({
-                    LOCAL: t.identifier(e.local),
+                    LOCAL:
+                      typeof e.local === 'string'
+                        ? t.identifier(e.local)
+                        : e.local,
                     REMOTE: t.identifier(e.remote),
                   }),
                   e.loc,
@@ -585,6 +593,152 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
       },
     },
   };
+}
+
+function transformImportsAsObjects(
+  path: NodePath<ImportDeclaration>,
+  state: State,
+  specifiers: Array<
+    | BabelNodeImportSpecifier
+    | BabelNodeImportDefaultSpecifier
+    | BabelNodeImportNamespaceSpecifier,
+  >,
+  t: Types,
+): void {
+  const file = path.node.source;
+  const loc = path.node.loc;
+  let sharedModuleImport = null;
+
+  const groupedSpecifiers = specifiers.reduce(
+    (grouped, s) => {
+      if (
+        s.type === 'ImportSpecifier' &&
+        (s.imported.type === 'StringLiteral' || s.imported.name !== 'default')
+      ) {
+        grouped.named.push(s);
+      } else if (s.type === 'ImportNamespaceSpecifier') {
+        grouped.namespace.push(s);
+      } else if (
+        s.type === 'ImportDefaultSpecifier' ||
+        s.type === 'ImportSpecifier' // s.imported.name must be 'default'
+      ) {
+        grouped.default.push(s);
+      } else {
+        throw new Error('Unknown import type: ' + s.type);
+      }
+      return grouped;
+    },
+    {
+      default: [],
+      namespace: [],
+      named: [],
+    } as {
+      default: Array<
+        BabelNodeImportSpecifier | BabelNodeImportDefaultSpecifier,
+      >,
+      namespace: Array<BabelNodeImportNamespaceSpecifier>,
+      named: Array<BabelNodeImportSpecifier>,
+    },
+  );
+
+  if (groupedSpecifiers.named.length > 0) {
+    sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(file);
+    const sharedModuleVariableDeclaration = withLocation(
+      t.variableDeclaration('var', [
+        t.variableDeclarator(
+          t.cloneNode(sharedModuleImport),
+          t.callExpression(t.identifier('require'), [
+            resolvePath(t.cloneNode(file), state.opts.resolve),
+          ]),
+        ),
+      ]),
+      loc,
+    );
+    state.imports.push({node: sharedModuleVariableDeclaration});
+  }
+
+  let sharedImportDefault = null;
+  for (const s of groupedSpecifiers.default) {
+    if (sharedImportDefault == null) {
+      // For the first specifier in the declaration, push
+      // `var localName = importDefault('module')`
+      sharedImportDefault = s.local;
+      state.imports.push({
+        node: withLocation(
+          t.variableDeclaration('var', [
+            t.variableDeclarator(
+              t.cloneNode(s.local),
+              t.callExpression(t.cloneNode(state.importDefault), [
+                resolvePath(t.cloneNode(file), state.opts.resolve),
+              ]),
+            ),
+          ]),
+          loc,
+        ),
+      });
+    } else {
+      // For remaining default specifiers, push `var nthDefault = firstDefault`
+      // Covers (unusual) edge case:
+      // import React, {default as AnotherReact} from 'react';
+      state.imports.push({
+        node: withLocation(
+          t.variableDeclaration('var', [
+            t.variableDeclarator(t.cloneNode(s.local), sharedImportDefault),
+          ]),
+          loc,
+        ),
+      });
+    }
+  }
+
+  if (groupedSpecifiers.namespace.length > 0) {
+    if (groupedSpecifiers.namespace.length !== 1) {
+      throw new Error(
+        'Expected at most one namespace specifier per import declaration',
+      );
+    }
+    const sharedModuleDefaultVariableDeclaration = withLocation(
+      t.variableDeclaration('var', [
+        t.variableDeclarator(
+          t.cloneNode(groupedSpecifiers.namespace[0].local),
+          t.callExpression(t.cloneNode(state.importAll), [
+            resolvePath(t.cloneNode(file), state.opts.resolve),
+          ]),
+        ),
+      ]),
+      loc,
+    );
+    state.imports.push({
+      node: sharedModuleDefaultVariableDeclaration,
+    });
+  }
+
+  groupedSpecifiers.named.forEach(s => {
+    const local = s.local;
+    // Always defined after restricting to ImportSpecifier
+    const imported = s.imported;
+    // Replaces references to local with sharedModuleName.local
+    const referencePaths =
+      path.scope.bindings?.[local.name].referencePaths ?? [];
+    for (const referencePath of referencePaths) {
+      const newRef = t.memberExpression(
+        t.identifier(nullthrows(sharedModuleImport).name),
+        imported.type === 'StringLiteral'
+          ? t.stringLiteral(imported.value)
+          : t.identifier(imported.name),
+        imported.type === 'StringLiteral', // computed, use brackets
+      );
+      if (referencePath.parentPath?.type === 'ExportSpecifier') {
+        // ESM export specifiers eg `export {Foo, Bar as Baz}` cannot contain
+        // member expressions, but we're going to convert exports to regular
+        // objects later. Remember that we intend to re-map them and handle
+        // when we visit the export declaration.
+        state.exportSpecifiersToRemap.set(referencePath.node, newRef);
+        continue;
+      }
+      referencePath.replaceWith(newRef);
+    }
+  });
 }
 
 module.exports = importExportPlugin;
