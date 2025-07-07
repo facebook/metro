@@ -138,9 +138,10 @@ declare function withLocation<TNode: BabelNode>(
 ): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
-/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
- * LTI update could not be added via codemod */
-function withLocation(node, loc) {
+function withLocation(
+  node: BabelNode | $ReadOnlyArray<BabelNode>,
+  loc: ?BabelNodeSourceLocation,
+): Array<BabelNode> | BabelNode {
   if (Array.isArray(node)) {
     return node.map(n => withLocation(n, loc));
   }
