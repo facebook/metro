@@ -7,9 +7,7 @@
   "exports": {
     ".": "./src/worker-tool.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "dependencies": {
     "duplexer": "^0.1.1",

@@ -6,9 +6,7 @@
   "exports": {
     ".": "./src/babel-register.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
