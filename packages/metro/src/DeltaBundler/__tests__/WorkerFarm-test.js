@@ -10,7 +10,7 @@
 
 'use strict';
 
-const getDefaultConfig = require('metro-config/src/defaults');
+const {getDefaultConfig} = require('metro-config');
 const {Readable} = require('stream');
 
 describe('Worker Farm', function () {

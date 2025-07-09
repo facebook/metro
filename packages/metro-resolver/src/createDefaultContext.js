@@ -10,7 +10,7 @@
  */
 
 import type {ResolutionContext} from './types';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler/types.flow';
 
 import {redirectModulePath} from './PackageResolve';
 

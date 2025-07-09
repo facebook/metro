@@ -17,10 +17,12 @@ import type {
 import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
 import type {ConfigT} from 'metro-config';
 
-const {greatestLowerBound} = require('metro-source-map/src/Consumer/search');
+const {
+  greatestLowerBound,
+} = require('metro-source-map/private/Consumer/search');
 const {
   SourceMetadataMapConsumer,
-} = require('metro-symbolicate/src/Symbolication');
+} = require('metro-symbolicate/private/Symbolication');
 
 export type StackFrameInput = {
   +file: ?string,

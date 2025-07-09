@@ -26,8 +26,8 @@ const {
 const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
 const {Terminal} = require('metro-core');
-const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
-const TerminalReporter = require('metro/src/lib/TerminalReporter');
+const getMaxWorkers = require('metro/private/lib/getMaxWorkers');
+const TerminalReporter = require('metro/private/lib/TerminalReporter');
 const os = require('os');
 const path = require('path');
 

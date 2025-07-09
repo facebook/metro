@@ -20,8 +20,8 @@ jest
 
 var Transformer = require('../Transformer');
 var fs = require('fs');
-var {getDefaultValues} = require('metro-config/src/defaults');
-var {mergeConfig} = require('metro-config/src/loadConfig');
+var {getDefaultValues} = require('metro-config').getDefaultConfig;
+var {mergeConfig} = require('metro-config/private/loadConfig');
 
 describe('Transformer', function () {
   let watchFolders;

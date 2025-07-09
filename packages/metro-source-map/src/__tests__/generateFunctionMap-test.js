@@ -29,7 +29,7 @@ const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
   require('@babel/types').STANDARDIZED_TYPES;
 const {
   SourceMetadataMapConsumer,
-} = require('metro-symbolicate/src/Symbolication');
+} = require('metro-symbolicate/private/Symbolication');
 
 function getAst(source: string) {
   return parse(source, {

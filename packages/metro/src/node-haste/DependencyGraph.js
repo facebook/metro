@@ -37,7 +37,7 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
   PackageResolutionError,
 } = require('metro-core');
-const canonicalize = require('metro-core/src/canonicalize');
+const canonicalize = require('metro-core/private/canonicalize');
 const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');

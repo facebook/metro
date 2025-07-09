@@ -40,8 +40,8 @@ import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
-} from 'metro-core/src/Logger';
-import type {CustomResolverOptions} from 'metro-resolver/src/types';
+} from 'metro-core/private/Logger';
+import type {CustomResolverOptions} from 'metro-resolver/private/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
 import {SourcePathsMode} from './shared/types.flow';

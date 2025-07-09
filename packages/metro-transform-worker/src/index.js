@@ -28,12 +28,12 @@ import type {
   InlinePluginOptions,
   InlineRequiresPluginOptions,
 } from 'metro-transform-plugins';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types.flow';
 import type {
   DependencyTransformer,
   DynamicRequiresBehavior,
-} from 'metro/src/ModuleGraph/worker/collectDependencies';
+} from 'metro/private/ModuleGraph/worker/collectDependencies';
 
 const getMinifier = require('./utils/getMinifier');
 const {transformFromAstSync} = require('@babel/core');
@@ -49,16 +49,16 @@ const {
   toSegmentTuple,
 } = require('metro-source-map');
 const metroTransformPlugins = require('metro-transform-plugins');
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
+const collectDependencies = require('metro/private/ModuleGraph/worker/collectDependencies');
 const {
   InvalidRequireCallError: InternalInvalidRequireCallError,
-} = require('metro/src/ModuleGraph/worker/collectDependencies');
-const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
+} = require('metro/private/ModuleGraph/worker/collectDependencies');
+const generateImportNames = require('metro/private/ModuleGraph/worker/generateImportNames');
 const {
   importLocationsPlugin,
   locToKey,
-} = require('metro/src/ModuleGraph/worker/importLocationsPlugin');
-const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
+} = require('metro/private/ModuleGraph/worker/importLocationsPlugin');
+const JsFileWrapping = require('metro/private/ModuleGraph/worker/JsFileWrapping');
 const nullthrows = require('nullthrows');
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
