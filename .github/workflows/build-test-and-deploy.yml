@@ -48,9 +48,9 @@ jobs:
       matrix:
         runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         node-version: [
-          '18.18.0', # minimum supported
-          'lts/-1',  # pre-latest lts
+          '22.14.0', # minimum supported
           'lts/*',   # latest lts
+          'latest'   # latest node version
         ]
     uses: ./.github/workflows/test.yml
     with:

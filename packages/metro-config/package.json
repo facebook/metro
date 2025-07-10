@@ -37,6 +37,6 @@
     "pretty-format": "^29.7.0"
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=22.14"
   }
 }
