@@ -146,7 +146,6 @@ type TransformerConfigT = {
   getTransformOptions: GetTransformOptions,
   // TODO(moti): Remove this Meta-internal option from Metro's public config
   transformVariants: {+[name: string]: {...}},
-  workerPath: string,
   publicPath: string,
   unstable_workerThreads: boolean,
 };

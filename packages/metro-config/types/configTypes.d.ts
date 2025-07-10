@@ -141,7 +141,6 @@ export interface SerializerConfigT {
 export interface TransformerConfigT extends JsTransformerConfig {
   getTransformOptions: GetTransformOptions;
   transformVariants: Readonly<{[name: string]: unknown}>;
-  workerPath: string;
   publicPath: string;
 }
 

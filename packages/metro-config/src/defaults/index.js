@@ -127,7 +127,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     transformVariants: {default: {}},
-    workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
     unstable_allowRequireContext: false,
