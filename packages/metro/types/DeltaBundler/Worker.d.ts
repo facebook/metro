@@ -18,16 +18,14 @@ type LogEntry = unknown;
 
 export type TransformOptions = JsTransformOptions;
 
-declare function transform(
-  filename: string,
-  transformOptions: JsTransformOptions,
-  projectRoot: string,
-  transformerConfig: TransformerConfig,
-  fileBuffer?: Buffer,
-): Promise<Data>;
-
 export interface Worker {
-  readonly transform: typeof transform;
+  readonly transform: (
+    filename: string,
+    transformOptions: JsTransformOptions,
+    projectRoot: string,
+    transformerConfig: TransformerConfig,
+    fileBuffer?: Buffer,
+  ) => Promise<Data>;
 }
 
 export interface TransformerConfig {

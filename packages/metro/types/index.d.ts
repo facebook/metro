@@ -30,8 +30,7 @@ import type {
   Middleware,
 } from 'metro-config';
 import type {Duplex} from 'stream';
-
-import Yargs = require('yargs');
+import type Yargs from 'yargs';
 
 export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
 export {Terminal} from 'metro-core';
@@ -162,6 +161,6 @@ interface AttachMetroCLIOptions {
 }
 
 export function attachMetroCli(
-  yargs: typeof Yargs,
+  yargs: Yargs.Argv,
   options?: AttachMetroCLIOptions,
-): typeof Yargs;
+): Yargs.Argv;

@@ -18,8 +18,8 @@ import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types';
 
 export type MinifierConfig = Readonly<Record<string, unknown>>;
 
