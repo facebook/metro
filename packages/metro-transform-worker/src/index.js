@@ -732,8 +732,8 @@ module.exports = {
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),
       require.resolve('./utils/assetTransformer'),
-      require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
-      require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
+      require.resolve('metro/private/ModuleGraph/worker/generateImportNames'),
+      require.resolve('metro/private/ModuleGraph/worker/JsFileWrapping'),
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
     ]);
 

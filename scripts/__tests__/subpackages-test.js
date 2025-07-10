@@ -119,18 +119,8 @@ test('use package.json#exports, exporting a main and package.json', () => {
                 : './' + packageJson.main,
             }
           : null),
-        ...(packageJson.main?.endsWith('src/index.js')
-          ? {
-              // For backward compatibility, allow importing src as a directory
-              './src': './src/index.js',
-            }
-          : null),
         './package.json': './package.json',
         './private/*': './src/*.js',
-        // If an import specifies .js, keep it
-        './src/*.js': './src/*.js',
-        // Add .js to extensionless imports
-        './src/*': './src/*.js',
       }),
     );
   });

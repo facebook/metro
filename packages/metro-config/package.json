@@ -6,11 +6,7 @@
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src": "./src/index.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js",
-    "./src/defaults": "./src/defaults/index.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
