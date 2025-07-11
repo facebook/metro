@@ -22,9 +22,7 @@
     "https-proxy-agent": "^7.0.5",
     "metro-core": "0.82.5"
   },
-  "devDependencies": {
-    "metro-memory-fs": "0.82.5"
-  },
+  "devDependencies": {},
   "license": "MIT",
   "engines": {
     "node": ">=22.14"

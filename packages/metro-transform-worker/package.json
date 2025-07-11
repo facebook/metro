@@ -33,8 +33,7 @@
     "nullthrows": "^1.1.1"
   },
   "devDependencies": {
-    "@react-native/metro-babel-transformer": "0.78.0",
-    "metro-memory-fs": "0.82.5"
+    "@react-native/metro-babel-transformer": "0.78.0"
   },
   "engines": {
     "node": ">=22.14"

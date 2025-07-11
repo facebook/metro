@@ -16,9 +16,7 @@
     "jsonparse": "^1.2.0",
     "through": ">=2.2.7 <3"
   },
-  "devDependencies": {
-    "metro-memory-fs": "0.82.5"
-  },
+  "devDependencies": {},
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"

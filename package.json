@@ -38,6 +38,7 @@
     "jest-watch-typeahead": "^2.2.0",
     "jsonc-eslint-parser": "^2.3.0",
     "metro-babel-register": "*",
+    "metro-memory-fs": "*",
     "micromatch": "^4.0.4",
     "prettier": "2.8.8",
     "prettier-plugin-hermes-parser": "0.29.1",
@@ -62,7 +63,8 @@
     "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "private/*"
   ],
   "license": "MIT",
   "dependencies": {},
