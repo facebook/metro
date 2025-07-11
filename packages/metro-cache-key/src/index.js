@@ -23,4 +23,4 @@ function getCacheKey(files: Array<string>): string {
     .digest('hex');
 }
 
-module.exports = getCacheKey;
+module.exports = {getCacheKey};
