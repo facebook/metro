@@ -181,8 +181,9 @@ function registerForMetroMonorepo() {
   isRegisteredForMetroMonorepo = true;
 }
 
-register.config = config;
-register.buildRegExps = buildRegExps;
-register.unstable_registerForMetroMonorepo = registerForMetroMonorepo;
-
-module.exports = register;
+module.exports = {
+  register,
+  config,
+  buildRegExps,
+  unstable_registerForMetroMonorepo: registerForMetroMonorepo,
+};
