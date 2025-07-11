@@ -294,4 +294,4 @@ const success = (id: number) => ({
   exit_code: 0 as const,
 });
 
-module.exports = buckWorker;
+module.exports = {buckWorker};
