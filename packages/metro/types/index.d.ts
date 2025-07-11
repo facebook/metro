@@ -82,6 +82,10 @@ export interface RunServerOptions {
   };
 }
 
+export interface RunServerResult {
+  httpServer: HttpServer | HttpsServer;
+}
+
 export interface RunBuildOptions {
   entry: string;
   dev?: boolean;
@@ -139,7 +143,7 @@ export function createConnectMiddleware(
 export function runServer(
   config: ConfigT,
   options: RunServerOptions,
-): Promise<HttpServer | HttpsServer>;
+): Promise<RunServerResult>;
 
 export function runBuild(
   config: ConfigT,
