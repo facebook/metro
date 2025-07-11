@@ -107,7 +107,10 @@ module.exports = (): {
         resetCache: _resetCache,
         ...runServerOptions
       } = argv;
-      server = await MetroApi.runServer(config, runServerOptions);
+      ({httpServer: server} = await MetroApi.runServer(
+        config,
+        runServerOptions,
+      ));
 
       restarting = false;
     }
