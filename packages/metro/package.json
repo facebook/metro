@@ -70,7 +70,7 @@
     "jest-snapshot": "^29.7.0",
     "jest-snapshot-serializer-raw": "^1.2.0",
     "metro-babel-register": "0.82.5",
-    "metro-memory-fs": "0.82.5",
+    "metro-memory-fs": "*",
     "mock-req": "^0.2.0",
     "mock-res": "^0.6.0",
     "stack-trace": "^0.0.10"

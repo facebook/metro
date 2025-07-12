@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "metro-memory-fs": "0.82.5"
+    "metro-memory-fs": "*"
   },
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"

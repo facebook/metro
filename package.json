@@ -62,7 +62,8 @@
     "update-version": "node ./scripts/updateVersion"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "private/*"
   ],
   "license": "MIT",
   "dependencies": {},

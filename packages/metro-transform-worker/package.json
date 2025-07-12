@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@react-native/metro-babel-transformer": "0.78.0",
-    "metro-memory-fs": "0.82.5"
+    "metro-memory-fs": "*"
   },
   "engines": {
     "node": ">=22.14"

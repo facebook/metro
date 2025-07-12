@@ -23,7 +23,7 @@
     "metro-core": "0.82.5"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.82.5"
+    "metro-memory-fs": "*"
   },
   "license": "MIT",
   "engines": {
