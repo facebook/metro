@@ -41,7 +41,7 @@ const generate = require('@babel/generator').default;
 const babylon = require('@babel/parser');
 const types = require('@babel/types');
 const {stableHash} = require('metro-cache');
-const getCacheKey = require('metro-cache-key');
+const {getCacheKey} = require('metro-cache-key');
 const {
   fromRawMappings,
   functionMapBabelPlugin,
