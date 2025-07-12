@@ -4213,6 +4213,23 @@ merge2@^1.3.0:
   resolved "https://registry.yarnpkg.com/merge2/-/merge2-1.4.1.tgz#4368892f885e907455a6fd7dc55c0c9d404990ae"
   integrity sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==
 
+metro-babel-register@0.82.5:
+  version "0.82.5"
+  resolved "https://registry.yarnpkg.com/metro-babel-register/-/metro-babel-register-0.82.5.tgz#897c2021e6c44b18b533338d420fcacd5e9807c4"
+  integrity sha512-pWGLHX1ggicEu6UvF3Pe7E7xY7812u/EaY1OiR7f9ooy5s/W20OQsvkNshQ68j9v1yvFkckgzB2YCTYiklSsIg==
+  dependencies:
+    "@babel/core" "^7.25.2"
+    "@babel/plugin-proposal-export-namespace-from" "^7.18.9"
+    "@babel/plugin-transform-flow-strip-types" "^7.25.2"
+    "@babel/plugin-transform-modules-commonjs" "^7.24.8"
+    "@babel/preset-typescript" "^7.24.7"
+    "@babel/register" "^7.24.6"
+    babel-plugin-replace-ts-export-assignment "^0.0.2"
+    babel-plugin-syntax-hermes-parser "0.29.1"
+    babel-plugin-transform-flow-enums "^0.0.2"
+    escape-string-regexp "^1.0.5"
+    flow-enums-runtime "^0.0.6"
+
 micromatch@^4.0.4:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/micromatch/-/micromatch-4.0.4.tgz#896d519dfe9db25fce94ceb7a500919bf881ebf9"
