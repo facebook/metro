@@ -10,9 +10,9 @@
  */
 
 'use strict';
-import type {MinifierOptions} from '../../../metro-transform-worker/src/index';
 
 import type {BasicSourceMap} from 'metro-source-map';
+import type {MinifierOptions} from 'metro-transform-worker';
 
 const minify = require('..');
 

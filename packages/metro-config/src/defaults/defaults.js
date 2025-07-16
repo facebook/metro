@@ -13,7 +13,7 @@
 
 import type {PerfLogger, RootPerfLogger} from '../configTypes.flow';
 
-const defaultCreateModuleIdFactory = require('metro/src/lib/createModuleIdFactory');
+const defaultCreateModuleIdFactory = require('metro/private/lib/createModuleIdFactory');
 
 exports.assetExts = [
   // Image formats

@@ -23,6 +23,8 @@ function addParamsToDefineCall(
 ): string {
   const index = code.lastIndexOf(')');
   const params = paramsToAdd.map(param =>
+    // Distinguish between `undefined` and `null` - `undefined` is not JSON.
+    // eslint-disable-next-line lint/strictly-null
     param !== undefined ? JSON.stringify(param) : 'undefined',
   );
 

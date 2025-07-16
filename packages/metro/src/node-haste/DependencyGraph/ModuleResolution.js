@@ -25,13 +25,13 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
-import type {PackageForModule, PackageJson} from 'metro-resolver/src/types';
+import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
 
 const {codeFrameColumns} = require('@babel/code-frame');
 const fs = require('fs');
 const invariant = require('invariant');
 const Resolver = require('metro-resolver');
-const createDefaultContext = require('metro-resolver/src/createDefaultContext');
+const createDefaultContext = require('metro-resolver/private/createDefaultContext');
 const path = require('path');
 const util = require('util');
 

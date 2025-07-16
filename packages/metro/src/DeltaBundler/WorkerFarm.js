@@ -39,7 +39,7 @@ class WorkerFarm {
   constructor(config: ConfigT, transformerConfig: TransformerConfig) {
     this._config = config;
     this._transformerConfig = transformerConfig;
-    const absoluteWorkerPath = require.resolve(config.transformer.workerPath);
+    const absoluteWorkerPath = require.resolve('./Worker.js');
 
     if (this._config.maxWorkers > 1) {
       const worker = this._makeFarm(
@@ -63,11 +63,7 @@ class WorkerFarm {
 
       this._worker = worker;
     } else {
-      // eslint-disable-next-line no-useless-call
-      this._worker = (require.call(
-        null,
-        this._config.transformer.workerPath,
-      ): Worker);
+      this._worker = (require('./Worker'): Worker);
     }
   }
 

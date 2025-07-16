@@ -12,7 +12,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const canonicalize = require('metro-core/src/canonicalize');
+const canonicalize = require('metro-core/private/canonicalize');
 
 function stableHash(value: mixed): Buffer {
   return (

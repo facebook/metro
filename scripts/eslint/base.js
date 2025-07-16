@@ -30,6 +30,7 @@ module.exports = {
     'consistent-return': 'error',
     'import/no-extraneous-dependencies': 'error',
     'fb-www/extra-arrow-initializer': 'off',
+    'lint/metro-deep-imports': 'warn',
     'lint/sort-imports': 'warn',
     'lint/strictly-null': 'warn',
     'max-len': 'off',

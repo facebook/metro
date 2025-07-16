@@ -14,7 +14,7 @@
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {ResolverInputOptions} from '../shared/types.flow';
 
-const canonicalize = require('metro-core/src/canonicalize');
+const canonicalize = require('metro-core/private/canonicalize');
 
 export opaque type GraphId: string = string;
 

@@ -15,7 +15,7 @@ import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
-} from 'metro/src/DeltaBundler/types.flow.js';
+} from 'metro/private/DeltaBundler/types.flow';
 
 import {isProgram} from '@babel/types';
 

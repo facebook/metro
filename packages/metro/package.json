@@ -1,16 +1,13 @@
 {
   "name": "metro",
-  "version": "0.82.5",
+  "version": "0.83.0",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
   "bin": "src/cli.js",
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src": "./src/index.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
@@ -42,18 +39,18 @@
     "invariant": "^2.2.4",
     "jest-worker": "^29.7.0",
     "jsc-safe-url": "^0.2.2",
-    "metro-babel-transformer": "0.82.5",
-    "metro-cache": "0.82.5",
-    "metro-cache-key": "0.82.5",
-    "metro-config": "0.82.5",
-    "metro-core": "0.82.5",
-    "metro-file-map": "0.82.5",
-    "metro-resolver": "0.82.5",
-    "metro-runtime": "0.82.5",
-    "metro-source-map": "0.82.5",
-    "metro-symbolicate": "0.82.5",
-    "metro-transform-plugins": "0.82.5",
-    "metro-transform-worker": "0.82.5",
+    "metro-babel-transformer": "0.83.0",
+    "metro-cache": "0.83.0",
+    "metro-cache-key": "0.83.0",
+    "metro-config": "0.83.0",
+    "metro-core": "0.83.0",
+    "metro-file-map": "0.83.0",
+    "metro-resolver": "0.83.0",
+    "metro-runtime": "0.83.0",
+    "metro-source-map": "0.83.0",
+    "metro-symbolicate": "0.83.0",
+    "metro-transform-plugins": "0.83.0",
+    "metro-transform-worker": "0.83.0",
     "mime-types": "^2.1.27",
     "nullthrows": "^1.1.1",
     "serialize-error": "^2.1.0",
@@ -72,14 +69,14 @@
     "dedent": "^0.7.0",
     "jest-snapshot": "^29.7.0",
     "jest-snapshot-serializer-raw": "^1.2.0",
-    "metro-babel-register": "0.82.5",
-    "metro-memory-fs": "0.82.5",
+    "metro-babel-register": "0.83.0",
+    "metro-memory-fs": "*",
     "mock-req": "^0.2.0",
     "mock-res": "^0.6.0",
     "stack-trace": "^0.0.10"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=18.18"
+    "node": ">=22.14"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.82.5",
+  "version": "0.83.0",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "exports": {
     "./package.json": "./package.json",
@@ -33,6 +33,6 @@
     "react-test-renderer": "19.1.0"
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=22.14"
   }
 }

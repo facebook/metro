@@ -25,7 +25,7 @@ import type {ConfigT} from 'metro-config';
 import type {Type} from 'metro-transform-worker';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
-import isAssetFile from 'metro-resolver/src/utils/isAssetFile';
+import isAssetFile from 'metro-resolver/private/utils/isAssetFile';
 
 type InlineRequiresRaw =
   | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>

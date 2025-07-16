@@ -5,7 +5,7 @@ on:
       node-version:
         type: string
         required: false
-        default: '20.x'
+        default: '22.x'
       runs-on:
         type: string
         required: false

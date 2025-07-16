@@ -15,14 +15,14 @@ import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {ResolverInputOptions} from '../shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config/private/configTypes.flow';
 
 import CountingSet from './CountingSet';
 
 const countLines = require('./countLines');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
-const defaults = require('metro-config/src/defaults/defaults');
+const defaults = require('metro-config/private/defaults/defaults');
 
 async function getPrependedScripts(
   config: ConfigT,

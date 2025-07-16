@@ -1,15 +1,12 @@
 {
   "name": "metro-transform-plugins",
-  "version": "0.82.5",
+  "version": "0.83.0",
   "description": "🚇 Transform plugins for Metro.",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src": "./src/index.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
@@ -35,9 +32,9 @@
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
     "@babel/types": "^7.25.2",
     "babel-plugin-tester": "^6.0.1",
-    "metro": "0.82.5"
+    "metro": "0.83.0"
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=22.14"
   }
 }

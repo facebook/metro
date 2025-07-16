@@ -13,7 +13,7 @@
 
 jest.mock('fs', () => new (require('metro-memory-fs'))());
 
-const getCacheKey = require('../index');
+const {getCacheKey} = require('../index');
 const fs = require('fs');
 
 beforeAll(() => {

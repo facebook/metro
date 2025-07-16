@@ -14,8 +14,8 @@
 import type {File} from '@babel/types';
 import type {BabelTransformerArgs} from 'metro-babel-transformer';
 
-const {getAssetData} = require('metro/src/Assets');
-const {generateAssetCodeFileAst} = require('metro/src/Bundler/util');
+const {getAssetData} = require('metro/private/Assets');
+const {generateAssetCodeFileAst} = require('metro/private/Bundler/util');
 const path = require('path');
 
 async function transform(

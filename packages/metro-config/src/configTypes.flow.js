@@ -17,15 +17,15 @@ import typeof MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
-import type {TransformResult} from 'metro/src/DeltaBundler';
+import type {TransformResult} from 'metro/private/DeltaBundler';
 import type {
   DeltaResult,
   Module,
   ReadOnlyGraph,
   SerializerOptions,
-} from 'metro/src/DeltaBundler/types.flow.js';
-import type {Reporter} from 'metro/src/lib/reporting';
-import type MetroServer from 'metro/src/Server';
+} from 'metro/private/DeltaBundler/types.flow';
+import type {Reporter} from 'metro/private/lib/reporting';
+import type MetroServer from 'metro/private/Server';
 
 export type ExtraTransformOptions = $ReadOnly<{
   preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
@@ -146,7 +146,6 @@ type TransformerConfigT = {
   getTransformOptions: GetTransformOptions,
   // TODO(moti): Remove this Meta-internal option from Metro's public config
   transformVariants: {+[name: string]: {...}},
-  workerPath: string,
   publicPath: string,
   unstable_workerThreads: boolean,
 };

@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {PackageJson} from 'metro-resolver/src/types';
+import type {PackageJson} from 'metro-resolver/private/types';
 
 const fs = require('fs');
 const path = require('path');

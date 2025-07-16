@@ -5,133 +5,163 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
 
-'use strict';
+import fs from 'fs';
+// TODO: Replace with fs.globSync once Flow knows about it
+// $FlowFixMe[untyped-import] glob in OSS
+import glob from 'glob';
+import path from 'path';
 
-const getPackages = require('../_getPackages');
-const ENGINES = require('../../package.json').engines;
-const METRO_VERSION = require('../../packages/metro/package.json').version;
-const fs = require('fs');
-const path = require('path');
+const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
 
-function readPackageJson(packagePath) {
-  return require(path.join(packagePath, 'package.json'));
-}
+const readJsonSync = (absOrRelativePath: string) =>
+  JSON.parse(
+    fs.readFileSync(path.resolve(WORKSPACE_ROOT, absOrRelativePath), 'utf-8'),
+  );
+const workspaceRootPackageJson = readJsonSync('package.json');
 
-function checkAssertionInPackages(packages, assertionCb) {
-  for (const packagePath of packages) {
-    try {
-      assertionCb(packagePath);
-    } catch (e) {
-      console.error(
-        `Failed to pass assertion in package ${path.basename(packagePath)}`,
-      );
-      throw e;
-    }
-  }
-}
+const ALL_PACKAGES: $ReadOnlySet<string> = new Set(
+  Array.isArray(workspaceRootPackageJson.workspaces)
+    ? workspaceRootPackageJson.workspaces.flatMap(relativeGlob =>
+        glob.sync(relativeGlob, {cwd: WORKSPACE_ROOT}),
+      )
+    : [],
+);
 
-test('forces all package names to match their folder name', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    expect(readPackageJson(packagePath).name).toEqual(
-      path.basename(packagePath),
+const METRO_PACKAGE_VERSION = readJsonSync(
+  'packages/metro/package.json',
+).version;
+const PUBLIC_PACKAGE_BASENAMES = new Set(
+  ALL_PACKAGES.values()
+    .map(relativePath => relativePath.split(path.sep))
+    .filter(parts => parts[0] !== 'private')
+    .map(parts => parts.pop()),
+);
+
+test('workspaces are split into public and private directories', () => {
+  expect(workspaceRootPackageJson.workspaces).toEqual([
+    'packages/*',
+    'private/*',
+  ]);
+});
+
+test('workspaces are enumerated from root package.json', () => {
+  expect(ALL_PACKAGES.size).toBeGreaterThan(0);
+});
+
+describe.each([...ALL_PACKAGES])('%s', packagePath => {
+  let packageJson: {
+    name: string,
+    dependencies: {[key: string]: mixed},
+    [key: string]: mixed,
+  };
+
+  beforeAll(() => {
+    packageJson = JSON.parse(
+      fs.readFileSync(
+        path.resolve(WORKSPACE_ROOT, packagePath, 'package.json'),
+        'utf-8',
+      ),
     );
   });
-});
 
-test('forces all packages to use the main metro version', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    expect(readPackageJson(packagePath).version).toEqual(METRO_VERSION);
+  test('package name matches folder name', () => {
+    expect(packageJson.name).toEqual(path.basename(packagePath));
   });
-});
 
-test('forces all packages to use the root "engines" spec', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    expect(readPackageJson(packagePath).engines).toEqual(ENGINES);
+  test('uses the root "engines" spec', () => {
+    expect(packageJson.engines).toEqual(workspaceRootPackageJson.engines);
   });
-});
 
-test('forces all metro dependencies to be fixed to the main version', () => {
-  const packages = getPackages();
-  const packageNames = new Set(
-    packages.map(packageName => path.basename(packageName)),
-  );
-
-  checkAssertionInPackages(packages, packagePath => {
-    const dependencies = readPackageJson(packagePath).dependencies || {};
-
+  test('all metro dependencies are fixed to the main version', () => {
+    const dependencies = packageJson.dependencies ?? {};
     for (const [name, version] of Object.entries(dependencies)) {
-      if (packageNames.has(name)) {
-        expect(version).toEqual(METRO_VERSION);
+      if (PUBLIC_PACKAGE_BASENAMES.has(name)) {
+        expect(version).toEqual(METRO_PACKAGE_VERSION);
       }
     }
   });
-});
 
-test('forces all packages to have a prepare-release and cleanup-release scripts', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    expect(readPackageJson(packagePath).scripts).toEqual(
-      expect.objectContaining({
-        'prepare-release': expect.any(String),
-        'cleanup-release': expect.any(String),
-      }),
-    );
+  test('has a src/ folder', () => {
+    expect(
+      fs
+        .lstatSync(path.resolve(WORKSPACE_ROOT, packagePath, 'src'))
+        .isDirectory(),
+    ).toBe(true);
   });
-});
 
-test('forces all packages to have a src/ folder', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    expect(fs.lstatSync(path.join(packagePath, 'src')).isDirectory()).toBe(
-      true,
-    );
-  });
-});
-
-test('forces all packages to have an .npmignore with expected entries', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    const npmIgnorePath = path.join(packagePath, '.npmignore');
-    expect(fs.existsSync(npmIgnorePath)).toBe(true);
-    const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
-    expect(lines).toEqual(
-      expect.arrayContaining([
-        '**/__mocks__/',
-        '**/__tests__/',
-        '/build/',
-        '/src.real/',
-        '/types/',
-        'yarn.lock',
-      ]),
-    );
-  });
-});
-
-test('use package.json#exports, exporting a main and package.json', () => {
-  checkAssertionInPackages(getPackages(), packagePath => {
-    const packageJson = readPackageJson(packagePath);
+  test('use package.json#exports, exporting a main and package.json', () => {
     expect(packageJson.exports).toEqual(
       expect.objectContaining({
-        ...(packageJson.main != null
+        ...(typeof packageJson.main === 'string'
           ? {
               '.': packageJson.main.startsWith('./')
                 ? packageJson.main
                 : './' + packageJson.main,
             }
           : null),
-        ...(packageJson.main?.endsWith('src/index.js')
-          ? {
-              // For backward compatibility, allow importing src as a directory
-              './src': './src/index.js',
-            }
-          : null),
         './package.json': './package.json',
         './private/*': './src/*.js',
-        // If an import specifies .js, keep it
-        './src/*.js': './src/*.js',
-        // Add .js to extensionless imports
-        './src/*': './src/*.js',
       }),
     );
   });
+
+  if (!packagePath.startsWith('private' + path.sep)) {
+    describe('public package constraints', () => {
+      test('does not have "private" in package.json', () => {
+        expect(packageJson.private).toBeUndefined();
+      });
+
+      test('has prepare-release and cleanup-release scripts', () => {
+        expect(packageJson.scripts).toEqual(
+          expect.objectContaining({
+            'prepare-release': expect.any(String),
+            'cleanup-release': expect.any(String),
+          }),
+        );
+      });
+    });
+
+    test('version matches Metro version', () => {
+      expect(packageJson.version).toEqual(METRO_PACKAGE_VERSION);
+    });
+
+    test('has an .npmignore with expected entries', () => {
+      const npmIgnorePath = path.resolve(
+        WORKSPACE_ROOT,
+        packagePath,
+        '.npmignore',
+      );
+      expect(fs.existsSync(npmIgnorePath)).toBe(true);
+      const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          '**/__mocks__/',
+          '**/__tests__/',
+          '/build/',
+          '/src.real/',
+          '/types/',
+          'yarn.lock',
+        ]),
+      );
+    });
+  } else {
+    describe('private package constraints', () => {
+      test('has "private" in package.json', () => {
+        expect(packageJson.private).toBe(true);
+      });
+
+      test('does not have a prepare-release or cleanup-release scripts', () => {
+        expect(packageJson.scripts ?? {}).not.toHaveProperty('prepare-release');
+        expect(packageJson.scripts ?? {}).not.toHaveProperty('cleanup-release');
+      });
+
+      test('has version 0.0.0', () => {
+        expect(packageJson.version).toBe('0.0.0');
+      });
+    });
+  }
 });

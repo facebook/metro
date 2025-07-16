@@ -1,14 +1,12 @@
 {
   "name": "metro-babel-register",
-  "version": "0.82.5",
+  "version": "0.83.0",
   "description": "🚇 babel/register configuration for Metro.",
   "main": "src/babel-register.js",
   "exports": {
     ".": "./src/babel-register.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
@@ -33,6 +31,6 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=18.18"
+    "node": ">=22.14"
   }
 }
