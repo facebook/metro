@@ -18,7 +18,7 @@ import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 const logToConsole = require('./logToConsole');
 const reporting = require('./reporting');
 const chalk = require('chalk');
-const throttle = require('lodash.throttle');
+const throttle = require('es-toolkit/compat/throttle');
 const {AmbiguousModuleResolutionError} = require('metro-core');
 const path = require('path');
 

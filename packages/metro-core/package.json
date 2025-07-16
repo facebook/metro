@@ -20,8 +20,8 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
+    "es-toolkit": "^1.39.7",
     "flow-enums-runtime": "^0.0.6",
-    "lodash.throttle": "^4.1.1",
     "metro-resolver": "0.82.5"
   },
   "license": "MIT",

@@ -11,7 +11,7 @@
 
 'use strict';
 
-const throttle = require('lodash.throttle');
+const throttle = require('es-toolkit/compat/throttle');
 const readline = require('readline');
 const tty = require('tty');
 const util = require('util');
