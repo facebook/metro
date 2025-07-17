@@ -82,6 +82,7 @@ Object {
       ],
     },
     "unstable_enablePackageExports": true,
+    "unstable_incrementalResolution": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -266,6 +267,7 @@ Object {
       ],
     },
     "unstable_enablePackageExports": true,
+    "unstable_incrementalResolution": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -450,6 +452,7 @@ Object {
       ],
     },
     "unstable_enablePackageExports": true,
+    "unstable_incrementalResolution": false,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -634,6 +637,7 @@ Object {
       ],
     },
     "unstable_enablePackageExports": true,
+    "unstable_incrementalResolution": false,
     "useWatchman": true,
   },
   "serializer": Object {
