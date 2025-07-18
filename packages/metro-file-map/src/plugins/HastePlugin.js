@@ -222,7 +222,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       return;
     }
 
-    const module = [
+    const module: HasteMapItemMetaData = [
       relativeFilePath,
       this.#enableHastePackages &&
       path.basename(relativeFilePath) === 'package.json'
