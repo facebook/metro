@@ -12,6 +12,7 @@
 'use strict';
 
 import type {Context} from '../generateFunctionMap';
+import type {MixedSourceMap} from '../source-map';
 import type {NodePath} from '@babel/traverse';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
@@ -1435,7 +1436,7 @@ function parent2() {
     const mappings = generateFunctionMappingsArray(ast);
     const encoded = generateFunctionMap(ast);
 
-    const sourceMap = {
+    const sourceMap: MixedSourceMap = {
       version: 3,
       sources: ['input.js'],
       names: ([]: Array<string>),

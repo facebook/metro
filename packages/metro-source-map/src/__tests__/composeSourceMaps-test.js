@@ -137,7 +137,7 @@ describe('composeSourceMaps', () => {
   });
 
   test('preserves x_facebook_sources', () => {
-    const map1 = {
+    const map1: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -153,7 +153,7 @@ describe('composeSourceMaps', () => {
       ],
     };
 
-    const map2 = {
+    const map2: MixedSourceMap = {
       version: 3,
       sources: ['src-transformed.js'],
       names: ['gLoBAl'],
@@ -168,7 +168,7 @@ describe('composeSourceMaps', () => {
   });
 
   test('preserves and reindexes x_google_ignoreList', () => {
-    const map1 = {
+    const map1: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -184,7 +184,7 @@ describe('composeSourceMaps', () => {
       ],
     };
 
-    const map2 = {
+    const map2: MixedSourceMap = {
       version: 3,
       sources: ['src-transformed.js'],
       names: ['gLoBAl'],
@@ -202,7 +202,7 @@ describe('composeSourceMaps', () => {
   });
 
   test('x_google_ignoreList: a source with inconsistent ignore status is considered to be ignored', () => {
-    const map1 = {
+    const map1: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -234,7 +234,7 @@ describe('composeSourceMaps', () => {
       ],
     };
 
-    const map2 = {
+    const map2: MixedSourceMap = {
       version: 3,
       sources: ['src-transformed.js'],
       names: ['gLoBAl'],
@@ -255,7 +255,7 @@ describe('composeSourceMaps', () => {
   });
 
   test('preserves sourcesContent', () => {
-    const map1 = {
+    const map1: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -272,7 +272,7 @@ describe('composeSourceMaps', () => {
       ],
     };
 
-    const map2 = {
+    const map2: MixedSourceMap = {
       version: 3,
       sources: ['transformed.js'],
       names: ([]: Array<string>),
