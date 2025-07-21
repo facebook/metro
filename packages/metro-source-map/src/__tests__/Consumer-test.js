@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {MixedSourceMap} from '../source-map';
+
 const Consumer = require('../Consumer');
 const {add0, add1} = require('ob1');
 
@@ -658,7 +660,7 @@ describe('source path normalization', () => {
 
 describe('known bugs in source-map', () => {
   test('accepts mappings without sources in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -690,7 +692,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('accepts mappings without names in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -721,7 +723,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('accepts mappings to the first name entry in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -752,7 +754,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('processes sources correctly in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -790,7 +792,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('supports unmapped sections in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -827,7 +829,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('performs lookup correctly in an indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       sections: [
         {
@@ -866,7 +868,7 @@ describe('known bugs in source-map', () => {
   });
 
   test('performs lookup correctly in a non-indexed map', () => {
-    const map = {
+    const map: MixedSourceMap = {
       version: 3,
       names: ['first', 'second'],
       sources: ['foo.js', 'bar.js'],

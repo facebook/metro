@@ -104,7 +104,7 @@ function fromRawMappingsImpl(
   isBlocking: boolean,
   onDone: Generator => void,
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -175,7 +175,7 @@ function fromRawMappingsImpl(
  */
 function fromRawMappings(
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -202,7 +202,7 @@ function fromRawMappings(
 
 async function fromRawMappingsNonBlocking(
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
