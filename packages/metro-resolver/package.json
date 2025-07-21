@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=22.14"
+    "node": ">=20.19.4"
   },
   "devDependencies": {
     "metro": "0.83.0"

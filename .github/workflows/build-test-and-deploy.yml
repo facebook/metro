@@ -48,7 +48,8 @@ jobs:
       matrix:
         runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         node-version: [
-          '22.14.0', # minimum supported
+          '20.19.4', # minimum supported
+          'lts/-1',  # previous lts
           'lts/*',   # latest lts
           'latest'   # latest node version
         ]
