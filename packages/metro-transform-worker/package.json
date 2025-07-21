@@ -37,6 +37,6 @@
     "metro-memory-fs": "*"
   },
   "engines": {
-    "node": ">=22.14"
+    "node": ">=20.19.4"
   }
 }

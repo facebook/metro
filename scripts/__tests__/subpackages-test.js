@@ -36,7 +36,7 @@ const METRO_PACKAGE_VERSION = readJsonSync(
   'packages/metro/package.json',
 ).version;
 const PUBLIC_PACKAGE_BASENAMES = new Set(
-  ALL_PACKAGES.values()
+  [...ALL_PACKAGES.values()]
     .map(relativePath => relativePath.split(path.sep))
     .filter(parts => parts[0] !== 'private')
     .map(parts => parts.pop()),
