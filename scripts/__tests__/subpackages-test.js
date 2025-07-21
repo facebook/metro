@@ -25,9 +25,10 @@ const workspaceRootPackageJson = readJsonSync('package.json');
 
 const ALL_PACKAGES: $ReadOnlySet<string> = new Set(
   Array.isArray(workspaceRootPackageJson.workspaces)
-    ? workspaceRootPackageJson.workspaces.flatMap(relativeGlob =>
-        glob.sync(relativeGlob, {cwd: WORKSPACE_ROOT}),
-      )
+    ? workspaceRootPackageJson.workspaces
+        .flatMap(relativeGlob => glob.sync(relativeGlob, {cwd: WORKSPACE_ROOT}))
+        // Glob returns posix separators, we want system-native
+        .map(relativePath => path.normalize(relativePath))
     : [],
 );
 
