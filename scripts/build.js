@@ -85,7 +85,7 @@ function buildPackage(p /*: string */) {
   process.stdout.write(`[  ${chalk.green('OK')}  ]\n`);
 }
 
-function buildFile(file /*: string */, silent /*: number | boolean */) {
+async function buildFile(file /*: string */, silent /*: number | boolean */) {
   const destPath = getBuildPath(file, BUILD_DIR);
 
   fs.mkdirSync(path.dirname(destPath), {recursive: true});
@@ -108,7 +108,7 @@ function buildFile(file /*: string */, silent /*: number | boolean */) {
           '\n'
       );
   } else {
-    const transformed = prettier.format(babel.transformFileSync(file, {}).code, {
+    const transformed = await prettier.format(babel.transformFileSync(file, {}).code, {
       parser: 'babel',
     });
     fs.writeFileSync(destPath, transformed);
