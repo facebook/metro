@@ -817,18 +817,24 @@ describe('FileMap', () => {
       // Blueberry too!
     `;
 
-    expect(() =>
+    const mockWarn = jest.fn();
+
+    const expectedError =
+      'Duplicate manual mock found for `subdir/Blueberry`:\n' +
+      '    * <rootDir>/../../fruits1/__mocks__/subdir/Blueberry.js\n' +
+      '    * <rootDir>/../../fruits2/__mocks__/subdir/Blueberry.js\n';
+
+    await expect(() =>
       new FileMap({
         mocksPattern: '__mocks__',
         throwOnModuleCollision: true,
         ...defaultConfig,
+        console: {
+          warn: mockWarn,
+        },
       }).build(),
-    ).rejects.toThrowError(
-      'Mock map has 1 error:\n' +
-        'Duplicate manual mock found for `subdir/Blueberry`:\n' +
-        '    * <rootDir>/../../fruits1/__mocks__/subdir/Blueberry.js\n' +
-        '    * <rootDir>/../../fruits2/__mocks__/subdir/Blueberry.js\n',
-    );
+    ).rejects.toThrowError('Mock map has 1 error:\n' + expectedError);
+    expect(mockWarn).toHaveBeenCalledWith(expectedError);
   });
 
   test('warns on duplicate module ids', async () => {
