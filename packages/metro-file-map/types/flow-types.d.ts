@@ -117,7 +117,7 @@ export interface CrawlerOptions {
   perfLogger?: PerfLogger | null;
   previousState: Readonly<{
     clocks: ReadonlyMap<Path, WatchmanClockSpec>;
-    files: ReadonlyMap<Path, FileMetaData>;
+    files: ReadonlyMap<Path, FileMetadata>;
   }>;
   rootDir: string;
   roots: ReadonlyArray<string>;
@@ -172,9 +172,9 @@ export type HTypeValue = Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type FileData = Map<Path, FileMetaData>;
+export type FileData = Map<Path, FileMetadata>;
 
-export type FileMetaData = [
+export type FileMetadata = [
   /* id */ string,
   /* mtime */ number,
   /* size */ number,
@@ -318,13 +318,13 @@ export type RawMockMap = {
 export type HasteMapData = Map<string, HasteMapItem>;
 
 export interface HasteMapItem {
-  [platform: string]: HasteMapItemMetaData;
+  [platform: string]: HasteMapItemMetadata;
 }
-export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): void;
-  addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
+  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
 }
 
@@ -348,6 +348,6 @@ export type WorkerMessage = Readonly<{
 export type WorkerMetadata = Readonly<{
   dependencies?: ReadonlyArray<string>;
   id?: string | null;
-  module?: HasteMapItemMetaData | null;
+  module?: HasteMapItemMetadata | null;
   sha1?: string | null;
 }>;

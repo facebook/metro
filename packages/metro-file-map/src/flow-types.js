@@ -168,8 +168,8 @@ export type EventsQueue = Array<{
 }>;
 
 export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetaData]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetaData]>,
+  removed: Iterable<[CanonicalPath, FileMetadata]>,
+  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
 }>;
 
 interface FileSystemState {
@@ -181,7 +181,7 @@ interface FileSystemState {
   ): Iterable<{
     baseName: string,
     canonicalPath: string,
-    metadata: FileMetaData,
+    metadata: FileMetadata,
   }>;
 }
 
@@ -200,10 +200,10 @@ export interface FileMapPlugin<SerializableState = V8Serializable> {
   assertValid(): void;
   bulkUpdate(delta: FileMapDelta): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData): void;
+  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
   onNewOrModifiedFile(
     relativeFilePath: string,
-    fileMetadata: FileMetaData,
+    fileMetadata: FileMetadata,
   ): void;
   getCacheKey(): string;
 }
@@ -229,9 +229,9 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type FileData = Map<CanonicalPath, FileMetaData>;
+export type FileData = Map<CanonicalPath, FileMetadata>;
 
-export type FileMetaData = [
+export type FileMetadata = [
   /* id */ string,
   /* mtime */ ?number,
   /* size */ number,
@@ -380,14 +380,14 @@ export interface HasteMap {
 export type HasteMapData = Map<string, HasteMapItem>;
 
 export type HasteMapItem = {
-  [platform: string]: HasteMapItemMetaData,
+  [platform: string]: HasteMapItemMetadata,
   __proto__: null,
 };
-export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): ?FileMetaData;
-  addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
+  remove(filePath: Path): ?FileMetadata;
+  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
 }
 
@@ -395,7 +395,7 @@ export type Path = string;
 
 export type ProcessFileFunction = (
   absolutePath: string,
-  metadata: FileMetaData,
+  metadata: FileMetadata,
   request: $ReadOnly<{computeSha1: boolean}>,
 ) => ?Buffer;
 

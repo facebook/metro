@@ -25,7 +25,7 @@ import type {
   EventsQueue,
   FileData,
   FileMapPlugin,
-  FileMetaData,
+  FileMetadata,
   FileSystem,
   HasteMapData,
   HasteMapItem,
@@ -178,7 +178,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *
  * type CacheData = {
  *   clocks: WatchmanClocks,
- *   files: {[filepath: string]: FileMetaData},
+ *   files: {[filepath: string]: FileMetadata},
  *   map: {[id: string]: HasteMapItem},
  *   mocks: {[id: string]: string},
  * }
@@ -186,7 +186,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * // Watchman clocks are used for query synchronization and file system deltas.
  * type WatchmanClocks = {[filepath: string]: string};
  *
- * type FileMetaData = {
+ * type FileMetadata = {
  *   id: ?string, // used to look up module metadata objects in `map`.
  *   mtime: number, // check for outdated files.
  *   size: number, // size of the file in bytes.
@@ -199,10 +199,10 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * // Modules can be targeted to a specific platform based on the file name.
  * // Example: platform.ios.js and Platform.android.js will both map to the same
  * // `Platform` module. The platform should be specified during resolution.
- * type HasteMapItem = {[platform: string]: ModuleMetaData};
+ * type HasteMapItem = {[platform: string]: ModuleMetadata};
  *
  * //
- * type ModuleMetaData = {
+ * type ModuleMetadata = {
  *   path: string, // the path to look up the file object in `files`.
  *   type: string, // the module type (either `package` or `module`).
  * };
@@ -550,7 +550,7 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  _maybeReadLink(filePath: Path, fileMetadata: FileMetaData): ?Promise<void> {
+  _maybeReadLink(filePath: Path, fileMetadata: FileMetadata): ?Promise<void> {
     // If we only need to read a link, it's more efficient to do it in-band
     // (with async file IO) than to have the overhead of worker IO.
     if (fileMetadata[H.SYMLINK] === 1) {
@@ -579,7 +579,7 @@ export default class FileMap extends EventEmitter {
     // Remove files first so that we don't mistake moved mocks or Haste
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
-    const removed: Array<[string, FileMetaData]> = [];
+    const removed: Array<[string, FileMetadata]> = [];
     for (const relativeFilePath of removedFiles) {
       const metadata = fileSystem.remove(relativeFilePath);
       if (metadata) {
@@ -593,7 +593,7 @@ export default class FileMap extends EventEmitter {
       absolutePath: string,
       error: Error & {code?: string},
     }> = [];
-    const filesToProcess: Array<[string, FileMetaData]> = [];
+    const filesToProcess: Array<[string, FileMetadata]> = [];
 
     for (const [relativeFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
@@ -903,7 +903,7 @@ export default class FileMap extends EventEmitter {
               change.metadata.size != null,
               'since the file exists or changed, it should have known size',
             );
-            const fileMetadata: FileMetaData = [
+            const fileMetadata: FileMetadata = [
               '',
               change.metadata.modifiedTime,
               change.metadata.size,

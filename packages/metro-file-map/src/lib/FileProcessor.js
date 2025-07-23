@@ -10,7 +10,7 @@
  */
 
 import type {
-  FileMetaData,
+  FileMetadata,
   PerfLogger,
   WorkerMessage,
   WorkerMetadata,
@@ -87,7 +87,7 @@ export class FileProcessor {
   }
 
   async processBatch(
-    files: $ReadOnlyArray<[string /*absolutePath*/, FileMetaData]>,
+    files: $ReadOnlyArray<[string /*absolutePath*/, FileMetadata]>,
     req: ProcessFileRequest,
   ): Promise<{
     errors: Array<{
@@ -132,7 +132,7 @@ export class FileProcessor {
 
   processRegularFile(
     absolutePath: string,
-    fileMetadata: FileMetaData,
+    fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?{content: ?Buffer} {
     const workerInput = this.#getWorkerInput(absolutePath, fileMetadata, req);
@@ -148,7 +148,7 @@ export class FileProcessor {
 
   #getWorkerInput(
     absolutePath: string,
-    fileMetadata: FileMetaData,
+    fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?WorkerMessage {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
@@ -231,7 +231,7 @@ export class FileProcessor {
 
 function processWorkerReply(
   metadata: WorkerMetadata,
-  fileMetadata: FileMetaData,
+  fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;
 

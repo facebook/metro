@@ -14,7 +14,7 @@ import type {
   CanonicalPath,
   CrawlerOptions,
   FileData,
-  FileMetaData,
+  FileMetadata,
   Path,
   WatchmanClocks,
 } from '../../flow-types';
@@ -333,7 +333,7 @@ module.exports = async function watchmanCrawl({
           symlinkInfo = fileData['symlink_target'] ?? 1;
         }
 
-        const nextData: FileMetaData = [
+        const nextData: FileMetadata = [
           '',
           mtime,
           size,

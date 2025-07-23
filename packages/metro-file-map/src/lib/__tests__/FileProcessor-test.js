@@ -10,7 +10,7 @@
  */
 
 import type {
-  FileMetaData,
+  FileMetadata,
   WorkerMessage,
   WorkerMetadata,
 } from '../../flow-types';
@@ -128,11 +128,11 @@ describe('processRegularFile', () => {
   });
 });
 
-function getNMockFiles(numFiles: number): Array<[string, FileMetaData]> {
-  return new Array<?[string, FileMetaData]>(numFiles)
+function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
+  return new Array<?[string, FileMetadata]>(numFiles)
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      ['', 123, 234, 0, '', null, 0] as FileMetaData,
+      ['', 123, 234, 0, '', null, 0] as FileMetadata,
     ]);
 }

@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {CanonicalPath, FileData, FileMetaData} from '../../flow-types';
+import type {CanonicalPath, FileData, FileMetadata} from '../../flow-types';
 import type TreeFSType from '../TreeFS';
 
 import H from '../../constants';
@@ -34,7 +34,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     TreeFS = require('../TreeFS').default;
     tfs = new TreeFS({
       rootDir: p('/project'),
-      files: new Map<CanonicalPath, FileMetaData>([
+      files: new Map<CanonicalPath, FileMetadata>([
         [p('foo/another.js'), ['another', 123, 2, 0, '', '', 0]],
         [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
         [p('foo/link-to-bar.js'), ['', 0, 0, 0, '', '', p('../bar.js')]],
@@ -186,7 +186,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     test('ancestors of the root are not reported as missing', () => {
       const tfs = new TreeFS({
         rootDir: p('/deep/project/root'),
-        files: new Map<CanonicalPath, FileMetaData>([
+        files: new Map<CanonicalPath, FileMetadata>([
           [p('foo/index.js'), ['', 123, 0, 0, '', '', 0]],
           [p('link-up'), ['', 123, 0, 0, '', '', p('..')]],
         ]),
@@ -268,7 +268,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
   describe('getDifference', () => {
     test('returns changed (inc. new) and removed files in given FileData', () => {
-      const newFiles: FileData = new Map<CanonicalPath, FileMetaData>([
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
         [p('new-file'), ['', 789, 0, 0, '', '', 0]],
         [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./foo')]],
         // Different modified time, expect new mtime in changedFiles
@@ -282,7 +282,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
       ]);
       expect(tfs.getDifference(newFiles)).toEqual({
-        changedFiles: new Map<CanonicalPath, FileMetaData>([
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
           [p('new-file'), ['', 789, 0, 0, '', '', 0]],
           [p('foo/another.js'), ['', 124, 0, 0, '', '', 0]],
           [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
@@ -306,7 +306,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     beforeEach(() => {
       tfs = new TreeFS({
         rootDir: p('/A/B/C'),
-        files: new Map<CanonicalPath, FileMetaData>(
+        files: new Map<CanonicalPath, FileMetadata>(
           ([
             [
               p('a/1/package.json'),
@@ -329,7 +329,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               p('n_m/workspace/link-to-pkg'),
               ['', 0, 0, 0, '', '', p('../../../workspace-pkg')],
             ],
-          ]: Array<[CanonicalPath, FileMetaData]>).concat(
+          ]: Array<[CanonicalPath, FileMetadata]>).concat(
             [
               'a/package.json',
               // A directory named package.json should never match
@@ -730,7 +730,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     describe('bulkAddOrModify', () => {
       test('adds new files and modifies existing, new symlinks work', () => {
         tfs.bulkAddOrModify(
-          new Map<CanonicalPath, FileMetaData>([
+          new Map<CanonicalPath, FileMetadata>([
             [
               p('newdir/link-to-link-to-bar.js'),
               ['', 0, 0, 0, '', '', p('../foo/link-to-bar.js')],
@@ -881,7 +881,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     beforeEach(() => {
       tfs = new TreeFS({
         rootDir: p('/project'),
-        files: new Map<CanonicalPath, FileMetaData>([
+        files: new Map<CanonicalPath, FileMetadata>([
           [p('foo.js'), ['', 123, 0, 0, '', 'def456', 0]],
           [p('bar.js'), ['', 123, 0, 0, '', '', 0]],
           [p('link-to-bar'), ['', 456, 0, 0, '', '', p('./bar.js')]],
