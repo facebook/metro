@@ -467,3 +467,5 @@ export type WorkerMetadata = $ReadOnly<{
   sha1?: ?string,
   content?: ?Buffer,
 }>;
+
+export type WorkerSetupArgs = $ReadOnly<{}>;

@@ -25,13 +25,16 @@ jest.mock('../lib/checkWatchmanCapabilities', () => ({
 }));
 
 jest.mock('jest-worker', () => ({
-  Worker: jest.fn(worker => {
-    mockWorker = jest.fn(async (...args) => require(worker).worker(...args));
+  Worker: jest.fn((worker, opts) => {
+    require(worker).setup(...opts.setupArgs);
+    mockProcessFile = jest.fn(async (...args) =>
+      require(worker).processFile(...args),
+    );
     mockEnd = jest.fn();
 
     return {
       end: mockEnd,
-      worker: mockWorker,
+      processFile: mockProcessFile,
     };
   }),
 }));
@@ -154,14 +157,25 @@ jest.mock('fs', () => ({
   },
 }));
 
+const hasteImplModulePath = require.resolve('./haste_impl.js');
+let inBandWorker;
 jest.mock('../worker.js', () => ({
-  worker: mockWorkerFn,
+  setup: args => {
+    jest.requireActual('../worker').setup(args);
+  },
+  processFile: mockProcessFileFn,
+  Worker: class extends jest.requireActual('../worker').Worker {
+    constructor(args) {
+      super(args);
+      inBandWorker = this;
+    }
+  },
 }));
 
-const mockWorkerFn = jest
+const mockProcessFileFn = jest
   .fn()
   .mockImplementation((...args) =>
-    jest.requireActual('../worker').worker(...args),
+    jest.requireActual('../worker').processFile(...args),
   );
 
 const object = data => Object.assign(Object.create(null), data);
@@ -204,7 +218,7 @@ let mockCacheManager;
 let mockClocks;
 let mockEmitters;
 let mockEnd;
-let mockWorker;
+let mockProcessFile;
 let cacheContent = null;
 
 describe('FileMap', () => {
@@ -273,7 +287,7 @@ describe('FileMap', () => {
     defaultConfig = {
       enableSymlinks: false,
       extensions: ['js', 'json'],
-      hasteImplModulePath: require.resolve('./haste_impl.js'),
+      hasteImplModulePath,
       healthCheck: {
         enabled: false,
         interval: 10000,
@@ -1391,9 +1405,9 @@ describe('FileMap', () => {
       }),
     );
 
-    expect(mockWorker.mock.calls.length).toBe(5);
+    expect(mockProcessFile.mock.calls.length).toBe(5);
 
-    expect(mockWorker.mock.calls).toEqual([
+    expect(mockProcessFile.mock.calls).toEqual([
       [
         {
           computeDependencies: true,
@@ -1734,10 +1748,10 @@ describe('FileMap', () => {
           },
         });
 
-        // Wait for the a worker job to be enqueued, but not yet resolved
-        const initialWorkerCalls = mockWorkerFn.mock.calls.length;
+        const workerSpy = jest.spyOn(inBandWorker, 'processFile');
+        expect(workerSpy).not.toBeCalled();
         await null;
-        expect(mockWorkerFn).toHaveBeenCalledTimes(initialWorkerCalls + 1);
+        expect(workerSpy).toBeCalled();
 
         // Initially, expect same data as before
         expect(fileSystem.linkStats(bananaPath)).toEqual({

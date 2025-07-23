@@ -9,10 +9,11 @@
  * @oncall react_native
  */
 
-import type {WorkerMessage} from '../flow-types';
+import type {WorkerMessage, WorkerMetadata} from '../flow-types';
+import typeof TWorker from '../worker';
 import typeof FS from 'fs';
 
-import {worker} from '../worker';
+import {Worker} from '../worker';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vm from 'vm';
@@ -63,9 +64,21 @@ jest.mock('fs', () => {
   };
 });
 
+const defaults: WorkerMessage = {
+  computeDependencies: false,
+  computeSha1: false,
+  enableHastePackages: false,
+  filePath: path.join('/project', 'notexist.js'),
+  maybeReturnContent: false,
+};
+
 describe('worker', () => {
+  let worker: (message: WorkerMessage) => Promise<WorkerMetadata>;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    const workerInstance = new Worker({});
+    worker = async message => workerInstance.processFile(message);
   });
 
   const defaults: WorkerMessage = {
@@ -100,7 +113,7 @@ describe('worker', () => {
 
   test('accepts a custom dependency extractor', async () => {
     expect(
-      await worker({
+      new Worker({}).processFile({
         ...defaults,
         computeDependencies: true,
         dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
@@ -138,8 +151,9 @@ describe('worker', () => {
   });
 
   test('parses package.json files as haste packages when enableHastePackages=true', async () => {
+    const worker = new Worker({});
     expect(
-      await worker({
+      worker.processFile({
         ...defaults,
         computeDependencies: true,
         enableHastePackages: true,
@@ -152,8 +166,9 @@ describe('worker', () => {
   });
 
   test('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
+    const worker = new Worker({});
     expect(
-      await worker({
+      worker.processFile({
         ...defaults,
         computeDependencies: true,
         enableHastePackages: false,
@@ -216,7 +231,7 @@ describe('worker', () => {
 
     await expect(() =>
       worker({...defaults, computeSha1: true, filePath: '/i/dont/exist.js'}),
-    ).toThrow();
+    ).rejects.toThrow();
   });
 
   test('avoids computing dependencies if not requested and Haste does not need it', async () => {
@@ -274,5 +289,33 @@ describe('worker', () => {
       .requireActual<FS>('fs')
       .promises.readFile(require.resolve('../worker.js'), 'utf8');
     expect(() => new vm.Script(code)).not.toThrow();
+  });
+});
+
+describe('jest-worker interface', () => {
+  let workerModule: TWorker;
+
+  beforeEach(() => {
+    jest.resetModules();
+    workerModule = require('../worker');
+  });
+
+  test('setup must be called before processFile', () => {
+    expect(() => workerModule.processFile(defaults)).toThrow(
+      new Error('metro-file-map: setup() must be called before processFile()'),
+    );
+  });
+
+  test('setup cannot be called twice', () => {
+    workerModule.setup({});
+    expect(() => workerModule.setup({})).toThrow(
+      new Error('metro-file-map: setup() should only be called once'),
+    );
+  });
+
+  test('processFile may be called after setup', () => {
+    jest.mock('mock-haste-impl', () => {}, {virtual: true});
+    workerModule.setup({});
+    workerModule.processFile(defaults);
   });
 });

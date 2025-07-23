@@ -14,11 +14,12 @@ import type {
   PerfLogger,
   WorkerMessage,
   WorkerMetadata,
+  WorkerSetupArgs,
 } from '../flow-types';
 
 import H from '../constants';
-import {worker} from '../worker';
-import {Worker} from 'jest-worker';
+import {Worker} from '../worker';
+import {Worker as JestWorker} from 'jest-worker';
 import {sep} from 'path';
 
 const debug = require('debug')('Metro:FileMap');
@@ -41,7 +42,7 @@ type ProcessFileRequest = $ReadOnly<{
 }>;
 
 interface AsyncWorker {
-  +worker: WorkerMessage => Promise<WorkerMetadata>;
+  +processFile: WorkerMessage => Promise<WorkerMetadata>;
   +end: () => Promise<void>;
 }
 
@@ -60,6 +61,8 @@ export class FileProcessor {
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
+  #workerArgs: WorkerSetupArgs;
+  #inBandWorker: Worker;
 
   constructor(
     opts: $ReadOnly<{
@@ -78,6 +81,8 @@ export class FileProcessor {
     this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
+    this.#workerArgs = {};
+    this.#inBandWorker = new Worker(this.#workerArgs);
     this.#perfLogger = opts.perfLogger;
   }
 
@@ -114,7 +119,7 @@ export class FileProcessor {
           return null;
         }
         return batchWorker
-          .worker(maybeWorkerInput)
+          .processFile(maybeWorkerInput)
           .then(reply => processWorkerReply(reply, fileMetadata))
           .catch(error =>
             errors.push({absolutePath, error: normalizeWorkerError(error)}),
@@ -132,7 +137,12 @@ export class FileProcessor {
   ): ?{content: ?Buffer} {
     const workerInput = this.#getWorkerInput(absolutePath, fileMetadata, req);
     return workerInput
-      ? {content: processWorkerReply(worker(workerInput), fileMetadata)}
+      ? {
+          content: processWorkerReply(
+            this.#inBandWorker.processFile(workerInput),
+            fileMetadata,
+          ),
+        }
       : null;
   }
 
@@ -183,7 +193,10 @@ export class FileProcessor {
   #getBatchWorker(numWorkers: number): AsyncWorker {
     if (numWorkers <= 1) {
       // In-band worker with the same interface as a Jest worker farm
-      return {worker: async message => worker(message), end: async () => {}};
+      return {
+        processFile: async message => this.#inBandWorker.processFile(message),
+        end: async () => {},
+      };
     }
     const workerPath = require.resolve('../worker');
     debug(
@@ -192,10 +205,10 @@ export class FileProcessor {
       this.#enableWorkerThreads ? 'threads' : 'processes',
     );
     this.#perfLogger?.point('initWorkers_start');
-    const jestWorker = new Worker<{
-      worker: WorkerMessage => Promise<WorkerMetadata>,
+    const jestWorker = new JestWorker<{
+      processFile: WorkerMessage => Promise<WorkerMetadata>,
     }>(workerPath, {
-      exposedMethods: ['worker'],
+      exposedMethods: ['processFile'],
       maxRetries: 3,
       numWorkers,
       enableWorkerThreads: this.#enableWorkerThreads,
@@ -205,6 +218,7 @@ export class FileProcessor {
         // source (our worker is plain CommonJS).
         execArgv: [],
       },
+      setupArgs: [this.#workerArgs],
     });
     this.#perfLogger?.point('initWorkers_end');
     // Only log worker init once
