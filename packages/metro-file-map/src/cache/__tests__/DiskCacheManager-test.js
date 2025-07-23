@@ -13,6 +13,7 @@ import type {
   BuildParameters,
   CacheData,
   CacheManagerEventSource,
+  FileMapPlugin,
 } from '../../flow-types';
 
 import {DiskCacheManager} from '../DiskCacheManager';
@@ -46,12 +47,11 @@ const buildParameters: BuildParameters = {
   enableSymlinks: false,
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,
-  mocksPattern: null,
   retainAllFiles: false,
   skipPackageJson: false,
   extensions: ['js', 'json'],
   hasteImplModulePath: require.resolve('../../__tests__/haste_impl'),
-  platforms: ['ios', 'android'],
+  plugins: [],
   rootDir: path.join('/', 'project'),
   roots: [
     path.join('/', 'project', 'fruits'),
@@ -123,6 +123,47 @@ describe('cacheManager', () => {
     expect(cacheManager1.getCacheFilePath()).not.toBe(
       cacheManager2.getCacheFilePath(),
     );
+  });
+
+  test('creates different cache file paths for different plugins', () => {
+    const config = {
+      ...defaultConfig,
+    };
+    let pluginCacheKey = 'foo';
+    const plugin: FileMapPlugin<> = {
+      name: 'foo',
+      async bulkUpdate() {},
+      async initialize() {},
+      assertValid() {},
+      getSerializableSnapshot() {
+        return {};
+      },
+      onNewOrModifiedFile() {},
+      onRemovedFile() {},
+      getCacheKey() {
+        return pluginCacheKey;
+      },
+    };
+    const withPlugin = {
+      buildParameters: {
+        ...buildParameters,
+        plugins: [plugin],
+      },
+    };
+    const cachePath1 = new DiskCacheManager(
+      {buildParameters},
+      config,
+    ).getCacheFilePath();
+    const cachePath2 = new DiskCacheManager(
+      withPlugin,
+      config,
+    ).getCacheFilePath();
+    pluginCacheKey = 'bar';
+    const cachePath3 = new DiskCacheManager(
+      withPlugin,
+      config,
+    ).getCacheFilePath();
+    expect(new Set([cachePath1, cachePath2, cachePath3]).size).toBe(3);
   });
 
   test('creates different cache file paths for different values of computeDependencies', () => {

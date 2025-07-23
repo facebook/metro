@@ -82,6 +82,7 @@ export type InputOptions = $ReadOnly<{
   ignorePattern?: ?RegExp,
   mocksPattern?: ?string,
   platforms: $ReadOnlyArray<string>,
+  plugins?: $ReadOnlyArray<FileMapPlugin<>>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -116,7 +117,6 @@ type InternalOptions = $ReadOnly<{
   healthCheck: HealthCheckOptions,
   perfLoggerFactory: ?PerfLoggerFactory,
   resetCache: ?boolean,
-  throwOnModuleCollision: boolean,
   useWatchman: boolean,
   watch: boolean,
   watchmanDeferStates: $ReadOnlyArray<string>,
@@ -249,6 +249,10 @@ export default class FileMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
+  #hastePlugin: HastePlugin;
+  #mockPlugin: ?MockPlugin = null;
+  #plugins: $ReadOnlyArray<FileMapPlugin<>>;
+
   static create(options: InputOptions): FileMap {
     return new FileMap(options);
   }
@@ -280,6 +284,34 @@ export default class FileMap extends EventEmitter {
       ignorePattern = new RegExp(VCS_DIRECTORIES);
     }
 
+    this._console = options.console || global.console;
+    const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
+
+    const enableHastePackages = options.enableHastePackages ?? true;
+
+    this.#hastePlugin = new HastePlugin({
+      console: this._console,
+      enableHastePackages,
+      perfLogger: this._startupPerfLogger,
+      platforms: new Set(options.platforms),
+      rootDir: options.rootDir,
+      failValidationOnConflicts: throwOnModuleCollision,
+    });
+
+    const plugins: Array<FileMapPlugin<$FlowFixMe>> = [this.#hastePlugin];
+
+    if (options.mocksPattern != null && options.mocksPattern !== '') {
+      this.#mockPlugin = new MockPlugin({
+        console: this._console,
+        mocksPattern: new RegExp(options.mocksPattern),
+        rootDir: options.rootDir,
+        throwOnModuleCollision,
+      });
+      plugins.push(this.#mockPlugin);
+    }
+
+    this.#plugins = plugins;
+
     const buildParameters: BuildParameters = {
       computeDependencies:
         options.computeDependencies == null
@@ -287,17 +319,13 @@ export default class FileMap extends EventEmitter {
           : options.computeDependencies,
       computeSha1: options.computeSha1 || false,
       dependencyExtractor: options.dependencyExtractor ?? null,
-      enableHastePackages: options.enableHastePackages ?? true,
+      enableHastePackages,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
       hasteImplModulePath: options.hasteImplModulePath,
       ignorePattern,
-      mocksPattern:
-        options.mocksPattern != null && options.mocksPattern !== ''
-          ? new RegExp(options.mocksPattern)
-          : null,
-      platforms: options.platforms,
+      plugins: options.plugins ?? [],
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
@@ -310,13 +338,11 @@ export default class FileMap extends EventEmitter {
       healthCheck: options.healthCheck,
       perfLoggerFactory: options.perfLoggerFactory,
       resetCache: options.resetCache,
-      throwOnModuleCollision: !!options.throwOnModuleCollision,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
       watch: !!options.watch,
       watchmanDeferStates: options.watchmanDeferStates ?? [],
     };
 
-    this._console = options.console || global.console;
     const cacheFactoryOptions: CacheManagerFactoryOptions = {
       buildParameters,
     };
@@ -390,29 +416,7 @@ export default class FileMap extends EventEmitter {
             : new TreeFS({rootDir, processFile});
         this._startupPerfLogger?.point('constructFileSystem_end');
 
-        const hastePlugin = new HastePlugin({
-          console: this._console,
-          enableHastePackages: this._options.enableHastePackages,
-          perfLogger: this._startupPerfLogger,
-          platforms: new Set(this._options.platforms),
-          rootDir: this._options.rootDir,
-          failValidationOnConflicts: this._options.throwOnModuleCollision,
-        });
-
-        const mockPlugin =
-          this._options.mocksPattern != null
-            ? new MockPlugin({
-                console: this._console,
-                mocksPattern: this._options.mocksPattern,
-                rootDir,
-                throwOnModuleCollision: this._options.throwOnModuleCollision,
-              })
-            : null;
-
-        const plugins: Array<FileMapPlugin<$FlowFixMe>> = [hastePlugin];
-        if (mockPlugin) {
-          plugins.push(mockPlugin);
-        }
+        const plugins = this.#plugins;
 
         // Initialize plugins from cached file system and plugin state while
         // crawling to build a diff of current state vs cached. `fileSystem`
@@ -455,8 +459,8 @@ export default class FileMap extends EventEmitter {
         await this._watch(fileSystem, watchmanClocks, plugins);
         return {
           fileSystem,
-          hasteMap: hastePlugin,
-          mockMap: mockPlugin,
+          hasteMap: this.#hastePlugin,
+          mockMap: this.#mockPlugin,
         };
       })();
     }

@@ -63,7 +63,6 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
   +#failValidationOnConflicts: boolean;
-  +#cacheKey: string;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
@@ -448,5 +447,12 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     );
 
     return conflicts;
+  }
+
+  getCacheKey(): string {
+    return JSON.stringify([
+      this.#enableHastePackages,
+      [...this.#platforms].sort(),
+    ]);
   }
 }

@@ -25,8 +25,7 @@ export type BuildParameters = $ReadOnly<{
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignorePattern: RegExp,
-  mocksPattern: ?RegExp,
-  platforms: $ReadOnlyArray<string>,
+  plugins: $ReadOnlyArray<FileMapPlugin<>>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -48,7 +47,7 @@ export type BuildResult = {
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
   fileSystemData: mixed,
-  plugins: $ReadOnlyMap<string, mixed>,
+  plugins: $ReadOnlyMap<string, V8Serializable>,
 }>;
 
 export interface CacheManager {
@@ -206,6 +205,7 @@ export interface FileMapPlugin<SerializableState = V8Serializable> {
     relativeFilePath: string,
     fileMetadata: FileMetaData,
   ): void;
+  getCacheKey(): string;
 }
 
 export type HType = {
