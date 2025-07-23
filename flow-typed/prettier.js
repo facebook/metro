@@ -296,13 +296,19 @@ declare module 'prettier' {
   /**
    * `format` is used to format text using Prettier. [Options](https://prettier.io/docs/en/options.html) may be provided to override the defaults.
    */
-  declare export function format(source: string, options?: Options): string;
+  declare export function format(
+    source: string,
+    options?: Options,
+  ): Promise<string>;
 
   /**
    * `check` checks to see if the file has been formatted with Prettier given those options and returns a `Boolean`.
    * This is similar to the `--list-different` parameter in the CLI and is useful for running Prettier in CI scenarios.
    */
-  declare export function check(source: string, options?: Options): boolean;
+  declare export function check(
+    source: string,
+    options?: Options,
+  ): Promise<boolean>;
 
   /**
    * `formatWithCursor` both formats the code, and translates a cursor position from unformatted code to formatted code.
@@ -313,7 +319,7 @@ declare module 'prettier' {
   declare export function formatWithCursor(
     source: string,
     options: CursorOptions,
-  ): CursorResult;
+  ): Promise<CursorResult>;
 
   declare export type ResolveConfigOptions = {
     /**
