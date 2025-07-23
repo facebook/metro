@@ -1123,7 +1123,7 @@ class Server {
         );
         mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
         if (serializerOptions?.sourceUrl != null) {
-          mres.setHeader('Content-Location', serializerOptions.sourceUrl);
+          mres.setHeader('Content-Location', new URL(serializerOptions.sourceUrl));
         }
         mres.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
