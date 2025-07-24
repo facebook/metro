@@ -446,6 +446,13 @@ export type WatcherBackendChangeEvent =
       metadata?: void,
     }>;
 
+export type WatcherBackendOptions = $ReadOnly<{
+  ignored: ?RegExp,
+  globs: $ReadOnlyArray<string>,
+  dot: boolean,
+  ...
+}>;
+
 export type WatchmanClockSpec =
   | string
   | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;

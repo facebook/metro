@@ -5,8 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
  * @oncall react_native
  */
+
+import type {InputOptions} from '..';
+import type {
+  ChangeEvent,
+  ChangeEventMetadata,
+  FileData,
+  FileMetadata,
+  FileSystem,
+  WatcherBackendOptions,
+  WorkerSetupArgs,
+} from '../flow-types';
+import typeof WorkerModule from '../worker';
 
 import {AbstractWatcher} from '../watchers/AbstractWatcher';
 import crypto from 'crypto';
@@ -15,7 +28,7 @@ import {serialize} from 'v8';
 
 jest.useRealTimers();
 
-function mockHashContents(contents) {
+function mockHashContents(contents: string | Buffer) {
   return crypto.createHash('sha1').update(contents).digest('hex');
 }
 
@@ -26,8 +39,10 @@ jest.mock('../lib/checkWatchmanCapabilities', () => ({
 
 jest.mock('jest-worker', () => ({
   Worker: jest.fn((worker, opts) => {
+    // $FlowIgnore[unsupported-syntax] - dynamic require
     require(worker).setup(...opts.setupArgs);
     mockProcessFile = jest.fn(async (...args) =>
+      // $FlowIgnore[unsupported-syntax] - dynamic require
       require(worker).processFile(...args),
     );
     mockEnd = jest.fn();
@@ -53,8 +68,8 @@ jest.mock('../crawlers/watchman', () =>
       includeSymlinks,
     } = options;
     const list = mockChangedFiles || mockFs;
-    const removedFiles = new Set();
-    const changedFiles = new Map();
+    const removedFiles: Set<string> = new Set();
+    const changedFiles: Map<string, FileMetadata> = new Map();
 
     previousState.clocks = mockClocks;
 
@@ -64,19 +79,21 @@ jest.mock('../crawlers/watchman', () =>
         !ignore(file)
       ) {
         const relativeFilePath = path.relative(rootDir, file);
-        if (list[file]) {
-          const isSymlink = typeof list[file].link === 'string';
-          if (!isSymlink || includeSymlinks) {
+        const contentOrLink = list[file];
+        if (contentOrLink) {
+          if (typeof contentOrLink === 'string' || includeSymlinks) {
             const hash =
-              !isSymlink && computeSha1 ? mockHashContents(list[file]) : null;
+              typeof contentOrLink === 'string' && computeSha1
+                ? mockHashContents(contentOrLink)
+                : null;
             changedFiles.set(relativeFilePath, [
               '', // Haste name
               32, // mtime
               42, // size
               0, // visited
-              [], // dependencies
+              '', // dependencies
               hash,
-              isSymlink ? 1 : 0,
+              typeof contentOrLink !== 'string' ? 1 : 0,
             ]);
           }
         } else {
@@ -96,7 +113,7 @@ jest.mock('../crawlers/watchman', () =>
 );
 
 class MockWatcher extends AbstractWatcher {
-  constructor(root, opts) {
+  constructor(root: string, opts: WatcherBackendOptions) {
     super(root, opts);
     mockEmitters[root] = this;
   }
@@ -105,8 +122,10 @@ class MockWatcher extends AbstractWatcher {
 jest.mock('../watchers/FallbackWatcher', () => MockWatcher);
 jest.mock('../watchers/WatchmanWatcher', () => MockWatcher);
 
-let mockChangedFiles;
-let mockFs;
+type MockFS = {[path: string]: ?string | {link: string}, __proto__: null};
+
+let mockChangedFiles: MockFS;
+let mockFs: MockFS;
 
 jest.mock('fs', () => ({
   existsSync: jest.fn(path => {
@@ -134,6 +153,7 @@ jest.mock('fs', () => ({
     }
 
     const error = new Error(`Cannot read path '${path}'.`);
+    // $FlowFixMe[prop-missing] code
     error.code = 'ENOENT';
     throw error;
   }),
@@ -146,6 +166,7 @@ jest.mock('fs', () => ({
       const entry = mockFs[path];
       if (!entry) {
         const error = new Error(`Cannot read path '${path}'.`);
+        // $FlowFixMe[prop-missing] code
         error.code = 'ENOENT';
         throw error;
       }
@@ -159,27 +180,31 @@ jest.mock('fs', () => ({
 
 const hasteImplModulePath = require.resolve('./haste_impl.js');
 let inBandWorker;
-jest.mock('../worker.js', () => ({
-  setup: args => {
-    jest.requireActual('../worker').setup(args);
-  },
-  processFile: mockProcessFileFn,
-  Worker: class extends jest.requireActual('../worker').Worker {
-    constructor(args) {
-      super(args);
-      inBandWorker = this;
-    }
-  },
-}));
+jest.mock('../worker.js', () => {
+  const {setup, Worker} = jest.requireActual('../worker') as WorkerModule;
+  return {
+    setup,
+    processFile: mockProcessFileFn,
+    Worker: class extends Worker {
+      constructor(args: WorkerSetupArgs) {
+        super(args);
+        inBandWorker = this;
+      }
+    },
+  };
+});
 
 const mockProcessFileFn = jest
   .fn()
   .mockImplementation((...args) =>
-    jest.requireActual('../worker').processFile(...args),
+    jest.requireActual<WorkerModule>('../worker').processFile(...args),
   );
 
-const object = data => Object.assign(Object.create(null), data);
-const createMap = obj => new Map(Object.entries(obj));
+const object = <T>(data: $ReadOnly<{[key: string]: T}>): {[key: string]: T} =>
+  // $FlowFixMe[unsafe-object-assign]
+  Object.assign(Object.create(null), data);
+const createMap = <T>(obj: $ReadOnly<{[key: string]: T}>): Map<string, T> =>
+  new Map(Object.entries(obj));
 const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
   expect(fileSystem.getDifference(fileData)).toEqual({
     changedFiles: new Map(),
@@ -189,15 +214,21 @@ const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
 
 // Jest toEqual does not match Map instances from different contexts
 // This normalizes them for the uses cases in this test
-const deepNormalize = value => {
+const deepNormalize = <T: mixed>(value: T): T => {
+  // $FlowFixMe[method-unbinding]
   const stringTag = Object.prototype.toString.call(value);
   switch (stringTag) {
     case '[object Map]':
+      // $FlowFixMe[incompatible-return]
       return new Map(
+        // $FlowFixMe[incompatible-call]
         Array.from(value).map(([k, v]) => [deepNormalize(k), deepNormalize(v)]),
       );
     case '[object Object]':
+      // $FlowFixMe[not-an-object]
+      // $FlowFixMe[incompatible-call]
       return Object.keys(value).reduce((obj, key) => {
+        // $FlowFixMe[incompatible-use]
         obj[key] = deepNormalize(value[key]);
         return obj;
       }, {});
@@ -216,7 +247,7 @@ let HasteConflictsError;
 let FileMap;
 let mockCacheManager;
 let mockClocks;
-let mockEmitters;
+let mockEmitters: {[root: string]: MockWatcher, __proto__: null};
 let mockEnd;
 let mockProcessFile;
 let cacheContent = null;
@@ -256,6 +287,7 @@ describe('FileMap', () => {
       video: 'c:fake-clock:3',
     });
 
+    // $FlowFixMe[incompatible-type]
     mockChangedFiles = null;
 
     fs = require('graceful-fs');
@@ -263,7 +295,9 @@ describe('FileMap', () => {
     consoleWarn = console.warn;
     consoleError = console.error;
 
+    // $FlowFixMe[cannot-write]
     console.warn = jest.fn();
+    // $FlowFixMe[cannot-write]
     console.error = jest.fn();
 
     ({
@@ -295,9 +329,9 @@ describe('FileMap', () => {
         filePrefix: '.metro-file-map-health-check',
       },
       maxWorkers: 1,
-      name: 'haste-map-test',
       platforms: ['ios', 'android'],
       resetCache: false,
+      retainAllFiles: false,
       rootDir: path.join('/', 'project'),
       roots: [
         path.join('/', 'project', 'fruits'),
@@ -309,7 +343,9 @@ describe('FileMap', () => {
   });
 
   afterEach(() => {
+    // $FlowFixMe[cannot-write]
     console.warn = consoleWarn;
+    // $FlowFixMe[cannot-write]
     console.error = consoleError;
   });
 
@@ -354,6 +390,7 @@ describe('FileMap', () => {
     `;
 
     try {
+      // $FlowExpectedError[incompatible-call]
       await new FileMap(config).build();
     } catch (err) {
       expect(err.message).toBe(
@@ -447,7 +484,7 @@ describe('FileMap', () => {
 
     const {fileSystem, hasteMap, mockMap} = await fileMap.build();
 
-    expect(cacheContent.clocks).toEqual(mockClocks);
+    expect(cacheContent?.clocks).toEqual(mockClocks);
 
     assertFileSystemEqual(
       fileSystem,
@@ -513,11 +550,12 @@ describe('FileMap', () => {
       path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
     );
 
-    expect(mockMap.getMockModule('Pear')).toEqual(
+    expect(mockMap?.getMockModule('Pear')).toEqual(
       path.resolve(defaultConfig.rootDir, 'fruits', '__mocks__', 'Pear.js'),
     );
 
-    expect(cacheContent.plugins.get(mockMap.name)).toEqual({
+    // $FlowFixMe[prop-missing] - MockMap is not MockPlugin
+    expect(cacheContent?.plugins.get(mockMap?.name)).toEqual({
       mocks: new Map([['Pear', path.join('fruits', '__mocks__', 'Pear.js')]]),
       duplicates: new Map(),
       version: 2,
@@ -539,6 +577,8 @@ describe('FileMap', () => {
       async (useWatchman, enableSymlinks) => {
         const node = require('../crawlers/node');
 
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[missing-local-annot]
         node.mockImplementation(options => {
           // The node crawler returns "null" for the SHA-1.
           const changedFiles = createMap({
@@ -702,10 +742,10 @@ describe('FileMap', () => {
 
     // Haste Melon moved from vegetables to fruits since the cache was built.
     mockFs = object({
-      [path.join('/', 'project', 'vegetables', 'Melon.js')]: null, // Mock deletion
       [path.join('/', 'project', 'fruits', 'Melon.js')]: `
-        // Melon is a fruit!
-      `,
+      // Melon is a fruit!
+    `,
+      [path.join('/', 'project', 'vegetables', 'Melon.js')]: null, // Mock deletion
     });
 
     const newData = await new FileMap(defaultConfig).build();
@@ -740,6 +780,7 @@ describe('FileMap', () => {
       modifiedTime: 32,
       size: 42,
     });
+    // $FlowFixMe[incompatible-use]
     expect(fs.readFileSync.mock.calls.map(call => call[0])).not.toContain(
       path.join('video', 'video.mp4'),
     );
@@ -771,6 +812,7 @@ describe('FileMap', () => {
     expect(hasteMap.getModule('fbjs')).toBeNull();
 
     // 5 modules - the node_module
+    // $FlowFixMe[incompatible-use]
     expect(fs.readFileSync.mock.calls.length).toBe(5);
   });
 
@@ -791,7 +833,7 @@ describe('FileMap', () => {
     }).build();
 
     expect(mockMap).not.toBeNull();
-    expect(mockMap.getMockModule('Blueberry')).toEqual(pathToMock);
+    expect(mockMap?.getMockModule('Blueberry')).toEqual(pathToMock);
   });
 
   test('returns null mockMap if mocksPattern is empty', async () => {
@@ -844,6 +886,7 @@ describe('FileMap', () => {
         throwOnModuleCollision: true,
         ...defaultConfig,
         console: {
+          ...globalThis.console,
           warn: mockWarn,
         },
       }).build(),
@@ -863,6 +906,7 @@ describe('FileMap', () => {
     );
 
     expect(
+      // $FlowFixMe[prop-missing]
       console.warn.mock.calls[0][0].replaceAll('\\', '/'),
     ).toMatchSnapshot();
   });
@@ -886,7 +930,8 @@ describe('FileMap', () => {
   });
 
   test('splits up modules by platform', async () => {
-    mockFs = Object.create(null);
+    mockFs = Object.create(null) as MockFS;
+    // $FlowFixMe[prop-missing]
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
     `;
@@ -958,8 +1003,10 @@ describe('FileMap', () => {
 
     // The first run should access the file system five times for the regular
     // files in the system.
+    // $FlowFixMe[incompatible-use]
     expect(fs.readFileSync.mock.calls.length).toBe(5);
 
+    // $FlowFixMe[incompatible-call]
     fs.readFileSync.mockClear();
 
     // Explicitly mock that no files have changed.
@@ -977,10 +1024,11 @@ describe('FileMap', () => {
     // Expect the cache to have been read again
     expect(mockCacheManager.read).toHaveBeenCalledTimes(2);
     // Expect no fs reads, because there have been no changes
+    // $FlowFixMe[incompatible-use]
     expect(fs.readFileSync.mock.calls.length).toBe(0);
-    expect(deepNormalize(data.clocks)).toEqual(mockClocks);
-    expect(serialize(data.fileSystem)).toEqual(
-      serialize(initialData.fileSystem),
+    expect(deepNormalize(data?.clocks)).toEqual(mockClocks);
+    expect(serialize(data?.fileSystem)).toEqual(
+      serialize(initialData?.fileSystem),
     );
   });
 
@@ -994,6 +1042,7 @@ describe('FileMap', () => {
       initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Strawberry']);
 
+    // $FlowFixMe[incompatible-call]
     fs.readFileSync.mockClear();
     expect(mockCacheManager.read).toHaveBeenCalledTimes(1);
 
@@ -1019,7 +1068,7 @@ describe('FileMap', () => {
       path.join('/', 'project', 'fruits', 'Banana.js'),
     );
 
-    expect(deepNormalize(data.clocks)).toEqual(mockClocks);
+    expect(deepNormalize(data?.clocks)).toEqual(mockClocks);
 
     expect(
       fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
@@ -1028,6 +1077,7 @@ describe('FileMap', () => {
 
   test('correctly handles file deletions', async () => {
     await new FileMap(defaultConfig).build();
+    // $FlowFixMe[incompatible-call]
     fs.readFileSync.mockClear();
 
     // Let's assume one JS file was removed.
@@ -1048,7 +1098,7 @@ describe('FileMap', () => {
   });
 
   test('correctly handles platform-specific file additions', async () => {
-    mockFs = Object.create(null);
+    mockFs = Object.create(null) as MockFS;
     // Begin with only a generic implementation.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
@@ -1080,7 +1130,7 @@ describe('FileMap', () => {
   });
 
   test('correctly handles platform-specific file deletions', async () => {
-    mockFs = Object.create(null);
+    mockFs = Object.create(null) as MockFS;
     // Begin with generic and ios implementations.
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.js')] = `
       const Banana = require("Banana");
@@ -1126,7 +1176,7 @@ describe('FileMap', () => {
   });
 
   test('correctly handles platform-specific file renames', async () => {
-    mockFs = Object.create(null);
+    mockFs = Object.create(null) as MockFS;
     mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')] = `
       const Raspberry = require("Raspberry");
     `;
@@ -1139,10 +1189,10 @@ describe('FileMap', () => {
     // Rename Strawberry.ios.js -> Strawberry.js to make it generic
     delete mockFs[path.join('/', 'project', 'fruits', 'Strawberry.ios.js')];
     mockChangedFiles = object({
-      [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: null,
       [path.join('/', 'project', 'fruits', 'Strawberry.js')]: `
         const Banana = require("Banana");
       `,
+      [path.join('/', 'project', 'fruits', 'Strawberry.ios.js')]: null,
     });
     mockClocks = createMap({fruits: 'c:fake-clock:3'});
     const {hasteMap: secondHasteMap} = await new FileMap(defaultConfig).build();
@@ -1172,7 +1222,7 @@ describe('FileMap', () => {
           'Strawberry',
           H.GENERIC_PLATFORM,
           false,
-          new Set([
+          new Map([
             [
               path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
               H.MODULE,
@@ -1195,7 +1245,7 @@ describe('FileMap', () => {
           'Banana',
           'ios',
           false,
-          new Set([
+          new Map([
             [
               path.join(defaultConfig.rootDir, 'fruits', 'Banana.ios.js'),
               H.MODULE,
@@ -1282,7 +1332,7 @@ describe('FileMap', () => {
       expect(initialStrawberryError).toBeInstanceOf(
         DuplicateHasteCandidatesError,
       );
-      expect(initialStrawberryError.duplicatesSet).toEqual(
+      expect(initialStrawberryError?.duplicatesSet).toEqual(
         new Map([
           [
             path.join(defaultConfig.rootDir, 'fruits', 'Strawberry.js'),
@@ -1364,9 +1414,12 @@ describe('FileMap', () => {
 
   test('ignores files that do not exist', async () => {
     const watchman = require('../crawlers/watchman');
+    // $FlowFixMe[prop-missing]
     const mockImpl = watchman.getMockImplementation();
     // Wrap the watchman mock and add an invalid file to the file list.
     const invalidFilePath = path.join('fruits', 'invalid', 'file.js');
+    // $FlowFixMe[prop-missing]
+    // $FlowFixMe[missing-local-annot]
     watchman.mockImplementation(async options => {
       const {changedFiles} = await mockImpl(options);
       changedFiles.set(invalidFilePath, ['', 34, 44, 0, [], null, 0]);
@@ -1472,10 +1525,12 @@ describe('FileMap', () => {
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');
 
+    // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() => {
       throw new Error('watchman error');
     });
-    node.mockImplementation(options => {
+    // $FlowFixMe[prop-missing]
+    node.mockImplementation(() => {
       return Promise.resolve({
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
@@ -1504,6 +1559,7 @@ describe('FileMap', () => {
       }),
     );
 
+    // $FlowFixMe[prop-missing]
     expect(console.warn.mock.calls[0][0]).toMatchSnapshot();
   });
 
@@ -1511,10 +1567,12 @@ describe('FileMap', () => {
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');
 
+    // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() =>
       Promise.reject(new Error('watchman error')),
     );
-    node.mockImplementation(options => {
+    // $FlowFixMe[prop-missing]
+    node.mockImplementation(() => {
       return Promise.resolve({
         changedFiles: createMap({
           [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
@@ -1549,13 +1607,13 @@ describe('FileMap', () => {
     const watchman = require('../crawlers/watchman');
     const node = require('../crawlers/node');
 
+    // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() =>
       Promise.reject(new Error('watchman error')),
     );
 
-    node.mockImplementation((roots, extensions, ignore, data) =>
-      Promise.reject(new Error('node error')),
-    );
+    // $FlowFixMe[prop-missing]
+    node.mockImplementation(() => Promise.reject(new Error('node error')));
 
     try {
       await new FileMap(defaultConfig).build();
@@ -1569,18 +1627,30 @@ describe('FileMap', () => {
   });
 
   describe('file system changes processing', () => {
-    function waitForItToChange(fileMap) {
+    function waitForItToChange(
+      fileMap: FileMap,
+    ): Promise<{eventsQueue: ChangeEvent}> {
       return new Promise(resolve => {
         fileMap.once('change', resolve);
       });
     }
 
-    function mockDeleteFile(root, relativePath) {
+    function mockDeleteFile(root: string, relativePath: string) {
       const e = mockEmitters[root];
-      e.emitFileEvent({event: 'delete', relativePath, root});
+      e.emitFileEvent({event: 'delete', relativePath});
     }
 
-    function fm_it(title, fn, options) {
+    type FileMapTestOptions = $ReadOnly<{
+      only?: boolean,
+      mockFs?: MockFS,
+      config?: Partial<InputOptions>,
+    }>;
+
+    function fm_it(
+      title: string,
+      fn: (fm: FileMap) => mixed,
+      options?: FileMapTestOptions = {},
+    ): void {
       options = options || {};
       (options.only ? it.only : it)(title, async () => {
         if (options.mockFs) {
@@ -1596,13 +1666,17 @@ describe('FileMap', () => {
         try {
           await fn(hm);
         } finally {
+          // $FlowFixMe[unused-promise]
           hm.end();
         }
       });
     }
 
-    fm_it.only = (title, fn, options) =>
-      fm_it(title, fn, {...options, only: true});
+    fm_it.only = (
+      title: string,
+      fn: () => mixed,
+      options?: FileMapTestOptions,
+    ): void => fm_it(title, fn, {...options, only: true});
 
     fm_it('build returns a "live" fileSystem and hasteMap', async hm => {
       const {fileSystem, hasteMap} = await hm.build();
@@ -1628,31 +1702,31 @@ describe('FileMap', () => {
       expect(hasteMap.getModule('Banana')).toBeNull();
     });
 
-    const MOCK_CHANGE_FILE = {
+    const MOCK_CHANGE_FILE: ChangeEventMetadata = {
       type: 'f',
       modifiedTime: 45,
       size: 55,
     };
 
-    const MOCK_DELETE_FILE = {
+    const MOCK_DELETE_FILE: ChangeEventMetadata = {
       type: 'f',
       modifiedTime: null,
       size: null,
     };
 
-    const MOCK_CHANGE_LINK = {
+    const MOCK_CHANGE_LINK: ChangeEventMetadata = {
       type: 'l',
       modifiedTime: 46,
       size: 5,
     };
 
-    const MOCK_DELETE_LINK = {
+    const MOCK_DELETE_LINK: ChangeEventMetadata = {
       type: 'l',
       modifiedTime: null,
       size: null,
     };
 
-    const MOCK_CHANGE_FOLDER = {
+    const MOCK_CHANGE_FOLDER: ChangeEventMetadata = {
       type: 'd',
       modifiedTime: 45,
       size: 55,
@@ -2104,7 +2178,7 @@ describe('FileMap', () => {
     });
 
     describe('recovery from duplicate module IDs', () => {
-      async function setupDuplicates(hm) {
+      async function setupDuplicates(hm: FileMap) {
         const {fileSystem, hasteMap} = await hm.build();
         mockFs[path.join('/', 'project', 'fruits', 'Pear.js')] = `
           // Pear!
@@ -2170,6 +2244,7 @@ describe('FileMap', () => {
             metadata: MOCK_CHANGE_FILE,
           });
           await new Promise((resolve, reject) => {
+            // $FlowFixMe[prop-missing]
             console.error.mockImplementationOnce(() => {
               reject(new Error('should not print error'));
             });
@@ -2212,7 +2287,6 @@ describe('FileMap', () => {
           e.emitFileEvent({
             event: 'delete',
             relativePath: 'Pear.js',
-            metadata: MOCK_CHANGE_FILE,
           });
           e.emitFileEvent({
             event: 'touch',

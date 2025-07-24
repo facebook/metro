@@ -8,7 +8,11 @@
  * @flow strict-local
  */
 
-import type {WatcherBackend, WatcherBackendChangeEvent} from '../flow-types';
+import type {
+  WatcherBackend,
+  WatcherBackendChangeEvent,
+  WatcherBackendOptions,
+} from '../flow-types';
 
 import {posixPathMatchesPattern} from './common';
 import EventEmitter from 'events';
@@ -28,19 +32,7 @@ export class AbstractWatcher implements WatcherBackend {
 
   #emitter: EventEmitter = new EventEmitter();
 
-  constructor(
-    dir: string,
-    {
-      ignored,
-      globs,
-      dot,
-    }: $ReadOnly<{
-      ignored: ?RegExp,
-      globs: $ReadOnlyArray<string>,
-      dot: boolean,
-      ...
-    }>,
-  ) {
+  constructor(dir: string, {ignored, globs, dot}: WatcherBackendOptions) {
     this.dot = dot || false;
     this.ignored = ignored;
     this.globs = globs;
