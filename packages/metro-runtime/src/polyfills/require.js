@@ -585,6 +585,8 @@ if (__DEV__) {
   ) {
     const mod = modules.get(id);
     if (!mod) {
+      /* $FlowFixMe[constant-condition] Error discovered during Constant
+       * Condition roll out. See https://fburl.com/workplace/1v97vimq. */
       if (factory) {
         // New modules are going to be handled by the define() method.
         return;
