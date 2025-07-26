@@ -107,6 +107,8 @@ export type JsTransformerConfig = $ReadOnly<{
   unstable_allowRequireContext: boolean,
   /** With inlineRequires, enable a module-scope memo var and inline as (v || v=require('foo')) */
   unstable_memoizeInlineRequires?: boolean,
+  /** Enable automatic Flow file detection and use hermes-parser for parsing */
+  unstable_enableFlowAutoDetection?: boolean,
   /** With inlineRequires, do not memoize these module specifiers */
   unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
@@ -277,9 +279,79 @@ async function transformJS(
   file: JSFile,
   {config, options, projectRoot}: TransformationContext,
 ): Promise<TransformResponse> {
+  // Auto-detect Flow files for hermes-parser usage
+  const shouldUseHermesParser = (code: string, filename: string): boolean => {
+    // If hermesParser is explicitly set, respect that
+    if (config.hermesParser !== undefined) {
+      return config.hermesParser;
+    }
+    
+    // Feature flag for opt-in (safer rollout)
+    if (!config.unstable_enableFlowAutoDetection) {
+      return false;
+    }
+    
+    // Check if hermes-parser is available
+    try {
+      require.resolve('hermes-parser');
+    } catch (e) {
+      // Log warning once
+      if (!shouldUseHermesParser._warnedOnce) {
+        console.warn(
+          'Metro: Flow syntax detected but hermes-parser not available. ' +
+          'Install hermes-parser for better Flow support.'
+        );
+        shouldUseHermesParser._warnedOnce = true;
+      }
+      return false;
+    }
+    
+    // Check for Flow pragma in first 1KB of file
+    const headerContent = code.slice(0, 1000);
+    if (/@flow|@noflow/.test(headerContent)) {
+      return true;
+    }
+    
+    // Check for .flow.js extension
+    if (filename.endsWith('.flow.js')) {
+      return true;
+    }
+    
+    // Only check for component syntax if we see type annotations
+    // This reduces false positives
+    if (/:\s*\w+[<\[\{]/.test(headerContent)) {
+      if (/component\s*\(|type\s+\w+\s*=\s*component\s*\(/.test(headerContent)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
   // Transformers can output null ASTs (if they ignore the file). In that case
   // we need to parse the module source code to get their AST.
-  let ast = file.ast ?? babylon.parse(file.code, {sourceType: 'unambiguous'});
+  let ast = file.ast;
+  if (!ast) {
+    const useHermesParser = shouldUseHermesParser(file.code, file.filename);
+    
+    if (useHermesParser) {
+      try {
+        ast = require('hermes-parser').parse(file.code, {
+          babel: true,
+          sourceType: 'module',
+        });
+      } catch (e) {
+        // Fall back to Babel parser if hermes-parser fails
+        console.warn(
+          `Metro: hermes-parser failed for ${file.filename}, falling back to Babel parser`,
+          e.message
+        );
+        ast = babylon.parse(file.code, {sourceType: 'unambiguous'});
+      }
+    } else {
+      ast = babylon.parse(file.code, {sourceType: 'unambiguous'});
+    }
+  }
 
   const {importDefault, importAll} = generateImportNames(ast);
 

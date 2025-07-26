@@ -1,0 +1,45 @@
+--- a/packages/metro-transform-worker/src/index.js
++++ b/packages/metro-transform-worker/src/index.js
+@@ -276,10 +276,39 @@ class InvalidRequireCallError extends Error {
+ async function transformJS(
+   file: JSFile,
+   {config, options, projectRoot}: TransformationContext,
+ ): Promise<TransformResponse> {
++  // Auto-detect Flow files for hermes-parser usage
++  const shouldUseHermesParser = (code: string, filename: string): boolean => {
++    // If hermesParser is explicitly set, respect that
++    if (config.hermesParser !== undefined) {
++      return config.hermesParser;
++    }
++    
++    // Check for Flow pragma in first 1KB of file
++    const headerContent = code.slice(0, 1000);
++    if (/@flow|@noflow/.test(headerContent)) {
++      return true;
++    }
++    
++    // Check for .flow.js extension
++    if (filename.endsWith('.flow.js')) {
++      return true;
++    }
++    
++    // Check for Flow component syntax patterns
++    if (/component\s*\(|type\s+\w+\s*=\s*component\s*\(/.test(headerContent)) {
++      return true;
++    }
++    
++    return false;
++  };
++
+   // Transformers can output null ASTs (if they ignore the file). In that case
+   // we need to parse the module source code to get their AST.
+-  let ast = file.ast ?? babylon.parse(file.code, {sourceType: 'unambiguous'});
++  let ast = file.ast;
++  if (!ast) {
++    const useHermesParser = shouldUseHermesParser(file.code, file.filename);
++    ast = useHermesParser
++      ? require('hermes-parser').parse(file.code, {babel: true, sourceType: 'module'})
++      : babylon.parse(file.code, {sourceType: 'unambiguous'});
++  }
+ 
+   const {importDefault, importAll} = generateImportNames(ast);
