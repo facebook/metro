@@ -43,7 +43,6 @@ declare module 'prettier' {
   declare export type BuiltInParser = (text: string, options?: any) => AST;
   declare export type BuiltInParserName =
     | 'angular'
-    | 'babel-flow'
     | 'babel-ts'
     | 'babel'
     | 'css'
