@@ -686,6 +686,7 @@ describe('processRequest', () => {
       },
       unstable_allowRequireContext: false,
       unstable_enablePackageExports: true,
+      unstable_incrementalResolution: false,
     });
   });
 
@@ -748,6 +749,7 @@ describe('processRequest', () => {
       },
       unstable_allowRequireContext: false,
       unstable_enablePackageExports: true,
+      unstable_incrementalResolution: false,
     });
   });
 
@@ -978,6 +980,7 @@ describe('processRequest', () => {
         },
         unstable_allowRequireContext: false,
         unstable_enablePackageExports: true,
+        unstable_incrementalResolution: false,
       });
     });
   });

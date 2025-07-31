@@ -37,6 +37,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   const options: Options<> = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: true,
+    unstable_incrementalResolution: false,
     lazy: false,
     onProgress: null,
     resolve: (from: string, to: TransformResultDependency) => {
