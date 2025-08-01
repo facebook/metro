@@ -104,7 +104,7 @@ const FLAGS_SPECS: {
   wx: {exclusive: true, truncate: true, writable: true},
   'w+': {readable: true, truncate: true, writable: true},
   'wx+': {exclusive: true, readable: true, truncate: true, writable: true},
-  // $FlowIssue: Symbol support is incomplete
+  // $FlowFixMe: Symbol support is incomplete
   [kWritableMustExist]: {mustExist: true, writable: true},
 };
 

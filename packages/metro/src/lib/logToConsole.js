@@ -74,7 +74,7 @@ module.exports = (
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.
       // Otherwise, it just concatenates all arguments.
-      // $FlowIssue[incompatible-call] util.format expected the first argument to be a string
+      // $FlowFixMe[incompatible-call] util.format expected the first argument to be a string
       util.format(...data),
     );
   }

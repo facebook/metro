@@ -262,7 +262,7 @@ class ChromeHeapSnapshotRecordAccessor {
           ]),
         );
       } else {
-        // $FlowIssue[incompatible-type-arg] Object.entries is incompletely typed
+        // $FlowFixMe[incompatible-type-arg] Object.entries is incompletely typed
         this._fieldToType = new Map(Object.entries(recordTypes || {}));
       }
     }
@@ -569,7 +569,7 @@ class ChromeHeapSnapshotRecordAccessor {
   }
 }
 
-// $FlowIssue[prop-missing] Flow doesn't see that we implement the iteration protocol
+// $FlowFixMe[prop-missing] Flow doesn't see that we implement the iteration protocol
 class ChromeHeapSnapshotRecordIterator
   extends ChromeHeapSnapshotRecordAccessor
   implements Iterable<ChromeHeapSnapshotRecordAccessor>
@@ -608,7 +608,7 @@ class ChromeHeapSnapshotRecordIterator
   }
 
   // JS Iterable protocol
-  // $FlowIssue[unsupported-syntax]
+  // $FlowFixMe[unsupported-syntax]
   [Symbol.iterator](): this {
     return this;
   }
