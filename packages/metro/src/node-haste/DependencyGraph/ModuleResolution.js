@@ -44,7 +44,6 @@ export type Packageish = interface {
 
 export type Moduleish = interface {
   +path: string,
-  getPackage(): ?Packageish,
 };
 
 export type ModuleishCache<TPackage> = interface {
@@ -94,14 +93,9 @@ class ModuleResolver<TPackage: Packageish> {
 
   constructor(options: Options<TPackage>) {
     this._options = options;
-    const {projectRoot, moduleCache} = this._options;
+    const {projectRoot} = this._options;
     this._projectRootFakeModule = {
       path: path.join(projectRoot, '_'),
-      getPackage: () =>
-        moduleCache.getPackageOf(this._projectRootFakeModule.path)?.pkg,
-      isHaste() {
-        throw new Error('not implemented');
-      },
       getName() {
         throw new Error('not implemented');
       },

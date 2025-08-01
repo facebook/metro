@@ -57,7 +57,7 @@ class ModuleCache {
 
   getModule(filePath: string): Module {
     if (!this._moduleCache[filePath]) {
-      this._moduleCache[filePath] = new Module(filePath, this);
+      this._moduleCache[filePath] = new Module(filePath);
     }
     return this._moduleCache[filePath];
   }
@@ -114,7 +114,6 @@ class ModuleCache {
 
   invalidate(filePath: string) {
     if (this._moduleCache[filePath]) {
-      this._moduleCache[filePath].invalidate();
       delete this._moduleCache[filePath];
     }
     if (this._packageCache[filePath]) {

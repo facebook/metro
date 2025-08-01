@@ -11,31 +11,19 @@
 
 'use strict';
 
-import type ModuleCache from './ModuleCache';
-import type Package from './Package';
-
 import path from 'path';
 
 class Module {
   path: string;
-
-  _moduleCache: ModuleCache;
   _sourceCode: ?string;
 
-  constructor(file: string, moduleCache: ModuleCache) {
+  constructor(file: string) {
     if (!path.isAbsolute(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);
     }
 
     this.path = file;
-    this._moduleCache = moduleCache;
   }
-
-  getPackage(): ?Package {
-    return this._moduleCache.getPackageForModule(this)?.pkg;
-  }
-
-  invalidate() {}
 }
 
 module.exports = Module;
