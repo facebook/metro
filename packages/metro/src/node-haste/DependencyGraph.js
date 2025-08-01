@@ -25,11 +25,11 @@ import type MetroFileMap, {
 } from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
+import {PackageCache} from './PackageCache';
 import {DuplicateHasteCandidatesError} from 'metro-file-map';
 
 const createFileMap = require('./DependencyGraph/createFileMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
-const ModuleCache = require('./ModuleCache');
 const {EventEmitter} = require('events');
 const fs = require('fs');
 const {
@@ -60,7 +60,7 @@ class DependencyGraph extends EventEmitter {
   _config: ConfigT;
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
-  _moduleCache: ModuleCache;
+  #packageCache: PackageCache;
   _hasteMap: HasteMap;
   _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
@@ -130,7 +130,7 @@ class DependencyGraph extends EventEmitter {
           this._onWatcherHealthCheck(result),
         );
         this._resolutionCache = new Map();
-        this._moduleCache = this._createModuleCache();
+        this.#packageCache = this._createPackageCache();
         this._createModuleResolver();
       });
   }
@@ -162,7 +162,9 @@ class DependencyGraph extends EventEmitter {
 
   _onHasteChange({eventsQueue}: ChangeEvent) {
     this._resolutionCache = new Map();
-    eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
+    eventsQueue.forEach(({filePath}) =>
+      this.#packageCache.invalidate(filePath),
+    );
     this._createModuleResolver();
     this.emit('change');
   }
@@ -199,8 +201,8 @@ class DependencyGraph extends EventEmitter {
       getHastePackagePath: (name, platform) =>
         this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
-      moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
+      packageCache: this.#packageCache,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
@@ -247,8 +249,8 @@ class DependencyGraph extends EventEmitter {
       : null;
   }
 
-  _createModuleCache(): ModuleCache {
-    return new ModuleCache({
+  _createPackageCache(): PackageCache {
+    return new PackageCache({
       getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
     });
   }

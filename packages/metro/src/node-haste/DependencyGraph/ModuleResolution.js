@@ -46,7 +46,7 @@ export type Moduleish = interface {
   +path: string,
 };
 
-export type ModuleishCache<TPackage> = interface {
+export type PackageishCache<TPackage> = interface {
   getPackage(
     name: string,
     platform?: string,
@@ -69,7 +69,7 @@ type Options<TPackage> = $ReadOnly<{
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
   mainFields: $ReadOnlyArray<string>,
-  moduleCache: ModuleishCache<TPackage>,
+  packageCache: PackageishCache<TPackage>,
   nodeModulesPaths: $ReadOnlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
@@ -121,7 +121,7 @@ class ModuleResolver<TPackage: Packageish> {
   }
 
   resolveDependency(
-    fromModule: string | Moduleish /* deprecated */,
+    originModulePath: string,
     dependency: TransformResultDependency,
     allowHaste: boolean,
     platform: string | null,
@@ -143,9 +143,6 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
     } = this._options;
-
-    const originModulePath =
-      typeof fromModule === 'string' ? fromModule : fromModule.path;
 
     try {
       const result = Resolver.resolve(
@@ -242,7 +239,7 @@ class ModuleResolver<TPackage: Packageish> {
 
   _getPackage = (packageJsonPath: string): ?PackageJson => {
     try {
-      return this._options.moduleCache.getPackage(packageJsonPath).read();
+      return this._options.packageCache.getPackage(packageJsonPath).read();
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.
@@ -255,7 +252,7 @@ class ModuleResolver<TPackage: Packageish> {
     let result;
 
     try {
-      result = this._options.moduleCache.getPackageOf(absolutePath);
+      result = this._options.packageCache.getPackageOf(absolutePath);
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.

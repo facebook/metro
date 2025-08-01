@@ -11,7 +11,6 @@
 
 'use strict';
 
-const Module = require('./Module');
 const Package = require('./Package');
 
 type GetClosestPackageFn = (absoluteFilePath: string) => ?{
@@ -19,13 +18,8 @@ type GetClosestPackageFn = (absoluteFilePath: string) => ?{
   packageRelativePath: string,
 };
 
-class ModuleCache {
+export class PackageCache {
   _getClosestPackage: GetClosestPackageFn;
-  _moduleCache: {
-    [filePath: string]: Module,
-    __proto__: null,
-    ...
-  };
   _packageCache: {
     [filePath: string]: Package,
     __proto__: null,
@@ -49,18 +43,9 @@ class ModuleCache {
 
   constructor(options: {getClosestPackage: GetClosestPackageFn, ...}) {
     this._getClosestPackage = options.getClosestPackage;
-    this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);
     this._packagePathAndSubpathByModulePath = Object.create(null);
     this._modulePathsByPackagePath = Object.create(null);
-  }
-
-  // TODO: Remove
-  getModule(filePath: string): Module {
-    if (!this._moduleCache[filePath]) {
-      this._moduleCache[filePath] = new Module(filePath);
-    }
-    return this._moduleCache[filePath];
   }
 
   getPackage(filePath: string): Package {
@@ -70,12 +55,6 @@ class ModuleCache {
       });
     }
     return this._packageCache[filePath];
-  }
-
-  getPackageForModule(
-    module: Module,
-  ): ?{pkg: Package, packageRelativePath: string} {
-    return this.getPackageOf(module.path);
   }
 
   getPackageOf(
@@ -114,9 +93,6 @@ class ModuleCache {
   }
 
   invalidate(filePath: string) {
-    if (this._moduleCache[filePath]) {
-      delete this._moduleCache[filePath];
-    }
     if (this._packageCache[filePath]) {
       this._packageCache[filePath].invalidate();
       delete this._packageCache[filePath];
@@ -149,5 +125,3 @@ class ModuleCache {
     }
   }
 }
-
-module.exports = ModuleCache;
