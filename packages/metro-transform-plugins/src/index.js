@@ -32,27 +32,27 @@ type TransformPlugins = {
 };
 
 module.exports = ({
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get addParamsToDefineCall() {
     return require('./addParamsToDefineCall');
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get constantFoldingPlugin() {
     return require('./constant-folding-plugin');
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get importExportPlugin() {
     return require('./import-export-plugin');
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get inlinePlugin() {
     return require('./inline-plugin');
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get inlineRequiresPlugin() {
     return require('./inline-requires-plugin');
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get normalizePseudoGlobals() {
     return require('./normalizePseudoGlobals');
   },

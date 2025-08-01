@@ -161,7 +161,7 @@ class Terminal {
       this._shouldFlush = true;
     }
     await this.waitForUpdates();
-    // $FlowIgnore[prop-missing]
+    // $FlowFixMe[prop-missing]
     this._writeStatusThrottled.flush();
   }
 

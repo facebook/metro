@@ -94,7 +94,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
     moduleId,
     hasPaths
       ? {
-          // $FlowIgnore[not-an-object] Intentionally spreading an array into an object
+          // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
           ...dependencyMapArray,
           paths,
         }

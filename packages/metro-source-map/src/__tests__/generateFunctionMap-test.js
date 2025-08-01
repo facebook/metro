@@ -25,8 +25,8 @@ const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
-  // $FlowIgnore[prop-missing]
-  // $FlowIgnore[incompatible-type]
+  // $FlowFixMe[prop-missing]
+  // $FlowFixMe[incompatible-type]
   require('@babel/types').STANDARDIZED_TYPES;
 const {
   SourceMetadataMapConsumer,
@@ -1914,7 +1914,7 @@ window.foo();
 
     test('does not reset the path cache', () => {
       const dummyCache: Map<mixed, mixed> = new Map();
-      // $FlowIgnore[prop-missing] - Writing to readonly map for test purposes.
+      // $FlowFixMe[prop-missing] - Writing to readonly map for test purposes.
       traverse.cache.path.set(ast, dummyCache);
 
       generateFunctionMap(ast);

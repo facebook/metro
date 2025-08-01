@@ -67,7 +67,7 @@ class ChromeHeapSnapshotProcessor {
   traceFunctionInfos(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-call]
       this._snapshotData.trace_function_infos,
       this._snapshotData.snapshot.meta.trace_function_info_fields,
       {name: 'string', script_name: 'string'},
@@ -79,7 +79,7 @@ class ChromeHeapSnapshotProcessor {
   locations(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-call]
       this._snapshotData.locations,
       this._snapshotData.snapshot.meta.location_fields,
       null,
@@ -91,7 +91,7 @@ class ChromeHeapSnapshotProcessor {
   nodes(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-call]
       this._snapshotData.nodes,
       this._snapshotData.snapshot.meta.node_fields,
       this._snapshotData.snapshot.meta.node_types,
@@ -103,7 +103,7 @@ class ChromeHeapSnapshotProcessor {
   edges(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-call]
       this._snapshotData.edges,
       this._snapshotData.snapshot.meta.edge_fields,
       this._snapshotData.snapshot.meta.edge_types,

@@ -409,7 +409,7 @@ export default class FileMap extends EventEmitter {
                 // Typed `mixed` because we've read this from an external
                 // source. It'd be too expensive to validate at runtime, so
                 // trust our cache manager that this is correct.
-                // $FlowIgnore
+                // $FlowFixMe
                 fileSystemData: initialData.fileSystemData,
                 processFile,
               })

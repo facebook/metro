@@ -572,7 +572,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
   while (
     current &&
     !current.node.loc &&
-    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    // $FlowFixMe[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
     !current.node.METRO_INLINE_REQUIRES_INIT_LOC
   ) {
     current = current.parentPath;
@@ -582,7 +582,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
     current = null;
   }
   return (
-    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    // $FlowFixMe[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
     current?.node.METRO_INLINE_REQUIRES_INIT_LOC ?? current?.node.loc
   );
 }

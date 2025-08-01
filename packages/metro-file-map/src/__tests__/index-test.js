@@ -39,10 +39,10 @@ jest.mock('../lib/checkWatchmanCapabilities', () => ({
 
 jest.mock('jest-worker', () => ({
   Worker: jest.fn((worker, opts) => {
-    // $FlowIgnore[unsupported-syntax] - dynamic require
+    // $FlowFixMe[unsupported-syntax] - dynamic require
     require(worker).setup(...opts.setupArgs);
     mockProcessFile = jest.fn(async (...args) =>
-      // $FlowIgnore[unsupported-syntax] - dynamic require
+      // $FlowFixMe[unsupported-syntax] - dynamic require
       require(worker).processFile(...args),
     );
     mockEnd = jest.fn();

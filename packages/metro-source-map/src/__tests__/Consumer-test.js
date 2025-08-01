@@ -56,7 +56,7 @@ describe('basic maps', () => {
       expect(empty1).not.toBe(empty2);
       expect(() => {
         empty1.name = 'foo';
-        // $FlowIgnore[prop-missing]
+        // $FlowFixMe[prop-missing]
         empty1.someProp = 'bar';
       }).not.toThrow();
     });
@@ -299,7 +299,7 @@ describe('indexed (sectioned) maps', () => {
       expect(empty1).not.toBe(empty2);
       expect(() => {
         empty1.name = 'foo';
-        // $FlowIgnore[prop-missing]
+        // $FlowFixMe[prop-missing]
         empty1.someProp = 'bar';
       }).not.toThrow();
     });

@@ -457,7 +457,7 @@ function loadModuleImplementation(
   }
   try {
     if (__DEV__) {
-      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
     }
 
@@ -503,7 +503,7 @@ function loadModuleImplementation(
     }
 
     if (__DEV__) {
-      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
       if (Refresh != null) {
