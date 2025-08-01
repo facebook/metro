@@ -304,7 +304,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   resolveDependency(
-    from: string,
+    originModulePath: string,
     dependency: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
@@ -323,12 +323,14 @@ class DependencyGraph extends EventEmitter {
       to === '.' ||
       to === '..' ||
       // Preserve standard assumptions under node_modules
-      from.includes(path.sep + 'node_modules' + path.sep);
+      originModulePath.includes(path.sep + 'node_modules' + path.sep);
 
     // Compound key for the resolver cache
     const resolverOptionsKey =
       JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
-    const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
+    const originKey = isSensitiveToOriginFolder
+      ? path.dirname(originModulePath)
+      : '';
     const targetKey =
       to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
     const platformKey = platform ?? NULL_PLATFORM;
@@ -346,7 +348,7 @@ class DependencyGraph extends EventEmitter {
     if (!resolution) {
       try {
         resolution = this._moduleResolver.resolveDependency(
-          this._moduleCache.getModule(from),
+          originModulePath,
           dependency,
           true,
           platform,
@@ -354,12 +356,12 @@ class DependencyGraph extends EventEmitter {
         );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
-          throw new AmbiguousModuleResolutionError(from, error);
+          throw new AmbiguousModuleResolutionError(originModulePath, error);
         }
         if (error instanceof InvalidPackageError) {
           throw new PackageResolutionError({
             packageError: error,
-            originModulePath: from,
+            originModulePath,
             targetModuleName: to,
           });
         }

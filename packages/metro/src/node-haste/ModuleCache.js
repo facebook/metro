@@ -55,6 +55,7 @@ class ModuleCache {
     this._modulePathsByPackagePath = Object.create(null);
   }
 
+  // TODO: Remove
   getModule(filePath: string): Module {
     if (!this._moduleCache[filePath]) {
       this._moduleCache[filePath] = new Module(filePath);

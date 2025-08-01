@@ -87,26 +87,21 @@ type Options<TPackage> = $ReadOnly<{
 class ModuleResolver<TPackage: Packageish> {
   _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
-  _projectRootFakeModule: Moduleish;
+  _projectRootFakeModulePath: string;
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?BundlerResolution;
 
   constructor(options: Options<TPackage>) {
     this._options = options;
     const {projectRoot} = this._options;
-    this._projectRootFakeModule = {
-      path: path.join(projectRoot, '_'),
-      getName() {
-        throw new Error('not implemented');
-      },
-    };
+    this._projectRootFakeModulePath = path.join(projectRoot, '_');
   }
 
   _getEmptyModule(): BundlerResolution {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
-        this._projectRootFakeModule,
+        this._projectRootFakeModulePath,
         {
           name: this._options.emptyModulePath,
           data: {
@@ -126,7 +121,7 @@ class ModuleResolver<TPackage: Packageish> {
   }
 
   resolveDependency(
-    fromModule: Moduleish,
+    fromModule: string | Moduleish /* deprecated */,
     dependency: TransformResultDependency,
     allowHaste: boolean,
     platform: string | null,
@@ -148,6 +143,9 @@ class ModuleResolver<TPackage: Packageish> {
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
     } = this._options;
+
+    const originModulePath =
+      typeof fromModule === 'string' ? fromModule : fromModule.path;
 
     try {
       const result = Resolver.resolve(
@@ -172,7 +170,7 @@ class ModuleResolver<TPackage: Packageish> {
             unstable_enablePackageExports,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
-            originModulePath: fromModule.path,
+            originModulePath,
             resolveHasteModule: (name: string) =>
               this._options.getHasteModulePath(name, platform),
             resolveHastePackage: (name: string) =>
@@ -191,7 +189,7 @@ class ModuleResolver<TPackage: Packageish> {
       if (error instanceof Resolver.FailedToResolvePathError) {
         const {candidates} = error;
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           '\n\nNone of these files exist:\n' +
             [candidates.file, candidates.dir]
@@ -208,7 +206,7 @@ class ModuleResolver<TPackage: Packageish> {
         );
       } else if (error instanceof Resolver.FailedToResolveUnsupportedError) {
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           error.message,
           {cause: error, dependency},
@@ -224,7 +222,7 @@ class ModuleResolver<TPackage: Packageish> {
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
 
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           [
             `${dependency.name} could not be found within the project${
