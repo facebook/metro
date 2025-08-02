@@ -455,7 +455,7 @@ exports.runBuild = async (
       const sourcemapOutput =
         sourceMap === false
           ? undefined
-          : sourceMapOut ?? out?.replace(/(\.js)?$/, '.map');
+          : (sourceMapOut ?? out?.replace(/(\.js)?$/, '.map'));
 
       const outputOptions: OutputOptions = {
         bundleOutput,

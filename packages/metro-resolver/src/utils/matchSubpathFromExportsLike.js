@@ -39,7 +39,7 @@ export function matchSubpathFromExportsLike(
     context.isESMImport === true ? 'import' : 'require',
     ...context.unstable_conditionNames,
     ...(platform != null
-      ? context.unstable_conditionsByPlatform[platform] ?? []
+      ? (context.unstable_conditionsByPlatform[platform] ?? [])
       : []),
   ]);
 

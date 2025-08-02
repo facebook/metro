@@ -200,14 +200,14 @@ describe('getGraphId', () => {
 
   test('generates different graph IDs for different custom resolver options', () => {
     const transformOptions = {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: true,
-        type: 'module',
-        platform: 'web',
-        unstable_transformProfile: 'default',
-      } /*:: as const */;
+      customTransformOptions: {},
+      dev: true,
+      hot: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      unstable_transformProfile: 'default',
+    } as const;
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
@@ -237,14 +237,14 @@ describe('getGraphId', () => {
 
   test("order of keys in custom resolver options doesn't matter", () => {
     const transformOptions = {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: true,
-        type: 'module',
-        platform: 'web',
-        unstable_transformProfile: 'default',
-      } /*:: as const */;
+      customTransformOptions: {},
+      dev: true,
+      hot: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      unstable_transformProfile: 'default',
+    } as const;
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
