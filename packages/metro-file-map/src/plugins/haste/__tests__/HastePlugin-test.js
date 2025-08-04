@@ -164,5 +164,5 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 });
 
 function hasteMetadata(hasteName: string): FileMetadata {
-  return [hasteName, 0, 0, 0, '', '', 0];
+  return [0, 0, 0, '', '', 0, hasteName];
 }

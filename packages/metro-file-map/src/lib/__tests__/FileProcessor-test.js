@@ -133,6 +133,6 @@ function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      ['', 123, 234, 0, '', null, 0] as FileMetadata,
+      [123, 234, 0, '', null, 0, ''] as FileMetadata,
     ]);
 }

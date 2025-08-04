@@ -75,13 +75,13 @@ function find(
               const ext = path.extname(file).substr(1);
               if (stat.isSymbolicLink() || extensions.includes(ext)) {
                 result.set(pathUtils.absoluteToNormal(file), [
-                  '',
                   stat.mtime.getTime(),
                   stat.size,
                   0,
                   '',
                   null,
                   stat.isSymbolicLink() ? 1 : 0,
+                  '',
                 ]);
               }
             }
@@ -153,13 +153,13 @@ function findNative(
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
             result.set(pathUtils.absoluteToNormal(path), [
-              '',
               stat.mtime.getTime(),
               stat.size,
               0,
               '',
               null,
               stat.isSymbolicLink() ? 1 : 0,
+              '',
             ]);
           }
           if (--count === 0) {

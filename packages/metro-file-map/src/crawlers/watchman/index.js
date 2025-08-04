@@ -334,13 +334,13 @@ module.exports = async function watchmanCrawl({
         }
 
         const nextData: FileMetadata = [
-          '',
           mtime,
           size,
           0,
           '',
           sha1hex ?? null,
           symlinkInfo,
+          '',
         ];
 
         // If watchman is fresh, the removed files map starts with all files

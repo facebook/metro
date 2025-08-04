@@ -35,21 +35,21 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     tfs = new TreeFS({
       rootDir: p('/project'),
       files: new Map<CanonicalPath, FileMetadata>([
-        [p('foo/another.js'), ['another', 123, 2, 0, '', '', 0]],
-        [p('foo/owndir'), ['', 0, 0, 0, '', '', '.']],
-        [p('foo/link-to-bar.js'), ['', 0, 0, 0, '', '', p('../bar.js')]],
-        [p('foo/link-to-another.js'), ['', 0, 0, 0, '', '', p('another.js')]],
-        [p('../outside/external.js'), ['', 0, 0, 0, '', '', 0]],
-        [p('bar.js'), ['bar', 234, 3, 0, '', '', 0]],
-        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./../project/foo')]],
-        [p('abs-link-out'), ['', 456, 0, 0, '', '', p('/outside/./baz/..')]],
-        [p('root'), ['', 0, 0, 0, '', '', '..']],
-        [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
-        [p('link-to-self'), ['', 123, 0, 0, '', '', p('./link-to-self')]],
-        [p('link-cycle-1'), ['', 123, 0, 0, '', '', p('./link-cycle-2')]],
-        [p('link-cycle-2'), ['', 123, 0, 0, '', '', p('./link-cycle-1')]],
-        [p('node_modules/pkg/a.js'), ['a', 123, 0, 0, '', '', 0]],
-        [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
+        [p('foo/another.js'), [123, 2, 0, '', '', 0, 'another']],
+        [p('foo/owndir'), [0, 0, 0, '', '', '.', '']],
+        [p('foo/link-to-bar.js'), [0, 0, 0, '', '', p('../bar.js'), '']],
+        [p('foo/link-to-another.js'), [0, 0, 0, '', '', p('another.js'), '']],
+        [p('../outside/external.js'), [0, 0, 0, '', '', 0, '']],
+        [p('bar.js'), [234, 3, 0, '', '', 0, 'bar']],
+        [p('link-to-foo'), [456, 0, 0, '', '', p('./../project/foo'), '']],
+        [p('abs-link-out'), [456, 0, 0, '', '', p('/outside/./baz/..'), '']],
+        [p('root'), [0, 0, 0, '', '', '..', '']],
+        [p('link-to-nowhere'), [123, 0, 0, '', '', p('./nowhere'), '']],
+        [p('link-to-self'), [123, 0, 0, '', '', p('./link-to-self'), '']],
+        [p('link-cycle-1'), [123, 0, 0, '', '', p('./link-cycle-2'), '']],
+        [p('link-cycle-2'), [123, 0, 0, '', '', p('./link-cycle-1'), '']],
+        [p('node_modules/pkg/a.js'), [123, 0, 0, '', '', 0, 'a']],
+        [p('node_modules/pkg/package.json'), [123, 0, 0, '', '', 0, 'pkg']],
       ]),
       processFile: () => {
         throw new Error('Not implemented');
@@ -187,8 +187,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       const tfs = new TreeFS({
         rootDir: p('/deep/project/root'),
         files: new Map<CanonicalPath, FileMetadata>([
-          [p('foo/index.js'), ['', 123, 0, 0, '', '', 0]],
-          [p('link-up'), ['', 123, 0, 0, '', '', p('..')]],
+          [p('foo/index.js'), [123, 0, 0, '', '', 0, '']],
+          [p('link-up'), [123, 0, 0, '', '', p('..'), '']],
         ]),
         processFile: () => {
           throw new Error('Not implemented');
@@ -215,7 +215,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
 
   describe('symlinks to an ancestor of the project root', () => {
     beforeEach(() => {
-      tfs.addOrModify(p('foo/link-up-2'), ['', 0, 0, 0, '', '', p('../..')]);
+      tfs.addOrModify(p('foo/link-up-2'), [0, 0, 0, '', '', p('../..'), '']);
     });
 
     test.each([
@@ -269,23 +269,23 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   describe('getDifference', () => {
     test('returns changed (inc. new) and removed files in given FileData', () => {
       const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
-        [p('new-file'), ['', 789, 0, 0, '', '', 0]],
-        [p('link-to-foo'), ['', 456, 0, 0, '', '', p('./foo')]],
+        [p('new-file'), [789, 0, 0, '', '', 0, '']],
+        [p('link-to-foo'), [456, 0, 0, '', '', p('./foo'), '']],
         // Different modified time, expect new mtime in changedFiles
-        [p('foo/another.js'), ['', 124, 0, 0, '', '', 0]],
-        [p('link-cycle-1'), ['', 123, 0, 0, '', '', p('./link-cycle-2')]],
-        [p('link-cycle-2'), ['', 123, 0, 0, '', '', p('./link-cycle-1')]],
+        [p('foo/another.js'), [124, 0, 0, '', '', 0, '']],
+        [p('link-cycle-1'), [123, 0, 0, '', '', p('./link-cycle-2'), '']],
+        [p('link-cycle-2'), [123, 0, 0, '', '', p('./link-cycle-1'), '']],
         // Was a symlink, now a regular file
-        [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
-        [p('link-to-nowhere'), ['', 123, 0, 0, '', '', p('./nowhere')]],
-        [p('node_modules/pkg/a.js'), ['a', 123, 0, 0, '', '', 0]],
-        [p('node_modules/pkg/package.json'), ['pkg', 123, 0, 0, '', '', 0]],
+        [p('link-to-self'), [123, 0, 0, '', '', 0, '']],
+        [p('link-to-nowhere'), [123, 0, 0, '', '', p('./nowhere'), '']],
+        [p('node_modules/pkg/a.js'), [123, 0, 0, '', '', 0, 'a']],
+        [p('node_modules/pkg/package.json'), [123, 0, 0, '', '', 0, 'pkg']],
       ]);
       expect(tfs.getDifference(newFiles)).toEqual({
         changedFiles: new Map<CanonicalPath, FileMetadata>([
-          [p('new-file'), ['', 789, 0, 0, '', '', 0]],
-          [p('foo/another.js'), ['', 124, 0, 0, '', '', 0]],
-          [p('link-to-self'), ['', 123, 0, 0, '', '', 0]],
+          [p('new-file'), [789, 0, 0, '', '', 0, '']],
+          [p('foo/another.js'), [124, 0, 0, '', '', 0, '']],
+          [p('link-to-self'), [123, 0, 0, '', '', 0, '']],
         ]),
         removedFiles: new Set([
           p('foo/owndir'),
@@ -310,24 +310,24 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           ([
             [
               p('a/1/package.json'),
-              ['', 0, 0, 0, '', '', './real-package.json'],
+              [0, 0, 0, '', '', './real-package.json', ''],
             ],
             [
               p('a/2/package.json'),
-              ['', 0, 0, 0, '', '', './notexist-package.json'],
+              [0, 0, 0, '', '', './notexist-package.json', ''],
             ],
-            [p('a/b/c/d/link-to-C'), ['', 0, 0, 0, '', '', p('../../../..')]],
+            [p('a/b/c/d/link-to-C'), [0, 0, 0, '', '', p('../../../..'), '']],
             [
               p('a/b/c/d/link-to-B'),
-              ['', 0, 0, 0, '', '', p('../../../../..')],
+              [0, 0, 0, '', '', p('../../../../..'), ''],
             ],
             [
               p('a/b/c/d/link-to-A'),
-              ['', 0, 0, 0, '', '', p('../../../../../..')],
+              [0, 0, 0, '', '', p('../../../../../..'), ''],
             ],
             [
               p('n_m/workspace/link-to-pkg'),
-              ['', 0, 0, 0, '', '', p('../../../workspace-pkg')],
+              [0, 0, 0, '', '', p('../../../workspace-pkg'), ''],
             ],
           ]: Array<[CanonicalPath, FileMetadata]>).concat(
             [
@@ -347,7 +347,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               '../../package.json',
               '../../../a/b/package.json',
               '../workspace-pkg/package.json',
-            ].map(posixPath => [p(posixPath), ['', 0, 0, 0, '', '', 0]]),
+            ].map(posixPath => [p(posixPath), [0, 0, 0, '', '', 0, '']]),
           ),
         ),
         processFile: () => {
@@ -711,8 +711,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   describe('mutation', () => {
     describe('addOrModify', () => {
       test('accepts non-real and absolute paths', () => {
-        tfs.addOrModify(p('link-to-foo/new.js'), ['', 0, 1, 0, '', '', 0]);
-        tfs.addOrModify(p('/project/fileatroot.js'), ['', 0, 2, 0, '', '', 0]);
+        tfs.addOrModify(p('link-to-foo/new.js'), [0, 1, 0, '', '', 0, '']);
+        tfs.addOrModify(p('/project/fileatroot.js'), [0, 2, 0, '', '', 0, '']);
         expect(tfs.getAllFiles().sort()).toEqual([
           p('/outside/external.js'),
           p('/project/bar.js'),
@@ -733,10 +733,10 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           new Map<CanonicalPath, FileMetadata>([
             [
               p('newdir/link-to-link-to-bar.js'),
-              ['', 0, 0, 0, '', '', p('../foo/link-to-bar.js')],
+              [0, 0, 0, '', '', p('../foo/link-to-bar.js'), ''],
             ],
-            [p('foo/baz.js'), ['', 0, 0, 0, '', '', 0]],
-            [p('bar.js'), ['', 999, 1, 0, '', '', 0]],
+            [p('foo/baz.js'), [0, 0, 0, '', '', 0, '']],
+            [p('bar.js'), [999, 1, 0, '', '', 0, '']],
           ]),
         );
 
@@ -825,17 +825,17 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         {
           baseName: 'another.js',
           canonicalPath: p('foo/another.js'),
-          metadata: ['another', 123, 2, 0, '', '', 0],
+          metadata: [123, 2, 0, '', '', 0, 'another'],
         },
         {
           baseName: 'external.js',
           canonicalPath: p('../outside/external.js'),
-          metadata: ['', 0, 0, 0, '', '', 0],
+          metadata: [0, 0, 0, '', '', 0, ''],
         },
         {
           baseName: 'bar.js',
           canonicalPath: p('bar.js'),
-          metadata: ['bar', 234, 3, 0, '', '', 0],
+          metadata: [234, 3, 0, '', '', 0, 'bar'],
         },
       ]);
     });
@@ -851,7 +851,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           {
             baseName: 'a.js',
             canonicalPath: p('node_modules/pkg/a.js'),
-            metadata: ['a', 123, 0, 0, '', '', 0],
+            metadata: [123, 0, 0, '', '', 0, 'a'],
           },
         ]),
       );
@@ -868,7 +868,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           {
             baseName: 'link-to-bar.js',
             canonicalPath: p('foo/link-to-bar.js'),
-            metadata: ['', 0, 0, 0, '', '', p('../bar.js')],
+            metadata: [0, 0, 0, '', '', p('../bar.js'), ''],
           },
         ]),
       );
@@ -882,9 +882,9 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       tfs = new TreeFS({
         rootDir: p('/project'),
         files: new Map<CanonicalPath, FileMetadata>([
-          [p('foo.js'), ['', 123, 0, 0, '', 'def456', 0]],
-          [p('bar.js'), ['', 123, 0, 0, '', '', 0]],
-          [p('link-to-bar'), ['', 456, 0, 0, '', '', p('./bar.js')]],
+          [p('foo.js'), [123, 0, 0, '', 'def456', 0, '']],
+          [p('bar.js'), [123, 0, 0, '', '', 0, '']],
+          [p('link-to-bar'), [456, 0, 0, '', '', p('./bar.js'), '']],
         ]),
         processFile: mockProcessFile,
       });
@@ -958,7 +958,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         {computeSha1: true},
       );
       // Simulate the file being modified while we're waiting for the SHA1.
-      tfs.addOrModify(p('bar.js'), ['', 123, 0, 0, '', '', 0]);
+      tfs.addOrModify(p('bar.js'), [123, 0, 0, '', '', 0, '']);
       resolve?.('newsha1');
       expect(await getOrComputePromise).toEqual({sha1: 'newsha1'});
       // A second call re-computes

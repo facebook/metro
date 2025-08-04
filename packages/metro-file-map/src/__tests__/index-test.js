@@ -87,13 +87,13 @@ jest.mock('../crawlers/watchman', () =>
                 ? mockHashContents(contentOrLink)
                 : null;
             changedFiles.set(relativeFilePath, [
-              '', // Haste name
               32, // mtime
               42, // size
               0, // visited
               '', // dependencies
               hash,
               typeof contentOrLink !== 'string' ? 1 : 0,
+              '', // Haste name
             ]);
           }
         } else {
@@ -490,49 +490,49 @@ describe('FileMap', () => {
       fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
-          'Banana',
           32,
           42,
           1,
           'Strawberry',
           null,
           0,
+          'Banana',
         ],
         [path.join('fruits', 'Pear.js')]: [
-          'Pear',
           32,
           42,
           1,
           'Banana\0Strawberry',
           null,
           0,
+          'Pear',
         ],
         [path.join('fruits', 'Strawberry.js')]: [
-          'Strawberry',
           32,
           42,
           1,
           '',
           null,
           0,
+          'Strawberry',
         ],
         [path.join('fruits', '__mocks__', 'Pear.js')]: [
-          '',
           32,
           42,
           1,
           'Melon',
           null,
           0,
+          '',
         ],
         [path.join('vegetables', 'Melon.js')]: [
-          'Melon',
           32,
           42,
           1,
           '',
           null,
           0,
+          'Melon',
         ],
       }),
     );
@@ -583,60 +583,60 @@ describe('FileMap', () => {
           // The node crawler returns "null" for the SHA-1.
           const changedFiles = createMap({
             [path.join('fruits', 'Banana.js')]: [
-              'Banana',
               32,
               42,
               0,
               'Strawberry',
               null,
               0,
+              'Banana',
             ],
             [path.join('fruits', 'Pear.js')]: [
-              'Pear',
               32,
               42,
               0,
               'Banana\0Strawberry',
               null,
               0,
+              'Pear',
             ],
             [path.join('fruits', 'Strawberry.js')]: [
-              'Strawberry',
               32,
               42,
               0,
               '',
               null,
               0,
+              'Strawberry',
             ],
             [path.join('fruits', '__mocks__', 'Pear.js')]: [
-              '',
               32,
               42,
               0,
               'Melon',
               null,
               0,
+              '',
             ],
             [path.join('vegetables', 'Melon.js')]: [
-              'Melon',
               32,
               42,
               0,
               '',
               null,
               0,
+              'Melon',
             ],
             ...(enableSymlinks
               ? {
                   [path.join('fruits', 'LinkToStrawberry.js')]: [
-                    '',
                     32,
                     42,
                     0,
                     '',
                     null,
                     1,
+                    '',
                   ],
                 }
               : null),
@@ -661,60 +661,59 @@ describe('FileMap', () => {
         expect(
           createMap({
             [path.join('fruits', 'Banana.js')]: [
-              'Banana',
               32,
               42,
               1,
               'Strawberry',
               '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
               0,
+              'Banana',
             ],
             [path.join('fruits', 'Pear.js')]: [
-              'Pear',
               32,
               42,
               1,
               'Banana\0Strawberry',
               '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
               0,
+              'Pear',
             ],
             [path.join('fruits', 'Strawberry.js')]: [
-              'Strawberry',
               32,
               42,
               1,
               '',
               'e8aa38e232b3795f062f1d777731d9240c0f8c25',
               0,
+              'Strawberry',
             ],
             [path.join('fruits', '__mocks__', 'Pear.js')]: [
-              '',
               32,
               42,
               1,
               'Melon',
               '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
               0,
+              '',
             ],
             [path.join('vegetables', 'Melon.js')]: [
-              'Melon',
               32,
               42,
               1,
               '',
               'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
               0,
+              'Melon',
             ],
             ...(enableSymlinks
               ? {
                   [path.join('fruits', 'LinkToStrawberry.js')]: [
-                    '',
                     32,
                     42,
                     1,
                     '',
                     null,
-                    'Strawberry.js',
+                    '',
                   ],
                 }
               : null),
@@ -950,31 +949,31 @@ describe('FileMap', () => {
       fileSystem,
       createMap({
         [path.join('fruits', 'Strawberry.android.js')]: [
-          'Strawberry',
           32,
           42,
           1,
           'Blackberry',
           null,
           0,
+          'Strawberry',
         ],
         [path.join('fruits', 'Strawberry.ios.js')]: [
-          'Strawberry',
           32,
           42,
           1,
           'Raspberry',
           null,
           0,
+          'Strawberry',
         ],
         [path.join('fruits', 'Strawberry.js')]: [
-          'Strawberry',
           32,
           42,
           1,
           'Banana',
           null,
           0,
+          'Strawberry',
         ],
       }),
     );
@@ -1415,14 +1414,14 @@ describe('FileMap', () => {
   test('ignores files that do not exist', async () => {
     const watchman = require('../crawlers/watchman');
     // $FlowFixMe[prop-missing]
-    const mockImpl = watchman.getMockImplementation();
+    const mockImpl: typeof watchman = watchman.getMockImplementation();
     // Wrap the watchman mock and add an invalid file to the file list.
     const invalidFilePath = path.join('fruits', 'invalid', 'file.js');
     // $FlowFixMe[prop-missing]
     // $FlowFixMe[missing-local-annot]
     watchman.mockImplementation(async options => {
       const {changedFiles} = await mockImpl(options);
-      changedFiles.set(invalidFilePath, ['', 34, 44, 0, [], null, 0]);
+      changedFiles.set(invalidFilePath, [34, 44, 0, '', null, 0, '']);
       return {
         changedFiles,
         removedFiles: new Set(),
@@ -1530,14 +1529,14 @@ describe('FileMap', () => {
       throw new Error('watchman error');
     });
     // $FlowFixMe[prop-missing]
-    node.mockImplementation(() => {
+    node.mockImplementation((() => {
       return Promise.resolve({
         changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, ''],
         }),
         removedFiles: new Set(),
       });
-    });
+    }) as typeof node);
 
     const {fileSystem} = await new FileMap(defaultConfig).build();
 
@@ -1548,13 +1547,13 @@ describe('FileMap', () => {
       fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
-          'Banana',
           32,
           42,
           1,
           'Strawberry',
           null,
           0,
+          'Banana',
         ],
       }),
     );
@@ -1574,8 +1573,8 @@ describe('FileMap', () => {
     // $FlowFixMe[prop-missing]
     node.mockImplementation(() => {
       return Promise.resolve({
-        changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: ['', 32, 42, 0, '', null, 0],
+        changedFiles: createMap<FileMetadata>({
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, ''],
         }),
         removedFiles: new Set(),
       });
@@ -1590,13 +1589,13 @@ describe('FileMap', () => {
       fileSystem,
       createMap({
         [path.join('fruits', 'Banana.js')]: [
-          'Banana',
           32,
           42,
           1,
           'Strawberry',
           null,
           0,
+          'Banana',
         ],
       }),
     );
