@@ -47,6 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+        # Sync with nightly-tests.yml
         node-version: [
           '20.19.4', # minimum supported
           'lts/-1',  # previous lts
