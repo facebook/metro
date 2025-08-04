@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {ModuleGroups, ModuleTransportLike} from '../../types';
 import type {IndexMap} from 'metro-source-map';
 
 const {

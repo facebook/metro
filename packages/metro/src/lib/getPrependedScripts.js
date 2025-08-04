@@ -13,9 +13,9 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
-import type {ResolverInputOptions} from '../shared/types.flow';
-import type {ConfigT} from 'metro-config/private/configTypes.flow';
+import type {TransformInputOptions} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
+import type {ConfigT} from 'metro-config';
 
 import CountingSet from './CountingSet';
 

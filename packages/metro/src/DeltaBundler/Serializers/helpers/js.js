@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {MixedOutput, Module} from '../../types.flow';
+import type {MixedOutput, Module} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
 const {isResolvedDependency} = require('../../../lib/isResolvedDependency');

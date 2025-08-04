@@ -9,9 +9,9 @@
  * @oncall react_native
  */
 
-import type {TransformResultDependency} from '../DeltaBundler/types.flow';
+import type {TransformResultDependency} from '../DeltaBundler/types';
 import type {Client} from '../HmrServer';
-import type {HmrClientMessage} from 'metro-runtime/src/modules/types.flow';
+import type {HmrClientMessage} from 'metro-runtime/src/modules/types';
 
 import DeltaBundler from '../DeltaBundler';
 import IncrementalBundler from '../IncrementalBundler';

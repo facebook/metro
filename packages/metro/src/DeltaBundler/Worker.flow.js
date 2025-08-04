@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {TransformResult} from './types.flow';
+import type {TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,

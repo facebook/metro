@@ -14,8 +14,7 @@
 import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
-import type {BuildOptions} from './shared/types.flow';
-import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
+import type {BuildOptions, OutputOptions, RequestOptions} from './shared/types';
 import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';

@@ -17,7 +17,7 @@ import type {
   IConsumer,
   Mapping,
   SourcePosition,
-} from './types.flow';
+} from './types';
 import type {Number0} from 'ob1';
 
 const AbstractConsumer = require('./AbstractConsumer');

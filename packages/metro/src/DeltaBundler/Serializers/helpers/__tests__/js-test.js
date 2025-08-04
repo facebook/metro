@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Dependency} from '../../../types.flow';
+import type {Dependency} from '../../../types';
 
 import CountingSet from '../../../../lib/CountingSet';
 import createModuleIdFactory from '../../../../lib/createModuleIdFactory';

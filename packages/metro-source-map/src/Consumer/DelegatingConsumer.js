@@ -18,7 +18,7 @@ import type {
   IterationOrder,
   Mapping,
   SourcePosition,
-} from './types.flow';
+} from './types';
 
 const {
   GENERATED_ORDER,

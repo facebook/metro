@@ -16,8 +16,8 @@ import type {
   Module,
   ReadOnlyGraph,
   SerializerOptions,
-} from '../types.flow';
-import type {Bundle} from 'metro-runtime/src/modules/types.flow';
+} from '../types';
+import type {Bundle} from 'metro-runtime/src/modules/types';
 
 const getAppendScripts = require('../../lib/getAppendScripts');
 const processModules = require('./helpers/processModules');

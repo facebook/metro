@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {BundleOptions} from 'metro/private/shared/types.flow';
+import type {BundleOptions} from 'metro/private/shared/types';
 
 const VERSION = require('../package.json').version;
 const {EventEmitter} = require('events');

@@ -21,7 +21,7 @@ import type {
   ReadOnlyGraph,
   TransformInputOptions,
   TransformResult,
-} from './DeltaBundler/types.flow';
+} from './DeltaBundler/types';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
@@ -32,7 +32,7 @@ import type {
   GraphOptions,
   ResolverInputOptions,
   SplitBundleOptions,
-} from './shared/types.flow';
+} from './shared/types';
 import type {IncomingMessage} from 'connect';
 import type {ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
@@ -44,7 +44,7 @@ import type {
 import type {CustomResolverOptions} from 'metro-resolver/private/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-import {SourcePathsMode} from './shared/types.flow';
+import {SourcePathsMode} from './shared/types';
 
 const {getAsset} = require('./Assets');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');

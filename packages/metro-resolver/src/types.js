@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {TransformResultDependency} from 'metro/private/DeltaBundler/types.flow';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
 export type Result<+TResolution, +TCandidates> =
   | {+type: 'resolved', +resolution: TResolution}

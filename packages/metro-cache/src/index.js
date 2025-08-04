@@ -20,7 +20,7 @@ const HttpStore = require('./stores/HttpStore');
 
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';
-export type {CacheStore} from './types.flow';
+export type {CacheStore} from './types';
 
 module.exports.AutoCleanFileStore = AutoCleanFileStore;
 module.exports.Cache = Cache;

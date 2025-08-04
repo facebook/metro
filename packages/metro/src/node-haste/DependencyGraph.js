@@ -12,8 +12,8 @@
 import type {
   BundlerResolution,
   TransformResultDependency,
-} from '../DeltaBundler/types.flow';
-import type {ResolverInputOptions} from '../shared/types.flow';
+} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config';
 import type MetroFileMap, {

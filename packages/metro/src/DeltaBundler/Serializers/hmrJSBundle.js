@@ -12,8 +12,8 @@
 'use strict';
 
 import type {EntryPointURL} from '../../HmrServer';
-import type {DeltaResult, Module, ReadOnlyGraph} from '../types.flow';
-import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
+import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
+import type {HmrModule} from 'metro-runtime/src/modules/types';
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 const jscSafeUrl = require('jsc-safe-url');

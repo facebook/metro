@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {ReadOnlyGraph} from '../../types.flow';
+import type {ReadOnlyGraph} from '../../types';
 
 import {isResolvedDependency} from '../../../lib/isResolvedDependency';
 

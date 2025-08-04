@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {ConfigT} from '../configTypes.flow';
+import type {ConfigT} from '../types';
 
 const {
   DEFAULT_METRO_MINIFIER_PATH,

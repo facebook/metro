@@ -16,9 +16,9 @@ import type {
   Options as DeltaBundlerOptions,
   ReadOnlyDependencies,
   TransformInputOptions,
-} from './DeltaBundler/types.flow';
+} from './DeltaBundler/types';
 import type {GraphId} from './lib/getGraphId';
-import type {ResolverInputOptions} from './shared/types.flow';
+import type {ResolverInputOptions} from './shared/types';
 import type {ConfigT} from 'metro-config';
 
 const Bundler = require('./Bundler');

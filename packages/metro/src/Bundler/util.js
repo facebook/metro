@@ -12,7 +12,7 @@
 'use strict';
 
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
-import type {ModuleTransportLike} from '../shared/types.flow';
+import type {ModuleTransportLike} from '../shared/types';
 import type {File} from '@babel/types';
 
 const babylon = require('@babel/parser');
