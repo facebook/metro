@@ -278,12 +278,12 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
       | {
           functionId: number,
           location: {bytecodeSize: number, virtualOffset: number},
-          usage: Array<$FlowFixMeEmpty>,
+          usage: Array<$FlowFixMe>,
         }
       | {
           functionId: number,
           location: {virtualOffset: number},
-          usage: Array<$FlowFixMeEmpty>,
+          usage: Array<$FlowFixMe>,
         },
   ) =>
     (
