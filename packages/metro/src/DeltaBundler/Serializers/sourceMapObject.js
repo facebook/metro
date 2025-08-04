@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Module} from '../types.flow';
+import type {Module} from '../types';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {MixedSourceMap} from 'metro-source-map';
 

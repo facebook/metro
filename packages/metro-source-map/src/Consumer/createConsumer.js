@@ -12,7 +12,7 @@
 'use strict';
 
 import type {MixedSourceMap} from '../source-map';
-import type {IConsumer} from './types.flow';
+import type {IConsumer} from './types';
 
 const invariant = require('invariant');
 

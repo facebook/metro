@@ -11,11 +11,8 @@
 
 'use strict';
 
-import type {
-  ModuleTransportLike,
-  RamModuleTransport,
-} from '../../shared/types.flow';
-import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
+import type {ModuleTransportLike, RamModuleTransport} from '../../shared/types';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {GetTransformOptions} from 'metro-config';
 

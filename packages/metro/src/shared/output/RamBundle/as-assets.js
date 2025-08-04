@@ -12,8 +12,8 @@
 'use strict';
 
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
-import type {ModuleTransportLike} from '../../../shared/types.flow';
-import type {OutputOptions} from '../../types.flow';
+import type {ModuleTransportLike} from '../../../shared/types';
+import type {OutputOptions} from '../../types';
 
 const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
 const writeFile = require('../writeFile');

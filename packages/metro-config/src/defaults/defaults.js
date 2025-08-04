@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {PerfLogger, RootPerfLogger} from '../configTypes.flow';
+import type {PerfLogger, RootPerfLogger} from '../types';
 
 const defaultCreateModuleIdFactory = require('metro/private/lib/createModuleIdFactory');
 

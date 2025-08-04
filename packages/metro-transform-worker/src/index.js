@@ -29,7 +29,7 @@ import type {
   InlineRequiresPluginOptions,
 } from 'metro-transform-plugins';
 import type {TransformResultDependency} from 'metro/private/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types.flow';
+import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types';
 import type {
   DependencyTransformer,
   DynamicRequiresBehavior,

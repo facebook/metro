@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Module, TransformInputOptions} from '../../types.flow';
+import type {Module, TransformInputOptions} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
 import CountingSet from '../../../lib/CountingSet';

@@ -11,11 +11,7 @@
 
 'use strict';
 
-import type {
-  MixedOutput,
-  Options,
-  TransformResultDependency,
-} from '../types.flow';
+import type {MixedOutput, Options, TransformResultDependency} from '../types';
 
 const DeltaBundler = require('../../DeltaBundler');
 const DeltaCalculator = require('../DeltaCalculator');

@@ -41,7 +41,7 @@ import type {
   Options,
   ResolvedDependency,
   TransformInputOptions,
-} from './types.flow';
+} from './types';
 
 import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';

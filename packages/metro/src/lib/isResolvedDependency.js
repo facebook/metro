@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Dependency, ResolvedDependency} from '../DeltaBundler/types.flow';
+import type {Dependency, ResolvedDependency} from '../DeltaBundler/types';
 
 export function isResolvedDependency(
   dep: Dependency,

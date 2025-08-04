@@ -23,7 +23,7 @@ import type {
   Module,
   ReadOnlyGraph,
   SerializerOptions,
-} from 'metro/private/DeltaBundler/types.flow';
+} from 'metro/private/DeltaBundler/types';
 import type {Reporter} from 'metro/private/lib/reporting';
 import type MetroServer from 'metro/private/Server';
 

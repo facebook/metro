@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {SourcePosition} from './Consumer/types.flow';
+import type {SourcePosition} from './Consumer/types';
 import type {IConsumer, MixedSourceMap} from './source-map';
 import type {Number0, Number1} from 'ob1';
 

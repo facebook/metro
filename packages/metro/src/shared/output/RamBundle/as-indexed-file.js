@@ -16,7 +16,7 @@ import type {
   ModuleGroups,
   ModuleTransportLike,
   OutputOptions,
-} from '../../types.flow';
+} from '../../types';
 import type {WriteStream} from 'fs';
 
 const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');

@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {BundleOptions, SplitBundleOptions} from '../shared/types.flow';
+import type {BundleOptions, SplitBundleOptions} from '../shared/types';
 
 /**
  * Splits a BundleOptions object into smaller, more manageable parts.

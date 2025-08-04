@@ -18,7 +18,7 @@ import type {
   MixedOutput,
   Options,
   ReadOnlyGraph,
-} from './DeltaBundler/types.flow';
+} from './DeltaBundler/types';
 import type EventEmitter from 'events';
 
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
@@ -34,7 +34,7 @@ export type {
   TransformResult,
   TransformResultDependency,
   TransformResultWithSource,
-} from './DeltaBundler/types.flow';
+} from './DeltaBundler/types';
 
 /**
  * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This

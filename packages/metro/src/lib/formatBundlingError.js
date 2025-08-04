@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
+import type {FormattedError} from 'metro-runtime/src/modules/types';
 
 const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
 const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');

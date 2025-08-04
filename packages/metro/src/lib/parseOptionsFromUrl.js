@@ -11,10 +11,10 @@
 
 'use strict';
 
-import type {BundleOptions} from '../shared/types.flow';
+import type {BundleOptions} from '../shared/types';
 import type {TransformProfile} from 'metro-babel-transformer';
 
-import {SourcePathsMode} from '../shared/types.flow';
+import {SourcePathsMode} from '../shared/types';
 
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const parseCustomResolverOptions = require('./parseCustomResolverOptions');

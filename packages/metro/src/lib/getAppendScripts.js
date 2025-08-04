@@ -11,7 +11,7 @@
 
 'use strict';
 import type {Module} from '../DeltaBundler';
-import type {Dependency} from '../DeltaBundler/types.flow';
+import type {Dependency} from '../DeltaBundler/types';
 
 import CountingSet from './CountingSet';
 

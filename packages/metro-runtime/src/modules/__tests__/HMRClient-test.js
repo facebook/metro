@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {HmrUpdate} from '../types.flow';
+import type {HmrUpdate} from '../types';
 
 const HMRClient = require('../HMRClient');
 

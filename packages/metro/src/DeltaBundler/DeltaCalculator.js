@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {DeltaResult, Options} from './types.flow';
+import type {DeltaResult, Options} from './types';
 import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 

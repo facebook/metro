@@ -11,8 +11,8 @@
 
 'use strict';
 
-import type {ResolverInputOptions} from '../../shared/types.flow';
-import type {TransformResultDependency} from '../types.flow';
+import type {ResolverInputOptions} from '../../shared/types';
+import type {TransformResultDependency} from '../types';
 import type {InputConfigT} from 'metro-config';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');

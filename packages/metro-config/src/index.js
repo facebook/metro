@@ -12,7 +12,7 @@
 'use strict';
 
 /*::
-export type * from './configTypes.flow';
+export type * from './types';
 */
 
 try {

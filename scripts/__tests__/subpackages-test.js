@@ -14,6 +14,12 @@ import fs from 'fs';
 // $FlowFixMe[untyped-import] glob in OSS
 import glob from 'glob';
 import path from 'path';
+import {promisify} from 'util';
+
+const globAsync = promisify(glob);
+
+// For promisified glob
+jest.useRealTimers();
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
 
@@ -108,6 +114,18 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
         './private/*': './src/*.js',
       }),
     );
+  });
+
+  test('all .flow.js files have an accompanying babel-registering entry point', async () => {
+    const flowFiles = await globAsync('src/**/*.flow.js', {
+      cwd: path.resolve(WORKSPACE_ROOT, packagePath),
+      ignore: ['node_modules'],
+      absolute: true,
+    });
+    const unmatchedFlowFiles = flowFiles.filter(
+      file => !fs.existsSync(file.replace(/\.flow\.js$/, '.js')),
+    );
+    expect(unmatchedFlowFiles).toEqual([]);
   });
 
   if (!packagePath.startsWith('private' + path.sep)) {

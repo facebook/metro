@@ -15,7 +15,7 @@ import type {
   Module,
   Options,
   TransformResultDependency,
-} from '../types.flow';
+} from '../types';
 
 import CountingSet from '../../lib/CountingSet';
 import path from 'path';

@@ -16,7 +16,7 @@ import type {
   Options,
   ReadOnlyGraph,
   TransformResultDependency,
-} from '../../DeltaBundler/types.flow';
+} from '../../DeltaBundler/types';
 
 import CountingSet from '../../lib/CountingSet';
 import {mergeConfig} from 'metro-config';

@@ -12,7 +12,7 @@
 'use strict';
 
 import type {AssetData} from '../../Assets';
-import type {Module, ReadOnlyDependencies} from '../types.flow';
+import type {Module, ReadOnlyDependencies} from '../types';
 
 const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
