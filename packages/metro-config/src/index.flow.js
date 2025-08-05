@@ -9,14 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
+export type * from './types';
 
-/*::
-export type * from './index.flow';
-*/
-
-try {
-  require('metro-babel-register').unstable_registerForMetroMonorepo();
-} catch {}
-
-module.exports = require('./index.flow');
+export {default as getDefaultConfig} from './defaults';
+export {loadConfig, mergeConfig, resolveConfig} from './loadConfig';
