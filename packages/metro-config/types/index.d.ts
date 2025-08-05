@@ -11,5 +11,5 @@
 import getDefaultConfig from './defaults';
 import {loadConfig, mergeConfig, resolveConfig} from './loadConfig';
 
-export * from './configTypes';
+export * from './types';
 export {loadConfig, mergeConfig, resolveConfig, getDefaultConfig};

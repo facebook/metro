@@ -9,10 +9,7 @@
  */
 
 import type {RequireContextParams} from '../../ModuleGraph/worker/collectDependencies';
-import type {
-  ResolvedDependency,
-  TransformResultDependency,
-} from '../types.flow';
+import type {ResolvedDependency, TransformResultDependency} from '../types';
 
 import {buildSubgraph} from '../buildSubgraph';
 import nullthrows from 'nullthrows';

@@ -18,7 +18,7 @@ import type {
   IConsumer,
   Mapping,
   SourcePosition,
-} from './types.flow';
+} from './types';
 
 const AbstractConsumer = require('./AbstractConsumer');
 const {EMPTY_POSITION, FIRST_COLUMN, FIRST_LINE} = require('./constants');

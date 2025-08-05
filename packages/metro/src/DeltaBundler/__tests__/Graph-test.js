@@ -46,7 +46,7 @@ import type {
   TransformFn,
   TransformResultDependency,
   TransformResultWithSource,
-} from '../types.flow';
+} from '../types';
 
 import {deriveAbsolutePathFromContext} from '../../lib/contextModule';
 import CountingSet from '../../lib/CountingSet';

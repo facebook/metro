@@ -11,8 +11,8 @@
 
 'use strict';
 
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
-import type {ResolverInputOptions} from '../shared/types.flow';
+import type {TransformInputOptions} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
 
 const canonicalize = require('metro-core/private/canonicalize');
 

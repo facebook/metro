@@ -14,6 +14,12 @@ import fs from 'fs';
 // $FlowFixMe[untyped-import] glob in OSS
 import glob from 'glob';
 import path from 'path';
+import {promisify} from 'util';
+
+const globAsync = promisify(glob);
+
+// For promisified glob
+jest.useRealTimers();
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
 
@@ -108,6 +114,57 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
         './private/*': './src/*.js',
       }),
     );
+  });
+
+  test('all .flow.js files have an adjacent babel-registering entry point', async () => {
+    const flowFiles: Array<string> = await globAsync('src/**/*.flow.js', {
+      cwd: path.resolve(WORKSPACE_ROOT, packagePath),
+      ignore: ['node_modules'],
+      absolute: true,
+    });
+
+    const filePaths = flowFiles.map(flowFilePath => ({
+      flowFilePath,
+      entryFilePath: flowFilePath.replace(/\.flow\.js$/, '.js'),
+    }));
+
+    const unmatchedFlowFiles = filePaths
+      .filter(({flowFilePath, entryFilePath}) => !fs.existsSync(entryFilePath))
+      .map(
+        ({flowFilePath}) =>
+          path.relative(WORKSPACE_ROOT, flowFilePath) +
+          ' has no adjacent .js file',
+      );
+
+    expect(unmatchedFlowFiles).toEqual([]);
+
+    const entryFiles = await Promise.all(
+      filePaths.map(async ({entryFilePath}) => {
+        const content = await fs.promises.readFile(entryFilePath, 'utf-8');
+        return {
+          entryFilePath,
+          content,
+        };
+      }),
+    );
+    for (const {content, entryFilePath} of entryFiles) {
+      const flowFileBaseName = path.basename(entryFilePath, '.js') + '.flow';
+      const endOfHeader = content.indexOf('*/\n') + 3;
+      expect(endOfHeader).toBeGreaterThan(3);
+      expect(content.slice(endOfHeader)).toEqual(`
+'use strict';
+
+/*::
+export type * from './${flowFileBaseName}';
+*/
+
+try {
+  require('metro-babel-register').unstable_registerForMetroMonorepo();
+} catch {}
+
+module.exports = require('./${flowFileBaseName}');
+`);
+    }
   });
 
   if (!packagePath.startsWith('private' + path.sep)) {

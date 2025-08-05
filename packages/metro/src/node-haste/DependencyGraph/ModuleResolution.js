@@ -14,9 +14,9 @@
 import type {
   BundlerResolution,
   TransformResultDependency,
-} from '../../DeltaBundler/types.flow';
+} from '../../DeltaBundler/types';
 import type {Reporter} from '../../lib/reporting';
-import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {ResolverInputOptions} from '../../shared/types';
 import type {
   CustomResolver,
   DoesFileExist,

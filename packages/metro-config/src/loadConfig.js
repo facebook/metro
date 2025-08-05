@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
+import type {ConfigT, InputConfigT, YargArguments} from './types';
 
 const getDefaultConfig = require('./defaults');
 const validConfig = require('./defaults/validConfig');

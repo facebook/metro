@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {Module, ReadOnlyGraph} from '../types.flow';
+import type {Module, ReadOnlyGraph} from '../types';
 
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');

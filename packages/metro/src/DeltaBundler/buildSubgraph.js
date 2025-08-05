@@ -16,7 +16,7 @@ import type {
   ResolveFn,
   TransformFn,
   TransformResultDependency,
-} from './types.flow';
+} from './types';
 
 import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 import {isResolvedDependency} from '../lib/isResolvedDependency';

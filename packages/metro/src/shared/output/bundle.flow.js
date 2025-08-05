@@ -12,7 +12,7 @@
 'use strict';
 
 import type {AssetData} from '../../Assets';
-import type {BuildOptions, OutputOptions, RequestOptions} from '../types.flow';
+import type {BuildOptions, OutputOptions, RequestOptions} from '../types';
 import type {MixedSourceMap} from 'metro-source-map';
 
 const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');

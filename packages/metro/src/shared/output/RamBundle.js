@@ -12,7 +12,7 @@
 'use strict';
 
 import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
-import type {OutputOptions, RequestOptions} from '../types.flow';
+import type {OutputOptions, RequestOptions} from '../types';
 
 const Server = require('../../Server');
 const asAssets = require('./RamBundle/as-assets');

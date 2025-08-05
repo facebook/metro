@@ -11,7 +11,7 @@
 
 'use strict';
 
-import type {IConsumer} from './Consumer/types.flow';
+import type {IConsumer} from './Consumer/types';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
 const {BundleBuilder, createIndexMap} = require('./BundleBuilder');

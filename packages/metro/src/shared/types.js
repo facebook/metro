@@ -14,7 +14,7 @@
 import type {
   Options as DeltaBundlerOptions,
   TransformInputOptions,
-} from '../DeltaBundler/types.flow';
+} from '../DeltaBundler/types';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {

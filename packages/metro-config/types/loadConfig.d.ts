@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-import type {ConfigT, InputConfigT, YargArguments} from './configTypes';
+import type {ConfigT, InputConfigT, YargArguments} from './types';
 
 export interface CosmiConfigResult {
   filepath: string;

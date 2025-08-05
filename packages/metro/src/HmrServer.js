@@ -11,14 +11,14 @@
 'use strict';
 
 import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
-import type {GraphOptions} from './shared/types.flow';
+import type {GraphOptions} from './shared/types';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   HmrClientMessage,
   HmrErrorMessage,
   HmrMessage,
   HmrUpdateMessage,
-} from 'metro-runtime/src/modules/types.flow';
+} from 'metro-runtime/src/modules/types';
 import type {UrlWithParsedQuery} from 'url';
 
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
