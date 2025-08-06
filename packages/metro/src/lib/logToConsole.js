@@ -20,12 +20,7 @@ const util = require('util');
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (
-  terminal: Terminal,
-  level: string,
-  mode: 'BRIDGE' | 'NOBRIDGE',
-  ...data: Array<mixed>
-) => {
+module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
   // $FlowFixMe[invalid-computed-prop]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
@@ -66,10 +61,8 @@ module.exports = (
       data[data.length - 1] = lastItem.trimEnd();
     }
 
-    const modePrefix =
-      !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
+      color.bold(` ${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.
