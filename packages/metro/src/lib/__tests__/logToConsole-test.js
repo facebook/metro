@@ -33,9 +33,9 @@ beforeEach(() => {
 });
 
 test('invoke native console methods', () => {
-  log(console, 'log', 'BRIDGE', 'Banana');
-  log(console, 'warn', 'BRIDGE', 'Apple');
-  log(console, 'warn', 'BRIDGE', 'Kiwi');
+  log(console, 'log', 'Banana');
+  log(console, 'warn', 'Apple');
+  log(console, 'warn', 'Kiwi');
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenNthCalledWith(1, ' LOG ', 'Banana');
@@ -44,22 +44,22 @@ test('invoke native console methods', () => {
 });
 
 test('removes excess whitespace', () => {
-  log(console, 'log', 'BRIDGE', 'Banana\n   ');
+  log(console, 'log', 'Banana\n   ');
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenNthCalledWith(1, ' LOG ', 'Banana');
 });
 
 test('ignore `groupCollapsed` calls', () => {
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
+  log(console, 'groupCollapsed');
+  log(console, 'groupEnd');
   jest.runAllTimers();
 
   expect(console.log).not.toHaveBeenCalled();
 });
 
 test('warn if `groupCollapsed` and `groupEnd` are not balanced', () => {
-  log(console, 'groupCollapsed', 'BRIDGE');
+  log(console, 'groupCollapsed');
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenCalledWith(
@@ -68,47 +68,47 @@ test('warn if `groupCollapsed` and `groupEnd` are not balanced', () => {
   );
 
   // Ensure that the console resets the state and will accept new logs
-  log(console, 'warn', 'BRIDGE', 'Apple');
+  log(console, 'warn', 'Apple');
   jest.runAllTimers();
   expect(console.log).toHaveBeenCalledWith(' WARN ', 'Apple');
 });
 
 test('can deal with nested `group` and `groupCollapsed` calls', () => {
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'group', 'BRIDGE');
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
+  log(console, 'groupCollapsed');
+  log(console, 'group');
+  log(console, 'groupCollapsed');
+  log(console, 'groupEnd');
+  log(console, 'groupEnd');
+  log(console, 'groupEnd');
   jest.runAllTimers();
 
   expect(console.log).not.toHaveBeenCalled();
 
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'group', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
+  log(console, 'groupCollapsed');
+  log(console, 'group');
+  log(console, 'groupEnd');
+  log(console, 'groupCollapsed');
+  log(console, 'groupEnd');
+  log(console, 'groupEnd');
   jest.runAllTimers();
 
   expect(console.log).not.toHaveBeenCalled();
 
-  log(console, 'group', 'BRIDGE');
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
+  log(console, 'group');
+  log(console, 'groupCollapsed');
+  log(console, 'groupEnd');
+  log(console, 'groupCollapsed');
+  log(console, 'groupEnd');
+  log(console, 'groupEnd');
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenCalledTimes(1);
 
-  log(console, 'groupCollapsed', 'BRIDGE');
-  log(console, 'group', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'groupEnd', 'BRIDGE');
-  log(console, 'log', 'BRIDGE', 'Banana');
+  log(console, 'groupCollapsed');
+  log(console, 'group');
+  log(console, 'groupEnd');
+  log(console, 'groupEnd');
+  log(console, 'log', 'Banana');
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenCalledTimes(2);
