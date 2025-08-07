@@ -85,8 +85,7 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
     });
   });
 
-  // todo: fix
-  xtest.each(['absolute', 'relative'])(
+  test.each(['absolute', 'relative'])(
     '%s urls with ascii characters are encoded correctly',
     type => {
       const protocol = type === 'absolute' ? 'http:' : '';
