@@ -52,7 +52,6 @@ const {
 const {Terminal} = require('metro-core');
 const net = require('net');
 const nullthrows = require('nullthrows');
-const {parse} = require('url');
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -237,7 +236,7 @@ const createConnectMiddleware = async function (
         ),
       });
       httpServer.on('upgrade', (request, socket, head) => {
-        const {pathname} = parse(request.url);
+        const {pathname} = new URL(request.url, 'resolve://');
         if (pathname === '/hot') {
           wss.handleUpgrade(request, socket, head, ws => {
             wss.emit('connection', ws, request);
@@ -351,7 +350,7 @@ exports.runServer = async (
       };
 
       httpServer.on('upgrade', (request, socket, head) => {
-        const {pathname} = parse(request.url);
+        const {pathname} = new URL(request.url, 'resolve://');
         if (pathname != null && websocketEndpoints[pathname]) {
           websocketEndpoints[pathname].handleUpgrade(
             request,

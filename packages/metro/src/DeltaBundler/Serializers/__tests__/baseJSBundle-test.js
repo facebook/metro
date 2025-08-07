@@ -79,6 +79,23 @@ const barModule: Module<> = {
   getSource: () => Buffer.from('bar-source'),
 };
 
+const nonAsciiModule: Module<> = {
+  path: '/root/%30.бундл.Øಚ😁AA',
+  dependencies: new Map(),
+  inverseDependencies: new CountingSet(),
+  output: [
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */});',
+        map: [],
+        lineCount: 1,
+      },
+    },
+  ],
+  getSource: () => Buffer.from('bar-source'),
+};
+
 const getRunModuleStatement = (moduleId: number | string) =>
   `require(${JSON.stringify(moduleId)});`;
 
@@ -139,6 +156,52 @@ test('should generate a very simple bundle', () => {
       ],
       "post": "require(\\"foo\\");
     //# sourceMappingURL=http://localhost/bundle.map",
+      "pre": "__d(function() {/* code for polyfill */});",
+    }
+  `);
+});
+
+test('should generate a bundle with correct ascii characters parsing', () => {
+  expect(
+    baseJSBundle(
+      '/root/',
+      [polyfill],
+      {
+        dependencies: new Map([['/root/%30.бундл.Øಚ😁AA', nonAsciiModule]]),
+        entryPoints: new Set(['/root/%30.бундл.Øಚ😁AA']),
+        transformOptions,
+      },
+      {
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        createModuleId: filePath => path.basename(filePath),
+        dev: true,
+        getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
+        // expecting to receive these as already encoded URIs
+        sourceMapUrl: encodeURI('http://localhost/bundle.%30.бундл.Øಚ😁AA.map'),
+        sourceUrl: encodeURI('http://localhost/bundle.%30.бундл.Øಚ😁AA.js'),
+        getSourceUrl: null,
+      },
+    ),
+  ).toMatchInlineSnapshot(`
+    Object {
+      "modules": Array [
+        Array [
+          "%30.бундл.Øಚ😁AA",
+          "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"%30.бундл.Øಚ😁AA\\",[],\\"%30.бундл.Øಚ😁AA\\");",
+        ],
+      ],
+      "post": "//# sourceMappingURL=http://localhost/bundle.%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA.map
+    //# sourceURL=http://localhost/bundle.%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA.js",
       "pre": "__d(function() {/* code for polyfill */});",
     }
   `);

@@ -19,7 +19,6 @@ import type {
   HmrMessage,
   HmrUpdateMessage,
 } from 'metro-runtime/src/modules/types';
-import type {UrlWithParsedQuery} from 'url';
 
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
@@ -27,16 +26,13 @@ const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundErro
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const parseBundleOptionsFromBundleRequestUrl = require('./lib/parseBundleOptionsFromBundleRequestUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 const nullthrows = require('nullthrows');
-const url = require('url');
-
-export type EntryPointURL = UrlWithParsedQuery;
 
 export type Client = {
   optedIntoHMR: boolean,
@@ -46,7 +42,7 @@ export type Client = {
 
 type ClientGroup = {
   +clients: Set<Client>,
-  clientUrl: EntryPointURL,
+  clientUrl: URL,
   revisionId: RevisionId,
   +unlisten: () => void,
   +graphOptions: GraphOptions,
@@ -100,11 +96,12 @@ class HmrServer<TClient: Client> {
     sendFn: (data: string) => void,
   ): Promise<void> {
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
-    const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const {bundleType: _bundleType, ...options} = parseOptionsFromUrl(
-      requestUrl,
-      new Set(this._config.resolver.platforms),
-    );
+    const clientUrl = new URL(requestUrl);
+    const {bundleType: _bundleType, ...options} =
+      parseBundleOptionsFromBundleRequestUrl(
+        requestUrl,
+        new Set(this._config.resolver.platforms),
+      );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 
@@ -155,29 +152,18 @@ class HmrServer<TClient: Client> {
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {
-        dev,
-        minify,
-        runModule,
-        bundleEntry: _bundleEntry,
-        ...query
-      } = clientUrl.query || {};
-      clientUrl.query = {
-        ...query,
-        dev: dev || 'true',
-        minify: minify || 'false',
-        modulesOnly: 'true',
-        runModule: runModule || 'false',
-        shallow: 'true',
-      };
-      // the legacy url object is parsed with both "search" and "query" fields.
-      // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
-      // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
-      clientUrl.search = '';
+
+      const clientQuery = clientUrl.searchParams;
+      clientQuery.delete('bundleEntry');
+      clientQuery.set('dev', clientQuery.get('dev') || 'true');
+      clientQuery.set('minify', clientQuery.get('minify') || 'false');
+      clientQuery.set('modulesOnly', 'true');
+      clientQuery.set('runModule', clientQuery.get('runModule') || 'false');
+      clientQuery.set('shallow', 'true');
 
       clientGroup = {
         clients: new Set([client]),
-        clientUrl,
+        clientUrl: new URL(clientUrl),
         revisionId: id,
         graphOptions,
         unlisten: (): void => unlisten(),
@@ -369,7 +355,7 @@ class HmrServer<TClient: Client> {
       logger?.point('serialize_start');
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        clientUrl: group.clientUrl,
+        clientUrl: new URL(group.clientUrl),
         createModuleId: this._createModuleId,
         includeAsyncPaths: group.graphOptions.lazy,
         projectRoot: this._config.projectRoot,
