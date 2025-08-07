@@ -27,7 +27,7 @@ const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundErro
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const parseBundleOptionsFromBundleRequestUrl = require('./lib/parseBundleOptionsFromBundleRequestUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
 const {
@@ -101,10 +101,11 @@ class HmrServer<TClient: Client> {
   ): Promise<void> {
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
     const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const {bundleType: _bundleType, ...options} = parseOptionsFromUrl(
-      requestUrl,
-      new Set(this._config.resolver.platforms),
-    );
+    const {bundleType: _bundleType, ...options} =
+      parseBundleOptionsFromBundleRequestUrl(
+        requestUrl,
+        new Set(this._config.resolver.platforms),
+      );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 

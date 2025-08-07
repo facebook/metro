@@ -62,8 +62,8 @@ const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundErro
 const bundleToString = require('./lib/bundleToString');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
+const parseBundleOptionsFromBundleRequestUrl = require('./lib/parseBundleOptionsFromBundleRequestUrl');
 const parseJsonBody = require('./lib/parseJsonBody');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
 const {
@@ -578,10 +578,11 @@ class Server {
   };
 
   _parseOptions(url: string): BundleOptions {
-    const {bundleType: _bundleType, ...bundleOptions} = parseOptionsFromUrl(
-      url,
-      new Set(this._config.resolver.platforms),
-    );
+    const {bundleType: _bundleType, ...bundleOptions} =
+      parseBundleOptionsFromBundleRequestUrl(
+        url,
+        new Set(this._config.resolver.platforms),
+      );
     return bundleOptions;
   }
 
