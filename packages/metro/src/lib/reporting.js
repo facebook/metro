@@ -129,7 +129,6 @@ export type ReportableEvent =
         | 'groupEnd'
         | 'debug',
       data: Array<mixed>,
-      mode: 'BRIDGE' | 'NOBRIDGE',
       ...
     }
   | {
