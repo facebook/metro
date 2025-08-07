@@ -12,13 +12,12 @@
 'use strict';
 
 const parseCustomResolverOptions = require('../parseCustomResolverOptions');
-const url = require('url');
 
 test('should parse some custom options from a http url', () => {
   const myUrl =
     'http://localhost/my/bundle.bundle?dev=true&resolver.foo=value&resolver.bar=other';
 
-  expect(parseCustomResolverOptions(url.parse(myUrl, true))).toEqual({
+  expect(parseCustomResolverOptions(new URL(myUrl).searchParams)).toEqual({
     foo: 'value',
     bar: 'other',
   });
@@ -27,7 +26,7 @@ test('should parse some custom options from a http url', () => {
 test('should parse some custom options from a websocket url', () => {
   const myUrl = 'ws://localhost/hot?resolver.foo=value&resolver.bar=other';
 
-  expect(parseCustomResolverOptions(url.parse(myUrl, true))).toEqual({
+  expect(parseCustomResolverOptions(new URL(myUrl).searchParams)).toEqual({
     foo: 'value',
     bar: 'other',
   });
@@ -36,5 +35,5 @@ test('should parse some custom options from a websocket url', () => {
 test('should return an empty object if there are no custom params', () => {
   const myUrl = 'http://localhost/my/bundle.bundle?dev=true';
 
-  expect(parseCustomResolverOptions(url.parse(myUrl, true))).toEqual({});
+  expect(parseCustomResolverOptions(new URL(myUrl).searchParams)).toEqual({});
 });

@@ -13,21 +13,20 @@
 
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-const nullthrows = require('nullthrows');
-
 const PREFIX = 'transform.';
 
-module.exports = function parseCustomTransformOptions(urlObj: {
-  +query?: {[string]: string, ...},
-  ...
-}): CustomTransformOptions {
-  const customTransformOptions = Object.create(null);
-  const query = nullthrows(urlObj.query);
+module.exports = function parseCustomTransformOptions(
+  searchParams: URLSearchParams,
+): CustomTransformOptions {
+  const customTransformOptions: {
+    __proto__: null,
+    [string]: mixed,
+    ...
+  } = Object.create(null);
 
-  Object.keys(query).forEach((key: string) => {
+  searchParams.forEach((value: string, key: string) => {
     if (key.startsWith(PREFIX)) {
-      // $FlowFixMe[prop-missing]
-      customTransformOptions[key.substr(PREFIX.length)] = query[key];
+      customTransformOptions[key.substr(PREFIX.length)] = value;
     }
   });
 

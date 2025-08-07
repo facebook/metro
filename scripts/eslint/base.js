@@ -42,6 +42,23 @@ module.exports = {
     quotes: 'off',
     'sort-keys': 'off',
 
+    'no-restricted-imports': [
+      'error',
+      {
+        name: 'url',
+        message:
+          'Deprecated. Please use URL instead. https://nodejs.org/docs/latest/api/url.html#legacy-url-api',
+      },
+    ],
+    'no-restricted-modules': [
+      'error',
+      {
+        name: 'url',
+        message:
+          'Deprecated. Please use URL instead. https://nodejs.org/docs/latest/api/url.html#legacy-url-api',
+      },
+    ],
+
     // TODO: This was added after migrating from `eslint-plugin-prettier` to
     // `eslint-config-prettier`. The former used to disable this rule, so this
     // was added to avoid introducing lint errors during the migration. Either

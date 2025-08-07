@@ -86,7 +86,6 @@ const nullthrows = require('nullthrows');
 const path = require('path');
 const {performance} = require('perf_hooks');
 const querystring = require('querystring');
-const url = require('url');
 
 const noopLogger: RootPerfLogger = {
   start: () => {},
@@ -510,20 +509,29 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
-    const urlObj = url.parse(decodeURI(req.url), true);
+    debug('Processing single asset request: %s', req.url);
+    const urlObj = new URL(
+      req.url,
+      'mock-protocol://mock-host' /* URL expects a protocol and a host to be present to parse a URL */,
+    );
+    const formattedUrl = urlObj.toString();
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
     let [, assetPath] =
-      (urlObj &&
-        urlObj.pathname &&
-        urlObj.pathname.match(/^\/assets\/(.+)$/)) ||
-      [];
-
-    if (!assetPath && urlObj && urlObj.query && urlObj.query.unstable_path) {
+      decodeURI(urlObj.pathname).match(/^\/assets\/(.+)$/) || [];
+    if (!assetPath && urlObj.searchParams.get('unstable_path')) {
       const [, actualPath, secondaryQuery] = nullthrows(
-        urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
+        (urlObj.searchParams.get('unstable_path') || '').match(
+          /^([^?]*)\??(.*)$/,
+        ),
       );
       if (secondaryQuery) {
-        // $FlowFixMe[unsafe-object-assign]
-        Object.assign(urlObj.query, querystring.parse(secondaryQuery));
+        Object.entries(querystring.parse(secondaryQuery)).forEach(
+          ([key, value]) => {
+            urlObj.searchParams.set(key, value);
+          },
+        );
       }
       assetPath = actualPath;
     }
@@ -544,7 +552,7 @@ class Server {
         assetPath,
         this._config.projectRoot,
         this._config.watchFolders,
-        urlObj.query.platform,
+        urlObj.searchParams.get('platform'),
         this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
@@ -598,19 +606,21 @@ class Server {
     next: (?Error) => void,
   ) {
     const originalUrl = req.url;
+    debug('Handling request:    %s', originalUrl);
     req.url = this._rewriteAndNormalizeUrl(req.url);
-    const urlObj = url.parse(decodeURI(req.url), true);
+    if (req.url !== originalUrl) {
+      debug('Rewritten to:    %s', req.url);
+    }
     const {host} = req.headers;
-    debug(
-      `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
-        (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
-    );
-    const formattedUrl = url.format({
-      ...urlObj,
-      host,
-      protocol: 'http',
-    });
+    const urlObj = new URL(req.url, 'http://' + host);
+    const formattedUrl = urlObj.toString();
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
+
     const pathname = urlObj.pathname || '';
+    const decodedPathname = decodeURI(urlObj.pathname || '');
+
     const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
@@ -623,7 +633,7 @@ class Server {
       });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
-        this._serverOptions.onBundleBuilt(pathname);
+        this._serverOptions.onBundleBuilt(decodedPathname);
       }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
@@ -655,8 +665,10 @@ class Server {
       let handled = false;
       for (const [pathnamePrefix, normalizedRootDir] of this
         ._sourceRequestRoutingMap) {
-        if (pathname.startsWith(pathnamePrefix)) {
-          const relativePathname = pathname.substr(pathnamePrefix.length);
+        if (decodedPathname.startsWith(pathnamePrefix)) {
+          const relativePathname = decodedPathname.substr(
+            pathnamePrefix.length,
+          );
           await this._processSourceRequest(
             relativePathname,
             normalizedRootDir,
@@ -673,13 +685,13 @@ class Server {
   }
 
   async _processSourceRequest(
-    relativePathname: string,
+    relativeFilePathname: string,
     rootDir: string,
     res: ServerResponse,
   ): Promise<void> {
     if (
       !this._allowedSuffixesForSourceRequests.some(suffix =>
-        relativePathname.endsWith(suffix),
+        relativeFilePathname.endsWith(suffix),
       )
     ) {
       res.writeHead(404);
@@ -687,7 +699,7 @@ class Server {
       return;
     }
     const depGraph = await this._bundler.getBundler().getDependencyGraph();
-    const filePath = path.join(rootDir, relativePathname);
+    const filePath = path.join(rootDir, relativeFilePathname);
     try {
       await depGraph.getOrComputeSha1(filePath);
     } catch {
@@ -695,7 +707,7 @@ class Server {
       res.end();
       return;
     }
-    const mimeType = mime.lookup(path.basename(relativePathname));
+    const mimeType = mime.lookup(path.basename(relativeFilePathname));
     res.setHeader('Content-Type', mimeType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);

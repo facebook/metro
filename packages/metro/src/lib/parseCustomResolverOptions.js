@@ -13,24 +13,20 @@
 
 import type {CustomResolverOptions} from '../../../metro-resolver/src/types';
 
-const nullthrows = require('nullthrows');
-
 const PREFIX = 'resolver.';
 
-module.exports = function parseCustomResolverOptions(urlObj: {
-  +query?: {[string]: string, ...},
-  ...
-}): CustomResolverOptions {
+module.exports = function parseCustomResolverOptions(
+  searchParams: URLSearchParams,
+): CustomResolverOptions {
   const customResolverOptions: {
     __proto__: null,
     [string]: mixed,
     ...
   } = Object.create(null);
-  const query = nullthrows(urlObj.query);
 
-  Object.keys(query).forEach((key: string) => {
+  searchParams.forEach((value: string, key: string) => {
     if (key.startsWith(PREFIX)) {
-      customResolverOptions[key.substr(PREFIX.length)] = query[key];
+      customResolverOptions[key.substr(PREFIX.length)] = value;
     }
   });
 
