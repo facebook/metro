@@ -9,10 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {IncomingMessage, ServerResponse} from 'http';
 
-const accepts = require('accepts');
+import accepts from 'accepts';
 
 const CRLF = '\r\n';
 const BOUNDARY = '3beqjf3apnqeu3h5jqorms4i';

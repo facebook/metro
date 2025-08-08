@@ -9,18 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BundleDetails, ReportableEvent} from './reporting';
 import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
-const logToConsole = require('./logToConsole');
-const reporting = require('./reporting');
-const chalk = require('chalk');
-const throttle = require('lodash.throttle');
-const {AmbiguousModuleResolutionError} = require('metro-core');
-const path = require('path');
+import logToConsole from './logToConsole';
+import reporting from './reporting';
+import chalk from 'chalk';
+import throttle from 'lodash.throttle';
+import {AmbiguousModuleResolutionError} from 'metro-core';
+import path from 'path';
 
 type BundleProgress = {
   bundleDetails: BundleDetails,
@@ -274,6 +272,7 @@ class TerminalReporter {
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
+        // eslint-disable-next-line lint/no-commonjs-require
         const version = 'v' + require('../../package.json').version;
         this.terminal.log(
           color.bold(

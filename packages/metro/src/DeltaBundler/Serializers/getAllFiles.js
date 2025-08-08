@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module, ReadOnlyGraph} from '../types';
 
-const {getAssetFiles} = require('../../Assets');
-const {getJsOutput, isJsModule} = require('./helpers/js');
+import {getAssetFiles} from '../../Assets';
+import {getJsOutput, isJsModule} from './helpers/js';
 
 type Options = {
   platform: ?string,

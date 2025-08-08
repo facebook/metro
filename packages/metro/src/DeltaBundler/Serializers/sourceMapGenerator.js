@@ -9,16 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module} from '../types';
 
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
-const {isJsModule} = require('./helpers/js');
-const {
-  fromRawMappings,
-  fromRawMappingsNonBlocking,
-} = require('metro-source-map');
+import getSourceMapInfo from './helpers/getSourceMapInfo';
+import {isJsModule} from './helpers/js';
+import {fromRawMappings, fromRawMappingsNonBlocking} from 'metro-source-map';
 
 export type SourceMapGeneratorOptions = $ReadOnly<{
   excludeSource: boolean,

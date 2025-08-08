@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   BundlerResolution,
   TransformResultDependency,
@@ -27,13 +25,13 @@ import type {
 } from 'metro-resolver';
 import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
 
-const {codeFrameColumns} = require('@babel/code-frame');
-const fs = require('fs');
-const invariant = require('invariant');
-const Resolver = require('metro-resolver');
-const createDefaultContext = require('metro-resolver/private/createDefaultContext');
-const path = require('path');
-const util = require('util');
+import {codeFrameColumns} from '@babel/code-frame';
+import fs from 'fs';
+import invariant from 'invariant';
+import * as Resolver from 'metro-resolver';
+import createDefaultContext from 'metro-resolver/private/createDefaultContext';
+import path from 'path';
+import util from 'util';
 
 export type DirExistsFn = (filePath: string) => boolean;
 

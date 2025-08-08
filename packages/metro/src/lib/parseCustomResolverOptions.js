@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {CustomResolverOptions} from '../../../metro-resolver/src/types';
 
-const nullthrows = require('nullthrows');
+import nullthrows from 'nullthrows';
 
 const PREFIX = 'resolver.';
 

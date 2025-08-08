@@ -9,10 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const fs = require('fs');
-const throat = require('throat');
+import fs from 'fs';
+import throat from 'throat';
 
 const writeFile: typeof fs.promises.writeFile = throat(
   128,

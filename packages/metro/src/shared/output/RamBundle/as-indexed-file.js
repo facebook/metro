@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   ModuleGroups,
@@ -19,12 +17,12 @@ import type {
 } from '../../types';
 import type {WriteStream} from 'fs';
 
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
-const {joinModules} = require('./util');
-const writeSourceMap = require('./write-sourcemap');
-const fs = require('fs');
+import relativizeSourceMapInline from '../../../lib/relativizeSourceMap';
+import buildSourcemapWithMetadata from './buildSourcemapWithMetadata';
+import MAGIC_UNBUNDLE_FILE_HEADER from './magic-number';
+import {joinModules} from './util';
+import writeSourceMap from './write-sourcemap';
+import fs from 'fs';
 
 const SIZEOF_UINT32 = 4;
 

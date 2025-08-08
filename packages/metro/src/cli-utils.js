@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const fs = require('fs');
+import fs from 'fs';
 
 exports.watchFile = async function (
   filename: string,

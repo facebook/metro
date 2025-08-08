@@ -152,6 +152,8 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
       const endOfHeader = content.indexOf('*/\n') + 3;
       expect(endOfHeader).toBeGreaterThan(3);
       expect(content.slice(endOfHeader)).toEqual(`
+/* eslint-disable lint/no-commonjs-require */
+
 'use strict';
 
 /*::

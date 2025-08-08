@@ -8,8 +8,6 @@
  * @flow
  */
 
-'use strict';
-
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
@@ -17,17 +15,14 @@ import type {
   AsyncDependencyType,
 } from 'metro/private/DeltaBundler/types';
 
-import {isProgram} from '@babel/types';
-
-const generate = require('@babel/generator').default;
-const template = require('@babel/template').default;
-const traverse = require('@babel/traverse').default;
-const types = require('@babel/types');
-const crypto = require('crypto');
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-
-const {isImport} = types;
+import generate from '@babel/generator';
+import template from '@babel/template';
+import traverse from '@babel/traverse';
+import * as types from '@babel/types';
+import {isImport, isProgram} from '@babel/types';
+import crypto from 'crypto';
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,

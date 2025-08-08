@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module} from '../types';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 
-const {
+import {
   sourceMapGenerator,
   sourceMapGeneratorNonBlocking,
-} = require('./sourceMapGenerator');
+} from './sourceMapGenerator';
 
 function sourceMapString(
   modules: $ReadOnlyArray<Module<>>,

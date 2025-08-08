@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const path = require('path');
+import path from 'path';
 
 type PlatformFilePathParts = {
   dirPath: string,

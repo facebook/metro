@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ReadOnlyGraph} from '../../types';
 
 import {isResolvedDependency} from '../../../lib/isResolvedDependency';

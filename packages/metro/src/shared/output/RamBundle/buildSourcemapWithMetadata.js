@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ModuleGroups, ModuleTransportLike} from '../../types';
 import type {IndexMap} from 'metro-source-map';
 
-const {
+import {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   joinModules,
-} = require('./util');
+} from './util';
 
 type Params = {
   fixWrapperOffset: boolean,

@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetPath} from './node-haste/lib/AssetPaths';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
-const crypto = require('crypto');
-const fs = require('fs');
-const getImageSize = require('image-size');
-const path = require('path');
+import * as AssetPaths from './node-haste/lib/AssetPaths';
+import crypto from 'crypto';
+import fs from 'fs';
+import getImageSize from 'image-size';
+import path from 'path';
 
 export type AssetInfo = {
   +files: Array<string>,

@@ -10,12 +10,10 @@
 
 /* eslint-disable no-console */
 
-'use strict';
-
 import type {Terminal} from 'metro-core';
 
-const chalk = require('chalk');
-const util = require('util');
+import chalk from 'chalk';
+import util from 'util';
 
 const groupStack = [];
 let collapsedGuardTimer;
