@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {FileAndDirCandidates} from '../types';
 
-const formatFileCandidates = require('./formatFileCandidates');
+import formatFileCandidates from './formatFileCandidates';
 
 class FailedToResolvePathError extends Error {
   candidates: FileAndDirCandidates;
