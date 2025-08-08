@@ -40,7 +40,7 @@ type ParsedBareSpecifier = $ReadOnly<{
   posixSubpath: string,
 }>;
 
-function resolve(
+export default function resolve(
   context: ResolutionContext,
   moduleName: string,
   platform: string | null,
@@ -652,5 +652,3 @@ function failedFor<TResolution, TCandidates>(
 ): Result<TResolution, TCandidates> {
   return {type: 'failed', candidates};
 }
-
-module.exports = resolve;

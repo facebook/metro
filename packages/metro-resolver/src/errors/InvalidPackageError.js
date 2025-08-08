@@ -13,7 +13,7 @@ import type {FileCandidates} from '../types';
 
 import formatFileCandidates from './formatFileCandidates';
 
-class InvalidPackageError extends Error {
+export default class InvalidPackageError extends Error {
   /**
    * The file candidates we tried to find to resolve the `main` field of the
    * package. Ex. `/js/foo/beep(.js|.json)?` if `main` is specifying `./beep`
@@ -53,5 +53,3 @@ class InvalidPackageError extends Error {
     Object.assign(this, opts);
   }
 }
-
-module.exports = InvalidPackageError;

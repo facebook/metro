@@ -24,7 +24,7 @@ type PartialContext = $ReadOnly<{
  * As context values can be overridden by callers, this occurs externally to
  * `resolve.js`.
  */
-function createDefaultContext(
+export default function createDefaultContext(
   context: PartialContext,
   dependency: TransformResultDependency,
 ): ResolutionContext {
@@ -35,5 +35,3 @@ function createDefaultContext(
     ...context,
   };
 }
-
-module.exports = createDefaultContext;
