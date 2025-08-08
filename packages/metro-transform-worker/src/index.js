@@ -54,7 +54,7 @@ import {
   importLocationsPlugin,
   locToKey,
 } from 'metro/private/ModuleGraph/worker/importLocationsPlugin';
-import JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
+import * as JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
 import nullthrows from 'nullthrows';
 
 const InternalInvalidRequireCallError =

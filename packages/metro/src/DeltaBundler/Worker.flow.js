@@ -23,10 +23,6 @@ import path from 'path';
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 
-export type Worker = {
-  +transform: typeof transform,
-};
-
 type TransformerInterface = {
   transform(
     JsTransformerConfig,
@@ -70,13 +66,13 @@ function asDeserializedBuffer(value: any): Buffer | null {
   return null;
 }
 
-async function transform(
+export const transform = (
   filename: string,
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
-): Promise<Data> {
+): Promise<Data> => {
   let data;
 
   const fileBufferObject = asDeserializedBuffer(fileBuffer);
@@ -92,7 +88,11 @@ async function transform(
     projectRoot,
     transformerConfig,
   );
-}
+};
+
+export type Worker = {
+  +transform: typeof transform,
+};
 
 async function transformFile(
   filename: string,
@@ -158,7 +158,3 @@ function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
     log_entry_label: 'Transforming file',
   };
 }
-
-module.exports = ({
-  transform,
-}: Worker);

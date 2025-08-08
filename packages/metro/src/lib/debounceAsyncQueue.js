@@ -13,7 +13,7 @@
 
 // Debounces calls with the given delay, and queues the next call while the
 // previous one hasn't completed so that no two calls can execute concurrently.
-function debounceAsyncQueue<T>(
+export default function debounceAsyncQueue<T>(
   fn: () => Promise<T>,
   delay: number,
 ): () => Promise<T> {
@@ -51,5 +51,3 @@ function debounceAsyncQueue<T>(
       }
     });
 }
-
-module.exports = debounceAsyncQueue;

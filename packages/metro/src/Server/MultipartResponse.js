@@ -18,7 +18,7 @@ const BOUNDARY = '3beqjf3apnqeu3h5jqorms4i';
 type Data = string | Buffer | Uint8Array;
 type Headers = {[string]: string | number};
 
-class MultipartResponse {
+export default class MultipartResponse {
   static wrapIfSupported(
     req: IncomingMessage,
     res: ServerResponse,
@@ -99,5 +99,3 @@ class MultipartResponse {
     return this;
   }
 }
-
-module.exports = MultipartResponse;

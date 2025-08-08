@@ -13,7 +13,7 @@
 
 import type {RevisionId} from '../IncrementalBundler';
 
-class RevisionNotFoundError extends Error {
+export default class RevisionNotFoundError extends Error {
   revisionId: RevisionId;
 
   constructor(revisionId: RevisionId) {
@@ -21,5 +21,3 @@ class RevisionNotFoundError extends Error {
     this.revisionId = revisionId;
   }
 }
-
-module.exports = RevisionNotFoundError;

@@ -24,7 +24,7 @@ type SubTree<T: ModuleTransportLike> = (
 
 const assetPropertyBlockList = new Set(['files', 'fileSystemLocation', 'path']);
 
-function generateAssetCodeFileAst(
+export function generateAssetCodeFileAst(
   assetRegistryPath: string,
   assetDescriptor: AssetDataWithoutFiles,
 ): File {
@@ -66,7 +66,7 @@ function filterObject(
   return copied;
 }
 
-function createRamBundleGroups<T: ModuleTransportLike>(
+export function createRamBundleGroups<T: ModuleTransportLike>(
   ramGroups: $ReadOnlyArray<string>,
   groupableModules: $ReadOnlyArray<T>,
   subtree: SubTree<T>,
@@ -144,8 +144,3 @@ class ArrayMap<K, V> extends Map<K, Array<V>> {
     return array;
   }
 }
-
-module.exports = {
-  createRamBundleGroups,
-  generateAssetCodeFileAst,
-};

@@ -15,7 +15,7 @@ import nullthrows from 'nullthrows';
 
 const PREFIX = 'resolver.';
 
-module.exports = function parseCustomResolverOptions(urlObj: {
+export default function parseCustomResolverOptions(urlObj: {
   +query?: {[string]: string, ...},
   ...
 }): CustomResolverOptions {
@@ -33,4 +33,4 @@ module.exports = function parseCustomResolverOptions(urlObj: {
   });
 
   return customResolverOptions;
-};
+}

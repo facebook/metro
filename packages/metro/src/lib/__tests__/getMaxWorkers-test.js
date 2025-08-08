@@ -13,7 +13,8 @@
 
 jest.mock('os');
 
-const getMaxWorkers = require('../getMaxWorkers');
+import getMaxWorkers from '../getMaxWorkers';
+
 const os = require('os');
 
 test('calculates the number of max workers', () => {

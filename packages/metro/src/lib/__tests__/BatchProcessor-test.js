@@ -13,7 +13,7 @@
 
 jest.useRealTimers();
 
-const BatchProcessor = require('../BatchProcessor');
+import BatchProcessor from '../BatchProcessor';
 
 describe('BatchProcessor', () => {
   const options = {

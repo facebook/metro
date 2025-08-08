@@ -23,7 +23,7 @@ const constantFor = (encoding: 'ascii' | 'utf16le' | 'utf8') =>
         ? 3
         : 0;
 
-module.exports = function (
+export default function (
   code: Buffer | string,
   encoding: 'ascii' | 'utf16le' | 'utf8' = 'utf8',
 ): Buffer {
@@ -38,7 +38,7 @@ module.exports = function (
     signature.length - 1,
   );
   return signature;
-};
+}
 
 function tryAsciiPromotion(
   buffer: Buffer,

@@ -9,9 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import getPreludeCode from '../getPreludeCode';
 
-const getPreludeCode = require('../getPreludeCode');
 const vm = require('vm');
 
 ['development', 'production'].forEach((mode: string) => {

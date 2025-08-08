@@ -21,7 +21,7 @@ import getPreludeCode from './getPreludeCode';
 import * as transformHelpers from './transformHelpers';
 import * as defaults from 'metro-config/private/defaults/defaults';
 
-async function getPrependedScripts(
+export default async function getPrependedScripts(
   config: ConfigT,
   options: Omit<TransformInputOptions, 'type'>,
   resolverOptions: ResolverInputOptions,
@@ -112,5 +112,3 @@ function _getPrelude({
     ],
   };
 }
-
-module.exports = getPrependedScripts;

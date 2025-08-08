@@ -59,7 +59,7 @@ function createFunctionNameGetter(
     });
 }
 
-async function symbolicate(
+export default async function symbolicate(
   stack: $ReadOnlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
@@ -219,5 +219,3 @@ async function symbolicate(
     customizeStack,
   );
 }
-
-module.exports = symbolicate;

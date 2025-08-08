@@ -22,7 +22,7 @@ type CacheKeyProvider = {
   getCacheKey?: JsTransformerConfig => string,
 };
 
-function getTransformCacheKey(opts: {
+export default function getTransformCacheKey(opts: {
   +cacheVersion: string,
   +projectRoot: string,
   +transformerConfig: TransformerConfig,
@@ -49,5 +49,3 @@ function getTransformCacheKey(opts: {
     )
     .digest('hex');
 }
-
-module.exports = getTransformCacheKey;

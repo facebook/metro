@@ -203,7 +203,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       };
     });
 
-    const DeltaCalculator = require('../DeltaCalculator');
+    const DeltaCalculator = require('../DeltaCalculator').default;
 
     // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(

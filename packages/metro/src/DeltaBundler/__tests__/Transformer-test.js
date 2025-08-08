@@ -18,10 +18,11 @@ jest
   .mock('../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
-var Transformer = require('../Transformer');
-var fs = require('fs');
-var {getDefaultValues} = require('metro-config').getDefaultConfig;
-var {mergeConfig} = require('metro-config/private/loadConfig');
+// Must be required after mocks above
+const Transformer = require('../Transformer').default;
+const fs = require('fs');
+const {getDefaultValues} = require('metro-config').getDefaultConfig;
+const {mergeConfig} = require('metro-config/private/loadConfig');
 
 describe('Transformer', function () {
   let watchFolders;
@@ -74,7 +75,7 @@ describe('Transformer', function () {
       {getOrComputeSha1},
     );
 
-    require('../WorkerFarm').prototype.transform.mockReturnValue({
+    require('../WorkerFarm').default.prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });
@@ -123,7 +124,7 @@ describe('Transformer', function () {
       {getOrComputeSha1},
     );
 
-    require('../WorkerFarm').prototype.transform.mockReturnValue({
+    require('../WorkerFarm').default.prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });
@@ -163,7 +164,7 @@ describe('Transformer', function () {
       {getOrComputeSha1},
     );
 
-    require('../WorkerFarm').prototype.transform.mockReturnValue({
+    require('../WorkerFarm').default.prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });
@@ -204,7 +205,7 @@ describe('Transformer', function () {
       {getOrComputeSha1},
     );
 
-    require('../WorkerFarm').prototype.transform.mockReturnValue({
+    require('../WorkerFarm').default.prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });

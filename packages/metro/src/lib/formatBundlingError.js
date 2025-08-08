@@ -33,7 +33,9 @@ export type CustomError = Error &
     }>,
   };
 
-function formatBundlingError(error: CustomError): FormattedError {
+export default function formatBundlingError(
+  error: CustomError,
+): FormattedError {
   if (error instanceof AmbiguousModuleResolutionError) {
     const he = error.hasteError;
     const message =
@@ -116,5 +118,3 @@ function formatBundlingError(error: CustomError): FormattedError {
     };
   }
 }
-
-module.exports = formatBundlingError;

@@ -137,7 +137,7 @@ function combineMaps(
 const joinModules = (modules: $ReadOnlyArray<{+code: string, ...}>): string =>
   modules.map((m: {+code: string, ...}) => m.code).join('\n');
 
-module.exports = {
+export {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   countLines,

@@ -24,7 +24,7 @@ export type ExplodedSourceMap = $ReadOnlyArray<{
   +path: string,
 }>;
 
-function getExplodedSourceMap(
+export function getExplodedSourceMap(
   modules: $ReadOnlyArray<Module<>>,
   options: {
     +processModuleFilter: (module: Module<>) => boolean,
@@ -45,7 +45,3 @@ function getExplodedSourceMap(
   }
   return result;
 }
-
-module.exports = {
-  getExplodedSourceMap,
-};
