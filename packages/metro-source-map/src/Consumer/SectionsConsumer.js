@@ -29,7 +29,10 @@ import {add, add0, get0, get1, sub, sub1} from 'ob1';
  * A source map consumer that supports "indexed" source maps (that have a
  * `sections` field and no top-level mappings).
  */
-class SectionsConsumer extends AbstractConsumer implements IConsumer {
+export default class SectionsConsumer
+  extends AbstractConsumer
+  implements IConsumer
+{
   _consumers: $ReadOnlyArray<[GeneratedOffset, IConsumer]>;
 
   constructor(sourceMap: IndexMap) {
@@ -119,5 +122,3 @@ class SectionsConsumer extends AbstractConsumer implements IConsumer {
     return null;
   }
 }
-
-module.exports = SectionsConsumer;

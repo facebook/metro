@@ -51,7 +51,7 @@ type MetadataMap = {[source: string]: ?FBSourceMetadata, ...};
  *
  *     new SourceMetadataMapConsumer(map, source => source) // Don't normalize
  */
-class SourceMetadataMapConsumer {
+export default class SourceMetadataMapConsumer {
   constructor(
     map: MixedSourceMap,
     normalizeSourceFn: SourceNameNormalizer = normalizeSourcePath,
@@ -228,5 +228,3 @@ function comparePositions(a: Position, b: Position): number {
   }
   return a.line - b.line;
 }
-
-module.exports = SourceMetadataMapConsumer;

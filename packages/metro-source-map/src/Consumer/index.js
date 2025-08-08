@@ -12,4 +12,4 @@
 // Implements an API-compatible subset of source-map's `SourceMapConsumer`.
 import DelegatingConsumer from './DelegatingConsumer';
 
-module.exports = DelegatingConsumer;
+export default DelegatingConsumer;

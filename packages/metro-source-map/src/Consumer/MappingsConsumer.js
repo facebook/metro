@@ -36,7 +36,10 @@ import {decode as decodeVlq} from 'vlq';
  * A source map consumer that supports "basic" source maps (that have a
  * `mappings` field and no sections).
  */
-class MappingsConsumer extends AbstractConsumer implements IConsumer {
+export default class MappingsConsumer
+  extends AbstractConsumer
+  implements IConsumer
+{
   _sourceMap: BasicSourceMap;
   _decodedMappings: ?$ReadOnlyArray<Mapping>;
   _normalizedSources: ?$ReadOnlyArray<string>;
@@ -214,5 +217,3 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
     return sourcesContent[get0(idx)] ?? null;
   }
 }
-
-module.exports = MappingsConsumer;

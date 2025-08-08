@@ -21,7 +21,7 @@ import {GENERATED_ORDER, iterationOrderToString} from './constants';
 import invariant from 'invariant';
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
-class AbstractConsumer implements IConsumer {
+export default class AbstractConsumer implements IConsumer {
   _sourceMap: {+file?: string, ...};
 
   constructor(sourceMap: {+file?: string, ...}) {
@@ -61,5 +61,3 @@ class AbstractConsumer implements IConsumer {
     invariant(false, 'Not implemented');
   }
 }
-
-module.exports = AbstractConsumer;

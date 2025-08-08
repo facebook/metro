@@ -32,7 +32,7 @@ type FileFlags = $ReadOnly<{
  *
  * Mappings have to be passed in the order appearance in the generated source.
  */
-class Generator {
+export default class Generator {
   builder: B64Builder;
   last: {
     generatedColumn: number,
@@ -289,5 +289,3 @@ class IndexedSet {
     return Array.from(this.map.keys());
   }
 }
-
-module.exports = Generator;

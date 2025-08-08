@@ -28,7 +28,7 @@ const SEMICOLON = 0x3b;
  * For details about source map terminology and specification, check
  * https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
  */
-class B64Builder {
+export default class B64Builder {
   buffer: Buffer;
   pos: number;
   hasSegment: boolean;
@@ -102,5 +102,3 @@ class B64Builder {
     buffer.copy(this.buffer);
   }
 }
-
-module.exports = B64Builder;

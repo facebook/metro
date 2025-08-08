@@ -47,7 +47,7 @@ const CHILDREN_FIELD_TYPE = '__CHILDREN__';
 // Care is taken to adhere to the self-describing heap snapshot schema, but
 // we make some additional assumptions based on what Chrome hardcodes (where
 // the format leaves us no other choice).
-class ChromeHeapSnapshotProcessor {
+export class ChromeHeapSnapshotProcessor {
   // The raw snapshot data provided to this processor. Mutable.
   +_snapshotData: ChromeHeapSnapshot;
 
@@ -611,5 +611,3 @@ class ChromeHeapSnapshotRecordIterator
     return this;
   }
 }
-
-module.exports = {ChromeHeapSnapshotProcessor};

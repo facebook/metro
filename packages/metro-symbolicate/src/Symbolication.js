@@ -914,11 +914,11 @@ function symbolicateChromeTrace<ModuleIdsT>(
   return context.symbolicateChromeTrace(traceFile, {stdout, stderr});
 }
 
-module.exports = {
+export {
   createContext,
   unstable_createDirectoryContext,
   getOriginalPositionFor,
-  parseFileName: parseSingleMapFileName,
+  parseSingleMapFileName as parseFileName,
   symbolicate,
   symbolicateProfilerMap,
   symbolicateAttribution,

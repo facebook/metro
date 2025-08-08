@@ -587,7 +587,7 @@ function positionGreater(x: Position, y: Position) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 
-module.exports = {
+export {
   functionMapBabelPlugin,
   generateFunctionMap,
   generateFunctionMappingsArray,

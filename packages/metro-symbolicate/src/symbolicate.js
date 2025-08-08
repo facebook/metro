@@ -19,10 +19,9 @@
 
 import * as Symbolication from './Symbolication';
 import fs from 'fs';
+// $FlowFixMe[untyped-import] source-map
+import {SourceMapConsumer} from 'source-map';
 import {Transform} from 'stream';
-
-// flowlint-next-line untyped-import:off
-const SourceMapConsumer = require('source-map').SourceMapConsumer;
 
 function printHelp() {
   const usages = [
@@ -46,7 +45,7 @@ function printHelp() {
   console.error(usages.join('\n'));
 }
 
-async function main(
+export default async function main(
   argvInput: Array<string> = process.argv.slice(2),
   {
     stdin,
@@ -258,5 +257,3 @@ function waitForStream(stream: $FlowFixMe) {
     stream.on('finish', resolve);
   });
 }
-
-module.exports = main;
