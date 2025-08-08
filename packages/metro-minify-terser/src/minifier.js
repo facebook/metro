@@ -14,7 +14,9 @@ import type {MinifierOptions, MinifierResult} from 'metro-transform-worker';
 
 import terser from 'terser';
 
-async function minifier(options: MinifierOptions): Promise<MinifierResult> {
+export default async function minifier(
+  options: MinifierOptions,
+): Promise<MinifierResult> {
   const result = await minify(options);
 
   if (!options.map || result.map == null) {
@@ -66,5 +68,3 @@ async function minify({
     map: result.map,
   };
 }
-
-module.exports = minifier;
