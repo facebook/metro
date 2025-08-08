@@ -8,6 +8,8 @@
  * @format
  */
 
+/* eslint-disable lint/no-commonjs-require */
+
 /*::
 import type {
   DependencyExtractor,

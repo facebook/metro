@@ -24,6 +24,7 @@ import path from 'path';
 import {Timeout, clearTimeout, setTimeout} from 'timers';
 import {deserialize, serialize} from 'v8';
 
+// eslint-disable-next-line lint/no-commonjs-require
 const debug = require('debug')('Metro:FileMapCache');
 
 type AutoSaveOptions = $ReadOnly<{

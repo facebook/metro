@@ -29,6 +29,7 @@ import {createHash} from 'crypto';
 import watchman from 'fb-watchman';
 import invariant from 'invariant';
 
+// eslint-disable-next-line lint/no-commonjs-require
 const debug = require('debug')('Metro:WatchmanWatcher');
 
 const DELETE_EVENT = common.DELETE_EVENT;

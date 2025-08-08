@@ -8,6 +8,8 @@
  * @oncall react_native
  */
 
+/* eslint-disable lint/no-commonjs-require */
+
 'use strict';
 
 const path = require('path');
