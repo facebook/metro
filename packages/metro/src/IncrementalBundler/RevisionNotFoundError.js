@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {RevisionId} from '../IncrementalBundler';
 
 export default class RevisionNotFoundError extends Error {

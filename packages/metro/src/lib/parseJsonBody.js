@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {IncomingMessage} from 'http';
 
 const CONTENT_TYPE = 'application/json';
