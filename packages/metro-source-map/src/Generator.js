@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   BasicSourceMap,
   FBSourceFunctionMap,
   FBSourceMetadata,
 } from './source-map';
 
-const B64Builder = require('./B64Builder');
+import B64Builder from './B64Builder';
 
 type FileFlags = $ReadOnly<{
   addToIgnoreList?: boolean,

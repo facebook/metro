@@ -9,13 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
+import traverse from '@babel/traverse';
+import nullthrows from 'nullthrows';
 
 export type Options = {
   reservedNames: $ReadOnlyArray<string>,

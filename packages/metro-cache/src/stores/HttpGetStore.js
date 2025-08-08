@@ -8,14 +8,12 @@
  * @flow strict-local
  */
 
-'use strict';
-
 import type HttpError from './HttpError';
 import type NetworkError from './NetworkError';
 import type {HttpOptions} from 'metro-cache';
 
-const HttpStore = require('./HttpStore');
-const {Logger} = require('metro-core');
+import HttpStore from './HttpStore';
+import {Logger} from 'metro-core';
 
 class HttpGetStore<T> extends HttpStore<T> {
   _warned: boolean;

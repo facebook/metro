@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Writable} from 'stream';
 
-const {startProfiling, stopProfilingAndWrite} = require('./profiling');
-const JSONStream = require('./third-party/JSONStream');
-const {Console} = require('console');
-const duplexer = require('duplexer');
-const fs = require('fs');
-const invariant = require('invariant');
+import {startProfiling, stopProfilingAndWrite} from './profiling';
+import JSONStream from './third-party/JSONStream';
+import {Console} from 'console';
+import duplexer from 'duplexer';
+import fs from 'fs';
+import invariant from 'invariant';
 
 export type Command = (
   argv: Array<string>,

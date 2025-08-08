@@ -9,23 +9,21 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {IConsumer} from './Consumer/types';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
-const {BundleBuilder, createIndexMap} = require('./BundleBuilder');
-const composeSourceMaps = require('./composeSourceMaps');
-const Consumer = require('./Consumer');
+import {BundleBuilder, createIndexMap} from './BundleBuilder';
+import composeSourceMaps from './composeSourceMaps';
+import Consumer from './Consumer';
 // We need to export this for `metro-symbolicate`
-const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-const {
+import normalizeSourcePath from './Consumer/normalizeSourcePath';
+import {
   functionMapBabelPlugin,
   generateFunctionMap,
-} = require('./generateFunctionMap');
-const Generator = require('./Generator');
+} from './generateFunctionMap';
+import Generator from './Generator';
 // $FlowFixMe[untyped-import] - source-map
-const SourceMap = require('source-map');
+import SourceMap from 'source-map';
 
 export type {IConsumer};
 

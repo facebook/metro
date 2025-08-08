@@ -8,17 +8,15 @@
  * @flow
  */
 
-'use strict';
-
 import type {HttpsProxyAgentOptions} from 'https-proxy-agent';
 
-const HttpError = require('./HttpError');
-const NetworkError = require('./NetworkError');
-const {backOff} = require('exponential-backoff');
-const http = require('http');
-const https = require('https');
-const {HttpsProxyAgent} = require('https-proxy-agent');
-const zlib = require('zlib');
+import HttpError from './HttpError';
+import NetworkError from './NetworkError';
+import {backOff} from 'exponential-backoff';
+import http from 'http';
+import https from 'https';
+import {HttpsProxyAgent} from 'https-proxy-agent';
+import zlib from 'zlib';
 
 export type Options =
   | EndpointOptions // Uses the same options for both reads and writes

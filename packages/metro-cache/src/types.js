@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 export interface CacheStore<T> {
   name?: string;
   get(key: Buffer): ?T | Promise<?T>;

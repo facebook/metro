@@ -9,13 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BundleOptions} from 'metro/private/shared/types';
 
+import EventEmitter from 'events';
+import os from 'os';
+
 const VERSION = require('../package.json').version;
-const {EventEmitter} = require('events');
-const os = require('os');
 
 export type ActionLogEntryData = {
   action_name: string,

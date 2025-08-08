@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const minifier = require('./minifier');
+import minifier from './minifier';
 
 module.exports = minifier;

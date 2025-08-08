@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {InvalidPackageError} from 'metro-resolver';
 
-const {formatFileCandidates} = require('metro-resolver');
+import {formatFileCandidates} from 'metro-resolver';
 
 class PackageResolutionError extends Error {
   originModulePath: string;
