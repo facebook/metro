@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types';
@@ -18,13 +16,12 @@ import type {ResolverInputOptions} from '../shared/types';
 import type {ConfigT} from 'metro-config';
 
 import CountingSet from './CountingSet';
+import countLines from './countLines';
+import getPreludeCode from './getPreludeCode';
+import * as transformHelpers from './transformHelpers';
+import * as defaults from 'metro-config/private/defaults/defaults';
 
-const countLines = require('./countLines');
-const getPreludeCode = require('./getPreludeCode');
-const transformHelpers = require('./transformHelpers');
-const defaults = require('metro-config/private/defaults/defaults');
-
-async function getPrependedScripts(
+export default async function getPrependedScripts(
   config: ConfigT,
   options: Omit<TransformInputOptions, 'type'>,
   resolverOptions: ResolverInputOptions,
@@ -115,5 +112,3 @@ function _getPrelude({
     ],
   };
 }
-
-module.exports = getPrependedScripts;

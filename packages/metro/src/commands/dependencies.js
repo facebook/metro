@@ -9,18 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ConfigT} from 'metro-config';
 import type {ModuleObject} from 'yargs';
 import typeof Yargs from 'yargs';
 
-const {makeAsyncCommand} = require('../cli-utils');
-const Server = require('../Server');
-const fs = require('fs');
-const {loadConfig} = require('metro-config');
-const path = require('path');
-const {promisify} = require('util');
+import {makeAsyncCommand} from '../cli-utils';
+import Server from '../Server';
+import fs from 'fs';
+import {loadConfig} from 'metro-config';
+import path from 'path';
+import {promisify} from 'util';
 
 type Args = $ReadOnly<{
   entryFile: string,
@@ -84,7 +82,7 @@ async function dependencies(args: Args, config: ConfigT) {
     : Promise.resolve();
 }
 
-module.exports = (): {...ModuleObject, handler: Function} => ({
+export default (): {...ModuleObject, handler: Function} => ({
   command: 'get-dependencies [entryFile]',
   desc: 'List all dependencies that will be bundled for a given entry point',
   builder: (yargs: Yargs) => {

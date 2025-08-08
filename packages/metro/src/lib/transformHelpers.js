@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
@@ -138,7 +136,7 @@ function removeInlineRequiresBlockListFromOptions(
   return inlineRequires;
 }
 
-async function getTransformFn(
+export async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
@@ -213,7 +211,7 @@ function getType(
   return 'module';
 }
 
-async function getResolveDependencyFn(
+export async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
@@ -230,8 +228,3 @@ async function getResolveDependencyFn(
       resolverOptions,
     );
 }
-
-module.exports = {
-  getTransformFn,
-  getResolveDependencyFn,
-};

@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BabelCoreOptions, BabelFileMetadata} from '@babel/core';
 
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const nullthrows = require('nullthrows');
+import {parseSync, transformFromAstSync} from '@babel/core';
+import nullthrows from 'nullthrows';
 
 export type CustomTransformOptions = {
   [string]: mixed,
@@ -81,7 +79,12 @@ export type BabelTransformer = $ReadOnly<{
   getCacheKey?: () => string,
 }>;
 
-function transform({filename, options, plugins, src}: BabelTransformerArgs) {
+function transform({
+  filename,
+  options,
+  plugins,
+  src,
+}: BabelTransformerArgs): ReturnType<BabelTransformer['transform']> {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev
     ? 'development'
@@ -105,8 +108,8 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       // You get this behavior by default when using Babel's `transform` method directly.
       cloneInputAst: false,
     };
-    const sourceAst: BabelNodeFile = options.hermesParser
-      ? // $FlowFixMe[incompatible-exact]
+    const sourceAst = options.hermesParser
+      ? // eslint-disable-next-line import/no-commonjs
         require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
@@ -114,6 +117,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       : parseSync(src, babelConfig);
 
     const transformResult = transformFromAstSync<MetroBabelFileMetadata>(
+      // $FlowFixMe[incompatible-call] BabelFile vs BabelNodeFile
       sourceAst,
       src,
       babelConfig,
@@ -130,6 +134,9 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   }
 }
 
-module.exports = ({
-  transform,
-}: BabelTransformer);
+// Type check exports
+/*::
+({transform}) as BabelTransformer;
+*/
+
+export {transform};

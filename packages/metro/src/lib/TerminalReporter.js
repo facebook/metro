@@ -9,18 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BundleDetails, ReportableEvent} from './reporting';
 import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
-const logToConsole = require('./logToConsole');
-const reporting = require('./reporting');
-const chalk = require('chalk');
-const throttle = require('lodash.throttle');
-const {AmbiguousModuleResolutionError} = require('metro-core');
-const path = require('path');
+import logToConsole from './logToConsole';
+import * as reporting from './reporting';
+import chalk from 'chalk';
+import throttle from 'lodash.throttle';
+import {AmbiguousModuleResolutionError} from 'metro-core';
+import path from 'path';
 
 type BundleProgress = {
   bundleDetails: BundleDetails,
@@ -72,7 +70,7 @@ const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
  * We try to print useful information to the terminal for interactive builds.
  * This implements the `Reporter` interface from the './reporting' module.
  */
-class TerminalReporter {
+export default class TerminalReporter {
   /**
    * The bundle builds for which we are actively maintaining the status on the
    * terminal, ie. showing a progress bar. There can be several bundles being
@@ -274,6 +272,7 @@ class TerminalReporter {
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
+        // eslint-disable-next-line import/no-commonjs
         const version = 'v' + require('../../package.json').version;
         this.terminal.log(
           color.bold(
@@ -543,5 +542,3 @@ class TerminalReporter {
     this.terminal.status(this._getStatusMessage());
   }
 }
-
-module.exports = TerminalReporter;

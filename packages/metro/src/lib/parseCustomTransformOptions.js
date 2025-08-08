@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-const nullthrows = require('nullthrows');
+import nullthrows from 'nullthrows';
 
 const PREFIX = 'transform.';
 
-module.exports = function parseCustomTransformOptions(urlObj: {
+export default function parseCustomTransformOptions(urlObj: {
   +query?: {[string]: string, ...},
   ...
 }): CustomTransformOptions {
@@ -32,4 +30,4 @@ module.exports = function parseCustomTransformOptions(urlObj: {
   });
 
   return customTransformOptions;
-};
+}

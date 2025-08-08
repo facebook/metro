@@ -9,14 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ResolutionContext} from '../index';
 
+import FailedToResolvePathError from '../errors/FailedToResolvePathError';
+import * as Resolver from '../index';
 import {createResolutionContext} from './utils';
-
-const FailedToResolvePathError = require('../errors/FailedToResolvePathError');
-const Resolver = require('../index');
 
 const fileMap = {
   '/root/project/foo.js': '',

@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const parseOptionsFromUrl = require('../parseOptionsFromUrl');
+import parseOptionsFromUrl from '../parseOptionsFromUrl';
 
 describe('parseOptionsFromUrl', () => {
   test.each([['map'], ['bundle']])('detects %s requests', type => {

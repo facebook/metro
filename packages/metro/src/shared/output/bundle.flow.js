@@ -9,17 +9,15 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from '../../Assets';
 import type {BuildOptions, OutputOptions, RequestOptions} from '../types';
 import type {MixedSourceMap} from 'metro-source-map';
 
-const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
-const Server = require('../../Server');
-const writeFile = require('./writeFile');
+import relativizeSourceMapInline from '../../lib/relativizeSourceMap';
+import Server from '../../Server';
+import writeFile from './writeFile';
 
-function buildBundle(
+export function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
   buildOptions?: BuildOptions = {},
@@ -47,7 +45,7 @@ function relativateSerializedMap(
   return JSON.stringify(sourceMap);
 }
 
-async function saveBundleAndMap(
+export async function save(
   bundle: {
     code: string,
     map: string,
@@ -90,6 +88,4 @@ async function saveBundleAndMap(
   await Promise.all(writeFns.map((cb: void => mixed) => cb()));
 }
 
-exports.build = buildBundle;
-exports.save = saveBundleAndMap;
-exports.formatName = 'bundle';
+export const formatName = 'bundle';

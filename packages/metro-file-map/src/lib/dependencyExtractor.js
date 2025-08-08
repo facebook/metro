@@ -8,6 +8,9 @@
  * @flow strict
  */
 
+// Required by worker, must be commonjs
+/* eslint-disable import/no-commonjs */
+
 'use strict';
 
 const NOT_A_DOT = '(?<!\\.\\s*)';

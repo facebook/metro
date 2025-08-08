@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {MixedSourceMap} from '../source-map';
 import type {LookupBias} from './constants.js';
 import type {
@@ -20,20 +19,20 @@ import type {
   SourcePosition,
 } from './types';
 
-const {
+import {
   GENERATED_ORDER,
   GREATEST_LOWER_BOUND,
   LEAST_UPPER_BOUND,
   ORIGINAL_ORDER,
-} = require('./constants');
-const createConsumer = require('./createConsumer');
+} from './constants';
+import createConsumer from './createConsumer';
 
 /**
  * A source map consumer that supports both "basic" and "indexed" source maps.
  * Uses `MappingsConsumer` and `SectionsConsumer` under the hood (via
  * `createConsumer`).
  */
-class DelegatingConsumer implements IConsumer {
+export default class DelegatingConsumer implements IConsumer {
   static +GENERATED_ORDER: IterationOrder = GENERATED_ORDER;
   static +ORIGINAL_ORDER: IterationOrder = ORIGINAL_ORDER;
   static +GREATEST_LOWER_BOUND: LookupBias = GREATEST_LOWER_BOUND;
@@ -74,5 +73,3 @@ class DelegatingConsumer implements IConsumer {
     return this._rootConsumer.sourceContentFor(source, nullOnMissing);
   }
 }
-
-module.exports = DelegatingConsumer;

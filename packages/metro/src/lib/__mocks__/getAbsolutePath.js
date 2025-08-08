@@ -13,5 +13,5 @@
 
 const path = require('path');
 
-module.exports = (file: string, roots: $ReadOnlyArray<string>): string =>
+export default (file: string, roots: $ReadOnlyArray<string>): string =>
   path.resolve(roots[0], file);

@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-class FailedToResolveNameError extends Error {
+export default class FailedToResolveNameError extends Error {
   dirPaths: $ReadOnlyArray<string>;
   extraPaths: $ReadOnlyArray<string>;
 
@@ -31,5 +29,3 @@ class FailedToResolveNameError extends Error {
     this.extraPaths = extraPaths;
   }
 }
-
-module.exports = FailedToResolveNameError;

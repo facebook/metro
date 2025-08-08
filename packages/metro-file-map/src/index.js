@@ -57,6 +57,7 @@ import nullthrows from 'nullthrows';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:FileMap');
 
 export type {

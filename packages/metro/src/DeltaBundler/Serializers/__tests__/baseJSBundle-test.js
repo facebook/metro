@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module, TransformInputOptions} from '../../types';
 
 import CountingSet from '../../../lib/CountingSet';
+import createModuleIdFactory from '../../../lib/createModuleIdFactory';
+import baseJSBundle from '../baseJSBundle';
 
-const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
-const baseJSBundle = require('../baseJSBundle');
 const path = require('path');
 
 const {objectContaining} = expect;

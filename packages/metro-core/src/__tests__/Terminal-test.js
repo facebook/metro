@@ -49,7 +49,7 @@ describe.each([false, true])(
     });
 
     function prepare({isTTY, ttyPrint}) {
-      const Terminal = require('../Terminal');
+      const Terminal = require('../Terminal').default;
       const lines = 10;
       const columns = 10;
       const stream = Object.create(

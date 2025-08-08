@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   BasicSourceMap,
   FBSourceFunctionMap,
@@ -20,8 +18,8 @@ import type {
   MixedSourceMap,
 } from 'metro-source-map';
 
-const {normalizeSourcePath} = require('metro-source-map');
-const vlq = require('vlq');
+import {normalizeSourcePath} from 'metro-source-map';
+import * as vlq from 'vlq';
 
 const METADATA_FIELD_FUNCTIONS = 0;
 
@@ -53,7 +51,7 @@ type MetadataMap = {[source: string]: ?FBSourceMetadata, ...};
  *
  *     new SourceMetadataMapConsumer(map, source => source) // Don't normalize
  */
-class SourceMetadataMapConsumer {
+export default class SourceMetadataMapConsumer {
   constructor(
     map: MixedSourceMap,
     normalizeSourceFn: SourceNameNormalizer = normalizeSourcePath,
@@ -230,5 +228,3 @@ function comparePositions(a: Position, b: Position): number {
   }
   return a.line - b.line;
 }
-
-module.exports = SourceMetadataMapConsumer;

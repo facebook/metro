@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const path = require('path');
+import path from 'path';
 
 type PlatformFilePathParts = {
   dirPath: string,
@@ -26,7 +24,7 @@ const PATH_RE = /^(.+?)(\.([^.]+))?\.([^.]+)$/;
  * Extract the components of a file path that can have a platform specifier: Ex.
  * `index.ios.js` is specific to the `ios` platform and has the extension `js`.
  */
-function parsePlatformFilePath(
+export default function parsePlatformFilePath(
   filePath: string,
   platforms: $ReadOnlySet<string>,
 ): PlatformFilePathParts {
@@ -44,5 +42,3 @@ function parsePlatformFilePath(
   const baseName = `${match[1]}.${platform}`;
   return {dirPath, baseName, platform: null, extension};
 }
-
-module.exports = parsePlatformFilePath;

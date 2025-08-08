@@ -17,13 +17,11 @@
 // In our third form, we symbolicate using a module ID, a line number, and
 // optionally a column.
 
-'use strict';
-
-const Symbolication = require('./Symbolication.js');
-const fs = require('fs');
-// flowlint-next-line untyped-import:off
-const SourceMapConsumer = require('source-map').SourceMapConsumer;
-const {Transform} = require('stream');
+import * as Symbolication from './Symbolication';
+import fs from 'fs';
+// $FlowFixMe[untyped-import] source-map
+import {SourceMapConsumer} from 'source-map';
+import {Transform} from 'stream';
 
 function printHelp() {
   const usages = [
@@ -47,7 +45,7 @@ function printHelp() {
   console.error(usages.join('\n'));
 }
 
-async function main(
+export default async function main(
   argvInput: Array<string> = process.argv.slice(2),
   {
     stdin,
@@ -259,5 +257,3 @@ function waitForStream(stream: $FlowFixMe) {
     stream.on('finish', resolve);
   });
 }
-
-module.exports = main;

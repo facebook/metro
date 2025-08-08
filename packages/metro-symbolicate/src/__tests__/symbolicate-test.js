@@ -9,9 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import symbolicate from '../symbolicate';
 
-const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');

@@ -8,8 +8,6 @@
  * @flow
  */
 
-'use strict';
-
 import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
 import type {GraphOptions} from './shared/types';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
@@ -21,20 +19,20 @@ import type {
 } from 'metro-runtime/src/modules/types';
 import type {UrlWithParsedQuery} from 'url';
 
-const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
-const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
-const formatBundlingError = require('./lib/formatBundlingError');
-const getGraphId = require('./lib/getGraphId');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const transformHelpers = require('./lib/transformHelpers');
-const {
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-const nullthrows = require('nullthrows');
-const url = require('url');
+import hmrJSBundle from './DeltaBundler/Serializers/hmrJSBundle';
+import GraphNotFoundError from './IncrementalBundler/GraphNotFoundError';
+import RevisionNotFoundError from './IncrementalBundler/RevisionNotFoundError';
+import debounceAsyncQueue from './lib/debounceAsyncQueue';
+import formatBundlingError from './lib/formatBundlingError';
+import getGraphId from './lib/getGraphId';
+import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
+import splitBundleOptions from './lib/splitBundleOptions';
+import * as transformHelpers from './lib/transformHelpers';
+import {Logger} from 'metro-core';
+import nullthrows from 'nullthrows';
+import url from 'url';
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 export type EntryPointURL = UrlWithParsedQuery;
 
@@ -66,7 +64,7 @@ function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
  * getting connected, disconnected or having errors (through the
  * `onClientConnect`, `onClientDisconnect` and `onClientError` methods).
  */
-class HmrServer<TClient: Client> {
+export default class HmrServer<TClient: Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;
@@ -396,5 +394,3 @@ class HmrServer<TClient: Client> {
     }
   }
 }
-
-module.exports = HmrServer;

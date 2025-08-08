@@ -22,7 +22,7 @@ describe('FileStore', () => {
       .resetAllMocks()
       .mock('fs', () => new (require('metro-memory-fs'))());
 
-    FileStore = require('../FileStore');
+    FileStore = require('../FileStore').default;
     fs = require('fs');
     jest.spyOn(fs, 'unlinkSync');
   });

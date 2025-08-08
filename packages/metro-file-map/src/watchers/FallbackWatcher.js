@@ -13,21 +13,21 @@
  * Originally vendored from https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/node_watcher.js
  */
 
-'use strict';
-
 import type {
   ChangeEventMetadata,
   WatcherBackendChangeEvent,
 } from '../flow-types';
 import type {FSWatcher, Stats} from 'fs';
 
-const {AbstractWatcher} = require('./AbstractWatcher');
-const common = require('./common');
-const fs = require('fs');
-const platform = require('os').platform();
-const path = require('path');
+import {AbstractWatcher} from './AbstractWatcher';
+import * as common from './common';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 // $FlowFixMe[untyped-import] - Write libdefs for `walker`
-const walker = require('walker');
+import walker from 'walker';
+
+const platform = os.platform();
 
 const fsPromises = fs.promises;
 
@@ -41,7 +41,7 @@ const DELETE_EVENT = common.DELETE_EVENT;
  */
 const DEBOUNCE_MS = 100;
 
-module.exports = class FallbackWatcher extends AbstractWatcher {
+export default class FallbackWatcher extends AbstractWatcher {
   +_changeTimers: Map<string, TimeoutID> = new Map();
   +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
@@ -384,7 +384,7 @@ module.exports = class FallbackWatcher extends AbstractWatcher {
   getPauseReason(): ?string {
     return null;
   }
-};
+}
 /**
  * Determine if a given FS error can be ignored
  */

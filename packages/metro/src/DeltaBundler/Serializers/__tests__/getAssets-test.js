@@ -8,12 +8,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 jest.mock('../../../Assets');
 
-const {getAssetData} = require('../../../Assets');
-const getAssets = require('../getAssets');
+import {getAssetData} from '../../../Assets';
+import getAssets from '../getAssets';
 
 beforeEach(() => {
   getAssetData.mockImplementation(async (path, localPath) => ({

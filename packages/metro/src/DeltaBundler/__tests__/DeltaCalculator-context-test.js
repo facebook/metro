@@ -15,9 +15,9 @@ import type {Result} from '../Graph';
 import type {Options, TransformResultDependency} from '../types';
 
 import CountingSet from '../../lib/CountingSet';
+import DeltaCalculator from '../DeltaCalculator';
 import {Graph} from '../Graph';
 
-const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
 
 const traverseDependencies = jest.spyOn(

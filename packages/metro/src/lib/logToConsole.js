@@ -10,17 +10,15 @@
 
 /* eslint-disable no-console */
 
-'use strict';
-
 import type {Terminal} from 'metro-core';
 
-const chalk = require('chalk');
-const util = require('util');
+import chalk from 'chalk';
+import util from 'util';
 
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
+export default (terminal: Terminal, level: string, ...data: Array<mixed>) => {
   // $FlowFixMe[invalid-computed-prop]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =

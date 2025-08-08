@@ -12,7 +12,7 @@
 import type {ResolutionContext} from '../index';
 
 import FailedToResolvePathError from '../errors/FailedToResolvePathError';
-import Resolver from '../index';
+import * as Resolver from '../index';
 import {createResolutionContext} from './utils';
 
 const fileMap = {

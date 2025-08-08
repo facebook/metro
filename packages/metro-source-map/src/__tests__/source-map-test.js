@@ -9,14 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const Generator = require('../Generator');
-const {
-  fromRawMappings,
-  toBabelSegments,
-  toSegmentTuple,
-} = require('../source-map');
+import Generator from '../Generator';
+import {fromRawMappings, toBabelSegments, toSegmentTuple} from '../source-map';
 
 describe('flattening mappings / compacting', () => {
   test('flattens simple mappings', () => {

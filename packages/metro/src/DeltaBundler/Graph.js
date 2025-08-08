@@ -47,9 +47,8 @@ import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import {buildSubgraph} from './buildSubgraph';
-
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
 
 // TODO: Convert to a Flow enum
 type NodeColor =

@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
+import crypto from 'crypto';
+import canonicalize from 'metro-core/private/canonicalize';
 
-const crypto = require('crypto');
-const canonicalize = require('metro-core/private/canonicalize');
-
-function stableHash(value: mixed): Buffer {
+export default function stableHash(value: mixed): Buffer {
   return (
     crypto
       .createHash('md5')
@@ -25,5 +23,3 @@ function stableHash(value: mixed): Buffer {
       .digest('buffer')
   );
 }
-
-module.exports = stableHash;

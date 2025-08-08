@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {IterationOrder, LookupBias} from './constants';
 import type {Number0, Number1} from 'ob1';
 

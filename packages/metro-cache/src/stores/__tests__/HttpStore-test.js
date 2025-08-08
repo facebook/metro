@@ -67,7 +67,7 @@ describe('HttpStore', () => {
     require('http').request.mockReturnValue(httpPassThrough);
     require('https').request.mockReturnValue(httpPassThrough);
 
-    HttpStore = require('../HttpStore');
+    HttpStore = require('../HttpStore').default;
   });
 
   test('works with HTTP and HTTPS', () => {

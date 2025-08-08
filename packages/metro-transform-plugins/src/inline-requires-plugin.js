@@ -8,8 +8,6 @@
  * @flow strict
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import typeof * as Babel from '@babel/core';
 import type {NodePath, Scope} from '@babel/traverse';
@@ -59,7 +57,7 @@ export type State = {
  * Is also successfully inlined into:
  *     g(require('foo').Baz);
  */
-module.exports = ({types: t, traverse}: Babel): PluginObj<State> => ({
+export default ({types: t, traverse}: Babel): PluginObj<State> => ({
   name: 'inline-requires',
   visitor: {
     Program: {

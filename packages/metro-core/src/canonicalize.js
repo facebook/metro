@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-function canonicalize(key: string, value: mixed): mixed {
+export default function canonicalize(key: string, value: mixed): mixed {
   if (
     // eslint-disable-next-line lint/strictly-null
     value === null ||
@@ -31,5 +29,3 @@ function canonicalize(key: string, value: mixed): mixed {
 
   return object;
 }
-
-module.exports = canonicalize;

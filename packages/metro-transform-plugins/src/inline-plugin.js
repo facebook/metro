@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {Binding, NodePath, Scope} from '@babel/traverse';
 import type {
@@ -23,7 +21,7 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
-const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
+import createInlinePlatformChecks from './utils/createInlinePlatformChecks';
 
 export type Options = $ReadOnly<{
   dev: boolean,
@@ -41,7 +39,7 @@ const processId = {name: 'process'};
 
 const dev = {name: '__DEV__'};
 
-function inlinePlugin(
+export default function inlinePlugin(
   {types: t}: {types: Types},
   options: Options,
 ): PluginObj<State> {
@@ -177,5 +175,3 @@ function inlinePlugin(
     },
   };
 }
-
-module.exports = inlinePlugin;

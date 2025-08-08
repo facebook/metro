@@ -21,7 +21,7 @@ describe('AutoCleanFileStore', () => {
       .resetAllMocks()
       .mock('fs', () => new (require('metro-memory-fs'))());
 
-    AutoCleanFileStore = require('../AutoCleanFileStore');
+    AutoCleanFileStore = require('../AutoCleanFileStore').default;
     fs = require('fs');
     jest.spyOn(fs, 'unlinkSync');
   });

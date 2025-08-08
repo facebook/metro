@@ -8,16 +8,14 @@
  * @flow strict-local
  */
 
-'use strict';
-
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
+import traverse from '@babel/traverse';
+import nullthrows from 'nullthrows';
 
 /**
  * Select unused names for "metroImportDefault" and "metroImportAll", by
  * calling "generateUid".
  */
-function generateImportNames(ast: BabelNode): {
+export default function generateImportNames(ast: BabelNode): {
   importAll: string,
   importDefault: string,
 } {
@@ -38,5 +36,3 @@ function generateImportNames(ast: BabelNode): {
     importDefault: nullthrows(importDefault),
   };
 }
-
-module.exports = generateImportNames;

@@ -8,10 +8,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const generate = require('@babel/generator').default;
-const {toMatchSnapshot} = require('jest-snapshot');
+import generate from '@babel/generator';
+import {toMatchSnapshot} from 'jest-snapshot';
 
 const generateOptions = {concise: true, sourceType: 'module'};
 const codeFromAst = ast => generate(ast, generateOptions).code;
@@ -80,7 +78,7 @@ function toMatchCodeFrameSnapshot(received) {
   );
 }
 
-module.exports = {
+export {
   codeFromAst,
   comparableCode,
   toEqualComparableCode,

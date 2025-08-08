@@ -9,27 +9,26 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
+import getTransformCacheKey from './getTransformCacheKey';
+import WorkerFarm from './WorkerFarm';
+import assert from 'assert';
 import crypto from 'crypto';
+import fs from 'fs';
+import {Cache, stableHash} from 'metro-cache';
+import path from 'path';
 
-const getTransformCacheKey = require('./getTransformCacheKey');
-const WorkerFarm = require('./WorkerFarm');
-const assert = require('assert');
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:Transformer');
-const fs = require('fs');
-const {Cache, stableHash} = require('metro-cache');
-const path = require('path');
 
 type GetOrComputeSha1Fn = string => Promise<
   $ReadOnly<{content?: Buffer, sha1: string}>,
 >;
 
-class Transformer {
+export default class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
@@ -212,5 +211,3 @@ function verifyRootExists(root: string): void {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }
-
-module.exports = Transformer;

@@ -9,12 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-class FailedToResolveUnsupportedError extends Error {
+export default class FailedToResolveUnsupportedError extends Error {
   constructor(message: string) {
     super(message);
   }
 }
-
-module.exports = FailedToResolveUnsupportedError;

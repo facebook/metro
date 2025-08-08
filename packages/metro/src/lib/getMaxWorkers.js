@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
+import os from 'os';
 
-const os = require('os');
-
-module.exports = (workers: ?number): number => {
+export default (workers: ?number): number => {
   // $FlowFixMe[prop-missing] Missing Flow lib def for availableParallelism
   const cores = os.availableParallelism();
   return typeof workers === 'number' && Number.isInteger(workers)

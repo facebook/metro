@@ -8,12 +8,10 @@
  * @flow strict-local
  */
 
-'use strict';
-
 import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
-import typeof MetroCache from 'metro-cache';
+import typeof * as MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';

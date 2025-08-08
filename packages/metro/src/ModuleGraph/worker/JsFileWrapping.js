@@ -8,8 +8,6 @@
  * @flow strict-local
  */
 
-'use strict';
-
 import type {FunctionExpression, Identifier, Program} from '@babel/types';
 
 import template from '@babel/template';
@@ -162,11 +160,4 @@ function renameRequires(ast: BabelNodeFile): string {
   return newRequireName;
 }
 
-module.exports = {
-  WRAP_NAME,
-
-  wrapJson,
-  jsonToCommonJS,
-  wrapModule,
-  wrapPolyfill,
-};
+export {WRAP_NAME, wrapJson, jsonToCommonJS, wrapModule, wrapPolyfill};

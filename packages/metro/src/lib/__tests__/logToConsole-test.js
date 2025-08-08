@@ -27,7 +27,7 @@ let log;
 
 beforeEach(() => {
   jest.resetModules();
-  log = require('../logToConsole');
+  log = require('../logToConsole').default;
 
   console.log = jest.fn();
 });

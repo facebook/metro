@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
 
-const {Worker: JestWorker} = require('jest-worker');
-const {Logger} = require('metro-core');
+import {Worker as JestWorker} from 'jest-worker';
+import {Logger} from 'metro-core';
 
 type WorkerInterface = {
   getStdout(): Readable,
@@ -31,7 +29,7 @@ type TransformerResult = $ReadOnly<{
   sha1: string,
 }>;
 
-class WorkerFarm {
+export default class WorkerFarm {
   _config: ConfigT;
   _transformerConfig: TransformerConfig;
   _worker: WorkerInterface | Worker;
@@ -63,6 +61,7 @@ class WorkerFarm {
 
       this._worker = worker;
     } else {
+      // eslint-disable-next-line import/no-commonjs
       this._worker = (require('./Worker'): Worker);
     }
   }
@@ -180,5 +179,3 @@ class TransformError extends SyntaxError {
     Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
   }
 }
-
-module.exports = WorkerFarm;

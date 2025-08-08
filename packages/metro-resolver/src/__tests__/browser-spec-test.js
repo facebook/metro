@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import Resolver from '../index';
+import * as Resolver from '../index';
 import {createPackageAccessors, createResolutionContext} from './utils';
 
 describe('browser field spec', () => {

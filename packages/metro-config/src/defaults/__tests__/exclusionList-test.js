@@ -9,9 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import exclusionList from '../exclusionList';
 
-const exclusionList = require('../exclusionList');
 const path = require('path');
 
 describe('exclusionList', () => {

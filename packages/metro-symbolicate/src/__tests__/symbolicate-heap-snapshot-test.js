@@ -9,10 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
+import symbolicate from '../symbolicate';
 
 const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
-const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
 const {PassThrough} = require('stream');

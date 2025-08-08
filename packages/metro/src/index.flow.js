@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
@@ -29,30 +27,30 @@ import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
 
-const makeBuildCommand = require('./commands/build');
-const makeDependenciesCommand = require('./commands/dependencies');
-const makeServeCommand = require('./commands/serve');
-const MetroHmrServer = require('./HmrServer');
-const IncrementalBundler = require('./IncrementalBundler');
-const createWebsocketServer = require('./lib/createWebsocketServer');
-const JsonReporter = require('./lib/JsonReporter');
-const TerminalReporter = require('./lib/TerminalReporter');
-const MetroServer = require('./Server');
-const outputBundle = require('./shared/output/bundle');
-const chalk = require('chalk');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const {
+import makeBuildCommand from './commands/build';
+import makeDependenciesCommand from './commands/dependencies';
+import makeServeCommand from './commands/serve';
+import MetroHmrServer from './HmrServer';
+import IncrementalBundler from './IncrementalBundler';
+import createWebsocketServer from './lib/createWebsocketServer';
+import JsonReporter from './lib/JsonReporter';
+import TerminalReporter from './lib/TerminalReporter';
+import MetroServer from './Server';
+import * as outputBundle from './shared/output/bundle';
+import chalk from 'chalk';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import {
   getDefaultConfig,
   loadConfig,
   mergeConfig,
   resolveConfig,
-} = require('metro-config');
-const {Terminal} = require('metro-core');
-const net = require('net');
-const nullthrows = require('nullthrows');
-const {parse} = require('url');
+} from 'metro-config';
+import {Terminal} from 'metro-core';
+import net from 'net';
+import nullthrows from 'nullthrows';
+import {parse} from 'url';
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -149,9 +147,7 @@ export type RunBuildResult = {
 type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
 
-exports.Terminal = Terminal;
-exports.JsonReporter = JsonReporter;
-exports.TerminalReporter = TerminalReporter;
+export {Terminal, JsonReporter, TerminalReporter};
 
 export type {AssetData} from './Assets';
 export type {Reporter, ReportableEvent} from './lib/reporting';
@@ -163,7 +159,7 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
   return mergeConfig(defaultConfig, config);
 }
 
-async function runMetro(
+export async function runMetro(
   config: InputConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroServer> {
@@ -206,12 +202,9 @@ async function runMetro(
   return server;
 }
 
-exports.runMetro = runMetro;
-exports.loadConfig = loadConfig;
-exports.mergeConfig = mergeConfig;
-exports.resolveConfig = resolveConfig;
+export {loadConfig, mergeConfig, resolveConfig};
 
-const createConnectMiddleware = async function (
+export const createConnectMiddleware = async function (
   config: ConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
@@ -254,9 +247,8 @@ const createConnectMiddleware = async function (
     },
   };
 };
-exports.createConnectMiddleware = createConnectMiddleware;
 
-exports.runServer = async (
+export const runServer = async (
   config: ConfigT,
   {
     hasReducedPerformance = false,
@@ -286,6 +278,7 @@ exports.runServer = async (
     );
   }
   // Lazy require
+  // eslint-disable-next-line import/no-commonjs
   const connect = require('connect');
 
   const serverApp = connect();
@@ -386,7 +379,7 @@ exports.runServer = async (
   });
 };
 
-exports.runBuild = async (
+export const runBuild = async (
   config: ConfigT,
   {
     assets = false,
@@ -477,7 +470,7 @@ exports.runBuild = async (
   }
 };
 
-exports.buildGraph = async function (
+export const buildGraph = async function (
   config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
@@ -520,7 +513,7 @@ type AttachMetroCLIOptions = {
   ...
 };
 
-exports.attachMetroCli = function (
+export const attachMetroCli = function (
   yargs: Yargs,
   options?: AttachMetroCLIOptions = {},
 ): Yargs {

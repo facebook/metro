@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Number0, Number1} from 'ob1';
 
-const {add0, add1} = require('ob1');
+import {add0, add1} from 'ob1';
 
 const FIRST_COLUMN: Number0 = add0(0);
 const FIRST_LINE: Number1 = add1(0);
@@ -41,7 +39,7 @@ function lookupBiasToString(x: LookupBias): string {
   return x;
 }
 
-module.exports = {
+export {
   FIRST_COLUMN,
   FIRST_LINE,
   GENERATED_ORDER,

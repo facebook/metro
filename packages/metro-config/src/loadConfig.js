@@ -9,18 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ConfigT, InputConfigT, YargArguments} from './types';
 
-const getDefaultConfig = require('./defaults');
-const validConfig = require('./defaults/validConfig');
-const cosmiconfig = require('cosmiconfig');
-const fs = require('fs');
-const {validate} = require('jest-validate');
-const MetroCache = require('metro-cache');
-const path = require('path');
-const {dirname, join} = require('path');
+import getDefaultConfig from './defaults';
+import validConfig from './defaults/validConfig';
+import cosmiconfig from 'cosmiconfig';
+import fs from 'fs';
+import {validate} from 'jest-validate';
+import * as MetroCache from 'metro-cache';
+import path from 'path';
+import {dirname, join} from 'path';
 
 type CosmiConfigResult = {
   filepath: string,
@@ -321,8 +319,4 @@ async function loadConfig(
   });
 }
 
-module.exports = {
-  loadConfig,
-  resolveConfig,
-  mergeConfig,
-};
+export {loadConfig, resolveConfig, mergeConfig};

@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {
@@ -24,8 +22,8 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
-const template = require('@babel/template').default;
-const nullthrows = require('nullthrows');
+import template from '@babel/template';
+import nullthrows from 'nullthrows';
 
 export type Options = $ReadOnly<{
   importDefault: string,
@@ -151,7 +149,12 @@ function withLocation(
   return node;
 }
 
-function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
+export default function importExportPlugin({
+  types: t,
+}: {
+  types: Types,
+  ...
+}): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
 
   return {
@@ -586,5 +589,3 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
     },
   };
 }
-
-module.exports = importExportPlugin;

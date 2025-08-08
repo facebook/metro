@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ModuleGroups, ModuleTransportLike} from '../../types';
 import type {
   BasicSourceMap,
@@ -20,8 +18,7 @@ import type {
 } from 'metro-source-map';
 
 import countLines from '../../../lib/countLines';
-
-const invariant = require('invariant');
+import invariant from 'invariant';
 
 function lineToLineSourceMap(
   source: string,
@@ -140,7 +137,7 @@ function combineMaps(
 const joinModules = (modules: $ReadOnlyArray<{+code: string, ...}>): string =>
   modules.map((m: {+code: string, ...}) => m.code).join('\n');
 
-module.exports = {
+export {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   countLines,
