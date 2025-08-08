@@ -10,7 +10,7 @@
 
 'use strict';
 
-const getTransitiveDependencies = require('../getTransitiveDependencies');
+import getTransitiveDependencies from '../getTransitiveDependencies';
 
 function createModule(name, dependencies, type = 'module') {
   return [

@@ -25,7 +25,7 @@ type Params = {
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
 };
 
-module.exports = (({
+export default (({
   fixWrapperOffset,
   lazyModules,
   moduleGroups,

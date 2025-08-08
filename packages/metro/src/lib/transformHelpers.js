@@ -136,7 +136,7 @@ function removeInlineRequiresBlockListFromOptions(
   return inlineRequires;
 }
 
-async function getTransformFn(
+export async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
@@ -211,7 +211,7 @@ function getType(
   return 'module';
 }
 
-async function getResolveDependencyFn(
+export async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
@@ -228,8 +228,3 @@ async function getResolveDependencyFn(
       resolverOptions,
     );
 }
-
-module.exports = {
-  getTransformFn,
-  getResolveDependencyFn,
-};

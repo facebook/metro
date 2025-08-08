@@ -57,7 +57,7 @@ function getOrCreateMap<T>(
   return subMap;
 }
 
-class DependencyGraph extends EventEmitter {
+export default class DependencyGraph extends EventEmitter {
   _config: ConfigT;
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
@@ -394,5 +394,3 @@ class DependencyGraph extends EventEmitter {
     return nullthrows(this._fileSystem.getDependencies(filePath));
   }
 }
-
-module.exports = DependencyGraph;

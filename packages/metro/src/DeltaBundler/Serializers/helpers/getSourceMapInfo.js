@@ -17,7 +17,7 @@ import type {
 
 import {getJsOutput} from './js';
 
-function getSourceMapInfo(
+export default function getSourceMapInfo(
   module: Module<>,
   options: {
     +excludeSource: boolean,
@@ -48,5 +48,3 @@ function getModuleSource(module: Module<>): string {
 
   return module.getSource().toString();
 }
-
-module.exports = getSourceMapInfo;

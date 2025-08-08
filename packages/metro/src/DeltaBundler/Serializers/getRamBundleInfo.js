@@ -36,7 +36,7 @@ export type RamBundleInfo = {
   groups: Map<number, Set<number>>,
 };
 
-async function getRamBundleInfo(
+export default async function getRamBundleInfo(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
@@ -169,5 +169,3 @@ async function _getRamOptions(
     ramGroups: ramGroups || [],
   };
 }
-
-module.exports = getRamBundleInfo;

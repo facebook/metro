@@ -19,7 +19,7 @@ type Options = {
   +processModuleFilter: (module: Module<>) => boolean,
 };
 
-async function getAllFiles(
+export default async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: Options,
@@ -56,5 +56,3 @@ async function getAllFiles(
 
   return output;
 }
-
-module.exports = getAllFiles;

@@ -9,12 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {MixedOutput, Options, TransformResultDependency} from '../types';
 
-const DeltaBundler = require('../../DeltaBundler');
-const DeltaCalculator = require('../DeltaCalculator');
+import DeltaBundler from '../../DeltaBundler';
+import DeltaCalculator from '../DeltaCalculator';
+
 const {EventEmitter} = require('events');
 
 jest.mock('../DeltaCalculator');

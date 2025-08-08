@@ -27,7 +27,7 @@ import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
 import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
 import splitBundleOptions from './lib/splitBundleOptions';
-import transformHelpers from './lib/transformHelpers';
+import * as transformHelpers from './lib/transformHelpers';
 import {Logger} from 'metro-core';
 import nullthrows from 'nullthrows';
 import url from 'url';
@@ -64,7 +64,7 @@ function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
  * getting connected, disconnected or having errors (through the
  * `onClientConnect`, `onClientDisconnect` and `onClientError` methods).
  */
-class HmrServer<TClient: Client> {
+export default class HmrServer<TClient: Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;
@@ -394,5 +394,3 @@ class HmrServer<TClient: Client> {
     }
   }
 }
-
-module.exports = HmrServer;

@@ -18,7 +18,7 @@ import type {ConfigT} from 'metro-config';
 import CountingSet from './CountingSet';
 import countLines from './countLines';
 import getPreludeCode from './getPreludeCode';
-import transformHelpers from './transformHelpers';
+import * as transformHelpers from './transformHelpers';
 import * as defaults from 'metro-config/private/defaults/defaults';
 
 async function getPrependedScripts(

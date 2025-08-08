@@ -30,7 +30,7 @@ type Args = $ReadOnly<{
   resetCache?: boolean,
 }>;
 
-module.exports = (): {
+export default (): {
   ...ModuleObject,
   handler: Function,
 } => ({

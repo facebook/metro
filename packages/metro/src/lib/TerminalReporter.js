@@ -70,7 +70,7 @@ const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
  * We try to print useful information to the terminal for interactive builds.
  * This implements the `Reporter` interface from the './reporting' module.
  */
-class TerminalReporter {
+export default class TerminalReporter {
   /**
    * The bundle builds for which we are actively maintaining the status on the
    * terminal, ie. showing a progress bar. There can be several bundles being
@@ -542,5 +542,3 @@ class TerminalReporter {
     this.terminal.status(this._getStatusMessage());
   }
 }
-
-module.exports = TerminalReporter;

@@ -14,12 +14,12 @@ import type {Client} from '../HmrServer';
 import type {HmrClientMessage} from 'metro-runtime/src/modules/types';
 
 import DeltaBundler from '../DeltaBundler';
+import HmrServer from '../HmrServer';
 import IncrementalBundler from '../IncrementalBundler';
+import getGraphId from '../lib/getGraphId';
 import EventEmitter from 'events';
 import {mergeConfig} from 'metro-config';
 
-const HmrServer = require('../HmrServer');
-const getGraphId = require('../lib/getGraphId');
 const {
   getDefaultConfig: {getDefaultValues},
 } = require('metro-config');

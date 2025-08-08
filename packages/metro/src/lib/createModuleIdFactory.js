@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-function createModuleIdFactory(): (path: string) => number {
+export default function createModuleIdFactory(): (path: string) => number {
   const fileToIdMap: Map<string, number> = new Map();
   let nextId = 0;
   return (path: string) => {
@@ -23,5 +21,3 @@ function createModuleIdFactory(): (path: string) => number {
     return id;
   };
 }
-
-module.exports = createModuleIdFactory;

@@ -28,7 +28,7 @@ export type Options = $ReadOnly<{
   ...
 }>;
 
-function wrapModule(module: Module<>, options: Options): string {
+export function wrapModule(module: Module<>, options: Options): string {
   const output = getJsOutput(module);
 
   if (output.type.startsWith('js/script')) {
@@ -39,7 +39,10 @@ function wrapModule(module: Module<>, options: Options): string {
   return addParamsToDefineCall(output.data.code, ...params);
 }
 
-function getModuleParams(module: Module<>, options: Options): Array<mixed> {
+export function getModuleParams(
+  module: Module<>,
+  options: Options,
+): Array<mixed> {
   const moduleId = options.createModuleId(module.path);
 
   const paths: {[moduleID: number | string]: mixed} = {};
@@ -108,7 +111,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
   return params;
 }
 
-function getJsOutput(
+export function getJsOutput(
   module: $ReadOnly<{
     output: $ReadOnlyArray<MixedOutput>,
     path?: string,
@@ -136,17 +139,10 @@ function getJsOutput(
   return jsOutput;
 }
 
-function isJsModule(module: Module<>): boolean {
+export function isJsModule(module: Module<>): boolean {
   return module.output.filter(isJsOutput).length > 0;
 }
 
 function isJsOutput(output: MixedOutput): boolean {
   return output.type.startsWith('js/');
 }
-
-module.exports = {
-  getJsOutput,
-  getModuleParams,
-  isJsModule,
-  wrapModule,
-};

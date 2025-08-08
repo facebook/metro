@@ -40,7 +40,7 @@ export type {
  * concurrent clients requesting their own deltas. This is done through the
  * `clientId` param (which maps a client to a specific delta transformer).
  */
-class DeltaBundler<T = MixedOutput> {
+export default class DeltaBundler<T = MixedOutput> {
   _changeEventSource: EventEmitter;
   _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
 
@@ -138,5 +138,3 @@ class DeltaBundler<T = MixedOutput> {
     this._deltaCalculators.delete(graph);
   }
 }
-
-module.exports = DeltaBundler;

@@ -22,7 +22,7 @@ export type BundlerOptions = $ReadOnly<{
   watch?: boolean,
 }>;
 
-class Bundler {
+export default class Bundler {
   _depGraph: DependencyGraph;
   _initializedPromise: Promise<void>;
   _transformer: Transformer;
@@ -88,5 +88,3 @@ class Bundler {
     await this._initializedPromise;
   }
 }
-
-module.exports = Bundler;

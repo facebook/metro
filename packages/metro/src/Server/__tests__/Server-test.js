@@ -96,7 +96,7 @@ describe('processRequest', () => {
       getResolveDependencyFn,
     }));
 
-    Bundler = require('../../Bundler');
+    Bundler = require('../../Bundler').default;
     jest
       .spyOn(Bundler.prototype, 'getDependencyGraph')
       .mockImplementation(getDependencyGraph);
@@ -104,13 +104,13 @@ describe('processRequest', () => {
     jest.mock('fs', () => new (require('metro-memory-fs'))());
     fs = require('fs');
 
-    DeltaBundler = require('../../DeltaBundler');
+    DeltaBundler = require('../../DeltaBundler').default;
     jest
       .spyOn(DeltaBundler.prototype, 'buildGraph')
       .mockImplementation(buildGraph);
     jest.spyOn(DeltaBundler.prototype, 'getDelta').mockImplementation(getDelta);
 
-    Server = require('../../Server');
+    Server = require('../../Server').default;
   });
 
   afterEach(() => {
@@ -487,7 +487,7 @@ describe('processRequest', () => {
   });
 
   test('should handle DELETE requests on *.bundle', async () => {
-    const IncrementalBundler = require('../../IncrementalBundler');
+    const IncrementalBundler = require('../../IncrementalBundler').default;
     const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
     const initSpy = jest.spyOn(IncrementalBundler.prototype, 'initializeGraph');
 
@@ -545,7 +545,7 @@ describe('processRequest', () => {
   });
 
   test('DELETE handles errors', async () => {
-    const IncrementalBundler = require('../../IncrementalBundler');
+    const IncrementalBundler = require('../../IncrementalBundler').default;
     jest
       .spyOn(IncrementalBundler.prototype, 'endGraph')
       .mockImplementationOnce(async () => {
@@ -1122,7 +1122,7 @@ describe('processRequest', () => {
           }),
         };
 
-        const IncrementalBundler = require('../../IncrementalBundler');
+        const IncrementalBundler = require('../../IncrementalBundler').default;
         const updateSpy = jest.spyOn(
           IncrementalBundler.prototype,
           'updateGraph',

@@ -52,7 +52,7 @@ function getIgnorePattern(config: ConfigT): RegExp {
   return ignorePattern;
 }
 
-function createFileMap(
+export default function createFileMap(
   config: ConfigT,
   options?: $ReadOnly<{
     extractDependencies?: boolean,
@@ -113,5 +113,3 @@ function createFileMap(
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
 }
-
-module.exports = createFileMap;

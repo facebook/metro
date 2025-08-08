@@ -14,7 +14,7 @@ import type {PackageJson} from 'metro-resolver/private/types';
 import fs from 'fs';
 import path from 'path';
 
-class Package {
+export default class Package {
   path: string;
 
   _root: string;
@@ -37,5 +37,3 @@ class Package {
     return this._content;
   }
 }
-
-module.exports = Package;

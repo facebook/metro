@@ -57,7 +57,7 @@ import getGraphId from './lib/getGraphId';
 import parseJsonBody from './lib/parseJsonBody';
 import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
 import splitBundleOptions from './lib/splitBundleOptions';
-import transformHelpers from './lib/transformHelpers';
+import * as transformHelpers from './lib/transformHelpers';
 import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
 import parsePlatformFilePath from './node-haste/lib/parsePlatformFilePath';
 import MultipartResponse from './Server/MultipartResponse';
@@ -131,7 +131,7 @@ export type ServerOptions = $ReadOnly<{
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
-class Server {
+export default class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
   _createModuleId: (path: string) => number;
@@ -1618,5 +1618,3 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
 function getBuildID(buildNumber: number): string {
   return buildNumber.toString(36);
 }
-
-module.exports = Server;

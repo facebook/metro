@@ -51,7 +51,7 @@ export type AssetDataFiltered = {
 
 // Test extension against all types supported by image-size module.
 // If it's not one of these, we won't treat it as an image.
-function isAssetTypeAnImage(type: string): boolean {
+export function isAssetTypeAnImage(type: string): boolean {
   return (
     [
       'png',
@@ -68,7 +68,7 @@ function isAssetTypeAnImage(type: string): boolean {
   );
 }
 
-function getAssetSize(
+export function getAssetSize(
   type: string,
   content: Buffer,
   filePath: string,
@@ -196,7 +196,7 @@ async function getAbsoluteAssetInfo(
   return {files, hash: hasher.digest('hex'), name, scales, type};
 }
 
-async function getAssetData(
+export async function getAssetData(
   assetPath: string,
   localPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
@@ -257,7 +257,7 @@ async function applyAssetDataPlugins(
 /**
  * Returns all the associated files (for different resolutions) of an asset.
  **/
-async function getAssetFiles(
+export async function getAssetFiles(
   assetPath: string,
   platform: ?string = null,
 ): Promise<Array<string>> {
@@ -277,7 +277,7 @@ async function getAssetFiles(
  * 3. Then try to pick platform-specific asset records
  * 4. Then pick the closest resolution (rounding up) to the requested one
  */
-async function getAsset(
+export async function getAsset(
   relativePath: string,
   projectRoot: string,
   watchFolders: $ReadOnlyArray<string>,
@@ -326,11 +326,3 @@ function pathBelongsToRoots(
 
   return false;
 }
-
-module.exports = {
-  getAsset,
-  getAssetSize,
-  getAssetData,
-  getAssetFiles,
-  isAssetTypeAnImage,
-};
