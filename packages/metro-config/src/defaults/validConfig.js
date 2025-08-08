@@ -9,10 +9,12 @@
  * @oncall react_native
  */
 
+/* eslint-disable lint/no-commonjs-require,import/no-commonjs */
+
 'use strict';
 
 module.exports = (async () => {
-  const defaultConfig = await require('./index')('/path/to/project');
+  const defaultConfig = await require('./index').default('/path/to/project');
   const validConfig = {
     ...defaultConfig,
     resolver: {

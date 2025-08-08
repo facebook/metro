@@ -12,7 +12,4 @@
 import AmbiguousModuleResolutionError from './errors/AmbiguousModuleResolutionError';
 import PackageResolutionError from './errors/PackageResolutionError';
 
-module.exports = {
-  AmbiguousModuleResolutionError,
-  PackageResolutionError,
-};
+export {AmbiguousModuleResolutionError, PackageResolutionError};

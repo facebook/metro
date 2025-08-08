@@ -14,6 +14,7 @@ import type {BundleOptions} from 'metro/private/shared/types';
 import EventEmitter from 'events';
 import os from 'os';
 
+// eslint-disable-next-line lint/no-commonjs-require,import/no-commonjs
 const VERSION = require('../package.json').version;
 
 export type ActionLogEntryData = {
@@ -112,10 +113,4 @@ function log(logEntry: LogEntry): LogEntry {
   return logEntry;
 }
 
-module.exports = {
-  on,
-  createEntry,
-  createActionStartEntry,
-  createActionEndEntry,
-  log,
-};
+export {on, createEntry, createActionStartEntry, createActionEndEntry, log};

@@ -20,10 +20,11 @@ export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';
 export type {CacheStore} from './types';
 
-module.exports.AutoCleanFileStore = AutoCleanFileStore;
-module.exports.Cache = Cache;
-module.exports.FileStore = FileStore;
-module.exports.HttpGetStore = HttpGetStore;
-module.exports.HttpStore = HttpStore;
-
-module.exports.stableHash = stableHash;
+export {
+  AutoCleanFileStore,
+  Cache,
+  FileStore,
+  HttpGetStore,
+  HttpStore,
+  stableHash,
+};

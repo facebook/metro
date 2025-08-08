@@ -20,7 +20,7 @@ import {Logger} from 'metro-core';
  *
  * All get/set operations are logged via Metro's logger.
  */
-class Cache<T> {
+export default class Cache<T> {
   _stores: $ReadOnlyArray<CacheStore<T>>;
 
   _hits: WeakMap<Buffer, CacheStore<T>>;
@@ -136,5 +136,3 @@ class Cache<T> {
     return this._stores.length === 0;
   }
 }
-
-module.exports = Cache;

@@ -14,7 +14,7 @@ import PackageResolutionError from './errors/PackageResolutionError';
 import * as Logger from './Logger';
 import Terminal from './Terminal';
 
-module.exports = {
+export {
   AmbiguousModuleResolutionError,
   Logger,
   PackageResolutionError,

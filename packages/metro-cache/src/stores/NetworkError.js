@@ -8,9 +8,7 @@
  * @flow strict
  */
 
-'use strict';
-
-class NetworkError extends Error {
+export default class NetworkError extends Error {
   code: string;
 
   constructor(message: string, code: string) {
@@ -19,5 +17,3 @@ class NetworkError extends Error {
     this.code = code;
   }
 }
-
-module.exports = NetworkError;
