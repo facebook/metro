@@ -46,7 +46,7 @@ function makeWatchmanError(error: Error): Error {
   return error;
 }
 
-module.exports = async function watchmanCrawl({
+export default async function watchmanCrawl({
   abortSignal,
   computeSha1,
   extensions,
@@ -366,4 +366,4 @@ module.exports = async function watchmanCrawl({
     removedFiles,
     clocks: newClocks,
   };
-};
+}

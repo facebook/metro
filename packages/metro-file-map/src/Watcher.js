@@ -32,7 +32,7 @@ import nullthrows from 'nullthrows';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
 
-// eslint-disable-next-line lint/no-commonjs-require
+// eslint-disable-next-line lint/no-commonjs-require,import/no-commonjs
 const debug = require('debug')('Metro:Watcher');
 
 const MAX_WAIT_TIME = 240000;
