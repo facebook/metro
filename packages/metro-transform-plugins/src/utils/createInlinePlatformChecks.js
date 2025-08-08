@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Scope} from '@babel/traverse';
 import type {CallExpression, MemberExpression} from '@babel/types';
 // Type only import. No runtime dependency
@@ -32,7 +30,7 @@ type PlatformChecks = {
   ) => boolean,
 };
 
-function createInlinePlatformChecks(
+export default function createInlinePlatformChecks(
   t: Types,
   requireName: string = 'require',
 ): PlatformChecks {
@@ -184,5 +182,3 @@ function createInlinePlatformChecks(
     isPlatformSelectNode,
   };
 }
-
-module.exports = createInlinePlatformChecks;

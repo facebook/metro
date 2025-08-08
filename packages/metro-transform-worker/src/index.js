@@ -40,7 +40,7 @@ import generate from '@babel/generator';
 import * as babylon from '@babel/parser';
 import * as types from '@babel/types';
 import {stableHash} from 'metro-cache';
-import {getCacheKey} from 'metro-cache-key';
+import {getCacheKey as metroGetCacheKey} from 'metro-cache-key';
 import {
   fromRawMappings,
   functionMapBabelPlugin,
@@ -651,98 +651,96 @@ function getBabelTransformArgs(
   };
 }
 
-module.exports = {
-  transform: async (
-    config: JsTransformerConfig,
-    projectRoot: string,
-    filename: string,
-    data: Buffer,
-    options: JsTransformOptions,
-  ): Promise<TransformResponse> => {
-    const context: TransformationContext = {
-      config,
-      projectRoot,
-      options,
-    };
-    const sourceCode = data.toString('utf8');
+export const transform = async (
+  config: JsTransformerConfig,
+  projectRoot: string,
+  filename: string,
+  data: Buffer,
+  options: JsTransformOptions,
+): Promise<TransformResponse> => {
+  const context: TransformationContext = {
+    config,
+    projectRoot,
+    options,
+  };
+  const sourceCode = data.toString('utf8');
 
-    const reservedStrings = [];
-    if (
-      options.customTransformOptions?.unstable_staticHermesOptimizedRequire ==
-      true
-    ) {
-      reservedStrings.push('_$$_METRO_MODULE_ID');
+  const reservedStrings = [];
+  if (
+    options.customTransformOptions?.unstable_staticHermesOptimizedRequire ==
+    true
+  ) {
+    reservedStrings.push('_$$_METRO_MODULE_ID');
+  }
+  if (config.unstable_dependencyMapReservedName != null) {
+    reservedStrings.push(config.unstable_dependencyMapReservedName);
+  }
+  for (const reservedString of reservedStrings) {
+    const position = sourceCode.indexOf(reservedString);
+    if (position > -1) {
+      throw new SyntaxError(
+        'Source code contains the reserved string `' +
+          reservedString +
+          '` at character offset ' +
+          position,
+      );
     }
-    if (config.unstable_dependencyMapReservedName != null) {
-      reservedStrings.push(config.unstable_dependencyMapReservedName);
-    }
-    for (const reservedString of reservedStrings) {
-      const position = sourceCode.indexOf(reservedString);
-      if (position > -1) {
-        throw new SyntaxError(
-          'Source code contains the reserved string `' +
-            reservedString +
-            '` at character offset ' +
-            position,
-        );
-      }
-    }
+  }
 
-    if (filename.endsWith('.json')) {
-      const jsonFile: JSONFile = {
-        filename,
-        inputFileSize: data.length,
-        code: sourceCode,
-        type: options.type,
-      };
-
-      return await transformJSON(jsonFile, context);
-    }
-
-    if (options.type === 'asset') {
-      const file: AssetFile = {
-        filename,
-        inputFileSize: data.length,
-        code: sourceCode,
-        type: options.type,
-      };
-
-      return await transformAsset(file, context);
-    }
-
-    const file: JSFile = {
+  if (filename.endsWith('.json')) {
+    const jsonFile: JSONFile = {
       filename,
       inputFileSize: data.length,
       code: sourceCode,
-      type: options.type === 'script' ? 'js/script' : 'js/module',
-      functionMap: null,
+      type: options.type,
     };
 
-    return await transformJSWithBabel(file, context);
-  },
+    return await transformJSON(jsonFile, context);
+  }
 
-  getCacheKey: (config: JsTransformerConfig): string => {
-    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
+  if (options.type === 'asset') {
+    const file: AssetFile = {
+      filename,
+      inputFileSize: data.length,
+      code: sourceCode,
+      type: options.type,
+    };
 
-    const filesKey = getCacheKey([
-      __filename,
-      require.resolve(babelTransformerPath),
-      require.resolve(minifierPath),
-      require.resolve('./utils/getMinifier'),
-      require.resolve('./utils/assetTransformer'),
-      require.resolve('metro/private/ModuleGraph/worker/generateImportNames'),
-      require.resolve('metro/private/ModuleGraph/worker/JsFileWrapping'),
-      ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
-    ]);
+    return await transformAsset(file, context);
+  }
 
-    // $FlowFixMe[unsupported-syntax]
-    const babelTransformer = require(babelTransformerPath);
-    return [
-      filesKey,
-      stableHash(remainingConfig).toString('hex'),
-      babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
-    ].join('$');
-  },
+  const file: JSFile = {
+    filename,
+    inputFileSize: data.length,
+    code: sourceCode,
+    type: options.type === 'script' ? 'js/script' : 'js/module',
+    functionMap: null,
+  };
+
+  return await transformJSWithBabel(file, context);
+};
+
+export const getCacheKey = (config: JsTransformerConfig): string => {
+  const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
+
+  const filesKey = metroGetCacheKey([
+    __filename,
+    require.resolve(babelTransformerPath),
+    require.resolve(minifierPath),
+    require.resolve('./utils/getMinifier'),
+    require.resolve('./utils/assetTransformer'),
+    require.resolve('metro/private/ModuleGraph/worker/generateImportNames'),
+    require.resolve('metro/private/ModuleGraph/worker/JsFileWrapping'),
+    ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
+  ]);
+
+  // $FlowFixMe[unsupported-syntax]
+  const babelTransformer = require(babelTransformerPath);
+  return [
+    filesKey,
+    stableHash(remainingConfig).toString('hex'),
+    babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
+  ].join('$');
 };
 
 function countLinesAndTerminateMap(

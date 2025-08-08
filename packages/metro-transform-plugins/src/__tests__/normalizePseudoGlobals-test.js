@@ -9,11 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Options} from '../normalizePseudoGlobals';
 
-const normalizePseudoglobals = require('../normalizePseudoGlobals');
+import normalizePseudoglobals from '../normalizePseudoGlobals';
+
 const {transformFromAstSync, transformSync} = require('@babel/core');
 const nullthrows = require('nullthrows');
 

@@ -39,7 +39,7 @@ const processId = {name: 'process'};
 
 const dev = {name: '__DEV__'};
 
-function inlinePlugin(
+export default function inlinePlugin(
   {types: t}: {types: Types},
   options: Options,
 ): PluginObj<State> {
@@ -175,5 +175,3 @@ function inlinePlugin(
     },
   };
 }
-
-module.exports = inlinePlugin;

@@ -22,9 +22,8 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
+import template from '@babel/template';
 import nullthrows from 'nullthrows';
-
-const template = require('@babel/template').default;
 
 export type Options = $ReadOnly<{
   importDefault: string,
@@ -150,7 +149,12 @@ function withLocation(
   return node;
 }
 
-function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
+export default function importExportPlugin({
+  types: t,
+}: {
+  types: Types,
+  ...
+}): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
 
   return {
@@ -585,5 +589,3 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
     },
   };
 }
-
-module.exports = importExportPlugin;

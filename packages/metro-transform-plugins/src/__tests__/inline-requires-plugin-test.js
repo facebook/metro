@@ -14,11 +14,11 @@ import type {PluginOptions, State} from '../inline-requires-plugin';
 import type {Plugins} from '@babel/core';
 import type {PluginTesterOptions} from 'babel-plugin-tester';
 
-const inlineRequiresPlugin = require('../inline-requires-plugin');
-const validateOutputAst = require('./validateOutputAst');
-const babel = require('@babel/core');
-const pluginTester = require('babel-plugin-tester');
-const nullthrows = require('nullthrows');
+import inlineRequiresPlugin from '../inline-requires-plugin';
+import validateOutputAst from './validateOutputAst';
+import * as babel from '@babel/core';
+import pluginTester from 'babel-plugin-tester';
+import nullthrows from 'nullthrows';
 
 type TestCases = PluginTesterOptions<PluginOptions, State>['tests'];
 

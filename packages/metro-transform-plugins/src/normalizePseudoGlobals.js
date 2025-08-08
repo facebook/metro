@@ -19,7 +19,7 @@ export type Options = {
   reservedNames: $ReadOnlyArray<string>,
 };
 
-function normalizePseudoglobals(
+export default function normalizePseudoglobals(
   ast: BabelNode,
   options?: Options,
 ): $ReadOnlyArray<string> {
@@ -124,5 +124,3 @@ function rename(fullName: string, shortName: string, scope: Scope): string {
 
   return unusedName;
 }
-
-module.exports = normalizePseudoglobals;
