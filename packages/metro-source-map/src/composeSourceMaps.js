@@ -25,10 +25,10 @@ export default function composeSourceMaps(
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
   const SourceMetadataMapConsumer =
-    // eslint-disable-next-line lint/no-commonjs-require
+    // eslint-disable-next-line import/no-commonjs
     require('metro-symbolicate/private/SourceMetadataMapConsumer').default;
   const GoogleIgnoreListConsumer =
-    // eslint-disable-next-line lint/no-commonjs-require
+    // eslint-disable-next-line import/no-commonjs
     require('metro-symbolicate/private/GoogleIgnoreListConsumer').default;
   if (maps.length < 1) {
     throw new Error('composeSourceMaps: Expected at least one map');

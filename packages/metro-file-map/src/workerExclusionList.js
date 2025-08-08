@@ -9,7 +9,7 @@
  */
 
 // Imported directly in CJS workers - must be CommonJS
-/* eslint-disable lint/no-commonjs-require,import/no-commonjs */
+/* eslint-disable import/no-commonjs */
 
 // This list is compiled after the MDN list of the most common MIME types (see
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/

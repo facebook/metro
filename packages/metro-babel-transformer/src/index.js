@@ -109,7 +109,7 @@ function transform({
       cloneInputAst: false,
     };
     const sourceAst = options.hermesParser
-      ? // eslint-disable-next-line lint/no-commonjs-require,import/no-commonjs
+      ? // eslint-disable-next-line import/no-commonjs
         require('hermes-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,

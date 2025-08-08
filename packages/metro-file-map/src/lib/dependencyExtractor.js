@@ -9,7 +9,7 @@
  */
 
 // Required by worker, must be commonjs
-/* eslint-disable lint/no-commonjs-require,import/no-commonjs */
+/* eslint-disable import/no-commonjs */
 
 'use strict';
 

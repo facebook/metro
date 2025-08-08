@@ -8,7 +8,7 @@
  * @noformat - Flow comment syntax
  */
 
-/* eslint-disable lint/no-commonjs-require,import/no-commonjs */
+/* eslint-disable import/no-commonjs */
 
 /*
  * This file exports a set of constants that are used for Jest's haste map

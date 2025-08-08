@@ -272,7 +272,7 @@ export default class TerminalReporter {
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
-        // eslint-disable-next-line lint/no-commonjs-require
+        // eslint-disable-next-line import/no-commonjs
         const version = 'v' + require('../../package.json').version;
         this.terminal.log(
           color.bold(

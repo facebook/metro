@@ -14,7 +14,7 @@ import type {BundleOptions} from 'metro/private/shared/types';
 import EventEmitter from 'events';
 import os from 'os';
 
-// eslint-disable-next-line lint/no-commonjs-require,import/no-commonjs
+// eslint-disable-next-line import/no-commonjs
 const VERSION = require('../package.json').version;
 
 export type ActionLogEntryData = {

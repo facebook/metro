@@ -41,5 +41,23 @@ module.exports = {
         'import/no-extraneous-dependencies': 'off',
       },
     },
+    {
+      files: ['packages/**/*.js'],
+      rules: {
+        'import/no-commonjs': 'error',
+      },
+    },
+    {
+      files: [
+        'packages/metro/src/integration_tests/**/*.js',
+        'packages/metro-runtime/**/*.js',
+        '**/__tests__/**/*.js',
+        '**/__mocks__/**/*.js',
+        '**/__fixtures__/**/*.js',
+      ],
+      rules: {
+        'import/no-commonjs': 'off',
+      },
+    },
   ],
 };

@@ -15,7 +15,7 @@ import type {JsTransformerConfig} from 'metro-transform-worker';
 import crypto from 'crypto';
 import {getCacheKey} from 'metro-cache-key';
 
-// eslint-disable-next-line import/no-commonjs,lint/no-commonjs-require
+// eslint-disable-next-line import/no-commonjs
 const VERSION = require('../../package.json').version;
 
 type CacheKeyProvider = {

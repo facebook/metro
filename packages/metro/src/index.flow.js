@@ -278,7 +278,7 @@ export const runServer = async (
     );
   }
   // Lazy require
-  // eslint-disable-next-line lint/no-commonjs-require
+  // eslint-disable-next-line import/no-commonjs
   const connect = require('connect');
 
   const serverApp = connect();
