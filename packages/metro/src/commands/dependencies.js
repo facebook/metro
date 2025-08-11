@@ -82,7 +82,7 @@ async function dependencies(args: Args, config: ConfigT) {
     : Promise.resolve();
 }
 
-module.exports = (): {...ModuleObject, handler: Function} => ({
+export default (): {...ModuleObject, handler: Function} => ({
   command: 'get-dependencies [entryFile]',
   desc: 'List all dependencies that will be bundled for a given entry point',
   builder: (yargs: Yargs) => {

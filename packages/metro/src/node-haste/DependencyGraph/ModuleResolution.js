@@ -82,7 +82,7 @@ type Options<TPackage> = $ReadOnly<{
   unstable_enablePackageExports: boolean,
 }>;
 
-class ModuleResolver<TPackage: Packageish> {
+export class ModuleResolver<TPackage: Packageish> {
   _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModulePath: string;
@@ -318,7 +318,7 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
 }
 
 // $FlowFixMe[incompatible-extend]
-class UnableToResolveError extends Error {
+export class UnableToResolveError extends Error {
   /**
    * File path of the module that tried to require a module, ex. `/js/foo.js`.
    */
@@ -480,8 +480,3 @@ function guessDependencyLocation(
 function isQuote(str: ?string): boolean {
   return str === '"' || str === "'" || str === '`';
 }
-
-module.exports = {
-  ModuleResolver,
-  UnableToResolveError,
-};

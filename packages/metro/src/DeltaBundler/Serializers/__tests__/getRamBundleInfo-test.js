@@ -9,14 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module, TransformInputOptions} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
 import CountingSet from '../../../lib/CountingSet';
-
-const getRamBundleInfo = require('../getRamBundleInfo');
+import getRamBundleInfo from '../getRamBundleInfo';
 
 function createModule(
   name: string,

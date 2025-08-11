@@ -142,7 +142,7 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  *
  * The second argument is only provided for debugging purposes.
  */
-function collectDependencies(
+export default function collectDependencies(
   ast: BabelNodeFile,
   options: Options,
 ): CollectedDependencies {
@@ -927,5 +927,3 @@ class DependencyRegistry {
     return Array.from(this._dependencies.values());
   }
 }
-
-module.exports = collectDependencies;
