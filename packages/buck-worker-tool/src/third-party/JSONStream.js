@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/* eslint-disable lint/no-commonjs-require,import/no-commonjs */
+
 /**
  * Copyright (c) 2011 Dominic Tarr.
  * Based on the JSONStream package: https://github.com/dominictarr/JSONStream

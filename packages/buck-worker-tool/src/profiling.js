@@ -25,7 +25,7 @@ function getInspectorSession() {
   return currentInspectorSession;
 }
 
-async function startProfiling() {
+export async function startProfiling() {
   if (isProfiling) {
     return;
   }
@@ -36,7 +36,7 @@ async function startProfiling() {
   isProfiling = true;
 }
 
-async function stopProfilingAndWrite(workerName: ?string) {
+export async function stopProfilingAndWrite(workerName: ?string) {
   if (!isProfiling) {
     return;
   }
@@ -55,8 +55,3 @@ async function stopProfilingAndWrite(workerName: ?string) {
   );
   isProfiling = false;
 }
-
-module.exports = {
-  stopProfilingAndWrite,
-  startProfiling,
-};
