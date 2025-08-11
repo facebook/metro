@@ -32,7 +32,7 @@ import createConsumer from './createConsumer';
  * Uses `MappingsConsumer` and `SectionsConsumer` under the hood (via
  * `createConsumer`).
  */
-class DelegatingConsumer implements IConsumer {
+export default class DelegatingConsumer implements IConsumer {
   static +GENERATED_ORDER: IterationOrder = GENERATED_ORDER;
   static +ORIGINAL_ORDER: IterationOrder = ORIGINAL_ORDER;
   static +GREATEST_LOWER_BOUND: LookupBias = GREATEST_LOWER_BOUND;
@@ -73,5 +73,3 @@ class DelegatingConsumer implements IConsumer {
     return this._rootConsumer.sourceContentFor(source, nullOnMissing);
   }
 }
-
-module.exports = DelegatingConsumer;

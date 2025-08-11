@@ -20,12 +20,16 @@ import {SourceMapGenerator} from 'source-map';
 Consumer;
 
 // Originally based on https://github.com/jakobwesthoff/source-map-merger
-function composeSourceMaps(
+export default function composeSourceMaps(
   maps: $ReadOnlyArray<MixedSourceMap>,
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
-  const SourceMetadataMapConsumer = require('metro-symbolicate/private/SourceMetadataMapConsumer');
-  const GoogleIgnoreListConsumer = require('metro-symbolicate/private/GoogleIgnoreListConsumer');
+  const SourceMetadataMapConsumer =
+    // eslint-disable-next-line lint/no-commonjs-require
+    require('metro-symbolicate/private/SourceMetadataMapConsumer').default;
+  const GoogleIgnoreListConsumer =
+    // eslint-disable-next-line lint/no-commonjs-require
+    require('metro-symbolicate/private/GoogleIgnoreListConsumer').default;
   if (maps.length < 1) {
     throw new Error('composeSourceMaps: Expected at least one map');
   }
@@ -132,5 +136,3 @@ function findOriginalPosition(
   // $FlowFixMe[incompatible-return] `Number0`, `Number1` is incompatible with number
   return original;
 }
-
-module.exports = composeSourceMaps;

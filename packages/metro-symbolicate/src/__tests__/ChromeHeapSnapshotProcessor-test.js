@@ -13,7 +13,7 @@
 
 import type {ChromeHeapSnapshot} from '../ChromeHeapSnapshot';
 
-const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
+import {ChromeHeapSnapshotProcessor} from '../ChromeHeapSnapshot';
 
 const SNAPSHOT_COMMON = {
   snapshot: {
