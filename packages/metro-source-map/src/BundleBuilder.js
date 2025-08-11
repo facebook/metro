@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
@@ -34,7 +32,7 @@ const EMPTY_MAP = {
  * const code = builder.getCode();
  * const map = builder.getMap();
  */
-class BundleBuilder {
+export class BundleBuilder {
   _file: string;
   _sections: Array<IndexMapSection>;
   _line: number;
@@ -114,7 +112,7 @@ function measureString(str: string): {
   return {lineBreaks, lastLineColumns};
 }
 
-function createIndexMap(
+export function createIndexMap(
   file: string,
   sections: Array<IndexMapSection>,
 ): IndexMap {
@@ -124,5 +122,3 @@ function createIndexMap(
     sections,
   };
 }
-
-module.exports = {BundleBuilder, createIndexMap};

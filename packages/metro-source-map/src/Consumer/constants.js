@@ -39,7 +39,7 @@ function lookupBiasToString(x: LookupBias): string {
   return x;
 }
 
-module.exports = {
+export {
   FIRST_COLUMN,
   FIRST_LINE,
   GENERATED_ORDER,

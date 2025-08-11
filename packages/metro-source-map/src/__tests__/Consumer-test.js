@@ -13,8 +13,8 @@
 
 import type {MixedSourceMap} from '../source-map';
 
-const Consumer = require('../Consumer');
-const {add0, add1} = require('ob1');
+import Consumer from '../Consumer';
+import {add0, add1} from 'ob1';
 
 const {objectContaining} = expect;
 

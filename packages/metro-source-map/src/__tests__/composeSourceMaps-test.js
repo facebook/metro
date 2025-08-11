@@ -9,14 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {BasicSourceMap, IndexMap, MixedSourceMap} from '../source-map';
 
-const composeSourceMaps = require('../composeSourceMaps');
-const Consumer = require('../Consumer');
+import composeSourceMaps from '../composeSourceMaps';
+import Consumer from '../Consumer';
+import {add0, add1} from 'ob1';
+
 const fs = require('fs');
 const invariant = require('invariant');
-const {add0, add1} = require('ob1');
 const path = require('path');
 const terser = require('terser');
 

@@ -29,7 +29,7 @@ type SourceNameNormalizer = (string, {+sourceRoot?: ?string, ...}) => string;
   *
   *     new GoogleIgnoreListConsumer(map, source => source) // Don't normalize
   */
-class GoogleIgnoreListConsumer {
+export default class GoogleIgnoreListConsumer {
   constructor(
     map: MixedSourceMap,
     normalizeSourceFn: SourceNameNormalizer = normalizeSourcePath,
@@ -128,5 +128,3 @@ class GoogleIgnoreListConsumer {
     }
   }
 }
-
-module.exports = GoogleIgnoreListConsumer;

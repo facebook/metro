@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const GoogleIgnoreListConsumer = require('../GoogleIgnoreListConsumer.js');
+import GoogleIgnoreListConsumer from '../GoogleIgnoreListConsumer';
 
 describe('GoogleIgnoreListConsumer', () => {
   test('discards indices beyond the range of the sources array', () => {

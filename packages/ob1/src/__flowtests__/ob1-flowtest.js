@@ -16,7 +16,7 @@ import {add, add0, add1, get0, get1, inc, neg, sub, sub1} from '../ob1';
 const FORTY_TWO_0 = add0(42);
 const FORTY_TWO_1 = add1(42);
 
-module.exports = {
+export default {
   testSafeOps() {
     (add(FORTY_TWO_0, FORTY_TWO_0): Number0);
     (add(FORTY_TWO_0, FORTY_TWO_1): Number1);
