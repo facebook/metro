@@ -11,7 +11,7 @@
 
 'use strict';
 
-import Resolver from '../index';
+import * as Resolver from '../index';
 import {createResolutionContext} from './utils';
 import path from 'path';
 
