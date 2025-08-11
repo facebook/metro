@@ -11,4 +11,6 @@
 
 import minifier from './minifier';
 
+// CommonJS export for backwards compatibility
+// eslint-disable-next-line import/no-commonjs
 module.exports = minifier;
