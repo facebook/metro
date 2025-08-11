@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 export type ModuleMap = $ReadOnlyArray<[number, string]>;
 
 export type Bundle = {

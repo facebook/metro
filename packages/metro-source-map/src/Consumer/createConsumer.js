@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {MixedSourceMap} from '../source-map';
 import type {IConsumer} from './types';
 
-const invariant = require('invariant');
+import invariant from 'invariant';
 
 function createConsumer(sourceMap: MixedSourceMap): IConsumer {
   invariant(

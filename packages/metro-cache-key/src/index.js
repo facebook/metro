@@ -9,10 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const crypto = require('crypto');
-const fs = require('fs');
+import crypto from 'crypto';
+import fs from 'fs';
 
 function getCacheKey(files: Array<string>): string {
   return files

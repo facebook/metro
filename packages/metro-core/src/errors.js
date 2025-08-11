@@ -9,10 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const AmbiguousModuleResolutionError = require('./errors/AmbiguousModuleResolutionError');
-const PackageResolutionError = require('./errors/PackageResolutionError');
+import AmbiguousModuleResolutionError from './errors/AmbiguousModuleResolutionError';
+import PackageResolutionError from './errors/PackageResolutionError';
 
 module.exports = {
   AmbiguousModuleResolutionError,

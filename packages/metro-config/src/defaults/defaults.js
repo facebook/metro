@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PerfLogger, RootPerfLogger} from '../types';
 
-const defaultCreateModuleIdFactory = require('metro/private/lib/createModuleIdFactory');
+import defaultCreateModuleIdFactory from 'metro/private/lib/createModuleIdFactory';
 
 exports.assetExts = [
   // Image formats

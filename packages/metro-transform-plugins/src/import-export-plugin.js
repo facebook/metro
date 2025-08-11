@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {
@@ -24,8 +22,9 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
+import nullthrows from 'nullthrows';
+
 const template = require('@babel/template').default;
-const nullthrows = require('nullthrows');
 
 export type Options = $ReadOnly<{
   importDefault: string,

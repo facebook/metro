@@ -17,13 +17,12 @@
 // In our third form, we symbolicate using a module ID, a line number, and
 // optionally a column.
 
-'use strict';
+import * as Symbolication from './Symbolication';
+import fs from 'fs';
+import {Transform} from 'stream';
 
-const Symbolication = require('./Symbolication.js');
-const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
-const {Transform} = require('stream');
 
 function printHelp() {
   const usages = [

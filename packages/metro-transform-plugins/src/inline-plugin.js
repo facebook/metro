@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {Binding, NodePath, Scope} from '@babel/traverse';
 import type {
@@ -23,7 +21,7 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
-const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
+import createInlinePlatformChecks from './utils/createInlinePlatformChecks';
 
 export type Options = $ReadOnly<{
   dev: boolean,

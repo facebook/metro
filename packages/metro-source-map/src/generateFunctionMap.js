@@ -9,16 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {Node} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
+import B64Builder from './B64Builder';
 // $FlowFixMe[cannot-resolve-module] - resolves to @babel/traverse
 import traverseForGenerateFunctionMap from '@babel/traverse--for-generate-function-map';
+import * as t from '@babel/types';
 import {
   isAssignmentExpression,
   isClassBody,
@@ -42,12 +42,9 @@ import {
   isTypeCastExpression,
   isVariableDeclarator,
 } from '@babel/types';
-
-const B64Builder = require('./B64Builder');
-const t = require('@babel/types');
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-const fsPath = require('path');
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
+import fsPath from 'path';
 
 type Position = {
   line: number,

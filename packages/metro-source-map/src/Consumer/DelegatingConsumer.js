@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {MixedSourceMap} from '../source-map';
 import type {LookupBias} from './constants.js';
 import type {
@@ -20,13 +19,13 @@ import type {
   SourcePosition,
 } from './types';
 
-const {
+import {
   GENERATED_ORDER,
   GREATEST_LOWER_BOUND,
   LEAST_UPPER_BOUND,
   ORIGINAL_ORDER,
-} = require('./constants');
-const createConsumer = require('./createConsumer');
+} from './constants';
+import createConsumer from './createConsumer';
 
 /**
  * A source map consumer that supports both "basic" and "indexed" source maps.

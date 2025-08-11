@@ -8,8 +8,6 @@
  * @flow strict-local
  */
 
-'use strict';
-
 import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';

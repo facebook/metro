@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const invariant = require('invariant');
+import invariant from 'invariant';
 
 type RawBuffer = Array<number | RawBuffer>;
 

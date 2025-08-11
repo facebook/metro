@@ -8,13 +8,11 @@
  * @flow
  */
 
-'use strict';
-
 import type {Options} from './FileStore';
 
-const FileStore = require('./FileStore');
-const fs = require('fs');
-const path = require('path');
+import FileStore from './FileStore';
+import fs from 'fs';
+import path from 'path';
 
 type CleanOptions = {
   ...Options,

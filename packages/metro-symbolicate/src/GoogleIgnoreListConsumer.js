@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BasicSourceMap, IndexMap, MixedSourceMap} from 'metro-source-map';
 
-const {normalizeSourcePath} = require('metro-source-map');
+import {normalizeSourcePath} from 'metro-source-map';
 
 type SourceNameNormalizer = (string, {+sourceRoot?: ?string, ...}) => string;
 

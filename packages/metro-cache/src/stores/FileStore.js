@@ -8,10 +8,8 @@
  * @flow
  */
 
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);

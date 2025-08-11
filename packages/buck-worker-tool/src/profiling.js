@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const fs = require('fs');
+import fs from 'fs';
 
 let currentInspectorSession;
 let isProfiling = false;
@@ -20,6 +18,7 @@ function getInspectorSession() {
   if (currentInspectorSession) {
     return currentInspectorSession;
   }
+  // eslint-disable-next-line lint/no-commonjs-require
   const inspector = require('inspector');
   currentInspectorSession = new inspector.Session();
   currentInspectorSession.connect();

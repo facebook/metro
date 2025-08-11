@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginEntry, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
@@ -35,31 +33,32 @@ import type {
   DynamicRequiresBehavior,
 } from 'metro/private/ModuleGraph/worker/collectDependencies';
 
-const getMinifier = require('./utils/getMinifier');
-const {transformFromAstSync} = require('@babel/core');
-const generate = require('@babel/generator').default;
-const babylon = require('@babel/parser');
-const types = require('@babel/types');
-const {stableHash} = require('metro-cache');
-const {getCacheKey} = require('metro-cache-key');
-const {
+import * as assetTransformer from './utils/assetTransformer';
+import getMinifier from './utils/getMinifier';
+import {transformFromAstSync} from '@babel/core';
+import generate from '@babel/generator';
+import * as babylon from '@babel/parser';
+import * as types from '@babel/types';
+import {stableHash} from 'metro-cache';
+import {getCacheKey} from 'metro-cache-key';
+import {
   fromRawMappings,
   functionMapBabelPlugin,
   toBabelSegments,
   toSegmentTuple,
-} = require('metro-source-map');
-const metroTransformPlugins = require('metro-transform-plugins');
-const collectDependencies = require('metro/private/ModuleGraph/worker/collectDependencies');
-const {
-  InvalidRequireCallError: InternalInvalidRequireCallError,
-} = require('metro/private/ModuleGraph/worker/collectDependencies');
-const generateImportNames = require('metro/private/ModuleGraph/worker/generateImportNames');
-const {
+} from 'metro-source-map';
+import metroTransformPlugins from 'metro-transform-plugins';
+import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
+import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
+import {
   importLocationsPlugin,
   locToKey,
-} = require('metro/private/ModuleGraph/worker/importLocationsPlugin');
-const JsFileWrapping = require('metro/private/ModuleGraph/worker/JsFileWrapping');
-const nullthrows = require('nullthrows');
+} from 'metro/private/ModuleGraph/worker/importLocationsPlugin';
+import * as JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
+import nullthrows from 'nullthrows';
+
+const InternalInvalidRequireCallError =
+  collectDependencies.InvalidRequireCallError;
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
@@ -517,7 +516,6 @@ async function transformAsset(
   file: AssetFile,
   context: TransformationContext,
 ): Promise<TransformResponse> {
-  const assetTransformer = require('./utils/assetTransformer');
   const {assetRegistryPath, assetPlugins} = context.config;
 
   const result = await assetTransformer.transform(

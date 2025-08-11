@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BabelCoreOptions, BabelFileMetadata} from '@babel/core';
 
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const nullthrows = require('nullthrows');
+import {parseSync, transformFromAstSync} from '@babel/core';
+import nullthrows from 'nullthrows';
 
 export type CustomTransformOptions = {
   [string]: mixed,
