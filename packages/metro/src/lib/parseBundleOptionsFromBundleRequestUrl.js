@@ -38,15 +38,15 @@ const getTransformProfile = (transformProfile: string): TransformProfile =>
     ? transformProfile
     : 'default';
 
-export default function parseOptionsFromUrl(
-  normalizedRequestUrl: string,
+export default function parseBundleOptionsFromBundleRequestUrl(
+  rawNonJscSafeUrlEncodedUrl: string,
   platforms: Set<string>,
 ): {
   ...BundleOptions,
   // Retained for backwards compatibility, unused in Metro, to be removed.
   bundleType: string,
 } {
-  const parsedURL = nullthrows(url.parse(normalizedRequestUrl, true)); // `true` to parse the query param as an object.
+  const parsedURL = nullthrows(url.parse(rawNonJscSafeUrlEncodedUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
     query.bundleEntry ||
@@ -60,6 +60,7 @@ export default function parseOptionsFromUrl(
     customResolverOptions: parseCustomResolverOptions(parsedURL),
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
+    // absolute and relative paths are converted to paths relative to root
     entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
     excludeSource: getBoolean(query, 'excludeSource', false),
     hot: true,
@@ -86,7 +87,7 @@ export default function parseOptionsFromUrl(
     }),
     sourcePaths:
       SourcePathsMode.cast(query.sourcePaths) ?? SourcePathsMode.Absolute,
-    sourceUrl: jscSafeUrl.toJscSafeUrl(normalizedRequestUrl),
+    sourceUrl: jscSafeUrl.toJscSafeUrl(rawNonJscSafeUrlEncodedUrl),
     unstable_transformProfile: getTransformProfile(
       query.unstable_transformProfile,
     ),

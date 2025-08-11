@@ -55,7 +55,7 @@ import bundleToString from './lib/bundleToString';
 import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
 import parseJsonBody from './lib/parseJsonBody';
-import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
+import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
 import splitBundleOptions from './lib/splitBundleOptions';
 import * as transformHelpers from './lib/transformHelpers';
 import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
@@ -570,10 +570,11 @@ export default class Server {
   };
 
   _parseOptions(url: string): BundleOptions {
-    const {bundleType: _bundleType, ...bundleOptions} = parseOptionsFromUrl(
-      url,
-      new Set(this._config.resolver.platforms),
-    );
+    const {bundleType: _bundleType, ...bundleOptions} =
+      parseBundleOptionsFromBundleRequestUrl(
+        url,
+        new Set(this._config.resolver.platforms),
+      );
     return bundleOptions;
   }
 

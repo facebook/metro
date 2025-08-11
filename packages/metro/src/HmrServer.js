@@ -25,7 +25,7 @@ import RevisionNotFoundError from './IncrementalBundler/RevisionNotFoundError';
 import debounceAsyncQueue from './lib/debounceAsyncQueue';
 import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
-import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
+import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
 import splitBundleOptions from './lib/splitBundleOptions';
 import * as transformHelpers from './lib/transformHelpers';
 import {Logger} from 'metro-core';
@@ -99,10 +99,11 @@ export default class HmrServer<TClient: Client> {
   ): Promise<void> {
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
     const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const {bundleType: _bundleType, ...options} = parseOptionsFromUrl(
-      requestUrl,
-      new Set(this._config.resolver.platforms),
-    );
+    const {bundleType: _bundleType, ...options} =
+      parseBundleOptionsFromBundleRequestUrl(
+        requestUrl,
+        new Set(this._config.resolver.platforms),
+      );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 
