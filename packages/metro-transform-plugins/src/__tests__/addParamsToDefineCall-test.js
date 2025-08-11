@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const addParamsToDefineCall = require('../addParamsToDefineCall');
+import addParamsToDefineCall from '../addParamsToDefineCall';
 
 describe('addParamsToDefineCall', () => {
   const input = '__d(function() {}); // SourceMapUrl=something';

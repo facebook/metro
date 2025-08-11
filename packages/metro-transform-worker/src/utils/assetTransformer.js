@@ -16,7 +16,7 @@ import {getAssetData} from 'metro/private/Assets';
 import {generateAssetCodeFileAst} from 'metro/private/Bundler/util';
 import path from 'path';
 
-async function transform(
+export async function transform(
   {filename, options, src}: BabelTransformerArgs,
   assetRegistryPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
@@ -42,7 +42,3 @@ async function transform(
     ast: generateAssetCodeFileAst(assetRegistryPath, data),
   };
 }
-
-module.exports = {
-  transform,
-};
