@@ -9,17 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {DeltaResult, Options} from './types';
 import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
+import EventEmitter from 'events';
 import path from 'path';
 
+// eslint-disable-next-line lint/no-commonjs-require
 const debug = require('debug')('Metro:DeltaCalculator');
-const {EventEmitter} = require('events');
 
 /**
  * This class is in charge of calculating the delta of changed modules that

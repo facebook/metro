@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {MixedOutput, Module} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
-const {isResolvedDependency} = require('../../../lib/isResolvedDependency');
-const invariant = require('invariant');
-const jscSafeUrl = require('jsc-safe-url');
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const path = require('path');
+import {isResolvedDependency} from '../../../lib/isResolvedDependency';
+import invariant from 'invariant';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {addParamsToDefineCall} from 'metro-transform-plugins';
+import path from 'path';
 
 export type Options = $ReadOnly<{
   createModuleId: string => number | string,

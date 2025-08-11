@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -44,49 +42,43 @@ import type {
 import type {CustomResolverOptions} from 'metro-resolver/private/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
+import {getAsset} from './Assets';
+import baseJSBundle from './DeltaBundler/Serializers/baseJSBundle';
+import getAllFiles from './DeltaBundler/Serializers/getAllFiles';
+import getAssets from './DeltaBundler/Serializers/getAssets';
+import {getExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
+import getRamBundleInfo from './DeltaBundler/Serializers/getRamBundleInfo';
+import {sourceMapStringNonBlocking} from './DeltaBundler/Serializers/sourceMapString';
+import IncrementalBundler from './IncrementalBundler';
+import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
+import bundleToString from './lib/bundleToString';
+import formatBundlingError from './lib/formatBundlingError';
+import getGraphId from './lib/getGraphId';
+import parseJsonBody from './lib/parseJsonBody';
+import parseOptionsFromUrl from './lib/parseOptionsFromUrl';
+import splitBundleOptions from './lib/splitBundleOptions';
+import transformHelpers from './lib/transformHelpers';
+import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
+import parsePlatformFilePath from './node-haste/lib/parsePlatformFilePath';
+import MultipartResponse from './Server/MultipartResponse';
+import symbolicate from './Server/symbolicate';
 import {SourcePathsMode} from './shared/types';
+import {codeFrameColumns} from '@babel/code-frame';
+import * as fs from 'graceful-fs';
+import invariant from 'invariant';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {Logger} from 'metro-core';
+import mime from 'mime-types';
+import nullthrows from 'nullthrows';
+import path from 'path';
+import {performance} from 'perf_hooks';
+import querystring from 'querystring';
+import url from 'url';
 
-const {getAsset} = require('./Assets');
-const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
-const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
-const getAssets = require('./DeltaBundler/Serializers/getAssets');
-const {
-  getExplodedSourceMap,
-} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
-const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const {
-  sourceMapStringNonBlocking,
-} = require('./DeltaBundler/Serializers/sourceMapString');
-const IncrementalBundler = require('./IncrementalBundler');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const bundleToString = require('./lib/bundleToString');
-const formatBundlingError = require('./lib/formatBundlingError');
-const getGraphId = require('./lib/getGraphId');
-const parseJsonBody = require('./lib/parseJsonBody');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const transformHelpers = require('./lib/transformHelpers');
-const {
-  UnableToResolveError,
-} = require('./node-haste/DependencyGraph/ModuleResolution');
-const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
-const MultipartResponse = require('./Server/MultipartResponse');
-const symbolicate = require('./Server/symbolicate');
-const {codeFrameColumns} = require('@babel/code-frame');
+// eslint-disable-next-line lint/no-commonjs-require
 const debug = require('debug')('Metro:Server');
-const fs = require('graceful-fs');
-const invariant = require('invariant');
-const jscSafeUrl = require('jsc-safe-url');
-const {
-  Logger,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-const mime = require('mime-types');
-const nullthrows = require('nullthrows');
-const path = require('path');
-const {performance} = require('perf_hooks');
-const querystring = require('querystring');
-const url = require('url');
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 const noopLogger: RootPerfLogger = {
   start: () => {},

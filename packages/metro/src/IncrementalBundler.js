@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {DeltaResult, Graph, MixedOutput, Module} from './DeltaBundler';
 import type {
   Options as DeltaBundlerOptions,
@@ -21,15 +19,15 @@ import type {GraphId} from './lib/getGraphId';
 import type {ResolverInputOptions} from './shared/types';
 import type {ConfigT} from 'metro-config';
 
-const Bundler = require('./Bundler');
-const DeltaBundler = require('./DeltaBundler');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const getGraphId = require('./lib/getGraphId');
-const getPrependedScripts = require('./lib/getPrependedScripts');
-const transformHelpers = require('./lib/transformHelpers');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import Bundler from './Bundler';
+import DeltaBundler from './DeltaBundler';
+import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
+import getGraphId from './lib/getGraphId';
+import getPrependedScripts from './lib/getPrependedScripts';
+import transformHelpers from './lib/transformHelpers';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 export opaque type RevisionId: string = string;
 

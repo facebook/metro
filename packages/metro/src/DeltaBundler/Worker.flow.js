@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
@@ -18,10 +16,10 @@ import type {
   JsTransformOptions,
 } from 'metro-transform-worker';
 
-const traverse = require('@babel/traverse').default;
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import traverse from '@babel/traverse';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 

@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformInputOptions} from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
 
-const canonicalize = require('metro-core/private/canonicalize');
+import canonicalize from 'metro-core/private/canonicalize';
 
 export opaque type GraphId: string = string;
 

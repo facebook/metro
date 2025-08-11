@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const Package = require('./Package');
+import Package from './Package';
 
 type GetClosestPackageFn = (absoluteFilePath: string) => ?{
   packageJsonPath: string,

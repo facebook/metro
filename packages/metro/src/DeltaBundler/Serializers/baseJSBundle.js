@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   MixedOutput,
   Module,
@@ -19,8 +17,8 @@ import type {
 } from '../types';
 import type {Bundle} from 'metro-runtime/src/modules/types';
 
-const getAppendScripts = require('../../lib/getAppendScripts');
-const processModules = require('./helpers/processModules');
+import getAppendScripts from '../../lib/getAppendScripts';
+import processModules from './helpers/processModules';
 
 function baseJSBundle(
   entryPoint: string,

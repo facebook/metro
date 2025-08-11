@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   Options as DeltaBundlerOptions,
   TransformInputOptions,

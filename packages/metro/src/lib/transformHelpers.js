@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
