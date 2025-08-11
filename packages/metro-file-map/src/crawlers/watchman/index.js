@@ -24,11 +24,10 @@ import normalizePathSeparatorsToPosix from '../../lib/normalizePathSeparatorsToP
 import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from '../../lib/RootPathUtils';
 import {planQuery} from './planQuery';
+import watchman from 'fb-watchman';
 import invariant from 'invariant';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
-
-const watchman = require('fb-watchman');
 
 type WatchmanRoots = Map<
   string, // Posix-separated absolute path

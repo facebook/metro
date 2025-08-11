@@ -14,8 +14,6 @@
  * https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/utils/recrawl-warning-dedupe.js
  */
 
-'use strict';
-
 export default class RecrawlWarning {
   static RECRAWL_WARNINGS: Array<RecrawlWarning> = [];
   static REGEXP: RegExp =
