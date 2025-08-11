@@ -22,6 +22,7 @@ import {Worker} from '../worker';
 import {Worker as JestWorker} from 'jest-worker';
 import {sep} from 'path';
 
+// eslint-disable-next-line lint/no-commonjs-require
 const debug = require('debug')('Metro:FileMap');
 
 type ProcessFileRequest = $ReadOnly<{

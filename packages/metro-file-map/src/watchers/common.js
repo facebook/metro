@@ -14,14 +14,12 @@
  * https://github.com/amasad/sane/blob/64ff3a870c42e84f744086884bf55a4f9c22d376/src/common.js
  */
 
-'use strict';
-
 import type {ChangeEventMetadata} from '../flow-types';
 import type {Stats} from 'fs';
 
 // $FlowFixMe[untyped-import] - Write libdefs for `micromatch`
-const micromatch = require('micromatch');
-const path = require('path');
+import micromatch from 'micromatch';
+import path from 'path';
 
 /**
  * Constants

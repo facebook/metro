@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PerfLogger, PerfLoggerFactory, RootPerfLogger} from 'metro-config';
 
 export type {PerfLoggerFactory, PerfLogger};
