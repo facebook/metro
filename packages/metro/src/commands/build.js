@@ -108,7 +108,7 @@ export default (): {
     };
 
     // Inline require() to avoid circular dependency with ../index
-    // eslint-disable-next-line lint/no-commonjs-require
+    // eslint-disable-next-line import/no-commonjs
     const MetroApi = require('../index');
 
     await MetroApi.runBuild(config, {

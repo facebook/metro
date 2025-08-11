@@ -24,7 +24,7 @@ import * as fs from 'graceful-fs';
 import {platform} from 'os';
 import * as path from 'path';
 
-// eslint-disable-next-line lint/no-commonjs-require,import/no-commonjs
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:NodeCrawler');
 
 type Callback = (result: FileData) => void;
