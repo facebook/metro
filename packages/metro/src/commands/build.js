@@ -42,7 +42,7 @@ type Args = $ReadOnly<{
   resolverOption: CustomResolverOptions,
 }>;
 
-module.exports = (): {
+export default (): {
   ...ModuleObject,
   handler: Function,
 } => ({

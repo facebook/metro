@@ -13,7 +13,7 @@ import type {Module} from '../../types';
 
 import {isJsModule, wrapModule} from './js';
 
-function processModules(
+export default function processModules(
   modules: $ReadOnlyArray<Module<>>,
   {
     filter = () => true,
@@ -48,5 +48,3 @@ function processModules(
       }),
     ]);
 }
-
-module.exports = processModules;

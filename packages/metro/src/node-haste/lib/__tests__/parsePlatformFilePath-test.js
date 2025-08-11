@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-var parsePlatformFilePath = require('../parsePlatformFilePath');
+import parsePlatformFilePath from '../parsePlatformFilePath';
 
 const TEST_PLATFORMS = new Set(['ios', 'android']);
 

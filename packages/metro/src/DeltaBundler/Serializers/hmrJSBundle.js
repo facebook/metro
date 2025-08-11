@@ -129,7 +129,7 @@ function getInverseDependencies(
   return inverseDependencies;
 }
 
-function hmrJSBundle(
+export default function hmrJSBundle(
   delta: DeltaResult<>,
   graph: ReadOnlyGraph<>,
   options: Options,
@@ -146,5 +146,3 @@ function hmrJSBundle(
     ),
   };
 }
-
-module.exports = hmrJSBundle;

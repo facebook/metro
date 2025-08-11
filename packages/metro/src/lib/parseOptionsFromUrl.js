@@ -38,7 +38,7 @@ const getTransformProfile = (transformProfile: string): TransformProfile =>
     ? transformProfile
     : 'default';
 
-module.exports = function parseOptionsFromUrl(
+export default function parseOptionsFromUrl(
   normalizedRequestUrl: string,
   platforms: Set<string>,
 ): {
@@ -91,4 +91,4 @@ module.exports = function parseOptionsFromUrl(
       query.unstable_transformProfile,
     ),
   };
-};
+}

@@ -115,7 +115,7 @@ function dep(name: string): TransformResultDependency {
   };
 
   async function createResolver(config: InputConfigT = {}, platform?: string) {
-    const DependencyGraph = require('../../node-haste/DependencyGraph');
+    const DependencyGraph = require('../../node-haste/DependencyGraph').default;
     const dependencyGraph = new DependencyGraph(
       mergeConfig(await getDefaultConfig(p('/root')), defaultConfig, config),
     );

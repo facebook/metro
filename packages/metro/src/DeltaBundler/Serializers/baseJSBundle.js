@@ -20,7 +20,7 @@ import type {Bundle} from 'metro-runtime/src/modules/types';
 import getAppendScripts from '../../lib/getAppendScripts';
 import processModules from './helpers/processModules';
 
-function baseJSBundle(
+export default function baseJSBundle(
   entryPoint: string,
   preModules: $ReadOnlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
@@ -81,5 +81,3 @@ function baseJSBundle(
     ).map(([module, code]) => [options.createModuleId(module.path), code]),
   };
 }
-
-module.exports = baseJSBundle;

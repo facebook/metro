@@ -24,7 +24,7 @@ type Options = {
   publicPath: string,
 };
 
-async function getAssets(
+export default async function getAssets(
   dependencies: ReadOnlyDependencies<>,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
@@ -52,5 +52,3 @@ async function getAssets(
 
   return await Promise.all(promises);
 }
-
-module.exports = getAssets;

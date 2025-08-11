@@ -24,7 +24,7 @@ import DeltaBundler from './DeltaBundler';
 import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
 import getGraphId from './lib/getGraphId';
 import getPrependedScripts from './lib/getPrependedScripts';
-import transformHelpers from './lib/transformHelpers';
+import * as transformHelpers from './lib/transformHelpers';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -61,7 +61,7 @@ function revisionIdFromString(str: string): RevisionId {
   return str;
 }
 
-class IncrementalBundler {
+export default class IncrementalBundler {
   _config: ConfigT;
   _bundler: Bundler;
   _deltaBundler: DeltaBundler<>;
@@ -364,5 +364,3 @@ class IncrementalBundler {
     await this._bundler.ready();
   }
 }
-
-module.exports = IncrementalBundler;

@@ -45,7 +45,7 @@ function parseBaseName(baseName: string): {
  * Return `null` if the `filePath` doesn't have a valid extension, required
  * to describe the type of an asset.
  */
-function tryParse(
+export function tryParse(
   filePath: string,
   platforms: $ReadOnlySet<string>,
 ): ?AssetPath {
@@ -64,12 +64,13 @@ function tryParse(
   };
 }
 
-function parse(filePath: string, platforms: $ReadOnlySet<string>): AssetPath {
+export function parse(
+  filePath: string,
+  platforms: $ReadOnlySet<string>,
+): AssetPath {
   const result = tryParse(filePath, platforms);
   if (result == null) {
     throw new Error(`invalid asset file path: ${filePath}`);
   }
   return result;
 }
-
-module.exports = {parse, tryParse};
