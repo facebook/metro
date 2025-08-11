@@ -46,11 +46,20 @@ export default function parseBundleOptionsFromBundleRequestUrl(
   // Retained for backwards compatibility, unused in Metro, to be removed.
   bundleType: string,
 } {
-  const parsedURL = nullthrows(url.parse(rawNonJscSafeUrlEncodedUrl, true)); // `true` to parse the query param as an object.
+  const relativeProtocolUrl = rawNonJscSafeUrlEncodedUrl.startsWith('//');
+  const parsedURL = nullthrows(
+    url.parse(
+      (relativeProtocolUrl ? 'temp-protocol:' : '') +
+        rawNonJscSafeUrlEncodedUrl,
+      true,
+    ),
+  ); // `true` to parse the query param as an object.
+
   const query = nullthrows(parsedURL.query);
-  const pathname =
-    query.bundleEntry ||
-    (parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '');
+
+  const pathname = query.bundleEntry || (parsedURL?.pathname ?? '');
+  const decodedPathname = decodeURIComponent(pathname);
+
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
   const bundleType = getBundleType(path.extname(pathname).substr(1));
@@ -61,7 +70,9 @@ export default function parseBundleOptionsFromBundleRequestUrl(
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
     // absolute and relative paths are converted to paths relative to root
-    entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
+    entryFile: decodedPathname
+      .replace(/^(?:\.?\/)?/, './')
+      .replace(/\.[^/.]+$/, ''),
     excludeSource: getBoolean(query, 'excludeSource', false),
     hot: true,
     inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
