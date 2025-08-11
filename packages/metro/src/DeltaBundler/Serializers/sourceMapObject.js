@@ -38,7 +38,4 @@ async function sourceMapObjectNonBlocking(
   });
 }
 
-module.exports = {
-  sourceMapObject,
-  sourceMapObjectNonBlocking,
-};
+export {sourceMapObject, sourceMapObjectNonBlocking};

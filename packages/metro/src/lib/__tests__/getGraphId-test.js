@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const getGraphId = require('../getGraphId');
+import getGraphId from '../getGraphId';
 
 describe('getGraphId', () => {
   test('generates a unique id from entry file', () => {

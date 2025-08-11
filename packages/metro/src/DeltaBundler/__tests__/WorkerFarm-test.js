@@ -55,7 +55,7 @@ describe('Worker Farm', function () {
       return api;
     });
 
-    WorkerFarm = require('../WorkerFarm');
+    WorkerFarm = require('../WorkerFarm').default;
   });
 
   test('passes transform data to the worker farm when transforming', async () => {

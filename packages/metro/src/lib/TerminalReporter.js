@@ -14,7 +14,7 @@ import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
 import logToConsole from './logToConsole';
-import reporting from './reporting';
+import * as reporting from './reporting';
 import chalk from 'chalk';
 import throttle from 'lodash.throttle';
 import {AmbiguousModuleResolutionError} from 'metro-core';

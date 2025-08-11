@@ -85,4 +85,4 @@ function locToKey(loc: BabelSourceLocation): string {
   return `${start.line},${start.column}:${end.line},${end.column}`;
 }
 
-module.exports = {importLocationsPlugin, locToKey};
+export {importLocationsPlugin, locToKey};

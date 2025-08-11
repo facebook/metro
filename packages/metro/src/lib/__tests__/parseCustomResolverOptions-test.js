@@ -9,9 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import parseCustomResolverOptions from '../parseCustomResolverOptions';
 
-const parseCustomResolverOptions = require('../parseCustomResolverOptions');
 const url = require('url');
 
 test('should parse some custom options from a http url', () => {

@@ -16,7 +16,7 @@ import canonicalize from 'metro-core/private/canonicalize';
 
 export opaque type GraphId: string = string;
 
-function getGraphId(
+export default function getGraphId(
   entryFile: string,
   options: TransformInputOptions,
   {
@@ -54,5 +54,3 @@ function getGraphId(
     canonicalize,
   );
 }
-
-module.exports = getGraphId;

@@ -29,7 +29,7 @@ type TransformerResult = $ReadOnly<{
   sha1: string,
 }>;
 
-class WorkerFarm {
+export default class WorkerFarm {
   _config: ConfigT;
   _transformerConfig: TransformerConfig;
   _worker: WorkerInterface | Worker;
@@ -178,5 +178,3 @@ class TransformError extends SyntaxError {
     Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
   }
 }
-
-module.exports = WorkerFarm;

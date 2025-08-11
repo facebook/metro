@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-function getPreludeCode({
+export default function getPreludeCode({
   extraVars,
   isDev,
   globalPrefix,
@@ -69,5 +67,3 @@ function processEnv(nodeEnv: string): string {
     nodeEnv,
   )};`;
 }
-
-module.exports = getPreludeCode;

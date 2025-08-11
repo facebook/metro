@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const debounceAsyncQueue = require('../debounceAsyncQueue');
+import debounceAsyncQueue from '../debounceAsyncQueue';
 
 describe('debounceAsyncQueue', () => {
   test('debounces calls', async () => {

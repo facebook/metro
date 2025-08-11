@@ -9,9 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
+import parseCustomTransformOptions from '../parseCustomTransformOptions';
 
-const parseCustomTransformOptions = require('../parseCustomTransformOptions');
 const url = require('url');
 
 test('should parse some custom options from a http url', () => {

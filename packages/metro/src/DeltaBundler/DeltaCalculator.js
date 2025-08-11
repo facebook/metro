@@ -26,7 +26,7 @@ const debug = require('debug')('Metro:DeltaCalculator');
  * traverse the files that have been changed between calls and avoid having to
  * traverse the whole dependency tree for trivial small changes.
  */
-class DeltaCalculator<T> extends EventEmitter {
+export default class DeltaCalculator<T> extends EventEmitter {
   _changeEventSource: EventEmitter;
   _options: Options<T>;
 
@@ -323,5 +323,3 @@ class DeltaCalculator<T> extends EventEmitter {
     };
   }
 }
-
-module.exports = DeltaCalculator;

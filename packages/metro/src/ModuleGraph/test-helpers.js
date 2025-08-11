@@ -78,7 +78,7 @@ function toMatchCodeFrameSnapshot(received) {
   );
 }
 
-module.exports = {
+export {
   codeFromAst,
   comparableCode,
   toEqualComparableCode,

@@ -36,7 +36,7 @@ type QueueItem<TItem, TResult> = {
  * if we have many items pending in a short amount of time, we can start
  * processing right away.
  */
-class BatchProcessor<TItem, TResult> {
+export default class BatchProcessor<TItem, TResult> {
   _currentProcessCount: number;
   _options: BatchProcessorOptions;
   _processBatch: ProcessBatch<TItem, TResult>;
@@ -122,5 +122,3 @@ class BatchProcessor<TItem, TResult> {
     return this._queue.length;
   }
 }
-
-module.exports = BatchProcessor;

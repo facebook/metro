@@ -22,7 +22,7 @@ const HEADER_SIZE = 3;
  * getStartupCode(): returns the runtime and the startup code of the bundle.
  * getModule(): returns the code for the specified module.
  */
-class RamBundleParser {
+export default class RamBundleParser {
   _buffer: Buffer;
   _numModules: number;
   _startupCodeLength: number;
@@ -64,5 +64,3 @@ class RamBundleParser {
     return this._buffer.toString('utf8', start, end);
   }
 }
-
-module.exports = RamBundleParser;

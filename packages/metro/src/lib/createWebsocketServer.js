@@ -41,7 +41,7 @@ type HMROptions<TClient> = {
  *   - onClientDisconnect
  */
 
-module.exports = function createWebsocketServer<TClient: Object>({
+export default function createWebsocketServer<TClient: Object>({
   websocketServer,
 }: HMROptions<TClient>): ws.Server {
   const wss = new ws.Server({
@@ -84,4 +84,4 @@ module.exports = function createWebsocketServer<TClient: Object>({
   });
 
   return wss;
-};
+}
