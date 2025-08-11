@@ -16,7 +16,7 @@ import Server from '../../Server';
 import asAssets from './RamBundle/as-assets';
 import {save as asIndexedFile} from './RamBundle/as-indexed-file';
 
-async function build(
+export async function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
 ): Promise<RamBundleInfo> {
@@ -29,7 +29,7 @@ async function build(
   return await packagerClient.getRamBundleInfo(options);
 }
 
-function save(
+export function save(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (x: string) => void,
@@ -42,6 +42,4 @@ function save(
     : asIndexedFile(bundle, options, log);
 }
 
-exports.build = build;
-exports.save = save;
-exports.formatName = 'bundle';
+export const formatName = 'bundle';

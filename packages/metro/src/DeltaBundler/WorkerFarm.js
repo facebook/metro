@@ -61,6 +61,7 @@ export default class WorkerFarm {
 
       this._worker = worker;
     } else {
+      // eslint-disable-next-line import/no-commonjs,lint/no-commonjs-require
       this._worker = (require('./Worker'): Worker);
     }
   }

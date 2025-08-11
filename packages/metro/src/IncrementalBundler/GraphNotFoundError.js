@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {GraphId} from '../lib/getGraphId';
 
 export default class GraphNotFoundError extends Error {

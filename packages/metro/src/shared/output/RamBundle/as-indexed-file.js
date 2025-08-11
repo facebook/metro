@@ -33,7 +33,7 @@ const SIZEOF_UINT32 = 4;
  * The module id for the startup code (prelude, polyfills etc.) is the
  * empty string.
  */
-function saveAsIndexedFile(
+export function save(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
@@ -215,7 +215,7 @@ function buildModuleBuffers(
     );
 }
 
-function buildTableAndContents(
+export function buildTableAndContents(
   startupCode: string,
   modules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
@@ -240,7 +240,7 @@ function buildTableAndContents(
   );
 }
 
-function createModuleGroups(
+export function createModuleGroups(
   groups: Map<number, Set<number>>,
   modules: $ReadOnlyArray<ModuleTransportLike>,
 ): ModuleGroups {
@@ -258,7 +258,3 @@ function* concat(
     yield* it;
   }
 }
-
-exports.save = saveAsIndexedFile;
-exports.buildTableAndContents = buildTableAndContents;
-exports.createModuleGroups = createModuleGroups;

@@ -21,7 +21,7 @@ import fs from 'fs';
 import {Cache, stableHash} from 'metro-cache';
 import path from 'path';
 
-// eslint-disable-next-line lint/no-commonjs-require
+// eslint-disable-next-line import/no-commonjs,lint/no-commonjs-require
 const debug = require('debug')('Metro:Transformer');
 
 type GetOrComputeSha1Fn = string => Promise<
