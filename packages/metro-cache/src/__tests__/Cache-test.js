@@ -29,7 +29,7 @@ describe('Cache', () => {
 
   beforeEach(() => {
     Logger = require('metro-core').Logger;
-    Cache = require('../Cache');
+    Cache = require('../Cache').default;
 
     Logger.on('log', item => {
       log.push({

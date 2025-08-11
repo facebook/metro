@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const canonicalize = require('../canonicalize');
+import canonicalize from '../canonicalize';
 
 describe('canonicalize', () => {
   test('has the same output for two objects with the same key/value pairs', () => {

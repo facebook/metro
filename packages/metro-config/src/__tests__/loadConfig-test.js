@@ -9,11 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
+// eslint-disable-next-line lint/sort-imports
+import getDefaultConfig from '../defaults';
 
 jest.mock('cosmiconfig');
 
-const getDefaultConfig = require('../defaults');
 const {loadConfig} = require('../loadConfig');
 const cosmiconfig = require('cosmiconfig');
 const path = require('path');

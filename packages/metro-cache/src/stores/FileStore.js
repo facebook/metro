@@ -18,7 +18,7 @@ export type Options = {
   root: string,
 };
 
-class FileStore<T> {
+export default class FileStore<T> {
   _root: string;
 
   constructor(options: Options) {
@@ -88,5 +88,3 @@ class FileStore<T> {
     }
   }
 }
-
-module.exports = FileStore;

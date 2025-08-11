@@ -13,7 +13,7 @@ import type {InvalidPackageError} from 'metro-resolver';
 
 import {formatFileCandidates} from 'metro-resolver';
 
-class PackageResolutionError extends Error {
+export default class PackageResolutionError extends Error {
   originModulePath: string;
   packageError: InvalidPackageError;
   targetModuleName: string;
@@ -38,5 +38,3 @@ class PackageResolutionError extends Error {
     Object.assign(this, opts);
   }
 }
-
-module.exports = PackageResolutionError;

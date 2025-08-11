@@ -8,9 +8,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-var path = require('path');
+import path from 'path';
 
 var list = [/\/__tests__\/.*/];
 
@@ -36,12 +34,10 @@ function escapeRegExp(pattern) {
   }
 }
 
-function exclusionList(additionalExclusions) {
+export default function exclusionList(additionalExclusions) {
   return new RegExp(
     '(' +
       (additionalExclusions || []).concat(list).map(escapeRegExp).join('|') +
       ')$',
   );
 }
-
-module.exports = exclusionList;

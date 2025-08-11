@@ -15,7 +15,7 @@ import type {HttpOptions} from 'metro-cache';
 import HttpStore from './HttpStore';
 import {Logger} from 'metro-core';
 
-class HttpGetStore<T> extends HttpStore<T> {
+export default class HttpGetStore<T> extends HttpStore<T> {
   _warned: boolean;
 
   constructor(options: HttpOptions) {
@@ -64,5 +64,3 @@ class HttpGetStore<T> extends HttpStore<T> {
     }
   }
 }
-
-module.exports = HttpGetStore;
