@@ -16,7 +16,7 @@ import validConfig from './defaults/validConfig';
 import cosmiconfig from 'cosmiconfig';
 import fs from 'fs';
 import {validate} from 'jest-validate';
-import MetroCache from 'metro-cache';
+import * as MetroCache from 'metro-cache';
 import path from 'path';
 import {dirname, join} from 'path';
 
@@ -319,8 +319,4 @@ async function loadConfig(
   });
 }
 
-module.exports = {
-  loadConfig,
-  resolveConfig,
-  mergeConfig,
-};
+export {loadConfig, resolveConfig, mergeConfig};

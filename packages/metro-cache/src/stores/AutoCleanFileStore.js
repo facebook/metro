@@ -57,7 +57,7 @@ function get<T>(property: ?T, defaultValue: T): T {
 /**
  * A FileStore that cleans itself up in a given interval
  */
-class AutoCleanFileStore<T> extends FileStore<T> {
+export default class AutoCleanFileStore<T> extends FileStore<T> {
   _intervalMs: number;
   _cleanupThresholdMs: number;
   _root: string;
@@ -101,5 +101,3 @@ class AutoCleanFileStore<T> extends FileStore<T> {
     this._scheduleCleanup();
   }
 }
-
-module.exports = AutoCleanFileStore;

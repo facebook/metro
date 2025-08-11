@@ -88,7 +88,7 @@ function getTTYStream(stream: UnderlyingStream): ?tty.WriteStream {
  * "error" printers, as it is not meant for formatting/reporting. It has the
  * single responsibility of handling status messages.
  */
-class Terminal {
+export default class Terminal {
   _logLines: Array<string>;
   _nextStatusStr: string;
   _statusStr: string;
@@ -245,5 +245,3 @@ class Terminal {
     this._nextStatusStr = '';
   }
 }
-
-module.exports = Terminal;

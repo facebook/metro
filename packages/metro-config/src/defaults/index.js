@@ -180,4 +180,4 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 getDefaultConfig.getDefaultValues = getDefaultValues;
-module.exports = getDefaultConfig;
+export default getDefaultConfig;

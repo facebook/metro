@@ -74,7 +74,7 @@ const ZLIB_OPTIONS = {
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
-class HttpStore<T> {
+export default class HttpStore<T> {
   static HttpError: typeof HttpError = HttpError;
   static NetworkError: typeof NetworkError = NetworkError;
 
@@ -405,5 +405,3 @@ class HttpStore<T> {
     });
   }
 }
-
-module.exports = HttpStore;
