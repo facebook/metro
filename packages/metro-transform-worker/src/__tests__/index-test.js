@@ -29,7 +29,7 @@ jest
   .mock('metro-minify-terser');
 
 import type {JsTransformerConfig, JsTransformOptions} from '../index';
-import typeof TransformerType from '../index';
+import typeof * as TransformerType from '../index';
 import typeof FSType from 'fs';
 
 const {Buffer} = require('buffer');

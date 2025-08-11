@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {NodePath, VisitNode, Visitor} from '@babel/traverse';
 import typeof Traverse from '@babel/traverse';
@@ -20,7 +18,7 @@ import typeof * as Types from '@babel/types';
 
 type State = {stripped: boolean};
 
-function constantFoldingPlugin(context: {
+export default function constantFoldingPlugin(context: {
   types: Types,
   traverse: Traverse,
   ...
@@ -221,5 +219,3 @@ function constantFoldingPlugin(context: {
 
   return {visitor};
 }
-
-module.exports = constantFoldingPlugin;
