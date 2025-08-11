@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {FileCandidates} from '../types';
 
-const formatFileCandidates = require('./formatFileCandidates');
+import formatFileCandidates from './formatFileCandidates';
 
 class InvalidPackageError extends Error {
   /**
