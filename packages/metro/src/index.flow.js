@@ -547,3 +547,17 @@ async function earlyPortCheck(host: void | string, port: number) {
     await new Promise(resolve => server.close(() => resolve()));
   }
 }
+
+export default {
+  attachMetroCli,
+  runServer,
+  Terminal,
+  JsonReporter,
+  TerminalReporter,
+  loadConfig,
+  mergeConfig,
+  resolveConfig,
+  createConnectMiddleware,
+  runBuild,
+  buildGraph,
+};
