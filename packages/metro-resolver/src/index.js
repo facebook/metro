@@ -32,7 +32,7 @@ import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageError from './errors/InvalidPackageError';
 import resolve from './resolve';
 
-module.exports = {
+export {
   FailedToResolveNameError,
   FailedToResolvePathError,
   FailedToResolveUnsupportedError,

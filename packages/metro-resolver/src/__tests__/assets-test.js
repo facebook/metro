@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import * as Resolver from '../index';
 import {createResolutionContext} from './utils';
 import path from 'path';
