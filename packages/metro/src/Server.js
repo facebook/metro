@@ -75,7 +75,7 @@ import {performance} from 'perf_hooks';
 import querystring from 'querystring';
 import url from 'url';
 
-// eslint-disable-next-line import/no-commonjs,lint/no-commonjs-require
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:Server');
 
 const {createActionStartEntry, createActionEndEntry, log} = Logger;

@@ -17,7 +17,7 @@ import {Graph} from './Graph';
 import EventEmitter from 'events';
 import path from 'path';
 
-// eslint-disable-next-line import/no-commonjs,lint/no-commonjs-require
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:DeltaCalculator');
 
 /**

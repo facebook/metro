@@ -18,7 +18,7 @@ function getInspectorSession() {
   if (currentInspectorSession) {
     return currentInspectorSession;
   }
-  // eslint-disable-next-line lint/no-commonjs-require
+  // eslint-disable-next-line import/no-commonjs
   const inspector = require('inspector');
   currentInspectorSession = new inspector.Session();
   currentInspectorSession.connect();

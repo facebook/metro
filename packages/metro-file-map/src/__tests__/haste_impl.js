@@ -8,7 +8,7 @@
  * @oncall react_native
  */
 
-/* eslint-disable lint/no-commonjs-require */
+/* eslint-disable import/no-commonjs */
 
 'use strict';
 
