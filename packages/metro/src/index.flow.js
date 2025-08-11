@@ -147,9 +147,7 @@ export type RunBuildResult = {
 type BuildCommandOptions = {} | null;
 type ServeCommandOptions = {} | null;
 
-exports.Terminal = Terminal;
-exports.JsonReporter = JsonReporter;
-exports.TerminalReporter = TerminalReporter;
+export {Terminal, JsonReporter, TerminalReporter};
 
 export type {AssetData} from './Assets';
 export type {Reporter, ReportableEvent} from './lib/reporting';
@@ -161,7 +159,7 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
   return mergeConfig(defaultConfig, config);
 }
 
-async function runMetro(
+export async function runMetro(
   config: InputConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroServer> {
@@ -204,12 +202,9 @@ async function runMetro(
   return server;
 }
 
-exports.runMetro = runMetro;
-exports.loadConfig = loadConfig;
-exports.mergeConfig = mergeConfig;
-exports.resolveConfig = resolveConfig;
+export {loadConfig, mergeConfig, resolveConfig};
 
-const createConnectMiddleware = async function (
+export const createConnectMiddleware = async function (
   config: ConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
@@ -252,9 +247,8 @@ const createConnectMiddleware = async function (
     },
   };
 };
-exports.createConnectMiddleware = createConnectMiddleware;
 
-exports.runServer = async (
+export const runServer = async (
   config: ConfigT,
   {
     hasReducedPerformance = false,
@@ -385,7 +379,7 @@ exports.runServer = async (
   });
 };
 
-exports.runBuild = async (
+export const runBuild = async (
   config: ConfigT,
   {
     assets = false,
@@ -476,7 +470,7 @@ exports.runBuild = async (
   }
 };
 
-exports.buildGraph = async function (
+export const buildGraph = async function (
   config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
@@ -519,7 +513,7 @@ type AttachMetroCLIOptions = {
   ...
 };
 
-exports.attachMetroCli = function (
+export const attachMetroCli = function (
   yargs: Yargs,
   options?: AttachMetroCLIOptions = {},
 ): Yargs {

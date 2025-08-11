@@ -17,7 +17,7 @@ import relativizeSourceMapInline from '../../lib/relativizeSourceMap';
 import Server from '../../Server';
 import writeFile from './writeFile';
 
-function buildBundle(
+export function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
   buildOptions?: BuildOptions = {},
@@ -45,7 +45,7 @@ function relativateSerializedMap(
   return JSON.stringify(sourceMap);
 }
 
-async function saveBundleAndMap(
+export async function save(
   bundle: {
     code: string,
     map: string,
@@ -88,6 +88,4 @@ async function saveBundleAndMap(
   await Promise.all(writeFns.map((cb: void => mixed) => cb()));
 }
 
-exports.build = buildBundle;
-exports.save = saveBundleAndMap;
-exports.formatName = 'bundle';
+export const formatName = 'bundle';
