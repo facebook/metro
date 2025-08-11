@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from '../../Assets';
 import type {BuildOptions, OutputOptions, RequestOptions} from '../types';
 import type {MixedSourceMap} from 'metro-source-map';
 
-const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
-const Server = require('../../Server');
-const writeFile = require('./writeFile');
+import relativizeSourceMapInline from '../../lib/relativizeSourceMap';
+import Server from '../../Server';
+import writeFile from './writeFile';
 
 function buildBundle(
   packagerClient: Server,

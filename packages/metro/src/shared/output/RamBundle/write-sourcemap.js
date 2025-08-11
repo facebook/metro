@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const writeFile = require('../writeFile');
+import writeFile from '../writeFile';
 
 function writeSourcemap(
   fileName: string,

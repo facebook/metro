@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
@@ -29,30 +27,30 @@ import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
 
-const makeBuildCommand = require('./commands/build');
-const makeDependenciesCommand = require('./commands/dependencies');
-const makeServeCommand = require('./commands/serve');
-const MetroHmrServer = require('./HmrServer');
-const IncrementalBundler = require('./IncrementalBundler');
-const createWebsocketServer = require('./lib/createWebsocketServer');
-const JsonReporter = require('./lib/JsonReporter');
-const TerminalReporter = require('./lib/TerminalReporter');
-const MetroServer = require('./Server');
-const outputBundle = require('./shared/output/bundle');
-const chalk = require('chalk');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const {
+import makeBuildCommand from './commands/build';
+import makeDependenciesCommand from './commands/dependencies';
+import makeServeCommand from './commands/serve';
+import MetroHmrServer from './HmrServer';
+import IncrementalBundler from './IncrementalBundler';
+import createWebsocketServer from './lib/createWebsocketServer';
+import JsonReporter from './lib/JsonReporter';
+import TerminalReporter from './lib/TerminalReporter';
+import MetroServer from './Server';
+import * as outputBundle from './shared/output/bundle';
+import chalk from 'chalk';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import {
   getDefaultConfig,
   loadConfig,
   mergeConfig,
   resolveConfig,
-} = require('metro-config');
-const {Terminal} = require('metro-core');
-const net = require('net');
-const nullthrows = require('nullthrows');
-const {parse} = require('url');
+} from 'metro-config';
+import {Terminal} from 'metro-core';
+import net from 'net';
+import nullthrows from 'nullthrows';
+import {parse} from 'url';
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -286,6 +284,7 @@ exports.runServer = async (
     );
   }
   // Lazy require
+  // eslint-disable-next-line lint/no-commonjs-require
   const connect = require('connect');
 
   const serverApp = connect();

@@ -11,9 +11,8 @@
 
 import type {ConfigT} from 'metro-config';
 
+import ci from 'ci-info';
 import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
-
-const ci = require('ci-info');
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options

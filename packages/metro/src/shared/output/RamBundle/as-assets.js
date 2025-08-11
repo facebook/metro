@@ -9,20 +9,19 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {ModuleTransportLike} from '../../../shared/types';
 import type {OutputOptions} from '../../types';
 
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const writeFile = require('../writeFile');
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
-const {joinModules} = require('./util');
-const writeSourceMap = require('./write-sourcemap');
-const fsPromises = require('fs').promises;
-const path = require('path');
+import relativizeSourceMapInline from '../../../lib/relativizeSourceMap';
+import writeFile from '../writeFile';
+import buildSourcemapWithMetadata from './buildSourcemapWithMetadata';
+import MAGIC_RAM_BUNDLE_NUMBER from './magic-number';
+import {joinModules} from './util';
+import writeSourceMap from './write-sourcemap';
+import {promises as fsPromises} from 'fs';
+import path from 'path';
+
 // must not start with a dot, as that won't go into the apk
 const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
 const MODULES_DIR = 'js-modules';

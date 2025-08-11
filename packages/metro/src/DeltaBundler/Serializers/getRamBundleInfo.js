@@ -9,20 +9,18 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ModuleTransportLike, RamModuleTransport} from '../../shared/types';
 import type {Module, ReadOnlyGraph, SerializerOptions} from '../types';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {GetTransformOptions} from 'metro-config';
 
-const {createRamBundleGroups} = require('../../Bundler/util');
-const getAppendScripts = require('../../lib/getAppendScripts');
-const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
-const {isJsModule, wrapModule} = require('./helpers/js');
-const {sourceMapObject} = require('./sourceMapObject');
-const nullthrows = require('nullthrows');
-const path = require('path');
+import {createRamBundleGroups} from '../../Bundler/util';
+import getAppendScripts from '../../lib/getAppendScripts';
+import getTransitiveDependencies from './helpers/getTransitiveDependencies';
+import {isJsModule, wrapModule} from './helpers/js';
+import {sourceMapObject} from './sourceMapObject';
+import nullthrows from 'nullthrows';
+import path from 'path';
 
 type Options = $ReadOnly<{
   ...SerializerOptions,

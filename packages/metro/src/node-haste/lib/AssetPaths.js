@@ -9,10 +9,8 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const parsePlatformFilePath = require('./parsePlatformFilePath');
-const path = require('path');
+import parsePlatformFilePath from './parsePlatformFilePath';
+import path from 'path';
 
 export type AssetPath = {
   assetName: string,

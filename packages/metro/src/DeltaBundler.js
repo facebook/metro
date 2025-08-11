@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   DeltaResult,
   Graph,
@@ -21,7 +19,7 @@ import type {
 } from './DeltaBundler/types';
 import type EventEmitter from 'events';
 
-const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
+import DeltaCalculator from './DeltaBundler/DeltaCalculator';
 
 export type {
   DeltaResult,

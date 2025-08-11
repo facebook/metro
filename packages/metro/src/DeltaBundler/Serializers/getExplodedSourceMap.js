@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module} from '../types';
 import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-const {getJsOutput, isJsModule} = require('./helpers/js');
+import {getJsOutput, isJsModule} from './helpers/js';
 
 export type ExplodedSourceMap = $ReadOnlyArray<{
   +map: Array<MetroSourceMapSegmentTuple>,

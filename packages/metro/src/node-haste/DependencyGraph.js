@@ -25,22 +25,23 @@ import type MetroFileMap, {
 } from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
+import createFileMap from './DependencyGraph/createFileMap';
+import {ModuleResolver} from './DependencyGraph/ModuleResolution';
 import {PackageCache} from './PackageCache';
-import {DuplicateHasteCandidatesError} from 'metro-file-map';
-
-const createFileMap = require('./DependencyGraph/createFileMap');
-const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
-const {EventEmitter} = require('events');
-const fs = require('fs');
-const {
+import EventEmitter from 'events';
+import fs from 'fs';
+import {
   AmbiguousModuleResolutionError,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
+  Logger,
   PackageResolutionError,
-} = require('metro-core');
-const canonicalize = require('metro-core/private/canonicalize');
-const {InvalidPackageError} = require('metro-resolver');
-const nullthrows = require('nullthrows');
-const path = require('path');
+} from 'metro-core';
+import canonicalize from 'metro-core/private/canonicalize';
+import {DuplicateHasteCandidatesError} from 'metro-file-map';
+import {InvalidPackageError} from 'metro-resolver';
+import nullthrows from 'nullthrows';
+import path from 'path';
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 const NULL_PLATFORM = Symbol();
 

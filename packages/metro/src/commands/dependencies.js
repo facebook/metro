@@ -9,18 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ConfigT} from 'metro-config';
 import type {ModuleObject} from 'yargs';
 import typeof Yargs from 'yargs';
 
-const {makeAsyncCommand} = require('../cli-utils');
-const Server = require('../Server');
-const fs = require('fs');
-const {loadConfig} = require('metro-config');
-const path = require('path');
-const {promisify} = require('util');
+import {makeAsyncCommand} from '../cli-utils';
+import Server from '../Server';
+import fs from 'fs';
+import {loadConfig} from 'metro-config';
+import path from 'path';
+import {promisify} from 'util';
 
 type Args = $ReadOnly<{
   entryFile: string,

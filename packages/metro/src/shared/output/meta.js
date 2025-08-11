@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const isUTF8 = (encoding: 'ascii' | 'utf16le' | 'utf8') =>
   /^utf-?8$/i.test(encoding);

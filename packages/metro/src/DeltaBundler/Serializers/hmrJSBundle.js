@@ -9,17 +9,15 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {EntryPointURL} from '../../HmrServer';
 import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
 import type {HmrModule} from 'metro-runtime/src/modules/types';
 
-const {isJsModule, wrapModule} = require('./helpers/js');
-const jscSafeUrl = require('jsc-safe-url');
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const path = require('path');
-const url = require('url');
+import {isJsModule, wrapModule} from './helpers/js';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {addParamsToDefineCall} from 'metro-transform-plugins';
+import path from 'path';
+import url from 'url';
 
 type Options = $ReadOnly<{
   clientUrl: EntryPointURL,

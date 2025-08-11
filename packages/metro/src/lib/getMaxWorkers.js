@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const os = require('os');
+import os from 'os';
 
 module.exports = (workers: ?number): number => {
   // $FlowFixMe[prop-missing] Missing Flow lib def for availableParallelism

@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types';
 import type {File} from '@babel/types';
 
-const babylon = require('@babel/parser');
-const template = require('@babel/template').default;
-const babelTypes = require('@babel/types');
+import * as babylon from '@babel/parser';
+import template from '@babel/template';
+import * as babelTypes from '@babel/types';
 
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,

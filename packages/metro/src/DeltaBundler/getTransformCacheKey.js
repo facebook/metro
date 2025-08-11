@@ -9,14 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformerConfig} from './Worker';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 
+import crypto from 'crypto';
+import {getCacheKey} from 'metro-cache-key';
+
+// eslint-disable-next-line lint/no-commonjs-require
 const VERSION = require('../../package.json').version;
-const crypto = require('crypto');
-const {getCacheKey} = require('metro-cache-key');
 
 type CacheKeyProvider = {
   getCacheKey?: JsTransformerConfig => string,

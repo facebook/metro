@@ -9,20 +9,17 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BundleOptions} from '../shared/types';
 import type {TransformProfile} from 'metro-babel-transformer';
 
+import parsePlatformFilePath from '../node-haste/lib/parsePlatformFilePath';
 import {SourcePathsMode} from '../shared/types';
-
-const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
-const parseCustomResolverOptions = require('./parseCustomResolverOptions');
-const parseCustomTransformOptions = require('./parseCustomTransformOptions');
-const jscSafeUrl = require('jsc-safe-url');
-const nullthrows = require('nullthrows');
-const path = require('path');
-const url = require('url');
+import parseCustomResolverOptions from './parseCustomResolverOptions';
+import parseCustomTransformOptions from './parseCustomTransformOptions';
+import * as jscSafeUrl from 'jsc-safe-url';
+import nullthrows from 'nullthrows';
+import path from 'path';
+import url from 'url';
 
 const getBoolean = (
   query: $ReadOnly<{[opt: string]: string}>,

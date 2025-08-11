@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {OutputOptions, RequestOptions} from '../types';
 
-const Server = require('../../Server');
-const asAssets = require('./RamBundle/as-assets');
-const asIndexedFile = require('./RamBundle/as-indexed-file').save;
+import Server from '../../Server';
+import asAssets from './RamBundle/as-assets';
+import {save as asIndexedFile} from './RamBundle/as-indexed-file';
 
 async function build(
   packagerClient: Server,

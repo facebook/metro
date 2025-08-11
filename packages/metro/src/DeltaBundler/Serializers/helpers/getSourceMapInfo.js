@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Module} from '../../types';
 import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-const {getJsOutput} = require('./js');
+import {getJsOutput} from './js';
 
 function getSourceMapInfo(
   module: Module<>,

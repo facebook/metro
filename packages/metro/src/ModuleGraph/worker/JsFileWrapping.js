@@ -8,8 +8,6 @@
  * @flow strict-local
  */
 
-'use strict';
-
 import type {FunctionExpression, Identifier, Program} from '@babel/types';
 
 import template from '@babel/template';
