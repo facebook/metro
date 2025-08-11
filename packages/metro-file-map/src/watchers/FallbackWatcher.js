@@ -41,7 +41,7 @@ const DELETE_EVENT = common.DELETE_EVENT;
  */
 const DEBOUNCE_MS = 100;
 
-module.exports = class FallbackWatcher extends AbstractWatcher {
+export default class FallbackWatcher extends AbstractWatcher {
   +_changeTimers: Map<string, TimeoutID> = new Map();
   +_dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
@@ -384,7 +384,7 @@ module.exports = class FallbackWatcher extends AbstractWatcher {
   getPauseReason(): ?string {
     return null;
   }
-};
+}
 /**
  * Determine if a given FS error can be ignored
  */

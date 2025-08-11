@@ -54,9 +54,10 @@ jest.mock('jest-worker', () => ({
   }),
 }));
 
-jest.mock('../crawlers/node');
-jest.mock('../crawlers/watchman', () =>
-  jest.fn(options => {
+jest.mock('../crawlers/node', () => ({__esModule: true, default: jest.fn()}));
+jest.mock('../crawlers/watchman', () => ({
+  __esModule: true,
+  default: jest.fn(options => {
     const path = require('path');
 
     const {
@@ -110,7 +111,7 @@ jest.mock('../crawlers/watchman', () =>
       clocks: mockClocks,
     });
   }),
-);
+}));
 
 class MockWatcher extends AbstractWatcher {
   constructor(root: string, opts: WatcherBackendOptions) {
@@ -575,7 +576,7 @@ describe('FileMap', () => {
     ])(
       'uses watchman: %s, symlinks enabled: %s',
       async (useWatchman, enableSymlinks) => {
-        const node = require('../crawlers/node');
+        const node = require('../crawlers/node').default;
 
         // $FlowFixMe[prop-missing]
         // $FlowFixMe[missing-local-annot]
@@ -1412,7 +1413,7 @@ describe('FileMap', () => {
   });
 
   test('ignores files that do not exist', async () => {
-    const watchman = require('../crawlers/watchman');
+    const watchman = require('../crawlers/watchman').default;
     // $FlowFixMe[prop-missing]
     const mockImpl: typeof watchman = watchman.getMockImplementation();
     // Wrap the watchman mock and add an invalid file to the file list.
@@ -1521,8 +1522,8 @@ describe('FileMap', () => {
   });
 
   test('tries to crawl using node as a fallback', async () => {
-    const watchman = require('../crawlers/watchman');
-    const node = require('../crawlers/node');
+    const watchman = require('../crawlers/watchman').default;
+    const node = require('../crawlers/node').default;
 
     // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() => {
@@ -1563,8 +1564,8 @@ describe('FileMap', () => {
   });
 
   test('tries to crawl using node as a fallback when promise fails once', async () => {
-    const watchman = require('../crawlers/watchman');
-    const node = require('../crawlers/node');
+    const watchman = require('../crawlers/watchman').default;
+    const node = require('../crawlers/node').default;
 
     // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() =>
@@ -1603,8 +1604,8 @@ describe('FileMap', () => {
 
   test('stops crawling when both crawlers fail', async () => {
     expect.assertions(1);
-    const watchman = require('../crawlers/watchman');
-    const node = require('../crawlers/node');
+    const watchman = require('../crawlers/watchman').default;
+    const node = require('../crawlers/node').default;
 
     // $FlowFixMe[prop-missing]
     watchman.mockImplementation(() =>

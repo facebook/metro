@@ -146,7 +146,7 @@ describe('node crawler', () => {
 
   test('crawls for files based on patterns', async () => {
     childProcess = require('child_process');
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     mockResponse = [
       '/project/fruits/pear.js',
@@ -195,7 +195,7 @@ describe('node crawler', () => {
   });
 
   test('updates only changed files', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     // In this test sample, strawberry is changed and tomato is unchanged
     const tomato = [33, 42, 1, '', null, 0, ''];
@@ -223,7 +223,7 @@ describe('node crawler', () => {
   });
 
   test('returns removed files', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     // In this test sample, previouslyExisted was present before and will not be
     // when crawling this directory.
@@ -255,7 +255,7 @@ describe('node crawler', () => {
     mockSpawnExit = 1;
     childProcess = require('child_process');
 
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     const {changedFiles, removedFiles} = await nodeCrawl({
       previousState: {fileSystem: emptyFS},
@@ -284,7 +284,7 @@ describe('node crawler', () => {
     childProcess.spawn.mockImplementationOnce(() => {
       throw new Error();
     });
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     const {changedFiles, removedFiles} = await nodeCrawl({
       console: global.console,
@@ -306,7 +306,7 @@ describe('node crawler', () => {
 
   test('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
     childProcess = require('child_process');
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     const {changedFiles, removedFiles} = await nodeCrawl({
       console: global.console,
@@ -329,7 +329,7 @@ describe('node crawler', () => {
   });
 
   test('completes with empty roots', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     const {changedFiles, removedFiles} = await nodeCrawl({
       console: global.console,
@@ -346,7 +346,7 @@ describe('node crawler', () => {
   });
 
   test('completes with fs.readdir throwing an error', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
 
     const mockConsole = {
       ...global.console,
@@ -371,7 +371,7 @@ describe('node crawler', () => {
   });
 
   test('uses the withFileTypes option with readdir', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
     const fs = require('graceful-fs');
 
     const {changedFiles, removedFiles} = await nodeCrawl({
@@ -398,7 +398,7 @@ describe('node crawler', () => {
   });
 
   test('aborts the crawl on pre-aborted signal', async () => {
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
     const err = new Error('aborted for test');
     await expect(
       nodeCrawl({
@@ -430,7 +430,7 @@ describe('node crawler', () => {
       },
     };
 
-    nodeCrawl = require('../node');
+    nodeCrawl = require('../node').default;
     await expect(
       nodeCrawl({
         console: global.console,
