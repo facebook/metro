@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const encode = require('./encode');
+import encode from './encode';
 
 const MAX_SEGMENT_LENGTH = 7;
 const ONE_MEG = 1024 * 1024;

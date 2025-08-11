@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   GeneratedPositionLookup,
   IConsumer,
@@ -19,8 +17,8 @@ import type {
   SourcePosition,
 } from './types';
 
-const {GENERATED_ORDER, iterationOrderToString} = require('./constants');
-const invariant = require('invariant');
+import {GENERATED_ORDER, iterationOrderToString} from './constants';
+import invariant from 'invariant';
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
 class AbstractConsumer implements IConsumer {

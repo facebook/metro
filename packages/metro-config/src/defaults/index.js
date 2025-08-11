@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ConfigT} from '../types';
 
-const {
+import {
   DEFAULT_METRO_MINIFIER_PATH,
   additionalExts,
   assetExts,
@@ -22,14 +20,14 @@ const {
   noopPerfLoggerFactory,
   platforms,
   sourceExts,
-} = require('./defaults');
-const exclusionList = require('./exclusionList');
-const {FileStore} = require('metro-cache');
-const {Terminal} = require('metro-core');
-const getMaxWorkers = require('metro/private/lib/getMaxWorkers');
-const TerminalReporter = require('metro/private/lib/TerminalReporter');
-const os = require('os');
-const path = require('path');
+} from './defaults';
+import exclusionList from './exclusionList';
+import {FileStore} from 'metro-cache';
+import {Terminal} from 'metro-core';
+import getMaxWorkers from 'metro/private/lib/getMaxWorkers';
+import TerminalReporter from 'metro/private/lib/TerminalReporter';
+import os from 'os';
+import path from 'path';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {

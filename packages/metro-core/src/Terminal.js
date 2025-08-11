@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const throttle = require('lodash.throttle');
-const readline = require('readline');
-const tty = require('tty');
-const util = require('util');
+import throttle from 'lodash.throttle';
+import readline from 'readline';
+import tty from 'tty';
+import util from 'util';
 
 const {promisify} = util;
 

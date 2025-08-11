@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const Cache = require('./Cache');
-const stableHash = require('./stableHash');
-const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
-const FileStore = require('./stores/FileStore');
-const HttpGetStore = require('./stores/HttpGetStore');
-const HttpStore = require('./stores/HttpStore');
+import Cache from './Cache';
+import stableHash from './stableHash';
+import AutoCleanFileStore from './stores/AutoCleanFileStore';
+import FileStore from './stores/FileStore';
+import HttpGetStore from './stores/HttpGetStore';
+import HttpStore from './stores/HttpStore';
 
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';

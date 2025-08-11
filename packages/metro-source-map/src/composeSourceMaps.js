@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {SourcePosition} from './Consumer/types';
 import type {IConsumer, MixedSourceMap} from './source-map';
 import type {Number0, Number1} from 'ob1';
 
-const Consumer = require('./Consumer');
-const {SourceMapGenerator} = require('source-map');
+import Consumer from './Consumer';
+import {SourceMapGenerator} from 'source-map';
 
 // TODO(t67648443): Bypass the `sort-requires` rule for this file because of a dependency cycle.
 Consumer;
