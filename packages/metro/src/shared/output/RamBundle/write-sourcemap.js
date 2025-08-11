@@ -11,7 +11,7 @@
 
 import writeFile from '../writeFile';
 
-function writeSourcemap(
+export default function writeSourcemap(
   fileName: string,
   contents: string,
   log: (...args: Array<string>) => void,
@@ -25,5 +25,3 @@ function writeSourcemap(
   writeMap.then(() => log('Done writing sourcemap output'));
   return writeMap;
 }
-
-module.exports = writeSourcemap;

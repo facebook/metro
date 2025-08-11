@@ -13,7 +13,7 @@ import type {MixedSourceMap} from 'metro-source-map';
 
 import path from 'path';
 
-function relativizeSourceMapInline(
+export default function relativizeSourceMapInline(
   sourceMap: MixedSourceMap,
   sourcesRoot: string,
 ): void {
@@ -28,5 +28,3 @@ function relativizeSourceMapInline(
     }
   }
 }
-
-module.exports = relativizeSourceMapInline;

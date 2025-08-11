@@ -160,11 +160,4 @@ function renameRequires(ast: BabelNodeFile): string {
   return newRequireName;
 }
 
-module.exports = {
-  WRAP_NAME,
-
-  wrapJson,
-  jsonToCommonJS,
-  wrapModule,
-  wrapPolyfill,
-};
+export {WRAP_NAME, wrapJson, jsonToCommonJS, wrapModule, wrapPolyfill};

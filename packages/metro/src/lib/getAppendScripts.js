@@ -32,7 +32,7 @@ type Options<T: number | string> = $ReadOnly<{
   ...
 }>;
 
-function getAppendScripts<T: number | string>(
+export default function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
   options: Options<T>,
@@ -120,5 +120,3 @@ function getAppendScripts<T: number | string>(
 
   return output;
 }
-
-module.exports = getAppendScripts;

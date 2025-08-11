@@ -28,7 +28,7 @@ type GetOrComputeSha1Fn = string => Promise<
   $ReadOnly<{content?: Buffer, sha1: string}>,
 >;
 
-class Transformer {
+export default class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
@@ -211,5 +211,3 @@ function verifyRootExists(root: string): void {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }
-
-module.exports = Transformer;

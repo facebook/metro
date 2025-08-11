@@ -18,6 +18,7 @@ import type {
   TransformResultDependency,
 } from '../../DeltaBundler/types';
 
+import ResourceNotFoundError from '../../IncrementalBundler/ResourceNotFoundError';
 import CountingSet from '../../lib/CountingSet';
 import {mergeConfig} from 'metro-config';
 // $FlowFixMe[untyped-import]
@@ -25,7 +26,6 @@ import MockRequest from 'mock-req';
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
 
-const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
 const {
   getDefaultConfig: {getDefaultValues},
 } = require('metro-config');

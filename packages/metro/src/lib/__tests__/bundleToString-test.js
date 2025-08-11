@@ -8,9 +8,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const bundleToString = require('../bundleToString');
+import bundleToString from '../bundleToString';
 
 describe('bundleToString', () => {
   test('serializes a bundle into a plain JS bundle', () => {

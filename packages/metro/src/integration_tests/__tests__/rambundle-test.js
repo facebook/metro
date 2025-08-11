@@ -8,11 +8,10 @@
  * @oncall react_native
  */
 
-'use strict';
+import * as Metro from '../../..';
+import RamBundleParser from '../../lib/RamBundleParser';
+import * as ramBundleOutput from '../../shared/output/unbundle';
 
-const Metro = require('../../..');
-const RamBundleParser = require('../../lib/RamBundleParser');
-const ramBundleOutput = require('../../shared/output/unbundle');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');

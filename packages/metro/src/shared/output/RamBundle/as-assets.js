@@ -33,7 +33,7 @@ const MODULES_DIR = 'js-modules';
  * All other modules go into a 'js-modules' folder that in the same parent
  * directory as the startup file.
  */
-function saveAsAssets(
+export default function saveAsAssets(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
@@ -122,5 +122,3 @@ function writeMagicFlagFile(outputDir: string): Promise<mixed> {
   buffer.writeUInt32LE(MAGIC_RAM_BUNDLE_NUMBER, 0);
   return writeFile(path.join(outputDir, MAGIC_RAM_BUNDLE_FILENAME), buffer);
 }
-
-module.exports = saveAsAssets;

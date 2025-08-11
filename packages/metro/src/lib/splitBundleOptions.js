@@ -16,7 +16,9 @@ import type {BundleOptions, SplitBundleOptions} from '../shared/types';
 /**
  * Splits a BundleOptions object into smaller, more manageable parts.
  */
-function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
+export default function splitBundleOptions(
+  options: BundleOptions,
+): SplitBundleOptions {
   return {
     entryFile: options.entryFile,
     resolverOptions: {
@@ -48,5 +50,3 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
     onProgress: options.onProgress,
   };
 }
-
-module.exports = splitBundleOptions;

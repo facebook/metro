@@ -108,7 +108,4 @@ async function sourceMapGeneratorNonBlocking(
   return fromRawMappingsNonBlocking(sourceMapInfos);
 }
 
-module.exports = {
-  sourceMapGenerator,
-  sourceMapGeneratorNonBlocking,
-};
+export {sourceMapGenerator, sourceMapGeneratorNonBlocking};

@@ -184,7 +184,7 @@ export type Reporter = interface {update(event: ReportableEvent): void};
  * calling this, add a new type of ReportableEvent instead, and implement a
  * proper handler in the reporter(s).
  */
-function logWarning(
+export function logWarning(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -196,7 +196,7 @@ function logWarning(
 /**
  * Similar to `logWarning`, but for messages that require the user to act.
  */
-function logError(
+export function logError(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -218,7 +218,7 @@ function logError(
 /**
  * Similar to `logWarning`, but for informational messages.
  */
-function logInfo(
+export function logInfo(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -231,11 +231,4 @@ function logInfo(
  * A reporter that does nothing. Errors and warnings will be swallowed, that
  * is generally not what you want.
  */
-const nullReporter = {update(): void {}};
-
-module.exports = {
-  logWarning,
-  logError,
-  logInfo,
-  nullReporter,
-};
+export const nullReporter = {update(): void {}};

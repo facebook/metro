@@ -36,7 +36,4 @@ async function sourceMapStringNonBlocking(
   });
 }
 
-module.exports = {
-  sourceMapString,
-  sourceMapStringNonBlocking,
-};
+export {sourceMapString, sourceMapStringNonBlocking};
