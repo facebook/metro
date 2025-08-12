@@ -8,9 +8,6 @@
  */
 
 let plugins = ['prettier-plugin-hermes-parser'];
-try {
-  plugins = require('./.prettier-plugins.fb.js');
-} catch {}
 
 module.exports = {
   arrowParens: 'avoid',

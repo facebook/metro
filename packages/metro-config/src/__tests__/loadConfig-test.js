@@ -12,60 +12,51 @@
 // eslint-disable-next-line lint/sort-imports
 import getDefaultConfig from '../defaults';
 
-jest.mock('cosmiconfig');
-
 const {loadConfig} = require('../loadConfig');
-const cosmiconfig = require('cosmiconfig');
 const path = require('path');
 const prettyFormat = require('pretty-format');
 const util = require('util');
 
+const FIXTURES = path.resolve(__dirname, '../__fixtures__');
+
 describe('loadConfig', () => {
   beforeEach(() => {
-    cosmiconfig.reset();
+    jest.unmock('fs');
+  });
+
+  test('can load the config from a path', async () => {
+    // We don't actually use the specified file in this test but it needs to
+    // resolve to a real file on the file system.
+    const result = await loadConfig({
+      config: path.resolve(FIXTURES, 'custom-path.metro.config.js'),
+    });
+    expect(result).toMatchObject({
+      cacheVersion: 'custom-path',
+    });
   });
 
   test('can load config objects', async () => {
-    const config: any = {
-      reporter: null,
-      maxWorkers: 2,
-      cacheStores: [],
-      transformerPath: '',
-      resolver: {
-        emptyModulePath: 'metro-runtime/src/modules/empty-module',
-      },
-    };
-
-    cosmiconfig.setResolvedConfig(config);
-
-    const result = await loadConfig({});
-
-    expect(result).toMatchSnapshot();
-    expect(result.cacheStores).toEqual([]);
+    const result = await loadConfig({
+      config: path.resolve(FIXTURES, 'basic.config.js'),
+    });
+    expect(result.cacheVersion).toEqual('basic-config');
   });
 
   test('can load config from function', async () => {
-    const config = (defaultConfig: any): any => ({
-      ...defaultConfig,
-      cacheStores: [],
-      reporter: null,
-      maxWorkers: 2,
-      resolver: {
-        sourceExts: [...defaultConfig.resolver.sourceExts, 'tsx'],
-        hasteImplModulePath: 'test',
-      },
-      transformerPath: '',
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
     const defaultConfigOverrides = {
       resolver: {
         sourceExts: ['json', 're'],
       },
     };
-
-    const result = await loadConfig({}, defaultConfigOverrides);
+    const result = await loadConfig(
+      {
+        config: path.resolve(
+          __dirname,
+          '../__fixtures__/cjs-sync-function.metro.config.js',
+        ),
+      },
+      defaultConfigOverrides,
+    );
     const defaults = await getDefaultConfig();
     expect(result.resolver).toMatchObject({
       assetExts: defaults.resolver.assetExts,
@@ -74,86 +65,19 @@ describe('loadConfig', () => {
     });
   });
 
-  test('can load the config from a path', async () => {
-    const config = (defaultConfig: any): any => ({
-      ...defaultConfig,
-      projectRoot: '/',
-      reporter: null,
-      maxWorkers: 2,
-      cacheStores: [],
-      transformerPath: '',
-      resolver: {
-        emptyModulePath: 'metro-runtime/src/modules/empty-module',
-      },
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
-    // We don't actually use the specified file in this test but it needs to
-    // resolve to a real file on the file system.
-    const result = await loadConfig({config: './__tests__/loadConfig-test.js'});
-
-    const relativizedResult = {
-      ...result,
-      transformer: {
-        // Remove absolute paths from the result.
-        ...result.transformer,
-        babelTransformerPath: path.relative(
-          path.join(
-            require.resolve('metro-babel-transformer'),
-            '..',
-            '..',
-            '..',
-          ),
-          result.transformer.babelTransformerPath,
-        ),
-      },
-    };
-    expect(relativizedResult).toMatchSnapshot();
-    expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
-  });
-
   test('can load the config from a path pointing to a directory', async () => {
-    const config = (defaultConfig: any): any => ({
-      ...defaultConfig,
-      projectRoot: '/',
-      reporter: null,
-      maxWorkers: 2,
-      cacheStores: [],
-      transformerPath: '',
-      resolver: {
-        emptyModulePath: 'metro-runtime/src/modules/empty-module',
-      },
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
     // We don't actually use the specified file in this test but it needs to
     // resolve to a real file on the file system.
-    const result = await loadConfig({config: path.resolve(__dirname, '../')});
-
-    const relativizedResult = {
-      ...result,
-      transformer: {
-        ...result.transformer,
-        // Remove absolute paths from the result.
-        babelTransformerPath: path.relative(
-          path.join(
-            require.resolve('metro-babel-transformer'),
-            '..',
-            '..',
-            '..',
-          ),
-          result.transformer.babelTransformerPath,
-        ),
-      },
-    };
-    expect(relativizedResult).toMatchSnapshot();
-    expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
+    const result = await loadConfig({cwd: FIXTURES});
+    expect(result).toMatchObject({
+      cacheVersion: 'default-config',
+    });
   });
 
   test('can load the config with no config present', async () => {
-    cosmiconfig.setReturnNull(true);
+    jest.mock('fs', () => ({
+      existsSync: jest.fn(() => false),
+    }));
 
     const result = await loadConfig({cwd: process.cwd()});
 
@@ -170,17 +94,10 @@ describe('loadConfig', () => {
 
   test('validates config for server', async () => {
     expect.assertions(1);
-    const config = (defaultConfig: any) => ({
-      ...defaultConfig,
-      server: {
-        useGlobalHotkey: 'test',
-      },
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
     try {
-      await loadConfig({});
+      await loadConfig({
+        config: path.resolve(FIXTURES, 'bad-server.metro.config.js'),
+      });
     } catch (error) {
       expect(util.stripVTControlCharacters(error.message)).toMatchSnapshot();
     }
@@ -188,37 +105,21 @@ describe('loadConfig', () => {
 
   test('validates config for projectRoot', async () => {
     expect.assertions(1);
-    const config = (defaultConfig: any) => ({
-      ...defaultConfig,
-      projectRoot: ['test'],
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
     try {
-      await loadConfig({});
+      await loadConfig({
+        config: path.resolve(FIXTURES, 'bad-root.metro.config.js'),
+      });
     } catch (error) {
       expect(util.stripVTControlCharacters(error.message)).toMatchSnapshot();
     }
   });
 
   test('injects `metro-cache` into the `cacheStores` callback', async () => {
-    const config = {
-      reporter: null,
-      maxWorkers: 2,
-      cacheStores: jest.fn(() => []),
-      transformerPath: '',
-      resolver: {
-        emptyModulePath: 'metro-runtime/src/modules/empty-module',
-      },
-    };
-
-    cosmiconfig.setResolvedConfig(config);
-
-    const result = await loadConfig({});
-
-    expect(result).toMatchSnapshot();
-    expect(result.cacheStores).toEqual([]);
-    expect(config.cacheStores).toBeCalledWith(require('metro-cache'));
+    const result = await loadConfig({
+      config: path.resolve(FIXTURES, 'cachestores.config.js'),
+    });
+    expect(result.cacheStores[0]).toBeInstanceOf(
+      require('metro-cache').FileStore,
+    );
   });
 });

@@ -16,8 +16,6 @@ const execBundle = require('../execBundle');
 const MetroConfig = require('metro-config');
 const path = require('path');
 
-jest.unmock('cosmiconfig');
-
 jest.setTimeout(30 * 1000);
 
 const INPUT_PATH = path.resolve(__dirname, '../basic_bundle');
