@@ -7,10 +7,16 @@
  * @format
  */
 
-let plugins = ['prettier-plugin-hermes-parser'];
+let plugins;
 try {
-  plugins = require('./.prettier-plugins.fb.js');
-} catch {}
+  plugins = [
+    require.resolve(
+      '../../../../tools/third-party/prettier/node_modules/prettier-plugin-hermes-parser/index.mjs',
+    ),
+  ];
+} catch {
+  plugins = ['prettier-plugin-hermes-parser'];
+}
 
 module.exports = {
   arrowParens: 'avoid',
