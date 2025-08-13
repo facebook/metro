@@ -9,11 +9,7 @@
 
 let plugins;
 try {
-  plugins = [
-    require.resolve(
-      '../../../../tools/third-party/prettier/node_modules/prettier-plugin-hermes-parser/index.mjs',
-    ),
-  ];
+  plugins = require('./.prettier-plugins.fb.js');
 } catch {
   plugins = ['prettier-plugin-hermes-parser'];
 }
