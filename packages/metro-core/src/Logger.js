@@ -52,6 +52,13 @@ export type LogEntry = {
   ...
 };
 
+try {
+  os.hostname();
+} catch (err) {
+  console.warn(err)
+  os.hostname = () => "localhost";
+}
+
 const log_session = `${os.hostname()}-${Date.now()}`;
 const eventEmitter = new EventEmitter();
 
