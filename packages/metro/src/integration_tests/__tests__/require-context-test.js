@@ -13,8 +13,6 @@
 const Metro = require('../../..');
 const execBundle = require('../execBundle');
 
-jest.unmock('cosmiconfig');
-
 jest.setTimeout(30 * 1000);
 
 test('require-context/matching.js', async () => {

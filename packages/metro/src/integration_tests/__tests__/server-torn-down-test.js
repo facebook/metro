@@ -13,8 +13,6 @@ const Metro = require('../../..');
 // $FlowFixMe[cannot-resolve-module] - Untyped module
 const asyncHooks = require('async_hooks');
 
-jest.unmock('cosmiconfig');
-
 jest.useRealTimers();
 
 jest.setTimeout(10000);
