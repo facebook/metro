@@ -17,8 +17,6 @@ const os = require('os');
 const path = require('path');
 const vm = require('vm');
 
-jest.unmock('cosmiconfig');
-
 jest.setTimeout(30 * 1000);
 
 test('builds and executes a RAM bundle', async () => {

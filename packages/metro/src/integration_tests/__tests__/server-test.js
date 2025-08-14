@@ -15,7 +15,6 @@ const execBundle = require('../execBundle');
 const fs = require('fs');
 const path = require('path');
 
-jest.unmock('cosmiconfig');
 jest.useRealTimers();
 jest.setTimeout(60 * 1000);
 
