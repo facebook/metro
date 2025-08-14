@@ -72,7 +72,7 @@ declare module 'prettier' {
   ) => AST;
 
   declare export type Options = Partial<RequiredOptions>;
-  declare export type RequiredOptions = {
+  declare export type RequiredOptions = $ReadOnly<{
     ...DocPrinterOptions,
     /**
      * Print semicolons at the ends of statements.
@@ -187,7 +187,7 @@ declare module 'prettier' {
      * @default 'auto'
      */
     embeddedLanguageFormatting: 'auto' | 'off',
-  };
+  }>;
 
   declare export type PrettierParserOptions<T = any> = {
     ...RequiredOptions,
@@ -277,7 +277,7 @@ declare module 'prettier' {
     } | void,
   };
 
-  declare export type CursorOptions = {
+  declare export type CursorOptions = $ReadOnly<{
     ...Options,
     /**
      * Specify where the cursor is.
@@ -285,7 +285,7 @@ declare module 'prettier' {
     cursorOffset: number,
     rangeStart?: mixed,
     rangeEnd?: mixed,
-  };
+  }>;
 
   declare export type CursorResult = {
     formatted: string,
