@@ -54,8 +54,8 @@ import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
 import bundleToString from './lib/bundleToString';
 import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
-import parseJsonBody from './lib/parseJsonBody';
 import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
+import parseJsonBody from './lib/parseJsonBody';
 import splitBundleOptions from './lib/splitBundleOptions';
 import * as transformHelpers from './lib/transformHelpers';
 import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
@@ -861,7 +861,7 @@ export default class Server {
         type: 'bundle_build_started',
       });
 
-      const startContext = {
+      const startContext: ProcessStartContext = {
         buildNumber,
         bundleOptions,
         entryFile: resolvedEntryFilePath,
@@ -916,7 +916,7 @@ export default class Server {
         return;
       }
 
-      const endContext = {
+      const endContext: ProcessEndContext<T> = {
         ...startContext,
         result,
       };

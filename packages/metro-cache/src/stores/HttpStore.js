@@ -67,7 +67,7 @@ type Endpoint = {
   retryStatuses: $ReadOnlySet<number>,
 };
 
-const ZLIB_OPTIONS = {
+const ZLIB_OPTIONS: zlib$options = {
   level: 9,
 };
 

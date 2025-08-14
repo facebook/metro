@@ -1359,7 +1359,7 @@ function parent2() {
 
   test('omit parent class name when it matches filename', () => {
     const ast = getAst('class FooBar { baz() {} }');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
@@ -1381,7 +1381,7 @@ function parent2() {
 
   test('do not omit parent class name when it only partially matches filename', () => {
     const ast = getAst('class FooBarItem { baz() {} }');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
@@ -1403,7 +1403,7 @@ function parent2() {
 
   test('derive name from simple assignment even if it matches the filename', () => {
     const ast = getAst('var FooBar = () => {}');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
