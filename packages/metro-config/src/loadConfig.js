@@ -44,15 +44,17 @@ function overrideArgument<T>(arg: Array<T> | T): T {
   return arg;
 }
 
+const SEARCH_JS_EXTS = ['.js', '.cjs', '.mjs', '.json'];
 const SEARCH_PLACES = [
-  'metro.config.js',
-  'metro.config.cjs',
-  'metro.config.json',
+  ...SEARCH_JS_EXTS.map(ext => 'metro.config' + ext),
   'package.json',
 ];
 
-const JS_EXTENSIONS = new Set(['.json', '.js', '.cjs', '.es6']);
-const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']);
+const JS_EXTENSIONS = new Set([
+  ...SEARCH_JS_EXTS,
+  '.es6', // Deprecated
+]);
+const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']); // Deprecated
 
 const PACKAGE_JSON = path.sep + 'package.json';
 const PACKAGE_JSON_PROP_NAME = 'metro';
@@ -317,16 +319,24 @@ async function loadConfig(
 export async function loadConfigFile(
   absolutePath: string,
 ): Promise<ResolveConfigResult> {
+  // Config should be JSON, CommonJS, ESM or YAML (deprecated)
   let config;
   const extension = path.extname(absolutePath);
 
   if (JS_EXTENSIONS.has(extension)) {
-    // $FlowIgnore[unsupported-syntax]
-    const configModule = require(absolutePath);
-    if (absolutePath.endsWith(PACKAGE_JSON)) {
-      config = configModule[PACKAGE_JSON_PROP_NAME];
-    } else {
-      config = configModule.__esModule ? configModule.default : configModule;
+    try {
+      // $FlowExpectedError[unsupported-syntax]
+      const configModule = require(absolutePath);
+      if (absolutePath.endsWith(PACKAGE_JSON)) {
+        config = configModule[PACKAGE_JSON_PROP_NAME];
+      } else {
+        config = configModule.__esModule ? configModule.default : configModule;
+      }
+    } catch (e) {
+      // $FlowExpectedError[unsupported-syntax]
+      const configModule = await import(absolutePath);
+      // The default export is a promise in the case of top-level await
+      config = await configModule.default;
     }
   } else if (YAML_EXTENSIONS.has(extension)) {
     console.warn(
