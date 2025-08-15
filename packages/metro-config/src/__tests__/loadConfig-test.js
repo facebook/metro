@@ -133,4 +133,58 @@ describe('loadConfig', () => {
     );
     expect(result.cacheVersion).toEqual('yaml-extensionless');
   });
+
+  describe('given a search directory', () => {
+    const HOME = process.platform === 'win32' ? 'C:\\Home' : '/home';
+    const mockHomeDir = jest.fn().mockReturnValue(HOME);
+    const mockExistsSync = jest.fn();
+    let loadConfig;
+
+    beforeAll(() => {
+      jest.resetModules();
+      jest.mock('os', () => ({
+        ...jest.requireActual('os'),
+        homedir: mockHomeDir,
+      }));
+      jest.mock('fs', () => ({
+        existsSync: mockExistsSync,
+      }));
+      // Reload after mocking above
+      loadConfig = require('../loadConfig').loadConfig;
+    });
+
+    test('looks in the expected places', async () => {
+      await loadConfig({cwd: path.join(HOME, 'project')});
+      expect(mockExistsSync.mock.calls.map(args => args[0])).toEqual(
+        [
+          'project/metro.config.js',
+          'project/metro.config.cjs',
+          'project/metro.config.mjs',
+          'project/metro.config.json',
+          'project/package.json',
+          'metro.config.js',
+          'metro.config.cjs',
+          'metro.config.mjs',
+          'metro.config.json',
+          'package.json',
+        ].map(relativePath => path.resolve(HOME, relativePath)),
+      );
+    });
+
+    test('returns defaults when no config is present', async () => {
+      const result = await loadConfig({cwd: HOME});
+      let defaultConfig = await getDefaultConfig(HOME);
+      defaultConfig = {
+        ...defaultConfig,
+        watchFolders: [
+          defaultConfig.projectRoot,
+          ...defaultConfig.watchFolders,
+        ],
+      };
+
+      expect(prettyFormat.format(result)).toEqual(
+        prettyFormat.format(defaultConfig),
+      );
+    });
+  });
 });
