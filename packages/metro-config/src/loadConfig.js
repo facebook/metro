@@ -46,7 +46,9 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 
 const SEARCH_JS_EXTS = ['.js', '.cjs', '.mjs', '.json'];
 const SEARCH_PLACES = [
-  ...SEARCH_JS_EXTS.map(ext => 'metro.config' + ext),
+  ...['metro.config', path.join('.config', 'metro')].flatMap(prefix =>
+    SEARCH_JS_EXTS.map(ext => prefix + ext),
+  ),
   'package.json',
 ];
 
