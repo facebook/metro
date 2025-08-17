@@ -174,9 +174,11 @@ export default class NativeWatcher extends AbstractWatcher {
       // for manual crawling if there's no other event that has a child path in this directory.
       // If we have a child path, then we can rely on `fs.watch` reporting changes for
       // this directory's files
-      if (type === 'd' && stat.nlink > 1) {
+      if (type === 'd' && isMaybeHardlinked(stat)) {
         const hasChildEntry = changeEvents.some(event => {
           return (
+            event.stat != null &&
+            (!isMaybeHardlinked(stat) || stat.isDirectory()) &&
             event.relativePath !== relativePath &&
             event.relativePath.length > relativePath.length &&
             event.relativePath.startsWith(relativePath)
@@ -247,6 +249,8 @@ export default class NativeWatcher extends AbstractWatcher {
     }
   }
 }
+
+const isMaybeHardlinked = (stat: Stats): boolean => stat.nlink > 1;
 
 async function lstatOptional(absolutePath: string): Promise<Stats | null> {
   try {
