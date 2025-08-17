@@ -165,7 +165,11 @@ export default class NativeWatcher extends AbstractWatcher {
 
       // If we have a hardlink on a copy-on-write file system (indicated by nlink i.e. multiple links to same inode)
       // then we should manually crawl the entire directory, since we're not expecting events for files inside it
-      if (type === 'd' && stat.nlink > 1) {
+      if (
+        type === 'd' &&
+        stat.nlink > 1 &&
+        (await containsOnlyHardlinkedFiles(absolutePath))
+      ) {
         this._handleHardlinkDirectory(relativePath).catch(error => {
           this.emitError(error);
         });
@@ -179,4 +183,18 @@ export default class NativeWatcher extends AbstractWatcher {
       this.emitFileEvent({event: DELETE_EVENT, relativePath});
     }
   }
+}
+
+async function containsOnlyHardlinkedFiles(
+  absolutePath: string,
+): Promise<boolean> {
+  const entries = await fsPromises.readdir(absolutePath);
+  for (const name of entries) {
+    const stat = await fsPromises.lstat(path.join(absolutePath, name));
+    if (stat.isFile() && stat.nlink <= 1) {
+      // If any file does not have nlink > 1 then the directory isn't hardlinked
+      return false;
+    }
+  }
+  return true;
 }
