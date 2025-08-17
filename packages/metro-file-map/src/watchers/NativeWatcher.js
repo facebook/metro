@@ -227,7 +227,7 @@ export default class NativeWatcher extends AbstractWatcher {
       } catch (error) {
         if (error?.code !== 'ENOENT') {
           this.emitError(error);
-        } else {
+        } else if (readdirPath !== relativePath) {
           // A directory could be deleted while we're still scanning
           // Requeue it for updates if we lose it while crawling
           this._receiveChangedPath(readdirPath);
