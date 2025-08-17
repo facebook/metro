@@ -179,9 +179,7 @@ export default class NativeWatcher extends AbstractWatcher {
           return (
             event.stat != null &&
             (!isMaybeHardlinked(stat) || stat.isDirectory()) &&
-            event.relativePath !== relativePath &&
-            event.relativePath.length > relativePath.length &&
-            event.relativePath.startsWith(relativePath)
+            event.relativePath.startsWith(relativePath + path.sep)
           );
         });
         if (!hasChildEntry) {
