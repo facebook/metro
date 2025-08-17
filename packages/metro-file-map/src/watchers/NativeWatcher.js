@@ -8,7 +8,7 @@
  * @flow strict-local
  */
 
-import type {FSWatcher} from 'fs';
+import type {Dirent, FSWatcher} from 'fs';
 
 import {AbstractWatcher} from './AbstractWatcher';
 import {includedByGlob, typeFromStat} from './common';
@@ -95,6 +95,43 @@ export default class NativeWatcher extends AbstractWatcher {
     }
   }
 
+  async _handleHardlinkDirectory(relativePath: string) {
+    debug(
+      'Crawling hardlinked directory %s (root: %s)',
+      relativePath,
+      this.root,
+    );
+    const direntQueue = [relativePath];
+    let readdirPath: ?string;
+    while ((readdirPath = direntQueue.pop()) != null) {
+      if (readdirPath == null) {
+        return;
+      }
+      let entries: $ReadOnlyArray<Dirent>;
+      try {
+        const absolutePath = path.join(this.root, readdirPath);
+        entries = await fsPromises.readdir(absolutePath, {withFileTypes: true});
+      } catch (error) {
+        this.emitError(error);
+        continue;
+      }
+      for (const dirent of entries) {
+        if (dirent.isDirectory()) {
+          // We can ignore directories, to avoid triggering nested hardlink
+          // handling, but also since the parent FileMap ultimately discards
+          // directory events anyway
+          direntQueue.push(path.join(readdirPath, dirent.name.toString()));
+        } else if (dirent.isFile() || dirent.isSymbolicLink()) {
+          this._handleEvent(
+            path.join(readdirPath, dirent.name.toString()),
+          ).catch(error => {
+            this.emitError(error);
+          });
+        }
+      }
+    }
+  }
+
   async _handleEvent(relativePath: string) {
     const absolutePath = path.resolve(this.root, relativePath);
     if (this.doIgnore(relativePath)) {
@@ -125,6 +162,14 @@ export default class NativeWatcher extends AbstractWatcher {
           size: stat.size,
         },
       });
+
+      // If we have a hardlink on a copy-on-write file system (indicated by nlink i.e. multiple links to same inode)
+      // then we should manually crawl the entire directory, since we're not expecting events for files inside it
+      if (type === 'd' && stat.nlink > 1) {
+        this._handleHardlinkDirectory(relativePath).catch(error => {
+          this.emitError(error);
+        });
+      }
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         this.emitError(error);
