@@ -223,7 +223,13 @@ export default class NativeWatcher extends AbstractWatcher {
         const absolutePath = path.join(this.root, readdirPath);
         entries = await fsPromises.readdir(absolutePath, {withFileTypes: true});
       } catch (error) {
-        this.emitError(error);
+        if (error?.code !== 'ENOENT') {
+          this.emitError(error);
+        } else {
+          // A directory could be deleted while we're still scanning
+          // Requeue it for updates if we lose it while crawling
+          this._receiveChangedPath(readdirPath);
+        }
         continue;
       }
       for (const dirent of entries) {
