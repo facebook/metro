@@ -161,19 +161,27 @@ describe('loadConfig', () => {
           'project/metro.config.cjs',
           'project/metro.config.mjs',
           'project/metro.config.json',
+          'project/.config/metro.js',
+          'project/.config/metro.cjs',
+          'project/.config/metro.mjs',
+          'project/.config/metro.json',
           'project/package.json',
           'metro.config.js',
           'metro.config.cjs',
           'metro.config.mjs',
           'metro.config.json',
+          '.config/metro.js',
+          '.config/metro.cjs',
+          '.config/metro.mjs',
+          '.config/metro.json',
           'package.json',
         ].map(relativePath => path.resolve(HOME, relativePath)),
       );
     });
 
     test('returns defaults when no config is present', async () => {
-      const result = await loadConfig({cwd: HOME});
-      let defaultConfig = await getDefaultConfig(HOME);
+      const result = await loadConfig({cwd: path.resolve(HOME, 'project')});
+      let defaultConfig = await getDefaultConfig(path.resolve(HOME, 'project'));
       defaultConfig = {
         ...defaultConfig,
         watchFolders: [

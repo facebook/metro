@@ -18,7 +18,6 @@ import {validate} from 'jest-validate';
 import * as MetroCache from 'metro-cache';
 import {homedir} from 'os';
 import path from 'path';
-import {dirname, join} from 'path';
 import {parse as parseYaml} from 'yaml';
 
 type ResolveConfigResult = {
@@ -46,7 +45,9 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 
 const SEARCH_JS_EXTS = ['.js', '.cjs', '.mjs', '.json'];
 const SEARCH_PLACES = [
-  ...SEARCH_JS_EXTS.map(ext => 'metro.config' + ext),
+  ...['metro.config', path.join('.config', 'metro')].flatMap(prefix =>
+    SEARCH_JS_EXTS.map(ext => prefix + ext),
+  ),
   'package.json',
 ];
 
@@ -90,7 +91,7 @@ async function resolveConfig(
     // No config file found, return a default
     return {
       isEmpty: true,
-      filepath: join(cwd || process.cwd(), 'metro.config.stub.js'),
+      filepath: path.join(cwd || process.cwd(), 'metro.config.stub.js'),
       config: {},
     };
   }
@@ -183,17 +184,22 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
 }
 
 async function loadMetroConfigFromDisk(
-  path?: string,
+  pathToLoad?: string,
   cwd?: string,
   defaultConfigOverrides: InputConfigT,
 ): Promise<ConfigT> {
   const resolvedConfigResults: ResolveConfigResult = await resolveConfig(
-    path,
+    pathToLoad,
     cwd,
   );
 
   const {config: configModule, filepath} = resolvedConfigResults;
-  const rootPath = dirname(filepath);
+  let rootPath = path.dirname(filepath);
+  // Special case .config directories, which are assumed to be a child of the
+  // project root.
+  if (path.basename(rootPath) === '.config') {
+    rootPath = path.dirname(rootPath);
+  }
 
   const defaults = await getDefaultConfig(rootPath);
 
