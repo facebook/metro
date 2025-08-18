@@ -124,7 +124,7 @@ function functionMapBabelPlugin(): PluginObj<> {
       );
       // $FlowFixMe[prop-missing] checked above
       // $FlowFixMe[incompatible-type-arg] checked above
-      const programPath: NodePath<BabelNodeProgram> = path;
+      const programPath: NodePath<BabelNodeProgram> = path as $FlowFixMe;
 
       visitor.enter(programPath);
       programPath.traverse({
@@ -133,7 +133,7 @@ function functionMapBabelPlugin(): PluginObj<> {
       });
       visitor.exit(programPath);
 
-      // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+      // $FlowFixMe[incompatible-type] Babel `File` is not generically typed
       const metroMetadata: MetroBabelFileMetadata = metadata;
 
       const functionMap = encoder.getResult();

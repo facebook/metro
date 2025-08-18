@@ -310,7 +310,7 @@ export const runServer = async (
         ...secureServerOptions,
       };
     }
-    // $FlowFixMe[incompatible-call] 'http' and 'https' Flow types do not match
+    // $FlowFixMe[incompatible-type] 'http' and 'https' Flow types do not match
     httpServer = https.createServer(options, serverApp);
   } else {
     httpServer = http.createServer(serverApp);

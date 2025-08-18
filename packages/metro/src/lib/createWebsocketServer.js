@@ -54,7 +54,7 @@ export default function createWebsocketServer<TClient: Object>({
 
     const sendFn = (...args: Array<string>) => {
       if (connected) {
-        // $FlowFixMe[incompatible-call]
+        // $FlowFixMe[incompatible-type]
         ws.send(...args);
       }
     };
@@ -67,7 +67,7 @@ export default function createWebsocketServer<TClient: Object>({
     }
 
     ws.on('error', e => {
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       websocketServer.onClientError && websocketServer.onClientError(client, e);
     });
 

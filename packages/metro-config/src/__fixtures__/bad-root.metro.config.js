@@ -13,6 +13,6 @@ import type {ConfigT, InputConfigT} from '../types';
 */
 
 module.exports = (defaultConfig /*: ConfigT */) /*:InputConfigT*/ => ({
-  // $FlowExpectedError[incompatible-return] testing bad config
+  // $FlowExpectedError[incompatible-type] testing bad config
   projectRoot: ['array'],
 });

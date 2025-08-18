@@ -25,7 +25,7 @@ describe('GoogleIgnoreListConsumer', () => {
 
   test('discards the index of a null source', () => {
     const consumer = new GoogleIgnoreListConsumer(
-      // $FlowFixMe[incompatible-call] intentionally malformed source map
+      // $FlowFixMe[incompatible-type] intentionally malformed source map
       {
         version: 3,
         mappings: '',

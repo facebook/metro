@@ -220,14 +220,14 @@ const deepNormalize = <T: mixed>(value: T): T => {
   const stringTag = Object.prototype.toString.call(value);
   switch (stringTag) {
     case '[object Map]':
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       return new Map(
-        // $FlowFixMe[incompatible-call]
+        // $FlowFixMe[incompatible-type]
         Array.from(value).map(([k, v]) => [deepNormalize(k), deepNormalize(v)]),
       );
     case '[object Object]':
       // $FlowFixMe[not-an-object]
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       return Object.keys(value).reduce((obj, key) => {
         // $FlowFixMe[incompatible-use]
         obj[key] = deepNormalize(value[key]);
@@ -391,7 +391,7 @@ describe('FileMap', () => {
     `;
 
     try {
-      // $FlowExpectedError[incompatible-call]
+      // $FlowExpectedError[incompatible-type]
       await new FileMap(config).build();
     } catch (err) {
       expect(err.message).toBe(
@@ -1006,7 +1006,7 @@ describe('FileMap', () => {
     // $FlowFixMe[incompatible-use]
     expect(fs.readFileSync.mock.calls.length).toBe(5);
 
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     fs.readFileSync.mockClear();
 
     // Explicitly mock that no files have changed.
@@ -1042,7 +1042,7 @@ describe('FileMap', () => {
       initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Strawberry']);
 
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     fs.readFileSync.mockClear();
     expect(mockCacheManager.read).toHaveBeenCalledTimes(1);
 
@@ -1077,7 +1077,7 @@ describe('FileMap', () => {
 
   test('correctly handles file deletions', async () => {
     await new FileMap(defaultConfig).build();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     fs.readFileSync.mockClear();
 
     // Let's assume one JS file was removed.

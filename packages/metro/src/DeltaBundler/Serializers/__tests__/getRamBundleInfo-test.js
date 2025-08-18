@@ -85,7 +85,7 @@ test('should return the RAM bundle info', async () => {
       {...graph, entryPoints: new Set(['/root/entry.js'])},
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: path => path,
         dev: true,
         excludeSource: false,
@@ -120,7 +120,7 @@ test('emits x_google_ignoreList based on shouldAddToIgnoreList', async () => {
       {...graph, entryPoints: new Set(['/root/entry.js'])},
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: path => path,
         dev: true,
         excludeSource: false,
@@ -159,12 +159,12 @@ test('should use the preloadedModules and ramGroup configs to build a RAM bundle
     {...graph, entryPoints: new Set(['/root/entry.js'])},
     {
       asyncRequireModulePath: '',
-      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+      // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: path => path,
       dev: true,
       excludeSource: false,
       getRunModuleStatement,
-      /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+      /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
        * https://fburl.com/workplace/6291gfvu */
       getTransformOptions,
       includeAsyncPaths: false,

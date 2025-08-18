@@ -36,7 +36,7 @@ function overrideArgument<T>(arg: Array<T> | T): T {
   }
 
   if (Array.isArray(arg)) {
-    // $FlowFixMe[incompatible-return]
+    // $FlowFixMe[incompatible-type]
     return arg[arg.length - 1];
   }
 

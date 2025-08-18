@@ -102,7 +102,7 @@ export default async function watchmanCrawl({
     try {
       const response = await new Promise<WatchmanQueryResponse>(
         (resolve, reject) =>
-          // $FlowFixMe[incompatible-call] - dynamic call of command
+          // $FlowFixMe[incompatible-type] - dynamic call of command
           client.command(
             [command, ...args],
             (error: ?Error, result: WatchmanQueryResponse) =>
@@ -116,10 +116,10 @@ export default async function watchmanCrawl({
           command,
         });
       }
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       return response;
     } finally {
-      // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable
+      // $FlowFixMe[incompatible-type] clearInterval / clearTimeout are interchangeable
       clearInterval(intervalOrTimeoutId);
       if (didLogWatchmanWaitMessage) {
         onStatus({

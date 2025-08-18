@@ -14,7 +14,7 @@ import type {ConfigT, InputConfigT} from '../types';
 
 module.exports = (defaultConfig /*: ConfigT */) /*:InputConfigT*/ => ({
   server: {
-    // $FlowExpectedError[incompatible-return] testing bad config
+    // $FlowExpectedError[incompatible-type] testing bad config
     useGlobalHotkey: 'test',
   },
 });

@@ -56,11 +56,11 @@ describe('debounceAsyncQueue', () => {
     await Promise.resolve();
     const pro2 = debounced();
     const pro3 = debounced();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     finishExecuting('foo');
     jest.runAllTimers();
     await Promise.resolve();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     finishExecuting('bar');
     expect(await pro1).toBe('foo');
     expect(await pro2).toBe('bar');

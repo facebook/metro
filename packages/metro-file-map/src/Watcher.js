@@ -125,7 +125,7 @@ export class Watcher extends EventEmitter {
             '  ' +
             error.toString(),
         );
-        // $FlowFixMe[prop-missing] Found when updating Promise type definition
+        // $FlowFixMe[incompatible-type] Found when updating Promise type definition
         return nodeCrawl(crawlerOptions).catch<CrawlResult>(e => {
           throw new Error(
             'Crawler retry failed:\n' +
@@ -152,7 +152,7 @@ export class Watcher extends EventEmitter {
 
     debug('Beginning crawl with "%s".', crawler);
     try {
-      // $FlowFixMe[incompatible-call] Found when updating Promise type definition
+      // $FlowFixMe[incompatible-type] Found when updating Promise type definition
       return crawl(crawlerOptions).catch<CrawlResult>(retry).then(logEnd);
     } catch (error) {
       return retry(error).then(logEnd);

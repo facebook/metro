@@ -58,7 +58,7 @@ function importLocationsPlugin({
         // Initialise state
         state.importDeclarationLocs = new Set();
 
-        // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+        // $FlowFixMe[incompatible-type] Babel `File` is not generically typed
         const metroMetadata: MetroBabelFileMetadata = state.file.metadata;
 
         // Set the result on a metadata property

@@ -74,7 +74,7 @@ export default function createInlinePlatformChecks(
     isMemberExpression(node.object) &&
     isIdentifier(node.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       node.object.object,
       scope,
       [{name: 'React'}, {name: 'ReactNative'}],
@@ -89,7 +89,7 @@ export default function createInlinePlatformChecks(
     isMemberExpression(node.callee) &&
     isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       node.callee.object,
       scope,
       [{name: 'Platform'}],
@@ -106,7 +106,7 @@ export default function createInlinePlatformChecks(
     isMemberExpression(node.callee.object) &&
     isIdentifier(node.callee.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       // $FlowFixMe[incompatible-use]
       node.callee.object.object,
       scope,

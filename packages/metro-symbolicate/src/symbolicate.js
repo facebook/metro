@@ -118,23 +118,23 @@ export default async function main(
       outputColumnStart,
     };
     let context;
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     if (fs.lstatSync(sourceMapFileName).isDirectory()) {
       context = Symbolication.unstable_createDirectoryContext(
         SourceMapConsumer,
-        // $FlowFixMe[incompatible-call]
+        // $FlowFixMe[incompatible-type]
         sourceMapFileName,
-        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+        /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
          * https://fburl.com/workplace/6291gfvu */
         options,
       );
     } else {
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       const content = fs.readFileSync(sourceMapFileName, 'utf8');
       context = Symbolication.createContext(
         SourceMapConsumer,
         content,
-        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+        /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
          * https://fburl.com/workplace/6291gfvu */
         options,
       );

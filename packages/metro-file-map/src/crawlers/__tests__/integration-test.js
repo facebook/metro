@@ -76,7 +76,7 @@ function oneOf(this: $FlowFixMe, actual: mixed, ...expectOneOf: mixed[]) {
       } to be in ${this.utils.printExpected(expectOneOf)}`,
   };
 }
-/* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+/* $FlowFixMe[incompatible-type] Natural Inference rollout. See
  * https://fburl.com/gdoc/y8dn025u */
 expect.extend({oneOf});
 

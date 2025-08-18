@@ -125,7 +125,7 @@ function fromRawMappingsImpl(
     // $FlowFixMe[incompatible-use]
     const {code, map} = mod;
     if (Array.isArray(map)) {
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       addMappingsForFile(generator, map, mod, carryOver);
     } else if (map != null) {
       throw new Error(

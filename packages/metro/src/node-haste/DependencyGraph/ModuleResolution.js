@@ -191,7 +191,9 @@ export class ModuleResolver<TPackage: Packageish> {
               .filter(Boolean)
               .map(
                 candidates =>
-                  `  * ${Resolver.formatFileCandidates(this._removeRoot(candidates))}`,
+                  `  * ${Resolver.formatFileCandidates(
+                    this._removeRoot(candidates),
+                  )}`,
               )
               .join('\n'),
           {
@@ -317,7 +319,7 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
   return lowest;
 }
 
-// $FlowFixMe[incompatible-extend]
+// $FlowFixMe[incompatible-type]
 export class UnableToResolveError extends Error {
   /**
    * File path of the module that tried to require a module, ex. `/js/foo.js`.

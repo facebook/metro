@@ -463,7 +463,7 @@ export default class Server {
       transformOptions.platform ||
       parsePlatformFilePath(entryFile, this._platforms).platform;
 
-    // $FlowFixMe[incompatible-return]
+    // $FlowFixMe[incompatible-type]
     return await getAllFiles(prepend, graph, {
       platform,
       processModuleFilter: this._config.serializer.processModuleFilter,

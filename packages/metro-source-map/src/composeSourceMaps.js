@@ -133,6 +133,6 @@ function findOriginalPosition(
       };
     }
   }
-  // $FlowFixMe[incompatible-return] `Number0`, `Number1` is incompatible with number
+  // $FlowFixMe[incompatible-type] `Number0`, `Number1` is incompatible with number
   return original;
 }

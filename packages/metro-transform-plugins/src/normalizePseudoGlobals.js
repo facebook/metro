@@ -44,7 +44,7 @@ export default function normalizePseudoglobals(
 
       const pseudoglobals: Array<string> = params
         .map(path => path.node.name)
-        // $FlowFixMe[incompatible-call] Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
         .filter(name => !reservedNames.has(name));
 
       const usedShortNames = new Set<string>();

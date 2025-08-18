@@ -316,7 +316,7 @@ async function transformJS(
         ignoredRequires: options.nonInlinedRequires,
         inlineableCalls: [importDefault, importAll],
         memoizeCalls:
-          // $FlowFixMe[incompatible-cast] is this always (?boolean)?
+          // $FlowFixMe[incompatible-type] is this always (?boolean)?
           options.customTransformOptions?.unstable_memoizeInlineRequires ??
           options.unstable_memoizeInlineRequires,
         nonMemoizedModules: options.unstable_nonMemoizedInlineRequires,
@@ -330,7 +330,7 @@ async function transformJS(
       dev: options.dev,
       inlinePlatform: options.inlinePlatform,
       isWrapped: false,
-      // $FlowFixMe[incompatible-cast] expects a string if inlinePlatform
+      // $FlowFixMe[incompatible-type] expects a string if inlinePlatform
       platform: options.platform,
     } as InlinePluginOptions,
   ]);

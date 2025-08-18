@@ -761,7 +761,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },
@@ -784,7 +784,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },
@@ -807,7 +807,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },

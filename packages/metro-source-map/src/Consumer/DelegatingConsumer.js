@@ -40,7 +40,7 @@ export default class DelegatingConsumer implements IConsumer {
 
   _rootConsumer: IConsumer;
 
-  // $FlowFixMe[incompatible-return]
+  // $FlowFixMe[incompatible-type]
   constructor(sourceMap: MixedSourceMap): IConsumer {
     this._rootConsumer = createConsumer(sourceMap);
     return this._rootConsumer;

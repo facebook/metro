@@ -117,7 +117,7 @@ function transform({
       : parseSync(src, babelConfig);
 
     const transformResult = transformFromAstSync<MetroBabelFileMetadata>(
-      // $FlowFixMe[incompatible-call] BabelFile vs BabelNodeFile
+      // $FlowFixMe[incompatible-type] BabelFile vs BabelNodeFile
       sourceAst,
       src,
       babelConfig,

@@ -16,6 +16,7 @@ experimental.pattern_matching=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
 
+experimental.error_code_migration=new
 suppress_type=$FlowFixMe
 suppress_type=$FlowExpectedError
 

@@ -188,7 +188,7 @@ export default function constantFoldingPlugin(context: {
         {
           ArrowFunctionExpression: FunctionExpression,
           ConditionalExpression: Conditional,
-          // $FlowFixMe[incompatible-call]
+          // $FlowFixMe[incompatible-type]
           FunctionDeclaration,
           FunctionExpression,
           IfStatement: Conditional,

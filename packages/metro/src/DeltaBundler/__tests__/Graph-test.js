@@ -377,7 +377,7 @@ beforeEach(async () => {
             isESMImport: false,
             // $FlowFixMe[missing-empty-array-annot]
             locs: [],
-            // $FlowFixMe[incompatible-call]
+            // $FlowFixMe[incompatible-type]
             key: dep.data.key,
             ...dep.data,
           },

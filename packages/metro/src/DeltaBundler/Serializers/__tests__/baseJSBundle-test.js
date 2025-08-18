@@ -105,7 +105,7 @@ test('should generate a very simple bundle', () => {
       },
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
@@ -157,7 +157,7 @@ test('should add runBeforeMainModule statements if found in the graph', () => {
       },
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
@@ -243,7 +243,7 @@ test('outputs custom runModule statements', () => {
       },
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement: moduleId =>
@@ -282,7 +282,7 @@ test('should add an inline source map to a very simple bundle', () => {
     },
     {
       asyncRequireModulePath: '',
-      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+      // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
@@ -333,7 +333,7 @@ test('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
     },
     {
       asyncRequireModulePath: '',
-      // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+      // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
@@ -384,7 +384,7 @@ test('does not add polyfills when `modulesOnly` is used', () => {
       },
       {
         asyncRequireModulePath: '',
-        // $FlowFixMe[incompatible-call] createModuleId assumes numeric IDs - is this too strict?
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,

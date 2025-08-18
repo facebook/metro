@@ -392,7 +392,7 @@ class MemoryFs {
     flags?: number = 0,
   ) => {
     const options = flags & constants.COPYFILE_EXCL ? {flag: 'wx'} : {};
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     this.writeFileSync(dest, this.readFileSync(src), options);
   };

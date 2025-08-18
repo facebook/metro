@@ -116,7 +116,7 @@ export default class WorkerFarm {
     return new JestWorker(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
         ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-          // $FlowFixMe[incompatible-call]
+          // $FlowFixMe[incompatible-type]
           this._computeWorkerKey
         : undefined,
       exposedMethods,

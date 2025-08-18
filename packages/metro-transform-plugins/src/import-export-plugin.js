@@ -226,7 +226,7 @@ export default function importExportPlugin({
                     properties.forEach(p => {
                       // $FlowFixMe Flow error uncovered by typing Babel more strictly
                       const name = p.key.name;
-                      // $FlowFixMe[incompatible-call]
+                      // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
@@ -237,7 +237,7 @@ export default function importExportPlugin({
                     elements.forEach(e => {
                       // $FlowFixMe Flow error uncovered by typing Babel more strictly
                       const name = e.name;
-                      // $FlowFixMe[incompatible-call]
+                      // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
@@ -245,7 +245,7 @@ export default function importExportPlugin({
                 default:
                   {
                     const name = d.id.name;
-                    // $FlowFixMe[incompatible-call]
+                    // $FlowFixMe[incompatible-type]
                     state.exportNamed.push({local: name, remote: name, loc});
                   }
                   break;
@@ -257,7 +257,7 @@ export default function importExportPlugin({
 
             // $FlowFixMe Flow error uncovered by typing Babel more strictly
             declaration.id = id;
-            // $FlowFixMe[incompatible-call]
+            // $FlowFixMe[incompatible-type]
             state.exportNamed.push({local: name, remote: name, loc});
           }
 
@@ -459,7 +459,7 @@ export default function importExportPlugin({
                         t.cloneNode(local),
                         t.memberExpression(
                           t.cloneNode(sharedModuleImport),
-                          // $FlowFixMe[incompatible-call]
+                          // $FlowFixMe[incompatible-type]
                           t.cloneNode(imported),
                         ),
                       ),

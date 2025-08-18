@@ -721,7 +721,7 @@ export default class TreeFS implements MutableFileSystem {
             collapsedPath =
               collapsedPath === '' ? '..' : collapsedPath + path.sep + '..';
           }
-          /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+          /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
            * https://fburl.com/gdoc/y8dn025u */
           collectAncestors.push(...reverseAncestors.reverse());
         }

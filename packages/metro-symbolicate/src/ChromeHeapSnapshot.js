@@ -65,7 +65,7 @@ export class ChromeHeapSnapshotProcessor {
   traceFunctionInfos(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.trace_function_infos,
       this._snapshotData.snapshot.meta.trace_function_info_fields,
       {name: 'string', script_name: 'string'},
@@ -77,7 +77,7 @@ export class ChromeHeapSnapshotProcessor {
   locations(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.locations,
       this._snapshotData.snapshot.meta.location_fields,
       null,
@@ -89,7 +89,7 @@ export class ChromeHeapSnapshotProcessor {
   nodes(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.nodes,
       this._snapshotData.snapshot.meta.node_fields,
       this._snapshotData.snapshot.meta.node_types,
@@ -101,7 +101,7 @@ export class ChromeHeapSnapshotProcessor {
   edges(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.edges,
       this._snapshotData.snapshot.meta.edge_fields,
       this._snapshotData.snapshot.meta.edge_types,
@@ -260,7 +260,7 @@ class ChromeHeapSnapshotRecordAccessor {
           ]),
         );
       } else {
-        // $FlowFixMe[incompatible-type-arg] Object.entries is incompletely typed
+        // $FlowFixMe[incompatible-type] Object.entries is incompletely typed
         this._fieldToType = new Map(Object.entries(recordTypes || {}));
       }
     }
@@ -552,9 +552,7 @@ class ChromeHeapSnapshotRecordAccessor {
     if (this._buffer.length - position < this._recordSize) {
       if (!(allowEnd && this._buffer.length === position)) {
         throw new Error(
-          `Record at position ${position} is truncated: expected ${
-            this._recordSize
-          } fields but found ${this._buffer.length - position}`,
+          `Record at position ${position} is truncated: expected ${this._recordSize} fields but found ${this._buffer.length - position}`,
         );
       }
     }
@@ -567,7 +565,7 @@ class ChromeHeapSnapshotRecordAccessor {
   }
 }
 
-// $FlowFixMe[prop-missing] Flow doesn't see that we implement the iteration protocol
+// $FlowFixMe[incompatible-type] Flow doesn't see that we implement the iteration protocol
 class ChromeHeapSnapshotRecordIterator
   extends ChromeHeapSnapshotRecordAccessor
   implements Iterable<ChromeHeapSnapshotRecordAccessor>
