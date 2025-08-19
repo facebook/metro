@@ -542,6 +542,8 @@ export default class Server {
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
       // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+       * roll out. See https://fburl.com/workplace/4oq3zi07. */
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }

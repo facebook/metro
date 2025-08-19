@@ -712,6 +712,8 @@ class MemoryFs {
           const [_parentName, parentNode] =
             context.nodePath[context.nodePath.length - 2];
           const childPair = context.nodePath[context.nodePath.length - 1];
+          /* $FlowFixMe[invalid-compare] Error discovered during Constant
+           * Condition roll out. See https://fburl.com/workplace/4oq3zi07. */
           if (parentNode && parentNode.type === 'directory') {
             context.node = this._makeDir(mode);
             parentNode.entries.set(entName, context.node);

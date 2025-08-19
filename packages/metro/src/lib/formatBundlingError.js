@@ -58,6 +58,8 @@ export default function formatBundlingError(
   if (
     error instanceof UnableToResolveError ||
     (error instanceof Error &&
+      /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+       * roll out. See https://fburl.com/workplace/4oq3zi07. */
       (error.type === 'TransformError' || error.type === 'NotFoundError'))
   ) {
     return {

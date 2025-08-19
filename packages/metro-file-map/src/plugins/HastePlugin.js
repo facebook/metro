@@ -117,6 +117,8 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       platform,
       !!supportsNativePlatform,
     );
+    /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+     * roll out. See https://fburl.com/workplace/4oq3zi07. */
     if (module && module[H.TYPE] === (type ?? H.MODULE)) {
       const modulePath = module[H.PATH];
       return modulePath && this.#pathUtils.normalToAbsolute(modulePath);
