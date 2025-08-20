@@ -36,7 +36,7 @@ export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
 export {Terminal} from 'metro-core';
 export {
   TerminalReporter,
-  TerminalReportableEvent
+  TerminalReportableEvent,
 } from './lib/TerminalReporter';
 
 export {HttpServer, HttpsServer};
