@@ -34,7 +34,7 @@ import type Yargs from 'yargs';
 
 export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
 export {Terminal} from 'metro-core';
-export {TerminalReporter} from './lib/TerminalReporter';
+export {TerminalReporter, TerminalReportableEvent} from './lib/TerminalReporter';
 
 export {HttpServer, HttpsServer};
 
