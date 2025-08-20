@@ -44,9 +44,10 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 }
 
 const SEARCH_JS_EXTS = ['.js', '.cjs', '.mjs', '.json'];
+const SEARCH_TS_EXTS = ['.ts', '.cts', '.mts'];
 const SEARCH_PLACES = [
   ...['metro.config', path.join('.config', 'metro')].flatMap(prefix =>
-    SEARCH_JS_EXTS.map(ext => prefix + ext),
+    [...SEARCH_JS_EXTS, ...SEARCH_TS_EXTS].map(ext => prefix + ext),
   ),
   'package.json',
 ];
@@ -55,6 +56,7 @@ const JS_EXTENSIONS = new Set([
   ...SEARCH_JS_EXTS,
   '.es6', // Deprecated
 ]);
+const TS_EXTENSIONS = new Set(SEARCH_TS_EXTS);
 const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']); // Deprecated
 
 const PACKAGE_JSON = path.sep + 'package.json';
@@ -329,7 +331,7 @@ export async function loadConfigFile(
   let config;
   const extension = path.extname(absolutePath);
 
-  if (JS_EXTENSIONS.has(extension)) {
+  if (JS_EXTENSIONS.has(extension) || TS_EXTENSIONS.has(extension)) {
     try {
       // $FlowExpectedError[unsupported-syntax]
       const configModule = require(absolutePath);
@@ -339,10 +341,21 @@ export async function loadConfigFile(
         config = configModule.__esModule ? configModule.default : configModule;
       }
     } catch (e) {
-      // $FlowExpectedError[unsupported-syntax]
-      const configModule = await import(absolutePath);
-      // The default export is a promise in the case of top-level await
-      config = await configModule.default;
+      try {
+        // $FlowExpectedError[unsupported-syntax]
+        const configModule = await import(absolutePath);
+        // The default export is a promise in the case of top-level await
+        config = await configModule.default;
+      } catch (error) {
+        throw new Error(
+          `Found config at ${absolutePath} that could not be loaded with Node.js.` +
+            (error.code === 'ERR_UNKNOWN_FILE_EXTENSION' &&
+            TS_EXTENSIONS.has(extension)
+              ? '\n\nEnsure your Node.js version supports loading TypeScript. (>=24.0.0 or >=22.6.0 with --experimental-strip-types)'
+              : ''),
+          {cause: error},
+        );
+      }
     }
   } else if (YAML_EXTENSIONS.has(extension)) {
     console.warn(
@@ -352,7 +365,7 @@ export async function loadConfigFile(
   } else {
     throw new Error(
       `Unsupported config file extension: ${extension}. ` +
-        `Supported extensions are ${[...JS_EXTENSIONS, ...YAML_EXTENSIONS].map(ext => (ext === '' ? 'none' : `${ext}`)).join()})}.`,
+        `Supported extensions are ${[...JS_EXTENSIONS, ...TS_EXTENSIONS, ...YAML_EXTENSIONS].map(ext => (ext === '' ? 'none' : `${ext}`)).join()})}.`,
     );
   }
 
@@ -363,7 +376,7 @@ export async function loadConfigFile(
   };
 }
 
-export function searchForConfigFile(
+function searchForConfigFile(
   absoluteStartDir: string,
   absoluteStopDir: string,
 ): ?string {
