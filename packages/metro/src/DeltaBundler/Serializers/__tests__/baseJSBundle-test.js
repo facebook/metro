@@ -12,8 +12,8 @@
 import type {Module, TransformInputOptions} from '../../types';
 
 import CountingSet from '../../../lib/CountingSet';
-import createModuleIdFactory from '../../../lib/createModuleIdFactory';
 import baseJSBundle from '../baseJSBundle';
+import createModuleIdFactory from 'metro-config/private/defaults/createModuleIdFactory';
 
 const path = require('path');
 

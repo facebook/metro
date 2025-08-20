@@ -22,9 +22,9 @@ import {
   sourceExts,
 } from './defaults';
 import exclusionList from './exclusionList';
+import getMaxWorkers from './getMaxWorkers';
 import {FileStore} from 'metro-cache';
 import {Terminal} from 'metro-core';
-import getMaxWorkers from 'metro/private/lib/getMaxWorkers';
 import TerminalReporter from 'metro/private/lib/TerminalReporter';
 import os from 'os';
 import path from 'path';
