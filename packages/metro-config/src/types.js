@@ -149,7 +149,6 @@ type TransformerConfigT = {
 };
 
 type MetalConfigT = {
-  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
   fileMapCacheDirectory?: string,
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
@@ -163,6 +162,8 @@ type MetalConfigT = {
   resetCache: boolean,
   watchFolders: $ReadOnlyArray<string>,
 };
+
+type CacheStoresConfigT = $ReadOnlyArray<CacheStore<TransformResult<>>>;
 
 type ServerConfigT = {
   /** @deprecated */
@@ -208,56 +209,46 @@ type WatcherConfigT = {
   }>,
 };
 
-export type InputConfigT = $ReadOnly<
-  Partial<{
-    ...MetalConfigT,
-    ...$ReadOnly<{
-      cacheStores:
-        | $ReadOnlyArray<CacheStore<TransformResult<>>>
-        | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
+export type InputConfigT = Partial<
+  $ReadOnly<
+    MetalConfigT & {
+      cacheStores: CacheStoresConfigT | (MetroCache => CacheStoresConfigT),
       resolver: $ReadOnly<Partial<ResolverConfigT>>,
       server: $ReadOnly<Partial<ServerConfigT>>,
       serializer: $ReadOnly<Partial<SerializerConfigT>>,
       symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
       transformer: $ReadOnly<Partial<TransformerConfigT>>,
-      watcher: $ReadOnly<
-        Partial<{
-          ...WatcherConfigT,
-          healthCheck?: $ReadOnly<Partial<WatcherConfigT['healthCheck']>>,
-          unstable_autoSaveCache?: $ReadOnly<
-            Partial<WatcherConfigT['unstable_autoSaveCache']>,
-          >,
-        }>,
+      watcher: Partial<
+        $ReadOnly<
+          Omit<
+            WatcherConfigT,
+            'healthCheck' | 'unstable_autoSaveCache' | 'watchman',
+          > & {
+            healthCheck: Partial<$ReadOnly<WatcherConfigT['healthCheck']>>,
+            unstable_autoSaveCache: Partial<
+              $ReadOnly<WatcherConfigT['unstable_autoSaveCache']>,
+            >,
+            watchman: Partial<$ReadOnly<WatcherConfigT['watchman']>>,
+          },
+        >,
       >,
-    }>,
-  }>,
+    },
+  >,
 >;
 
 export type MetroConfig = InputConfigT;
 
-export type IntermediateConfigT = {
-  ...MetalConfigT,
-  ...{
-    resolver: ResolverConfigT,
-    server: ServerConfigT,
-    serializer: SerializerConfigT,
-    symbolicator: SymbolicatorConfigT,
-    transformer: TransformerConfigT,
-    watcher: WatcherConfigT,
-  },
-};
-
-export type ConfigT = $ReadOnly<{
-  ...$ReadOnly<MetalConfigT>,
-  ...$ReadOnly<{
+export type ConfigT = $ReadOnly<
+  MetalConfigT & {
+    cacheStores: CacheStoresConfigT,
     resolver: $ReadOnly<ResolverConfigT>,
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
     symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
     watcher: $ReadOnly<WatcherConfigT>,
-  }>,
-}>;
+  },
+>;
 
 export type YargArguments = $ReadOnly<{
   config?: string,

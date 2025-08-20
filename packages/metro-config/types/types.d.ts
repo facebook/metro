@@ -140,12 +140,11 @@ export interface SerializerConfigT {
 
 export interface TransformerConfigT extends JsTransformerConfig {
   getTransformOptions: GetTransformOptions;
-  transformVariants: Readonly<{[name: string]: unknown}>;
+  transformVariants: Readonly<{[name: string]: Partial<ExtraTransformOptions>}>;
   publicPath: string;
 }
 
 export interface MetalConfigT {
-  cacheStores: ReadonlyArray<CacheStore<TransformResult>>;
   cacheVersion: string;
   fileMapCacheDirectory?: string;
   /** Deprecated, alias of fileMapCacheDirectory */
@@ -212,8 +211,7 @@ export interface WatcherInputConfigT
   unstable_autoSaveCache?: Partial<WatcherConfigT['unstable_autoSaveCache']>;
 }
 
-export interface InputConfigT
-  extends Partial<Omit<MetalConfigT, 'cacheStores'>> {
+export interface InputConfigT extends Partial<MetalConfigT> {
   readonly cacheStores?:
     | ReadonlyArray<CacheStore<TransformResult>>
     | ((metroCache: MetroCache) => ReadonlyArray<CacheStore<TransformResult>>);
@@ -227,16 +225,8 @@ export interface InputConfigT
 
 export type MetroConfig = InputConfigT;
 
-export interface IntermediateConfigT extends MetalConfigT {
-  resolver: ResolverConfigT;
-  server: ServerConfigT;
-  serializer: SerializerConfigT;
-  symbolicator: SymbolicatorConfigT;
-  transformer: TransformerConfigT;
-  watcher: WatcherConfigT;
-}
-
 export interface ConfigT extends Readonly<MetalConfigT> {
+  readonly cacheStores: ReadonlyArray<CacheStore<TransformResult>>;
   readonly resolver: Readonly<ResolverConfigT>;
   readonly server: Readonly<ServerConfigT>;
   readonly serializer: Readonly<SerializerConfigT>;
