@@ -4,16 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
 import path from 'path';
 
-var list = [/\/__tests__\/.*/];
+const list = [/\/__tests__\/.*/];
 
-function escapeRegExp(pattern) {
-  if (Object.prototype.toString.call(pattern) === '[object RegExp]') {
+function escapeRegExp(pattern: RegExp | string) {
+  if (pattern instanceof RegExp) {
     // the forward slash may or may not be escaped in regular expression depends
     // on if it's in brackets. See this post for details
     // https://github.com/nodejs/help/issues/3039. The or condition in string
@@ -34,7 +35,9 @@ function escapeRegExp(pattern) {
   }
 }
 
-export default function exclusionList(additionalExclusions) {
+export default function exclusionList(
+  additionalExclusions?: $ReadOnlyArray<RegExp | string>,
+): RegExp {
   return new RegExp(
     '(' +
       (additionalExclusions || []).concat(list).map(escapeRegExp).join('|') +

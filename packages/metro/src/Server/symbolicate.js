@@ -31,10 +31,7 @@ export type IntermediateStackFrame = {
   collapse?: boolean,
   ...
 };
-export type StackFrameOutput = $ReadOnly<{
-  ...IntermediateStackFrame,
-  ...
-}>;
+export type StackFrameOutput = $ReadOnly<IntermediateStackFrame>;
 type ExplodedSourceMapModule = ExplodedSourceMap[number];
 type Position = {+line1Based: number, column0Based: number};
 

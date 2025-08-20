@@ -180,4 +180,8 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 getDefaultConfig.getDefaultValues = getDefaultValues;
-export default getDefaultConfig;
+
+export default getDefaultConfig as interface {
+  (rootPath?: string): Promise<ConfigT>,
+  getDefaultValues: (rootPath?: string) => ConfigT,
+};

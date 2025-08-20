@@ -6,9 +6,9 @@
  *
  * @format
  * @flow strict-local
+ * @oncall react_native
  */
 
-import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof * as MetroCache from 'metro-cache';
@@ -24,6 +24,7 @@ import type {
 } from 'metro/private/DeltaBundler/types';
 import type {Reporter} from 'metro/private/lib/reporting';
 import type MetroServer from 'metro/private/Server';
+import type {IntermediateStackFrame} from 'metro/private/Server/symbolicate';
 
 export type ExtraTransformOptions = $ReadOnly<{
   preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
@@ -143,7 +144,7 @@ type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
   // TODO(moti): Remove this Meta-internal option from Metro's public config
-  transformVariants: {+[name: string]: {...}},
+  transformVariants: {+[name: string]: Partial<ExtraTransformOptions>},
   publicPath: string,
   unstable_workerThreads: boolean,
 };
