@@ -52,11 +52,14 @@ export type LogEntry = {
   ...
 };
 
+// Walk-around `uv_os_gethostname` function not implemented on Windows 7 node <=18.
+// See also https://github.com/libuv/libuv/issues/3260
 try {
   os.hostname();
 } catch (err) {
-  console.warn(err)
-  os.hostname = () => "localhost";
+  console.warn(err);
+  // $FlowFixMe[cannot-write]
+  os.hostname = () => 'localhost';
 }
 
 const log_session = `${os.hostname()}-${Date.now()}`;
