@@ -362,7 +362,7 @@ describe('posix support', () => {
   test('realpathSync.native is supported', () => {
     fs.mkdirSync('/glo');
     fs.symlinkSync('glo', '/baz');
-    // $FlowFixMe: Ideally this should typecheck.
+    // $FlowFixMe[prop-missing]: Ideally this should typecheck.
     const realpathSyncNative = fs.realpathSync.native;
     expect(realpathSyncNative('/baz/foo.txt')).toEqual('/glo/foo.txt');
   });

@@ -128,7 +128,8 @@ export default function constantFoldingPlugin(context: {
           state.stripped = true;
 
           if (result.value || node.alternate) {
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[incompatible-type]
+            // $FlowFixMe[sketchy-null-mixed] Flow error uncovered by typing Babel more strictly
             path.replaceWith(result.value ? node.consequent : node.alternate);
           } else if (!result.value) {
             path.remove();

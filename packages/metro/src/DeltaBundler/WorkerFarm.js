@@ -160,7 +160,8 @@ export default class WorkerFarm {
       }: ${err.message}`,
     );
 
-    // $FlowExpectedError: TODO(t67543470): Change this to properly extend the error.
+    // $FlowFixMe[prop-missing]
+    // $FlowExpectedError[unsafe-object-assign] : TODO(t67543470): Change this to properly extend the error.
     return Object.assign(error, {
       stack: err.stack,
       snippet: err.codeFrame,

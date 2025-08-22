@@ -13,7 +13,7 @@
 
 /* eslint-disable no-bitwise */
 
-// $FlowFixMe: not defined by Flow
+// $FlowFixMe[cannot-resolve-module]: not defined by Flow
 const constants = require('constants');
 const {EventEmitter} = require('events');
 const stream = require('stream');
@@ -104,7 +104,7 @@ const FLAGS_SPECS: {
   wx: {exclusive: true, truncate: true, writable: true},
   'w+': {readable: true, truncate: true, writable: true},
   'wx+': {exclusive: true, readable: true, truncate: true, writable: true},
-  // $FlowFixMe: Symbol support is incomplete
+  // $FlowFixMe[invalid-computed-prop]: Symbol support is incomplete
   [kWritableMustExist]: {mustExist: true, writable: true},
 };
 
@@ -287,14 +287,14 @@ class MemoryFs {
       func.native = func;
     });
     this.promises = PROMISE_FUNC_NAMES.filter(
-      // $FlowFixMe: No indexer
+      // $FlowFixMe[prop-missing]: No indexer
       funcName => typeof this[`${funcName}Sync`] === 'function',
     ).reduce<{[string]: (...args: Array<any>) => Promise<any>}>(
       (promises, funcName) => {
         promises[funcName] = (...args) =>
           new Promise((resolve, reject) => {
             try {
-              // $FlowFixMe: No indexer
+              // $FlowFixMe[prop-missing]: No indexer
               resolve(this[`${funcName}Sync`](...args));
             } catch (error) {
               reject(error);

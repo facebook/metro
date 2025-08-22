@@ -16,7 +16,7 @@ export default function stableHash(value: mixed): Buffer {
   return (
     crypto
       .createHash('md5')
-      /* $FlowFixMe(>=0.95.0 site=react_native_fb) This comment suppresses an
+      /* $FlowFixMe[incompatible-type](>=0.95.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.95 was deployed. To see the error, delete this
        * comment and run Flow. */
       .update(JSON.stringify(value, canonicalize))

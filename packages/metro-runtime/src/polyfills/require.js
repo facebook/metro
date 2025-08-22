@@ -191,7 +191,7 @@ function metroRequire(
     );
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   if (__DEV__) {
@@ -244,7 +244,7 @@ function metroImportDefault(
     moduleId = getModuleIdForVerboseName(verboseName);
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
@@ -276,7 +276,7 @@ function metroImportAll(
     moduleId = getModuleIdForVerboseName(verboseName);
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
@@ -457,7 +457,7 @@ function loadModuleImplementation(
   }
   try {
     if (__DEV__) {
-      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe[incompatible-use]: we know that __DEV__ is const and `Systrace` exists
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
     }
 
@@ -497,13 +497,13 @@ function loadModuleImplementation(
 
     // avoid removing factory in DEV mode as it breaks HMR
     if (!__DEV__) {
-      // $FlowFixMe: This is only sound because we never access `factory` again
+      // $FlowFixMe[incompatible-type]: This is only sound because we never access `factory` again
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
     if (__DEV__) {
-      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe[incompatible-use]: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
       if (Refresh != null) {

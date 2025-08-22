@@ -444,7 +444,7 @@ export default class Server {
       onProgress,
       resolverOptions,
       transformOptions,
-      /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses an
+      /* $FlowFixMe[cannot-spread-inexact](>=0.122.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.122.0 was deployed. To see the error, delete
        * this comment and run Flow. */
     } = splitBundleOptions({
@@ -930,7 +930,7 @@ export default class Server {
       });
 
       log(
-        /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses
+        /* $FlowFixMe[cannot-spread-inexact](>=0.122.0 site=react_native_fb) This comment suppresses
          * an error found when Flow v0.122.0 was deployed. To see the error,
          * delete this comment and run Flow. */
         createActionEndEntry({
@@ -1607,7 +1607,7 @@ export default class Server {
 }
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
-  //$FlowFixMe #9324959
+  //$FlowFixMe[incompatible-type] #9324959
   const ysIter: Iterator<Y> = ys[Symbol.iterator]();
   for (const x of xs) {
     const y = ysIter.next();

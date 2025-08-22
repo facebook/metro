@@ -131,9 +131,9 @@ export default async function symbolicate(
       return null;
     }
     return {
-      // $FlowFixMe: Length checks do not refine tuple unions.
+      // $FlowFixMe[invalid-tuple-index]: Length checks do not refine tuple unions.
       line1Based: mapping[2],
-      // $FlowFixMe: Length checks do not refine tuple unions.
+      // $FlowFixMe[invalid-tuple-index]: Length checks do not refine tuple unions.
       column0Based: mapping[3],
     };
   }

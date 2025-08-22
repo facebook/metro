@@ -35,37 +35,37 @@ export default {
     (inc(FORTY_TWO_1): Number1);
   },
   testUnsafeOps() {
-    // $FlowExpectedError - adding two 1-based offsets.
+    // $FlowExpectedError[incompatible-type]  - adding two 1-based offsets.
     add(FORTY_TWO_1, FORTY_TWO_1);
 
-    // $FlowExpectedError - subtracting 1-based offset from 0-based offset.
+    // $FlowExpectedError[incompatible-type]  - subtracting 1-based offset from 0-based offset.
     sub(FORTY_TWO_0, FORTY_TWO_1);
 
-    // $FlowExpectedError - direct computations with offsets are disallowed.
+    // $FlowExpectedError[unsafe-arithmetic]  - direct computations with offsets are disallowed.
     FORTY_TWO_0 - 1;
 
-    // $FlowExpectedError - direct computations with offsets are disallowed.
+    // $FlowExpectedError[unsafe-arithmetic]  - direct computations with offsets are disallowed.
     FORTY_TWO_1 - 1;
 
-    // $FlowExpectedError - extracting a 1-based offset as a 0-based number
+    // $FlowExpectedError[incompatible-type]  - extracting a 1-based offset as a 0-based number
     get0(FORTY_TWO_1);
 
-    // $FlowExpectedError - extracting a 0-based offset as a 1-based number
+    // $FlowExpectedError[incompatible-type]  - extracting a 0-based offset as a 1-based number
     get1(FORTY_TWO_0);
 
-    // $FlowExpectedError - negating a 1-based offset
+    // $FlowExpectedError[incompatible-type]  - negating a 1-based offset
     neg(FORTY_TWO_1);
 
-    // $FlowExpectedError - adding 1 to an offset that's already 1-based
+    // $FlowExpectedError[incompatible-type]  - adding 1 to an offset that's already 1-based
     add1(FORTY_TWO_1);
 
-    // $FlowExpectedError - subtracting 1 from an offset that's already 0-based
+    // $FlowExpectedError[incompatible-type]  - subtracting 1 from an offset that's already 0-based
     sub1(FORTY_TWO_0);
 
-    // $FlowExpectedError - extracting an arbitrary number as a 0-based number
+    // $FlowExpectedError[incompatible-type]  - extracting an arbitrary number as a 0-based number
     get0(42);
 
-    // $FlowExpectedError - extracting an arbitrary number as a 1-based number
+    // $FlowExpectedError[incompatible-type]  - extracting an arbitrary number as a 1-based number
     get1(42);
   },
 };

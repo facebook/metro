@@ -212,7 +212,7 @@ export default async function main(
       const original = context.getOriginalPositionFor(
         +lineNumber,
         +columnNumber,
-        // $FlowFixMe context is a union here and so this parameter is a union
+        // $FlowFixMe[incompatible-type] context is a union here and so this parameter is a union
         moduleIds,
       );
       stdout.write(

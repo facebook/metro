@@ -16,7 +16,7 @@ export default function getMinifier(minifierPath: string): Minifier {
   // The options allow relative paths but they HAVE to be normalized at
   // any entry point that accepts them...
   try {
-    // $FlowFixMe TODO t0 cannot do require with literal
+    // $FlowFixMe[unsupported-syntax] TODO t0 cannot do require with literal
     return require(minifierPath);
   } catch (e) {
     throw new Error(

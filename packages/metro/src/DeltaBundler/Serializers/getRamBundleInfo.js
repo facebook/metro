@@ -157,7 +157,7 @@ async function _getRamOptions(
   const {preloadedModules, ramGroups} = await getTransformOptions(
     [entryFile],
     {dev: options.dev, hot: true, platform: options.platform},
-    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+    /* $FlowFixMe[incompatible-type](>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
     async (x: string) => Array.from(getDependencies),

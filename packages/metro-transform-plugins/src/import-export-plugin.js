@@ -179,7 +179,7 @@ export default function importExportPlugin({
         const id =
           declaration.id || path.scope.generateUidIdentifier('default');
 
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[prop-missing] Flow error uncovered by typing Babel more strictly
         declaration.id = id;
 
         const loc = path.node.loc;
@@ -224,7 +224,8 @@ export default function importExportPlugin({
                   {
                     const properties = d.id.properties;
                     properties.forEach(p => {
-                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[prop-missing]
                       const name = p.key.name;
                       // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
@@ -235,7 +236,8 @@ export default function importExportPlugin({
                   {
                     const elements = d.id.elements;
                     elements.forEach(e => {
-                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[prop-missing]
                       const name = e.name;
                       // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
@@ -255,7 +257,8 @@ export default function importExportPlugin({
             const id = declaration.id || path.scope.generateUidIdentifier();
             const name = id.name;
 
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[prop-missing]
             declaration.id = id;
             // $FlowFixMe[incompatible-type]
             state.exportNamed.push({local: name, remote: name, loc});

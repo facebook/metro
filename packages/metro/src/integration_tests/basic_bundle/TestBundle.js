@@ -12,7 +12,8 @@
 
 const Bar = require('./Bar');
 const Foo = require('./Foo');
-// $FlowFixMe: Flow doesn't understand TypeScript
+// $FlowFixMe[untyped-import]: Flow doesn't understand TypeScript
+// $FlowFixMe[cannot-resolve-module]: Flow doesn't understand TypeScript
 const TypeScript = require('./TypeScript');
 
 Object.keys({...Bar});

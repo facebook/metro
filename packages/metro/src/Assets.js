@@ -248,7 +248,7 @@ async function applyAssetDataPlugins(
   }
 
   const [currentAssetPlugin, ...remainingAssetPlugins] = assetDataPlugins;
-  // $FlowFixMe: impossible to type a dynamic require.
+  // $FlowFixMe[unsupported-syntax]: impossible to type a dynamic require.
   const assetPluginFunction: AssetDataPlugin = require(currentAssetPlugin);
   const resultAssetData = await assetPluginFunction(assetData);
   return await applyAssetDataPlugins(remainingAssetPlugins, resultAssetData);

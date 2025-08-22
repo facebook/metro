@@ -22,12 +22,12 @@ describe('Logger', () => {
   const originalConsoleLog = console.log;
 
   beforeEach(() => {
-    // $FlowFixMe don't worry, state restored below
+    // $FlowFixMe[cannot-write] don't worry, state restored below
     console.log = jest.fn();
   });
 
   afterEach(() => {
-    // $FlowFixMe
+    // $FlowFixMe[cannot-write]
     console.log = originalConsoleLog;
   });
 

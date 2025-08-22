@@ -100,22 +100,22 @@ export default class HttpStore<T> {
     };
 
     if (options.key != null) {
-      // $FlowFixMe `key` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `key` is missing in the Flow definition
       agentConfig.key = options.key;
     }
 
     if (options.cert != null) {
-      // $FlowFixMe `cert` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `cert` is missing in the Flow definition
       agentConfig.cert = options.cert;
     }
 
     if (options.ca != null) {
-      // $FlowFixMe `ca` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `ca` is missing in the Flow definition
       agentConfig.ca = options.ca;
     }
 
     if (options.socketPath != null) {
-      // $FlowFixMe `socketPath` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `socketPath` is missing in the Flow definition
       agentConfig.socketPath = options.socketPath;
     }
 
@@ -172,7 +172,8 @@ export default class HttpStore<T> {
         timeout: this._getEndpoint.timeout,
       };
 
-      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+      // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
       const req = this._getEndpoint.module.request(options, res => {
@@ -299,7 +300,8 @@ export default class HttpStore<T> {
         timeout: this._setEndpoint.timeout,
       };
 
-      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+      // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
       const req = this._setEndpoint.module.request(options, res => {

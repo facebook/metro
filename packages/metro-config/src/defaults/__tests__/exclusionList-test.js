@@ -17,7 +17,7 @@ describe('exclusionList', () => {
   let originalSeparator;
 
   function setPathSeperator(sep: string) {
-    // $FlowFixMe: property sep is not writable.
+    // $FlowFixMe[cannot-write]: property sep is not writable.
     path.sep = sep;
   }
 
@@ -26,7 +26,7 @@ describe('exclusionList', () => {
   });
 
   afterEach(() => {
-    // $FlowFixMe: property sep is not writable.
+    // $FlowFixMe[cannot-write]: property sep is not writable.
     path.sep = originalSeparator;
   });
 
