@@ -395,7 +395,7 @@ function searchForConfigFile(
           // By using `require`, we'll add the json to the Node.js module
           // cache, so we don't incur further parse cost after returning the
           // manifest's path.
-          // $FlowIgnore[unsupported-syntax] dynamic require
+          // $FlowFixMe[unsupported-syntax] dynamic require
           const content = require(candidatePath);
           if (Object.hasOwn(content, PACKAGE_JSON_PROP_NAME)) {
             return candidatePath;
