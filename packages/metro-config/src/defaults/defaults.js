@@ -11,7 +11,7 @@
 
 import type {PerfLogger, RootPerfLogger} from '../types';
 
-export {default as defaultCreateModuleIdFactory} from 'metro/private/lib/createModuleIdFactory';
+export {default as defaultCreateModuleIdFactory} from './createModuleIdFactory';
 
 export const assetExts = [
   // Image formats

@@ -11,10 +11,10 @@
 
 import os from 'os';
 
-export default (workers: ?number): number => {
+export default function getMaxWorkers(workers: ?number): number {
   // $FlowFixMe[prop-missing] Missing Flow lib def for availableParallelism
   const cores = os.availableParallelism();
   return typeof workers === 'number' && Number.isInteger(workers)
     ? Math.min(cores, workers > 0 ? workers : 1)
     : Math.max(1, Math.ceil(cores * (0.5 + 0.5 * Math.exp(-cores * 0.07)) - 1));
-};
+}
