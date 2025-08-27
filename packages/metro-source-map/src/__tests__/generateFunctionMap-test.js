@@ -27,6 +27,7 @@ const traverse = require('@babel/traverse').default;
 const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
   // $FlowFixMe[prop-missing]
   // $FlowFixMe[incompatible-type]
+  // $FlowFixMe[missing-export]
   require('@babel/types').STANDARDIZED_TYPES;
 const {
   SourceMetadataMapConsumer,
