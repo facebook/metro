@@ -4,26 +4,27 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow strict-local
+ * @format
+ * @oncall react_native
  */
 
-import type {IntermediateStackFrame} from '../../metro/src/Server/symbolicate';
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore} from 'metro-cache';
 import typeof * as MetroCache from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
-import type {TransformResult} from 'metro/private/DeltaBundler';
 import type {
   DeltaResult,
   Module,
   ReadOnlyGraph,
   SerializerOptions,
+  TransformResult,
 } from 'metro/private/DeltaBundler/types';
 import type {Reporter} from 'metro/private/lib/reporting';
 import type MetroServer from 'metro/private/Server';
+import type {IntermediateStackFrame} from 'metro/private/Server/symbolicate';
 
 export type ExtraTransformOptions = $ReadOnly<{
   preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
@@ -143,7 +144,7 @@ type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
   // TODO(moti): Remove this Meta-internal option from Metro's public config
-  transformVariants: {+[name: string]: {...}},
+  transformVariants: {+[name: string]: Partial<ExtraTransformOptions>},
   publicPath: string,
   unstable_workerThreads: boolean,
 };

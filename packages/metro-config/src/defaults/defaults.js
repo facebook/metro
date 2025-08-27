@@ -13,7 +13,7 @@ import type {PerfLogger, RootPerfLogger} from '../types';
 
 export {default as defaultCreateModuleIdFactory} from './createModuleIdFactory';
 
-export const assetExts = [
+export const assetExts: Array<string> = [
   // Image formats
   'bmp',
   'gif',
@@ -50,17 +50,17 @@ export const assetExts = [
   'zip',
 ];
 
-export const assetResolutions = ['1', '1.5', '2', '3', '4'];
+export const assetResolutions: Array<string> = ['1', '1.5', '2', '3', '4'];
 
-export const sourceExts = ['js', 'jsx', 'json', 'ts', 'tsx'];
+export const sourceExts: Array<string> = ['js', 'jsx', 'json', 'ts', 'tsx'];
 
-export const additionalExts = ['cjs', 'mjs'];
+export const additionalExts: Array<string> = ['cjs', 'mjs'];
 
 export const moduleSystem = (require.resolve(
   'metro-runtime/src/polyfills/require.js',
 ): string);
 
-export const platforms = ['ios', 'android', 'windows', 'web'];
+export const platforms: Array<string> = ['ios', 'android', 'windows', 'web'];
 
 export const DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-terser';
 

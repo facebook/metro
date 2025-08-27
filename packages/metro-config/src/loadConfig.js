@@ -13,11 +13,11 @@ import type {ConfigT, InputConfigT, YargArguments} from './types';
 
 import getDefaultConfig from './defaults';
 import validConfig from './defaults/validConfig';
-import fs from 'fs';
+import * as fs from 'fs';
 import {validate} from 'jest-validate';
 import * as MetroCache from 'metro-cache';
 import {homedir} from 'os';
-import path from 'path';
+import * as path from 'path';
 import {parse as parseYaml} from 'yaml';
 
 type ResolveConfigResult = {

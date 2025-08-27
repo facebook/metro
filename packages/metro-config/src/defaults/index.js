@@ -26,8 +26,8 @@ import getMaxWorkers from './getMaxWorkers';
 import {FileStore} from 'metro-cache';
 import {Terminal} from 'metro-core';
 import TerminalReporter from 'metro/private/lib/TerminalReporter';
-import os from 'os';
-import path from 'path';
+import * as os from 'os';
+import * as path from 'path';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
@@ -180,4 +180,8 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 getDefaultConfig.getDefaultValues = getDefaultValues;
-export default getDefaultConfig;
+
+export default getDefaultConfig as interface {
+  (rootPath?: string): Promise<ConfigT>,
+  getDefaultValues: (rootPath?: string) => ConfigT,
+};
