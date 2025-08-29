@@ -48,3 +48,14 @@ export interface BabelTransformer {
 }
 
 export const transform: BabelTransformer['transform'];
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-babel-transformer' is deprecated, use named exports.
+ */
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {transform: typeof transform};
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
+export default $$EXPORT_DEFAULT_DECLARATION$$;

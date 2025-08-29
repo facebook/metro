@@ -32,14 +32,12 @@ import type {
 import type {Duplex} from 'stream';
 import type Yargs from 'yargs';
 
-export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
-export {Terminal} from 'metro-core';
-export {
-  TerminalReporter,
-  TerminalReportableEvent,
-} from './lib/TerminalReporter';
+import {TerminalReporter} from './lib/TerminalReporter';
+import {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
+import {Terminal} from 'metro-core';
 
 export {HttpServer, HttpsServer};
+export {loadConfig, mergeConfig, resolveConfig, Terminal, TerminalReporter};
 
 interface MetroMiddleWare {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void;
@@ -171,3 +169,25 @@ export function attachMetroCli(
   yargs: Yargs.Argv,
   options?: AttachMetroCLIOptions,
 ): Yargs.Argv;
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro' is deprecated, use named exports.
+ */
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  attachMetroCli: typeof attachMetroCli;
+  runServer: typeof runServer;
+  Terminal: typeof Terminal;
+  TerminalReporter: typeof TerminalReporter;
+  loadConfig: typeof loadConfig;
+  mergeConfig: typeof mergeConfig;
+  resolveConfig: typeof resolveConfig;
+  createConnectMiddleware: typeof createConnectMiddleware;
+  runBuild: typeof runBuild;
+  buildGraph: typeof buildGraph;
+};
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
+export default $$EXPORT_DEFAULT_DECLARATION$$;

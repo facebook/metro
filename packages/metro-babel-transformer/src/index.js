@@ -140,3 +140,11 @@ function transform({
 */
 
 export {transform};
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-babel-transformer' is deprecated, use named exports.
+ */
+export default {transform};

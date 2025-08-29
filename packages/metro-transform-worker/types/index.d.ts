@@ -124,3 +124,17 @@ export function transform(
 ): Promise<TransformResponse>;
 
 export function getCacheKey(config: JsTransformerConfig): string;
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-transform-worker' is deprecated, use named exports.
+ */
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  getCacheKey: typeof getCacheKey;
+  transform: typeof transform;
+};
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
+export default $$EXPORT_DEFAULT_DECLARATION$$;
