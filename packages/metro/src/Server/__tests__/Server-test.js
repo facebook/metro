@@ -879,12 +879,12 @@ describe('processRequest', () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest(
-        '/assets/imgs/%E4%B8%BB%E9%A1%B5/logo.png',
+        '/assets/imgs/%2530/%D0%B0%D0%B9%D1%81%D0%B5%D1%82/%C3%98%E0%B2%9A%F0%9F%98%81/%E4%B8%BB%E9%A1%B5/logo.png',
       );
       expect(response._getString()).toBe('i am image');
 
       expect(getAsset).toBeCalledWith(
-        'imgs/\u{4E3B}\u{9875}/logo.png',
+        'imgs/%30/айсет/Øಚ😁/主页/logo.png',
         '/root',
         ['/root'],
         undefined,

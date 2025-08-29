@@ -502,14 +502,17 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
-    const urlObj = url.parse(decodeURI(req.url), true);
-    let [, assetPath] =
-      (urlObj &&
-        urlObj.pathname &&
-        urlObj.pathname.match(/^\/assets\/(.+)$/)) ||
-      [];
+    debug('Processing single asset request: %s', req.url);
+    const urlObj = url.parse(req.url, true);
 
-    if (!assetPath && urlObj && urlObj.query && urlObj.query.unstable_path) {
+    let [, assetPath] =
+      (urlObj.pathname || '')
+        .split('/')
+        .map(segment => decodeURIComponent(segment))
+        .join('/')
+        .match(/^\/assets\/(.+)$/) || [];
+
+    if (!assetPath && urlObj.query.unstable_path) {
       const [, actualPath, secondaryQuery] = nullthrows(
         urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
       );
@@ -592,19 +595,29 @@ export default class Server {
     next: (?Error) => void,
   ) {
     const originalUrl = req.url;
+    debug('Handling request:    %s', originalUrl);
     req.url = this._rewriteAndNormalizeUrl(req.url);
-    const urlObj = url.parse(decodeURI(req.url), true);
+    if (req.url !== originalUrl) {
+      debug('Rewritten to:    %s', req.url);
+    }
+    const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
-    debug(
-      `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
-        (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
-    );
     const formattedUrl = url.format({
       ...urlObj,
       host,
       protocol: 'http',
     });
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
     const pathname = urlObj.pathname || '';
+
+    // using this Metro particular convention for decoding URL paths into file paths
+    const decodedPathname = pathname
+      .split('/')
+      .map(segment => decodeURIComponent(segment))
+      .join('/');
+
     const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
@@ -617,7 +630,7 @@ export default class Server {
       });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
-        this._serverOptions.onBundleBuilt(pathname);
+        this._serverOptions.onBundleBuilt(decodedPathname);
       }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
@@ -649,10 +662,12 @@ export default class Server {
       let handled = false;
       for (const [pathnamePrefix, normalizedRootDir] of this
         ._sourceRequestRoutingMap) {
-        if (pathname.startsWith(pathnamePrefix)) {
-          const relativePathname = pathname.substr(pathnamePrefix.length);
+        if (decodedPathname.startsWith(pathnamePrefix)) {
+          const relativeFilePathname = decodedPathname.substr(
+            pathnamePrefix.length,
+          );
           await this._processSourceRequest(
-            relativePathname,
+            relativeFilePathname,
             normalizedRootDir,
             res,
           );
@@ -667,13 +682,13 @@ export default class Server {
   }
 
   async _processSourceRequest(
-    relativePathname: string,
+    relativeFilePathname: string,
     rootDir: string,
     res: ServerResponse,
   ): Promise<void> {
     if (
       !this._allowedSuffixesForSourceRequests.some(suffix =>
-        relativePathname.endsWith(suffix),
+        relativeFilePathname.endsWith(suffix),
       )
     ) {
       res.writeHead(404);
@@ -681,7 +696,7 @@ export default class Server {
       return;
     }
     const depGraph = await this._bundler.getBundler().getDependencyGraph();
-    const filePath = path.join(rootDir, relativePathname);
+    const filePath = path.join(rootDir, relativeFilePathname);
     try {
       await depGraph.getOrComputeSha1(filePath);
     } catch {
@@ -689,7 +704,7 @@ export default class Server {
       res.end();
       return;
     }
-    const mimeType = mime.lookup(path.basename(relativePathname));
+    const mimeType = mime.lookup(path.basename(relativeFilePathname));
     res.setHeader('Content-Type', mimeType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
@@ -1589,17 +1604,23 @@ export default class Server {
             const relativePath = module.path.slice(
               normalizedRootDir.length + 1,
             );
-            const relativePathPosix = relativePath.split(path.sep).join('/');
-            return pathnamePrefix + encodeURI(relativePathPosix);
+            const relativePathPosix = relativePath
+              .split(path.sep)
+              .map(segment => encodeURIComponent(segment))
+              .join('/');
+            return pathnamePrefix + relativePathPosix;
           }
         }
         // Ordinarily all files should match one of the roots above. If they
         // don't, try to preserve useful information, even if fetching the path
         // from Metro might fail.
-        const modulePathPosix = module.path.split(path.sep).join('/');
+        const modulePathPosix = module.path
+          .split(path.sep)
+          .map(segment => encodeURIComponent(segment))
+          .join('/');
         return modulePathPosix.startsWith('/')
-          ? encodeURI(modulePathPosix)
-          : '/' + encodeURI(modulePathPosix);
+          ? modulePathPosix
+          : '/' + modulePathPosix;
       case SourcePathsMode.Absolute:
         return module.path;
     }

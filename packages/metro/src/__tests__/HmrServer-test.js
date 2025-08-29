@@ -165,8 +165,12 @@ describe('HmrServer', () => {
     // $FlowFixMe[underconstrained-implicit-instantiation]
     hmrServer = new HmrServer(incrementalBundlerMock, id, config);
 
-    connect = async (relativeUrl: string, sendFn?: string => void) => {
-      const absoluteUrl = 'ws://localhost/' + relativeUrl;
+    connect = async (
+      relativeUrl: string,
+      sendFn?: string => void,
+      {baseUrl = 'ws://localhost'}: {baseUrl?: string} = {},
+    ) => {
+      const absoluteUrl = baseUrl + relativeUrl;
       const client = await hmrServer.onClientConnect(
         absoluteUrl,
         sendFn || jest.fn(),
@@ -197,6 +201,64 @@ describe('HmrServer', () => {
 
   test('should retrieve the correct graph from the incremental bundler (graphId)', async () => {
     await connect('/hot?bundleEntry=EntryPoint.js&platform=ios');
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: 'ios',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {
+          shallow: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {
+            dev: true,
+          },
+        },
+      ),
+    );
+  });
+
+  test('should retrieve for relative urls without host and protocol', async () => {
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', undefined, {
+      baseUrl: '',
+    });
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: 'ios',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {
+          shallow: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {
+            dev: true,
+          },
+        },
+      ),
+    );
+  });
+
+  test('should retrieve for non standard protocols', async () => {
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', undefined, {
+      baseUrl: 'foo://localhost',
+    });
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
       getGraphId(

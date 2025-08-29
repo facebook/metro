@@ -77,6 +77,23 @@ const barModule: Module<> = {
   getSource: () => Buffer.from('bar-source'),
 };
 
+const nonAsciiModule: Module<> = {
+  path: '/root/%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js',
+  dependencies: new Map(),
+  inverseDependencies: new CountingSet(),
+  output: [
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */});',
+        map: [],
+        lineCount: 1,
+      },
+    },
+  ],
+  getSource: () => Buffer.from('bar-source'),
+};
+
 const getRunModuleStatement = (moduleId: number | string) =>
   `require(${JSON.stringify(moduleId)});`;
 
@@ -140,6 +157,63 @@ test('should generate a very simple bundle', () => {
       "pre": "__d(function() {/* code for polyfill */});",
     }
   `);
+});
+
+test('should generate a bundle with correct non ascii characters parsing', () => {
+  expect(
+    baseJSBundle(
+      '/root/',
+      [polyfill],
+      {
+        dependencies: new Map([
+          ['/root/%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js', nonAsciiModule],
+        ]),
+        entryPoints: new Set(['/root/%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js']),
+        transformOptions,
+      },
+      {
+        asyncRequireModulePath: '',
+        // $FlowFixMe[incompatible-type] createModuleId assumes numeric IDs - is this too strict?
+        createModuleId: filePath => path.basename(filePath),
+        dev: true,
+        getRunModuleStatement,
+        includeAsyncPaths: false,
+        inlineSourceMap: false,
+        modulesOnly: false,
+        processModuleFilter: () => true,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        serverRoot: '/root',
+        shouldAddToIgnoreList: () => false,
+        sourceMapUrl:
+          'http://localhost/' +
+          'root/%30.бундл.Øಚ😁AA/src/?/foo=bar/#.map'
+            .split('/')
+            .map(segment => encodeURIComponent(segment))
+            .join('/'),
+        sourceUrl:
+          'http://localhost/' +
+          'root/%30.бундл.Øಚ😁AA/src/?/foo=bar/#.bundle'
+            .split('/')
+            .map(segment => encodeURIComponent(segment))
+            .join('/'),
+        getSourceUrl: null,
+      },
+    ),
+  ).toMatchInlineSnapshot(`
+Object {
+  "modules": Array [
+    Array [
+      "#.js",
+      "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"#.js\\",[],\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\");",
+    ],
+  ],
+  "post": "//# sourceMappingURL=http://localhost/root/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.map
+//# sourceURL=http://localhost/root/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.bundle",
+  "pre": "__d(function() {/* code for polyfill */});",
+}
+`);
 });
 
 test('should add runBeforeMainModule statements if found in the graph', () => {

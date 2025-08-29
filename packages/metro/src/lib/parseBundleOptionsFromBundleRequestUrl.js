@@ -58,7 +58,12 @@ export default function parseBundleOptionsFromBundleRequestUrl(
   const query = nullthrows(parsedURL.query);
 
   const pathname = query.bundleEntry || (parsedURL?.pathname ?? '');
-  const decodedPathname = decodeURIComponent(pathname);
+
+  // Using this Metro particular convention for decoding URL paths into file paths
+  const filePathPosix = pathname
+    .split('/')
+    .map(segment => decodeURIComponent(segment))
+    .join('/');
 
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
@@ -69,8 +74,8 @@ export default function parseBundleOptionsFromBundleRequestUrl(
     customResolverOptions: parseCustomResolverOptions(parsedURL),
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
-    // absolute and relative paths are converted to paths relative to root
-    entryFile: decodedPathname
+    // Absolute and relative paths are converted to paths relative to root
+    entryFile: filePathPosix
       .replace(/^(?:\.?\/)?/, './')
       .replace(/\.[^/.]+$/, ''),
     excludeSource: getBoolean(query, 'excludeSource', false),
