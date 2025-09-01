@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {EntryPointURL} from '../../HmrServer';
 import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
 import type {HmrModule} from 'metro-runtime/src/modules/types';
 
@@ -17,13 +16,12 @@ import {isJsModule, wrapModule} from './helpers/js';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {addParamsToDefineCall} from 'metro-transform-plugins';
 import path from 'path';
-import url from 'url';
 
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:HMR');
 
 type Options = $ReadOnly<{
-  clientUrl: EntryPointURL,
+  clientUrl: URL,
   createModuleId: string => number,
   includeAsyncPaths: boolean,
   projectRoot: string,
@@ -40,7 +38,6 @@ function generateModules(
 
   for (const module of sourceModules) {
     if (isJsModule(module)) {
-      // Construct a bundle URL for this specific module only
       const getPathname = (extension: 'bundle' | 'map') => {
         return (
           path
@@ -60,19 +57,14 @@ function generateModules(
         );
       };
 
-      const clientUrl = url.parse(url.format(options.clientUrl), true);
-
-      // the legacy url object is parsed with both "search" and "query" fields.
-      // for the "query" field to be used when formatting the object back to string, the "search" field must be empty.
-      // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
-      clientUrl.search = '';
-      delete clientUrl.query.excludeSource;
+      const clientUrl = new URL(options.clientUrl);
+      clientUrl.searchParams.delete('excludeSource');
 
       clientUrl.pathname = getPathname('map');
-      const sourceMappingURL = url.format(clientUrl);
+      const sourceMappingURL = clientUrl.toString();
 
       clientUrl.pathname = getPathname('bundle');
-      const sourceURL = jscSafeUrl.toJscSafeUrl(url.format(clientUrl));
+      const sourceURL = jscSafeUrl.toJscSafeUrl(clientUrl.toString());
 
       debug(
         'got sourceMappingURL: %s\nand sourceURL: %s\nfor module: %s',
@@ -104,7 +96,7 @@ function prepareModule(
 ): string {
   const code = wrapModule(module, {
     ...options,
-    sourceUrl: url.format(options.clientUrl),
+    sourceUrl: options.clientUrl.toString(),
     dev: true,
   });
 

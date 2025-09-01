@@ -17,23 +17,32 @@ import {SourcePathsMode} from '../shared/types';
 import parseCustomResolverOptions from './parseCustomResolverOptions';
 import parseCustomTransformOptions from './parseCustomTransformOptions';
 import * as jscSafeUrl from 'jsc-safe-url';
-import nullthrows from 'nullthrows';
 import path from 'path';
-import url from 'url';
 
-const getBoolean = (
-  query: $ReadOnly<{[opt: string]: string}>,
+// eslint-disable-next-line import/no-commonjs
+const debug = require('debug')(
+  'Metro:Server:parseBundleOptionsFromBundleRequestUrl',
+);
+
+const TRUE_STRINGS = new Set<string>(['true', '1']);
+
+// This is a bit weird but this is the recommended way of getting around "URL" demanding to have a valid protocol
+// for when handling relative URLs: https://nodejs.org/docs/latest-v24.x/api/url.html#urlresolvefrom-to
+const RESOLVE_BASE_URL = 'resolve://';
+
+const getBoolQueryParam = (
+  searchParams: URLSearchParams,
   opt: string,
   defaultValue: boolean,
 ) =>
-  query[opt] == null
-    ? defaultValue
-    : query[opt] === 'true' || query[opt] === '1';
+  searchParams.has(opt)
+    ? TRUE_STRINGS.has(searchParams.get(opt) || '')
+    : defaultValue;
 
 const getBundleType = (bundleType: string): 'map' | 'bundle' =>
   bundleType === 'map' ? bundleType : 'bundle';
 
-const getTransformProfile = (transformProfile: string): TransformProfile =>
+const getTransformProfile = (transformProfile: ?string): TransformProfile =>
   transformProfile === 'hermes-stable' || transformProfile === 'hermes-canary'
     ? transformProfile
     : 'default';
@@ -46,66 +55,100 @@ export default function parseBundleOptionsFromBundleRequestUrl(
   // Retained for backwards compatibility, unused in Metro, to be removed.
   bundleType: string,
 } {
-  const relativeProtocolUrl = rawNonJscSafeUrlEncodedUrl.startsWith('//');
-  const parsedURL = nullthrows(
-    url.parse(
-      (relativeProtocolUrl ? 'temp-protocol:' : '') +
-        rawNonJscSafeUrlEncodedUrl,
-      true,
-    ),
-  ); // `true` to parse the query param as an object.
+  if (
+    !URL.canParse(rawNonJscSafeUrlEncodedUrl, RESOLVE_BASE_URL /* baseURL */)
+  ) {
+    throw new Error('Invalid URL', {cause: rawNonJscSafeUrlEncodedUrl});
+  }
 
-  const query = nullthrows(parsedURL.query);
+  const {
+    protocol: _tempProtocol,
+    host,
+    searchParams,
+    pathname: requestPathname,
+    search,
+    hash,
+  } = new URL(rawNonJscSafeUrlEncodedUrl, RESOLVE_BASE_URL /* baseURL */);
 
-  const pathname = query.bundleEntry || (parsedURL?.pathname ?? '');
+  const isRelativeProtocol = rawNonJscSafeUrlEncodedUrl.startsWith('//');
+  const isNoProtocol =
+    !isRelativeProtocol && _tempProtocol + '//' === RESOLVE_BASE_URL;
 
-  // Using this Metro particular convention for decoding URL paths into file paths
-  const filePathPosix = pathname
-    .split('/')
-    .map(segment => decodeURIComponent(segment))
-    .join('/');
+  // TODO: next diff (D79809398) will remove the support for "isNoProtocol" to make the requested URL more expected (either "//" or "http://")
+  const protocol = isNoProtocol // e.g. "./foo/bar.js" or "foo/bar.js" both converted to paths relative to root
+    ? ''
+    : isRelativeProtocol // e.g. "//localhost:8081/foo/bar.js?platform=ios"
+      ? '//'
+      : _tempProtocol + '//'; // e.g. "http://localhost:8081/foo/bar.js?platform=ios"
+
+  const sourceUrl = jscSafeUrl.toJscSafeUrl(
+    protocol + host + requestPathname + search + hash,
+  );
+
+  const pathname = searchParams.get('bundleEntry') || requestPathname || '';
 
   const platform =
-    query.platform || parsePlatformFilePath(pathname, platforms).platform;
-  const bundleType = getBundleType(path.extname(pathname).substr(1));
+    searchParams.get('platform') ||
+    parsePlatformFilePath(pathname, platforms).platform;
+
+  const bundleType = getBundleType(path.extname(pathname).substring(1));
+
+  // The Chrome Debugger loads bundles via Blob urls, whose
+  // protocol is blob:http. This breaks loading source maps through
+  // protocol-relative URLs, which is why we must force the HTTP protocol
+  // when loading the bundle for either Android or iOS.
+  // TODO(T167298674): Remove when remote debugging is not needed in React Native
+  const sourceMapUrlProtocol =
+    platform != null && platform.match(/^(android|ios|vr|windows|macos)$/)
+      ? 'http://'
+      : '//';
+  const {pathname: sourceMapPathname} = new URL(
+    pathname.replace(/\.(bundle|delta)$/, '.map'),
+    RESOLVE_BASE_URL /* baseURL */,
+  );
+  const sourceMapUrl =
+    sourceMapUrlProtocol + host + sourceMapPathname + search + hash;
+
+  const filePathPosix = pathname
+    // Using this Metro particular convention for decoding URL paths into file paths
+    .split('/')
+    .map(segment => decodeURIComponent(segment))
+    .join('/')
+    .replace(/^(?:\.?\/)?/, './')
+    .replace(/\.[^/.]+$/, '');
+
+  debug(
+    'Bundle options parsed from rawNonJscSafeUrlEncodedUrl:    %s:\nsourceUrl:    %s\nsourceMapUrl:    %s\nentryFile:    %s',
+    rawNonJscSafeUrlEncodedUrl,
+    sourceUrl,
+    sourceMapUrl,
+    filePathPosix,
+  );
 
   return {
     bundleType,
-    customResolverOptions: parseCustomResolverOptions(parsedURL),
-    customTransformOptions: parseCustomTransformOptions(parsedURL),
-    dev: getBoolean(query, 'dev', true),
+    customResolverOptions: parseCustomResolverOptions(searchParams),
+    customTransformOptions: parseCustomTransformOptions(searchParams),
+    dev: getBoolQueryParam(searchParams, 'dev', true),
     // Absolute and relative paths are converted to paths relative to root
-    entryFile: filePathPosix
-      .replace(/^(?:\.?\/)?/, './')
-      .replace(/\.[^/.]+$/, ''),
-    excludeSource: getBoolean(query, 'excludeSource', false),
+    entryFile: filePathPosix,
+    excludeSource: getBoolQueryParam(searchParams, 'excludeSource', false),
     hot: true,
-    inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
-    lazy: getBoolean(query, 'lazy', false),
-    minify: getBoolean(query, 'minify', false),
-    modulesOnly: getBoolean(query, 'modulesOnly', false),
+    inlineSourceMap: getBoolQueryParam(searchParams, 'inlineSourceMap', false),
+    lazy: getBoolQueryParam(searchParams, 'lazy', false),
+    minify: getBoolQueryParam(searchParams, 'minify', false),
+    modulesOnly: getBoolQueryParam(searchParams, 'modulesOnly', false),
     onProgress: null,
     platform,
-    runModule: getBoolean(query, 'runModule', true),
-    shallow: getBoolean(query, 'shallow', false),
-    sourceMapUrl: url.format({
-      ...parsedURL,
-      // The Chrome Debugger loads bundles via Blob urls, whose
-      // protocol is blob:http. This breaks loading source maps through
-      // protocol-relative URLs, which is why we must force the HTTP protocol
-      // when loading the bundle for either Android or iOS.
-      // TODO(T167298674): Remove when remote debugging is not needed in React Native
-      protocol:
-        platform != null && platform.match(/^(android|ios|vr|windows|macos)$/)
-          ? 'http'
-          : '',
-      pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
-    }),
+    runModule: getBoolQueryParam(searchParams, 'runModule', true),
+    shallow: getBoolQueryParam(searchParams, 'shallow', false),
+    sourceMapUrl,
     sourcePaths:
-      SourcePathsMode.cast(query.sourcePaths) ?? SourcePathsMode.Absolute,
-    sourceUrl: jscSafeUrl.toJscSafeUrl(rawNonJscSafeUrlEncodedUrl),
+      SourcePathsMode.cast(searchParams.get('sourcePaths')) ??
+      SourcePathsMode.Absolute,
+    sourceUrl,
     unstable_transformProfile: getTransformProfile(
-      query.unstable_transformProfile,
+      searchParams.get('unstable_transformProfile'),
     ),
   };
 }

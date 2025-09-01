@@ -73,7 +73,6 @@ import nullthrows from 'nullthrows';
 import path from 'path';
 import {performance} from 'perf_hooks';
 import querystring from 'querystring';
-import url from 'url';
 
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:Server');
@@ -503,22 +502,35 @@ export default class Server {
     res: ServerResponse,
   ): Promise<void> {
     debug('Processing single asset request: %s', req.url);
-    const urlObj = url.parse(req.url, true);
+    if (!URL.canParse(req.url, 'resolve://')) {
+      throw new Error('Could not parse URL', {cause: req.url});
+    }
 
+    const urlObj = new URL(req.url, 'resolve://');
+    const formattedUrl = urlObj.toString();
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
+
+    // using this Metro particular convention for decoding URL paths into file paths
     let [, assetPath] =
-      (urlObj.pathname || '')
+      urlObj.pathname
         .split('/')
         .map(segment => decodeURIComponent(segment))
         .join('/')
         .match(/^\/assets\/(.+)$/) || [];
-
-    if (!assetPath && urlObj.query.unstable_path) {
+    if (!assetPath && urlObj.searchParams.get('unstable_path')) {
       const [, actualPath, secondaryQuery] = nullthrows(
-        urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
+        (urlObj.searchParams.get('unstable_path') || '').match(
+          /^([^?]*)\??(.*)$/,
+        ),
       );
       if (secondaryQuery) {
-        // $FlowFixMe[unsafe-object-assign]
-        Object.assign(urlObj.query, querystring.parse(secondaryQuery));
+        Object.entries(querystring.parse(secondaryQuery)).forEach(
+          ([key, value]) => {
+            urlObj.searchParams.set(key, value);
+          },
+        );
       }
       assetPath = actualPath;
     }
@@ -539,7 +551,7 @@ export default class Server {
         assetPath,
         this._config.projectRoot,
         this._config.watchFolders,
-        urlObj.query.platform,
+        urlObj.searchParams.get('platform'),
         this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
@@ -600,16 +612,13 @@ export default class Server {
     if (req.url !== originalUrl) {
       debug('Rewritten to:    %s', req.url);
     }
-    const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
-    const formattedUrl = url.format({
-      ...urlObj,
-      host,
-      protocol: 'http',
-    });
+    const urlObj = new URL(req.url, 'http://' + host);
+    const formattedUrl = urlObj.toString();
     if (req.url !== formattedUrl) {
       debug('Formatted as:    %s', formattedUrl);
     }
+
     const pathname = urlObj.pathname || '';
 
     // using this Metro particular convention for decoding URL paths into file paths

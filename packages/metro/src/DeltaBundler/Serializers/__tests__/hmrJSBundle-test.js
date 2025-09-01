@@ -15,7 +15,6 @@ import type {Module, ReadOnlyGraph, TransformInputOptions} from '../../types';
 
 import CountingSet from '../../../lib/CountingSet';
 import hmrJSBundle from '../hmrJSBundle';
-import url from 'url';
 
 const fooModule: Module<> = {
   path: '/root/foo',
@@ -99,7 +98,7 @@ const graph: ReadOnlyGraph<> = {
 };
 
 const options = {
-  clientUrl: url.parse('http://localhost/root/foo/bundle.js', true),
+  clientUrl: new URL('http://localhost/root/foo/bundle.js'),
   createModuleId: (s: string) =>
     s.includes('foo') ? (s.includes('bar') ? 2 : 1) : 0,
   includeAsyncPaths: false,

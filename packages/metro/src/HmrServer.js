@@ -17,7 +17,6 @@ import type {
   HmrMessage,
   HmrUpdateMessage,
 } from 'metro-runtime/src/modules/types';
-import type {UrlWithParsedQuery} from 'url';
 
 import hmrJSBundle from './DeltaBundler/Serializers/hmrJSBundle';
 import GraphNotFoundError from './IncrementalBundler/GraphNotFoundError';
@@ -30,11 +29,11 @@ import splitBundleOptions from './lib/splitBundleOptions';
 import * as transformHelpers from './lib/transformHelpers';
 import {Logger} from 'metro-core';
 import nullthrows from 'nullthrows';
-import url from 'url';
+
+// eslint-disable-next-line import/no-commonjs
+const debug = require('debug')('Metro:HMR');
 
 const {createActionStartEntry, createActionEndEntry, log} = Logger;
-
-export type EntryPointURL = UrlWithParsedQuery;
 
 export type Client = {
   optedIntoHMR: boolean,
@@ -44,11 +43,15 @@ export type Client = {
 
 type ClientGroup = {
   +clients: Set<Client>,
-  clientUrl: EntryPointURL,
+  clientUrl: URL,
   revisionId: RevisionId,
   +unlisten: () => void,
   +graphOptions: GraphOptions,
 };
+
+// This is a bit weird but this is the recommended way of getting around "URL" demanding to have a valid protocol
+// for when handling relative URLs: https://nodejs.org/docs/latest-v24.x/api/url.html#urlresolvefrom-to
+const RESOLVE_BASE_URL = 'resolve://';
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -97,8 +100,10 @@ export default class HmrServer<TClient: Client> {
     requestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<void> {
+    debug('Registering entry point: %s', requestUrl);
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
-    const clientUrl = nullthrows(url.parse(requestUrl, true));
+    debug('Rewritten as: %s', requestUrl);
+
     const {bundleType: _bundleType, ...options} =
       parseBundleOptionsFromBundleRequestUrl(
         requestUrl,
@@ -152,31 +157,22 @@ export default class HmrServer<TClient: Client> {
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
+      const clientUrl = new URL(requestUrl, RESOLVE_BASE_URL);
+
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {
-        dev,
-        minify,
-        runModule,
-        bundleEntry: _bundleEntry,
-        ...query
-      } = clientUrl.query || {};
-      clientUrl.query = {
-        ...query,
-        dev: dev || 'true',
-        minify: minify || 'false',
-        modulesOnly: 'true',
-        runModule: runModule || 'false',
-        shallow: 'true',
-      };
-      // the legacy url object is parsed with both "search" and "query" fields.
-      // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
-      // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
-      clientUrl.search = '';
+
+      const clientQuery = clientUrl.searchParams;
+      clientQuery.delete('bundleEntry');
+      clientQuery.set('dev', clientQuery.get('dev') || 'true');
+      clientQuery.set('minify', clientQuery.get('minify') || 'false');
+      clientQuery.set('modulesOnly', 'true');
+      clientQuery.set('runModule', clientQuery.get('runModule') || 'false');
+      clientQuery.set('shallow', 'true');
 
       clientGroup = {
         clients: new Set([client]),
-        clientUrl,
+        clientUrl: new URL(clientUrl),
         revisionId: id,
         graphOptions,
         unlisten: (): void => unlisten(),
@@ -368,7 +364,7 @@ export default class HmrServer<TClient: Client> {
       logger?.point('serialize_start');
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        clientUrl: group.clientUrl,
+        clientUrl: new URL(group.clientUrl),
         createModuleId: this._createModuleId,
         includeAsyncPaths: group.graphOptions.lazy,
         projectRoot: this._config.projectRoot,

@@ -50,7 +50,6 @@ import {
 import {Terminal} from 'metro-core';
 import net from 'net';
 import nullthrows from 'nullthrows';
-import {parse} from 'url';
 
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -230,7 +229,7 @@ export const createConnectMiddleware = async function (
         ),
       });
       httpServer.on('upgrade', (request, socket, head) => {
-        const {pathname} = parse(request.url);
+        const {pathname} = new URL(request.url, 'resolve://');
         if (pathname === '/hot') {
           wss.handleUpgrade(request, socket, head, ws => {
             wss.emit('connection', ws, request);
@@ -344,7 +343,7 @@ export const runServer = async (
       };
 
       httpServer.on('upgrade', (request, socket, head) => {
-        const {pathname} = parse(request.url);
+        const {pathname} = new URL(request.url, 'resolve://');
         if (pathname != null && websocketEndpoints[pathname]) {
           websocketEndpoints[pathname].handleUpgrade(
             request,

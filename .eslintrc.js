@@ -18,6 +18,7 @@ module.exports = {
       rules: {
         'babel/quotes': 'off',
         'lint/flow-function-shape': 'off',
+        'no-unused-vars': 'off',
       },
     },
     {

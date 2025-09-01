@@ -887,7 +887,7 @@ describe('processRequest', () => {
         'imgs/%30/айсет/Øಚ😁/主页/logo.png',
         '/root',
         ['/root'],
-        undefined,
+        null,
         expect.any(Array),
       );
     });
@@ -928,7 +928,7 @@ describe('processRequest', () => {
         '../otherFolder/otherImage.png',
         '/root',
         ['/root'],
-        undefined,
+        null,
         expect.any(Array),
       );
       expect(response._getString()).toBe('i am image');
