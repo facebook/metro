@@ -622,7 +622,7 @@ export default class Server {
     const pathname = urlObj.pathname || '';
 
     // using this Metro particular convention for decoding URL paths into file paths
-    const decodedPathname = pathname
+    const filePathname = pathname
       .split('/')
       .map(segment => decodeURIComponent(segment))
       .join('/');
@@ -639,7 +639,7 @@ export default class Server {
       });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
-        this._serverOptions.onBundleBuilt(decodedPathname);
+        this._serverOptions.onBundleBuilt(filePathname);
       }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
@@ -671,8 +671,8 @@ export default class Server {
       let handled = false;
       for (const [pathnamePrefix, normalizedRootDir] of this
         ._sourceRequestRoutingMap) {
-        if (decodedPathname.startsWith(pathnamePrefix)) {
-          const relativeFilePathname = decodedPathname.substr(
+        if (filePathname.startsWith(pathnamePrefix)) {
+          const relativeFilePathname = filePathname.substr(
             pathnamePrefix.length,
           );
           await this._processSourceRequest(

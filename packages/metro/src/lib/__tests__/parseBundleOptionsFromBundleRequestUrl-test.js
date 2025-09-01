@@ -39,8 +39,16 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
     ).toMatchObject({platform: 'test'});
   });
 
+  test('relative urls fail to be parsed', () => {
+    expect(() =>
+      parseBundleOptionsFromBundleRequestUrl('my/bundle.bundle', new Set([])),
+    ).toThrowError(
+      'Expecting the request url to have a valid protocol, e.g. "http://", "https://", or "//"',
+    );
+  });
+
   test.each(['absolute', 'relative'])(
-    '%s urls- infers the source url and source map url from the pathname',
+    '%s protocol urls- infers the source url and source map url from the pathname',
     type => {
       const protocol = type === 'absolute' ? 'http:' : '';
       expect(
@@ -72,14 +80,6 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
       ),
     ).toMatchObject({
       sourceMapUrl: 'http://localhost/my/bundle.map?platform=android',
-    });
-  });
-
-  test('retrieves stuff from HMR urls', () => {
-    expect(
-      parseBundleOptionsFromBundleRequestUrl('my/bundle.bundle', new Set([])),
-    ).toMatchObject({
-      entryFile: './my/bundle',
     });
   });
 

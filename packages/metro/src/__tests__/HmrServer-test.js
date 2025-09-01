@@ -227,31 +227,12 @@ describe('HmrServer', () => {
   });
 
   test('should retrieve for relative urls without host and protocol', async () => {
-    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', undefined, {
-      baseUrl: '',
-    });
-
-    expect(getRevisionByGraphIdMock).toBeCalledWith(
-      getGraphId(
-        '/root/EntryPoint.js',
-        {
-          customTransformOptions: {},
-          dev: true,
-          hot: true,
-          minify: false,
-          platform: 'ios',
-          type: 'module',
-          unstable_transformProfile: 'default',
-        },
-        {
-          shallow: false,
-          lazy: false,
-          unstable_allowRequireContext: false,
-          resolverOptions: {
-            dev: true,
-          },
-        },
-      ),
+    expect(
+      connect('/hot?bundleEntry=EntryPoint.js&platform=ios', undefined, {
+        baseUrl: '',
+      }),
+    ).rejects.toThrowError(
+      'Expecting the request url to have a valid protocol, e.g. "http://", "https://", or "//"',
     );
   });
 

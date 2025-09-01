@@ -70,16 +70,21 @@ export default function parseBundleOptionsFromBundleRequestUrl(
     hash,
   } = new URL(rawNonJscSafeUrlEncodedUrl, RESOLVE_BASE_URL /* baseURL */);
 
+  // e.g. "//localhost:8081/foo/bar.js?platform=ios"
   const isRelativeProtocol = rawNonJscSafeUrlEncodedUrl.startsWith('//');
+
+  // e.g. "/foo/bar.js?platform=ios"
   const isNoProtocol =
     !isRelativeProtocol && _tempProtocol + '//' === RESOLVE_BASE_URL;
 
-  // TODO: next diff (D79809398) will remove the support for "isNoProtocol" to make the requested URL more expected (either "//" or "http://")
-  const protocol = isNoProtocol // e.g. "./foo/bar.js" or "foo/bar.js" both converted to paths relative to root
-    ? ''
-    : isRelativeProtocol // e.g. "//localhost:8081/foo/bar.js?platform=ios"
-      ? '//'
-      : _tempProtocol + '//'; // e.g. "http://localhost:8081/foo/bar.js?platform=ios"
+  if (isNoProtocol) {
+    throw new Error(
+      'Expecting the request url to have a valid protocol, e.g. "http://", "https://", or "//"',
+      {cause: rawNonJscSafeUrlEncodedUrl},
+    );
+  }
+
+  const protocol = isRelativeProtocol ? '//' : _tempProtocol + '//';
 
   const sourceUrl = jscSafeUrl.toJscSafeUrl(
     protocol + host + requestPathname + search + hash,

@@ -49,10 +49,6 @@ type ClientGroup = {
   +graphOptions: GraphOptions,
 };
 
-// This is a bit weird but this is the recommended way of getting around "URL" demanding to have a valid protocol
-// for when handling relative URLs: https://nodejs.org/docs/latest-v24.x/api/url.html#urlresolvefrom-to
-const RESOLVE_BASE_URL = 'resolve://';
-
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
   sendFns.forEach((sendFn: string => void) => sendFn(strMessage));
@@ -157,7 +153,7 @@ export default class HmrServer<TClient: Client> {
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
-      const clientUrl = new URL(requestUrl, RESOLVE_BASE_URL);
+      const clientUrl = new URL(requestUrl);
 
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
