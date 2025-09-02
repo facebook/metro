@@ -168,7 +168,11 @@ export type SerializerOptions = $ReadOnly<{
   asyncRequireModulePath: string,
   createModuleId: string => number,
   dev: boolean,
-  getRunModuleStatement: (number | string) => string,
+  getRunModuleStatement: (
+    moduleId: number | string,
+    globalPrefix: string,
+  ) => string,
+  globalPrefix: string,
   includeAsyncPaths: boolean,
   inlineSourceMap: ?boolean,
   modulesOnly: boolean,

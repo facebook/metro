@@ -562,7 +562,7 @@ This option only has an effect under the default [`transformerPath`](#transforme
 
 #### `getRunModuleStatement`
 
-Type: `(number | string) => string`
+Type: `(moduleId: number | string, globalPrefix: string) => string`
 
 Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.
 

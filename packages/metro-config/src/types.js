@@ -134,7 +134,10 @@ type SerializerConfigT = {
   ) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
-  getRunModuleStatement: (number | string) => string,
+  getRunModuleStatement: (
+    moduleId: number | string,
+    globalPrefix: string,
+  ) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
   isThirdPartyModule: (module: $ReadOnly<{path: string, ...}>) => boolean,

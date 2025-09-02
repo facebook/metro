@@ -94,8 +94,10 @@ const nonAsciiModule: Module<> = {
   getSource: () => Buffer.from('bar-source'),
 };
 
-const getRunModuleStatement = (moduleId: number | string) =>
-  `require(${JSON.stringify(moduleId)});`;
+const getRunModuleStatement = jest.fn(
+  (moduleId: number | string, globalPrefix: string) =>
+    `require(${JSON.stringify(moduleId)});`,
+);
 
 const transformOptions: TransformInputOptions = {
   customTransformOptions: {},
@@ -106,6 +108,10 @@ const transformOptions: TransformInputOptions = {
   type: 'module',
   unstable_transformProfile: 'default',
 };
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 test('should generate a very simple bundle', () => {
   expect(
@@ -126,6 +132,7 @@ test('should generate a very simple bundle', () => {
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        globalPrefix: 'customPrefix',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: false,
@@ -157,6 +164,8 @@ test('should generate a very simple bundle', () => {
       "pre": "__d(function() {/* code for polyfill */});",
     }
   `);
+
+  expect(getRunModuleStatement).toHaveBeenCalledWith('foo', 'customPrefix');
 });
 
 test('should generate a bundle with correct non ascii characters parsing', () => {
@@ -177,6 +186,7 @@ test('should generate a bundle with correct non ascii characters parsing', () =>
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        globalPrefix: '',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: false,
@@ -235,6 +245,7 @@ test('should add runBeforeMainModule statements if found in the graph', () => {
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        globalPrefix: '',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: false,
@@ -274,6 +285,7 @@ test('should handle numeric module ids', () => {
         createModuleId: createModuleIdFactory(),
         dev: true,
         getRunModuleStatement,
+        globalPrefix: '',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: false,
@@ -322,6 +334,7 @@ test('outputs custom runModule statements', () => {
         dev: true,
         getRunModuleStatement: moduleId =>
           `export default require(${JSON.stringify(moduleId)}).default;`,
+        globalPrefix: '',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: false,
@@ -360,6 +373,7 @@ test('should add an inline source map to a very simple bundle', () => {
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
+      globalPrefix: '',
       includeAsyncPaths: false,
       inlineSourceMap: true,
       modulesOnly: false,
@@ -411,6 +425,7 @@ test('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
       createModuleId: filePath => path.basename(filePath),
       dev: true,
       getRunModuleStatement,
+      globalPrefix: '',
       includeAsyncPaths: false,
       inlineSourceMap: true,
       modulesOnly: false,
@@ -462,6 +477,7 @@ test('does not add polyfills when `modulesOnly` is used', () => {
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        globalPrefix: '',
         includeAsyncPaths: false,
         inlineSourceMap: false,
         modulesOnly: true,

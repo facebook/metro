@@ -148,7 +148,10 @@ export interface SerializerOptions<T = MixedOutput> {
   readonly asyncRequireModulePath: string;
   readonly createModuleId: (filePath: string) => number;
   readonly dev: boolean;
-  readonly getRunModuleStatement: (moduleId: string | number) => string;
+  readonly getRunModuleStatement: (
+    moduleId: number | string,
+    globalPrefix: string,
+  ) => string;
   readonly includeAsyncPaths: boolean;
   readonly inlineSourceMap?: boolean;
   readonly modulesOnly: boolean;
