@@ -21,7 +21,8 @@ import nullthrows from 'nullthrows';
 type Options<T: number | string> = $ReadOnly<{
   asyncRequireModulePath: string,
   createModuleId: string => T,
-  getRunModuleStatement: T => string,
+  getRunModuleStatement: (moduleId: T, globalPrefix: string) => string,
+  globalPrefix: string,
   inlineSourceMap: ?boolean,
   runBeforeMainModule: $ReadOnlyArray<string>,
   runModule: boolean,
@@ -46,6 +47,7 @@ export default function getAppendScripts<T: number | string>(
       if (modules.some((module: Module<>) => module.path === path)) {
         const code = options.getRunModuleStatement(
           options.createModuleId(path),
+          options.globalPrefix,
         );
         output.push({
           path: `require-${path}`,

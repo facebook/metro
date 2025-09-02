@@ -132,7 +132,10 @@ export interface SerializerConfigT {
   ) => unknown;
   getModulesRunBeforeMainModule: (entryFilePath: string) => string[];
   getPolyfills: (options: {platform: string | null}) => ReadonlyArray<string>;
-  getRunModuleStatement: (moduleId: number | string) => string;
+  getRunModuleStatement: (
+    moduleId: number | string,
+    globalPrefix: string,
+  ) => string;
   polyfillModuleNames: ReadonlyArray<string>;
   processModuleFilter: (modules: Module) => boolean;
   isThirdPartyModule: (module: {readonly path: string}) => boolean;
