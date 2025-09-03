@@ -130,18 +130,20 @@ export type OutputOptions = {
   ...
 };
 
-export type RequestOptions = {
-  entryFile: string,
-  inlineSourceMap?: boolean,
-  sourceMapUrl?: string,
-  dev?: boolean,
-  minify: boolean,
-  platform: string,
-  createModuleIdFactory?: () => (path: string) => number,
-  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
-  +customResolverOptions?: CustomResolverOptions,
-  +customTransformOptions?: CustomTransformOptions,
-  +unstable_transformProfile?: TransformProfile,
-};
+export type RequestOptions = $ReadOnly<
+  SafeOptionalProps<{
+    entryFile: string,
+    inlineSourceMap?: boolean,
+    sourceMapUrl?: string,
+    dev?: boolean,
+    minify: boolean,
+    platform: string,
+    createModuleIdFactory?: () => (path: string) => number,
+    onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+    customResolverOptions?: CustomResolverOptions,
+    customTransformOptions?: CustomTransformOptions,
+    unstable_transformProfile?: TransformProfile,
+  }>,
+>;
 
 export type {MinifierOptions};
