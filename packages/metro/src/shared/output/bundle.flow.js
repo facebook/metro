@@ -17,6 +17,8 @@ import relativizeSourceMapInline from '../../lib/relativizeSourceMap';
 import Server from '../../Server';
 import writeFile from './writeFile';
 
+const DEFAULTS = Server.DEFAULT_BUNDLE_OPTIONS;
+
 export function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
@@ -29,8 +31,22 @@ export function build(
 }> {
   return packagerClient.build(
     {
-      ...Server.DEFAULT_BUNDLE_OPTIONS,
+      ...DEFAULTS,
       ...requestOptions,
+      ...{
+        customResolverOptions:
+          requestOptions.customResolverOptions ??
+          DEFAULTS.customResolverOptions,
+        customTransformOptions:
+          requestOptions.customTransformOptions ??
+          DEFAULTS.customTransformOptions,
+        dev: requestOptions.dev ?? DEFAULTS.dev,
+        inlineSourceMap:
+          requestOptions.inlineSourceMap ?? DEFAULTS.inlineSourceMap,
+        unstable_transformProfile:
+          requestOptions.unstable_transformProfile ??
+          DEFAULTS.unstable_transformProfile,
+      },
     },
     buildOptions,
   );

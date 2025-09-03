@@ -51,6 +51,8 @@ import {Terminal} from 'metro-core';
 import net from 'net';
 import nullthrows from 'nullthrows';
 
+const DEFAULTS = MetroServer.DEFAULT_BUNDLE_OPTIONS;
+
 type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
   end: () => Promise<void>,
@@ -382,8 +384,8 @@ export const runBuild = async (
   config: ConfigT,
   {
     assets = false,
-    customResolverOptions,
-    customTransformOptions,
+    customResolverOptions = DEFAULTS.customResolverOptions,
+    customTransformOptions = DEFAULTS.customTransformOptions,
     dev = false,
     entry,
     onBegin,
@@ -397,7 +399,7 @@ export const runBuild = async (
     platform = 'web',
     sourceMap = false,
     sourceMapUrl,
-    unstable_transformProfile,
+    unstable_transformProfile = DEFAULTS.unstable_transformProfile,
   }: RunBuildOptions,
 ): Promise<RunBuildResult> => {
   const metroServer = await runMetro(config, {
@@ -405,13 +407,13 @@ export const runBuild = async (
   });
 
   try {
-    const requestOptions: RequestOptions = {
+    const requestOptions = {
       dev,
       entryFile: entry,
       inlineSourceMap: sourceMap && !sourceMapUrl,
       minify,
       platform,
-      sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
+      ...(sourceMap === false ? {} : {sourceMapUrl}),
       createModuleIdFactory: config.serializer.createModuleIdFactory,
       onProgress,
       customResolverOptions,
