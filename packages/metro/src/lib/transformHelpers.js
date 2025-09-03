@@ -54,7 +54,6 @@ async function calcTransformerOptions(
   const baseOptions = {
     customTransformOptions: options.customTransformOptions,
     dev: options.dev,
-    hot: options.hot,
     inlineRequires: false,
     inlinePlatform: true,
     minify: options.minify,
@@ -105,7 +104,7 @@ async function calcTransformerOptions(
 
   const {transform} = await config.transformer.getTransformOptions(
     entryFiles,
-    {dev: options.dev, hot: options.hot, platform: options.platform},
+    {dev: options.dev, hot: true, platform: options.platform},
     getDependencies,
   );
 

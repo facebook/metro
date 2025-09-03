@@ -416,7 +416,6 @@ beforeEach(async () => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer.
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',

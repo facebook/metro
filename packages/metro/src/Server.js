@@ -1542,14 +1542,12 @@ export default class Server {
     customResolverOptions: CustomResolverOptions,
     customTransformOptions: CustomTransformOptions,
     dev: boolean,
-    hot: boolean,
     minify: boolean,
     unstable_transformProfile: 'default',
   }> = {
     customResolverOptions: Object.create(null),
     customTransformOptions: Object.create(null),
     dev: true,
-    hot: false,
     minify: false,
     unstable_transformProfile: 'default',
   };

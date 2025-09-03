@@ -26,7 +26,6 @@ export default function splitBundleOptions(
     transformOptions: {
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
-      hot: options.hot,
       minify: options.minify,
       platform: options.platform,
       type: 'module',

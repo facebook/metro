@@ -31,7 +31,6 @@ export interface BundleOptions {
   dev: boolean;
   entryFile: string;
   readonly excludeSource: boolean;
-  readonly hot: boolean;
   readonly inlineSourceMap: boolean;
   readonly lazy: boolean;
   minify: boolean;

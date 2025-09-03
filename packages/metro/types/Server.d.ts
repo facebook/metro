@@ -71,7 +71,6 @@ export interface DefaultGraphOptions {
   customResolverOptions: CustomResolverOptions;
   customTransformOptions: CustomTransformOptions;
   dev: boolean;
-  hot: boolean;
   minify: boolean;
   runtimeBytecodeVersion?: number;
   unstable_transformProfile: TransformProfile;

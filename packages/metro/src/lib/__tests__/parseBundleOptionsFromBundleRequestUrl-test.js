@@ -101,15 +101,6 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
     },
   );
 
-  test('always sets the `hot` option to `true`', () => {
-    expect(
-      parseBundleOptionsFromBundleRequestUrl(
-        'http://localhost/my/bundle.bundle',
-        new Set([]),
-      ),
-    ).toMatchObject({hot: true});
-  });
-
   describe.each([
     ['dev', true],
     ['minify', false],

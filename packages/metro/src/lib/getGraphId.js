@@ -39,7 +39,6 @@ export default function getGraphId(
         customTransformOptions: options.customTransformOptions ?? null,
         dev: options.dev,
         experimentalImportSupport: options.experimentalImportSupport || false,
-        hot: options.hot,
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,

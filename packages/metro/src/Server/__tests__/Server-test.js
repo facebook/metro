@@ -678,7 +678,6 @@ describe('processRequest', () => {
       transformOptions: {
         customTransformOptions: {},
         dev: true,
-        hot: true,
         minify: false,
         platform: 'ios',
         type: 'module',
@@ -740,7 +739,6 @@ describe('processRequest', () => {
       transformOptions: {
         customTransformOptions: {},
         dev: true,
-        hot: true,
         minify: false,
         platform: null,
         type: 'module',
@@ -951,7 +949,6 @@ describe('processRequest', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: false,
           minify: false,
           platform: undefined,
           type: 'module',
@@ -970,7 +967,6 @@ describe('processRequest', () => {
         transformOptions: {
           customTransformOptions: {},
           dev: true,
-          hot: false,
           minify: false,
           platform: undefined,
           type: 'module',

@@ -44,7 +44,6 @@ describe('DeltaBundler', () => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer (via DeltaCalculator).
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',

@@ -41,7 +41,6 @@ export type BundleOptions = {
   dev: boolean,
   entryFile: string,
   +excludeSource: boolean,
-  +hot: boolean,
   +inlineSourceMap: boolean,
   +lazy: boolean,
   minify: boolean,

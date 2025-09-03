@@ -52,7 +52,6 @@ describe('DeltaCalculator + require.context', () => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer (via traverseDependencies).
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',

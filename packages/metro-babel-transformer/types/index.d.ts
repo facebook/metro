@@ -22,7 +22,6 @@ export interface BabelTransformerOptions {
   readonly extendsBabelConfigPath?: string;
   readonly experimentalImportSupport?: boolean;
   readonly hermesParser?: boolean;
-  readonly hot: boolean;
   readonly minify: boolean;
   readonly unstable_disableES6Transforms?: boolean;
   readonly platform: string | null;

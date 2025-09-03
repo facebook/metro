@@ -18,7 +18,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -38,7 +37,6 @@ describe('getGraphId', () => {
         '/root/notmuch',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -62,7 +60,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -82,7 +79,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: false,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -106,7 +102,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -127,7 +122,6 @@ describe('getGraphId', () => {
         {
           type: 'module',
           platform: 'web',
-          hot: true,
           dev: true,
           minify: true,
           unstable_transformProfile: 'default',
@@ -154,7 +148,6 @@ describe('getGraphId', () => {
             b: false,
           },
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -178,7 +171,6 @@ describe('getGraphId', () => {
             a: true,
           },
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -200,7 +192,6 @@ describe('getGraphId', () => {
     const transformOptions = {
       customTransformOptions: {},
       dev: true,
-      hot: true,
       minify: true,
       type: 'module',
       platform: 'web',
@@ -237,7 +228,6 @@ describe('getGraphId', () => {
     const transformOptions = {
       customTransformOptions: {},
       dev: true,
-      hot: true,
       minify: true,
       type: 'module',
       platform: 'web',
@@ -280,7 +270,6 @@ describe('getGraphId', () => {
           customTransformOptions: undefined,
           experimentalImportSupport: false,
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: null,
@@ -301,7 +290,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: undefined,
