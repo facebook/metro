@@ -171,7 +171,6 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
         healthCheck: {
           // $FlowFixMe[exponential-spread]
           ...totalConfig.watcher?.healthCheck,
-          // $FlowFixMe: Spreading shapes creates an explosion of union types
           ...nextConfig.watcher?.healthCheck,
         },
         unstable_autoSaveCache: {
