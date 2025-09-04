@@ -16,10 +16,6 @@ experimental.pattern_matching=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
 
-experimental.only_support_flow_fixme_and_expected_error=true
-experimental.require_suppression_with_error_code=true
-experimental.invariant_subtyping_error_message_improvement=true
-
 [lints]
 sketchy-null-number=warn
 sketchy-null-mixed=warn
@@ -41,4 +37,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.280.0
+^0.281.0
