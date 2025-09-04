@@ -13,6 +13,7 @@ import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
+import {normalizePathSeparatorsToPosix} from '../lib/pathUtils';
 import getTransformCacheKey from './getTransformCacheKey';
 import WorkerFarm from './WorkerFarm';
 import assert from 'assert';
@@ -118,8 +119,7 @@ export default class Transformer {
       // Project-relative, posix-separated path for portability. Necessary in
       // addition to content hash because transformers receive path as an
       // input, and may apply e.g. extension-based logic.
-      path.sep === '/' ? localPath : localPath.replaceAll(path.sep, '/'),
-
+      normalizePathSeparatorsToPosix(localPath),
       customTransformOptions,
       dev,
       experimentalImportSupport,

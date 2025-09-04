@@ -11,6 +11,7 @@
 
 import type {AssetPath} from './node-haste/lib/AssetPaths';
 
+import {normalizePathSeparatorsToPosix} from './lib/pathUtils';
 import * as AssetPaths from './node-haste/lib/AssetPaths';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -211,9 +212,7 @@ export async function getAssetData(
     : path.join(publicPath, path.dirname(localPath));
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
-  if (path.sep === '\\') {
-    assetUrlPath = assetUrlPath.replaceAll('\\', '/');
-  }
+  assetUrlPath = normalizePathSeparatorsToPosix(assetUrlPath);
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
   const assetInfo = await getAbsoluteAssetInfo(assetPath, platform);
