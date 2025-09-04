@@ -73,7 +73,6 @@ const baseConfig: JsTransformerConfig = {
 
 const baseTransformOptions: JsTransformOptions = {
   dev: true,
-  hot: false,
   inlinePlatform: false,
   inlineRequires: false,
   minify: false,

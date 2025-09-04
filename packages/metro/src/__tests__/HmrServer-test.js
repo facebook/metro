@@ -208,7 +208,6 @@ describe('HmrServer', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: true,
           minify: false,
           platform: 'ios',
           type: 'module',
@@ -247,7 +246,6 @@ describe('HmrServer', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: true,
           minify: false,
           platform: 'ios',
           type: 'module',
@@ -276,7 +274,6 @@ describe('HmrServer', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: true,
           minify: false,
           platform: 'ios',
           type: 'module',
@@ -305,7 +302,6 @@ describe('HmrServer', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: true,
           minify: false,
           platform: 'ios',
           type: 'module',
@@ -334,7 +330,6 @@ describe('HmrServer', () => {
       {
         customTransformOptions: {},
         dev: true,
-        hot: true,
         minify: false,
         platform: 'ios',
         type: 'module',

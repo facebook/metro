@@ -30,7 +30,6 @@ type BabelTransformerOptions = $ReadOnly<{
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
-  hot: boolean,
   minify: boolean,
   unstable_disableES6Transforms?: boolean,
   platform: ?string,

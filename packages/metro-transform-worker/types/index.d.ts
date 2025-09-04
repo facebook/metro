@@ -78,7 +78,6 @@ export type JsTransformOptions = Readonly<{
   customTransformOptions?: CustomTransformOptions;
   dev: boolean;
   experimentalImportSupport?: boolean;
-  hot: boolean;
   inlinePlatform: boolean;
   inlineRequires: boolean;
   minify: boolean;

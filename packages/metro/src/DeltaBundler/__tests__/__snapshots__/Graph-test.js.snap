@@ -121,7 +121,6 @@ TestGraph {
   },
   "transformOptions": Object {
     "dev": false,
-    "hot": false,
     "minify": false,
     "platform": null,
     "type": "module",
@@ -169,7 +168,6 @@ TestGraph {
   },
   "transformOptions": Object {
     "dev": false,
-    "hot": false,
     "minify": false,
     "platform": null,
     "type": "module",

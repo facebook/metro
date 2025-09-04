@@ -52,7 +52,6 @@ function createModule(
 const transformOptions: TransformInputOptions = {
   customTransformOptions: {},
   dev: true,
-  hot: true,
   minify: true,
   platform: 'web',
   type: 'module',
