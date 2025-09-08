@@ -23,7 +23,7 @@ test('TypeScript defs are in sync (yarn run build-ts-defs produces no changes)',
   }
   // If this is the usual type of error (issues with specific source files),
   // have Jest print the errors array so logs are a bit more helpful.
-  // **If this fails, run `yarn run build-ts-defs` in Metro's root**
+  // **If this fails, run `js1 build metro-ts-defs` (FB) / `yarn run build-ts-defs` (OSS)**
   if (error instanceof AggregateError) {
     expect(error.errors).toEqual([]);
   }
