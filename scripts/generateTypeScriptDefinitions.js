@@ -57,6 +57,7 @@ export async function generateTsDefsForJsGlobs(
 
   const globPatterns = Array.isArray(globPattern) ? globPattern : [globPattern];
 
+  const existingDefs = new Set<string>();
   const filesToProcess: Array<[jsFile: string, flowSourceFile: string]> =
     Array.from(
       globPatterns
@@ -66,20 +67,19 @@ export async function generateTsDefsForJsGlobs(
             cwd: WORKSPACE_ROOT,
           }),
         )
-        .reduce((toProcess, flowOrJsFile) => {
-          if (flowOrJsFile.endsWith('.flow.js')) {
+        .reduce((toProcess, filePath) => {
+          if (filePath.endsWith('.flow.js')) {
             // For .flow.js files, record the `.flow.js` as the source for the
             // corresponding `.js` file, which is enforced to be a transparent
             // entry file that only registers Babel and re-exports the module.
-            toProcess.set(
-              flowOrJsFile.replace(/\.flow\.js$/, '.js'),
-              flowOrJsFile,
-            );
+            toProcess.set(filePath.replace(/\.flow\.js$/, '.js'), filePath);
+          } else if (filePath.endsWith('.js') && !toProcess.has(filePath)) {
+            toProcess.set(filePath, filePath);
           } else if (
-            flowOrJsFile.endsWith('.js') &&
-            !toProcess.has(flowOrJsFile)
+            filePath.endsWith('.d.ts') &&
+            filePath.split(path.sep)[2] === TYPES_DIR
           ) {
-            toProcess.set(flowOrJsFile, flowOrJsFile);
+            existingDefs.add(path.resolve(WORKSPACE_ROOT, filePath));
           }
           return toProcess;
         }, new Map<string, string>())
@@ -127,6 +127,8 @@ export async function generateTsDefsForJsGlobs(
             prettierConfig,
           );
 
+          existingDefs.delete(absoluteTsFile);
+
           if (opts.verifyOnly) {
             let existingFile = null;
             try {
@@ -155,6 +157,23 @@ export async function generateTsDefsForJsGlobs(
       }
     }),
   );
+
+  if (existingDefs.size > 0) {
+    const orphanedDefs = Array.from(existingDefs);
+    if (opts.verifyOnly) {
+      orphanedDefs.forEach(sourceFile => {
+        errors.push({
+          error: new Error('.d.ts appears to be orphaned'),
+          sourceFile,
+        });
+      });
+    } else {
+      // Delete .d.ts files under a generated location that were not generated.
+      await Promise.all(
+        orphanedDefs.map(sourceFile => fs.promises.unlink(sourceFile)),
+      );
+    }
+  }
 
   if (errors.length > 0) {
     errors.sort((a, b) => a.sourceFile.localeCompare(b.sourceFile));
