@@ -9,15 +9,15 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {MixedOutput, Module} from '../../types.flow';
+import type {MixedOutput, Module} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
-const invariant = require('invariant');
-const jscSafeUrl = require('jsc-safe-url');
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const path = require('path');
+import {isResolvedDependency} from '../../../lib/isResolvedDependency';
+import {normalizePathSeparatorsToPosix} from '../../../lib/pathUtils';
+import invariant from 'invariant';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {addParamsToDefineCall} from 'metro-transform-plugins';
+import path from 'path';
 
 export type Options = $ReadOnly<{
   createModuleId: string => number | string,
@@ -29,7 +29,7 @@ export type Options = $ReadOnly<{
   ...
 }>;
 
-function wrapModule(module: Module<>, options: Options): string {
+export function wrapModule(module: Module<>, options: Options): string {
   const output = getJsOutput(module);
 
   if (output.type.startsWith('js/script')) {
@@ -40,13 +40,21 @@ function wrapModule(module: Module<>, options: Options): string {
   return addParamsToDefineCall(output.data.code, ...params);
 }
 
-function getModuleParams(module: Module<>, options: Options): Array<mixed> {
+export function getModuleParams(
+  module: Module<>,
+  options: Options,
+): Array<mixed> {
   const moduleId = options.createModuleId(module.path);
 
   const paths: {[moduleID: number | string]: mixed} = {};
   let hasPaths = false;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {
+      if (!isResolvedDependency(dependency)) {
+        // An unresolved dependency, which should cause a runtime error
+        // when required.
+        return null;
+      }
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;
@@ -73,6 +81,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
         paths[id] =
           '/' +
           path.join(
+            // TODO: This is not the proper Metro URL encoding of a file path
             path.dirname(bundlePath),
             // Strip the file extension
             path.basename(bundlePath, path.extname(bundlePath)),
@@ -88,7 +97,7 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
     moduleId,
     hasPaths
       ? {
-          // $FlowIgnore[not-an-object] Intentionally spreading an array into an object
+          // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
           ...dependencyMapArray,
           paths,
         }
@@ -98,13 +107,17 @@ function getModuleParams(module: Module<>, options: Options): Array<mixed> {
   if (options.dev) {
     // Add the relative path of the module to make debugging easier.
     // This is mapped to `module.verboseName` in `require.js`.
-    params.push(path.relative(options.projectRoot, module.path));
+    params.push(
+      normalizePathSeparatorsToPosix(
+        path.relative(options.projectRoot, module.path),
+      ),
+    );
   }
 
   return params;
 }
 
-function getJsOutput(
+export function getJsOutput(
   module: $ReadOnly<{
     output: $ReadOnlyArray<MixedOutput>,
     path?: string,
@@ -132,17 +145,10 @@ function getJsOutput(
   return jsOutput;
 }
 
-function isJsModule(module: Module<>): boolean {
+export function isJsModule(module: Module<>): boolean {
   return module.output.filter(isJsOutput).length > 0;
 }
 
 function isJsOutput(output: MixedOutput): boolean {
   return output.type.startsWith('js/');
 }
-
-module.exports = {
-  getJsOutput,
-  getModuleParams,
-  isJsModule,
-  wrapModule,
-};

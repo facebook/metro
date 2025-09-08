@@ -29,6 +29,7 @@ import {createHash} from 'crypto';
 import watchman from 'fb-watchman';
 import invariant from 'invariant';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:WatchmanWatcher');
 
 const DELETE_EVENT = common.DELETE_EVENT;
@@ -274,7 +275,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
 
     const clock =
       typeof rawClock === 'string' && this.watchProjectInfo != null
-        ? [this.watchProjectInfo.root, rawClock]
+        ? ([this.watchProjectInfo.root, rawClock]: [string, string])
         : undefined;
 
     if (!exists) {

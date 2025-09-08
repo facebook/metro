@@ -9,13 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {BundleOptions} from 'metro/private/shared/types';
 
-import type {BundleOptions} from 'metro/src/shared/types.flow';
+import EventEmitter from 'events';
+import os from 'os';
 
+// eslint-disable-next-line import/no-commonjs
 const VERSION = require('../package.json').version;
-const {EventEmitter} = require('events');
-const os = require('os');
 
 export type ActionLogEntryData = {
   action_name: string,
@@ -113,10 +113,4 @@ function log(logEntry: LogEntry): LogEntry {
   return logEntry;
 }
 
-module.exports = {
-  on,
-  createEntry,
-  createActionStartEntry,
-  createActionEndEntry,
-  log,
-};
+export {on, createEntry, createActionStartEntry, createActionEndEntry, log};

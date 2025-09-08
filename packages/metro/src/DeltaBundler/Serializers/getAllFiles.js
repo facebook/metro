@@ -9,19 +9,17 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {Module, ReadOnlyGraph} from '../types';
 
-import type {Module, ReadOnlyGraph} from '../types.flow';
-
-const {getAssetFiles} = require('../../Assets');
-const {getJsOutput, isJsModule} = require('./helpers/js');
+import {getAssetFiles} from '../../Assets';
+import {getJsOutput, isJsModule} from './helpers/js';
 
 type Options = {
   platform: ?string,
   +processModuleFilter: (module: Module<>) => boolean,
 };
 
-async function getAllFiles(
+export default async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: Options,
@@ -58,5 +56,3 @@ async function getAllFiles(
 
   return output;
 }
-
-module.exports = getAllFiles;

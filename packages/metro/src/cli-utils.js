@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
+import fs from 'fs';
 
-const fs = require('fs');
-
-exports.watchFile = async function (
+export const watchFile = async function (
   filename: string,
   callback: () => any,
 ): Promise<void> {
@@ -24,7 +22,7 @@ exports.watchFile = async function (
   await callback();
 };
 
-exports.makeAsyncCommand =
+export const makeAsyncCommand =
   <T>(command: (argv: T) => Promise<void>): ((argv: T) => void) =>
   (argv: T) => {
     Promise.resolve(command(argv)).catch(error => {

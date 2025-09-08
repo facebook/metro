@@ -8,26 +8,21 @@
  * @flow
  */
 
-'use strict';
-
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
-} from 'metro/src/DeltaBundler/types.flow.js';
+} from 'metro/private/DeltaBundler/types';
 
-import {isProgram} from '@babel/types';
-
-const generate = require('@babel/generator').default;
-const template = require('@babel/template').default;
-const traverse = require('@babel/traverse').default;
-const types = require('@babel/types');
-const crypto = require('crypto');
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-
-const {isImport} = types;
+import generate from '@babel/generator';
+import template from '@babel/template';
+import traverse from '@babel/traverse';
+import * as types from '@babel/types';
+import {isImport, isProgram} from '@babel/types';
+import crypto from 'crypto';
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
@@ -147,7 +142,7 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  *
  * The second argument is only provided for debugging purposes.
  */
-function collectDependencies(
+export default function collectDependencies(
   ast: BabelNodeFile,
   options: Options,
 ): CollectedDependencies {
@@ -572,7 +567,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
   while (
     current &&
     !current.node.loc &&
-    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    // $FlowFixMe[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
     !current.node.METRO_INLINE_REQUIRES_INIT_LOC
   ) {
     current = current.parentPath;
@@ -582,7 +577,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
     current = null;
   }
   return (
-    // $FlowIgnore[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
+    // $FlowFixMe[prop-missing] METRO_INLINE_REQUIRES_INIT_LOC is Metro-specific and not typed
     current?.node.METRO_INLINE_REQUIRES_INIT_LOC ?? current?.node.loc
   );
 }
@@ -766,7 +761,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },
@@ -789,7 +784,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },
@@ -812,7 +807,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
         ? {MODULE_NAME: createModuleNameLiteral(dependency)}
         : null),
     };
-    /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
      * https://fburl.com/gdoc/y8dn025u */
     path.replaceWith(makeNode(opts));
   },
@@ -932,5 +927,3 @@ class DependencyRegistry {
     return Array.from(this._dependencies.values());
   }
 }
-
-module.exports = collectDependencies;

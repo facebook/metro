@@ -16,6 +16,7 @@ import {promises as fsPromises, watch} from 'fs';
 import {platform} from 'os';
 import * as path from 'path';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:NativeWatcher');
 
 const TOUCH_EVENT = 'touch';

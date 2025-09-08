@@ -9,17 +9,15 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {Module} from '../../types.flow';
+import type {Module} from '../../types';
 import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-const {getJsOutput} = require('./js');
+import {getJsOutput} from './js';
 
-function getSourceMapInfo(
+export default function getSourceMapInfo(
   module: Module<>,
   options: {
     +excludeSource: boolean,
@@ -50,5 +48,3 @@ function getModuleSource(module: Module<>): string {
 
   return module.getSource().toString();
 }
-
-module.exports = getSourceMapInfo;

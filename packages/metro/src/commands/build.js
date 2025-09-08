@@ -15,12 +15,11 @@ import type {CustomResolverOptions} from 'metro-resolver';
 import type {ModuleObject} from 'yargs';
 import typeof Yargs from 'yargs';
 
+import {makeAsyncCommand} from '../cli-utils';
 import parseKeyValueParamArray from '../cli/parseKeyValueParamArray';
-
-const {makeAsyncCommand} = require('../cli-utils');
-const TerminalReporter = require('../lib/TerminalReporter');
-const {loadConfig} = require('metro-config');
-const {Terminal} = require('metro-core');
+import TerminalReporter from '../lib/TerminalReporter';
+import {loadConfig} from 'metro-config';
+import {Terminal} from 'metro-core';
 
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
@@ -43,7 +42,7 @@ type Args = $ReadOnly<{
   resolverOption: CustomResolverOptions,
 }>;
 
-module.exports = (): {
+export default (): {
   ...ModuleObject,
   handler: Function,
 } => ({
@@ -109,6 +108,7 @@ module.exports = (): {
     };
 
     // Inline require() to avoid circular dependency with ../index
+    // eslint-disable-next-line import/no-commonjs
     const MetroApi = require('../index');
 
     await MetroApi.runBuild(config, {

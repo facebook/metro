@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {IndexMap} from '../source-map';
 import type {
   GeneratedOffset,
@@ -18,20 +16,23 @@ import type {
   IConsumer,
   Mapping,
   SourcePosition,
-} from './types.flow';
+} from './types';
 
-const AbstractConsumer = require('./AbstractConsumer');
-const {EMPTY_POSITION, FIRST_COLUMN, FIRST_LINE} = require('./constants');
-const createConsumer = require('./createConsumer');
-const {subtractOffsetFromPosition} = require('./positionMath');
-const {greatestLowerBound} = require('./search');
-const {add, add0, get0, get1, sub, sub1} = require('ob1');
+import AbstractConsumer from './AbstractConsumer';
+import {EMPTY_POSITION, FIRST_COLUMN, FIRST_LINE} from './constants';
+import createConsumer from './createConsumer';
+import {subtractOffsetFromPosition} from './positionMath';
+import {greatestLowerBound} from './search';
+import {add, add0, get0, get1, sub, sub1} from 'ob1';
 
 /**
  * A source map consumer that supports "indexed" source maps (that have a
  * `sections` field and no top-level mappings).
  */
-class SectionsConsumer extends AbstractConsumer implements IConsumer {
+export default class SectionsConsumer
+  extends AbstractConsumer
+  implements IConsumer
+{
   _consumers: $ReadOnlyArray<[GeneratedOffset, IConsumer]>;
 
   constructor(sourceMap: IndexMap) {
@@ -121,5 +122,3 @@ class SectionsConsumer extends AbstractConsumer implements IConsumer {
     return null;
   }
 }
-
-module.exports = SectionsConsumer;

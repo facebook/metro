@@ -9,17 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {DeltaResult, Options} from './types.flow';
+import type {DeltaResult, Options} from './types';
 import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
+import EventEmitter from 'events';
 import path from 'path';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:DeltaCalculator');
-const {EventEmitter} = require('events');
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -27,7 +26,7 @@ const {EventEmitter} = require('events');
  * traverse the files that have been changed between calls and avoid having to
  * traverse the whole dependency tree for trivial small changes.
  */
-class DeltaCalculator<T> extends EventEmitter {
+export default class DeltaCalculator<T> extends EventEmitter {
   _changeEventSource: EventEmitter;
   _options: Options<T>;
 
@@ -324,5 +323,3 @@ class DeltaCalculator<T> extends EventEmitter {
     };
   }
 }
-
-module.exports = DeltaCalculator;

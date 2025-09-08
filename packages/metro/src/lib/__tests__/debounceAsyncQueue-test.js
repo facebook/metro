@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const debounceAsyncQueue = require('../debounceAsyncQueue');
+import debounceAsyncQueue from '../debounceAsyncQueue';
 
 describe('debounceAsyncQueue', () => {
   test('debounces calls', async () => {
@@ -58,11 +56,11 @@ describe('debounceAsyncQueue', () => {
     await Promise.resolve();
     const pro2 = debounced();
     const pro3 = debounced();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     finishExecuting('foo');
     jest.runAllTimers();
     await Promise.resolve();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     finishExecuting('bar');
     expect(await pro1).toBe('foo');
     expect(await pro2).toBe('bar');

@@ -8,35 +8,32 @@
  * @flow
  */
 
-'use strict';
-
 import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
-import type {GraphOptions} from './shared/types.flow';
+import type {GraphOptions} from './shared/types';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   HmrClientMessage,
   HmrErrorMessage,
   HmrMessage,
   HmrUpdateMessage,
-} from 'metro-runtime/src/modules/types.flow';
-import type {UrlWithParsedQuery} from 'url';
+} from 'metro-runtime/src/modules/types';
 
-const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
-const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
-const formatBundlingError = require('./lib/formatBundlingError');
-const getGraphId = require('./lib/getGraphId');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const transformHelpers = require('./lib/transformHelpers');
-const {
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-const nullthrows = require('nullthrows');
-const url = require('url');
+import hmrJSBundle from './DeltaBundler/Serializers/hmrJSBundle';
+import GraphNotFoundError from './IncrementalBundler/GraphNotFoundError';
+import RevisionNotFoundError from './IncrementalBundler/RevisionNotFoundError';
+import debounceAsyncQueue from './lib/debounceAsyncQueue';
+import formatBundlingError from './lib/formatBundlingError';
+import getGraphId from './lib/getGraphId';
+import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
+import splitBundleOptions from './lib/splitBundleOptions';
+import * as transformHelpers from './lib/transformHelpers';
+import {Logger} from 'metro-core';
+import nullthrows from 'nullthrows';
 
-export type EntryPointURL = UrlWithParsedQuery;
+// eslint-disable-next-line import/no-commonjs
+const debug = require('debug')('Metro:HMR');
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 export type Client = {
   optedIntoHMR: boolean,
@@ -46,7 +43,7 @@ export type Client = {
 
 type ClientGroup = {
   +clients: Set<Client>,
-  clientUrl: EntryPointURL,
+  clientUrl: URL,
   revisionId: RevisionId,
   +unlisten: () => void,
   +graphOptions: GraphOptions,
@@ -66,7 +63,7 @@ function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
  * getting connected, disconnected or having errors (through the
  * `onClientConnect`, `onClientDisconnect` and `onClientError` methods).
  */
-class HmrServer<TClient: Client> {
+export default class HmrServer<TClient: Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;
@@ -99,12 +96,15 @@ class HmrServer<TClient: Client> {
     requestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<void> {
+    debug('Registering entry point: %s', requestUrl);
     requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
-    const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const {bundleType: _bundleType, ...options} = parseOptionsFromUrl(
-      requestUrl,
-      new Set(this._config.resolver.platforms),
-    );
+    debug('Rewritten as: %s', requestUrl);
+
+    const {bundleType: _bundleType, ...options} =
+      parseBundleOptionsFromBundleRequestUrl(
+        requestUrl,
+        new Set(this._config.resolver.platforms),
+      );
     const {entryFile, resolverOptions, transformOptions, graphOptions} =
       splitBundleOptions(options);
 
@@ -153,31 +153,22 @@ class HmrServer<TClient: Client> {
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
+      const clientUrl = new URL(requestUrl);
+
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {
-        dev,
-        minify,
-        runModule,
-        bundleEntry: _bundleEntry,
-        ...query
-      } = clientUrl.query || {};
-      clientUrl.query = {
-        ...query,
-        dev: dev || 'true',
-        minify: minify || 'false',
-        modulesOnly: 'true',
-        runModule: runModule || 'false',
-        shallow: 'true',
-      };
-      // the legacy url object is parsed with both "search" and "query" fields.
-      // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
-      // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
-      clientUrl.search = '';
+
+      const clientQuery = clientUrl.searchParams;
+      clientQuery.delete('bundleEntry');
+      clientQuery.set('dev', clientQuery.get('dev') || 'true');
+      clientQuery.set('minify', clientQuery.get('minify') || 'false');
+      clientQuery.set('modulesOnly', 'true');
+      clientQuery.set('runModule', clientQuery.get('runModule') || 'false');
+      clientQuery.set('shallow', 'true');
 
       clientGroup = {
         clients: new Set([client]),
-        clientUrl,
+        clientUrl: new URL(clientUrl),
         revisionId: id,
         graphOptions,
         unlisten: (): void => unlisten(),
@@ -369,7 +360,7 @@ class HmrServer<TClient: Client> {
       logger?.point('serialize_start');
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
-        clientUrl: group.clientUrl,
+        clientUrl: new URL(group.clientUrl),
         createModuleId: this._createModuleId,
         includeAsyncPaths: group.graphOptions.lazy,
         projectRoot: this._config.projectRoot,
@@ -396,5 +387,3 @@ class HmrServer<TClient: Client> {
     }
   }
 }
-
-module.exports = HmrServer;

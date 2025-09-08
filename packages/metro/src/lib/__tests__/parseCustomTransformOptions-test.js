@@ -9,16 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const parseCustomTransformOptions = require('../parseCustomTransformOptions');
-const url = require('url');
+import parseCustomTransformOptions from '../parseCustomTransformOptions';
 
 test('should parse some custom options from a http url', () => {
   const myUrl =
     'http://localhost/my/bundle.bundle?dev=true&transform.foo=value&transform.bar=other';
 
-  expect(parseCustomTransformOptions(url.parse(myUrl, true))).toEqual({
+  expect(parseCustomTransformOptions(new URL(myUrl).searchParams)).toEqual({
     foo: 'value',
     bar: 'other',
   });
@@ -27,7 +24,7 @@ test('should parse some custom options from a http url', () => {
 test('should parse some custom options from a websocket url', () => {
   const myUrl = 'ws://localhost/hot?transform.foo=value&transform.bar=other';
 
-  expect(parseCustomTransformOptions(url.parse(myUrl, true))).toEqual({
+  expect(parseCustomTransformOptions(new URL(myUrl).searchParams)).toEqual({
     foo: 'value',
     bar: 'other',
   });
@@ -36,5 +33,5 @@ test('should parse some custom options from a websocket url', () => {
 test('should return an empty object if there are no custom params', () => {
   const myUrl = 'http://localhost/my/bundle.bundle?dev=true';
 
-  expect(parseCustomTransformOptions(url.parse(myUrl, true))).toEqual({});
+  expect(parseCustomTransformOptions(new URL(myUrl).searchParams)).toEqual({});
 });

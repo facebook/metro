@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {ModuleObject} from 'yargs';
 import typeof Yargs from 'yargs';
 
-const {makeAsyncCommand, watchFile} = require('../cli-utils');
-const {loadConfig, resolveConfig} = require('metro-config');
-const {promisify} = require('util');
+import {makeAsyncCommand, watchFile} from '../cli-utils';
+import {loadConfig, resolveConfig} from 'metro-config';
+import {promisify} from 'util';
 
 type Args = $ReadOnly<{
   projectRoots?: $ReadOnlyArray<string>,
@@ -32,7 +30,7 @@ type Args = $ReadOnly<{
   resetCache?: boolean,
 }>;
 
-module.exports = (): {
+export default (): {
   ...ModuleObject,
   handler: Function,
 } => ({
@@ -96,6 +94,7 @@ module.exports = (): {
       const config = await loadConfig(argv);
 
       // Inline require() to avoid circular dependency with ../index
+      // eslint-disable-next-line import/no-commonjs
       const MetroApi = require('../index');
 
       const {
@@ -107,7 +106,10 @@ module.exports = (): {
         resetCache: _resetCache,
         ...runServerOptions
       } = argv;
-      server = await MetroApi.runServer(config, runServerOptions);
+      ({httpServer: server} = await MetroApi.runServer(
+        config,
+        runServerOptions,
+      ));
 
       restarting = false;
     }

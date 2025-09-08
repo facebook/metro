@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
 
-const {Worker: JestWorker} = require('jest-worker');
-const {Logger} = require('metro-core');
+import {Worker as JestWorker} from 'jest-worker';
+import {Logger} from 'metro-core';
 
 type WorkerInterface = {
   getStdout(): Readable,
@@ -31,7 +29,7 @@ type TransformerResult = $ReadOnly<{
   sha1: string,
 }>;
 
-class WorkerFarm {
+export default class WorkerFarm {
   _config: ConfigT;
   _transformerConfig: TransformerConfig;
   _worker: WorkerInterface | Worker;
@@ -39,7 +37,7 @@ class WorkerFarm {
   constructor(config: ConfigT, transformerConfig: TransformerConfig) {
     this._config = config;
     this._transformerConfig = transformerConfig;
-    const absoluteWorkerPath = require.resolve(config.transformer.workerPath);
+    const absoluteWorkerPath = require.resolve('./Worker.js');
 
     if (this._config.maxWorkers > 1) {
       const worker = this._makeFarm(
@@ -63,11 +61,8 @@ class WorkerFarm {
 
       this._worker = worker;
     } else {
-      // eslint-disable-next-line no-useless-call
-      this._worker = (require.call(
-        null,
-        this._config.transformer.workerPath,
-      ): Worker);
+      // eslint-disable-next-line import/no-commonjs
+      this._worker = (require('./Worker'): Worker);
     }
   }
 
@@ -121,7 +116,7 @@ class WorkerFarm {
     return new JestWorker(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
         ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-          // $FlowFixMe[incompatible-call]
+          // $FlowFixMe[incompatible-type]
           this._computeWorkerKey
         : undefined,
       exposedMethods,
@@ -165,7 +160,8 @@ class WorkerFarm {
       }: ${err.message}`,
     );
 
-    // $FlowExpectedError: TODO(t67543470): Change this to properly extend the error.
+    // $FlowFixMe[prop-missing]
+    // $FlowExpectedError[unsafe-object-assign] : TODO(t67543470): Change this to properly extend the error.
     return Object.assign(error, {
       stack: err.stack,
       snippet: err.codeFrame,
@@ -184,5 +180,3 @@ class TransformError extends SyntaxError {
     Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
   }
 }
-
-module.exports = WorkerFarm;

@@ -16,11 +16,11 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
-  FileMetaData,
+  FileMetadata,
   HasteConflict,
   HasteMap,
   HasteMapItem,
-  HasteMapItemMetaData,
+  HasteMapItemMetadata,
   HTypeValue,
   Path,
   PerfLogger,
@@ -34,7 +34,7 @@ import getPlatformExtension from './haste/getPlatformExtension';
 import {HasteConflictsError} from './haste/HasteConflictsError';
 import path from 'path';
 
-const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetaData}> = {};
+const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetadata}> = {};
 const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
 
 // Periodically yield to the event loop to allow parallel I/O, etc.
@@ -63,7 +63,6 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
   +#failValidationOnConflicts: boolean;
-  +#cacheKey: string;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
@@ -118,6 +117,8 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       platform,
       !!supportsNativePlatform,
     );
+    /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+     * roll out. See https://fburl.com/workplace/4oq3zi07. */
     if (module && module[H.TYPE] === (type ?? H.MODULE)) {
       const modulePath = module[H.PATH];
       return modulePath && this.#pathUtils.normalToAbsolute(modulePath);
@@ -145,7 +146,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     name: string,
     platform: ?string,
     supportsNativePlatform: boolean,
-  ): HasteMapItemMetaData | null {
+  ): HasteMapItemMetadata | null {
     const map = this.#map.get(name) || EMPTY_OBJ;
     const dupMap = this.#duplicates.get(name) || EMPTY_MAP;
     if (platform != null) {
@@ -216,13 +217,13 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     }
   }
 
-  onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetaData) {
+  onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
     const id = fileMetadata[H.ID] || null; // Empty string indicates no module
     if (id == null) {
       return;
     }
 
-    const module = [
+    const module: HasteMapItemMetadata = [
       relativeFilePath,
       this.#enableHastePackages &&
       path.basename(relativeFilePath) === 'package.json'
@@ -233,7 +234,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     this.setModule(id, module);
   }
 
-  setModule(id: string, module: HasteMapItemMetaData) {
+  setModule(id: string, module: HasteMapItemMetadata) {
     let hasteMapItem = this.#map.get(id);
     if (!hasteMapItem) {
       // $FlowFixMe[unclear-type] - Add type coverage
@@ -293,7 +294,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     hasteMapItem[platform] = module;
   }
 
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData) {
+  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
     const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
     if (moduleName == null) {
       return;
@@ -448,5 +449,12 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     );
 
     return conflicts;
+  }
+
+  getCacheKey(): string {
+    return JSON.stringify([
+      this.#enableHastePackages,
+      [...this.#platforms].sort(),
+    ]);
   }
 }

@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
+import writeFile from '../writeFile';
 
-const writeFile = require('../writeFile');
-
-function writeSourcemap(
+export default function writeSourcemap(
   fileName: string,
   contents: string,
   log: (...args: Array<string>) => void,
@@ -27,5 +25,3 @@ function writeSourcemap(
   writeMap.then(() => log('Done writing sourcemap output'));
   return writeMap;
 }
-
-module.exports = writeSourcemap;

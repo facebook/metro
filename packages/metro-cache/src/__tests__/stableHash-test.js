@@ -8,9 +8,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const stableHash = require('../stableHash');
+import stableHash from '../stableHash';
 
 describe('stableHash', () => {
   test('ensures that the hash implementation supports switched order properties', () => {

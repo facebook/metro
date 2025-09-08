@@ -9,16 +9,16 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {Node} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
+import B64Builder from './B64Builder';
 // $FlowFixMe[cannot-resolve-module] - resolves to @babel/traverse
 import traverseForGenerateFunctionMap from '@babel/traverse--for-generate-function-map';
+import * as t from '@babel/types';
 import {
   isAssignmentExpression,
   isClassBody,
@@ -42,12 +42,9 @@ import {
   isTypeCastExpression,
   isVariableDeclarator,
 } from '@babel/types';
-
-const B64Builder = require('./B64Builder');
-const t = require('@babel/types');
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-const fsPath = require('path');
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
+import fsPath from 'path';
 
 type Position = {
   line: number,
@@ -127,7 +124,7 @@ function functionMapBabelPlugin(): PluginObj<> {
       );
       // $FlowFixMe[prop-missing] checked above
       // $FlowFixMe[incompatible-type-arg] checked above
-      const programPath: NodePath<BabelNodeProgram> = path;
+      const programPath: NodePath<BabelNodeProgram> = path as $FlowFixMe;
 
       visitor.enter(programPath);
       programPath.traverse({
@@ -136,7 +133,7 @@ function functionMapBabelPlugin(): PluginObj<> {
       });
       visitor.exit(programPath);
 
-      // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+      // $FlowFixMe[incompatible-type] Babel `File` is not generically typed
       const metroMetadata: MetroBabelFileMetadata = metadata;
 
       const functionMap = encoder.getResult();
@@ -250,7 +247,7 @@ function getNameForPath(path: NodePath<>): string {
   let {id}: any = path;
   // has an `id` so we don't need to infer one
   if (node.id) {
-    // $FlowFixMe Flow error uncovered by typing Babel more strictly
+    // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
     return node.id.name;
   }
   let propertyPath;
@@ -285,7 +282,7 @@ function getNameForPath(path: NodePath<>): string {
       // <foo>{function () {}}</foo>
       const openingElement = grandParentNode.openingElement;
       id = t.jsxMemberExpression(
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
         t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
         t.jsxIdentifier('children'),
       );
@@ -294,9 +291,10 @@ function getNameForPath(path: NodePath<>): string {
       const openingElement = parentPath?.parentPath?.parentPath?.node;
       const prop = grandParentNode;
       id = t.jsxMemberExpression(
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
         t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
         prop.name,
       );
     }
@@ -346,7 +344,8 @@ function getNameForPath(path: NodePath<>): string {
   // Annotate members with the name of their containing object/class.
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
-      // $FlowFixMe Discovered when typing babel-traverse
+      // $FlowFixMe[incompatible-type]
+      // $FlowFixMe[incompatible-use] Discovered when typing babel-traverse
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
         const separator = propertyPath.node.static ? '.' : '#';
@@ -590,7 +589,7 @@ function positionGreater(x: Position, y: Position) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 
-module.exports = {
+export {
   functionMapBabelPlugin,
   generateFunctionMap,
   generateFunctionMappingsArray,

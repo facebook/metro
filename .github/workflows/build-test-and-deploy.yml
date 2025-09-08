@@ -47,10 +47,12 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+        # Sync with nightly-tests.yml
         node-version: [
-          '18.18.0', # minimum supported
-          'lts/-1',  # pre-latest lts
+          '20.19.4', # minimum supported
+          'lts/-1',  # previous lts
           'lts/*',   # latest lts
+          'latest'   # latest node version
         ]
     uses: ./.github/workflows/test.yml
     with:

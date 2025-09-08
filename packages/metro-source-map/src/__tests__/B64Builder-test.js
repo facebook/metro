@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const B64Builder = require('../B64Builder');
+import B64Builder from '../B64Builder';
 
 let builder;
 beforeEach(() => {

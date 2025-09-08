@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
@@ -17,10 +16,8 @@ import type {
 import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
 import type {ConfigT} from 'metro-config';
 
-const {greatestLowerBound} = require('metro-source-map/src/Consumer/search');
-const {
-  SourceMetadataMapConsumer,
-} = require('metro-symbolicate/src/Symbolication');
+import {greatestLowerBound} from 'metro-source-map/private/Consumer/search';
+import {SourceMetadataMapConsumer} from 'metro-symbolicate/private/Symbolication';
 
 export type StackFrameInput = {
   +file: ?string,
@@ -34,10 +31,7 @@ export type IntermediateStackFrame = {
   collapse?: boolean,
   ...
 };
-export type StackFrameOutput = $ReadOnly<{
-  ...IntermediateStackFrame,
-  ...
-}>;
+export type StackFrameOutput = $ReadOnly<IntermediateStackFrame>;
 type ExplodedSourceMapModule = ExplodedSourceMap[number];
 type Position = {+line1Based: number, column0Based: number};
 
@@ -62,7 +56,7 @@ function createFunctionNameGetter(
     });
 }
 
-async function symbolicate(
+export default async function symbolicate(
   stack: $ReadOnlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
@@ -134,9 +128,9 @@ async function symbolicate(
       return null;
     }
     return {
-      // $FlowFixMe: Length checks do not refine tuple unions.
+      // $FlowFixMe[invalid-tuple-index]: Length checks do not refine tuple unions.
       line1Based: mapping[2],
-      // $FlowFixMe: Length checks do not refine tuple unions.
+      // $FlowFixMe[invalid-tuple-index]: Length checks do not refine tuple unions.
       column0Based: mapping[3],
     };
   }
@@ -222,5 +216,3 @@ async function symbolicate(
     customizeStack,
   );
 }
-
-module.exports = symbolicate;

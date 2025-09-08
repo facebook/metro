@@ -9,14 +9,25 @@
  * @oncall react_native
  */
 
-'use strict';
+import AmbiguousModuleResolutionError from './errors/AmbiguousModuleResolutionError';
+import PackageResolutionError from './errors/PackageResolutionError';
+import * as Logger from './Logger';
+import Terminal from './Terminal';
 
-const AmbiguousModuleResolutionError = require('./errors/AmbiguousModuleResolutionError');
-const PackageResolutionError = require('./errors/PackageResolutionError');
-const Logger = require('./Logger');
-const Terminal = require('./Terminal');
+export {
+  AmbiguousModuleResolutionError,
+  Logger,
+  PackageResolutionError,
+  Terminal,
+};
 
-module.exports = {
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-core' is deprecated, use named exports.
+ */
+export default {
   AmbiguousModuleResolutionError,
   Logger,
   PackageResolutionError,

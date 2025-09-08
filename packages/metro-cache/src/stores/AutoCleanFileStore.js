@@ -8,13 +8,11 @@
  * @flow
  */
 
-'use strict';
-
 import type {Options} from './FileStore';
 
-const FileStore = require('./FileStore');
-const fs = require('fs');
-const path = require('path');
+import FileStore from './FileStore';
+import fs from 'fs';
+import path from 'path';
 
 type CleanOptions = {
   ...Options,
@@ -59,7 +57,7 @@ function get<T>(property: ?T, defaultValue: T): T {
 /**
  * A FileStore that cleans itself up in a given interval
  */
-class AutoCleanFileStore<T> extends FileStore<T> {
+export default class AutoCleanFileStore<T> extends FileStore<T> {
   _intervalMs: number;
   _cleanupThresholdMs: number;
   _root: string;
@@ -103,5 +101,3 @@ class AutoCleanFileStore<T> extends FileStore<T> {
     this._scheduleCleanup();
   }
 }
-
-module.exports = AutoCleanFileStore;

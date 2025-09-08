@@ -24,6 +24,7 @@ import * as fs from 'graceful-fs';
 import {platform} from 'os';
 import * as path from 'path';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:NodeCrawler');
 
 type Callback = (result: FileData) => void;
@@ -75,13 +76,13 @@ function find(
               const ext = path.extname(file).substr(1);
               if (stat.isSymbolicLink() || extensions.includes(ext)) {
                 result.set(pathUtils.absoluteToNormal(file), [
-                  '',
                   stat.mtime.getTime(),
                   stat.size,
                   0,
                   '',
                   null,
                   stat.isSymbolicLink() ? 1 : 0,
+                  '',
                 ]);
               }
             }
@@ -153,13 +154,13 @@ function findNative(
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
             result.set(pathUtils.absoluteToNormal(path), [
-              '',
               stat.mtime.getTime(),
               stat.size,
               0,
               '',
               null,
               stat.isSymbolicLink() ? 1 : 0,
+              '',
             ]);
           }
           if (--count === 0) {
@@ -171,7 +172,7 @@ function findNative(
   });
 }
 
-module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
+export default async function nodeCrawl(options: CrawlerOptions): Promise<{
   removedFiles: Set<CanonicalPath>,
   changedFiles: FileData,
 }> {
@@ -235,4 +236,4 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       );
     }
   });
-};
+}

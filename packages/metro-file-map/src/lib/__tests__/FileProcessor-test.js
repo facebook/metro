@@ -9,15 +9,19 @@
  * @oncall react_native
  */
 
-import type {FileMetaData} from '../../flow-types';
+import type {
+  FileMetadata,
+  WorkerMessage,
+  WorkerMetadata,
+} from '../../flow-types';
 
 import H from '../../constants';
 
 const MockJestWorker = jest.fn().mockImplementation(() => ({
-  worker: async () => ({}),
+  processFile: async () => ({}),
   end: async () => {},
 }));
-const mockWorkerFn = jest.fn().mockResolvedValue({});
+const mockWorkerFn = jest.fn().mockReturnValue({});
 
 const defaultOptions = {
   dependencyExtractor: null,
@@ -38,7 +42,11 @@ describe('processBatch', () => {
       Worker: MockJestWorker,
     }));
     jest.mock('../../worker.js', () => ({
-      worker: mockWorkerFn,
+      setup: () => {},
+      processFile: mockWorkerFn,
+      Worker: class {
+        processFile: WorkerMessage => WorkerMetadata = mockWorkerFn;
+      },
     }));
     FileProcessor = require('../FileProcessor').FileProcessor;
   });
@@ -120,11 +128,11 @@ describe('processRegularFile', () => {
   });
 });
 
-function getNMockFiles(numFiles: number): Array<[string, FileMetaData]> {
-  return new Array<?[string, FileMetaData]>(numFiles)
+function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
+  return new Array<?[string, FileMetadata]>(numFiles)
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      ['', 123, 234, 0, '', null, 0] as FileMetaData,
+      [123, 234, 0, '', null, 0, ''] as FileMetadata,
     ]);
 }

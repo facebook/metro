@@ -8,9 +8,12 @@
  * @oncall react_native
  */
 
-import type {ConfigT} from '../configTypes';
+import type {ConfigT} from '../types';
 
-export default interface getDefaultConfig {
+interface getDefaultConfig {
   (rootPath: string | null): Promise<ConfigT>;
   getDefaultValues: (rootPath: string | null) => ConfigT;
 }
+
+declare const getDefaultConfig: getDefaultConfig;
+export default getDefaultConfig;

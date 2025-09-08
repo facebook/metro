@@ -9,19 +9,17 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
+import traverse from '@babel/traverse';
+import nullthrows from 'nullthrows';
 
 export type Options = {
   reservedNames: $ReadOnlyArray<string>,
 };
 
-function normalizePseudoglobals(
+export default function normalizePseudoglobals(
   ast: BabelNode,
   options?: Options,
 ): $ReadOnlyArray<string> {
@@ -46,7 +44,7 @@ function normalizePseudoglobals(
 
       const pseudoglobals: Array<string> = params
         .map(path => path.node.name)
-        // $FlowFixMe[incompatible-call] Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
         .filter(name => !reservedNames.has(name));
 
       const usedShortNames = new Set<string>();
@@ -126,5 +124,3 @@ function rename(fullName: string, shortName: string, scope: Scope): string {
 
   return unusedName;
 }
-
-module.exports = normalizePseudoglobals;

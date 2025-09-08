@@ -9,25 +9,27 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {SourcePosition} from './Consumer/types.flow';
+import type {SourcePosition} from './Consumer/types';
 import type {IConsumer, MixedSourceMap} from './source-map';
 import type {Number0, Number1} from 'ob1';
 
-const Consumer = require('./Consumer');
-const {SourceMapGenerator} = require('source-map');
+import Consumer from './Consumer';
+import {SourceMapGenerator} from 'source-map';
 
 // TODO(t67648443): Bypass the `sort-requires` rule for this file because of a dependency cycle.
 Consumer;
 
 // Originally based on https://github.com/jakobwesthoff/source-map-merger
-function composeSourceMaps(
+export default function composeSourceMaps(
   maps: $ReadOnlyArray<MixedSourceMap>,
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
-  const SourceMetadataMapConsumer = require('metro-symbolicate/src/SourceMetadataMapConsumer');
-  const GoogleIgnoreListConsumer = require('metro-symbolicate/src/GoogleIgnoreListConsumer');
+  const SourceMetadataMapConsumer =
+    // eslint-disable-next-line import/no-commonjs
+    require('metro-symbolicate/private/SourceMetadataMapConsumer').default;
+  const GoogleIgnoreListConsumer =
+    // eslint-disable-next-line import/no-commonjs
+    require('metro-symbolicate/private/GoogleIgnoreListConsumer').default;
   if (maps.length < 1) {
     throw new Error('composeSourceMaps: Expected at least one map');
   }
@@ -131,8 +133,6 @@ function findOriginalPosition(
       };
     }
   }
-  // $FlowFixMe[incompatible-return] `Number0`, `Number1` is incompatible with number
+  // $FlowFixMe[incompatible-type] `Number0`, `Number1` is incompatible with number
   return original;
 }
-
-module.exports = composeSourceMaps;

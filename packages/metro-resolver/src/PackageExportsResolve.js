@@ -180,7 +180,7 @@ function normalizeExportsField(
   if (Array.isArray(exportsField)) {
     // If an array of strings, use first value with valid specifier (root shorthand)
     if (exportsField.every(value => typeof value === 'string')) {
-      // $FlowIssue[incompatible-call] exportsField is refined to `string[]`
+      // $FlowFixMe[incompatible-type] exportsField is refined to `string[]`
       rootValue = exportsField.find((value: string) => value.startsWith('./'));
     } else {
       // Otherwise, should be a condition map and fallback string (Node.js <13.7)

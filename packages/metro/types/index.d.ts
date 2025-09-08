@@ -30,14 +30,14 @@ import type {
   Middleware,
 } from 'metro-config';
 import type {Duplex} from 'stream';
+import type Yargs from 'yargs';
 
-import Yargs = require('yargs');
-
-export {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
-export {Terminal} from 'metro-core';
-export {TerminalReporter} from './lib/TerminalReporter';
+import {TerminalReporter} from './lib/TerminalReporter';
+import {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
+import {Terminal} from 'metro-core';
 
 export {HttpServer, HttpsServer};
+export {loadConfig, mergeConfig, resolveConfig, Terminal, TerminalReporter};
 
 interface MetroMiddleWare {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void;
@@ -81,6 +81,10 @@ export interface RunServerOptions {
   websocketEndpoints?: {
     [path: string]: WebsocketServer;
   };
+}
+
+export interface RunServerResult {
+  httpServer: HttpServer | HttpsServer;
 }
 
 export interface RunBuildOptions {
@@ -140,7 +144,7 @@ export function createConnectMiddleware(
 export function runServer(
   config: ConfigT,
   options: RunServerOptions,
-): Promise<HttpServer | HttpsServer>;
+): Promise<RunServerResult>;
 
 export function runBuild(
   config: ConfigT,
@@ -162,6 +166,28 @@ interface AttachMetroCLIOptions {
 }
 
 export function attachMetroCli(
-  yargs: typeof Yargs,
+  yargs: Yargs.Argv,
   options?: AttachMetroCLIOptions,
-): typeof Yargs;
+): Yargs.Argv;
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro' is deprecated, use named exports.
+ */
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  attachMetroCli: typeof attachMetroCli;
+  runServer: typeof runServer;
+  Terminal: typeof Terminal;
+  TerminalReporter: typeof TerminalReporter;
+  loadConfig: typeof loadConfig;
+  mergeConfig: typeof mergeConfig;
+  resolveConfig: typeof resolveConfig;
+  createConnectMiddleware: typeof createConnectMiddleware;
+  runBuild: typeof runBuild;
+  buildGraph: typeof buildGraph;
+};
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
+export default $$EXPORT_DEFAULT_DECLARATION$$;

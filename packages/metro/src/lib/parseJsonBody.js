@@ -17,7 +17,7 @@ const SIZE_LIMIT = 100 * 1024 * 1024; // 100MB
 /**
  * Attempt to parse a request body as JSON.
  */
-function parseJsonBody(
+export default function parseJsonBody(
   req: IncomingMessage,
   options: {strict?: boolean} = {},
 ): Promise<$FlowFixMe> {
@@ -56,5 +56,3 @@ function parseJsonBody(
     });
   });
 }
-
-module.exports = parseJsonBody;

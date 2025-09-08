@@ -5,20 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow strict-local
  * @oncall react_native
  */
 
 const Metro = require('../../..');
+// $FlowFixMe[cannot-resolve-module] - Untyped module
 const asyncHooks = require('async_hooks');
-
-jest.unmock('cosmiconfig');
 
 jest.useRealTimers();
 
 jest.setTimeout(10000);
 
 describe('Server torn down test', () => {
-  const active = new Map();
+  const active = new Map<
+    number,
+    {type: string, callStack: string, resource: mixed},
+  >();
   const hook = asyncHooks.createHook({
     init(asyncId, type, _triggerAsyncId, resource) {
       if (
@@ -76,8 +79,7 @@ describe('Server torn down test', () => {
     let onCloseResolve;
     const closePromise = new Promise(resolve => (onCloseResolve = resolve));
 
-    const httpServer = await Metro.runServer(config, {
-      reporter: {update() {}},
+    const {httpServer} = await Metro.runServer(config, {
       onClose: () => {
         onCloseResolve();
       },

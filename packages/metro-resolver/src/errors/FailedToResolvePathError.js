@@ -9,13 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {FileAndDirCandidates} from '../types';
 
-const formatFileCandidates = require('./formatFileCandidates');
+import formatFileCandidates from './formatFileCandidates';
 
-class FailedToResolvePathError extends Error {
+export default class FailedToResolvePathError extends Error {
   candidates: FileAndDirCandidates;
 
   constructor(candidates: FileAndDirCandidates) {
@@ -29,5 +27,3 @@ class FailedToResolvePathError extends Error {
     this.candidates = candidates;
   }
 }
-
-module.exports = FailedToResolvePathError;

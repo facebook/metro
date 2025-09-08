@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-function getPreludeCode({
+export default function getPreludeCode({
   extraVars,
   isDev,
   globalPrefix,
@@ -54,7 +52,7 @@ function formatExtraVars(extraVars: ?{[string]: mixed, ...}): Array<string> {
 
   for (const key in extraVars) {
     if (extraVars.hasOwnProperty(key) && !excluded.has(key)) {
-      /* $FlowFixMe(>=0.95.0 site=react_native_fb) This comment suppresses an
+      /* $FlowFixMe[incompatible-type](>=0.95.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.95 was deployed. To see the error, delete
        * this comment and run Flow. */
       assignments.push(`${key}=${JSON.stringify(extraVars[key])}`);
@@ -69,5 +67,3 @@ function processEnv(nodeEnv: string): string {
     nodeEnv,
   )};`;
 }
-
-module.exports = getPreludeCode;

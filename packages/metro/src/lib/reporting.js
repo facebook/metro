@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-const chalk = require('chalk');
-const util = require('util');
+import chalk from 'chalk';
+import util from 'util';
 
 export type BundleDetails = {
   bundleType: string,
@@ -129,7 +127,6 @@ export type ReportableEvent =
         | 'groupEnd'
         | 'debug',
       data: Array<mixed>,
-      mode: 'BRIDGE' | 'NOBRIDGE',
       ...
     }
   | {
@@ -187,7 +184,7 @@ export type Reporter = interface {update(event: ReportableEvent): void};
  * calling this, add a new type of ReportableEvent instead, and implement a
  * proper handler in the reporter(s).
  */
-function logWarning(
+export function logWarning(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -199,7 +196,7 @@ function logWarning(
 /**
  * Similar to `logWarning`, but for messages that require the user to act.
  */
-function logError(
+export function logError(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -221,7 +218,7 @@ function logError(
 /**
  * Similar to `logWarning`, but for informational messages.
  */
-function logInfo(
+export function logInfo(
   terminal: Terminal,
   format: string,
   ...args: Array<mixed>
@@ -234,11 +231,4 @@ function logInfo(
  * A reporter that does nothing. Errors and warnings will be swallowed, that
  * is generally not what you want.
  */
-const nullReporter = {update(): void {}};
-
-module.exports = {
-  logWarning,
-  logError,
-  logInfo,
-  nullReporter,
-};
+export const nullReporter = {update(): void {}};

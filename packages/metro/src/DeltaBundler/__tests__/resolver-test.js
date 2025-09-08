@@ -11,8 +11,8 @@
 
 'use strict';
 
-import type {ResolverInputOptions} from '../../shared/types.flow';
-import type {TransformResultDependency} from '../types.flow';
+import type {ResolverInputOptions} from '../../shared/types';
+import type {TransformResultDependency} from '../types';
 import type {InputConfigT} from 'metro-config';
 
 const {getDefaultConfig, mergeConfig} = require('metro-config');
@@ -115,7 +115,7 @@ function dep(name: string): TransformResultDependency {
   };
 
   async function createResolver(config: InputConfigT = {}, platform?: string) {
-    const DependencyGraph = require('../../node-haste/DependencyGraph');
+    const DependencyGraph = require('../../node-haste/DependencyGraph').default;
     const dependencyGraph = new DependencyGraph(
       mergeConfig(await getDefaultConfig(p('/root')), defaultConfig, config),
     );

@@ -9,16 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {Module} from '../types';
 
-import type {Module} from '../types.flow';
-
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
-const {isJsModule} = require('./helpers/js');
-const {
-  fromRawMappings,
-  fromRawMappingsNonBlocking,
-} = require('metro-source-map');
+import getSourceMapInfo from './helpers/getSourceMapInfo';
+import {isJsModule} from './helpers/js';
+import {fromRawMappings, fromRawMappingsNonBlocking} from 'metro-source-map';
 
 export type SourceMapGeneratorOptions = $ReadOnly<{
   excludeSource: boolean,
@@ -44,7 +39,7 @@ function getSourceMapInfosImpl(
     }
 
     const mod = modulesToProcess.shift();
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     const info = getSourceMapInfo(mod, {
       excludeSource: options.excludeSource,
       shouldAddToIgnoreList: options.shouldAddToIgnoreList,
@@ -113,7 +108,4 @@ async function sourceMapGeneratorNonBlocking(
   return fromRawMappingsNonBlocking(sourceMapInfos);
 }
 
-module.exports = {
-  sourceMapGenerator,
-  sourceMapGeneratorNonBlocking,
-};
+export {sourceMapGenerator, sourceMapGeneratorNonBlocking};

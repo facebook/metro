@@ -9,23 +9,21 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   BundlerResolution,
   TransformInputOptions,
   TransformResultDependency,
-} from '../DeltaBundler/types.flow';
+} from '../DeltaBundler/types';
 import type {TransformOptions} from '../DeltaBundler/Worker';
-import type {ResolverInputOptions} from '../shared/types.flow';
+import type {ResolverInputOptions} from '../shared/types';
 import type {RequireContext} from './contextModule';
 import type {ConfigT} from 'metro-config';
 import type {Type} from 'metro-transform-worker';
 
 import {getContextModuleTemplate} from './contextModuleTemplates';
-import isAssetFile from 'metro-resolver/src/utils/isAssetFile';
+import isAssetFile from 'metro-resolver/private/utils/isAssetFile';
 
 type InlineRequiresRaw =
   | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
@@ -56,7 +54,6 @@ async function calcTransformerOptions(
   const baseOptions = {
     customTransformOptions: options.customTransformOptions,
     dev: options.dev,
-    hot: options.hot,
     inlineRequires: false,
     inlinePlatform: true,
     minify: options.minify,
@@ -107,7 +104,7 @@ async function calcTransformerOptions(
 
   const {transform} = await config.transformer.getTransformOptions(
     entryFiles,
-    {dev: options.dev, hot: options.hot, platform: options.platform},
+    {dev: options.dev, hot: true, platform: options.platform},
     getDependencies,
   );
 
@@ -138,7 +135,7 @@ function removeInlineRequiresBlockListFromOptions(
   return inlineRequires;
 }
 
-async function getTransformFn(
+export async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
@@ -213,7 +210,7 @@ function getType(
   return 'module';
 }
 
-async function getResolveDependencyFn(
+export async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
   resolverOptions: ResolverInputOptions,
@@ -230,8 +227,3 @@ async function getResolveDependencyFn(
       resolverOptions,
     );
 }
-
-module.exports = {
-  getTransformFn,
-  getResolveDependencyFn,
-};

@@ -12,6 +12,7 @@
 'use strict';
 
 import type {Context} from '../generateFunctionMap';
+import type {MixedSourceMap} from '../source-map';
 import type {NodePath} from '@babel/traverse';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
@@ -24,12 +25,13 @@ const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
-  // $FlowIgnore[prop-missing]
-  // $FlowIgnore[incompatible-type]
+  // $FlowFixMe[prop-missing]
+  // $FlowFixMe[incompatible-type]
+  // $FlowFixMe[missing-export]
   require('@babel/types').STANDARDIZED_TYPES;
 const {
   SourceMetadataMapConsumer,
-} = require('metro-symbolicate/src/Symbolication');
+} = require('metro-symbolicate/private/Symbolication');
 
 function getAst(source: string) {
   return parse(source, {
@@ -1358,7 +1360,7 @@ function parent2() {
 
   test('omit parent class name when it matches filename', () => {
     const ast = getAst('class FooBar { baz() {} }');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
@@ -1380,7 +1382,7 @@ function parent2() {
 
   test('do not omit parent class name when it only partially matches filename', () => {
     const ast = getAst('class FooBarItem { baz() {} }');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
@@ -1402,7 +1404,7 @@ function parent2() {
 
   test('derive name from simple assignment even if it matches the filename', () => {
     const ast = getAst('var FooBar = () => {}');
-    const context = {filename: 'FooBar.ios.js'};
+    const context: Context = {filename: 'FooBar.ios.js'};
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
@@ -1435,7 +1437,7 @@ function parent2() {
     const mappings = generateFunctionMappingsArray(ast);
     const encoded = generateFunctionMap(ast);
 
-    const sourceMap = {
+    const sourceMap: MixedSourceMap = {
       version: 3,
       sources: ['input.js'],
       names: ([]: Array<string>),
@@ -1913,7 +1915,7 @@ window.foo();
 
     test('does not reset the path cache', () => {
       const dummyCache: Map<mixed, mixed> = new Map();
-      // $FlowIgnore[prop-missing] - Writing to readonly map for test purposes.
+      // $FlowFixMe[prop-missing] - Writing to readonly map for test purposes.
       traverse.cache.path.set(ast, dummyCache);
 
       generateFunctionMap(ast);

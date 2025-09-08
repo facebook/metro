@@ -8,6 +8,8 @@
  * @noformat - Flow comment syntax
  */
 
+/* eslint-disable import/no-commonjs */
+
 /*
  * This file exports a set of constants that are used for Jest's haste map
  * serialization. On very large repositories, the haste map cache becomes very
@@ -28,13 +30,13 @@ const constants/*: HType */ = {
   DEPENDENCY_DELIM: '\0',
 
   /* file map attributes */
-  ID: 0,
-  MTIME: 1,
-  SIZE: 2,
-  VISITED: 3,
-  DEPENDENCIES: 4,
-  SHA1: 5,
-  SYMLINK: 6,
+  MTIME: 0,
+  SIZE: 1,
+  VISITED: 2,
+  DEPENDENCIES: 3,
+  SHA1: 4,
+  SYMLINK: 5,
+  ID: 6,
 
   /* module map attributes */
   PATH: 0,

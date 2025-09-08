@@ -39,7 +39,7 @@ export default async function main(): Promise<
     await Promise.all(
       intermediates.map(async ([fileName, rawContent]) => [
         fileName,
-        prettier.format(rawContent, {
+        await prettier.format(rawContent, {
           ...(await prettier.resolveConfig(fileName)),
           filepath: fileName,
         }),

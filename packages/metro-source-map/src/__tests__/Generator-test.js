@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const Generator = require('../Generator');
+import Generator from '../Generator';
 
 const {objectContaining} = expect;
 

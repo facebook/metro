@@ -10,22 +10,15 @@
 
 /* eslint-disable no-console */
 
-'use strict';
-
 import type {Terminal} from 'metro-core';
 
-const chalk = require('chalk');
-const util = require('util');
+import chalk from 'chalk';
+import util from 'util';
 
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (
-  terminal: Terminal,
-  level: string,
-  mode: 'BRIDGE' | 'NOBRIDGE',
-  ...data: Array<mixed>
-) => {
+export default (terminal: Terminal, level: string, ...data: Array<mixed>) => {
   // $FlowFixMe[invalid-computed-prop]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
@@ -66,15 +59,13 @@ module.exports = (
       data[data.length - 1] = lastItem.trimEnd();
     }
 
-    const modePrefix =
-      !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
+      color.bold(` ${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.
       // Otherwise, it just concatenates all arguments.
-      // $FlowIssue[incompatible-call] util.format expected the first argument to be a string
+      // $FlowFixMe[incompatible-type] util.format expected the first argument to be a string
       util.format(...data),
     );
   }

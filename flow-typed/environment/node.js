@@ -9,6 +9,7 @@
  */
 
 // Adapted from https://github.com/flow-typed/flow-typed/blob/main/definitions/environments/node/flow_v0.261.x-/node.js
+/* eslint-disable no-unused-vars */
 
 interface ErrnoError extends Error {
   address?: string;
@@ -197,7 +198,6 @@ declare module 'buffer' {
     fromEnc: buffer$Encoding,
     toEnc: buffer$Encoding,
   ): Node$Buffer;
-  // eslint-disable-next-line no-shadow
   declare var Buffer: Node$Buffer;
 }
 
@@ -3230,6 +3230,73 @@ declare module 'util' {
     isWebAssemblyCompiledModule: (value: mixed) => boolean,
     ...
   };
+
+  declare type BackgroundColors =
+    | 'bgBlack'
+    | 'bgBlackBright'
+    | 'bgBlue'
+    | 'bgBlueBright'
+    | 'bgCyan'
+    | 'bgCyanBright'
+    | 'bgGray'
+    | 'bgGreen'
+    | 'bgGreenBright'
+    | 'bgGrey'
+    | 'bgMagenta'
+    | 'bgMagentaBright'
+    | 'bgRed'
+    | 'bgRedBright'
+    | 'bgWhite'
+    | 'bgWhiteBright'
+    | 'bgYellow'
+    | 'bgYellowBright';
+
+  declare type ForegroundColors =
+    | 'black'
+    | 'blackBright'
+    | 'blue'
+    | 'blueBright'
+    | 'cyan'
+    | 'cyanBright'
+    | 'gray'
+    | 'green'
+    | 'greenBright'
+    | 'grey'
+    | 'magenta'
+    | 'magentaBright'
+    | 'red'
+    | 'redBright'
+    | 'white'
+    | 'whiteBright'
+    | 'yellow'
+    | 'yellowBright';
+
+  declare type Modifiers =
+    | 'blink'
+    | 'bold'
+    | 'dim'
+    | 'doubleunderline'
+    | 'framed'
+    | 'hidden'
+    | 'inverse'
+    | 'italic'
+    | 'overlined'
+    | 'reset'
+    | 'strikethrough'
+    | 'underline';
+
+  declare function styleText(
+    format:
+      | ForegroundColors
+      | BackgroundColors
+      | Modifiers
+      | $ReadOnlyArray<ForegroundColors | BackgroundColors | Modifiers>,
+    text: string,
+    options?: $ReadOnly<{
+      stream?: ?stream$Stream,
+      validStream?: ?boolean,
+    }>,
+  ): string;
 }
 
 type vm$ScriptOptions = {

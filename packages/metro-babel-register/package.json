@@ -1,14 +1,12 @@
 {
   "name": "metro-babel-register",
-  "version": "0.82.4",
+  "version": "0.83.1",
   "description": "🚇 babel/register configuration for Metro.",
   "main": "src/babel-register.js",
   "exports": {
     ".": "./src/babel-register.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +20,7 @@
     "@babel/preset-typescript": "^7.24.7",
     "@babel/register": "^7.24.6",
     "babel-plugin-replace-ts-export-assignment": "^0.0.2",
-    "babel-plugin-syntax-hermes-parser": "0.29.1",
+    "babel-plugin-syntax-hermes-parser": "0.32.0",
     "babel-plugin-transform-flow-enums": "^0.0.2",
     "escape-string-regexp": "^1.0.5",
     "flow-enums-runtime": "^0.0.6"
@@ -33,6 +31,6 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.19.4"
   }
 }

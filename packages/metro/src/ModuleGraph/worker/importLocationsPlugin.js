@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {File, PluginObj} from '@babel/core';
 import typeof * as Types from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
@@ -60,7 +58,7 @@ function importLocationsPlugin({
         // Initialise state
         state.importDeclarationLocs = new Set();
 
-        // $FlowFixMe[prop-missing] Babel `File` is not generically typed
+        // $FlowFixMe[incompatible-type] Babel `File` is not generically typed
         const metroMetadata: MetroBabelFileMetadata = state.file.metadata;
 
         // Set the result on a metadata property
@@ -85,4 +83,4 @@ function locToKey(loc: BabelSourceLocation): string {
   return `${start.line},${start.column}:${end.line},${end.column}`;
 }
 
-module.exports = {importLocationsPlugin, locToKey};
+export {importLocationsPlugin, locToKey};

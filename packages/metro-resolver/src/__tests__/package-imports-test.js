@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import Resolver from '../index';
+import * as Resolver from '../index';
 import {
   createPackageAccessors,
   createResolutionContext,
@@ -35,7 +35,7 @@ describe('subpath imports resolution support', () => {
   test('"imports" subpath that maps directly to a file', () => {
     const context = {
       ...baseContext,
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       ...createPackageAccessors({
         [p('/root/node_modules/test-pkg/package.json')]: {
           main: 'index-main.js',

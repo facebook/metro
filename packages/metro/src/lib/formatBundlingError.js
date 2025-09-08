@@ -8,21 +8,17 @@
  * @flow
  */
 
-'use strict';
+import type {FormattedError} from 'metro-runtime/src/modules/types';
 
-import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
-
-const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
-const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
-const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundError');
-const {
-  UnableToResolveError,
-} = require('../node-haste/DependencyGraph/ModuleResolution');
-const {codeFrameColumns} = require('@babel/code-frame');
-const ErrorStackParser = require('error-stack-parser');
-const fs = require('fs');
-const {AmbiguousModuleResolutionError} = require('metro-core');
-const serializeError = require('serialize-error');
+import GraphNotFoundError from '../IncrementalBundler/GraphNotFoundError';
+import ResourceNotFoundError from '../IncrementalBundler/ResourceNotFoundError';
+import RevisionNotFoundError from '../IncrementalBundler/RevisionNotFoundError';
+import {UnableToResolveError} from '../node-haste/DependencyGraph/ModuleResolution';
+import {codeFrameColumns} from '@babel/code-frame';
+import ErrorStackParser from 'error-stack-parser';
+import fs from 'fs';
+import {AmbiguousModuleResolutionError} from 'metro-core';
+import serializeError from 'serialize-error';
 
 export type CustomError = Error &
   interface {
@@ -37,7 +33,9 @@ export type CustomError = Error &
     }>,
   };
 
-function formatBundlingError(error: CustomError): FormattedError {
+export default function formatBundlingError(
+  error: CustomError,
+): FormattedError {
   if (error instanceof AmbiguousModuleResolutionError) {
     const he = error.hasteError;
     const message =
@@ -60,6 +58,8 @@ function formatBundlingError(error: CustomError): FormattedError {
   if (
     error instanceof UnableToResolveError ||
     (error instanceof Error &&
+      /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+       * roll out. See https://fburl.com/workplace/4oq3zi07. */
       (error.type === 'TransformError' || error.type === 'NotFoundError'))
   ) {
     return {
@@ -77,21 +77,21 @@ function formatBundlingError(error: CustomError): FormattedError {
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof GraphNotFoundError) {
     return {
       type: 'GraphNotFoundError',
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof RevisionNotFoundError) {
     return {
       type: 'RevisionNotFoundError',
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };
@@ -120,5 +120,3 @@ function formatBundlingError(error: CustomError): FormattedError {
     };
   }
 }
-
-module.exports = formatBundlingError;

@@ -11,7 +11,7 @@
 import type {
   CacheData,
   FileData,
-  FileMetaData,
+  FileMetadata,
   FileStats,
   LookupResult,
   MutableFileSystem,
@@ -25,7 +25,7 @@ import invariant from 'invariant';
 import path from 'path';
 
 type DirectoryNode = Map<string, MixedNode>;
-type FileNode = FileMetaData;
+type FileNode = FileMetadata;
 type MixedNode = FileNode | DirectoryNode;
 
 function isDirectory(node: ?MixedNode): node is DirectoryNode {
@@ -393,7 +393,7 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  addOrModify(mixedPath: Path, metadata: FileMetaData): void {
+  addOrModify(mixedPath: Path, metadata: FileMetadata): void {
     const normalPath = this._normalizePath(mixedPath);
     // Walk the tree to find the *real* path of the parent node, creating
     // directories as we need.
@@ -452,7 +452,7 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  remove(mixedPath: Path): ?FileMetaData {
+  remove(mixedPath: Path): ?FileMetadata {
     const normalPath = this._normalizePath(mixedPath);
     const result = this._lookupByNormalPath(normalPath, {followLeaf: false});
     if (!result.exists) {
@@ -721,7 +721,7 @@ export default class TreeFS implements MutableFileSystem {
             collapsedPath =
               collapsedPath === '' ? '..' : collapsedPath + path.sep + '..';
           }
-          /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+          /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
            * https://fburl.com/gdoc/y8dn025u */
           collectAncestors.push(...reverseAncestors.reverse());
         }
@@ -1009,7 +1009,7 @@ export default class TreeFS implements MutableFileSystem {
   ): Iterable<{
     baseName: string,
     canonicalPath: string,
-    metadata: FileMetaData,
+    metadata: FileMetadata,
   }> {
     yield* this._metadataIterator(this.#rootNode, opts);
   }
@@ -1021,7 +1021,7 @@ export default class TreeFS implements MutableFileSystem {
   ): Iterable<{
     baseName: string,
     canonicalPath: string,
-    metadata: FileMetaData,
+    metadata: FileMetadata,
   }> {
     for (const [name, node] of rootNode) {
       if (
@@ -1052,10 +1052,10 @@ export default class TreeFS implements MutableFileSystem {
     ancestorOfRootIdx: ?number,
   ): Iterator<[string, MixedNode]> {
     if (ancestorOfRootIdx != null && ancestorOfRootIdx > 0 && parent) {
-      yield [
+      yield ([
         this.#pathUtils.getBasenameOfNthAncestor(ancestorOfRootIdx - 1),
         parent,
-      ];
+      ]: [string, MixedNode]);
     }
     yield* node.entries();
   }
@@ -1076,7 +1076,7 @@ export default class TreeFS implements MutableFileSystem {
       subtreeOnly: boolean,
     }>,
     pathPrefix: string = '',
-    followedLinks: $ReadOnlySet<FileMetaData> = new Set(),
+    followedLinks: $ReadOnlySet<FileMetadata> = new Set(),
   ): Iterable<Path> {
     const pathSep = opts.alwaysYieldPosix ? '/' : path.sep;
     const prefixWithSep = pathPrefix === '' ? pathPrefix : pathPrefix + pathSep;
@@ -1158,7 +1158,7 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   _resolveSymlinkTargetToNormalPath(
-    symlinkNode: FileMetaData,
+    symlinkNode: FileMetadata,
     canonicalPathOfSymlink: Path,
   ): NormalizedSymlinkTarget {
     const cachedResult = this.#cachedNormalSymlinkTargets.get(symlinkNode);
@@ -1194,7 +1194,7 @@ export default class TreeFS implements MutableFileSystem {
   _getFileData(
     filePath: Path,
     opts: {followLeaf: boolean} = {followLeaf: true},
-  ): ?FileMetaData {
+  ): ?FileMetadata {
     const normalPath = this._normalizePath(filePath);
     const result = this._lookupByNormalPath(normalPath, {
       followLeaf: opts.followLeaf,

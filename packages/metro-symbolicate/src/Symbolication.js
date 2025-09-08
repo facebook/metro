@@ -12,16 +12,15 @@
 import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
 import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 
+import {ChromeHeapSnapshotProcessor} from './ChromeHeapSnapshot';
+import GoogleIgnoreListConsumer from './GoogleIgnoreListConsumer';
+import SourceMetadataMapConsumer from './SourceMetadataMapConsumer';
+import fs from 'fs';
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
+import path from 'path';
 // flowlint-next-line untyped-type-import:off
 import {typeof SourceMapConsumer} from 'source-map';
-
-const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
-const GoogleIgnoreListConsumer = require('./GoogleIgnoreListConsumer');
-const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
-const fs = require('fs');
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-const path = require('path');
 
 type SingleMapModuleIds = {
   segmentId: number,
@@ -915,11 +914,11 @@ function symbolicateChromeTrace<ModuleIdsT>(
   return context.symbolicateChromeTrace(traceFile, {stdout, stderr});
 }
 
-module.exports = {
+export {
   createContext,
   unstable_createDirectoryContext,
   getOriginalPositionFor,
-  parseFileName: parseSingleMapFileName,
+  parseSingleMapFileName as parseFileName,
   symbolicate,
   symbolicateProfilerMap,
   symbolicateAttribution,

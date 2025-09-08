@@ -9,6 +9,8 @@
  * @oncall react_native
  */
 
+/* eslint-disable import/no-commonjs */
+
 'use strict';
 
 import typeof ConstantFoldingPlugin from './constant-folding-plugin';
@@ -32,29 +34,29 @@ type TransformPlugins = {
 };
 
 module.exports = ({
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get addParamsToDefineCall() {
-    return require('./addParamsToDefineCall');
+    return require('./addParamsToDefineCall').default;
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get constantFoldingPlugin() {
-    return require('./constant-folding-plugin');
+    return require('./constant-folding-plugin').default;
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get importExportPlugin() {
-    return require('./import-export-plugin');
+    return require('./import-export-plugin').default;
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get inlinePlugin() {
-    return require('./inline-plugin');
+    return require('./inline-plugin').default;
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get inlineRequiresPlugin() {
-    return require('./inline-requires-plugin');
+    return require('./inline-requires-plugin').default;
   },
-  // $FlowIgnore[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get normalizePseudoGlobals() {
-    return require('./normalizePseudoGlobals');
+    return require('./normalizePseudoGlobals').default;
   },
   getTransformPluginCacheKeyFiles: () => [
     require.resolve(__filename),

@@ -9,22 +9,20 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type EventEmitter from 'events';
 import type {ConfigT} from 'metro-config';
 
-const Transformer = require('./DeltaBundler/Transformer');
-const DependencyGraph = require('./node-haste/DependencyGraph');
+import Transformer from './DeltaBundler/Transformer';
+import DependencyGraph from './node-haste/DependencyGraph';
 
 export type BundlerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   watch?: boolean,
 }>;
 
-class Bundler {
+export default class Bundler {
   _depGraph: DependencyGraph;
   _initializedPromise: Promise<void>;
   _transformer: Transformer;
@@ -90,5 +88,3 @@ class Bundler {
     await this._initializedPromise;
   }
 }
-
-module.exports = Bundler;

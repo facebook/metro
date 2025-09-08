@@ -9,12 +9,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const throttle = require('lodash.throttle');
-const readline = require('readline');
-const tty = require('tty');
-const util = require('util');
+import throttle from 'lodash.throttle';
+import readline from 'readline';
+import tty from 'tty';
+import util from 'util';
 
 const {promisify} = util;
 
@@ -90,7 +88,7 @@ function getTTYStream(stream: UnderlyingStream): ?tty.WriteStream {
  * "error" printers, as it is not meant for formatting/reporting. It has the
  * single responsibility of handling status messages.
  */
-class Terminal {
+export default class Terminal {
   _logLines: Array<string>;
   _nextStatusStr: string;
   _statusStr: string;
@@ -161,7 +159,7 @@ class Terminal {
       this._shouldFlush = true;
     }
     await this.waitForUpdates();
-    // $FlowIgnore[prop-missing]
+    // $FlowFixMe[prop-missing]
     this._writeStatusThrottled.flush();
   }
 
@@ -247,5 +245,3 @@ class Terminal {
     this._nextStatusStr = '';
   }
 }
-
-module.exports = Terminal;

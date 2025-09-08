@@ -8,9 +8,7 @@
  * @flow strict
  */
 
-'use strict';
-
-class HttpError extends Error {
+export default class HttpError extends Error {
   code: number;
 
   constructor(message: string, code: number) {
@@ -19,5 +17,3 @@ class HttpError extends Error {
     this.code = code;
   }
 }
-
-module.exports = HttpError;

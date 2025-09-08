@@ -8,17 +8,15 @@
  * @flow
  */
 
-'use strict';
-
 import type {HttpsProxyAgentOptions} from 'https-proxy-agent';
 
-const HttpError = require('./HttpError');
-const NetworkError = require('./NetworkError');
-const {backOff} = require('exponential-backoff');
-const http = require('http');
-const https = require('https');
-const {HttpsProxyAgent} = require('https-proxy-agent');
-const zlib = require('zlib');
+import HttpError from './HttpError';
+import NetworkError from './NetworkError';
+import {backOff} from 'exponential-backoff';
+import http from 'http';
+import https from 'https';
+import {HttpsProxyAgent} from 'https-proxy-agent';
+import zlib from 'zlib';
 
 export type Options =
   | EndpointOptions // Uses the same options for both reads and writes
@@ -69,14 +67,14 @@ type Endpoint = {
   retryStatuses: $ReadOnlySet<number>,
 };
 
-const ZLIB_OPTIONS = {
+const ZLIB_OPTIONS: zlib$options = {
   level: 9,
 };
 
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
-class HttpStore<T> {
+export default class HttpStore<T> {
   static HttpError: typeof HttpError = HttpError;
   static NetworkError: typeof NetworkError = NetworkError;
 
@@ -102,22 +100,22 @@ class HttpStore<T> {
     };
 
     if (options.key != null) {
-      // $FlowFixMe `key` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `key` is missing in the Flow definition
       agentConfig.key = options.key;
     }
 
     if (options.cert != null) {
-      // $FlowFixMe `cert` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `cert` is missing in the Flow definition
       agentConfig.cert = options.cert;
     }
 
     if (options.ca != null) {
-      // $FlowFixMe `ca` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `ca` is missing in the Flow definition
       agentConfig.ca = options.ca;
     }
 
     if (options.socketPath != null) {
-      // $FlowFixMe `socketPath` is missing in the Flow definition
+      // $FlowFixMe[incompatible-use] `socketPath` is missing in the Flow definition
       agentConfig.socketPath = options.socketPath;
     }
 
@@ -174,7 +172,8 @@ class HttpStore<T> {
         timeout: this._getEndpoint.timeout,
       };
 
-      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+      // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
       const req = this._getEndpoint.module.request(options, res => {
@@ -301,7 +300,8 @@ class HttpStore<T> {
         timeout: this._setEndpoint.timeout,
       };
 
-      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+      // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
       const req = this._setEndpoint.module.request(options, res => {
@@ -407,5 +407,3 @@ class HttpStore<T> {
     });
   }
 }
-
-module.exports = HttpStore;

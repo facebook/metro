@@ -9,6 +9,8 @@
  * @oncall react_native
  */
 
+/* eslint-disable import/no-commonjs */
+
 'use strict';
 
 /*::
@@ -50,7 +52,7 @@ function register(
     ],
   };
 
-  /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+  /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
    * https://fburl.com/gdoc/y8dn025u */
   require('@babel/register')(registerConfig);
 }
@@ -181,8 +183,9 @@ function registerForMetroMonorepo() {
   isRegisteredForMetroMonorepo = true;
 }
 
-register.config = config;
-register.buildRegExps = buildRegExps;
-register.unstable_registerForMetroMonorepo = registerForMetroMonorepo;
-
-module.exports = register;
+module.exports = {
+  register,
+  config,
+  buildRegExps,
+  unstable_registerForMetroMonorepo: registerForMetroMonorepo,
+};

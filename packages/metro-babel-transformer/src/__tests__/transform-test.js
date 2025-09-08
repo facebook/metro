@@ -40,7 +40,6 @@ test('exposes the correct absolute path to a source file to plugins', () => {
       enableBabelRuntime: false,
       enableBabelRCLookup: false,
       globalPrefix: '__metro__',
-      hot: false,
       minify: false,
       platform: null,
       publicPath: 'test',

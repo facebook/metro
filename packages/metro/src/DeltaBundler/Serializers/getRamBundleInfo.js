@@ -9,23 +9,18 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {
-  ModuleTransportLike,
-  RamModuleTransport,
-} from '../../shared/types.flow';
-import type {Module, ReadOnlyGraph, SerializerOptions} from '../types.flow';
+import type {ModuleTransportLike, RamModuleTransport} from '../../shared/types';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types';
 import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
 import type {GetTransformOptions} from 'metro-config';
 
-const {createRamBundleGroups} = require('../../Bundler/util');
-const getAppendScripts = require('../../lib/getAppendScripts');
-const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
-const {isJsModule, wrapModule} = require('./helpers/js');
-const {sourceMapObject} = require('./sourceMapObject');
-const nullthrows = require('nullthrows');
-const path = require('path');
+import {createRamBundleGroups} from '../../Bundler/util';
+import getAppendScripts from '../../lib/getAppendScripts';
+import getTransitiveDependencies from './helpers/getTransitiveDependencies';
+import {isJsModule, wrapModule} from './helpers/js';
+import {sourceMapObject} from './sourceMapObject';
+import nullthrows from 'nullthrows';
+import path from 'path';
 
 type Options = $ReadOnly<{
   ...SerializerOptions,
@@ -41,7 +36,7 @@ export type RamBundleInfo = {
   groups: Map<number, Set<number>>,
 };
 
-async function getRamBundleInfo(
+export default async function getRamBundleInfo(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
@@ -162,7 +157,7 @@ async function _getRamOptions(
   const {preloadedModules, ramGroups} = await getTransformOptions(
     [entryFile],
     {dev: options.dev, hot: true, platform: options.platform},
-    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+    /* $FlowFixMe[incompatible-type](>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
     async (x: string) => Array.from(getDependencies),
@@ -174,5 +169,3 @@ async function _getRamOptions(
     ramGroups: ramGroups || [],
   };
 }
-
-module.exports = getRamBundleInfo;

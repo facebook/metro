@@ -16,8 +16,9 @@ import type {
   Options,
   ReadOnlyGraph,
   TransformResultDependency,
-} from '../../DeltaBundler/types.flow';
+} from '../../DeltaBundler/types';
 
+import ResourceNotFoundError from '../../IncrementalBundler/ResourceNotFoundError';
 import CountingSet from '../../lib/CountingSet';
 import {mergeConfig} from 'metro-config';
 // $FlowFixMe[untyped-import]
@@ -25,7 +26,6 @@ import MockRequest from 'mock-req';
 // $FlowFixMe[untyped-import]
 import MockResponse from 'mock-res';
 
-const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
 const {
   getDefaultConfig: {getDefaultValues},
 } = require('metro-config');
@@ -96,7 +96,7 @@ describe('processRequest', () => {
       getResolveDependencyFn,
     }));
 
-    Bundler = require('../../Bundler');
+    Bundler = require('../../Bundler').default;
     jest
       .spyOn(Bundler.prototype, 'getDependencyGraph')
       .mockImplementation(getDependencyGraph);
@@ -104,13 +104,13 @@ describe('processRequest', () => {
     jest.mock('fs', () => new (require('metro-memory-fs'))());
     fs = require('fs');
 
-    DeltaBundler = require('../../DeltaBundler');
+    DeltaBundler = require('../../DeltaBundler').default;
     jest
       .spyOn(DeltaBundler.prototype, 'buildGraph')
       .mockImplementation(buildGraph);
     jest.spyOn(DeltaBundler.prototype, 'getDelta').mockImplementation(getDelta);
 
-    Server = require('../../Server');
+    Server = require('../../Server').default;
   });
 
   afterEach(() => {
@@ -487,7 +487,7 @@ describe('processRequest', () => {
   });
 
   test('should handle DELETE requests on *.bundle', async () => {
-    const IncrementalBundler = require('../../IncrementalBundler');
+    const IncrementalBundler = require('../../IncrementalBundler').default;
     const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
     const initSpy = jest.spyOn(IncrementalBundler.prototype, 'initializeGraph');
 
@@ -545,7 +545,7 @@ describe('processRequest', () => {
   });
 
   test('DELETE handles errors', async () => {
-    const IncrementalBundler = require('../../IncrementalBundler');
+    const IncrementalBundler = require('../../IncrementalBundler').default;
     jest
       .spyOn(IncrementalBundler.prototype, 'endGraph')
       .mockImplementationOnce(async () => {
@@ -678,7 +678,6 @@ describe('processRequest', () => {
       transformOptions: {
         customTransformOptions: {},
         dev: true,
-        hot: true,
         minify: false,
         platform: 'ios',
         type: 'module',
@@ -740,7 +739,6 @@ describe('processRequest', () => {
       transformOptions: {
         customTransformOptions: {},
         dev: true,
-        hot: true,
         minify: false,
         platform: null,
         type: 'module',
@@ -879,15 +877,15 @@ describe('processRequest', () => {
       getAsset.mockResolvedValue('i am image');
 
       const response = await makeRequest(
-        '/assets/imgs/%E4%B8%BB%E9%A1%B5/logo.png',
+        '/assets/imgs/%2530/%D0%B0%D0%B9%D1%81%D0%B5%D1%82/%C3%98%E0%B2%9A%F0%9F%98%81/%E4%B8%BB%E9%A1%B5/logo.png',
       );
       expect(response._getString()).toBe('i am image');
 
       expect(getAsset).toBeCalledWith(
-        'imgs/\u{4E3B}\u{9875}/logo.png',
+        'imgs/%30/айсет/Øಚ😁/主页/logo.png',
         '/root',
         ['/root'],
-        undefined,
+        null,
         expect.any(Array),
       );
     });
@@ -928,7 +926,7 @@ describe('processRequest', () => {
         '../otherFolder/otherImage.png',
         '/root',
         ['/root'],
-        undefined,
+        null,
         expect.any(Array),
       );
       expect(response._getString()).toBe('i am image');
@@ -951,7 +949,6 @@ describe('processRequest', () => {
         {
           customTransformOptions: {},
           dev: true,
-          hot: false,
           minify: false,
           platform: undefined,
           type: 'module',
@@ -970,7 +967,6 @@ describe('processRequest', () => {
         transformOptions: {
           customTransformOptions: {},
           dev: true,
-          hot: false,
           minify: false,
           platform: undefined,
           type: 'module',
@@ -1122,7 +1118,7 @@ describe('processRequest', () => {
           }),
         };
 
-        const IncrementalBundler = require('../../IncrementalBundler');
+        const IncrementalBundler = require('../../IncrementalBundler').default;
         const updateSpy = jest.spyOn(
           IncrementalBundler.prototype,
           'updateGraph',

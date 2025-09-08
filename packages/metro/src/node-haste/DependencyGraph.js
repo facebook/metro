@@ -12,8 +12,8 @@
 import type {
   BundlerResolution,
   TransformResultDependency,
-} from '../DeltaBundler/types.flow';
-import type {ResolverInputOptions} from '../shared/types.flow';
+} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config';
 import type MetroFileMap, {
@@ -25,22 +25,23 @@ import type MetroFileMap, {
 } from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
-import {DuplicateHasteCandidatesError} from 'metro-file-map';
-
-const createFileMap = require('./DependencyGraph/createFileMap');
-const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
-const ModuleCache = require('./ModuleCache');
-const {EventEmitter} = require('events');
-const fs = require('fs');
-const {
+import createFileMap from './DependencyGraph/createFileMap';
+import {ModuleResolver} from './DependencyGraph/ModuleResolution';
+import {PackageCache} from './PackageCache';
+import EventEmitter from 'events';
+import fs from 'fs';
+import {
   AmbiguousModuleResolutionError,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
+  Logger,
   PackageResolutionError,
-} = require('metro-core');
-const canonicalize = require('metro-core/src/canonicalize');
-const {InvalidPackageError} = require('metro-resolver');
-const nullthrows = require('nullthrows');
-const path = require('path');
+} from 'metro-core';
+import canonicalize from 'metro-core/private/canonicalize';
+import {DuplicateHasteCandidatesError} from 'metro-file-map';
+import {InvalidPackageError} from 'metro-resolver';
+import nullthrows from 'nullthrows';
+import path from 'path';
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 const NULL_PLATFORM = Symbol();
 
@@ -56,11 +57,11 @@ function getOrCreateMap<T>(
   return subMap;
 }
 
-class DependencyGraph extends EventEmitter {
+export default class DependencyGraph extends EventEmitter {
   _config: ConfigT;
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
-  _moduleCache: ModuleCache;
+  #packageCache: PackageCache;
   _hasteMap: HasteMap;
   _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
@@ -130,7 +131,7 @@ class DependencyGraph extends EventEmitter {
           this._onWatcherHealthCheck(result),
         );
         this._resolutionCache = new Map();
-        this._moduleCache = this._createModuleCache();
+        this.#packageCache = this._createPackageCache();
         this._createModuleResolver();
       });
   }
@@ -162,7 +163,9 @@ class DependencyGraph extends EventEmitter {
 
   _onHasteChange({eventsQueue}: ChangeEvent) {
     this._resolutionCache = new Map();
-    eventsQueue.forEach(({filePath}) => this._moduleCache.invalidate(filePath));
+    eventsQueue.forEach(({filePath}) =>
+      this.#packageCache.invalidate(filePath),
+    );
     this._createModuleResolver();
     this.emit('change');
   }
@@ -199,8 +202,8 @@ class DependencyGraph extends EventEmitter {
       getHastePackagePath: (name, platform) =>
         this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
-      moduleCache: this._moduleCache,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
+      packageCache: this.#packageCache,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
@@ -247,8 +250,8 @@ class DependencyGraph extends EventEmitter {
       : null;
   }
 
-  _createModuleCache(): ModuleCache {
-    return new ModuleCache({
+  _createPackageCache(): PackageCache {
+    return new PackageCache({
       getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
     });
   }
@@ -304,7 +307,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   resolveDependency(
-    from: string,
+    originModulePath: string,
     dependency: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
@@ -323,12 +326,14 @@ class DependencyGraph extends EventEmitter {
       to === '.' ||
       to === '..' ||
       // Preserve standard assumptions under node_modules
-      from.includes(path.sep + 'node_modules' + path.sep);
+      originModulePath.includes(path.sep + 'node_modules' + path.sep);
 
     // Compound key for the resolver cache
     const resolverOptionsKey =
       JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
-    const originKey = isSensitiveToOriginFolder ? path.dirname(from) : '';
+    const originKey = isSensitiveToOriginFolder
+      ? path.dirname(originModulePath)
+      : '';
     const targetKey =
       to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
     const platformKey = platform ?? NULL_PLATFORM;
@@ -346,7 +351,7 @@ class DependencyGraph extends EventEmitter {
     if (!resolution) {
       try {
         resolution = this._moduleResolver.resolveDependency(
-          this._moduleCache.getModule(from),
+          originModulePath,
           dependency,
           true,
           platform,
@@ -354,12 +359,12 @@ class DependencyGraph extends EventEmitter {
         );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
-          throw new AmbiguousModuleResolutionError(from, error);
+          throw new AmbiguousModuleResolutionError(originModulePath, error);
         }
         if (error instanceof InvalidPackageError) {
           throw new PackageResolutionError({
             packageError: error,
-            originModulePath: from,
+            originModulePath,
             targetModuleName: to,
           });
         }
@@ -389,5 +394,3 @@ class DependencyGraph extends EventEmitter {
     return nullthrows(this._fileSystem.getDependencies(filePath));
   }
 }
-
-module.exports = DependencyGraph;

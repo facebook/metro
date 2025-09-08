@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PerfLogger, PerfLoggerFactory, RootPerfLogger} from 'metro-config';
 
 export type {PerfLoggerFactory, PerfLogger};
@@ -25,8 +23,7 @@ export type BuildParameters = $ReadOnly<{
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignorePattern: RegExp,
-  mocksPattern: ?RegExp,
-  platforms: $ReadOnlyArray<string>,
+  plugins: $ReadOnlyArray<FileMapPlugin<>>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
@@ -48,7 +45,7 @@ export type BuildResult = {
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
   fileSystemData: mixed,
-  plugins: $ReadOnlyMap<string, mixed>,
+  plugins: $ReadOnlyMap<string, V8Serializable>,
 }>;
 
 export interface CacheManager {
@@ -169,8 +166,8 @@ export type EventsQueue = Array<{
 }>;
 
 export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetaData]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetaData]>,
+  removed: Iterable<[CanonicalPath, FileMetadata]>,
+  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
 }>;
 
 interface FileSystemState {
@@ -182,7 +179,7 @@ interface FileSystemState {
   ): Iterable<{
     baseName: string,
     canonicalPath: string,
-    metadata: FileMetaData,
+    metadata: FileMetadata,
   }>;
 }
 
@@ -201,21 +198,22 @@ export interface FileMapPlugin<SerializableState = V8Serializable> {
   assertValid(): void;
   bulkUpdate(delta: FileMapDelta): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetaData): void;
+  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
   onNewOrModifiedFile(
     relativeFilePath: string,
-    fileMetadata: FileMetaData,
+    fileMetadata: FileMetadata,
   ): void;
+  getCacheKey(): string;
 }
 
 export type HType = {
-  ID: 0,
-  MTIME: 1,
-  SIZE: 2,
-  VISITED: 3,
-  DEPENDENCIES: 4,
-  SHA1: 5,
-  SYMLINK: 6,
+  MTIME: 0,
+  SIZE: 1,
+  VISITED: 2,
+  DEPENDENCIES: 3,
+  SHA1: 4,
+  SYMLINK: 5,
+  ID: 6,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -229,16 +227,16 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type FileData = Map<CanonicalPath, FileMetaData>;
+export type FileData = Map<CanonicalPath, FileMetadata>;
 
-export type FileMetaData = [
-  /* id */ string,
+export type FileMetadata = [
   /* mtime */ ?number,
   /* size */ number,
   /* visited */ 0 | 1,
   /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
+  /* id */ string,
 ];
 
 export type FileStats = $ReadOnly<{
@@ -380,14 +378,14 @@ export interface HasteMap {
 export type HasteMapData = Map<string, HasteMapItem>;
 
 export type HasteMapItem = {
-  [platform: string]: HasteMapItemMetaData,
+  [platform: string]: HasteMapItemMetadata,
   __proto__: null,
 };
-export type HasteMapItemMetaData = [/* path */ string, /* type */ number];
+export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): ?FileMetaData;
-  addOrModify(filePath: Path, fileMetadata: FileMetaData): void;
+  remove(filePath: Path): ?FileMetadata;
+  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
   bulkAddOrModify(addedOrModifiedFiles: FileData): void;
 }
 
@@ -395,7 +393,7 @@ export type Path = string;
 
 export type ProcessFileFunction = (
   absolutePath: string,
-  metadata: FileMetaData,
+  metadata: FileMetadata,
   request: $ReadOnly<{computeSha1: boolean}>,
 ) => ?Buffer;
 
@@ -446,6 +444,13 @@ export type WatcherBackendChangeEvent =
       metadata?: void,
     }>;
 
+export type WatcherBackendOptions = $ReadOnly<{
+  ignored: ?RegExp,
+  globs: $ReadOnlyArray<string>,
+  dot: boolean,
+  ...
+}>;
+
 export type WatchmanClockSpec =
   | string
   | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
@@ -467,3 +472,5 @@ export type WorkerMetadata = $ReadOnly<{
   sha1?: ?string,
   content?: ?Buffer,
 }>;
+
+export type WorkerSetupArgs = $ReadOnly<{}>;

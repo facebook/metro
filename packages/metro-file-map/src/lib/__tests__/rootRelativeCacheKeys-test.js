@@ -23,8 +23,7 @@ const buildParameters: BuildParameters = {
   forceNodeFilesystemAPI: false,
   hasteImplModulePath: null,
   ignorePattern: /a/,
-  mocksPattern: /a/,
-  platforms: ['a'],
+  plugins: [],
   retainAllFiles: false,
   rootDir: '/root',
   roots: ['a', 'b'],
@@ -66,6 +65,7 @@ test('returns a distinct cache key for any change', () => {
     hasteImplModulePath: _,
     dependencyExtractor: __,
     rootDir: ___,
+    plugins: ____,
     ...simpleParameters
   } = buildParameters;
 
@@ -94,11 +94,9 @@ test('returns a distinct cache key for any change', () => {
         return varyDefault(key, 'foo');
       // String arrays
       case 'extensions':
-      case 'platforms':
       case 'roots':
         return varyDefault(key, ['foo']);
       // Regexp
-      case 'mocksPattern':
       case 'ignorePattern':
         return varyDefault(key, /foo/);
       default:

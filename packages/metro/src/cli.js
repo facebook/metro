@@ -10,6 +10,8 @@
  * @oncall react_native
  */
 
+/* eslint-disable import/no-commonjs */
+
 'use strict';
 
 try {

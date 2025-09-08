@@ -10,7 +10,7 @@
 
 'use strict';
 
-const getDefaultConfig = require('metro-config/src/defaults');
+const {getDefaultConfig} = require('metro-config');
 const {Readable} = require('stream');
 
 describe('Worker Farm', function () {
@@ -55,7 +55,7 @@ describe('Worker Farm', function () {
       return api;
     });
 
-    WorkerFarm = require('../WorkerFarm');
+    WorkerFarm = require('../WorkerFarm').default;
   });
 
   test('passes transform data to the worker farm when transforming', async () => {

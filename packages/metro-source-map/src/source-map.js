@@ -9,23 +9,21 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {IConsumer} from './Consumer/types.flow';
+import type {IConsumer} from './Consumer/types';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
-const {BundleBuilder, createIndexMap} = require('./BundleBuilder');
-const composeSourceMaps = require('./composeSourceMaps');
-const Consumer = require('./Consumer');
+import {BundleBuilder, createIndexMap} from './BundleBuilder';
+import composeSourceMaps from './composeSourceMaps';
+import Consumer from './Consumer';
 // We need to export this for `metro-symbolicate`
-const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-const {
+import normalizeSourcePath from './Consumer/normalizeSourcePath';
+import {
   functionMapBabelPlugin,
   generateFunctionMap,
-} = require('./generateFunctionMap');
-const Generator = require('./Generator');
+} from './generateFunctionMap';
+import Generator from './Generator';
 // $FlowFixMe[untyped-import] - source-map
-const SourceMap = require('source-map');
+import SourceMap from 'source-map';
 
 export type {IConsumer};
 
@@ -104,7 +102,7 @@ function fromRawMappingsImpl(
   isBlocking: boolean,
   onDone: Generator => void,
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -127,7 +125,7 @@ function fromRawMappingsImpl(
     // $FlowFixMe[incompatible-use]
     const {code, map} = mod;
     if (Array.isArray(map)) {
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       addMappingsForFile(generator, map, mod, carryOver);
     } else if (map != null) {
       throw new Error(
@@ -175,7 +173,7 @@ function fromRawMappingsImpl(
  */
 function fromRawMappings(
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -202,7 +200,7 @@ function fromRawMappings(
 
 async function fromRawMappingsNonBlocking(
   modules: $ReadOnlyArray<{
-    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -332,7 +330,27 @@ const newline = /\r\n?|\n|\u2028|\u2029/g;
 const countLines = (string: string): number =>
   (string.match(newline) || []).length + 1;
 
-module.exports = {
+export {
+  BundleBuilder,
+  composeSourceMaps,
+  Consumer,
+  createIndexMap,
+  generateFunctionMap,
+  fromRawMappings,
+  fromRawMappingsNonBlocking,
+  functionMapBabelPlugin,
+  normalizeSourcePath,
+  toBabelSegments,
+  toSegmentTuple,
+};
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-source-map' is deprecated, use named exports.
+ */
+export default {
   BundleBuilder,
   composeSourceMaps,
   Consumer,

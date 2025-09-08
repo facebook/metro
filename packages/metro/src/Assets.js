@@ -9,15 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetPath} from './node-haste/lib/AssetPaths';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
-const crypto = require('crypto');
-const fs = require('fs');
-const getImageSize = require('image-size');
-const path = require('path');
+import {normalizePathSeparatorsToPosix} from './lib/pathUtils';
+import * as AssetPaths from './node-haste/lib/AssetPaths';
+import crypto from 'crypto';
+import fs from 'fs';
+import getImageSize from 'image-size';
+import path from 'path';
 
 export type AssetInfo = {
   +files: Array<string>,
@@ -53,7 +52,7 @@ export type AssetDataFiltered = {
 
 // Test extension against all types supported by image-size module.
 // If it's not one of these, we won't treat it as an image.
-function isAssetTypeAnImage(type: string): boolean {
+export function isAssetTypeAnImage(type: string): boolean {
   return (
     [
       'png',
@@ -70,7 +69,7 @@ function isAssetTypeAnImage(type: string): boolean {
   );
 }
 
-function getAssetSize(
+export function getAssetSize(
   type: string,
   content: Buffer,
   filePath: string,
@@ -198,7 +197,7 @@ async function getAbsoluteAssetInfo(
   return {files, hash: hasher.digest('hex'), name, scales, type};
 }
 
-async function getAssetData(
+export async function getAssetData(
   assetPath: string,
   localPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
@@ -213,9 +212,7 @@ async function getAssetData(
     : path.join(publicPath, path.dirname(localPath));
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
-  if (path.sep === '\\') {
-    assetUrlPath = assetUrlPath.replaceAll('\\', '/');
-  }
+  assetUrlPath = normalizePathSeparatorsToPosix(assetUrlPath);
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
   const assetInfo = await getAbsoluteAssetInfo(assetPath, platform);
@@ -250,7 +247,7 @@ async function applyAssetDataPlugins(
   }
 
   const [currentAssetPlugin, ...remainingAssetPlugins] = assetDataPlugins;
-  // $FlowFixMe: impossible to type a dynamic require.
+  // $FlowFixMe[unsupported-syntax]: impossible to type a dynamic require.
   const assetPluginFunction: AssetDataPlugin = require(currentAssetPlugin);
   const resultAssetData = await assetPluginFunction(assetData);
   return await applyAssetDataPlugins(remainingAssetPlugins, resultAssetData);
@@ -259,7 +256,7 @@ async function applyAssetDataPlugins(
 /**
  * Returns all the associated files (for different resolutions) of an asset.
  **/
-async function getAssetFiles(
+export async function getAssetFiles(
   assetPath: string,
   platform: ?string = null,
 ): Promise<Array<string>> {
@@ -279,7 +276,7 @@ async function getAssetFiles(
  * 3. Then try to pick platform-specific asset records
  * 4. Then pick the closest resolution (rounding up) to the requested one
  */
-async function getAsset(
+export async function getAsset(
   relativePath: string,
   projectRoot: string,
   watchFolders: $ReadOnlyArray<string>,
@@ -328,11 +325,3 @@ function pathBelongsToRoots(
 
   return false;
 }
-
-module.exports = {
-  getAsset,
-  getAssetSize,
-  getAssetData,
-  getAssetFiles,
-  isAssetTypeAnImage,
-};

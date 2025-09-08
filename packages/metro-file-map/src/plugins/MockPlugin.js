@@ -205,4 +205,12 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
         .join('')
     );
   }
+
+  getCacheKey(): string {
+    return (
+      this.#mocksPattern.source.replaceAll('\\\\', '\\/') +
+      ',' +
+      this.#mocksPattern.flags
+    );
+  }
 }

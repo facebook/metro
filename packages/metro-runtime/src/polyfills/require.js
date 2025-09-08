@@ -174,7 +174,19 @@ function define(
   }
 }
 
-function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
+function metroRequire(
+  moduleId: ModuleID | VerboseModuleNameForDev | null,
+  maybeNameForDev?: string,
+): Exports {
+  // Unresolved optional dependencies are nulls in dependency maps
+  // eslint-disable-next-line lint/strictly-null
+  if (moduleId === null) {
+    if (__DEV__ && typeof maybeNameForDev === 'string') {
+      throw new Error("Cannot find module '" + maybeNameForDev + "'");
+    }
+    throw new Error('Cannot find module');
+  }
+
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = getModuleIdForVerboseName(verboseName);
@@ -184,7 +196,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     );
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   if (__DEV__) {
@@ -237,7 +249,7 @@ function metroImportDefault(
     moduleId = getModuleIdForVerboseName(verboseName);
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
@@ -269,7 +281,7 @@ function metroImportAll(
     moduleId = getModuleIdForVerboseName(verboseName);
   }
 
-  //$FlowFixMe: at this point we know that moduleId is a number
+  //$FlowFixMe[incompatible-type]: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
 
   const maybeInitializedModule = modules.get(moduleIdReallyIsNumber);
@@ -450,7 +462,7 @@ function loadModuleImplementation(
   }
   try {
     if (__DEV__) {
-      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe[incompatible-use]: we know that __DEV__ is const and `Systrace` exists
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
     }
 
@@ -490,13 +502,13 @@ function loadModuleImplementation(
 
     // avoid removing factory in DEV mode as it breaks HMR
     if (!__DEV__) {
-      // $FlowFixMe: This is only sound because we never access `factory` again
+      // $FlowFixMe[incompatible-type]: This is only sound because we never access `factory` again
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
     if (__DEV__) {
-      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
+      // $FlowFixMe[incompatible-use]: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
       if (Refresh != null) {
@@ -578,6 +590,8 @@ if (__DEV__) {
   ) {
     const mod = modules.get(id);
     if (!mod) {
+      /* $FlowFixMe[constant-condition] Error discovered during Constant
+       * Condition roll out. See https://fburl.com/workplace/1v97vimq. */
       if (factory) {
         // New modules are going to be handled by the define() method.
         return;

@@ -76,7 +76,7 @@ app.listen(8081);
 
 ### Method `runServer(config, options)`
 
-Starts a development server based on the given configuration and options. Returns the server.
+Starts a development server based on the given configuration and options. Returns an object with `httpServer`, the Node.js HTTP(S) server.
 We recommend using `runMetro` instead of `runServer`, `runMetro` calls this function.
 
 #### Options
@@ -88,7 +88,7 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 ```js
 const config = await Metro.loadConfig();
 
-const metroHttpServer = await Metro.runServer(config, {
+await Metro.runServer(config, {
   onClose: () => {console.log('metro server and all associated processes are closed')}
 });
 

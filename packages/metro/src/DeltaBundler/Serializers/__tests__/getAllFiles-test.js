@@ -8,12 +8,10 @@
  * @oncall react_native
  */
 
-'use strict';
-
 jest.mock('../../../Assets');
 
-const {getAssetFiles} = require('../../../Assets');
-const getAllFiles = require('../getAllFiles');
+import {getAssetFiles} from '../../../Assets';
+import getAllFiles from '../getAllFiles';
 
 describe('getOrderedDependencyPaths', () => {
   beforeEach(() => {

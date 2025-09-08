@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 export type {
   AssetFileResolution,
   CustomResolutionContext,
@@ -27,13 +25,33 @@ export type {
   Result,
 } from './types';
 
-const Resolver = {
-  FailedToResolveNameError: require('./errors/FailedToResolveNameError'),
-  FailedToResolvePathError: require('./errors/FailedToResolvePathError'),
-  FailedToResolveUnsupportedError: require('./errors/FailedToResolveUnsupportedError'),
-  formatFileCandidates: require('./errors/formatFileCandidates'),
-  InvalidPackageError: require('./errors/InvalidPackageError'),
-  resolve: require('./resolve'),
+import FailedToResolveNameError from './errors/FailedToResolveNameError';
+import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import FailedToResolveUnsupportedError from './errors/FailedToResolveUnsupportedError';
+import formatFileCandidates from './errors/formatFileCandidates';
+import InvalidPackageError from './errors/InvalidPackageError';
+import resolve from './resolve';
+
+export {
+  FailedToResolveNameError,
+  FailedToResolvePathError,
+  FailedToResolveUnsupportedError,
+  formatFileCandidates,
+  InvalidPackageError,
+  resolve,
 };
 
-module.exports = Resolver;
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-resolver' is deprecated, use named exports.
+ */
+export default {
+  FailedToResolveNameError,
+  FailedToResolvePathError,
+  FailedToResolveUnsupportedError,
+  formatFileCandidates,
+  InvalidPackageError,
+  resolve,
+};

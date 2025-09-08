@@ -9,14 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BasicSourceMap} from 'metro-source-map';
 import type {MinifierOptions, MinifierResult} from 'metro-transform-worker';
 
-const terser = require('terser');
+import terser from 'terser';
 
-async function minifier(options: MinifierOptions): Promise<MinifierResult> {
+export default async function minifier(
+  options: MinifierOptions,
+): Promise<MinifierResult> {
   const result = await minify(options);
 
   if (!options.map || result.map == null) {
@@ -58,7 +58,7 @@ async function minify({
       : false,
   };
 
-  /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+  /* $FlowFixMe[incompatible-type](>=0.111.0 site=react_native_fb) This comment suppresses an
    * error found when Flow v0.111 was deployed. To see the error, delete this
    * comment and run Flow. */
   const result = await terser.minify(code, options);
@@ -68,5 +68,3 @@ async function minify({
     map: result.map,
   };
 }
-
-module.exports = minifier;

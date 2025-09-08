@@ -9,15 +9,13 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
-import type {ModuleTransportLike} from '../shared/types.flow';
+import type {ModuleTransportLike} from '../shared/types';
 import type {File} from '@babel/types';
 
-const babylon = require('@babel/parser');
-const template = require('@babel/template').default;
-const babelTypes = require('@babel/types');
+import * as babylon from '@babel/parser';
+import template from '@babel/template';
+import * as babelTypes from '@babel/types';
 
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,
@@ -26,7 +24,7 @@ type SubTree<T: ModuleTransportLike> = (
 
 const assetPropertyBlockList = new Set(['files', 'fileSystemLocation', 'path']);
 
-function generateAssetCodeFileAst(
+export function generateAssetCodeFileAst(
   assetRegistryPath: string,
   assetDescriptor: AssetDataWithoutFiles,
 ): File {
@@ -68,7 +66,7 @@ function filterObject(
   return copied;
 }
 
-function createRamBundleGroups<T: ModuleTransportLike>(
+export function createRamBundleGroups<T: ModuleTransportLike>(
   ramGroups: $ReadOnlyArray<string>,
   groupableModules: $ReadOnlyArray<T>,
   subtree: SubTree<T>,
@@ -146,8 +144,3 @@ class ArrayMap<K, V> extends Map<K, Array<V>> {
     return array;
   }
 }
-
-module.exports = {
-  createRamBundleGroups,
-  generateAssetCodeFileAst,
-};

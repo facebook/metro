@@ -5958,7 +5958,7 @@ declare class URL {
   static createObjectURL(blob: Blob): string;
   static createObjectURL(mediaSource: MediaSource): string;
   static revokeObjectURL(url: string): void;
-  constructor(url: string, base?: string | URL): void;
+  constructor(url: string | URL, base?: string | URL): void;
   hash: string;
   host: string;
   hostname: string;

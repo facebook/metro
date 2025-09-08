@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from '../../Assets';
-import type {Module, ReadOnlyDependencies} from '../types.flow';
+import type {Module, ReadOnlyDependencies} from '../types';
 
-const {getAssetData} = require('../../Assets');
-const {getJsOutput, isJsModule} = require('./helpers/js');
-const path = require('path');
+import {getAssetData} from '../../Assets';
+import {getJsOutput, isJsModule} from './helpers/js';
+import path from 'path';
 
 type Options = {
   +processModuleFilter: (module: Module<>) => boolean,
@@ -26,7 +24,7 @@ type Options = {
   publicPath: string,
 };
 
-async function getAssets(
+export default async function getAssets(
   dependencies: ReadOnlyDependencies<>,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
@@ -54,5 +52,3 @@ async function getAssets(
 
   return await Promise.all(promises);
 }
-
-module.exports = getAssets;

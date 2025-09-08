@@ -9,36 +9,37 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {BasicSourceMap} from '../source-map';
 import type {
   GeneratedPositionLookup,
   IConsumer,
   Mapping,
   SourcePosition,
-} from './types.flow';
+} from './types';
 import type {Number0} from 'ob1';
 
-const AbstractConsumer = require('./AbstractConsumer');
-const {
+import AbstractConsumer from './AbstractConsumer';
+import {
   EMPTY_POSITION,
   FIRST_COLUMN,
   FIRST_LINE,
   GREATEST_LOWER_BOUND,
   lookupBiasToString,
-} = require('./constants');
-const normalizeSourcePath = require('./normalizeSourcePath');
-const {greatestLowerBound} = require('./search');
-const invariant = require('invariant');
-const {add, add0, get0, inc, sub} = require('ob1');
-const {decode: decodeVlq} = require('vlq');
+} from './constants';
+import normalizeSourcePath from './normalizeSourcePath';
+import {greatestLowerBound} from './search';
+import invariant from 'invariant';
+import {add, add0, get0, inc, sub} from 'ob1';
+import {decode as decodeVlq} from 'vlq';
 
 /**
  * A source map consumer that supports "basic" source maps (that have a
  * `mappings` field and no sections).
  */
-class MappingsConsumer extends AbstractConsumer implements IConsumer {
+export default class MappingsConsumer
+  extends AbstractConsumer
+  implements IConsumer
+{
   _sourceMap: BasicSourceMap;
   _decodedMappings: ?$ReadOnlyArray<Mapping>;
   _normalizedSources: ?$ReadOnlyArray<string>;
@@ -61,7 +62,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
       invariant(
         generatedPosition.bias === GREATEST_LOWER_BOUND,
         `Unimplemented lookup bias: ${lookupBiasToString(
-          // $FlowFixMe[incompatible-call]
+          // $FlowFixMe[incompatible-type]
           generatedPosition.bias,
         )}`,
       );
@@ -216,5 +217,3 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
     return sourcesContent[get0(idx)] ?? null;
   }
 }
-
-module.exports = MappingsConsumer;

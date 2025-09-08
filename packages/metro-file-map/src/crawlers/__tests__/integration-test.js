@@ -76,7 +76,7 @@ function oneOf(this: $FlowFixMe, actual: mixed, ...expectOneOf: mixed[]) {
       } to be in ${this.utils.printExpected(expectOneOf)}`,
   };
 }
-/* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+/* $FlowFixMe[incompatible-type] Natural Inference rollout. See
  * https://fburl.com/gdoc/y8dn025u */
 expect.extend({oneOf});
 
@@ -84,18 +84,18 @@ const CASES = [
   [
     true,
     new Map([
-      ['foo.js', ['', expect.any(Number), 245, 0, '', null, 0]],
+      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, '']],
       [
         join('directory', 'bar.js'),
-        ['', expect.any(Number), 245, 0, '', null, 0],
+        [expect.any(Number), 245, 0, '', null, 0, ''],
       ],
       [
         'link-to-directory',
-        ['', expect.any(Number), 9, 0, '', null, expect.oneOf(1, 'directory')],
+        [expect.any(Number), 9, 0, '', null, expect.oneOf(1, 'directory'), ''],
       ],
       [
         'link-to-foo.js',
-        ['', expect.any(Number), 6, 0, '', null, expect.oneOf(1, 'foo.js')],
+        [expect.any(Number), 6, 0, '', null, expect.oneOf(1, 'foo.js'), ''],
       ],
     ]),
   ],
@@ -104,9 +104,9 @@ const CASES = [
     new Map([
       [
         join('directory', 'bar.js'),
-        ['', expect.any(Number), 245, 0, '', null, 0],
+        [expect.any(Number), 245, 0, '', null, 0, ''],
       ],
-      ['foo.js', ['', expect.any(Number), 245, 0, '', null, 0]],
+      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, '']],
     ]),
   ],
 ];
@@ -126,7 +126,7 @@ describe.each(Object.keys(CRAWLERS))(
           previousState: {
             fileSystem: new TreeFS({
               rootDir: FIXTURES_DIR,
-              files: new Map([['removed.js', ['', 123, 234, 0, '', null, 0]]]),
+              files: new Map([['removed.js', [123, 234, 0, '', null, 0, '']]]),
               processFile: () => {
                 throw new Error('Not implemented');
               },

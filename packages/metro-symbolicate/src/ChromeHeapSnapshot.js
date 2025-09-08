@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const invariant = require('invariant');
+import invariant from 'invariant';
 
 type RawBuffer = Array<number | RawBuffer>;
 
@@ -49,7 +47,7 @@ const CHILDREN_FIELD_TYPE = '__CHILDREN__';
 // Care is taken to adhere to the self-describing heap snapshot schema, but
 // we make some additional assumptions based on what Chrome hardcodes (where
 // the format leaves us no other choice).
-class ChromeHeapSnapshotProcessor {
+export class ChromeHeapSnapshotProcessor {
   // The raw snapshot data provided to this processor. Mutable.
   +_snapshotData: ChromeHeapSnapshot;
 
@@ -67,7 +65,7 @@ class ChromeHeapSnapshotProcessor {
   traceFunctionInfos(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.trace_function_infos,
       this._snapshotData.snapshot.meta.trace_function_info_fields,
       {name: 'string', script_name: 'string'},
@@ -79,7 +77,7 @@ class ChromeHeapSnapshotProcessor {
   locations(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.locations,
       this._snapshotData.snapshot.meta.location_fields,
       null,
@@ -91,7 +89,7 @@ class ChromeHeapSnapshotProcessor {
   nodes(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.nodes,
       this._snapshotData.snapshot.meta.node_fields,
       this._snapshotData.snapshot.meta.node_types,
@@ -103,7 +101,7 @@ class ChromeHeapSnapshotProcessor {
   edges(): ChromeHeapSnapshotRecordIterator {
     return new ChromeHeapSnapshotRecordIterator(
       // Flow is being conservative here, but we'll never change a number into RawBuffer or vice versa.
-      // $FlowIgnore[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       this._snapshotData.edges,
       this._snapshotData.snapshot.meta.edge_fields,
       this._snapshotData.snapshot.meta.edge_types,
@@ -262,7 +260,7 @@ class ChromeHeapSnapshotRecordAccessor {
           ]),
         );
       } else {
-        // $FlowIssue[incompatible-type-arg] Object.entries is incompletely typed
+        // $FlowFixMe[incompatible-type] Object.entries is incompletely typed
         this._fieldToType = new Map(Object.entries(recordTypes || {}));
       }
     }
@@ -554,9 +552,7 @@ class ChromeHeapSnapshotRecordAccessor {
     if (this._buffer.length - position < this._recordSize) {
       if (!(allowEnd && this._buffer.length === position)) {
         throw new Error(
-          `Record at position ${position} is truncated: expected ${
-            this._recordSize
-          } fields but found ${this._buffer.length - position}`,
+          `Record at position ${position} is truncated: expected ${this._recordSize} fields but found ${this._buffer.length - position}`,
         );
       }
     }
@@ -569,7 +565,7 @@ class ChromeHeapSnapshotRecordAccessor {
   }
 }
 
-// $FlowIssue[prop-missing] Flow doesn't see that we implement the iteration protocol
+// $FlowFixMe[incompatible-type] Flow doesn't see that we implement the iteration protocol
 class ChromeHeapSnapshotRecordIterator
   extends ChromeHeapSnapshotRecordAccessor
   implements Iterable<ChromeHeapSnapshotRecordAccessor>
@@ -608,10 +604,8 @@ class ChromeHeapSnapshotRecordIterator
   }
 
   // JS Iterable protocol
-  // $FlowIssue[unsupported-syntax]
+  // $FlowFixMe[unsupported-syntax]
   [Symbol.iterator](): this {
     return this;
   }
 }
-
-module.exports = {ChromeHeapSnapshotProcessor};

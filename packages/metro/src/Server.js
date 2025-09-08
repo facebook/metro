@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -21,7 +19,7 @@ import type {
   ReadOnlyGraph,
   TransformInputOptions,
   TransformResult,
-} from './DeltaBundler/types.flow';
+} from './DeltaBundler/types';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {Reporter} from './lib/reporting';
@@ -32,7 +30,7 @@ import type {
   GraphOptions,
   ResolverInputOptions,
   SplitBundleOptions,
-} from './shared/types.flow';
+} from './shared/types';
 import type {IncomingMessage} from 'connect';
 import type {ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
@@ -40,53 +38,46 @@ import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
-} from 'metro-core/src/Logger';
-import type {CustomResolverOptions} from 'metro-resolver/src/types';
+} from 'metro-core/private/Logger';
+import type {CustomResolverOptions} from 'metro-resolver/private/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-import {SourcePathsMode} from './shared/types.flow';
+import {getAsset} from './Assets';
+import baseJSBundle from './DeltaBundler/Serializers/baseJSBundle';
+import getAllFiles from './DeltaBundler/Serializers/getAllFiles';
+import getAssets from './DeltaBundler/Serializers/getAssets';
+import {getExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
+import getRamBundleInfo from './DeltaBundler/Serializers/getRamBundleInfo';
+import {sourceMapStringNonBlocking} from './DeltaBundler/Serializers/sourceMapString';
+import IncrementalBundler from './IncrementalBundler';
+import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
+import bundleToString from './lib/bundleToString';
+import formatBundlingError from './lib/formatBundlingError';
+import getGraphId from './lib/getGraphId';
+import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
+import parseJsonBody from './lib/parseJsonBody';
+import splitBundleOptions from './lib/splitBundleOptions';
+import * as transformHelpers from './lib/transformHelpers';
+import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
+import parsePlatformFilePath from './node-haste/lib/parsePlatformFilePath';
+import MultipartResponse from './Server/MultipartResponse';
+import symbolicate from './Server/symbolicate';
+import {SourcePathsMode} from './shared/types';
+import {codeFrameColumns} from '@babel/code-frame';
+import * as fs from 'graceful-fs';
+import invariant from 'invariant';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {Logger} from 'metro-core';
+import mime from 'mime-types';
+import nullthrows from 'nullthrows';
+import path from 'path';
+import {performance} from 'perf_hooks';
+import querystring from 'querystring';
 
-const {getAsset} = require('./Assets');
-const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
-const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
-const getAssets = require('./DeltaBundler/Serializers/getAssets');
-const {
-  getExplodedSourceMap,
-} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
-const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const {
-  sourceMapStringNonBlocking,
-} = require('./DeltaBundler/Serializers/sourceMapString');
-const IncrementalBundler = require('./IncrementalBundler');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const bundleToString = require('./lib/bundleToString');
-const formatBundlingError = require('./lib/formatBundlingError');
-const getGraphId = require('./lib/getGraphId');
-const parseJsonBody = require('./lib/parseJsonBody');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const transformHelpers = require('./lib/transformHelpers');
-const {
-  UnableToResolveError,
-} = require('./node-haste/DependencyGraph/ModuleResolution');
-const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
-const MultipartResponse = require('./Server/MultipartResponse');
-const symbolicate = require('./Server/symbolicate');
-const {codeFrameColumns} = require('@babel/code-frame');
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:Server');
-const fs = require('graceful-fs');
-const invariant = require('invariant');
-const jscSafeUrl = require('jsc-safe-url');
-const {
-  Logger,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-const mime = require('mime-types');
-const nullthrows = require('nullthrows');
-const path = require('path');
-const {performance} = require('perf_hooks');
-const querystring = require('querystring');
-const url = require('url');
+
+const {createActionStartEntry, createActionEndEntry, log} = Logger;
 
 const noopLogger: RootPerfLogger = {
   start: () => {},
@@ -139,7 +130,7 @@ export type ServerOptions = $ReadOnly<{
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
-class Server {
+export default class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
   _createModuleId: (path: string) => number;
@@ -244,6 +235,7 @@ class Server {
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+      globalPrefix: this._config.transformer.globalPrefix,
       dev: transformOptions.dev,
       includeAsyncPaths: graphOptions.lazy,
       projectRoot: this._config.projectRoot,
@@ -389,6 +381,7 @@ class Server {
       excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
+      globalPrefix: this._config.transformer.globalPrefix,
       includeAsyncPaths: graphOptions.lazy,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
@@ -452,7 +445,7 @@ class Server {
       onProgress,
       resolverOptions,
       transformOptions,
-      /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses an
+      /* $FlowFixMe[cannot-spread-inexact](>=0.122.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.122.0 was deployed. To see the error, delete
        * this comment and run Flow. */
     } = splitBundleOptions({
@@ -471,7 +464,7 @@ class Server {
       transformOptions.platform ||
       parsePlatformFilePath(entryFile, this._platforms).platform;
 
-    // $FlowFixMe[incompatible-return]
+    // $FlowFixMe[incompatible-type]
     return await getAllFiles(prepend, graph, {
       platform,
       processModuleFilter: this._config.serializer.processModuleFilter,
@@ -510,20 +503,36 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
-    const urlObj = url.parse(decodeURI(req.url), true);
-    let [, assetPath] =
-      (urlObj &&
-        urlObj.pathname &&
-        urlObj.pathname.match(/^\/assets\/(.+)$/)) ||
-      [];
+    debug('Processing single asset request: %s', req.url);
+    if (!URL.canParse(req.url, 'resolve://')) {
+      throw new Error('Could not parse URL', {cause: req.url});
+    }
 
-    if (!assetPath && urlObj && urlObj.query && urlObj.query.unstable_path) {
+    const urlObj = new URL(req.url, 'resolve://');
+    const formattedUrl = urlObj.toString();
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
+
+    // using this Metro particular convention for decoding URL paths into file paths
+    let [, assetPath] =
+      urlObj.pathname
+        .split('/')
+        .map(segment => decodeURIComponent(segment))
+        .join('/')
+        .match(/^\/assets\/(.+)$/) || [];
+    if (!assetPath && urlObj.searchParams.get('unstable_path')) {
       const [, actualPath, secondaryQuery] = nullthrows(
-        urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
+        (urlObj.searchParams.get('unstable_path') || '').match(
+          /^([^?]*)\??(.*)$/,
+        ),
       );
       if (secondaryQuery) {
-        // $FlowFixMe[unsafe-object-assign]
-        Object.assign(urlObj.query, querystring.parse(secondaryQuery));
+        Object.entries(querystring.parse(secondaryQuery)).forEach(
+          ([key, value]) => {
+            urlObj.searchParams.set(key, value);
+          },
+        );
       }
       assetPath = actualPath;
     }
@@ -544,12 +553,14 @@ class Server {
         assetPath,
         this._config.projectRoot,
         this._config.watchFolders,
-        urlObj.query.platform,
+        urlObj.searchParams.get('platform'),
         this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
       // $FlowFixMe[incompatible-type]
+      /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+       * roll out. See https://fburl.com/workplace/4oq3zi07. */
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
@@ -578,10 +589,11 @@ class Server {
   };
 
   _parseOptions(url: string): BundleOptions {
-    const {bundleType: _bundleType, ...bundleOptions} = parseOptionsFromUrl(
-      url,
-      new Set(this._config.resolver.platforms),
-    );
+    const {bundleType: _bundleType, ...bundleOptions} =
+      parseBundleOptionsFromBundleRequestUrl(
+        url,
+        new Set(this._config.resolver.platforms),
+      );
     return bundleOptions;
   }
 
@@ -597,19 +609,26 @@ class Server {
     next: (?Error) => void,
   ) {
     const originalUrl = req.url;
+    debug('Handling request:    %s', originalUrl);
     req.url = this._rewriteAndNormalizeUrl(req.url);
-    const urlObj = url.parse(decodeURI(req.url), true);
+    if (req.url !== originalUrl) {
+      debug('Rewritten to:    %s', req.url);
+    }
     const {host} = req.headers;
-    debug(
-      `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
-        (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
-    );
-    const formattedUrl = url.format({
-      ...urlObj,
-      host,
-      protocol: 'http',
-    });
+    const urlObj = new URL(req.url, 'http://' + host);
+    const formattedUrl = urlObj.toString();
+    if (req.url !== formattedUrl) {
+      debug('Formatted as:    %s', formattedUrl);
+    }
+
     const pathname = urlObj.pathname || '';
+
+    // using this Metro particular convention for decoding URL paths into file paths
+    const filePathname = pathname
+      .split('/')
+      .map(segment => decodeURIComponent(segment))
+      .join('/');
+
     const buildNumber = this.getNewBuildNumber();
     if (pathname.endsWith('.bundle')) {
       const options = this._parseOptions(formattedUrl);
@@ -622,7 +641,7 @@ class Server {
       });
 
       if (this._serverOptions && this._serverOptions.onBundleBuilt) {
-        this._serverOptions.onBundleBuilt(pathname);
+        this._serverOptions.onBundleBuilt(filePathname);
       }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
@@ -654,10 +673,12 @@ class Server {
       let handled = false;
       for (const [pathnamePrefix, normalizedRootDir] of this
         ._sourceRequestRoutingMap) {
-        if (pathname.startsWith(pathnamePrefix)) {
-          const relativePathname = pathname.substr(pathnamePrefix.length);
+        if (filePathname.startsWith(pathnamePrefix)) {
+          const relativeFilePathname = filePathname.substr(
+            pathnamePrefix.length,
+          );
           await this._processSourceRequest(
-            relativePathname,
+            relativeFilePathname,
             normalizedRootDir,
             res,
           );
@@ -672,13 +693,13 @@ class Server {
   }
 
   async _processSourceRequest(
-    relativePathname: string,
+    relativeFilePathname: string,
     rootDir: string,
     res: ServerResponse,
   ): Promise<void> {
     if (
       !this._allowedSuffixesForSourceRequests.some(suffix =>
-        relativePathname.endsWith(suffix),
+        relativeFilePathname.endsWith(suffix),
       )
     ) {
       res.writeHead(404);
@@ -686,7 +707,7 @@ class Server {
       return;
     }
     const depGraph = await this._bundler.getBundler().getDependencyGraph();
-    const filePath = path.join(rootDir, relativePathname);
+    const filePath = path.join(rootDir, relativeFilePathname);
     try {
       await depGraph.getOrComputeSha1(filePath);
     } catch {
@@ -694,7 +715,7 @@ class Server {
       res.end();
       return;
     }
-    const mimeType = mime.lookup(path.basename(relativePathname));
+    const mimeType = mime.lookup(path.basename(relativeFilePathname));
     res.setHeader('Content-Type', mimeType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
@@ -868,7 +889,7 @@ class Server {
         type: 'bundle_build_started',
       });
 
-      const startContext = {
+      const startContext: ProcessStartContext = {
         buildNumber,
         bundleOptions,
         entryFile: resolvedEntryFilePath,
@@ -923,7 +944,7 @@ class Server {
         return;
       }
 
-      const endContext = {
+      const endContext: ProcessEndContext<T> = {
         ...startContext,
         result,
       };
@@ -935,7 +956,7 @@ class Server {
       });
 
       log(
-        /* $FlowFixMe(>=0.122.0 site=react_native_fb) This comment suppresses
+        /* $FlowFixMe[cannot-spread-inexact](>=0.122.0 site=react_native_fb) This comment suppresses
          * an error found when Flow v0.122.0 was deployed. To see the error,
          * delete this comment and run Flow. */
         createActionEndEntry({
@@ -1050,6 +1071,7 @@ class Server {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          globalPrefix: this._config.transformer.globalPrefix,
           includeAsyncPaths: graphOptions.lazy,
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
@@ -1520,14 +1542,12 @@ class Server {
     customResolverOptions: CustomResolverOptions,
     customTransformOptions: CustomTransformOptions,
     dev: boolean,
-    hot: boolean,
     minify: boolean,
     unstable_transformProfile: 'default',
   }> = {
     customResolverOptions: Object.create(null),
     customTransformOptions: Object.create(null),
     dev: true,
-    hot: false,
     minify: false,
     unstable_transformProfile: 'default',
   };
@@ -1594,17 +1614,23 @@ class Server {
             const relativePath = module.path.slice(
               normalizedRootDir.length + 1,
             );
-            const relativePathPosix = relativePath.split(path.sep).join('/');
-            return pathnamePrefix + encodeURI(relativePathPosix);
+            const relativePathPosix = relativePath
+              .split(path.sep)
+              .map(segment => encodeURIComponent(segment))
+              .join('/');
+            return pathnamePrefix + relativePathPosix;
           }
         }
         // Ordinarily all files should match one of the roots above. If they
         // don't, try to preserve useful information, even if fetching the path
         // from Metro might fail.
-        const modulePathPosix = module.path.split(path.sep).join('/');
+        const modulePathPosix = module.path
+          .split(path.sep)
+          .map(segment => encodeURIComponent(segment))
+          .join('/');
         return modulePathPosix.startsWith('/')
-          ? encodeURI(modulePathPosix)
-          : '/' + encodeURI(modulePathPosix);
+          ? modulePathPosix
+          : '/' + modulePathPosix;
       case SourcePathsMode.Absolute:
         return module.path;
     }
@@ -1612,7 +1638,7 @@ class Server {
 }
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
-  //$FlowIssue #9324959
+  //$FlowFixMe[incompatible-type] #9324959
   const ysIter: Iterator<Y> = ys[Symbol.iterator]();
   for (const x of xs) {
     const y = ysIter.next();
@@ -1626,5 +1652,3 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
 function getBuildID(buildNumber: number): string {
   return buildNumber.toString(36);
 }
-
-module.exports = Server;

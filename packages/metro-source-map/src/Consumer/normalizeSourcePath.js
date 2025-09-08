@@ -9,13 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
-
 // flowlint-next-line untyped-import:off
-const util = require('source-map/lib/util');
+import util from 'source-map/lib/util';
 
 // Extracted from source-map@0.5.6's SourceMapConsumer
-function normalizeSourcePath(
+export default function normalizeSourcePath(
   sourceInput: string,
   map: {+sourceRoot?: ?string, ...},
 ): string {
@@ -38,5 +36,3 @@ function normalizeSourcePath(
 
   return source;
 }
-
-module.exports = normalizeSourcePath;

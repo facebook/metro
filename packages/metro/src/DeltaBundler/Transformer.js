@@ -9,27 +9,27 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
+import {normalizePathSeparatorsToPosix} from '../lib/pathUtils';
+import getTransformCacheKey from './getTransformCacheKey';
+import WorkerFarm from './WorkerFarm';
+import assert from 'assert';
 import crypto from 'crypto';
+import fs from 'fs';
+import {Cache, stableHash} from 'metro-cache';
+import path from 'path';
 
-const getTransformCacheKey = require('./getTransformCacheKey');
-const WorkerFarm = require('./WorkerFarm');
-const assert = require('assert');
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:Transformer');
-const fs = require('fs');
-const {Cache, stableHash} = require('metro-cache');
-const path = require('path');
 
 type GetOrComputeSha1Fn = string => Promise<
   $ReadOnly<{content?: Buffer, sha1: string}>,
 >;
 
-class Transformer {
+export default class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
@@ -52,7 +52,6 @@ class Transformer {
     const {
       getTransformOptions: _getTransformOptions,
       transformVariants: _transformVariants,
-      workerPath: _workerPath,
       unstable_workerThreads: _workerThreads,
       ...transformerConfig
     } = this._config.transformer;
@@ -88,7 +87,6 @@ class Transformer {
       customTransformOptions,
       dev,
       experimentalImportSupport,
-      hot,
       inlinePlatform,
       inlineRequires,
       minify,
@@ -120,12 +118,10 @@ class Transformer {
       // Project-relative, posix-separated path for portability. Necessary in
       // addition to content hash because transformers receive path as an
       // input, and may apply e.g. extension-based logic.
-      path.sep === '/' ? localPath : localPath.replaceAll(path.sep, '/'),
-
+      normalizePathSeparatorsToPosix(localPath),
       customTransformOptions,
       dev,
       experimentalImportSupport,
-      hot,
       inlinePlatform,
       inlineRequires,
       minify,
@@ -213,5 +209,3 @@ function verifyRootExists(root: string): void {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }
-
-module.exports = Transformer;

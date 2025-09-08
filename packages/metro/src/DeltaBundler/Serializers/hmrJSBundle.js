@@ -9,20 +9,19 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
+import type {HmrModule} from 'metro-runtime/src/modules/types';
 
-import type {EntryPointURL} from '../../HmrServer';
-import type {DeltaResult, Module, ReadOnlyGraph} from '../types.flow';
-import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
+import {isJsModule, wrapModule} from './helpers/js';
+import * as jscSafeUrl from 'jsc-safe-url';
+import {addParamsToDefineCall} from 'metro-transform-plugins';
+import path from 'path';
 
-const {isJsModule, wrapModule} = require('./helpers/js');
-const jscSafeUrl = require('jsc-safe-url');
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const path = require('path');
-const url = require('url');
+// eslint-disable-next-line import/no-commonjs
+const debug = require('debug')('Metro:HMR');
 
 type Options = $ReadOnly<{
-  clientUrl: EntryPointURL,
+  clientUrl: URL,
   createModuleId: string => number,
   includeAsyncPaths: boolean,
   projectRoot: string,
@@ -39,28 +38,41 @@ function generateModules(
 
   for (const module of sourceModules) {
     if (isJsModule(module)) {
-      // Construct a bundle URL for this specific module only
-      const getURL = (extension: 'bundle' | 'map') => {
-        const moduleUrl = url.parse(url.format(options.clientUrl), true);
-        // the legacy url object is parsed with both "search" and "query" fields.
-        // for the "query" field to be used when formatting the object bach to string, the "search" field must be empty.
-        // https://nodejs.org/api/url.html#urlformaturlobject:~:text=If%20the%20urlObject.search%20property%20is%20undefined
-        moduleUrl.search = '';
-        moduleUrl.pathname = path.relative(
-          options.serverRoot ?? options.projectRoot,
-          path.join(
-            path.dirname(module.path),
-            path.basename(module.path, path.extname(module.path)) +
-              '.' +
-              extension,
-          ),
+      const getPathname = (extension: 'bundle' | 'map') => {
+        return (
+          path
+            .relative(
+              options.serverRoot ?? options.projectRoot,
+              path.join(
+                path.dirname(module.path),
+                path.basename(module.path, path.extname(module.path)) +
+                  '.' +
+                  extension,
+              ),
+            )
+            .split(path.sep)
+            // using this Metro particular convention for encoding file paths as URL paths.
+            .map(segment => encodeURIComponent(segment))
+            .join('/')
         );
-        delete moduleUrl.query.excludeSource;
-        return url.format(moduleUrl);
       };
 
-      const sourceMappingURL = getURL('map');
-      const sourceURL = jscSafeUrl.toJscSafeUrl(getURL('bundle'));
+      const clientUrl = new URL(options.clientUrl);
+      clientUrl.searchParams.delete('excludeSource');
+
+      clientUrl.pathname = getPathname('map');
+      const sourceMappingURL = clientUrl.toString();
+
+      clientUrl.pathname = getPathname('bundle');
+      const sourceURL = jscSafeUrl.toJscSafeUrl(clientUrl.toString());
+
+      debug(
+        'got sourceMappingURL: %s\nand sourceURL: %s\nfor module: %s',
+        sourceMappingURL,
+        sourceURL,
+        module.path,
+      );
+
       const code =
         prepareModule(module, graph, options) +
         `\n//# sourceMappingURL=${sourceMappingURL}\n` +
@@ -84,7 +96,7 @@ function prepareModule(
 ): string {
   const code = wrapModule(module, {
     ...options,
-    sourceUrl: url.format(options.clientUrl),
+    sourceUrl: options.clientUrl.toString(),
     dev: true,
   });
 
@@ -131,7 +143,7 @@ function getInverseDependencies(
   return inverseDependencies;
 }
 
-function hmrJSBundle(
+export default function hmrJSBundle(
   delta: DeltaResult<>,
   graph: ReadOnlyGraph<>,
   options: Options,
@@ -148,5 +160,3 @@ function hmrJSBundle(
     ),
   };
 }
-
-module.exports = hmrJSBundle;

@@ -1,14 +1,12 @@
 {
   "name": "ob1",
-  "version": "0.82.4",
+  "version": "0.83.1",
   "description": "A small library for working with 0- and 1-based offsets in a type-checked way.",
   "main": "src/ob1.js",
   "exports": {
     ".": "./src/ob1.js",
     "./package.json": "./package.json",
-    "./private/*": "./src/*.js",
-    "./src/*.js": "./src/*.js",
-    "./src/*": "./src/*.js"
+    "./private/*": "./src/*.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +24,6 @@
     "flow-enums-runtime": "^0.0.6"
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.19.4"
   }
 }

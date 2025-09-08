@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Writable} from 'stream';
 
 export type SerializedError = {
@@ -32,7 +30,7 @@ export type SerializedEvent<TEvent: {[string]: any, ...}> = TEvent extends {
     }
   : TEvent;
 
-class JsonReporter<TEvent: {[string]: any, ...}> {
+export default class JsonReporter<TEvent: {[string]: any, ...}> {
   _stream: Writable;
 
   constructor(stream: Writable) {
@@ -82,5 +80,3 @@ function serializeError(
   }
   return serialized;
 }
-
-module.exports = JsonReporter;

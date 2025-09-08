@@ -12,12 +12,12 @@
 'use strict';
 
 import type {Result} from '../Graph';
-import type {Options, TransformResultDependency} from '../types.flow';
+import type {Options, TransformResultDependency} from '../types';
 
 import CountingSet from '../../lib/CountingSet';
+import DeltaCalculator from '../DeltaCalculator';
 import {Graph} from '../Graph';
 
-const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
 
 const traverseDependencies = jest.spyOn(
@@ -52,7 +52,6 @@ describe('DeltaCalculator + require.context', () => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer (via traverseDependencies).
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',

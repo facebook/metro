@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Scope} from '@babel/traverse';
 import type {CallExpression, MemberExpression} from '@babel/types';
 // Type only import. No runtime dependency
@@ -32,7 +30,7 @@ type PlatformChecks = {
   ) => boolean,
 };
 
-function createInlinePlatformChecks(
+export default function createInlinePlatformChecks(
   t: Types,
   requireName: string = 'require',
 ): PlatformChecks {
@@ -76,7 +74,7 @@ function createInlinePlatformChecks(
     isMemberExpression(node.object) &&
     isIdentifier(node.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       node.object.object,
       scope,
       [{name: 'React'}, {name: 'ReactNative'}],
@@ -91,7 +89,7 @@ function createInlinePlatformChecks(
     isMemberExpression(node.callee) &&
     isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       node.callee.object,
       scope,
       [{name: 'Platform'}],
@@ -108,7 +106,7 @@ function createInlinePlatformChecks(
     isMemberExpression(node.callee.object) &&
     isIdentifier(node.callee.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       // $FlowFixMe[incompatible-use]
       node.callee.object.object,
       scope,
@@ -184,5 +182,3 @@ function createInlinePlatformChecks(
     isPlatformSelectNode,
   };
 }
-
-module.exports = createInlinePlatformChecks;

@@ -10,7 +10,7 @@
 
 'use strict';
 
-const SourceMetadataMapConsumer = require('../SourceMetadataMapConsumer.js');
+import SourceMetadataMapConsumer from '../SourceMetadataMapConsumer';
 
 describe('SourceMetadataMapConsumer', () => {
   test('ignores metadata beyond the range of the sources array', () => {

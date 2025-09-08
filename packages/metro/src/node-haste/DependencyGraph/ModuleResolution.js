@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {
   BundlerResolution,
   TransformResultDependency,
-} from '../../DeltaBundler/types.flow';
+} from '../../DeltaBundler/types';
 import type {Reporter} from '../../lib/reporting';
-import type {ResolverInputOptions} from '../../shared/types.flow';
+import type {ResolverInputOptions} from '../../shared/types';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -25,15 +23,15 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
-import type {PackageForModule, PackageJson} from 'metro-resolver/src/types';
+import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
 
-const {codeFrameColumns} = require('@babel/code-frame');
-const fs = require('fs');
-const invariant = require('invariant');
-const Resolver = require('metro-resolver');
-const createDefaultContext = require('metro-resolver/src/createDefaultContext');
-const path = require('path');
-const util = require('util');
+import {codeFrameColumns} from '@babel/code-frame';
+import fs from 'fs';
+import invariant from 'invariant';
+import * as Resolver from 'metro-resolver';
+import createDefaultContext from 'metro-resolver/private/createDefaultContext';
+import path from 'path';
+import util from 'util';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -44,10 +42,9 @@ export type Packageish = interface {
 
 export type Moduleish = interface {
   +path: string,
-  getPackage(): ?Packageish,
 };
 
-export type ModuleishCache<TPackage> = interface {
+export type PackageishCache<TPackage> = interface {
   getPackage(
     name: string,
     platform?: string,
@@ -70,7 +67,7 @@ type Options<TPackage> = $ReadOnly<{
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
   mainFields: $ReadOnlyArray<string>,
-  moduleCache: ModuleishCache<TPackage>,
+  packageCache: PackageishCache<TPackage>,
   nodeModulesPaths: $ReadOnlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
@@ -85,34 +82,24 @@ type Options<TPackage> = $ReadOnly<{
   unstable_enablePackageExports: boolean,
 }>;
 
-class ModuleResolver<TPackage: Packageish> {
+export class ModuleResolver<TPackage: Packageish> {
   _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
-  _projectRootFakeModule: Moduleish;
+  _projectRootFakeModulePath: string;
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?BundlerResolution;
 
   constructor(options: Options<TPackage>) {
     this._options = options;
-    const {projectRoot, moduleCache} = this._options;
-    this._projectRootFakeModule = {
-      path: path.join(projectRoot, '_'),
-      getPackage: () =>
-        moduleCache.getPackageOf(this._projectRootFakeModule.path)?.pkg,
-      isHaste() {
-        throw new Error('not implemented');
-      },
-      getName() {
-        throw new Error('not implemented');
-      },
-    };
+    const {projectRoot} = this._options;
+    this._projectRootFakeModulePath = path.join(projectRoot, '_');
   }
 
   _getEmptyModule(): BundlerResolution {
     let emptyModule = this._cachedEmptyModule;
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
-        this._projectRootFakeModule,
+        this._projectRootFakeModulePath,
         {
           name: this._options.emptyModulePath,
           data: {
@@ -132,7 +119,7 @@ class ModuleResolver<TPackage: Packageish> {
   }
 
   resolveDependency(
-    fromModule: Moduleish,
+    originModulePath: string,
     dependency: TransformResultDependency,
     allowHaste: boolean,
     platform: string | null,
@@ -178,7 +165,7 @@ class ModuleResolver<TPackage: Packageish> {
             unstable_enablePackageExports,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
-            originModulePath: fromModule.path,
+            originModulePath,
             resolveHasteModule: (name: string) =>
               this._options.getHasteModulePath(name, platform),
             resolveHastePackage: (name: string) =>
@@ -197,14 +184,16 @@ class ModuleResolver<TPackage: Packageish> {
       if (error instanceof Resolver.FailedToResolvePathError) {
         const {candidates} = error;
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           '\n\nNone of these files exist:\n' +
             [candidates.file, candidates.dir]
               .filter(Boolean)
               .map(
                 candidates =>
-                  `  * ${Resolver.formatFileCandidates(this._removeRoot(candidates))}`,
+                  `  * ${Resolver.formatFileCandidates(
+                    this._removeRoot(candidates),
+                  )}`,
               )
               .join('\n'),
           {
@@ -214,7 +203,7 @@ class ModuleResolver<TPackage: Packageish> {
         );
       } else if (error instanceof Resolver.FailedToResolveUnsupportedError) {
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           error.message,
           {cause: error, dependency},
@@ -230,7 +219,7 @@ class ModuleResolver<TPackage: Packageish> {
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
 
         throw new UnableToResolveError(
-          fromModule.path,
+          originModulePath,
           dependency.name,
           [
             `${dependency.name} could not be found within the project${
@@ -250,7 +239,7 @@ class ModuleResolver<TPackage: Packageish> {
 
   _getPackage = (packageJsonPath: string): ?PackageJson => {
     try {
-      return this._options.moduleCache.getPackage(packageJsonPath).read();
+      return this._options.packageCache.getPackage(packageJsonPath).read();
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.
@@ -263,7 +252,7 @@ class ModuleResolver<TPackage: Packageish> {
     let result;
 
     try {
-      result = this._options.moduleCache.getPackageOf(absolutePath);
+      result = this._options.packageCache.getPackageOf(absolutePath);
     } catch (e) {
       // Do nothing. The standard module cache does not trigger any error, but
       // the ModuleGraph one does, if the module does not exist.
@@ -330,8 +319,8 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
   return lowest;
 }
 
-// $FlowFixMe[incompatible-extend]
-class UnableToResolveError extends Error {
+// $FlowFixMe[incompatible-type]
+export class UnableToResolveError extends Error {
   /**
    * File path of the module that tried to require a module, ex. `/js/foo.js`.
    */
@@ -493,8 +482,3 @@ function guessDependencyLocation(
 function isQuote(str: ?string): boolean {
   return str === '"' || str === "'" || str === '`';
 }
-
-module.exports = {
-  ModuleResolver,
-  UnableToResolveError,
-};

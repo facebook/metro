@@ -15,7 +15,7 @@ import type {
   Module,
   Options,
   TransformResultDependency,
-} from '../types.flow';
+} from '../types';
 
 import CountingSet from '../../lib/CountingSet';
 import path from 'path';
@@ -49,7 +49,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer (via traverseDependencies).
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',
@@ -203,7 +202,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       };
     });
 
-    const DeltaCalculator = require('../DeltaCalculator');
+    const DeltaCalculator = require('../DeltaCalculator').default;
 
     // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(

@@ -9,20 +9,18 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {ConfigT, InputConfigT, YargArguments} from './types';
 
-import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
+import getDefaultConfig from './defaults';
+import validConfig from './defaults/validConfig';
+import * as fs from 'fs';
+import {validate} from 'jest-validate';
+import * as MetroCache from 'metro-cache';
+import {homedir} from 'os';
+import * as path from 'path';
+import {parse as parseYaml} from 'yaml';
 
-const getDefaultConfig = require('./defaults');
-const validConfig = require('./defaults/validConfig');
-const cosmiconfig = require('cosmiconfig');
-const fs = require('fs');
-const {validate} = require('jest-validate');
-const MetroCache = require('metro-cache');
-const path = require('path');
-const {dirname, join} = require('path');
-
-type CosmiConfigResult = {
+type ResolveConfigResult = {
   filepath: string,
   isEmpty: boolean,
   config: (ConfigT => Promise<ConfigT>) | (ConfigT => ConfigT) | InputConfigT,
@@ -38,30 +36,31 @@ function overrideArgument<T>(arg: Array<T> | T): T {
   }
 
   if (Array.isArray(arg)) {
-    // $FlowFixMe[incompatible-return]
+    // $FlowFixMe[incompatible-type]
     return arg[arg.length - 1];
   }
 
   return arg;
 }
 
-const explorer = cosmiconfig('metro', {
-  searchPlaces: [
-    'metro.config.js',
-    'metro.config.cjs',
-    'metro.config.json',
-    'package.json',
-  ],
-  loaders: {
-    '.json': cosmiconfig.loadJson,
-    '.yaml': cosmiconfig.loadYaml,
-    '.yml': cosmiconfig.loadYaml,
-    '.js': cosmiconfig.loadJs,
-    '.cjs': cosmiconfig.loadJs,
-    '.es6': cosmiconfig.loadJs,
-    noExt: cosmiconfig.loadYaml,
-  },
-});
+const SEARCH_JS_EXTS = ['.js', '.cjs', '.mjs', '.json'];
+const SEARCH_TS_EXTS = ['.ts', '.cts', '.mts'];
+const SEARCH_PLACES = [
+  ...['metro.config', path.join('.config', 'metro')].flatMap(prefix =>
+    [...SEARCH_JS_EXTS, ...SEARCH_TS_EXTS].map(ext => prefix + ext),
+  ),
+  'package.json',
+];
+
+const JS_EXTENSIONS = new Set([
+  ...SEARCH_JS_EXTS,
+  '.es6', // Deprecated
+]);
+const TS_EXTENSIONS = new Set(SEARCH_TS_EXTS);
+const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']); // Deprecated
+
+const PACKAGE_JSON = path.sep + 'package.json';
+const PACKAGE_JSON_PROP_NAME = 'metro';
 
 const isFile = (filePath: string) =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
@@ -84,22 +83,21 @@ const resolve = (filePath: string) => {
 async function resolveConfig(
   filePath?: string,
   cwd?: string,
-): Promise<CosmiConfigResult> {
-  if (filePath) {
-    return explorer.load(resolve(filePath));
-  }
+): Promise<ResolveConfigResult> {
+  const configPath: ?string =
+    filePath != null
+      ? resolve(filePath)
+      : searchForConfigFile(path.resolve(process.cwd(), cwd ?? ''), homedir());
 
-  const result = await explorer.search(cwd);
-  if (result == null) {
+  if (configPath == null) {
     // No config file found, return a default
     return {
       isEmpty: true,
-      filepath: join(cwd || process.cwd(), 'metro.config.stub.js'),
+      filepath: path.join(cwd || process.cwd(), 'metro.config.stub.js'),
       config: {},
     };
   }
-
-  return result;
+  return await loadConfigFile(configPath);
 }
 
 function mergeConfig<T: $ReadOnly<InputConfigT>>(
@@ -173,7 +171,6 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
         healthCheck: {
           // $FlowFixMe[exponential-spread]
           ...totalConfig.watcher?.healthCheck,
-          // $FlowFixMe: Spreading shapes creates an explosion of union types
           ...nextConfig.watcher?.healthCheck,
         },
         unstable_autoSaveCache: {
@@ -188,17 +185,22 @@ function mergeConfig<T: $ReadOnly<InputConfigT>>(
 }
 
 async function loadMetroConfigFromDisk(
-  path?: string,
+  pathToLoad?: string,
   cwd?: string,
   defaultConfigOverrides: InputConfigT,
 ): Promise<ConfigT> {
-  const resolvedConfigResults: CosmiConfigResult = await resolveConfig(
-    path,
+  const resolvedConfigResults: ResolveConfigResult = await resolveConfig(
+    pathToLoad,
     cwd,
   );
 
   const {config: configModule, filepath} = resolvedConfigResults;
-  const rootPath = dirname(filepath);
+  let rootPath = path.dirname(filepath);
+  // Special case .config directories, which are assumed to be a child of the
+  // project root.
+  if (path.basename(rootPath) === '.config') {
+    rootPath = path.dirname(rootPath);
+  }
 
   const defaults = await getDefaultConfig(rootPath);
 
@@ -321,8 +323,90 @@ async function loadConfig(
   });
 }
 
-module.exports = {
-  loadConfig,
-  resolveConfig,
-  mergeConfig,
-};
+export async function loadConfigFile(
+  absolutePath: string,
+): Promise<ResolveConfigResult> {
+  // Config should be JSON, CommonJS, ESM or YAML (deprecated)
+  let config;
+  const extension = path.extname(absolutePath);
+
+  if (JS_EXTENSIONS.has(extension) || TS_EXTENSIONS.has(extension)) {
+    try {
+      // $FlowExpectedError[unsupported-syntax]
+      const configModule = require(absolutePath);
+      if (absolutePath.endsWith(PACKAGE_JSON)) {
+        config = configModule[PACKAGE_JSON_PROP_NAME];
+      } else {
+        config = configModule.__esModule ? configModule.default : configModule;
+      }
+    } catch (e) {
+      try {
+        // $FlowExpectedError[unsupported-syntax]
+        const configModule = await import(absolutePath);
+        // The default export is a promise in the case of top-level await
+        config = await configModule.default;
+      } catch (error) {
+        throw new Error(
+          `Found config at ${absolutePath} that could not be loaded with Node.js.` +
+            (error.code === 'ERR_UNKNOWN_FILE_EXTENSION' &&
+            TS_EXTENSIONS.has(extension)
+              ? '\n\nEnsure your Node.js version supports loading TypeScript. (>=24.0.0 or >=22.6.0 with --experimental-strip-types)'
+              : ''),
+          {cause: error},
+        );
+      }
+    }
+  } else if (YAML_EXTENSIONS.has(extension)) {
+    console.warn(
+      'YAML config is deprecated, please migrate to JavaScript config (e.g. metro.config.js)',
+    );
+    config = parseYaml(fs.readFileSync(absolutePath, 'utf8'));
+  } else {
+    throw new Error(
+      `Unsupported config file extension: ${extension}. ` +
+        `Supported extensions are ${[...JS_EXTENSIONS, ...TS_EXTENSIONS, ...YAML_EXTENSIONS].map(ext => (ext === '' ? 'none' : `${ext}`)).join()})}.`,
+    );
+  }
+
+  return {
+    isEmpty: false,
+    filepath: absolutePath,
+    config,
+  };
+}
+
+function searchForConfigFile(
+  absoluteStartDir: string,
+  absoluteStopDir: string,
+): ?string {
+  for (
+    let currentDir: string = absoluteStartDir, prevDir: string;
+    prevDir !== currentDir && prevDir !== absoluteStopDir;
+    currentDir = path.dirname(prevDir)
+  ) {
+    for (const candidate of SEARCH_PLACES) {
+      const candidatePath = path.join(currentDir, candidate);
+      if (isFile(candidatePath)) {
+        if (candidatePath.endsWith(path.sep + 'package.json')) {
+          // package.json is a special case - we only find a config if
+          // the json has a top-level `metro` key.
+          //
+          // By using `require`, we'll add the json to the Node.js module
+          // cache, so we don't incur further parse cost after returning the
+          // manifest's path.
+          // $FlowFixMe[unsupported-syntax] dynamic require
+          const content = require(candidatePath);
+          if (Object.hasOwn(content, PACKAGE_JSON_PROP_NAME)) {
+            return candidatePath;
+          }
+        } else {
+          return candidatePath;
+        }
+      }
+    }
+    prevDir = currentDir;
+  }
+  return null;
+}
+
+export {loadConfig, resolveConfig, mergeConfig};

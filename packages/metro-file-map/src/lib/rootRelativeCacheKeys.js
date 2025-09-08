@@ -37,7 +37,7 @@ export default function rootRelativeCacheKeys(
   rootDirHash: string,
   relativeConfigHash: string,
 } {
-  const {rootDir, ...otherParameters} = buildParameters;
+  const {rootDir, plugins, ...otherParameters} = buildParameters;
   const rootDirHash = createHash('md5')
     .update(normalizePathSeparatorsToPosix(rootDir))
     .digest('hex');
@@ -58,12 +58,9 @@ export default function rootRelativeCacheKeys(
         case 'enableHastePackages':
         case 'enableSymlinks':
         case 'forceNodeFilesystemAPI':
-        case 'platforms':
         case 'retainAllFiles':
         case 'skipPackageJson':
           return buildParameters[key] ?? null;
-        case 'mocksPattern':
-          return buildParameters[key]?.toString() ?? null;
         case 'ignorePattern':
           return buildParameters[key].toString();
         case 'hasteImplModulePath':
@@ -74,6 +71,10 @@ export default function rootRelativeCacheKeys(
           throw new Error('Unrecognised key in build parameters: ' + key);
       }
     });
+
+  for (const plugin of plugins) {
+    cacheComponents.push(plugin.getCacheKey());
+  }
 
   // JSON.stringify is stable here because we only deal in (nested) arrays of
   // primitives. Use a different approach if this is expanded to include

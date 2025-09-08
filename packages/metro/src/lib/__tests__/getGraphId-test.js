@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const getGraphId = require('../getGraphId');
+import getGraphId from '../getGraphId';
 
 describe('getGraphId', () => {
   test('generates a unique id from entry file', () => {
@@ -20,7 +18,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -40,7 +37,6 @@ describe('getGraphId', () => {
         '/root/notmuch',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -64,7 +60,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -84,7 +79,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: false,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -108,7 +102,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -129,7 +122,6 @@ describe('getGraphId', () => {
         {
           type: 'module',
           platform: 'web',
-          hot: true,
           dev: true,
           minify: true,
           unstable_transformProfile: 'default',
@@ -156,7 +148,6 @@ describe('getGraphId', () => {
             b: false,
           },
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -180,7 +171,6 @@ describe('getGraphId', () => {
             a: true,
           },
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: 'web',
@@ -200,14 +190,13 @@ describe('getGraphId', () => {
 
   test('generates different graph IDs for different custom resolver options', () => {
     const transformOptions = {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: true,
-        type: 'module',
-        platform: 'web',
-        unstable_transformProfile: 'default',
-      } /*:: as const */;
+      customTransformOptions: {},
+      dev: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      unstable_transformProfile: 'default',
+    } as const;
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
@@ -237,14 +226,13 @@ describe('getGraphId', () => {
 
   test("order of keys in custom resolver options doesn't matter", () => {
     const transformOptions = {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: true,
-        type: 'module',
-        platform: 'web',
-        unstable_transformProfile: 'default',
-      } /*:: as const */;
+      customTransformOptions: {},
+      dev: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      unstable_transformProfile: 'default',
+    } as const;
     expect(
       getGraphId('/root/waddup', transformOptions, {
         shallow: false,
@@ -282,7 +270,6 @@ describe('getGraphId', () => {
           customTransformOptions: undefined,
           experimentalImportSupport: false,
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: null,
@@ -303,7 +290,6 @@ describe('getGraphId', () => {
         '/root/waddup',
         {
           dev: true,
-          hot: true,
           minify: true,
           type: 'module',
           platform: undefined,

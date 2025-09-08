@@ -9,11 +9,9 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {ConfigT} from '../types';
 
-import type {ConfigT} from '../configTypes.flow';
-
-const {
+import {
   DEFAULT_METRO_MINIFIER_PATH,
   additionalExts,
   assetExts,
@@ -22,14 +20,14 @@ const {
   noopPerfLoggerFactory,
   platforms,
   sourceExts,
-} = require('./defaults');
-const exclusionList = require('./exclusionList');
-const {FileStore} = require('metro-cache');
-const {Terminal} = require('metro-core');
-const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
-const TerminalReporter = require('metro/src/lib/TerminalReporter');
-const os = require('os');
-const path = require('path');
+} from './defaults';
+import exclusionList from './exclusionList';
+import getMaxWorkers from './getMaxWorkers';
+import {FileStore} from 'metro-cache';
+import {Terminal} from 'metro-core';
+import TerminalReporter from 'metro/private/lib/TerminalReporter';
+import * as os from 'os';
+import * as path from 'path';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
@@ -60,7 +58,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
 
   serializer: {
     polyfillModuleNames: [],
-    getRunModuleStatement: (moduleId: number | string) =>
+    getRunModuleStatement: (moduleId: number | string, globalPrefix: string) =>
       `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
     getModulesRunBeforeMainModule: () => [],
@@ -127,7 +125,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     transformVariants: {default: {}},
-    workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
     unstable_allowRequireContext: false,
@@ -183,4 +180,8 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 getDefaultConfig.getDefaultValues = getDefaultValues;
-module.exports = getDefaultConfig;
+
+export default getDefaultConfig as interface {
+  (rootPath?: string): Promise<ConfigT>,
+  getDefaultValues: (rootPath?: string) => ConfigT,
+};

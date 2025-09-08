@@ -9,22 +9,20 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   ModuleGroups,
   ModuleTransportLike,
   OutputOptions,
-} from '../../types.flow';
+} from '../../types';
 import type {WriteStream} from 'fs';
 
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
-const {joinModules} = require('./util');
-const writeSourceMap = require('./write-sourcemap');
-const fs = require('fs');
+import relativizeSourceMapInline from '../../../lib/relativizeSourceMap';
+import buildSourcemapWithMetadata from './buildSourcemapWithMetadata';
+import MAGIC_UNBUNDLE_FILE_HEADER from './magic-number';
+import {joinModules} from './util';
+import writeSourceMap from './write-sourcemap';
+import fs from 'fs';
 
 const SIZEOF_UINT32 = 4;
 
@@ -35,7 +33,7 @@ const SIZEOF_UINT32 = 4;
  * The module id for the startup code (prelude, polyfills etc.) is the
  * empty string.
  */
-function saveAsIndexedFile(
+export function save(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
@@ -217,7 +215,7 @@ function buildModuleBuffers(
     );
 }
 
-function buildTableAndContents(
+export function buildTableAndContents(
   startupCode: string,
   modules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
@@ -242,7 +240,7 @@ function buildTableAndContents(
   );
 }
 
-function createModuleGroups(
+export function createModuleGroups(
   groups: Map<number, Set<number>>,
   modules: $ReadOnlyArray<ModuleTransportLike>,
 ): ModuleGroups {
@@ -260,7 +258,3 @@ function* concat(
     yield* it;
   }
 }
-
-exports.save = saveAsIndexedFile;
-exports.buildTableAndContents = buildTableAndContents;
-exports.createModuleGroups = createModuleGroups;

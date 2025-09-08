@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {ModuleGroups, ModuleTransportLike} from '../../types';
 import type {
   BasicSourceMap,
   IndexMap,
@@ -20,8 +18,7 @@ import type {
 } from 'metro-source-map';
 
 import countLines from '../../../lib/countLines';
-
-const invariant = require('invariant');
+import invariant from 'invariant';
 
 function lineToLineSourceMap(
   source: string,
@@ -123,6 +120,7 @@ function combineMaps(
     sections.push(
       /* $FlowFixMe[incompatible-exact] Natural Inference rollout. See
        * https://fburl.com/gdoc/y8dn025u */
+      // $FlowFixMe[incompatible-type]
       Section(line, column, map || lineToLineSourceMap(code, name)),
     );
     if (offsets != null && id != null) {
@@ -140,7 +138,7 @@ function combineMaps(
 const joinModules = (modules: $ReadOnlyArray<{+code: string, ...}>): string =>
   modules.map((m: {+code: string, ...}) => m.code).join('\n');
 
-module.exports = {
+export {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   countLines,

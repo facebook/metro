@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
-import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {ModuleGroups, ModuleTransportLike} from '../../types';
 import type {IndexMap} from 'metro-source-map';
 
-const {
+import {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   joinModules,
-} = require('./util');
+} from './util';
 
 type Params = {
   fixWrapperOffset: boolean,
@@ -27,7 +25,7 @@ type Params = {
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
 };
 
-module.exports = (({
+export default (({
   fixWrapperOffset,
   lazyModules,
   moduleGroups,

@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginEntry, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
@@ -28,38 +26,39 @@ import type {
   InlinePluginOptions,
   InlineRequiresPluginOptions,
 } from 'metro-transform-plugins';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types';
 import type {
   DependencyTransformer,
   DynamicRequiresBehavior,
-} from 'metro/src/ModuleGraph/worker/collectDependencies';
+} from 'metro/private/ModuleGraph/worker/collectDependencies';
 
-const getMinifier = require('./utils/getMinifier');
-const {transformFromAstSync} = require('@babel/core');
-const generate = require('@babel/generator').default;
-const babylon = require('@babel/parser');
-const types = require('@babel/types');
-const {stableHash} = require('metro-cache');
-const getCacheKey = require('metro-cache-key');
-const {
+import * as assetTransformer from './utils/assetTransformer';
+import getMinifier from './utils/getMinifier';
+import {transformFromAstSync} from '@babel/core';
+import generate from '@babel/generator';
+import * as babylon from '@babel/parser';
+import * as types from '@babel/types';
+import {stableHash} from 'metro-cache';
+import {getCacheKey as metroGetCacheKey} from 'metro-cache-key';
+import {
   fromRawMappings,
   functionMapBabelPlugin,
   toBabelSegments,
   toSegmentTuple,
-} = require('metro-source-map');
-const metroTransformPlugins = require('metro-transform-plugins');
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
-const {
-  InvalidRequireCallError: InternalInvalidRequireCallError,
-} = require('metro/src/ModuleGraph/worker/collectDependencies');
-const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
-const {
+} from 'metro-source-map';
+import metroTransformPlugins from 'metro-transform-plugins';
+import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
+import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
+import {
   importLocationsPlugin,
   locToKey,
-} = require('metro/src/ModuleGraph/worker/importLocationsPlugin');
-const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
-const nullthrows = require('nullthrows');
+} from 'metro/private/ModuleGraph/worker/importLocationsPlugin';
+import * as JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
+import nullthrows from 'nullthrows';
+
+const InternalInvalidRequireCallError =
+  collectDependencies.InvalidRequireCallError;
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
@@ -119,7 +118,6 @@ export type JsTransformOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
-  hot: boolean,
   inlinePlatform: boolean,
   inlineRequires: boolean,
   minify: boolean,
@@ -317,7 +315,7 @@ async function transformJS(
         ignoredRequires: options.nonInlinedRequires,
         inlineableCalls: [importDefault, importAll],
         memoizeCalls:
-          // $FlowFixMe[incompatible-cast] is this always (?boolean)?
+          // $FlowFixMe[incompatible-type] is this always (?boolean)?
           options.customTransformOptions?.unstable_memoizeInlineRequires ??
           options.unstable_memoizeInlineRequires,
         nonMemoizedModules: options.unstable_nonMemoizedInlineRequires,
@@ -331,7 +329,7 @@ async function transformJS(
       dev: options.dev,
       inlinePlatform: options.inlinePlatform,
       isWrapped: false,
-      // $FlowFixMe[incompatible-cast] expects a string if inlinePlatform
+      // $FlowFixMe[incompatible-type] expects a string if inlinePlatform
       platform: options.platform,
     } as InlinePluginOptions,
   ]);
@@ -517,7 +515,6 @@ async function transformAsset(
   file: AssetFile,
   context: TransformationContext,
 ): Promise<TransformResponse> {
-  const assetTransformer = require('./utils/assetTransformer');
   const {assetRegistryPath, assetPlugins} = context.config;
 
   const result = await assetTransformer.transform(
@@ -653,98 +650,96 @@ function getBabelTransformArgs(
   };
 }
 
-module.exports = {
-  transform: async (
-    config: JsTransformerConfig,
-    projectRoot: string,
-    filename: string,
-    data: Buffer,
-    options: JsTransformOptions,
-  ): Promise<TransformResponse> => {
-    const context: TransformationContext = {
-      config,
-      projectRoot,
-      options,
-    };
-    const sourceCode = data.toString('utf8');
+export const transform = async (
+  config: JsTransformerConfig,
+  projectRoot: string,
+  filename: string,
+  data: Buffer,
+  options: JsTransformOptions,
+): Promise<TransformResponse> => {
+  const context: TransformationContext = {
+    config,
+    projectRoot,
+    options,
+  };
+  const sourceCode = data.toString('utf8');
 
-    const reservedStrings = [];
-    if (
-      options.customTransformOptions?.unstable_staticHermesOptimizedRequire ==
-      true
-    ) {
-      reservedStrings.push('_$$_METRO_MODULE_ID');
+  const reservedStrings = [];
+  if (
+    options.customTransformOptions?.unstable_staticHermesOptimizedRequire ==
+    true
+  ) {
+    reservedStrings.push('_$$_METRO_MODULE_ID');
+  }
+  if (config.unstable_dependencyMapReservedName != null) {
+    reservedStrings.push(config.unstable_dependencyMapReservedName);
+  }
+  for (const reservedString of reservedStrings) {
+    const position = sourceCode.indexOf(reservedString);
+    if (position > -1) {
+      throw new SyntaxError(
+        'Source code contains the reserved string `' +
+          reservedString +
+          '` at character offset ' +
+          position,
+      );
     }
-    if (config.unstable_dependencyMapReservedName != null) {
-      reservedStrings.push(config.unstable_dependencyMapReservedName);
-    }
-    for (const reservedString of reservedStrings) {
-      const position = sourceCode.indexOf(reservedString);
-      if (position > -1) {
-        throw new SyntaxError(
-          'Source code contains the reserved string `' +
-            reservedString +
-            '` at character offset ' +
-            position,
-        );
-      }
-    }
+  }
 
-    if (filename.endsWith('.json')) {
-      const jsonFile: JSONFile = {
-        filename,
-        inputFileSize: data.length,
-        code: sourceCode,
-        type: options.type,
-      };
-
-      return await transformJSON(jsonFile, context);
-    }
-
-    if (options.type === 'asset') {
-      const file: AssetFile = {
-        filename,
-        inputFileSize: data.length,
-        code: sourceCode,
-        type: options.type,
-      };
-
-      return await transformAsset(file, context);
-    }
-
-    const file: JSFile = {
+  if (filename.endsWith('.json')) {
+    const jsonFile: JSONFile = {
       filename,
       inputFileSize: data.length,
       code: sourceCode,
-      type: options.type === 'script' ? 'js/script' : 'js/module',
-      functionMap: null,
+      type: options.type,
     };
 
-    return await transformJSWithBabel(file, context);
-  },
+    return await transformJSON(jsonFile, context);
+  }
 
-  getCacheKey: (config: JsTransformerConfig): string => {
-    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
+  if (options.type === 'asset') {
+    const file: AssetFile = {
+      filename,
+      inputFileSize: data.length,
+      code: sourceCode,
+      type: options.type,
+    };
 
-    const filesKey = getCacheKey([
-      __filename,
-      require.resolve(babelTransformerPath),
-      require.resolve(minifierPath),
-      require.resolve('./utils/getMinifier'),
-      require.resolve('./utils/assetTransformer'),
-      require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
-      require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
-      ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
-    ]);
+    return await transformAsset(file, context);
+  }
 
-    // $FlowFixMe[unsupported-syntax]
-    const babelTransformer = require(babelTransformerPath);
-    return [
-      filesKey,
-      stableHash(remainingConfig).toString('hex'),
-      babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
-    ].join('$');
-  },
+  const file: JSFile = {
+    filename,
+    inputFileSize: data.length,
+    code: sourceCode,
+    type: options.type === 'script' ? 'js/script' : 'js/module',
+    functionMap: null,
+  };
+
+  return await transformJSWithBabel(file, context);
+};
+
+export const getCacheKey = (config: JsTransformerConfig): string => {
+  const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
+
+  const filesKey = metroGetCacheKey([
+    __filename,
+    require.resolve(babelTransformerPath),
+    require.resolve(minifierPath),
+    require.resolve('./utils/getMinifier'),
+    require.resolve('./utils/assetTransformer'),
+    require.resolve('metro/private/ModuleGraph/worker/generateImportNames'),
+    require.resolve('metro/private/ModuleGraph/worker/JsFileWrapping'),
+    ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
+  ]);
+
+  // $FlowFixMe[unsupported-syntax]
+  const babelTransformer = require(babelTransformerPath);
+  return [
+    filesKey,
+    stableHash(remainingConfig).toString('hex'),
+    babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
+  ].join('$');
 };
 
 function countLinesAndTerminateMap(
@@ -785,3 +780,14 @@ function countLinesAndTerminateMap(
   }
   return {lineCount, map: [...map]};
 }
+
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-transform-worker' is deprecated, use named exports.
+ */
+export default {
+  getCacheKey,
+  transform,
+};

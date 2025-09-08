@@ -15,7 +15,6 @@ const execBundle = require('../execBundle');
 const fs = require('fs');
 const path = require('path');
 
-jest.unmock('cosmiconfig');
 jest.useRealTimers();
 jest.setTimeout(60 * 1000);
 
@@ -60,12 +59,12 @@ describe('Metro development server serves bundles via HTTP', () => {
 
     let onCloseResolve;
     serverClosedPromise = new Promise(resolve => (onCloseResolve = resolve));
-    httpServer = await Metro.runServer(config, {
+    ({httpServer} = await Metro.runServer(config, {
       reporter: {update() {}},
       onClose: () => {
         onCloseResolve();
       },
-    });
+    }));
   });
 
   afterEach(async () => {

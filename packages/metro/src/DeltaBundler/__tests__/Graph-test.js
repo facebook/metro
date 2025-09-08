@@ -42,10 +42,11 @@ import type {
   Options,
   ReadOnlyDependencies,
   ReadOnlyGraph,
+  ResolvedDependency,
   TransformFn,
   TransformResultDependency,
   TransformResultWithSource,
-} from '../types.flow';
+} from '../types';
 
 import {deriveAbsolutePathFromContext} from '../../lib/contextModule';
 import CountingSet from '../../lib/CountingSet';
@@ -283,7 +284,10 @@ function computeInverseDependencies(
   }
   for (const module of graph.dependencies.values()) {
     for (const dependency of module.dependencies.values()) {
-      if (options.lazy && dependency.data.data.asyncType != null) {
+      if (
+        dependency.absolutePath == null ||
+        (options.lazy && dependency.data.data.asyncType != null)
+      ) {
         // Async deps aren't tracked in inverseDependencies
         continue;
       }
@@ -323,7 +327,7 @@ class TestGraph extends Graph<> {
       options,
     );
     const actualInverseDependencies = new Map<string, Set<string>>();
-    for (const [path, module] of graph.dependencies) {
+    for (const [path, module] of this.dependencies) {
       actualInverseDependencies.set(path, new Set(module.inverseDependencies));
     }
     expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
@@ -373,7 +377,7 @@ beforeEach(async () => {
             isESMImport: false,
             // $FlowFixMe[missing-empty-array-annot]
             locs: [],
-            // $FlowFixMe[incompatible-call]
+            // $FlowFixMe[incompatible-type]
             key: dep.data.key,
             ...dep.data,
           },
@@ -412,7 +416,6 @@ beforeEach(async () => {
     transformOptions: {
       // NOTE: These options are ignored because we mock out the transformer.
       dev: false,
-      hot: false,
       minify: false,
       platform: null,
       type: 'module',
@@ -3495,7 +3498,7 @@ describe('require.context', () => {
 
 describe('reorderGraph', () => {
   test('should reorder any unordered graph in DFS order', async () => {
-    const dep = (path: string): Dependency => ({
+    const dep = (path: string): ResolvedDependency => ({
       absolutePath: path,
       data: {
         data: {
@@ -3553,31 +3556,7 @@ describe('reorderGraph', () => {
 describe('optional dependencies', () => {
   let localGraph;
   let localOptions;
-  const getAllDependencies = () => {
-    const all = new Set<string>();
-    mockedDependencyTree.forEach(deps => {
-      deps.forEach(r => all.add(r.name));
-    });
-    return all;
-  };
-  const assertResults = (
-    dependencies: Map<string, Module<>>,
-    expectedMissing: Array<string>,
-  ) => {
-    let count = 0;
-    const allDependency = getAllDependencies();
-    allDependency.forEach(m => {
-      const data = dependencies.get(`/${m}`);
-      if (expectedMissing.includes(m)) {
-        expect(data).toBeUndefined();
-      } else {
-        expect(data).not.toBeUndefined();
-      }
-      count += 1;
-    });
-    expect(count).toBeGreaterThan(0);
-    expect(count).toBe(allDependency.size);
-  };
+  let dependencyKeys: Map<string, string>;
 
   const createMockTransform = (notOptional?: string[]) => {
     /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
@@ -3608,11 +3587,18 @@ describe('optional dependencies', () => {
   beforeEach(() => {
     mockedDependencies = new Set();
     mockedDependencyTree = new Map();
+    dependencyKeys = new Map();
 
     entryModule = Actions.createFile('/bundle-o');
 
-    Actions.addDependency('/bundle-o', '/regular-a');
-    Actions.addDependency('/bundle-o', '/optional-b');
+    dependencyKeys.set(
+      '/regular-a',
+      Actions.addDependency('/bundle-o', '/regular-a'),
+    );
+    dependencyKeys.set(
+      '/optional-b',
+      Actions.addDependency('/bundle-o', '/optional-b'),
+    );
 
     localGraph = new TestGraph({
       entryPoints: new Set(['/bundle-o']),
@@ -3630,8 +3616,41 @@ describe('optional dependencies', () => {
 
     const result = await localGraph.initialTraverseDependencies(localOptions);
 
-    const dependencies = result.added;
-    assertResults(dependencies, ['optional-b']);
+    expect(result.added).toEqual(
+      new Map([
+        [
+          '/bundle-o',
+          expect.objectContaining({
+            dependencies: new Map([
+              [
+                dependencyKeys.get('/regular-a'),
+                expect.objectContaining({
+                  absolutePath: '/regular-a',
+                  data: expect.objectContaining({
+                    isOptional: false,
+                  }),
+                }),
+              ],
+              [
+                dependencyKeys.get('/optional-b'),
+                expect.objectContaining({
+                  absolutePath: null,
+                  data: expect.objectContaining({
+                    isOptional: true,
+                  }),
+                }),
+              ],
+            ]),
+          }),
+        ],
+        [
+          '/regular-a',
+          expect.objectContaining({
+            dependencies: new Map(),
+          }),
+        ],
+      ]),
+    );
   });
   test('missing non-optional dependency will throw', async () => {
     localOptions = {
@@ -3641,6 +3660,105 @@ describe('optional dependencies', () => {
     await expect(
       localGraph.initialTraverseDependencies(localOptions),
     ).rejects.toThrow();
+  });
+
+  test('deleting an optional dependency will not throw', async () => {
+    localOptions = {
+      ...options,
+      transform: createMockTransform(),
+    };
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┌─────────────┐     ┌────────────┐
+    │ /optional-b │ ──▶ │ /regular-c │
+    └─────────────┘     └────────────┘
+    */
+    Actions.createFile('/optional-b');
+    Actions.addDependency('/optional-b', '/regular-c');
+
+    expect(
+      getPaths(await localGraph.initialTraverseDependencies(localOptions)),
+    ).toEqual({
+      added: new Set(['/bundle-o', '/regular-a', '/optional-b', '/regular-c']),
+      modified: new Set(),
+      deleted: new Set(),
+    });
+
+    Actions.deleteFile('/optional-b', localGraph);
+
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┌────╲──╱─────┐     ┌────────────┐
+    │ /optional-b │ ──▶ │ /regular-c │
+    └────╱──╲─────┘     └────────────┘
+    */
+
+    expect(
+      getPaths(await localGraph.traverseDependencies([...files], localOptions)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle-o']),
+      deleted: new Set(['/optional-b', '/regular-c']),
+    });
+  });
+
+  test('creating a file satisfying an unresolved optional dependency', async () => {
+    localOptions = {
+      ...options,
+      transform: createMockTransform(),
+    };
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          ┊
+          ┊
+          ▽
+    ┌┈┈┈┈┈┈┈┈┈┈┈┈┈┐
+    ┊ /optional-b ┊ (not yet created)
+    └┈┈┈┈┈┈┈┈┈┈┈┈┈┘
+    */
+
+    expect(
+      getPaths(await localGraph.initialTraverseDependencies(localOptions)),
+    ).toEqual({
+      added: new Set(['/bundle-o', '/regular-a']),
+      modified: new Set(),
+      deleted: new Set(),
+    });
+
+    Actions.createFile('/optional-b');
+    Actions.addDependency('/optional-b', '/regular-c');
+
+    /*
+    ┌───────────┐     ┌────────────┐
+    │ /bundle-o │ ──▶ │ /regular-a │
+    └───────────┘     └────────────┘
+          │
+          │
+          ▼
+    ┏━━━━━━━━━━━━━┓     ┏━━━━━━━━━━━━┓
+    ┃ /optional-b ┃ ──▶ ┃ /regular-c ┃
+    ┗━━━━━━━━━━━━━┛     ┗━━━━━━━━━━━━┛
+    */
+
+    expect(
+      getPaths(await localGraph.traverseDependencies([...files], localOptions)),
+    ).toEqual({
+      added: new Set(['/optional-b', '/regular-c']),
+      modified: new Set(['/bundle-o']),
+      deleted: new Set(),
+    });
   });
 });
 

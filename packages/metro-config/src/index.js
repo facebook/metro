@@ -9,22 +9,16 @@
  * @oncall react_native
  */
 
+/* eslint-disable import/no-commonjs */
+
 'use strict';
 
 /*::
-export type * from './configTypes.flow';
+export type * from './index.flow';
 */
 
 try {
   require('metro-babel-register').unstable_registerForMetroMonorepo();
 } catch {}
 
-const getDefaultConfig = require('./defaults');
-const {loadConfig, mergeConfig, resolveConfig} = require('./loadConfig');
-
-module.exports = {
-  loadConfig,
-  resolveConfig,
-  mergeConfig,
-  getDefaultConfig,
-};
+module.exports = require('./index.flow');

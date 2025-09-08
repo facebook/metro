@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {Minifier} from '../index.js';
 
-function getMinifier(minifierPath: string): Minifier {
+export default function getMinifier(minifierPath: string): Minifier {
   // Note: minifierPath should be an absolute path OR a module name here!
   // The options allow relative paths but they HAVE to be normalized at
   // any entry point that accepts them...
   try {
-    // $FlowFixMe TODO t0 cannot do require with literal
+    // $FlowFixMe[unsupported-syntax] TODO t0 cannot do require with literal
     return require(minifierPath);
   } catch (e) {
     throw new Error(
@@ -29,5 +27,3 @@ function getMinifier(minifierPath: string): Minifier {
     );
   }
 }
-
-module.exports = getMinifier;

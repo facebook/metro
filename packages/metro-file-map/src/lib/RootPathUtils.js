@@ -57,6 +57,8 @@ export class RootPathUtils {
     const rootDirnames = [];
     for (
       let next = rootDir, previous = null;
+      /* $FlowFixMe[invalid-compare] Error discovered during Constant Condition
+       * roll out. See https://fburl.com/workplace/5whu3i34. */
       previous !== next;
       previous = next, next = path.dirname(next)
     ) {

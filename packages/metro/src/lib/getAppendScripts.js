@@ -9,23 +9,20 @@
  * @oncall react_native
  */
 
-'use strict';
 import type {Module} from '../DeltaBundler';
-import type {Dependency} from '../DeltaBundler/types.flow';
+import type {Dependency} from '../DeltaBundler/types';
 
+import getInlineSourceMappingURL from '../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL';
+import {sourceMapString} from '../DeltaBundler/Serializers/sourceMapString';
 import CountingSet from './CountingSet';
-
-const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL');
-const {
-  sourceMapString,
-} = require('../DeltaBundler/Serializers/sourceMapString');
-const countLines = require('./countLines');
-const nullthrows = require('nullthrows');
+import countLines from './countLines';
+import nullthrows from 'nullthrows';
 
 type Options<T: number | string> = $ReadOnly<{
   asyncRequireModulePath: string,
   createModuleId: string => T,
-  getRunModuleStatement: T => string,
+  getRunModuleStatement: (moduleId: T, globalPrefix: string) => string,
+  globalPrefix: string,
   inlineSourceMap: ?boolean,
   runBeforeMainModule: $ReadOnlyArray<string>,
   runModule: boolean,
@@ -36,7 +33,7 @@ type Options<T: number | string> = $ReadOnly<{
   ...
 }>;
 
-function getAppendScripts<T: number | string>(
+export default function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
   options: Options<T>,
@@ -50,6 +47,7 @@ function getAppendScripts<T: number | string>(
       if (modules.some((module: Module<>) => module.path === path)) {
         const code = options.getRunModuleStatement(
           options.createModuleId(path),
+          options.globalPrefix,
         );
         output.push({
           path: `require-${path}`,
@@ -124,5 +122,3 @@ function getAppendScripts<T: number | string>(
 
   return output;
 }
-
-module.exports = getAppendScripts;

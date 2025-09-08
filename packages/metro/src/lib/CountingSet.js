@@ -81,7 +81,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
   }
 
   // Iterate over unique entries
-  // $FlowIssue[unsupported-syntax]
+  // $FlowFixMe[unsupported-syntax]
   [Symbol.iterator](): Iterator<T> {
     return this.values();
   }
@@ -94,7 +94,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
   */
 
   // Number of unique entries
-  // $FlowIssue[unsafe-getters-setters]
+  // $FlowFixMe[unsafe-getters-setters]
   get size(): number {
     return this.#map.size;
   }

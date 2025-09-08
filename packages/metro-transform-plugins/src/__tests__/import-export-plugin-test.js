@@ -9,15 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {Dependency} from 'metro/private/ModuleGraph/worker/collectDependencies';
 
-import type {Dependency} from 'metro/src/ModuleGraph/worker/collectDependencies';
+import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
 
 const {compare, transformToAst} = require('../__mocks__/test-helpers');
 const importExportPlugin = require('../import-export-plugin');
 // $FlowFixMe[untyped-import] @babel/code-frame
 const {codeFrameColumns} = require('@babel/code-frame');
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',

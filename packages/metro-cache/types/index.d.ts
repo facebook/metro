@@ -8,8 +8,6 @@
  * @oncall react_native
  */
 
-// <reference types="node" />
-
 import Cache from './Cache';
 import stableHash from './stableHash';
 import AutoCleanFileStore from './stores/AutoCleanFileStore';
@@ -20,6 +18,14 @@ import HttpStore from './stores/HttpStore';
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';
 export type {CacheStore} from './types';
+export {
+  AutoCleanFileStore,
+  Cache,
+  FileStore,
+  HttpGetStore,
+  HttpStore,
+  stableHash,
+};
 
 export interface MetroCache {
   AutoCleanFileStore: typeof AutoCleanFileStore;
@@ -30,11 +36,11 @@ export interface MetroCache {
   stableHash: typeof stableHash;
 }
 
-export {
-  AutoCleanFileStore,
-  Cache,
-  FileStore,
-  HttpGetStore,
-  HttpStore,
-  stableHash,
-};
+/**
+ * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
+ * Do not add to this list.
+ *
+ * @deprecated Default import from 'metro-cache' is deprecated, use named exports.
+ */
+declare const $$EXPORT_DEFAULT_DECLARATION$$: MetroCache;
+export default $$EXPORT_DEFAULT_DECLARATION$$;

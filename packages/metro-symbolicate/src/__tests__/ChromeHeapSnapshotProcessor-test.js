@@ -13,9 +13,9 @@
 
 import type {ChromeHeapSnapshot} from '../ChromeHeapSnapshot';
 
-const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
+import {ChromeHeapSnapshotProcessor} from '../ChromeHeapSnapshot';
 
-const SNAPSHOT_COMMON = {
+const SNAPSHOT_COMMON: Pick<ChromeHeapSnapshot, 'snapshot'> = {
   snapshot: {
     meta: {
       node_fields: [

@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {FileMetaData} from '../../../flow-types';
+import type {FileMetadata} from '../../../flow-types';
 import type HasteMapType from '../../HastePlugin';
 
 let mockPathModule;
@@ -163,6 +163,6 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
   });
 });
 
-function hasteMetadata(hasteName: string): FileMetaData {
-  return [hasteName, 0, 0, 0, '', '', 0];
+function hasteMetadata(hasteName: string): FileMetadata {
+  return [0, 0, 0, '', '', 0, hasteName];
 }

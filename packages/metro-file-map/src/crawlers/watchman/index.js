@@ -14,7 +14,7 @@ import type {
   CanonicalPath,
   CrawlerOptions,
   FileData,
-  FileMetaData,
+  FileMetadata,
   Path,
   WatchmanClocks,
 } from '../../flow-types';
@@ -24,11 +24,10 @@ import normalizePathSeparatorsToPosix from '../../lib/normalizePathSeparatorsToP
 import normalizePathSeparatorsToSystem from '../../lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from '../../lib/RootPathUtils';
 import {planQuery} from './planQuery';
+import watchman from 'fb-watchman';
 import invariant from 'invariant';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
-
-const watchman = require('fb-watchman');
 
 type WatchmanRoots = Map<
   string, // Posix-separated absolute path
@@ -47,7 +46,7 @@ function makeWatchmanError(error: Error): Error {
   return error;
 }
 
-module.exports = async function watchmanCrawl({
+export default async function watchmanCrawl({
   abortSignal,
   computeSha1,
   extensions,
@@ -103,7 +102,7 @@ module.exports = async function watchmanCrawl({
     try {
       const response = await new Promise<WatchmanQueryResponse>(
         (resolve, reject) =>
-          // $FlowFixMe[incompatible-call] - dynamic call of command
+          // $FlowFixMe[incompatible-type] - dynamic call of command
           client.command(
             [command, ...args],
             (error: ?Error, result: WatchmanQueryResponse) =>
@@ -117,10 +116,10 @@ module.exports = async function watchmanCrawl({
           command,
         });
       }
-      // $FlowFixMe[incompatible-return]
+      // $FlowFixMe[incompatible-type]
       return response;
     } finally {
-      // $FlowFixMe[incompatible-call] clearInterval / clearTimeout are interchangeable
+      // $FlowFixMe[incompatible-type] clearInterval / clearTimeout are interchangeable
       clearInterval(intervalOrTimeoutId);
       if (didLogWatchmanWaitMessage) {
         onStatus({
@@ -333,14 +332,14 @@ module.exports = async function watchmanCrawl({
           symlinkInfo = fileData['symlink_target'] ?? 1;
         }
 
-        const nextData: FileMetaData = [
-          '',
+        const nextData: FileMetadata = [
           mtime,
           size,
           0,
           '',
           sha1hex ?? null,
           symlinkInfo,
+          '',
         ];
 
         // If watchman is fresh, the removed files map starts with all files
@@ -367,4 +366,4 @@ module.exports = async function watchmanCrawl({
     removedFiles,
     clocks: newClocks,
   };
-};
+}

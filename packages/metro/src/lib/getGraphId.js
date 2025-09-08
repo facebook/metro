@@ -9,16 +9,14 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {TransformInputOptions} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
 
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
-import type {ResolverInputOptions} from '../shared/types.flow';
-
-const canonicalize = require('metro-core/src/canonicalize');
+import canonicalize from 'metro-core/private/canonicalize';
 
 export opaque type GraphId: string = string;
 
-function getGraphId(
+export default function getGraphId(
   entryFile: string,
   options: TransformInputOptions,
   {
@@ -41,7 +39,6 @@ function getGraphId(
         customTransformOptions: options.customTransformOptions ?? null,
         dev: options.dev,
         experimentalImportSupport: options.experimentalImportSupport || false,
-        hot: options.hot,
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
@@ -56,5 +53,3 @@ function getGraphId(
     canonicalize,
   );
 }
-
-module.exports = getGraphId;

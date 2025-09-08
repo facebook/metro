@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {NodePath, VisitNode, Visitor} from '@babel/traverse';
 import typeof Traverse from '@babel/traverse';
@@ -20,7 +18,7 @@ import typeof * as Types from '@babel/types';
 
 type State = {stripped: boolean};
 
-function constantFoldingPlugin(context: {
+export default function constantFoldingPlugin(context: {
   types: Types,
   traverse: Traverse,
   ...
@@ -130,7 +128,8 @@ function constantFoldingPlugin(context: {
           state.stripped = true;
 
           if (result.value || node.alternate) {
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[incompatible-type]
+            // $FlowFixMe[sketchy-null-mixed] Flow error uncovered by typing Babel more strictly
             path.replaceWith(result.value ? node.consequent : node.alternate);
           } else if (!result.value) {
             path.remove();
@@ -190,7 +189,7 @@ function constantFoldingPlugin(context: {
         {
           ArrowFunctionExpression: FunctionExpression,
           ConditionalExpression: Conditional,
-          // $FlowFixMe[incompatible-call]
+          // $FlowFixMe[incompatible-type]
           FunctionDeclaration,
           FunctionExpression,
           IfStatement: Conditional,
@@ -221,5 +220,3 @@ function constantFoldingPlugin(context: {
 
   return {visitor};
 }
-
-module.exports = constantFoldingPlugin;

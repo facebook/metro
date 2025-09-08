@@ -10,7 +10,7 @@
  */
 
 import type {ResolutionContext} from './types';
-import type {TransformResultDependency} from 'metro/src/DeltaBundler/types.flow';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
 import {redirectModulePath} from './PackageResolve';
 
@@ -24,7 +24,7 @@ type PartialContext = $ReadOnly<{
  * As context values can be overridden by callers, this occurs externally to
  * `resolve.js`.
  */
-function createDefaultContext(
+export default function createDefaultContext(
   context: PartialContext,
   dependency: TransformResultDependency,
 ): ResolutionContext {
@@ -35,5 +35,3 @@ function createDefaultContext(
     ...context,
   };
 }
-
-module.exports = createDefaultContext;

@@ -9,8 +9,6 @@
  * @oncall react_native
  */
 
-'use strict';
-
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {
@@ -24,8 +22,8 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
-const template = require('@babel/template').default;
-const nullthrows = require('nullthrows');
+import template from '@babel/template';
+import nullthrows from 'nullthrows';
 
 export type Options = $ReadOnly<{
   importDefault: string,
@@ -138,9 +136,10 @@ declare function withLocation<TNode: BabelNode>(
 ): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
-/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
- * LTI update could not be added via codemod */
-function withLocation(node, loc) {
+function withLocation(
+  node: BabelNode | $ReadOnlyArray<BabelNode>,
+  loc: ?BabelNodeSourceLocation,
+): Array<BabelNode> | BabelNode {
   if (Array.isArray(node)) {
     return node.map(n => withLocation(n, loc));
   }
@@ -150,7 +149,12 @@ function withLocation(node, loc) {
   return node;
 }
 
-function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
+export default function importExportPlugin({
+  types: t,
+}: {
+  types: Types,
+  ...
+}): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
 
   return {
@@ -175,7 +179,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
         const id =
           declaration.id || path.scope.generateUidIdentifier('default');
 
-        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        // $FlowFixMe[prop-missing] Flow error uncovered by typing Babel more strictly
         declaration.id = id;
 
         const loc = path.node.loc;
@@ -220,9 +224,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   {
                     const properties = d.id.properties;
                     properties.forEach(p => {
-                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[prop-missing]
                       const name = p.key.name;
-                      // $FlowFixMe[incompatible-call]
+                      // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
@@ -231,9 +236,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   {
                     const elements = d.id.elements;
                     elements.forEach(e => {
-                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
+                      // $FlowFixMe[prop-missing]
                       const name = e.name;
-                      // $FlowFixMe[incompatible-call]
+                      // $FlowFixMe[incompatible-type]
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
@@ -241,7 +247,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                 default:
                   {
                     const name = d.id.name;
-                    // $FlowFixMe[incompatible-call]
+                    // $FlowFixMe[incompatible-type]
                     state.exportNamed.push({local: name, remote: name, loc});
                   }
                   break;
@@ -251,9 +257,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
             const id = declaration.id || path.scope.generateUidIdentifier();
             const name = id.name;
 
-            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[incompatible-type] Flow error uncovered by typing Babel more strictly
+            // $FlowFixMe[prop-missing]
             declaration.id = id;
-            // $FlowFixMe[incompatible-call]
+            // $FlowFixMe[incompatible-type]
             state.exportNamed.push({local: name, remote: name, loc});
           }
 
@@ -268,7 +275,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
 
             if (remote.type === 'StringLiteral') {
               // https://babeljs.io/docs/en/babel-plugin-syntax-module-string-names
-              throw path.buildCodeFrameError<$FlowFixMeEmpty>(
+              throw path.buildCodeFrameError<$FlowFixMe>(
                 'Module string names are not supported',
               );
             }
@@ -455,7 +462,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                         t.cloneNode(local),
                         t.memberExpression(
                           t.cloneNode(sharedModuleImport),
-                          // $FlowFixMe[incompatible-call]
+                          // $FlowFixMe[incompatible-type]
                           t.cloneNode(imported),
                         ),
                       ),
@@ -585,5 +592,3 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
     },
   };
 }
-
-module.exports = importExportPlugin;

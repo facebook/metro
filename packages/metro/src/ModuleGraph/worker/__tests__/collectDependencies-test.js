@@ -21,8 +21,9 @@ import type {
 import type {NodePath} from '@babel/traverse';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
+import collectDependencies from '../collectDependencies';
+
 const {codeFromAst, comparableCode} = require('../../test-helpers');
-const collectDependencies = require('../collectDependencies');
 const {importLocationsPlugin, locToKey} = require('../importLocationsPlugin');
 const {codeFrameColumns} = require('@babel/code-frame');
 const {transformFromAstSync} = require('@babel/core');
@@ -1212,7 +1213,7 @@ test('records locations of dependencies', () => {
   const ast = astFromCode(code);
 
   // Babel does not guarantee a loc on generated `require()`s.
-  // $FlowFixMe Discovered when typing @babel/parser
+  // $FlowFixMe[incompatible-use] Discovered when typing @babel/parser
   delete ast.program.body[ast.program.body.length - 1].expression.arguments[0]
     .loc;
 

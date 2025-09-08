@@ -24,17 +24,18 @@ import path from 'path';
 import {Timeout, clearTimeout, setTimeout} from 'timers';
 import {deserialize, serialize} from 'v8';
 
+// eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:FileMapCache');
 
 type AutoSaveOptions = $ReadOnly<{
   debounceMs: number,
 }>;
 
-type DiskCacheConfig = {
+type DiskCacheConfig = $ReadOnly<{
   autoSave?: Partial<AutoSaveOptions> | boolean,
   cacheFilePrefix?: ?string,
   cacheDirectory?: ?string,
-};
+}>;
 
 const DEFAULT_PREFIX = 'metro-file-map';
 const DEFAULT_DIRECTORY = tmpdir();

@@ -9,13 +9,11 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {Module} from '../../types';
 
-import type {Module} from '../../types.flow';
+import {isJsModule, wrapModule} from './js';
 
-const {isJsModule, wrapModule} = require('./js');
-
-function processModules(
+export default function processModules(
   modules: $ReadOnlyArray<Module<>>,
   {
     filter = () => true,
@@ -50,5 +48,3 @@ function processModules(
       }),
     ]);
 }
-
-module.exports = processModules;

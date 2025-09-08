@@ -9,14 +9,12 @@
  * @oncall react_native
  */
 
-'use strict';
+import type {PackageJson} from 'metro-resolver/private/types';
 
-import type {PackageJson} from 'metro-resolver/src/types';
+import fs from 'fs';
+import path from 'path';
 
-const fs = require('fs');
-const path = require('path');
-
-class Package {
+export default class Package {
   path: string;
 
   _root: string;
@@ -39,5 +37,3 @@ class Package {
     return this._content;
   }
 }
-
-module.exports = Package;

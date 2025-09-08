@@ -9,9 +9,7 @@
  * @oncall react_native
  */
 
-'use strict';
-
-const mergeDeltas = require('../mergeDeltas');
+import mergeDeltas from '../mergeDeltas';
 
 function sortById<T>([id1]: [number, T], [id2]: [number, T]): number {
   return id1 - id2;

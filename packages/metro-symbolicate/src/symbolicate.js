@@ -17,13 +17,11 @@
 // In our third form, we symbolicate using a module ID, a line number, and
 // optionally a column.
 
-'use strict';
-
-const Symbolication = require('./Symbolication.js');
-const fs = require('fs');
-// flowlint-next-line untyped-import:off
-const SourceMapConsumer = require('source-map').SourceMapConsumer;
-const {Transform} = require('stream');
+import * as Symbolication from './Symbolication';
+import fs from 'fs';
+// $FlowFixMe[untyped-import] source-map
+import {SourceMapConsumer} from 'source-map';
+import {Transform} from 'stream';
 
 function printHelp() {
   const usages = [
@@ -47,7 +45,7 @@ function printHelp() {
   console.error(usages.join('\n'));
 }
 
-async function main(
+export default async function main(
   argvInput: Array<string> = process.argv.slice(2),
   {
     stdin,
@@ -120,23 +118,23 @@ async function main(
       outputColumnStart,
     };
     let context;
-    // $FlowFixMe[incompatible-call]
+    // $FlowFixMe[incompatible-type]
     if (fs.lstatSync(sourceMapFileName).isDirectory()) {
       context = Symbolication.unstable_createDirectoryContext(
         SourceMapConsumer,
-        // $FlowFixMe[incompatible-call]
+        // $FlowFixMe[incompatible-type]
         sourceMapFileName,
-        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+        /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
          * https://fburl.com/workplace/6291gfvu */
         options,
       );
     } else {
-      // $FlowFixMe[incompatible-call]
+      // $FlowFixMe[incompatible-type]
       const content = fs.readFileSync(sourceMapFileName, 'utf8');
       context = Symbolication.createContext(
         SourceMapConsumer,
         content,
-        /* $FlowFixMe[incompatible-call] Natural Inference rollout. See
+        /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
          * https://fburl.com/workplace/6291gfvu */
         options,
       );
@@ -214,7 +212,7 @@ async function main(
       const original = context.getOriginalPositionFor(
         +lineNumber,
         +columnNumber,
-        // $FlowFixMe context is a union here and so this parameter is a union
+        // $FlowFixMe[incompatible-type] context is a union here and so this parameter is a union
         moduleIds,
       );
       stdout.write(
@@ -259,5 +257,3 @@ function waitForStream(stream: $FlowFixMe) {
     stream.on('finish', resolve);
   });
 }
-
-module.exports = main;
