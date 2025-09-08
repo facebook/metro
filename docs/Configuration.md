@@ -479,6 +479,10 @@ type ExtraTransformOptions = {
     * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
   * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
 
+#### `globalPrefix`
+
+Prefix added to all module system globals (e.g. `__r` or `__d`).
+
 #### `minifierPath`
 
 Type: `string` (default: `'metro-minify-terser'`)
