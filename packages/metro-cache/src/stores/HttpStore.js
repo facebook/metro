@@ -4,8 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow
+ * @format
+ * @oncall react_native
  */
 
 import type {HttpsProxyAgentOptions} from 'https-proxy-agent';
@@ -78,19 +79,19 @@ export default class HttpStore<T> {
   static HttpError: typeof HttpError = HttpError;
   static NetworkError: typeof NetworkError = NetworkError;
 
-  _getEndpoint: Endpoint;
-  _setEndpoint: Endpoint;
+  #getEndpoint: Endpoint;
+  #setEndpoint: Endpoint;
 
   constructor(options: Options) {
-    this._getEndpoint = this.createEndpointConfig(
+    this.#getEndpoint = this.#createEndpointConfig(
       options.getOptions != null ? options.getOptions : options,
     );
-    this._setEndpoint = this.createEndpointConfig(
+    this.#setEndpoint = this.#createEndpointConfig(
       options.setOptions != null ? options.setOptions : options,
     );
   }
 
-  createEndpointConfig(options: EndpointOptions): Endpoint {
+  #createEndpointConfig(options: EndpointOptions): Endpoint {
     const agentConfig: http$agentOptions & HttpsProxyAgentOptions = {
       family: options.family,
       keepAlive: true,
@@ -151,32 +152,32 @@ export default class HttpStore<T> {
   }
 
   get(key: Buffer): Promise<?T> {
-    return this.#withRetries(() => this.#getOnce(key), this._getEndpoint);
+    return this.#withRetries(() => this.#getOnce(key), this.#getEndpoint);
   }
 
   #getOnce(key: Buffer): Promise<?T> {
     return new Promise((resolve, reject) => {
-      let searchParamsString = this._getEndpoint.params.toString();
+      let searchParamsString = this.#getEndpoint.params.toString();
       if (searchParamsString != '') {
         searchParamsString = '?' + searchParamsString;
       }
       const options = {
-        agent: this._getEndpoint.agent,
-        headers: this._getEndpoint.headers,
-        host: this._getEndpoint.host,
+        agent: this.#getEndpoint.agent,
+        headers: this.#getEndpoint.headers,
+        host: this.#getEndpoint.host,
         method: 'GET',
-        path: `${this._getEndpoint.path}/${key.toString(
+        path: `${this.#getEndpoint.path}/${key.toString(
           'hex',
         )}${searchParamsString}`,
-        port: this._getEndpoint.port,
-        timeout: this._getEndpoint.timeout,
+        port: this.#getEndpoint.port,
+        timeout: this.#getEndpoint.timeout,
       };
 
       // $FlowFixMe[incompatible-type]
       /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
-      const req = this._getEndpoint.module.request(options, res => {
+      const req = this.#getEndpoint.module.request(options, res => {
         const code = res.statusCode;
         const data = [];
 
@@ -187,9 +188,9 @@ export default class HttpStore<T> {
           return;
         } else if (
           code !== 200 &&
-          !this._getEndpoint.additionalSuccessStatuses.has(code)
+          !this.#getEndpoint.additionalSuccessStatuses.has(code)
         ) {
-          if (this._getEndpoint.debug) {
+          if (this.#getEndpoint.debug) {
             res.on('data', chunk => {
               data.push(chunk);
             });
@@ -275,7 +276,7 @@ export default class HttpStore<T> {
   set(key: Buffer, value: T): Promise<void> {
     return this.#withRetries(
       () => this.#setOnce(key, value),
-      this._setEndpoint,
+      this.#setEndpoint,
     );
   }
 
@@ -283,35 +284,35 @@ export default class HttpStore<T> {
     return new Promise((resolve, reject) => {
       const gzip = zlib.createGzip(ZLIB_OPTIONS);
 
-      let searchParamsString = this._setEndpoint.params.toString();
+      let searchParamsString = this.#setEndpoint.params.toString();
       if (searchParamsString != '') {
         searchParamsString = '?' + searchParamsString;
       }
 
       const options = {
-        agent: this._setEndpoint.agent,
-        headers: this._setEndpoint.headers,
-        host: this._setEndpoint.host,
+        agent: this.#setEndpoint.agent,
+        headers: this.#setEndpoint.headers,
+        host: this.#setEndpoint.host,
         method: 'PUT',
-        path: `${this._setEndpoint.path}/${key.toString(
+        path: `${this.#setEndpoint.path}/${key.toString(
           'hex',
         )}${searchParamsString}`,
-        port: this._setEndpoint.port,
-        timeout: this._setEndpoint.timeout,
+        port: this.#setEndpoint.port,
+        timeout: this.#setEndpoint.timeout,
       };
 
       // $FlowFixMe[incompatible-type]
       /* $FlowFixMe[missing-local-annot](>=0.101.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
-      const req = this._setEndpoint.module.request(options, res => {
+      const req = this.#setEndpoint.module.request(options, res => {
         const code = res.statusCode;
 
         if (
           (code < 200 || code > 299) &&
-          !this._setEndpoint.additionalSuccessStatuses.has(code)
+          !this.#setEndpoint.additionalSuccessStatuses.has(code)
         ) {
-          if (this._setEndpoint.debug) {
+          if (this.#setEndpoint.debug) {
             const data = [];
             res.on('data', chunk => {
               data.push(chunk);
@@ -395,13 +396,13 @@ export default class HttpStore<T> {
     return backOff(fn, {
       jitter: 'full',
       maxDelay: 30000,
-      numOfAttempts: this._getEndpoint.maxAttempts || Number.POSITIVE_INFINITY,
+      numOfAttempts: this.#getEndpoint.maxAttempts || Number.POSITIVE_INFINITY,
       retry: (e: Error) => {
         if (e instanceof HttpError) {
-          return this._getEndpoint.retryStatuses.has(e.code);
+          return this.#getEndpoint.retryStatuses.has(e.code);
         }
         return (
-          e instanceof NetworkError && this._getEndpoint.retryNetworkErrors
+          e instanceof NetworkError && this.#getEndpoint.retryNetworkErrors
         );
       },
     });

@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {CacheStore} from 'metro-cache';
+import type {CacheStore} from './types';
 
 import {Logger} from 'metro-core';
 
@@ -21,17 +21,15 @@ import {Logger} from 'metro-core';
  * All get/set operations are logged via Metro's logger.
  */
 export default class Cache<T> {
-  _stores: $ReadOnlyArray<CacheStore<T>>;
-
-  _hits: WeakMap<Buffer, CacheStore<T>>;
+  +#stores: $ReadOnlyArray<CacheStore<T>>;
+  +#hits: WeakMap<Buffer, CacheStore<T>> = new WeakMap();
 
   constructor(stores: $ReadOnlyArray<CacheStore<T>>) {
-    this._hits = new WeakMap();
-    this._stores = stores;
+    this.#stores = stores;
   }
 
   async get(key: Buffer): Promise<?T> {
-    const stores = this._stores;
+    const stores = this.#stores;
     const length = stores.length;
 
     for (let i = 0; i < length; i++) {
@@ -74,7 +72,7 @@ export default class Cache<T> {
         );
 
         if (value != null) {
-          this._hits.set(key, store);
+          this.#hits.set(key, store);
 
           return value;
         }
@@ -85,8 +83,8 @@ export default class Cache<T> {
   }
 
   async set(key: Buffer, value: T): Promise<void> {
-    const stores = this._stores;
-    const stop = this._hits.get(key);
+    const stores = this.#stores;
+    const stop = this.#hits.get(key);
     const length = stores.length;
     const promises = [];
     const writeErrors = [];
@@ -133,6 +131,6 @@ export default class Cache<T> {
   // writing to the cache is a no-op and reading from the cache will always
   // return null.
   get isDisabled(): boolean {
-    return this._stores.length === 0;
+    return this.#stores.length === 0;
   }
 }
