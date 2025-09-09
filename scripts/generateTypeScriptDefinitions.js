@@ -31,6 +31,8 @@ export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-config/**',
   'packages/metro-core/**',
   'packages/metro-resolver/**',
+  'packages/metro-source-map/**',
+  'packages/ob1/**',
 
   // Dependencies of metro-config
   'packages/metro/src/Server/symbolicate.js',

@@ -100,7 +100,11 @@ function toVLQSigned(value: number) {
  * DON'T ADD MORE COMMENTS TO THIS FUNCTION TO KEEP ITS LENGTH SHORT ENOUGH FOR
  * V8 OPTIMIZATION!
  */
-function encode(value: number, buffer: Buffer, position: number): number {
+export default function encode(
+  value: number,
+  buffer: Buffer,
+  position: number,
+): number {
   let vlq = toVLQSigned(value);
   let digit;
   do {
@@ -116,5 +120,3 @@ function encode(value: number, buffer: Buffer, position: number): number {
 
   return position;
 }
-
-export default encode;
