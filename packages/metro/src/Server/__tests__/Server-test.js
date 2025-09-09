@@ -1336,7 +1336,7 @@ describe('processRequest', () => {
       expect(response._getJSON()).toEqual({
         error: expect.any(String),
       });
-      expect(console.error).toBeCalled();
+      expect(console.error).not.toBeCalled();
     });
   });
 });

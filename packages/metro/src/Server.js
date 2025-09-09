@@ -1341,7 +1341,11 @@ export default class Server {
             fileName: file,
           };
         } catch (error) {
-          debug('Generating code frame failed on file read.', fileAbsolute, error);
+          debug(
+            'Generating code frame failed on file read.',
+            fileAbsolute,
+            error,
+          );
         }
       }
 
