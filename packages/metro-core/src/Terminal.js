@@ -89,32 +89,32 @@ function getTTYStream(stream: UnderlyingStream): ?tty.WriteStream {
  * single responsibility of handling status messages.
  */
 export default class Terminal {
-  _logLines: Array<string>;
-  _nextStatusStr: string;
-  _statusStr: string;
-  _stream: UnderlyingStream;
-  _ttyStream: ?tty.WriteStream;
-  _updatePromise: Promise<void> | null;
-  _isUpdating: boolean;
-  _isPendingUpdate: boolean;
-  _shouldFlush: boolean;
-  _writeStatusThrottled: string => void;
+  #logLines: Array<string>;
+  #nextStatusStr: string;
+  #statusStr: string;
+  #stream: UnderlyingStream;
+  #ttyStream: ?tty.WriteStream;
+  #updatePromise: Promise<void> | null;
+  #isUpdating: boolean;
+  #isPendingUpdate: boolean;
+  #shouldFlush: boolean;
+  #writeStatusThrottled: string => void;
 
   constructor(
     stream: UnderlyingStream,
     {ttyPrint = true}: {ttyPrint?: boolean} = {},
   ) {
-    this._logLines = [];
-    this._nextStatusStr = '';
-    this._statusStr = '';
-    this._stream = stream;
-    this._ttyStream = ttyPrint ? getTTYStream(stream) : null;
-    this._updatePromise = null;
-    this._isUpdating = false;
-    this._isPendingUpdate = false;
-    this._shouldFlush = false;
-    this._writeStatusThrottled = throttle(
-      status => this._stream.write(status),
+    this.#logLines = [];
+    this.#nextStatusStr = '';
+    this.#statusStr = '';
+    this.#stream = stream;
+    this.#ttyStream = ttyPrint ? getTTYStream(stream) : null;
+    this.#updatePromise = null;
+    this.#isUpdating = false;
+    this.#isPendingUpdate = false;
+    this.#shouldFlush = false;
+    this.#writeStatusThrottled = throttle(
+      status => this.#stream.write(status),
       3500,
     );
   }
@@ -125,28 +125,28 @@ export default class Terminal {
    * If there are two updates scheduled, do nothing, as the second update will
    * take care of the latest status and log lines.
    */
-  _scheduleUpdate() {
-    if (this._isUpdating) {
-      this._isPendingUpdate = true;
+  #scheduleUpdate() {
+    if (this.#isUpdating) {
+      this.#isPendingUpdate = true;
       return;
     }
 
-    this._isUpdating = true;
-    this._updatePromise = this._update().then(async () => {
-      while (this._isPendingUpdate) {
-        if (!this._shouldFlush) {
+    this.#isUpdating = true;
+    this.#updatePromise = this.#update().then(async () => {
+      while (this.#isPendingUpdate) {
+        if (!this.#shouldFlush) {
           await new Promise(resolve => setTimeout(resolve, 33));
         }
-        this._isPendingUpdate = false;
-        await this._update();
+        this.#isPendingUpdate = false;
+        await this.#update();
       }
-      this._isUpdating = false;
-      this._shouldFlush = false;
+      this.#isUpdating = false;
+      this.#shouldFlush = false;
     });
   }
 
   async waitForUpdates(): Promise<void> {
-    await (this._updatePromise || Promise.resolve());
+    await (this.#updatePromise || Promise.resolve());
   }
 
   /**
@@ -155,12 +155,12 @@ export default class Terminal {
    * update starts writing to stream after a delay.
    */
   async flush(): Promise<void> {
-    if (this._isUpdating) {
-      this._shouldFlush = true;
+    if (this.#isUpdating) {
+      this.#shouldFlush = true;
     }
     await this.waitForUpdates();
     // $FlowFixMe[prop-missing]
-    this._writeStatusThrottled.flush();
+    this.#writeStatusThrottled.flush();
   }
 
   /**
@@ -169,16 +169,16 @@ export default class Terminal {
    * `status()`) prevents us from repeatedly rewriting the status in case
    * `terminal.log()` is called several times.
    */
-  async _update(): Promise<void> {
-    const ttyStream = this._ttyStream;
+  async #update(): Promise<void> {
+    const ttyStream = this.#ttyStream;
 
-    const nextStatusStr = this._nextStatusStr;
-    const statusStr = this._statusStr;
-    const logLines = this._logLines;
+    const nextStatusStr = this.#nextStatusStr;
+    const statusStr = this.#statusStr;
+    const logLines = this.#logLines;
 
     // reset these here to not have them changed while updating
-    this._statusStr = nextStatusStr;
-    this._logLines = [];
+    this.#statusStr = nextStatusStr;
+    this.#logLines = [];
 
     if (statusStr === nextStatusStr && logLines.length === 0) {
       return;
@@ -192,15 +192,15 @@ export default class Terminal {
     }
 
     if (logLines.length > 0) {
-      await streamWrite(this._stream, logLines.join('\n') + '\n');
+      await streamWrite(this.#stream, logLines.join('\n') + '\n');
     }
 
     if (ttyStream) {
       if (nextStatusStr.length > 0) {
-        await streamWrite(this._stream, nextStatusStr + '\n');
+        await streamWrite(this.#stream, nextStatusStr + '\n');
       }
     } else {
-      this._writeStatusThrottled(
+      this.#writeStatusThrottled(
         nextStatusStr.length > 0 ? nextStatusStr + '\n' : '',
       );
     }
@@ -214,16 +214,16 @@ export default class Terminal {
    * file, then we don't care too much about having a progress bar.
    */
   status(format: string, ...args: Array<mixed>): string {
-    const {_nextStatusStr} = this;
+    const nextStatusStr = this.#nextStatusStr;
 
     const statusStr = util.format(format, ...args);
-    this._nextStatusStr = this._ttyStream
-      ? chunkString(statusStr, this._ttyStream.columns).join('\n')
+    this.#nextStatusStr = this.#ttyStream
+      ? chunkString(statusStr, this.#ttyStream.columns).join('\n')
       : statusStr;
 
-    this._scheduleUpdate();
+    this.#scheduleUpdate();
 
-    return _nextStatusStr;
+    return nextStatusStr;
   }
 
   /**
@@ -232,8 +232,8 @@ export default class Terminal {
    * `console.log`.
    */
   log(format: string, ...args: Array<mixed>): void {
-    this._logLines.push(util.format(format, ...args));
-    this._scheduleUpdate();
+    this.#logLines.push(util.format(format, ...args));
+    this.#scheduleUpdate();
   }
 
   /**
@@ -241,7 +241,7 @@ export default class Terminal {
    * status was the last one of a series of updates.
    */
   persistStatus(): void {
-    this.log(this._nextStatusStr);
-    this._nextStatusStr = '';
+    this.log(this.#nextStatusStr);
+    this.#nextStatusStr = '';
   }
 }
