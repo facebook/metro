@@ -20,7 +20,7 @@ The main option for configuring the Metro cache is [`cacheStores`](./Configurati
 Metro provides a number of built-in cache store implementations for use with the [`cacheStores`](./Configuration.md#cachestores) config option:
 
 * **`FileStore({root: string})`** will store cache entries as files under the directory specified by `root`.
-* **`AutoCleanFileStore()`** is a `FileStore` that periodically cleans up old entries. It accepts the same options as `FileStore` plus the following:
+* **`AutoCleanFileStore()`** <div class="label deprecated">Deprecated</div> is a `FileStore` that periodically cleans up old entries. It accepts the same options as `FileStore` plus the following:
   * **`options.intervalMs: number`** is the time in milliseconds between cleanup attempts. Defaults to 10 minutes.
   * **`options.cleanupThresholdMs: number`** is the minimum time in milliseconds since the last modification of an entry before it can be deleted. Defaults to 3 days.
 * **`HttpStore(options)`** is a bare-bones remote cache client that reads (`GET`) and writes (`PUT`) compressed cache artifacts over HTTP or HTTPS.

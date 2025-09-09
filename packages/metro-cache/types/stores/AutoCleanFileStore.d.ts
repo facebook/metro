@@ -10,4 +10,12 @@
 
 import type FileStore from './FileStore';
 
+/**
+ * A FileStore that, at a given interval, stats the content of the cache root
+ * and deletes any file last modified a set threshold in the past.
+ *
+ * @deprecated This is not efficiently implemented and may cause significant
+ * redundant I/O when caches are large. Prefer your own cleanup scripts, or a
+ * custom Metro cache that uses watches, hooks get/set, and/or implements LRU.
+ */
 export default class AutoCleanFileStore<T> extends FileStore<T> {}

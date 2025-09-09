@@ -26,7 +26,6 @@ const BROKEN_ON_WINDOWS = [
   'packages/metro-file-map/src/crawlers/__tests__/node-test.js',
 
   // resolveModulePath failed
-  'packages/metro-cache/src/stores/__tests__/FileStore-test.js',
   'packages/metro-resolver/src/__tests__/assets-test.js',
   'packages/metro-resolver/src/__tests__/platform-extensions-test.js',
   'packages/metro-resolver/src/__tests__/symlinks-test.js',
