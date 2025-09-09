@@ -1341,7 +1341,7 @@ export default class Server {
             fileName: file,
           };
         } catch (error) {
-          console.error(error);
+          debug('Generating code frame failed on file read.', fileAbsolute, error);
         }
       }
 
@@ -1434,7 +1434,7 @@ export default class Server {
         log(createActionEndEntry(symbolicatingLogEntry));
       });
     } catch (error) {
-      console.error(error.stack || error);
+      debug('Symbolication required failed', error.stack || error);
       res.statusCode = 500;
       res.end(JSON.stringify({error: error.message}));
     }
