@@ -29,6 +29,15 @@ export {
   stableHash,
 };
 
+export interface MetroCache {
+  +AutoCleanFileStore: typeof AutoCleanFileStore;
+  +Cache: typeof Cache;
+  +FileStore: typeof FileStore;
+  +HttpGetStore: typeof HttpGetStore;
+  +HttpStore: typeof HttpStore;
+  +stableHash: typeof stableHash;
+}
+
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.
@@ -42,4 +51,4 @@ export default {
   HttpGetStore,
   HttpStore,
   stableHash,
-};
+} as MetroCache;
