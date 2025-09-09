@@ -8,8 +8,7 @@
  * @oncall react_native
  */
 
-import {CacheStore} from './types';
-
+import type {CacheStore} from './types';
 /**
  * Main cache class. Receives an array of cache instances, and sequentially
  * traverses them to return a previously stored value. It also ensures setting
@@ -17,9 +16,10 @@ import {CacheStore} from './types';
  *
  * All get/set operations are logged via Metro's logger.
  */
-export default class Cache<T> {
+declare class Cache<T> {
   constructor(stores: ReadonlyArray<CacheStore<T>>);
-  get(key: Buffer): Promise<T | null>;
+  get(key: Buffer): Promise<null | undefined | T>;
   set(key: Buffer, value: T): Promise<void>;
   get isDisabled(): boolean;
 }
+export default Cache;
