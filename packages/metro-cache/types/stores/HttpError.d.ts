@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @oncall react_native
  */
 
-declare function stableHash(value: unknown): Buffer;
-export default stableHash;
+declare class HttpError extends Error {
+  code: number;
+  constructor(message: string, code: number);
+}
+export default HttpError;

@@ -26,16 +26,14 @@ export {
   HttpStore,
   stableHash,
 };
-
 export interface MetroCache {
-  AutoCleanFileStore: typeof AutoCleanFileStore;
-  Cache: typeof Cache;
-  FileStore: typeof FileStore;
-  HttpGetStore: typeof HttpGetStore;
-  HttpStore: typeof HttpStore;
-  stableHash: typeof stableHash;
+  readonly AutoCleanFileStore: typeof AutoCleanFileStore;
+  readonly Cache: typeof Cache;
+  readonly FileStore: typeof FileStore;
+  readonly HttpGetStore: typeof HttpGetStore;
+  readonly HttpStore: typeof HttpStore;
+  readonly stableHash: typeof stableHash;
 }
-
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.
@@ -43,4 +41,6 @@ export interface MetroCache {
  * @deprecated Default import from 'metro-cache' is deprecated, use named exports.
  */
 declare const $$EXPORT_DEFAULT_DECLARATION$$: MetroCache;
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
 export default $$EXPORT_DEFAULT_DECLARATION$$;

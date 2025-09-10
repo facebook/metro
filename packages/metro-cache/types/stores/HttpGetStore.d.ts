@@ -8,11 +8,13 @@
  * @oncall react_native
  */
 
-import type {Options} from './HttpStore';
+import type {Options as HttpOptions} from './HttpStore';
 
-export default class HttpGetStore<T> {
-  constructor(options: Options);
-  get(key: Buffer): Promise<T | null>;
-  set(key: Buffer, value: T): Promise<void>;
-  clear(): void;
+import HttpStore from './HttpStore';
+
+declare class HttpGetStore<T> extends HttpStore<T> {
+  constructor(options: HttpOptions);
+  get(key: Buffer): Promise<null | undefined | T>;
+  set(_key: Buffer, _value: T): Promise<void>;
 }
+export default HttpGetStore;

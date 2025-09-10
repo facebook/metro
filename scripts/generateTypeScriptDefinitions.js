@@ -27,7 +27,7 @@ const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 const TYPES_DIR = 'types';
 
 export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
-  // TODO: Add globs
+  'packages/metro-cache/**',
 ];
 
 // Globs of paths for which we do not generate TypeScript definitions,
@@ -39,6 +39,7 @@ const IGNORED_PATTERNS = [
   '**/__fixtures__/**',
   '**/node_modules/**',
   'packages/metro-babel-register/**',
+  'packages/*/build/**',
   'packages/metro/src/integration_tests/**',
 ];
 
@@ -67,7 +68,8 @@ export async function generateTsDefsForJsGlobs(
             cwd: WORKSPACE_ROOT,
           }),
         )
-        .reduce((toProcess, filePath) => {
+        .reduce((toProcess, posixFilePath) => {
+          const filePath = path.normalize(posixFilePath);
           if (filePath.endsWith('.flow.js')) {
             // For .flow.js files, record the `.flow.js` as the source for the
             // corresponding `.js` file, which is enforced to be a transparent

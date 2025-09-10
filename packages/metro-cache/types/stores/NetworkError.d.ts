@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @oncall react_native
  */
 
-declare function stableHash(value: unknown): Buffer;
-export default stableHash;
+declare class NetworkError extends Error {
+  code: string;
+  constructor(message: string, code: string);
+}
+export default NetworkError;
