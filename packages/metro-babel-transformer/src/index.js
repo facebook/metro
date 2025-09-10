@@ -31,7 +31,6 @@ type BabelTransformerOptions = $ReadOnly<{
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
   minify: boolean,
-  unstable_disableES6Transforms?: boolean,
   platform: ?string,
   projectRoot: string,
   publicPath: string,

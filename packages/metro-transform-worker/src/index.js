@@ -124,7 +124,6 @@ export type JsTransformOptions = $ReadOnly<{
   nonInlinedRequires?: $ReadOnlyArray<string>,
   platform: ?string,
   type: Type,
-  unstable_disableES6Transforms?: boolean,
   unstable_memoizeInlineRequires?: boolean,
   unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   unstable_staticHermesOptimizedRequire?: boolean,

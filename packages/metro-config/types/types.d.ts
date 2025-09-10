@@ -31,7 +31,6 @@ export interface ExtraTransformOptions {
       | Readonly<{blockList: Readonly<{[path: string]: true}>}>
       | boolean;
     nonInlinedRequires?: ReadonlyArray<string>;
-    unstable_disableES6Transforms?: boolean;
     unstable_memoizeInlineRequires?: boolean;
   }>;
 }
