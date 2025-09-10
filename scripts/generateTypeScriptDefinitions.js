@@ -28,6 +28,7 @@ const TYPES_DIR = 'types';
 
 export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-cache/**',
+  'packages/metro-config/**',
 ];
 
 // Globs of paths for which we do not generate TypeScript definitions,

@@ -10,26 +10,33 @@
 
 import type {ConfigT, InputConfigT, YargArguments} from './types';
 
-export interface CosmiConfigResult {
+type ResolveConfigResult = {
   filepath: string;
   isEmpty: boolean;
   config:
-    | ((partialConfig: ConfigT) => Promise<ConfigT>)
-    | ((partialConfig: ConfigT) => ConfigT)
+    | ((baseConfig: ConfigT) => Promise<ConfigT>)
+    | ((baseConfig: ConfigT) => ConfigT)
     | InputConfigT;
-}
-
-export function loadConfig(
-  argv?: YargArguments,
-  defaultConfigOverrides?: InputConfigT,
-): Promise<ConfigT>;
-
-export function resolveConfig(
+};
+declare function resolveConfig(
   filePath?: string,
   cwd?: string,
-): Promise<CosmiConfigResult>;
-
-export function mergeConfig(
-  defaultConfig: InputConfigT,
-  ...configs: InputConfigT[]
-): ConfigT;
+): Promise<ResolveConfigResult>;
+declare function mergeConfig<T extends Readonly<InputConfigT>>(
+  defaultConfig: T,
+  ...configs: Array<InputConfigT>
+): T;
+/**
+ * Load the metro configuration from disk
+ * @param  {object} argv                    Arguments coming from the CLI, can be empty
+ * @param  {object} defaultConfigOverrides  A configuration that can override the default config
+ * @return {object}                         Configuration returned
+ */
+declare function loadConfig(
+  argvInput?: YargArguments,
+  defaultConfigOverrides?: InputConfigT,
+): Promise<ConfigT>;
+export declare function loadConfigFile(
+  absolutePath: string,
+): Promise<ResolveConfigResult>;
+export {loadConfig, resolveConfig, mergeConfig};

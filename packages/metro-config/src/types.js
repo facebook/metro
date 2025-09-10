@@ -31,7 +31,10 @@ export type ExtraTransformOptions = $ReadOnly<{
   transform?: $ReadOnly<{
     experimentalImportSupport?: boolean,
     inlineRequires?:
-      | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
+      | $ReadOnly<{
+          blockList: $ReadOnly<{[absoluteModulePath: string]: true, ...}>,
+          ...
+        }>
       | boolean,
     nonInlinedRequires?: $ReadOnlyArray<string>,
     unstable_memoizeInlineRequires?: boolean,
@@ -52,7 +55,7 @@ export type GetTransformOptionsOpts = {
 export type GetTransformOptions = (
   entryPoints: $ReadOnlyArray<string>,
   options: GetTransformOptionsOpts,
-  getDependenciesOf: (string) => Promise<Array<string>>,
+  getDependenciesOf: (absoluteFilePath: string) => Promise<Array<string>>,
 ) => Promise<Partial<ExtraTransformOptions>>;
 
 export type Middleware = HandleFunction;
