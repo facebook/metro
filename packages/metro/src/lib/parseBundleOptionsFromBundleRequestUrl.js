@@ -73,10 +73,10 @@ export default function parseBundleOptionsFromBundleRequestUrl(
   // e.g. "//localhost:8081/foo/bar.js?platform=ios"
   const isRelativeProtocol = rawNonJscSafeUrlEncodedUrl.startsWith('//');
 
-  // e.g. "/foo/bar.js?platform=ios"
-  const isNoProtocol =
-    !isRelativeProtocol && _tempProtocol + '//' === RESOLVE_BASE_URL;
+  const protocolPart = isRelativeProtocol ? '//' : _tempProtocol + '//';
 
+  // e.g. "/foo/bar.js?platform=ios"
+  const isNoProtocol = !isRelativeProtocol && protocolPart === RESOLVE_BASE_URL;
   if (isNoProtocol) {
     throw new Error(
       'Expecting the request url to have a valid protocol, e.g. "http://", "https://", or "//"',
@@ -84,10 +84,8 @@ export default function parseBundleOptionsFromBundleRequestUrl(
     );
   }
 
-  const protocol = isRelativeProtocol ? '//' : _tempProtocol + '//';
-
   const sourceUrl = jscSafeUrl.toJscSafeUrl(
-    protocol + host + requestPathname + search + hash,
+    protocolPart + host + requestPathname + search + hash,
   );
 
   const pathname = searchParams.get('bundleEntry') || requestPathname || '';
@@ -98,21 +96,11 @@ export default function parseBundleOptionsFromBundleRequestUrl(
 
   const bundleType = getBundleType(path.extname(pathname).substring(1));
 
-  // The Chrome Debugger loads bundles via Blob urls, whose
-  // protocol is blob:http. This breaks loading source maps through
-  // protocol-relative URLs, which is why we must force the HTTP protocol
-  // when loading the bundle for either Android or iOS.
-  // TODO(T167298674): Remove when remote debugging is not needed in React Native
-  const sourceMapUrlProtocol =
-    platform != null && platform.match(/^(android|ios|vr|windows|macos)$/)
-      ? 'http://'
-      : '//';
   const {pathname: sourceMapPathname} = new URL(
     pathname.replace(/\.(bundle|delta)$/, '.map'),
     RESOLVE_BASE_URL /* baseURL */,
   );
-  const sourceMapUrl =
-    sourceMapUrlProtocol + host + sourceMapPathname + search + hash;
+  const sourceMapUrl = protocolPart + host + sourceMapPathname + search + hash;
 
   const filePathPosix = pathname
     // Using this Metro particular convention for decoding URL paths into file paths

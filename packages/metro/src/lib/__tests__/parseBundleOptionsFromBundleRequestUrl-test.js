@@ -57,7 +57,7 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
           new Set([]),
         ),
       ).toMatchObject({
-        sourceMapUrl: '//localhost/my/bundle.map',
+        sourceMapUrl: `${protocol}//localhost/my/bundle.map`,
         sourceUrl: `${protocol}//localhost/my/bundle.bundle`,
       });
     },
@@ -93,8 +93,7 @@ describe('parseBundleOptionsFromBundleRequestUrl', () => {
           new Set([]),
         ),
       ).toMatchObject({
-        sourceMapUrl:
-          '//localhost/my/%2530/%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA.map',
+        sourceMapUrl: `${protocol}//localhost/my/%2530/%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA.map`,
         sourceUrl: `${protocol}//localhost/my/%2530/%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA.bundle`,
         entryFile: './my/%30/бундл.Øಚ😁AA',
       });
