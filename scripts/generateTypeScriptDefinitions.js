@@ -29,6 +29,7 @@ const TYPES_DIR = 'types';
 export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-cache/**',
   'packages/metro-config/**',
+  'packages/metro-core/**',
   'packages/metro-resolver/**',
 ];
 
