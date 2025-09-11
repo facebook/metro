@@ -8,14 +8,12 @@
  * @oncall react_native
  */
 
-import {TransformResultDependency} from 'metro';
+import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
 export type Result<TResolution, TCandidates> =
   | {readonly type: 'resolved'; readonly resolution: TResolution}
   | {readonly type: 'failed'; readonly candidates: TCandidates};
-
-export type Resolution = FileResolution | Readonly<{type: 'empty'}>;
-
+export type Resolution = FileResolution | {readonly type: 'empty'};
 export type SourceFileResolution = Readonly<{
   type: 'sourceFile';
   filePath: string;
@@ -26,55 +24,65 @@ export type AssetResolution = Readonly<{
   filePaths: AssetFileResolution;
 }>;
 export type FileResolution = AssetResolution | SourceFileResolution;
-
-export interface FileAndDirCandidates {
-  readonly dir: FileCandidates;
-  readonly file: FileCandidates;
-}
-
+export type FileAndDirCandidates = {
+  readonly dir: null | undefined | FileCandidates;
+  readonly file: null | undefined | FileCandidates;
+};
 /**
  * This is a way to describe what files we tried to look for when resolving
  * a module name as file. This is mainly used for error reporting, so that
  * we can explain why we cannot resolve a module.
  */
 export type FileCandidates =
-  // We only tried to resolve a specific asset.
   | {readonly type: 'asset'; readonly name: string}
-  // We attempted to resolve a name as being a source file (ex. JavaScript,
-  // JSON...), in which case there can be several extensions we tried, for
-  // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
   | {
       readonly type: 'sourceFile';
       filePathPrefix: string;
       readonly candidateExts: ReadonlyArray<string>;
     };
-
-export type ExportMap = Readonly<{
-  [subpathOrCondition: string]: ExportMap | string | null;
+export type ExportsLikeMap = Readonly<{
+  [subpathOrCondition: string]: string | ExportsLikeMap | null;
 }>;
-
-export interface PackageJson {
-  readonly name?: string;
-  readonly main?: string;
-  readonly exports?: string | ExportMap;
-}
-
-export interface PackageInfo {
-  readonly packageJson: PackageJson;
-  readonly rootPath: string;
-}
-
-export interface PackageForModule extends PackageInfo {
-  /* A system-separated subpath (with no './' prefix) that reflects the subpath
-     of the given candidate relative to the returned rootPath. */
-  readonly packageRelativePath: string;
-}
-
+/** "exports" mapping where values may be legacy Node.js <13.7 array format. */
+export type ExportMapWithFallbacks = Readonly<{
+  [subpath: string]:
+    | ExportsLikeMap[keyof ExportsLikeMap]
+    | ExportValueWithFallback;
+}>;
+/** "exports" subpath value when in legacy Node.js <13.7 array format. */
+export type ExportValueWithFallback =
+  | ReadonlyArray<ExportsLikeMap | string>
+  | ReadonlyArray<ReadonlyArray<unknown>>;
+export type ExportsField =
+  | string
+  | ReadonlyArray<string>
+  | ExportValueWithFallback
+  | ExportsLikeMap
+  | ExportMapWithFallbacks;
+export type FlattenedExportMap = ReadonlyMap<string, string | null>;
+export type NormalizedExportsLikeMap = Map<
+  string,
+  null | string | ExportsLikeMap
+>;
+export type PackageJson = Readonly<{
+  name?: string;
+  main?: string;
+  exports?: ExportsField;
+  imports?: ExportsLikeMap;
+}>;
+export type PackageInfo = Readonly<{
+  packageJson: PackageJson;
+  rootPath: string;
+}>;
+export type PackageForModule = Readonly<
+  Omit<PackageInfo, keyof {packageRelativePath: string}> & {
+    packageRelativePath: string;
+  }
+>;
 /**
  * Check existence of a single file.
  */
 export type DoesFileExist = (filePath: string) => boolean;
-export type IsAssetFile = (fileName: string) => boolean;
 /**
  * Performs a lookup against an absolute or project-relative path to determine
  * whether it exists as a file or directory. Follows any symlinks, and returns
@@ -83,7 +91,6 @@ export type IsAssetFile = (fileName: string) => boolean;
 export type FileSystemLookup = (
   absoluteOrProjectRelativePath: string,
 ) => {exists: false} | {exists: true; type: 'f' | 'd'; realPath: string};
-
 /**
  * Given a directory path and the base asset name, return a list of all the
  * asset file names that match the given base name in that directory. Return
@@ -94,27 +101,25 @@ export type ResolveAsset = (
   dirPath: string,
   assetName: string,
   extension: string,
-) => ReadonlyArray<string> | undefined;
-
-export interface ResolutionContext {
-  readonly assetExts: ReadonlyArray<string>;
-  readonly allowHaste: boolean;
-  readonly customResolverOptions: CustomResolverOptions;
-  readonly disableHierarchicalLookup: boolean;
-
+) => null | undefined | ReadonlyArray<string>;
+export type ResolutionContext = Readonly<{
+  allowHaste: boolean;
+  assetExts: ReadonlySet<string>;
+  customResolverOptions: CustomResolverOptions;
+  disableHierarchicalLookup: boolean;
   /**
    * Determine whether a regular file exists at the given path.
    *
    * @deprecated, prefer `fileSystemLookup`
    */
-  readonly doesFileExist: DoesFileExist;
-  readonly extraNodeModules?: {[key: string]: string};
-
+  doesFileExist: DoesFileExist;
+  extraNodeModules: null | undefined | {[$$Key$$: string]: string};
+  /** Is resolving for a development bundle. */
+  dev: boolean;
   /**
    * Get the parsed contents of the specified `package.json` file.
    */
-  readonly getPackage: (packageJsonPath: string) => PackageJson | null;
-
+  getPackage: (packageJsonPath: string) => null | undefined | PackageJson;
   /**
    * Get the closest package scope, parsed `package.json` and relative subpath
    * for a given absolute candidate path (which need not exist), or null if
@@ -122,17 +127,15 @@ export interface ResolutionContext {
    *
    * @deprecated See https://github.com/facebook/metro/commit/29c77bff31e2475a086bc3f04073f485da8f9ff0
    */
-  readonly getPackageForModule: (
+  getPackageForModule: (
     absoluteModulePath: string,
-  ) => PackageForModule | null;
-
+  ) => null | undefined | PackageForModule;
   /**
    * The dependency descriptor, within the origin module, corresponding to the
    * current resolution request. This is provided for diagnostic purposes ONLY
    * and may not be used for resolution purposes.
    */
-  readonly dependency?: TransformResultDependency;
-
+  dependency?: TransformResultDependency;
   /**
    * Whether the dependency to be resolved was declared with an ESM import,
    * ("import x from 'y'" or "await import('z')"), or a CommonJS "require".
@@ -142,66 +145,59 @@ export interface ResolutionContext {
    * Always equal to dependency.data.isESMImport where dependency is provided,
    * but may be used for resolution.
    */
-  readonly isESMImport?: boolean;
-
+  isESMImport?: boolean;
   /**
    * Synchonously returns information about a given absolute path, including
    * whether it exists, whether it is a file or directory, and its absolute
    * real path.
    */
-  readonly fileSystemLookup: FileSystemLookup;
-
+  fileSystemLookup: FileSystemLookup;
   /**
    * The ordered list of fields to read in `package.json` to resolve a main
    * entry point based on the "browser" field spec.
    */
-  readonly mainFields: ReadonlyArray<string>;
-
+  mainFields: ReadonlyArray<string>;
   /**
    * Full path of the module that is requiring or importing the module to be
    * resolved. This may not be the only place this dependency was found,
    * as resolutions can be cached.
    */
-  readonly originModulePath: string;
-
-  readonly nodeModulesPaths: ReadonlyArray<string>;
-  readonly preferNativePlatform: boolean;
-  readonly resolveAsset: ResolveAsset;
-  readonly redirectModulePath: (modulePath: string) => string | false;
-
+  originModulePath: string;
+  nodeModulesPaths: ReadonlyArray<string>;
+  preferNativePlatform: boolean;
+  resolveAsset: ResolveAsset;
+  redirectModulePath: (modulePath: string) => string | false;
   /**
    * Given a name, this should return the full path to the file that provides
    * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
    */
-  readonly resolveHasteModule: (name: string) => string | undefined;
-
+  resolveHasteModule: (name: string) => null | undefined | string;
   /**
    * Given a name, this should return the full path to the package manifest that
    * provides a Haste package of that name. Ex. for `Foo` it may return
    * `/smth/Foo/package.json`.
    */
-  readonly resolveHastePackage: (name: string) => string | undefined;
-
-  readonly resolveRequest?: CustomResolver;
-  readonly sourceExts: ReadonlyArray<string>;
+  resolveHastePackage: (name: string) => null | undefined | string;
+  resolveRequest?: null | undefined | CustomResolver;
+  sourceExts: ReadonlyArray<string>;
   unstable_conditionNames: ReadonlyArray<string>;
   unstable_conditionsByPlatform: Readonly<{
     [platform: string]: ReadonlyArray<string>;
   }>;
   unstable_enablePackageExports: boolean;
   unstable_logWarning: (message: string) => void;
-}
-
-export interface CustomResolutionContext extends ResolutionContext {
-  readonly resolveRequest: CustomResolver;
-}
-
+}>;
+export type CustomResolutionContext = Readonly<
+  Omit<ResolutionContext, keyof {resolveRequest: CustomResolver}> & {
+    resolveRequest: CustomResolver;
+  }
+>;
 export type CustomResolver = (
   context: CustomResolutionContext,
   moduleName: string,
   platform: string | null,
 ) => Resolution;
-
-export type CustomResolverOptions = Readonly<{
-  [option: string]: unknown;
-}>;
+export type CustomResolverOptions = {
+  __proto__: null;
+  readonly [$$Key$$: string]: unknown;
+};
