@@ -40,7 +40,6 @@ export default function getGraphId(
         dev: options.dev,
         experimentalImportSupport: options.experimentalImportSupport || false,
         minify: options.minify,
-        unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
         type: options.type,
         lazy,

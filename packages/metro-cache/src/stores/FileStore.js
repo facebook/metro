@@ -4,8 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow
+ * @format
+ * @oncall react_native
  */
 
 import fs from 'fs';
@@ -14,20 +15,20 @@ import path from 'path';
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
-export type Options = {
+export type Options = $ReadOnly<{
   root: string,
-};
+}>;
 
 export default class FileStore<T> {
-  _root: string;
+  +#root: string;
 
   constructor(options: Options) {
-    this._root = options.root;
+    this.#root = options.root;
   }
 
   async get(key: Buffer): Promise<?T> {
     try {
-      const data = await fs.promises.readFile(this._getFilePath(key));
+      const data = await fs.promises.readFile(this.#getFilePath(key));
 
       if (data[0] === NULL_BYTE) {
         return (data.slice(1): any);
@@ -44,20 +45,20 @@ export default class FileStore<T> {
   }
 
   async set(key: Buffer, value: T): Promise<void> {
-    const filePath = this._getFilePath(key);
+    const filePath = this.#getFilePath(key);
     try {
-      await this._set(filePath, value);
+      await this.#set(filePath, value);
     } catch (err) {
       if (err.code === 'ENOENT') {
         fs.mkdirSync(path.dirname(filePath), {recursive: true});
-        await this._set(filePath, value);
+        await this.#set(filePath, value);
       } else {
         throw err;
       }
     }
   }
 
-  async _set(filePath: string, value: T): Promise<void> {
+  async #set(filePath: string, value: T): Promise<void> {
     let content;
     if (value instanceof Buffer) {
       content = Buffer.concat([NULL_BYTE_BUFFER, value]);
@@ -68,20 +69,20 @@ export default class FileStore<T> {
   }
 
   clear() {
-    this._removeDirs();
+    this.#removeDirs();
   }
 
-  _getFilePath(key: Buffer): string {
+  #getFilePath(key: Buffer): string {
     return path.join(
-      this._root,
+      this.#root,
       key.slice(0, 1).toString('hex'),
       key.slice(1).toString('hex'),
     );
   }
 
-  _removeDirs() {
+  #removeDirs() {
     for (let i = 0; i < 256; i++) {
-      fs.rmSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), {
+      fs.rmSync(path.join(this.#root, ('0' + i.toString(16)).slice(-2)), {
         force: true,
         recursive: true,
       });

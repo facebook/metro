@@ -10,10 +10,10 @@
 
 import type {ConfigT} from '../types';
 
-interface getDefaultConfig {
-  (rootPath: string | null): Promise<ConfigT>;
-  getDefaultValues: (rootPath: string | null) => ConfigT;
-}
-
-declare const getDefaultConfig: getDefaultConfig;
-export default getDefaultConfig;
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  (rootPath?: string): Promise<ConfigT>;
+  getDefaultValues: (rootPath?: string) => ConfigT;
+};
+declare type $$EXPORT_DEFAULT_DECLARATION$$ =
+  typeof $$EXPORT_DEFAULT_DECLARATION$$;
+export default $$EXPORT_DEFAULT_DECLARATION$$;

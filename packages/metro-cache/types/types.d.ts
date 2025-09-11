@@ -9,7 +9,8 @@
  */
 
 export interface CacheStore<T> {
-  get(key: Buffer): T | undefined | Promise<T> | Promise<undefined>;
+  name?: string;
+  get(key: Buffer): (null | undefined | T) | Promise<null | undefined | T>;
   set(key: Buffer, value: T): void | Promise<void>;
   clear(): void | Promise<void>;
 }

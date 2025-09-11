@@ -23,7 +23,10 @@ import {parse as parseYaml} from 'yaml';
 type ResolveConfigResult = {
   filepath: string,
   isEmpty: boolean,
-  config: (ConfigT => Promise<ConfigT>) | (ConfigT => ConfigT) | InputConfigT,
+  config:
+    | ((baseConfig: ConfigT) => Promise<ConfigT>)
+    | ((baseConfig: ConfigT) => ConfigT)
+    | InputConfigT,
   ...
 };
 

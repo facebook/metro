@@ -1,5 +1,6 @@
 {
-  "name": "metro-monorepo",
+  "name": "@metro/monorepo",
+  "version": "0.0.0",
   "private": true,
   "devDependencies": {
     "@babel/core": "^7.25.2",

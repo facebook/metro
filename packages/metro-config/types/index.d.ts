@@ -13,7 +13,6 @@ import getDefaultConfig from './defaults';
 import {loadConfig, mergeConfig, resolveConfig} from './loadConfig';
 
 export {getDefaultConfig, loadConfig, mergeConfig, resolveConfig};
-
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.

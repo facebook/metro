@@ -10,8 +10,7 @@
  */
 
 import type {HandleFunction, Server} from 'connect';
-import type {CacheStore} from 'metro-cache';
-import typeof * as MetroCache from 'metro-cache';
+import type {CacheStore, MetroCache} from 'metro-cache';
 import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
@@ -32,10 +31,12 @@ export type ExtraTransformOptions = $ReadOnly<{
   transform?: $ReadOnly<{
     experimentalImportSupport?: boolean,
     inlineRequires?:
-      | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
+      | $ReadOnly<{
+          blockList: $ReadOnly<{[absoluteModulePath: string]: true, ...}>,
+          ...
+        }>
       | boolean,
     nonInlinedRequires?: $ReadOnlyArray<string>,
-    unstable_disableES6Transforms?: boolean,
     unstable_memoizeInlineRequires?: boolean,
     unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
   }>,
@@ -54,7 +55,7 @@ export type GetTransformOptionsOpts = {
 export type GetTransformOptions = (
   entryPoints: $ReadOnlyArray<string>,
   options: GetTransformOptionsOpts,
-  getDependenciesOf: (string) => Promise<Array<string>>,
+  getDependenciesOf: (absoluteFilePath: string) => Promise<Array<string>>,
 ) => Promise<Partial<ExtraTransformOptions>>;
 
 export type Middleware = HandleFunction;

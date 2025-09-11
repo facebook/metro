@@ -10,6 +10,7 @@
 
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore, MetroCache} from 'metro-cache';
+import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
@@ -21,59 +22,53 @@ import type {
 } from 'metro/private/DeltaBundler/types';
 import type {Reporter} from 'metro/private/lib/reporting';
 import type MetroServer from 'metro/private/Server';
+import type {IntermediateStackFrame} from 'metro/private/Server/symbolicate';
 
-export interface ExtraTransformOptions {
-  readonly preloadedModules: Readonly<{[path: string]: true}> | false;
-  readonly ramGroups: ReadonlyArray<string>;
-  readonly transform: Readonly<{
-    experimentalImportSupport: boolean;
-    inlineRequires:
-      | Readonly<{blockList: Readonly<{[path: string]: true}>}>
+export type ExtraTransformOptions = Readonly<{
+  preloadedModules?: Readonly<{[path: string]: true}> | false;
+  ramGroups?: ReadonlyArray<string>;
+  transform?: Readonly<{
+    experimentalImportSupport?: boolean;
+    inlineRequires?:
+      | Readonly<{
+          blockList: Readonly<{[absoluteModulePath: string]: true}>;
+        }>
       | boolean;
     nonInlinedRequires?: ReadonlyArray<string>;
-    unstable_disableES6Transforms?: boolean;
     unstable_memoizeInlineRequires?: boolean;
+    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
   }>;
-}
-
-export interface GetTransformOptionsOpts {
+}>;
+export type GetTransformOptionsOpts = {
   dev: boolean;
-  hot: boolean;
-  platform?: string;
-}
-
+  /**
+   * @deprecated Always true
+   */
+  hot: true;
+  platform: null | undefined | string;
+};
 export type GetTransformOptions = (
   entryPoints: ReadonlyArray<string>,
   options: GetTransformOptionsOpts,
-  getDependenciesOf: (filePath: string) => Promise<string[]>,
+  getDependenciesOf: (absoluteFilePath: string) => Promise<Array<string>>,
 ) => Promise<Partial<ExtraTransformOptions>>;
-
 export type Middleware = HandleFunction;
-
-export type PerfAnnotations = Partial<{
-  string: {[key: string]: string};
-  int: {[key: string]: number};
-  double: {[key: string]: number};
-  bool: {[key: string]: boolean};
-  string_array: {[key: string]: string[]};
-  int_array: {[key: string]: number[]};
-  double_array: {[key: string]: number[]};
-  bool_array: {[key: string]: boolean[]};
+type PerfAnnotations = Partial<{
+  string: Readonly<{[key: string]: string}>;
+  int: Readonly<{[key: string]: number}>;
+  double: Readonly<{[key: string]: number}>;
+  bool: Readonly<{[key: string]: boolean}>;
+  string_array: Readonly<{[key: string]: ReadonlyArray<string>}>;
+  int_array: Readonly<{[key: string]: ReadonlyArray<number>}>;
+  double_array: Readonly<{[key: string]: ReadonlyArray<number>}>;
+  bool_array: Readonly<{[key: string]: ReadonlyArray<boolean>}>;
 }>;
-
-export type PerfLoggerPointOptions = Readonly<{
-  /**
-   * The time this event point occurred, if it differs from the time the point was logged.
-   */
-  timestamp?: number;
-}>;
-
+type PerfLoggerPointOptions = Readonly<{timestamp?: number}>;
 export interface PerfLogger {
   point(name: string, opts?: PerfLoggerPointOptions): void;
   annotate(annotations: PerfAnnotations): void;
   subSpan(label: string): PerfLogger;
 }
-
 export interface RootPerfLogger extends PerfLogger {
   start(opts?: PerfLoggerPointOptions): void;
   end(
@@ -81,30 +76,25 @@ export interface RootPerfLogger extends PerfLogger {
     opts?: PerfLoggerPointOptions,
   ): void;
 }
-
-export type PerfLoggerFactoryOptions = Readonly<{
-  key?: number;
-}>;
-
+export type PerfLoggerFactoryOptions = Readonly<{key?: number}>;
 export type PerfLoggerFactory = (
   type: 'START_UP' | 'BUNDLING_REQUEST' | 'HMR',
   opts?: PerfLoggerFactoryOptions,
 ) => RootPerfLogger;
-
-export interface ResolverConfigT {
+type ResolverConfigT = {
   assetExts: ReadonlyArray<string>;
   assetResolutions: ReadonlyArray<string>;
-  blacklistRE?: RegExp | RegExp[];
-  blockList: RegExp | RegExp[];
-  dependencyExtractor?: string;
+  blacklistRE?: RegExp | Array<RegExp>;
+  blockList: RegExp | Array<RegExp>;
   disableHierarchicalLookup: boolean;
-  extraNodeModules: {[name: string]: string};
+  dependencyExtractor: null | undefined | string;
   emptyModulePath: string;
   enableGlobalPackages: boolean;
-  hasteImplModulePath?: string;
+  extraNodeModules: {[name: string]: string};
+  hasteImplModulePath: null | undefined | string;
   nodeModulesPaths: ReadonlyArray<string>;
   platforms: ReadonlyArray<string>;
-  resolveRequest?: CustomResolver;
+  resolveRequest: null | undefined | CustomResolver;
   resolverMainFields: ReadonlyArray<string>;
   sourceExts: ReadonlyArray<string>;
   unstable_conditionNames: ReadonlyArray<string>;
@@ -114,144 +104,161 @@ export interface ResolverConfigT {
   unstable_enablePackageExports: boolean;
   useWatchman: boolean;
   requireCycleIgnorePatterns: ReadonlyArray<RegExp>;
-}
-
-export interface SerializerConfigT {
+};
+type SerializerConfigT = {
   createModuleIdFactory: () => (path: string) => number;
   customSerializer:
+    | null
+    | undefined
     | ((
         entryPoint: string,
         preModules: ReadonlyArray<Module>,
         graph: ReadOnlyGraph,
         options: SerializerOptions,
-      ) => Promise<string | {code: string; map: string}>)
-    | null;
+      ) => Promise<string | {code: string; map: string}>);
   experimentalSerializerHook: (
     graph: ReadOnlyGraph,
     delta: DeltaResult,
   ) => unknown;
-  getModulesRunBeforeMainModule: (entryFilePath: string) => string[];
-  getPolyfills: (options: {platform: string | null}) => ReadonlyArray<string>;
+  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>;
+  getPolyfills: ($$PARAM_0$$: {
+    platform: null | undefined | string;
+  }) => ReadonlyArray<string>;
   getRunModuleStatement: (
     moduleId: number | string,
     globalPrefix: string,
   ) => string;
   polyfillModuleNames: ReadonlyArray<string>;
   processModuleFilter: (modules: Module) => boolean;
-  isThirdPartyModule: (module: {readonly path: string}) => boolean;
-}
-
-export interface TransformerConfigT extends JsTransformerConfig {
+  isThirdPartyModule: (module: Readonly<{path: string}>) => boolean;
+};
+type TransformerConfigT = Omit<
+  JsTransformerConfig,
+  keyof {
+    getTransformOptions: GetTransformOptions;
+    transformVariants: {
+      readonly [name: string]: Partial<ExtraTransformOptions>;
+    };
+    publicPath: string;
+    unstable_workerThreads: boolean;
+  }
+> & {
   getTransformOptions: GetTransformOptions;
-  transformVariants: Readonly<{[name: string]: Partial<ExtraTransformOptions>}>;
+  transformVariants: {
+    readonly [name: string]: Partial<ExtraTransformOptions>;
+  };
   publicPath: string;
-}
-
-export interface MetalConfigT {
+  unstable_workerThreads: boolean;
+};
+type MetalConfigT = {
   cacheVersion: string;
   fileMapCacheDirectory?: string;
-  /** Deprecated, alias of fileMapCacheDirectory */
   hasteMapCacheDirectory?: string;
+  unstable_fileMapCacheManagerFactory?: CacheManagerFactory;
   maxWorkers: number;
-  unstable_perfLoggerFactory?: PerfLoggerFactory | null;
+  unstable_perfLoggerFactory?: null | undefined | PerfLoggerFactory;
   projectRoot: string;
   stickyWorkers: boolean;
   transformerPath: string;
   reporter: Reporter;
   resetCache: boolean;
   watchFolders: ReadonlyArray<string>;
-}
-
-export interface ServerConfigT {
+};
+type CacheStoresConfigT = ReadonlyArray<CacheStore<TransformResult>>;
+type ServerConfigT = {
   /** @deprecated */
   enhanceMiddleware: (
-    metroMiddleware: Middleware,
-    metroServer: MetroServer,
+    $$PARAM_0$$: Middleware,
+    $$PARAM_1$$: MetroServer,
   ) => Middleware | Server;
   forwardClientLogs: boolean;
   port: number;
-  rewriteRequestUrl: (url: string) => string;
-  unstable_serverRoot: string | null;
+  rewriteRequestUrl: ($$PARAM_0$$: string) => string;
+  unstable_serverRoot: null | undefined | string;
   useGlobalHotkey: boolean;
   verifyConnections: boolean;
-}
-
-export interface SymbolicatorConfigT {
-  customizeFrame: (frame: {
-    readonly file?: string;
-    readonly lineNumber?: number;
-    readonly column?: number;
-    readonly methodName?: string;
+};
+type SymbolicatorConfigT = {
+  customizeFrame: ($$PARAM_0$$: {
+    readonly file: null | undefined | string;
+    readonly lineNumber: null | undefined | number;
+    readonly column: null | undefined | number;
+    readonly methodName: null | undefined | string;
   }) =>
-    | {readonly collapse?: boolean}
-    | undefined
-    | Promise<{readonly collapse?: boolean}>
-    | Promise<undefined>;
-}
-
-export interface WatcherConfigT {
+    | (null | undefined | {readonly collapse?: boolean})
+    | Promise<null | undefined | {readonly collapse?: boolean}>;
+  customizeStack: (
+    $$PARAM_0$$: Array<IntermediateStackFrame>,
+    $$PARAM_1$$: unknown,
+  ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>;
+};
+type WatcherConfigT = {
   additionalExts: ReadonlyArray<string>;
-  watchman: {
-    deferStates: ReadonlyArray<string>;
-  };
-  healthCheck: {
+  healthCheck: Readonly<{
     enabled: boolean;
     interval: number;
     timeout: number;
     filePrefix: string;
-  };
-  unstable_autoSaveCache: {
-    enabled: boolean;
-    debounceMs?: number;
-  };
-}
-
-export interface WatcherInputConfigT
-  extends Partial<
-    Omit<WatcherConfigT, 'healthCheck' | 'unstable_autoSaveCache'>
-  > {
-  healthCheck?: Partial<WatcherConfigT['healthCheck']>;
-  unstable_autoSaveCache?: Partial<WatcherConfigT['unstable_autoSaveCache']>;
-}
-
-export interface InputConfigT extends Partial<MetalConfigT> {
-  readonly cacheStores?:
-    | ReadonlyArray<CacheStore<TransformResult>>
-    | ((metroCache: MetroCache) => ReadonlyArray<CacheStore<TransformResult>>);
-  readonly resolver?: Partial<ResolverConfigT>;
-  readonly server?: Partial<ServerConfigT>;
-  readonly serializer?: Partial<SerializerConfigT>;
-  readonly symbolicator?: Partial<SymbolicatorConfigT>;
-  readonly transformer?: Partial<TransformerConfigT>;
-  readonly watcher?: Partial<WatcherInputConfigT>;
-}
-
+  }>;
+  unstable_autoSaveCache: Readonly<{enabled: boolean; debounceMs?: number}>;
+  unstable_lazySha1: boolean;
+  unstable_workerThreads: boolean;
+  watchman: Readonly<{deferStates: ReadonlyArray<string>}>;
+};
+export type InputConfigT = Partial<
+  Readonly<
+    MetalConfigT & {
+      cacheStores:
+        | CacheStoresConfigT
+        | (($$PARAM_0$$: MetroCache) => CacheStoresConfigT);
+      resolver: Readonly<Partial<ResolverConfigT>>;
+      server: Readonly<Partial<ServerConfigT>>;
+      serializer: Readonly<Partial<SerializerConfigT>>;
+      symbolicator: Readonly<Partial<SymbolicatorConfigT>>;
+      transformer: Readonly<Partial<TransformerConfigT>>;
+      watcher: Partial<
+        Readonly<
+          Omit<
+            WatcherConfigT,
+            'healthCheck' | 'unstable_autoSaveCache' | 'watchman'
+          > & {
+            healthCheck: Partial<Readonly<WatcherConfigT['healthCheck']>>;
+            unstable_autoSaveCache: Partial<
+              Readonly<WatcherConfigT['unstable_autoSaveCache']>
+            >;
+            watchman: Partial<Readonly<WatcherConfigT['watchman']>>;
+          }
+        >
+      >;
+    }
+  >
+>;
 export type MetroConfig = InputConfigT;
-
-export interface ConfigT extends Readonly<MetalConfigT> {
-  readonly cacheStores: ReadonlyArray<CacheStore<TransformResult>>;
-  readonly resolver: Readonly<ResolverConfigT>;
-  readonly server: Readonly<ServerConfigT>;
-  readonly serializer: Readonly<SerializerConfigT>;
-  readonly symbolicator: Readonly<SymbolicatorConfigT>;
-  readonly transformer: Readonly<TransformerConfigT>;
-  readonly watcher: Readonly<WatcherConfigT>;
-}
-
-export interface YargArguments {
+export type ConfigT = Readonly<
+  MetalConfigT & {
+    cacheStores: CacheStoresConfigT;
+    resolver: Readonly<ResolverConfigT>;
+    server: Readonly<ServerConfigT>;
+    serializer: Readonly<SerializerConfigT>;
+    symbolicator: Readonly<SymbolicatorConfigT>;
+    transformer: Readonly<TransformerConfigT>;
+    watcher: Readonly<WatcherConfigT>;
+  }
+>;
+export type YargArguments = Readonly<{
   config?: string;
   cwd?: string;
   port?: string | number;
   host?: string;
   projectRoot?: string;
-  watchFolders?: string[];
-  assetExts?: string[];
-  sourceExts?: string[];
-  platforms?: string[];
+  watchFolders?: Array<string>;
+  assetExts?: Array<string>;
+  sourceExts?: Array<string>;
+  platforms?: Array<string>;
   'max-workers'?: string | number;
   maxWorkers?: string | number;
   transformer?: string;
   'reset-cache'?: boolean;
   resetCache?: boolean;
   verbose?: boolean;
-}
+}>;

@@ -8,6 +8,25 @@
  * @oncall react_native
  */
 
-import type FileStore from './FileStore';
+import type {Options} from './FileStore';
 
-export default class AutoCleanFileStore<T> extends FileStore<T> {}
+import FileStore from './FileStore';
+
+type CleanOptions = Readonly<
+  Omit<Options, keyof {intervalMs?: number; cleanupThresholdMs?: number}> & {
+    intervalMs?: number;
+    cleanupThresholdMs?: number;
+  }
+>;
+/**
+ * A FileStore that, at a given interval, stats the content of the cache root
+ * and deletes any file last modified a set threshold in the past.
+ *
+ * @deprecated This is not efficiently implemented and may cause significant
+ * redundant I/O when caches are large. Prefer your own cleanup scripts, or a
+ * custom Metro cache that uses watches, hooks get/set, and/or implements LRU.
+ */
+declare class AutoCleanFileStore<T> extends FileStore<T> {
+  constructor(opts: CleanOptions);
+}
+export default AutoCleanFileStore;

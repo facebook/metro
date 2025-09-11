@@ -12,7 +12,8 @@
       // Mappings for main entry points which are not "src/index.js". Required
       // only for this tsconfig - external consumers will read the "main" field
       // and find the adjacent typedef file.
-      "metro-source-map": ["./packages/metro-source-map/types/source-map.d.ts"]
+      "metro-source-map": ["./packages/metro-source-map/types/source-map.d.ts"],
+      "ob1": ["./packages/ob1/types"]
     }
   }
 }

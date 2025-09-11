@@ -85,7 +85,6 @@ export type JsTransformOptions = Readonly<{
   platform?: string;
   runtimeBytecodeVersion?: number;
   type: Type;
-  unstable_disableES6Transforms?: boolean;
   unstable_transformProfile: TransformProfile;
 }>;
 

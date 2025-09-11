@@ -607,15 +607,24 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
     next: (?Error) => void,
-  ) {
+  ): Promise<void> {
     const originalUrl = req.url;
     debug('Handling request:    %s', originalUrl);
     req.url = this._rewriteAndNormalizeUrl(req.url);
     if (req.url !== originalUrl) {
       debug('Rewritten to:    %s', req.url);
     }
-    const {host} = req.headers;
-    const urlObj = new URL(req.url, 'http://' + host);
+    const reqHost = req.headers['x-forwarded-host'] || req.headers['host'];
+    if (!reqHost) {
+      throw new Error('No host header was found.');
+    }
+
+    const reqProtocol =
+      req.headers['x-forwarded-proto'] ||
+      // $FlowFixMe[prop-missing] not missing for https requests
+      (req.socket?.encrypted === true ? 'https' : 'http');
+    const urlObj = new URL(req.url, reqProtocol + '://' + reqHost);
+
     const formattedUrl = urlObj.toString();
     if (req.url !== formattedUrl) {
       debug('Formatted as:    %s', formattedUrl);
@@ -1341,7 +1350,11 @@ export default class Server {
             fileName: file,
           };
         } catch (error) {
-          console.error(error);
+          debug(
+            'Generating code frame failed on file read.',
+            fileAbsolute,
+            error,
+          );
         }
       }
 
@@ -1434,7 +1447,7 @@ export default class Server {
         log(createActionEndEntry(symbolicatingLogEntry));
       });
     } catch (error) {
-      console.error(error.stack || error);
+      debug('Symbolication failed', error.stack || error);
       res.statusCode = 500;
       res.end(JSON.stringify({error: error.message}));
     }

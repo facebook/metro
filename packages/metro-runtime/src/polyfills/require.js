@@ -929,6 +929,21 @@ if (__DEV__) {
     }
   };
 
+  // Check whether accessing an export may be side-effectful
+  const isExportSafeToAccess = (
+    moduleExports: Exports,
+    key: string,
+  ): boolean => {
+    return (
+      // Transformed ESM syntax uses getters to support live bindings - we
+      // consider those safe. ESM itself does not allow user-defined getters
+      // on exports.
+      moduleExports?.__esModule ||
+      // CommonJS modules exporting getters may have side-effects.
+      Object.getOwnPropertyDescriptor(moduleExports, key)?.get == null
+    );
+  };
+
   // Modules that only export components become React Refresh boundaries.
   var isReactRefreshBoundary = function (
     Refresh: any,
@@ -947,9 +962,7 @@ if (__DEV__) {
       hasExports = true;
       if (key === '__esModule') {
         continue;
-      }
-      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
-      if (desc && desc.get) {
+      } else if (!isExportSafeToAccess(moduleExports, key)) {
         // Don't invoke getters as they may have side effects.
         return false;
       }
@@ -994,9 +1007,7 @@ if (__DEV__) {
     for (const key in moduleExports) {
       if (key === '__esModule') {
         continue;
-      }
-      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
-      if (desc && desc.get) {
+      } else if (!isExportSafeToAccess(moduleExports, key)) {
         continue;
       }
       const exportValue = moduleExports[key];
@@ -1018,8 +1029,7 @@ if (__DEV__) {
       return;
     }
     for (const key in moduleExports) {
-      const desc = Object.getOwnPropertyDescriptor<any>(moduleExports, key);
-      if (desc && desc.get) {
+      if (!isExportSafeToAccess(moduleExports, key)) {
         // Don't invoke getters as they may have side effects.
         continue;
       }

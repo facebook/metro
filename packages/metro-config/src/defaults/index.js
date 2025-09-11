@@ -97,7 +97,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       transform: {
         experimentalImportSupport: false,
         inlineRequires: false,
-        unstable_disableES6Transforms: false,
       },
       preloadedModules: false,
       ramGroups: [],

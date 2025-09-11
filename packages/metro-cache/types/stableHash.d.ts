@@ -8,4 +8,5 @@
  * @oncall react_native
  */
 
-export default function stableHash(value: unknown): Buffer;
+declare function stableHash(value: unknown): Buffer;
+export default stableHash;
