@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
  * @format
  * @oncall react_native
  */
@@ -49,52 +48,7 @@
  * Associate this with the THIRD_PARTY_LICENCE type to ensure it isn't
  * stripped by flow-api-translator.
  */
-export type THIRD_PARTY_LICENSE = mixed;
-
-/* eslint-disable no-bitwise */
-
-// A map of values to characters for the b64 encoding
-const CHAR_MAP = [
-  0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d,
-  0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a,
-  0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d,
-  0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a,
-  0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x2b, 0x2f,
-];
-
-// A single base 64 digit can contain 6 bits of data. For the base 64 variable
-// length quantities we use in the source map spec, the first bit is the sign,
-// the next four bits are the actual value, and the 6th bit is the
-// continuation bit. The continuation bit tells us whether there are more
-// digits in this value following this digit.
-//
-//   Continuation
-//   |    Sign
-//   |    |
-//   V    V
-//   101011
-
-const VLQ_BASE_SHIFT = 5;
-
-// binary: 100000
-const VLQ_BASE = 1 << VLQ_BASE_SHIFT;
-
-// binary: 011111
-const VLQ_BASE_MASK = VLQ_BASE - 1;
-
-// binary: 100000
-const VLQ_CONTINUATION_BIT = VLQ_BASE;
-
-/**
- * Converts from a two-complement value to a value where the sign bit is
- * placed in the least significant bit.  For example, as decimals:
- *   1 becomes 2 (10 binary), -1 becomes 3 (11 binary)
- *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
- */
-function toVLQSigned(value: number) {
-  return value < 0 ? (-value << 1) + 1 : (value << 1) + 0;
-}
-
+export type THIRD_PARTY_LICENSE = unknown;
 /**
  * Encodes a number to base64 VLQ format and appends it to the passed-in buffer
  *
@@ -104,23 +58,9 @@ function toVLQSigned(value: number) {
  * DON'T ADD MORE COMMENTS TO THIS FUNCTION TO KEEP ITS LENGTH SHORT ENOUGH FOR
  * V8 OPTIMIZATION!
  */
-export default function encode(
+declare function encode(
   value: number,
   buffer: Buffer,
   position: number,
-): number {
-  let vlq = toVLQSigned(value);
-  let digit;
-  do {
-    digit = vlq & VLQ_BASE_MASK;
-    vlq = vlq >>> VLQ_BASE_SHIFT;
-    if (vlq > 0) {
-      // There are still more digits in this value, so we must make sure the
-      // continuation bit is marked.
-      digit = digit | VLQ_CONTINUATION_BIT;
-    }
-    buffer[position++] = CHAR_MAP[digit];
-  } while (vlq > 0);
-
-  return position;
-}
+): number;
+export default encode;

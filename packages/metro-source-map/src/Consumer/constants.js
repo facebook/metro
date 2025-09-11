@@ -24,7 +24,12 @@ export opaque type LookupBias = 'GREATEST_LOWER_BOUND' | 'LEAST_UPPER_BOUND';
 const GREATEST_LOWER_BOUND: LookupBias = 'GREATEST_LOWER_BOUND';
 const LEAST_UPPER_BOUND: LookupBias = 'LEAST_UPPER_BOUND';
 
-const EMPTY_POSITION = Object.freeze({
+const EMPTY_POSITION: $ReadOnly<{
+  source: null,
+  name: null,
+  line: null,
+  column: null,
+}> = Object.freeze({
   source: null,
   name: null,
   line: null,

@@ -31,6 +31,8 @@ export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-config/**',
   'packages/metro-core/**',
   'packages/metro-resolver/**',
+  'packages/metro-source-map/**',
+  'packages/ob1/**',
 ];
 
 // Globs of paths for which we do not generate TypeScript definitions,
