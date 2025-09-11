@@ -179,6 +179,7 @@ describe('processRequest', () => {
         headers: {...headers, host: 'localhost:8081'},
         ...reqOptions,
       });
+      req.socket = {};
       if (data != null) {
         req.write(data);
         req.end();
@@ -467,6 +468,27 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         '//# sourceMappingURL=http://localhost:8081/mybundle.map?modulesOnly=true&runModule=false',
         '//# sourceURL=http://localhost:8081/mybundle.bundle//&modulesOnly=true&runModule=false',
+      ].join('\n'),
+    );
+  });
+
+  test('support "x-forwarded-host" and "x-forwarded-proto" proxy headers for bundles', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?modulesOnly=true&runModule=false&platform=vr',
+      {
+        headers: {
+          'x-forwarded-host': 'forwardedhost.com',
+          'x-forwarded-proto': 'https',
+        },
+      },
+    );
+
+    expect(response._getString()).toEqual(
+      [
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        '//# sourceMappingURL=https://forwardedhost.com/mybundle.map?modulesOnly=true&runModule=false&platform=vr',
+        '//# sourceURL=https://forwardedhost.com/mybundle.bundle//&modulesOnly=true&runModule=false&platform=vr',
       ].join('\n'),
     );
   });
