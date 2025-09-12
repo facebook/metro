@@ -1,6 +1,6 @@
 {
   "name": "metro-file-map",
-  "version": "0.83.1",
+  "version": "0.83.2",
   "description": "[Experimental] - 🚇 File crawling, watching and mapping for Metro",
   "main": "src/index.js",
   "exports": {
