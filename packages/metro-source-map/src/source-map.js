@@ -10,7 +10,6 @@
  */
 
 import type {IConsumer} from './Consumer/types';
-import type {BabelSourceMapSegment} from '@babel/generator';
 
 import {BundleBuilder, createIndexMap} from './BundleBuilder';
 import composeSourceMaps from './composeSourceMaps';
@@ -44,6 +43,14 @@ export type FBSourceFunctionMap = {
   +names: $ReadOnlyArray<string>,
   +mappings: string,
 };
+
+export type BabelSourceMapSegment = $ReadOnly<{
+  generated: $ReadOnly<{column: number, line: number, ...}>,
+  original?: $ReadOnly<{column: number, line: number, ...}>,
+  source?: ?string,
+  name?: ?string,
+  ...
+}>;
 
 export type FBSegmentMap = {[id: string]: MixedSourceMap, ...};
 
