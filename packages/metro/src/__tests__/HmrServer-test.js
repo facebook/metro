@@ -11,6 +11,7 @@
 
 import type {TransformResultDependency} from '../DeltaBundler/types';
 import type {Client} from '../HmrServer';
+import type {InputConfigT} from 'metro-config';
 import type {HmrClientMessage} from 'metro-runtime/src/modules/types';
 
 import DeltaBundler from '../DeltaBundler';
@@ -141,7 +142,7 @@ describe('HmrServer', () => {
           return requrl;
         },
       },
-    });
+    } as InputConfigT);
 
     incrementalBundlerMock = new IncrementalBundler(config);
     jest
