@@ -10,6 +10,7 @@
 
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
+import type {Node as BabelNode} from '@babel/types';
 
 type Position = {line: number; column: number};
 type RangeMapping = {name: string; start: Position};
