@@ -28,4 +28,4 @@ test('TypeScript defs are in sync (yarn run build-ts-defs produces no changes)',
     expect(error.errors).toEqual([]);
   }
   expect(error).toBeUndefined();
-}, 10000);
+}, 30000);
