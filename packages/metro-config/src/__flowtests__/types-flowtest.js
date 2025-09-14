@@ -11,6 +11,8 @@
 
 import type {ConfigT, InputConfigT} from 'metro-config';
 
+import {mergeConfig} from '../loadConfig';
+
 declare var config: ConfigT;
 declare var inputConfig: InputConfigT;
 
@@ -44,3 +46,24 @@ if (
 // ConfigT is completely hydrated (no errors accessing deep props)
 config.resolver.unstable_conditionsByPlatform['foo'];
 config.transformer.assetPlugins[0];
+
+// A mergeConfig returns a full config only if the base is a full config
+mergeConfig(config, {}) as ConfigT;
+// $FlowExpectedError[incompatible-type]
+mergeConfig(inputConfig, {}) as ConfigT;
+
+// And is synchronous with any number of sync arguments
+mergeConfig(
+  config,
+  () => ({}),
+  {},
+  () => ({}),
+) as ConfigT;
+
+// But async if any function returns a promise
+mergeConfig(
+  config,
+  () => ({}),
+  {},
+  async () => ({}),
+).catch(() => {});

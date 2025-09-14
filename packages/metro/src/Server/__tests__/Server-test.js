@@ -17,6 +17,7 @@ import type {
   ReadOnlyGraph,
   TransformResultDependency,
 } from '../../DeltaBundler/types';
+import type {InputConfigT} from 'metro-config';
 
 import ResourceNotFoundError from '../../IncrementalBundler/ResourceNotFoundError';
 import CountingSet from '../../lib/CountingSet';
@@ -160,7 +161,7 @@ describe('processRequest', () => {
         });
       },
     },
-  });
+  } as InputConfigT);
 
   const makeRequest = (
     requrl: string,
