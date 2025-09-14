@@ -12,7 +12,7 @@
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
-import type {Node} from '@babel/types';
+import type {Node as BabelNode} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import B64Builder from './B64Builder';
@@ -363,7 +363,7 @@ function getNameForPath(path: NodePath<>): string {
 }
 
 function isAnyCallExpression(
-  node: Node,
+  node: BabelNode,
 ): node is
   | BabelNodeNewExpression
   | BabelNodeCallExpression
@@ -376,7 +376,7 @@ function isAnyCallExpression(
 }
 
 function isAnyMemberExpression(
-  node: Node,
+  node: BabelNode,
 ): node is
   | BabelNodeMemberExpression
   | BabelNodeJSXMemberExpression
@@ -389,12 +389,12 @@ function isAnyMemberExpression(
 }
 
 function isAnyIdentifier(
-  node: Node,
+  node: BabelNode,
 ): node is BabelNodeIdentifier | BabelNodeJSXIdentifier {
   return isIdentifier(node) || isJSXIdentifier(node);
 }
 
-function getNameFromId(id: Node): ?string {
+function getNameFromId(id: BabelNode): ?string {
   const parts = getNamePartsFromId(id);
 
   if (!parts.length) {
@@ -414,7 +414,7 @@ function getNameFromId(id: Node): ?string {
   return parts.join('.');
 }
 
-function getNamePartsFromId(id: Node): $ReadOnlyArray<string> {
+function getNamePartsFromId(id: BabelNode): $ReadOnlyArray<string> {
   if (!id) {
     return [];
   }
