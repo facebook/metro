@@ -22,10 +22,29 @@ declare function resolveConfig(
   filePath?: string,
   cwd?: string,
 ): Promise<ResolveConfigResult>;
-declare function mergeConfig<T extends Readonly<InputConfigT>>(
-  defaultConfig: T,
-  ...configs: Array<InputConfigT>
-): T;
+/**
+ * Merge two or more partial config objects (or functions returning partial
+ * configs) together, with arguments to the right overriding the left.
+ *
+ * Functions will be parsed the current config (the merge of all configs to the
+ * left).
+ *
+ * Functions may be async, in which case this function will return a promise.
+ * Otherwise it will return synchronously.
+ */
+declare function mergeConfig<
+  T extends InputConfigT,
+  R extends ReadonlyArray<
+    | InputConfigT
+    | ((baseConfig: T) => InputConfigT)
+    | ((baseConfig: T) => Promise<InputConfigT>)
+  >,
+>(
+  base: T | (() => T),
+  ...configs: R
+): R extends ReadonlyArray<InputConfigT | ((baseConfig: T) => InputConfigT)>
+  ? T
+  : Promise<T>;
 /**
  * Load the metro configuration from disk
  * @param  {object} argv                    Arguments coming from the CLI, can be empty

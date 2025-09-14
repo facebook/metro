@@ -726,9 +726,13 @@ The default value is `['hg.update']`.
 
 Using the `metro-config` package it is possible to merge multiple configurations together.
 
-| Method                                  | Description                                                            |
-| --------------------------------------- | ---------------------------------------------------------------------- |
-| `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects. |
+| Method                                  | Description                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------------- |
+| `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects or functions. |
+
+`configs` may be any combination of configuration objects or functions (from Metro 0.83.2). Functions are called with the merged config of all configs to the left, which may be useful for complex merges with the previous config.
+
+If any arguments are async functions, `mergeConfig` will return a `Promise`, otherwise it will return the merged config synchronously.
 
 :::note
 
@@ -777,5 +781,12 @@ const configB = {
   }
 };
 
-module.exports = mergeConfig(configA, configB);
+// Function forms may be used to access the previous configuration
+configCFn = (previousConfig /* result of mergeConfig(configA, configB) */) => {
+  return {
+    watchFolders: [...previousConfig.watchFolders, 'my-watch-folder'],
+  }
+}
+
+module.exports = mergeConfig(configA, configB, configCFn);
 ```

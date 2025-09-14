@@ -103,88 +103,139 @@ async function resolveConfig(
   return await loadConfigFile(configPath);
 }
 
-function mergeConfig<T: $ReadOnly<InputConfigT>>(
-  defaultConfig: T,
-  ...configs: Array<InputConfigT>
+function mergeConfigObjects<T: InputConfigT>(
+  base: T,
+  overrides: InputConfigT,
 ): T {
-  // If the file is a plain object we merge the file with the default config,
-  // for the function we don't do this since that's the responsibility of the user
-  return configs.reduce(
-    (totalConfig, nextConfig) => ({
-      ...totalConfig,
-      ...nextConfig,
+  return {
+    ...base,
+    ...overrides,
 
-      cacheStores:
-        nextConfig.cacheStores != null
-          ? typeof nextConfig.cacheStores === 'function'
-            ? nextConfig.cacheStores(MetroCache)
-            : nextConfig.cacheStores
-          : totalConfig.cacheStores,
+    cacheStores:
+      overrides.cacheStores != null
+        ? typeof overrides.cacheStores === 'function'
+          ? overrides.cacheStores(MetroCache)
+          : overrides.cacheStores
+        : base.cacheStores,
 
-      resolver: {
-        ...totalConfig.resolver,
+    resolver: {
+      ...base.resolver,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.resolver || {}),
+      dependencyExtractor:
+        overrides.resolver && overrides.resolver.dependencyExtractor != null
+          ? resolve(overrides.resolver.dependencyExtractor)
+          : // $FlowFixMe[incompatible-use]
+            base.resolver.dependencyExtractor,
+      hasteImplModulePath:
+        overrides.resolver && overrides.resolver.hasteImplModulePath != null
+          ? resolve(overrides.resolver.hasteImplModulePath)
+          : // $FlowFixMe[incompatible-use]
+            base.resolver.hasteImplModulePath,
+    },
+    serializer: {
+      ...base.serializer,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.serializer || {}),
+    },
+    transformer: {
+      ...base.transformer,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.transformer || {}),
+      babelTransformerPath:
+        overrides.transformer &&
+        overrides.transformer.babelTransformerPath != null
+          ? resolve(overrides.transformer.babelTransformerPath)
+          : // $FlowFixMe[incompatible-use]
+            base.transformer.babelTransformerPath,
+    },
+    server: {
+      ...base.server,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.server || {}),
+    },
+    symbolicator: {
+      ...base.symbolicator,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.symbolicator || {}),
+    },
+    watcher: {
+      ...base.watcher,
+      // $FlowFixMe[exponential-spread]
+      ...overrides.watcher,
+      watchman: {
         // $FlowFixMe[exponential-spread]
-        ...(nextConfig.resolver || {}),
-        dependencyExtractor:
-          nextConfig.resolver && nextConfig.resolver.dependencyExtractor != null
-            ? resolve(nextConfig.resolver.dependencyExtractor)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.resolver.dependencyExtractor,
-        hasteImplModulePath:
-          nextConfig.resolver && nextConfig.resolver.hasteImplModulePath != null
-            ? resolve(nextConfig.resolver.hasteImplModulePath)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.resolver.hasteImplModulePath,
+        ...base.watcher?.watchman,
+        ...overrides.watcher?.watchman,
       },
-      serializer: {
-        ...totalConfig.serializer,
+      healthCheck: {
         // $FlowFixMe[exponential-spread]
-        ...(nextConfig.serializer || {}),
+        ...base.watcher?.healthCheck,
+        ...overrides.watcher?.healthCheck,
       },
-      transformer: {
-        ...totalConfig.transformer,
+      unstable_autoSaveCache: {
         // $FlowFixMe[exponential-spread]
-        ...(nextConfig.transformer || {}),
-        babelTransformerPath:
-          nextConfig.transformer &&
-          nextConfig.transformer.babelTransformerPath != null
-            ? resolve(nextConfig.transformer.babelTransformerPath)
-            : // $FlowFixMe[incompatible-use]
-              totalConfig.transformer.babelTransformerPath,
+        ...base.watcher?.unstable_autoSaveCache,
+        ...overrides.watcher?.unstable_autoSaveCache,
       },
-      server: {
-        ...totalConfig.server,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.server || {}),
-      },
-      symbolicator: {
-        ...totalConfig.symbolicator,
-        // $FlowFixMe[exponential-spread]
-        ...(nextConfig.symbolicator || {}),
-      },
-      watcher: {
-        ...totalConfig.watcher,
-        // $FlowFixMe[exponential-spread]
-        ...nextConfig.watcher,
-        watchman: {
-          // $FlowFixMe[exponential-spread]
-          ...totalConfig.watcher?.watchman,
-          ...nextConfig.watcher?.watchman,
-        },
-        healthCheck: {
-          // $FlowFixMe[exponential-spread]
-          ...totalConfig.watcher?.healthCheck,
-          ...nextConfig.watcher?.healthCheck,
-        },
-        unstable_autoSaveCache: {
-          // $FlowFixMe[exponential-spread]
-          ...totalConfig.watcher?.unstable_autoSaveCache,
-          ...nextConfig.watcher?.unstable_autoSaveCache,
-        },
-      },
-    }),
-    defaultConfig,
-  );
+    },
+  };
+}
+
+async function mergeConfigAsync<T: InputConfigT>(
+  baseConfig: Promise<T>,
+  ...reversedConfigs: $ReadOnlyArray<
+    InputConfigT | (T => InputConfigT) | (T => Promise<InputConfigT>),
+  >
+): Promise<T> {
+  let currentConfig: T = await baseConfig;
+  for (const next of reversedConfigs) {
+    const nextConfig: InputConfigT = await (typeof next === 'function'
+      ? next(currentConfig)
+      : next);
+    currentConfig = mergeConfigObjects(currentConfig, nextConfig);
+  }
+  return currentConfig;
+}
+
+/**
+ * Merge two or more partial config objects (or functions returning partial
+ * configs) together, with arguments to the right overriding the left.
+ *
+ * Functions will be parsed the current config (the merge of all configs to the
+ * left).
+ *
+ * Functions may be async, in which case this function will return a promise.
+ * Otherwise it will return synchronously.
+ */
+function mergeConfig<
+  T: InputConfigT,
+  R: $ReadOnlyArray<
+    | InputConfigT
+    | ((baseConfig: T) => InputConfigT)
+    | ((baseConfig: T) => Promise<InputConfigT>),
+  >,
+>(
+  base: T | (() => T),
+  ...configs: R
+): R extends $ReadOnlyArray<InputConfigT | ((baseConfig: T) => InputConfigT)>
+  ? T
+  : Promise<T> {
+  let currentConfig: T = typeof base === 'function' ? base() : base;
+  // Reverse for easy popping
+  const reversedConfigs = configs.toReversed();
+  let next;
+  while ((next = reversedConfigs.pop())) {
+    const nextConfig: InputConfigT | Promise<InputConfigT> =
+      typeof next === 'function' ? next(currentConfig) : next;
+    if (nextConfig instanceof Promise) {
+      // $FlowFixMe[incompatible-type] Not clear why Flow doesn't like this
+      return mergeConfigAsync(nextConfig, reversedConfigs.toReversed());
+    }
+    currentConfig = mergeConfigObjects(currentConfig, nextConfig) as T;
+  }
+  // $FlowFixMe[incompatible-type] Not clear why Flow doesn't like this
+  return currentConfig;
 }
 
 async function loadMetroConfigFromDisk(
