@@ -735,6 +735,104 @@ describe('with package exports resolution enabled', () => {
       });
     });
 
+    test('should resolve "exports" subpath with nested default condition', () => {
+      const context = {
+        ...createResolutionContext({
+          '/root/src/main.js': '',
+          // Metro shouldn't prioritise the nested package.json over the main package.json's "exports"
+          '/root/node_modules/test-pkg/foo/package.json': JSON.stringify({
+            main: '../lib/foo-require.js',
+            module: '../lib/foo-module.mjs',
+            types: '../lib/foo-module.d.ts',
+            private: true,
+          }),
+          '/root/node_modules/test-pkg/package.json': JSON.stringify({
+            name: 'test-pkg',
+            main: 'index.js',
+            exports: {
+              './foo': {
+                import: {
+                  types: '<example>',
+                  default: './lib/foo-module.mjs',
+                },
+                require: {
+                  types: '<example>',
+                  default: './lib/foo-require.js',
+                },
+              },
+            },
+          }),
+          '/root/node_modules/test-pkg/index.js': '',
+          '/root/node_modules/test-pkg/lib/foo.js': '',
+          '/root/node_modules/test-pkg/lib/foo-require.cjs': '',
+          '/root/node_modules/test-pkg/lib/foo-module.mjs': '',
+          '/root/node_modules/test-pkg/lib/foo-dev.js': '',
+          '/root/node_modules/test-pkg/lib/foo-browser.js': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.cjs': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.mjs': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.js': '',
+          '/root/node_modules/test-pkg/lib/foo.web.js': '',
+        }),
+        originModulePath: '/root/src/main.js',
+        unstable_enablePackageExports: true,
+        unstable_conditionNames: ['require'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo-module.mjs',
+      });
+    });
+
+    test('should resolve "exports" subpath with nested default condition on deep file', () => {
+      const context = {
+        ...createResolutionContext({
+          '/root/src/main.js': '',
+          // Metro shouldn't prioritise the nested package.json over the main package.json's "exports"
+          '/root/node_modules/test-pkg/foo/bar/package.json': JSON.stringify({
+            main: '../../lib/foo-require.js',
+            module: '../../lib/foo-module.mjs',
+            types: '../../lib/foo-module.d.ts',
+            private: true,
+          }),
+          '/root/node_modules/test-pkg/package.json': JSON.stringify({
+            name: 'test-pkg',
+            main: 'index.js',
+            exports: {
+              './foo/bar': {
+                import: {
+                  types: '<example>',
+                  default: './lib/foo-module.mjs',
+                },
+                require: {
+                  types: '<example>',
+                  default: './lib/foo-require.js',
+                },
+              },
+            },
+          }),
+          '/root/node_modules/test-pkg/index.js': '',
+          '/root/node_modules/test-pkg/lib/foo.js': '',
+          '/root/node_modules/test-pkg/lib/foo-require.cjs': '',
+          '/root/node_modules/test-pkg/lib/foo-module.mjs': '',
+          '/root/node_modules/test-pkg/lib/foo-dev.js': '',
+          '/root/node_modules/test-pkg/lib/foo-browser.js': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.cjs': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.mjs': '',
+          '/root/node_modules/test-pkg/lib/foo-react-native.js': '',
+          '/root/node_modules/test-pkg/lib/foo.web.js': '',
+        }),
+        originModulePath: '/root/src/main.js',
+        unstable_enablePackageExports: true,
+        unstable_conditionNames: ['require'],
+      };
+
+      expect(Resolver.resolve(context, 'test-pkg/foo/bar', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/test-pkg/lib/foo-module.mjs',
+      });
+    });
+
     test('should resolve asserted conditions in order specified by package', () => {
       expect(
         Resolver.resolve(
