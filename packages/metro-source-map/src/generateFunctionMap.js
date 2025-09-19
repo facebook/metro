@@ -307,6 +307,8 @@ function getNameForPath(path: NodePath<>): string {
     // We couldn't find a name directly. Try the parent in certain cases.
     if (isAnyCallExpression(parent)) {
       // foo(function () {})
+      /* $FlowFixMe[incompatible-type] Error exposed after improved typing of
+       * Array.{includes,indexOf,lastIndexOf} */
       const argIndex = parent.arguments.indexOf(node);
       if (argIndex !== -1) {
         const calleeName = getNameFromId(parent.callee);

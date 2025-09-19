@@ -672,6 +672,8 @@ export default class FileMap extends EventEmitter {
     for (const {absolutePath, error} of batchResult.errors.concat(
       readLinkErrors,
     )) {
+      /* $FlowFixMe[incompatible-type] Error exposed after improved typing of
+       * Array.{includes,indexOf,lastIndexOf} */
       if (['ENOENT', 'EACCESS'].includes(error.code)) {
         missingFiles.add(this._pathUtils.absoluteToNormal(absolutePath));
       } else {
