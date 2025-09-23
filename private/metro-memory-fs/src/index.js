@@ -1230,7 +1230,7 @@ class MemoryFs {
     const {writable = false, readable = false} = spec;
     const {exclusive, mustExist, truncate} = spec;
     let {dirNode, node, basename, dirPath} = this._resolve(filePath);
-    let nodePath;
+    let nodePath: Array<[string, EntityNode]>;
     if (node == null) {
       if (mustExist) {
         throw makeError('ENOENT', filePath, 'no such file or directory');
