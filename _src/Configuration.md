@@ -730,9 +730,9 @@ Using the `metro-config` package it is possible to merge multiple configurations
 | --------------------------------------- | ----------------------------------------------------------------------------------- |
 | `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects or functions. |
 
-`configs` may be any combination of configuration objects or functions (from Metro 0.83.2). Functions are called with the merged config of all configs to the left, which may be useful for complex merges with the previous config.
+`configs` may be any combination of (promises resolving to) configuration objects or functions. Functions are called with the merged config of all configs to the left, which may be useful for complex merges with the previous config.
 
-If any arguments are async functions, `mergeConfig` will return a `Promise`, otherwise it will return the merged config synchronously.
+If any arguments are promises or async functions, `mergeConfig` will return a `Promise`, otherwise it will return the merged config synchronously.
 
 :::note
 
