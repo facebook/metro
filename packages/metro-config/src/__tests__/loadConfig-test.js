@@ -66,6 +66,21 @@ describe('loadConfig', () => {
     });
   });
 
+  test('can load config that exports a promise', async () => {
+    const result = await loadConfig(
+      {
+        config: path.resolve(
+          __dirname,
+          '../__fixtures__/cjs-promise.metro.config.js',
+        ),
+      },
+      {},
+    );
+    expect(result).toMatchObject({
+      cacheVersion: 'cjs-promise-config',
+    });
+  });
+
   test('mergeConfig chains config functions', async () => {
     const defaultConfigOverrides = {
       resolver: {

@@ -391,7 +391,9 @@ export async function loadConfigFile(
       if (absolutePath.endsWith(PACKAGE_JSON)) {
         config = configModule[PACKAGE_JSON_PROP_NAME];
       } else {
-        config = configModule.__esModule ? configModule.default : configModule;
+        config = await (configModule.__esModule
+          ? configModule.default
+          : configModule);
       }
     } catch (e) {
       try {
