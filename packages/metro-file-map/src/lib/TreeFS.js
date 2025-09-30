@@ -1005,7 +1005,7 @@ export default class TreeFS implements MutableFileSystem {
       includeSymlinks: boolean,
       includeNodeModules: boolean,
     }>,
-  ): Iterable<{
+  ): Iterator<{
     baseName: string,
     canonicalPath: string,
     metadata: FileMetadata,

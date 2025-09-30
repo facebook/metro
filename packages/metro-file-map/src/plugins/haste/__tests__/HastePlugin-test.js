@@ -9,7 +9,6 @@
  * @oncall react_native
  */
 
-import type {FileMetadata} from '../../../flow-types';
 import type HasteMapType from '../../HastePlugin';
 
 let mockPathModule;
@@ -25,22 +24,22 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     {
       canonicalPath: p('project/Foo.js'),
       baseName: 'Foo.js',
-      metadata: hasteMetadata('NameForFoo'),
+      data: 'NameForFoo',
     },
     {
       canonicalPath: p('project/Bar.js'),
       baseName: 'Bar.js',
-      metadata: hasteMetadata('Bar'),
+      data: 'Bar',
     },
     {
       canonicalPath: p('project/Duplicate.js'),
       baseName: 'Duplicate.js',
-      metadata: hasteMetadata('Duplicate'),
+      data: 'Duplicate',
     },
     {
       canonicalPath: p('project/other/Duplicate.js'),
       baseName: 'Duplicate.js',
-      metadata: hasteMetadata('Duplicate'),
+      data: 'Duplicate',
     },
   ];
 
@@ -73,10 +72,10 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
           {
             canonicalPath: p('project/Foo.js'),
             baseName: 'Foo.js',
-            metadata: hasteMetadata('NameForFoo'),
+            data: 'NameForFoo',
           },
         ]),
-        getFileMetadata: jest.fn(),
+        getFilePluginData: jest.fn(),
       },
       pluginState: null,
     };
@@ -96,7 +95,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       await hasteMap.initialize({
         files: {
           metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
-          getFileMetadata: jest.fn(),
+          getFilePluginData: jest.fn(),
         },
         pluginState: null,
       });
@@ -104,7 +103,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 
     test('removes a module, without affecting others', () => {
       expect(hasteMap.getModule('NameForFoo')).not.toBeNull();
-      hasteMap.onRemovedFile(p('project/Foo.js'), hasteMetadata('NameForFoo'));
+      hasteMap.onRemovedFile(p('project/Foo.js'), 'NameForFoo');
       expect(hasteMap.getModule('NameForFoo')).toBeNull();
       expect(hasteMap.getModule('Bar')).not.toBeNull();
     });
@@ -113,10 +112,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       expect(() => hasteMap.getModule('Duplicate')).toThrow(
         DuplicateHasteCandidatesError,
       );
-      hasteMap.onRemovedFile(
-        p('project/Duplicate.js'),
-        hasteMetadata('Duplicate'),
-      );
+      hasteMap.onRemovedFile(p('project/Duplicate.js'), 'Duplicate');
       expect(hasteMap.getModule('Duplicate')).toBe(
         p('/root/project/other/Duplicate.js'),
       );
@@ -131,7 +127,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       await hasteMap.initialize({
         files: {
           metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
-          getFileMetadata: jest.fn(),
+          getFilePluginData: jest.fn(),
         },
         pluginState: null,
       });
@@ -139,7 +135,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 
     test('removes a module, without affecting others', () => {
       expect(hasteMap.getModule('NameForFoo')).not.toBeNull();
-      hasteMap.onRemovedFile(p('project/Foo.js'), hasteMetadata('NameForFoo'));
+      hasteMap.onRemovedFile(p('project/Foo.js'), 'NameForFoo');
       expect(hasteMap.getModule('NameForFoo')).toBeNull();
       expect(hasteMap.getModule('Bar')).not.toBeNull();
     });
@@ -150,12 +146,12 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       );
       await hasteMap.bulkUpdate({
         removed: [
-          [p('project/Duplicate.js'), hasteMetadata('Duplicate')],
-          [p('project/Foo.js'), hasteMetadata('NameForFoo')],
+          [p('project/Duplicate.js'), 'Duplicate'],
+          [p('project/Foo.js'), 'NameForFoo'],
         ],
         addedOrModified: [
-          [p('project/Baz.js'), hasteMetadata('Baz')], // New
-          [p('project/other/Bar.js'), hasteMetadata('Bar')], // New duplicate
+          [p('project/Baz.js'), 'Baz'], // New
+          [p('project/other/Bar.js'), 'Bar'], // New duplicate
         ],
       });
       expect(hasteMap.getModule('Duplicate')).toBe(
@@ -171,27 +167,27 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 
   describe('getModuleNameByPath', () => {
     let hasteMap: HasteMapType;
-    let getFileMetadata;
+    let getFilePluginData;
 
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
-      getFileMetadata = jest.fn().mockReturnValue(null);
+      getFilePluginData = jest.fn().mockReturnValue(null);
 
       await hasteMap.initialize({
         files: {
           metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
-          getFileMetadata,
+          getFilePluginData,
         },
         pluginState: null,
       });
     });
 
     test('returns the correct module name', () => {
-      getFileMetadata.mockImplementation(
+      getFilePluginData.mockImplementation(
         filePath =>
           ({
-            [p('/root/Foo.js')]: hasteMetadata('Foo'),
-            [p('/root/not-haste.js')]: hasteMetadata(null),
+            [p('/root/Foo.js')]: 'Foo' as ?string,
+            [p('/root/not-haste.js')]: null,
           })[filePath] ?? null,
       );
       expect(hasteMap.getModuleNameByPath(p('/root/Foo.js'))).toBe('Foo');
@@ -200,7 +196,3 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     });
   });
 });
-
-function hasteMetadata(hasteName: ?string): FileMetadata {
-  return [0, 0, 0, '', '', 0, hasteName];
-}

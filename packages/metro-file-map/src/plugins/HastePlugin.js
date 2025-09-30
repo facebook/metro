@@ -16,7 +16,6 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
-  FileMetadata,
   HasteConflict,
   HasteMap,
   HasteMapItem,
@@ -50,7 +49,9 @@ type HasteMapOptions = $ReadOnly<{
   failValidationOnConflicts: boolean,
 }>;
 
-export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
+export default class HastePlugin
+  implements HasteMap, FileMapPlugin<null, string>
+{
   +name = 'haste';
 
   +#rootDir: Path;
@@ -75,33 +76,34 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize({files}: FileMapPluginInitOptions<null>): Promise<void> {
+  async initialize({
+    files,
+  }: FileMapPluginInitOptions<null, string>): Promise<void> {
     this.#perfLogger?.point('constructHasteMap_start');
     let hasteFiles = 0;
-    for (const {baseName, canonicalPath, metadata} of files.metadataIterator({
+    for (const {
+      baseName,
+      canonicalPath,
+      data: hasteId,
+    } of files.metadataIterator({
       // Symlinks and node_modules are never Haste modules or packages.
       includeNodeModules: false,
       includeSymlinks: false,
     })) {
-      if (metadata[H.ID] != null) {
-        this.setModule(metadata[H.ID], [
-          canonicalPath,
-          this.#enableHastePackages && baseName === 'package.json'
-            ? H.PACKAGE
-            : H.MODULE,
-        ]);
-        if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
-          await new Promise(setImmediate);
-        }
+      if (hasteId == null) {
+        continue;
+      }
+      this.setModule(hasteId, [
+        canonicalPath,
+        this.#enableHastePackages && baseName === 'package.json'
+          ? H.PACKAGE
+          : H.MODULE,
+      ]);
+      if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
+        await new Promise(setImmediate);
       }
     }
-    this.#getModuleNameByPath = mixedPath => {
-      const metadata = files.getFileMetadata(mixedPath);
-      if (metadata == null || metadata[H.ID] == null) {
-        return null;
-      }
-      return metadata[H.ID];
-    };
+    this.#getModuleNameByPath = files.getFilePluginData;
     this.#perfLogger?.point('constructHasteMap_end');
     this.#perfLogger?.annotate({int: {hasteFiles}});
   }
@@ -140,7 +142,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
         'HastePlugin has not been initialized before getModuleNameByPath',
       );
     }
-    return this.#getModuleNameByPath(mixedPath);
+    return this.#getModuleNameByPath(mixedPath) ?? null;
   }
 
   getPackage(
@@ -224,18 +226,17 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+  async bulkUpdate(delta: FileMapDelta<?string>): Promise<void> {
     // Process removals first so that moves aren't treated as duplicates.
-    for (const [normalPath, metadata] of delta.removed) {
-      this.onRemovedFile(normalPath, metadata);
+    for (const [normalPath, maybeHasteId] of delta.removed) {
+      this.onRemovedFile(normalPath, maybeHasteId);
     }
-    for (const [normalPath, metadata] of delta.addedOrModified) {
-      this.onNewOrModifiedFile(normalPath, metadata);
+    for (const [normalPath, maybeHasteId] of delta.addedOrModified) {
+      this.onNewOrModifiedFile(normalPath, maybeHasteId);
     }
   }
 
-  onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const id = fileMetadata[H.ID];
+  onNewOrModifiedFile(relativeFilePath: string, id: ?string) {
     if (id == null) {
       // Not a Haste module or package
       return;
@@ -312,8 +313,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     hasteMapItem[platform] = module;
   }
 
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const moduleName = fileMetadata[H.ID];
+  onRemovedFile(relativeFilePath: string, moduleName: ?string) {
     if (moduleName == null) {
       // Not a Haste module or package
       return;

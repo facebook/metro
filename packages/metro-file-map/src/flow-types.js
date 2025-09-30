@@ -165,45 +165,46 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetadata]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
+export type FileMapDelta<T = null | void> = $ReadOnly<{
+  removed: Iterable<[CanonicalPath, T]>,
+  addedOrModified: Iterable<[CanonicalPath, T]>,
 }>;
 
-interface FileSystemState {
-  metadataIterator(
-    opts: $ReadOnly<{
-      includeNodeModules: boolean,
-      includeSymlinks: boolean,
+export type FileMapPluginInitOptions<
+  SerializableState,
+  PerFileData = null | void,
+> = $ReadOnly<{
+  files: $ReadOnly<{
+    metadataIterator(
+      opts: $ReadOnly<{
+        includeNodeModules: boolean,
+        includeSymlinks: boolean,
+      }>,
+    ): Iterable<{
+      baseName: string,
+      canonicalPath: string,
+      data: PerFileData,
     }>,
-  ): Iterable<{
-    baseName: string,
-    canonicalPath: string,
-    metadata: FileMetadata,
-  }>;
-  getFileMetadata(mixedPath: string): ?FileMetadata;
-}
-
-export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
-  files: FileSystemState,
+    getFilePluginData(mixedPath: string): ?PerFileData,
+  }>,
   pluginState: ?SerializableState,
 }>;
 
 type V8Serializable = interface {};
 
-export interface FileMapPlugin<SerializableState = V8Serializable> {
+export interface FileMapPlugin<
+  SerializableState = V8Serializable,
+  PerFileData = null | void,
+> {
   +name: string;
   initialize(
-    initOptions: FileMapPluginInitOptions<SerializableState>,
+    initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<?PerFileData>): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    fileMetadata: FileMetadata,
-  ): void;
+  onRemovedFile(relativeFilePath: string, pluginData: PerFileData): void;
+  onNewOrModifiedFile(relativeFilePath: string, pluginData: PerFileData): void;
   getCacheKey(): string;
 }
 

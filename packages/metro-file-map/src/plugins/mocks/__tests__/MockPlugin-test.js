@@ -100,7 +100,7 @@ Duplicate manual mock found for \`foo\`:
         metadataIterator: () => {
           throw new Error('should not be used');
         },
-        getFileMetadata: () => {
+        getFilePluginData: () => {
           throw new Error('should not be used');
         },
       },
