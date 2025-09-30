@@ -110,54 +110,53 @@ function mergeConfigObjects<T: InputConfigT>(
   return {
     ...base,
     ...overrides,
-
-    cacheStores:
-      overrides.cacheStores != null
-        ? typeof overrides.cacheStores === 'function'
-          ? overrides.cacheStores(MetroCache)
-          : overrides.cacheStores
-        : base.cacheStores,
+    ...(overrides.cacheStores != null
+      ? {
+          cacheStores:
+            typeof overrides.cacheStores === 'function'
+              ? overrides.cacheStores(MetroCache)
+              : overrides.cacheStores,
+        }
+      : null),
 
     resolver: {
       ...base.resolver,
+      ...overrides.resolver,
       // $FlowFixMe[exponential-spread]
-      ...(overrides.resolver || {}),
-      dependencyExtractor:
-        overrides.resolver && overrides.resolver.dependencyExtractor != null
-          ? resolve(overrides.resolver.dependencyExtractor)
-          : // $FlowFixMe[incompatible-use]
-            base.resolver.dependencyExtractor,
-      hasteImplModulePath:
-        overrides.resolver && overrides.resolver.hasteImplModulePath != null
-          ? resolve(overrides.resolver.hasteImplModulePath)
-          : // $FlowFixMe[incompatible-use]
-            base.resolver.hasteImplModulePath,
+      ...(overrides.resolver?.dependencyExtractor != null
+        ? {dependencyExtractor: resolve(overrides.resolver.dependencyExtractor)}
+        : null),
+      ...(overrides.resolver?.hasteImplModulePath != null
+        ? {hasteImplModulePath: resolve(overrides.resolver.hasteImplModulePath)}
+        : null),
     },
     serializer: {
       ...base.serializer,
       // $FlowFixMe[exponential-spread]
-      ...(overrides.serializer || {}),
+      ...overrides.serializer,
     },
     transformer: {
       ...base.transformer,
       // $FlowFixMe[exponential-spread]
-      ...(overrides.transformer || {}),
-      babelTransformerPath:
-        overrides.transformer &&
-        overrides.transformer.babelTransformerPath != null
-          ? resolve(overrides.transformer.babelTransformerPath)
-          : // $FlowFixMe[incompatible-use]
-            base.transformer.babelTransformerPath,
+      ...overrides.transformer,
+      // $FlowFixMe[exponential-spread]
+      ...(overrides.transformer?.babelTransformerPath != null
+        ? {
+            babelTransformerPath: resolve(
+              overrides.transformer.babelTransformerPath,
+            ),
+          }
+        : null),
     },
     server: {
       ...base.server,
       // $FlowFixMe[exponential-spread]
-      ...(overrides.server || {}),
+      ...overrides.server,
     },
     symbolicator: {
       ...base.symbolicator,
       // $FlowFixMe[exponential-spread]
-      ...(overrides.symbolicator || {}),
+      ...overrides.symbolicator,
     },
     watcher: {
       ...base.watcher,
