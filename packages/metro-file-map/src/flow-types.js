@@ -215,7 +215,7 @@ export type HType = {
   DEPENDENCIES: 3,
   SHA1: 4,
   SYMLINK: 5,
-  ID: 6,
+  PLUGINDATA: number,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -238,7 +238,8 @@ export type FileMetadata = [
   /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
-  /* id */ ?string, // Haste module/package name, or null for non-Haste
+  /* plugindata */
+  ...
 ];
 
 export type FileStats = $ReadOnly<{
