@@ -401,14 +401,20 @@ export async function loadConfigFile(
         // The default export is a promise in the case of top-level await
         config = await configModule.default;
       } catch (error) {
-        throw new Error(
-          `Found config at ${absolutePath} that could not be loaded with Node.js.` +
-            (error.code === 'ERR_UNKNOWN_FILE_EXTENSION' &&
-            TS_EXTENSIONS.has(extension)
-              ? '\n\nEnsure your Node.js version supports loading TypeScript. (>=24.0.0 or >=22.6.0 with --experimental-strip-types)'
-              : ''),
-          {cause: error},
-        );
+        let prefix = `Error loading Metro config at: ${absolutePath}\n`;
+        if (
+          error.code === 'ERR_UNKNOWN_FILE_EXTENSION' &&
+          TS_EXTENSIONS.has(extension)
+        ) {
+          prefix +=
+            'Ensure your Node.js version supports loading TypeScript. (>=24.0.0 or >=22.6.0 with --experimental-strip-types).\n';
+        }
+        // error.stack is a getter that includes error.message. Access it now
+        // to cache the current value before modifying message, so that we
+        // don't repeat the prefix when printing message and stack later.
+        error.stack;
+        error.message = prefix + error.message;
+        throw error;
       }
     }
   } else if (YAML_EXTENSIONS.has(extension)) {
