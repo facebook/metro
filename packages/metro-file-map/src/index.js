@@ -143,7 +143,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '10';
+const CACHE_BREAKER = '11';
 
 const CHANGE_INTERVAL = 30;
 
@@ -913,7 +913,7 @@ export default class FileMap extends EventEmitter {
               '',
               null,
               change.metadata.type === 'l' ? 1 : 0,
-              '',
+              null,
             ];
 
             try {

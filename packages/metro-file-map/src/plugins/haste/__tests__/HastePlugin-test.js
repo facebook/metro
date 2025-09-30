@@ -191,7 +191,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
         filePath =>
           ({
             [p('/root/Foo.js')]: hasteMetadata('Foo'),
-            [p('/root/not-haste.js')]: hasteMetadata(''),
+            [p('/root/not-haste.js')]: hasteMetadata(null),
           })[filePath] ?? null,
       );
       expect(hasteMap.getModuleNameByPath(p('/root/Foo.js'))).toBe('Foo');
@@ -201,6 +201,6 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
   });
 });
 
-function hasteMetadata(hasteName: string): FileMetadata {
+function hasteMetadata(hasteName: ?string): FileMetadata {
   return [0, 0, 0, '', '', 0, hasteName];
 }
