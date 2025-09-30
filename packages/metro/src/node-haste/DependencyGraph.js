@@ -381,7 +381,7 @@ export default class DependencyGraph extends EventEmitter {
   };
 
   getHasteName(filePath: string): string {
-    const hasteName = this._fileSystem.getModuleName(filePath);
+    const hasteName = this._hasteMap.getModuleNameByPath(filePath);
 
     if (hasteName) {
       return hasteName;

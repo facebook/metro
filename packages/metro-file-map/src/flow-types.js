@@ -181,6 +181,7 @@ interface FileSystemState {
     canonicalPath: string,
     metadata: FileMetadata,
   }>;
+  getFileMetadata(mixedPath: string): ?FileMetadata;
 }
 
 export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
@@ -253,7 +254,6 @@ export interface FileSystem {
     changedFiles: FileData,
     removedFiles: Set<string>,
   };
-  getModuleName(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
   getOrComputeSha1(file: Path): Promise<?{sha1: string, content?: Buffer}>;
@@ -365,6 +365,8 @@ export interface HasteMap {
     supportsNativePlatform?: ?boolean,
     type?: ?HTypeValue,
   ): ?Path;
+
+  getModuleNameByPath(file: Path): ?string;
 
   getPackage(
     name: string,
