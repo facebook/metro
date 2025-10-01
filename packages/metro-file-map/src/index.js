@@ -370,6 +370,7 @@ export default class FileMap extends EventEmitter {
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
+      pluginWorkers: plugins.map(plugin => plugin.getWorker()).filter(Boolean),
     });
 
     this._buildPromise = null;
