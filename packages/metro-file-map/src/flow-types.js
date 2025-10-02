@@ -493,9 +493,8 @@ export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
-  enableHastePackages: boolean,
+  isNodeModules: boolean,
   filePath: string,
-  hasteImplModulePath?: ?string,
   maybeReturnContent: boolean,
 }>;
 
