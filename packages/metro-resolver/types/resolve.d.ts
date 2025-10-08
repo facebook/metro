@@ -10,9 +10,12 @@
 
 import type {Resolution, ResolutionContext} from './types';
 
+export type FutureModule = Readonly<{fullPath: string}>;
+export type FutureModulesMap = Map<string, FutureModule>;
 declare function resolve(
   context: ResolutionContext,
   moduleName: string,
   platform: string | null,
+  futureModules?: null | undefined | FutureModulesMap,
 ): Resolution;
 export default resolve;

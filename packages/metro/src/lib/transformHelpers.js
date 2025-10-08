@@ -13,7 +13,7 @@ import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   BundlerResolution,
-  Dependency,
+  FutureModulesMap,
   TransformInputOptions,
   TransformResultDependency,
 } from '../DeltaBundler/types';
@@ -155,7 +155,7 @@ export async function getTransformFn(
   return async (
     modulePath: string,
     requireContext: ?RequireContext,
-    metadata?: ?Dependency['data'],
+    futureModules?: ?FutureModulesMap,
   ) => {
     let templateBuffer: Buffer;
 
@@ -193,7 +193,7 @@ export async function getTransformFn(
         ),
       },
       templateBuffer,
-      metadata,
+      futureModules,
     );
   };
 }
@@ -223,11 +223,17 @@ export async function getResolveDependencyFn(
 > {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
-  return (from: string, dependency: TransformResultDependency) =>
+  return (
+    from: string,
+    dependency: TransformResultDependency,
+    futureModules?: ?FutureModulesMap,
+  ) =>
     dependencyGraph.resolveDependency(
       from,
       dependency,
       platform ?? null,
       resolverOptions,
+      undefined,
+      futureModules,
     );
 }

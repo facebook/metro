@@ -14,7 +14,6 @@ import type {
   BabelTransformer,
   BabelTransformerArgs,
   CustomTransformOptions,
-  FutureModulesMap,
   TransformProfile,
 } from 'metro-babel-transformer';
 import type {
@@ -143,6 +142,12 @@ type AssetFile = $ReadOnly<{
   ...BaseFile,
   type: 'asset',
 }>;
+
+export type FutureModule = $ReadOnly<{
+  fullPath: string,
+}>;
+
+export type FutureModulesMap = Map<string, FutureModule>;
 
 type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
 

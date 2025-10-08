@@ -31,6 +31,12 @@ import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import path from 'path';
 
+export type FutureModule = $ReadOnly<{
+  fullPath: string,
+}>;
+
+export type FutureModulesMap = Map<string, FutureModule>;
+
 type ParsedBareSpecifier = $ReadOnly<{
   isSinglePart: boolean,
   isValidPackageName: boolean,
@@ -44,6 +50,7 @@ export default function resolve(
   context: ResolutionContext,
   moduleName: string,
   platform: string | null,
+  futureModules?: ?FutureModulesMap,
 ): Resolution {
   const resolveRequest = context.resolveRequest;
   if (
@@ -58,14 +65,16 @@ export default function resolve(
     );
   }
 
-  if (context.dependency?.data?.isFutureModule) {
-    if (!context.dependency.data.fullPath) {
+  if (futureModules != null && futureModules.has(moduleName)) {
+    const futureModule = futureModules.get(moduleName);
+
+    if (futureModule == null) {
       throw new Error('Future module is missing fullPath field in data');
     }
 
     return {
       type: 'sourceFile',
-      filePath: context.dependency.data.fullPath,
+      filePath: futureModule.fullPath,
     };
   }
 

@@ -11,6 +11,7 @@
 import type {RequireContext} from '../lib/contextModule';
 import type {
   Dependency,
+  FutureModulesMap,
   ModuleData,
   ResolvedDependency,
   ResolveFn,
@@ -32,6 +33,7 @@ function resolveDependencies(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   resolve: ResolveFn,
+  futureModules?: ?FutureModulesMap,
 ): {
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
@@ -70,7 +72,7 @@ function resolveDependencies(
     } else {
       try {
         maybeResolvedDep = {
-          absolutePath: resolve(parentPath, dep).filePath,
+          absolutePath: resolve(parentPath, dep, futureModules).filePath,
           data: dep,
         };
       } catch (error) {
@@ -103,6 +105,7 @@ export async function buildSubgraph<T>(
   entryPaths: $ReadOnlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
+  futureModules?: ?FutureModulesMap,
 ): Promise<{
   moduleData: Map<string, ModuleData<T>>,
   errors: Map<string, Error>,
@@ -114,7 +117,7 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
-    metadata?: ?Dependency['data'],
+    futureModules?: ?FutureModulesMap,
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
@@ -123,8 +126,17 @@ export async function buildSubgraph<T>(
     const transformResult = await transform(
       absolutePath,
       requireContext,
-      metadata,
+      futureModules,
     );
+
+    for (const dep of transformResult.dependencies) {
+      if (dep.data.isFutureModule === true) {
+        if (dep.data.fullPath == null) {
+          throw new Error('Future module is missing fullPath');
+        }
+        futureModules?.set(dep.name, {fullPath: dep.data.fullPath});
+      }
+    }
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
@@ -132,6 +144,7 @@ export async function buildSubgraph<T>(
       absolutePath,
       transformResult.dependencies,
       resolve,
+      futureModules,
     );
 
     moduleData.set(absolutePath, {
@@ -149,7 +162,7 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
-            dependency.data,
+            futureModules,
           ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );
@@ -157,9 +170,11 @@ export async function buildSubgraph<T>(
 
   await Promise.all(
     [...entryPaths].map(absolutePath =>
-      visit(absolutePath, resolvedContexts.get(absolutePath)).catch(error =>
-        errors.set(absolutePath, error),
-      ),
+      visit(
+        absolutePath,
+        resolvedContexts.get(absolutePath),
+        futureModules,
+      ).catch(error => errors.set(absolutePath, error)),
     ),
   );
 

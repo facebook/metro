@@ -8,9 +8,9 @@
  * @flow
  */
 
+import type {FutureModulesMap} from '../../DeltaBundler/types';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
-import type {FutureModulesMap} from 'metro-babel-transformer';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
@@ -298,10 +298,10 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
-    if (options.futureModules?.has(name)) {
-      dependencyData.isFutureModule = true;
-      dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
-    }
+    // if (options.futureModules?.has(name)) {
+    //   dependencyData.isFutureModule = true;
+    //   dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
+    // }
 
     dependencies[index] = {
       name,

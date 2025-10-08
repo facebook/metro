@@ -34,6 +34,7 @@ import type {RequireContextParams} from '../ModuleGraph/worker/collectDependenci
 import type {
   Dependencies,
   Dependency,
+  FutureModulesMap,
   GraphInputOptions,
   MixedOutput,
   Module,
@@ -133,6 +134,7 @@ export class Graph<T = MixedOutput> {
   +entryPoints: $ReadOnlySet<string>;
   +transformOptions: TransformInputOptions;
   +dependencies: Dependencies<T> = new Map();
+  +futureModules: FutureModulesMap = new Map();
   +#importBundleNodes: Map<
     string,
     $ReadOnly<{
@@ -348,25 +350,30 @@ export class Graph<T = MixedOutput> {
     options: InternalOptions<T>,
     moduleFilter?: (path: string) => boolean,
   ): Promise<Delta<T>> {
-    const subGraph = await buildSubgraph(pathsToVisit, this.#resolvedContexts, {
-      resolve: options.resolve,
-      transform: async (absolutePath, requireContext, metadata) => {
-        options.onDependencyAdd();
-        const result = await options.transform(
-          absolutePath,
-          requireContext,
-          metadata,
-        );
-        options.onDependencyAdded();
-        return result;
+    const subGraph = await buildSubgraph(
+      pathsToVisit,
+      this.#resolvedContexts,
+      {
+        resolve: options.resolve,
+        transform: async (absolutePath, requireContext, futureModules) => {
+          options.onDependencyAdd();
+          const result = await options.transform(
+            absolutePath,
+            requireContext,
+            futureModules,
+          );
+          options.onDependencyAdded();
+          return result;
+        },
+        shouldTraverse: (dependency: ResolvedDependency) => {
+          if (options.shallow || isWeakOrLazy(dependency, options)) {
+            return false;
+          }
+          return moduleFilter == null || moduleFilter(dependency.absolutePath);
+        },
       },
-      shouldTraverse: (dependency: ResolvedDependency) => {
-        if (options.shallow || isWeakOrLazy(dependency, options)) {
-          return false;
-        }
-        return moduleFilter == null || moduleFilter(dependency.absolutePath);
-      },
-    });
+      this.futureModules,
+    );
 
     return {
       added: new Set(),

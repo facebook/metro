@@ -37,6 +37,7 @@ import type {RequireContextParams} from '../../ModuleGraph/worker/collectDepende
 import type {Result} from '../Graph';
 import type {
   Dependency,
+  FutureModulesMap,
   MixedOutput,
   Module,
   Options,
@@ -350,14 +351,14 @@ beforeEach(async () => {
 
   mockTransform = jest
     .fn<
-      [string, ?RequireContext, ?Dependency['data']],
+      [string, ?RequireContext, ?FutureModulesMap],
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(
       async (
         path: string,
         context: ?RequireContext,
-        data: ?Dependency['data'],
+        _futureModules?: ?FutureModulesMap,
       ) => {
         const override = transformOverrides.get(path);
         if (override != null) {
@@ -409,7 +410,11 @@ beforeEach(async () => {
     unstable_enablePackageExports: false,
     lazy: false,
     onProgress: null,
-    resolve: (from: string, to: TransformResultDependency) => {
+    resolve: (
+      from: string,
+      to: TransformResultDependency,
+      _futureModules?: ?FutureModulesMap,
+    ) => {
       const deps = getMockDependency(from);
       const {path} = deps.filter(dep => dep.name === to.name)[0];
 
@@ -2196,7 +2201,7 @@ describe('edge cases', () => {
       expect(mockTransform).toHaveBeenCalledWith(
         '/bundle',
         undefined,
-        undefined,
+        expect.anything(),
       );
     });
   });
@@ -2347,9 +2352,9 @@ describe('edge cases', () => {
         async (
           path: string,
           context: ?RequireContext,
-          metadata?: ?Dependency['data'],
+          _futureModules?: ?FutureModulesMap,
         ) => {
-          const result = await mockTransform(path, context, metadata);
+          const result = await mockTransform(path, context, undefined);
 
           if (path === slowPath && !fastResolved) {
             // Return a Promise that won't be resolved after fastPath.
@@ -2410,26 +2415,14 @@ describe('edge cases', () => {
     mockTransform.mockClear();
     setMockTransformOrder('/foo', '/bar');
     await assertOrder();
-    expect(mockTransform).toHaveBeenCalledWith('/foo', undefined, {
-      data: {asyncType: null, isESMImport: false, key: 'foo', locs: []},
-      name: 'foo',
-    });
-    expect(mockTransform).toHaveBeenCalledWith('/bar', undefined, {
-      data: {asyncType: null, isESMImport: false, key: 'bar', locs: []},
-      name: 'bar',
-    });
+    expect(mockTransform).toHaveBeenCalledWith('/foo', undefined, undefined);
+    expect(mockTransform).toHaveBeenCalledWith('/bar', undefined, undefined);
 
     mockTransform.mockClear();
     setMockTransformOrder('/bar', '/foo');
     await assertOrder();
-    expect(mockTransform).toHaveBeenCalledWith('/bar', undefined, {
-      data: {asyncType: null, isESMImport: false, key: 'bar', locs: []},
-      name: 'bar',
-    });
-    expect(mockTransform).toHaveBeenCalledWith('/foo', undefined, {
-      data: {asyncType: null, isESMImport: false, key: 'foo', locs: []},
-      name: 'foo',
-    });
+    expect(mockTransform).toHaveBeenCalledWith('/bar', undefined, undefined);
+    expect(mockTransform).toHaveBeenCalledWith('/foo', undefined, undefined);
   });
 
   test('removing a cycle with multiple outgoing edges to the same module', async () => {
@@ -2992,20 +2985,11 @@ describe('require.context', () => {
     await graph.initialTraverseDependencies(localOptions);
 
     // The transformer receives the arguments necessary to generate a context module
-    expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, {
-      data: {
-        asyncType: null,
-        contextParams: {
-          filter: {flags: '', pattern: '.*'},
-          mode: 'sync',
-          recursive: true,
-        },
-        isESMImport: false,
-        key: 'WxLN/v+WHI8BXfBLpOmUUuSlYX4=',
-        locs: [],
-      },
-      name: 'ctx',
-    });
+    expect(mockTransform).toHaveBeenCalledWith(
+      ctxPath,
+      ctxResolved,
+      expect.anything(),
+    );
     // Ensure the module has been created
     expect(graph.dependencies.get(ctxPath)).not.toBe(undefined);
     // No module at /ctx - that dependency turned into the context module
@@ -3040,20 +3024,11 @@ describe('require.context', () => {
     });
 
     // The transformer receives the arguments necessary to generate a context module
-    expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, {
-      data: {
-        asyncType: null,
-        contextParams: {
-          filter: {flags: '', pattern: '.*'},
-          mode: 'sync',
-          recursive: true,
-        },
-        isESMImport: false,
-        key: 'WxLN/v+WHI8BXfBLpOmUUuSlYX4=',
-        locs: [],
-      },
-      name: 'ctx',
-    });
+    expect(mockTransform).toHaveBeenCalledWith(
+      ctxPath,
+      ctxResolved,
+      expect.anything(),
+    );
 
     // We can match paths against the created context
     expect(getMatchingContextModules(graph, '/ctx/matched-file')).toEqual(
@@ -3171,7 +3146,11 @@ describe('require.context', () => {
     });
 
     // Ensure the incremental traversal re-transformed the context module
-    expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, undefined);
+    expect(mockTransform).toHaveBeenCalledWith(
+      ctxPath,
+      ctxResolved,
+      expect.anything(),
+    );
   });
 
   test('modify a matched file incrementally', async () => {
@@ -3240,7 +3219,11 @@ describe('require.context', () => {
     });
 
     // Ensure the incremental traversal re-transformed the context module
-    expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, undefined);
+    expect(mockTransform).toHaveBeenCalledWith(
+      ctxPath,
+      ctxResolved,
+      expect.anything(),
+    );
   });
 
   test('add a matched file incrementally to a context with two references', async () => {
@@ -3279,7 +3262,11 @@ describe('require.context', () => {
     });
 
     // Ensure the incremental traversal re-transformed the context module
-    expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, undefined);
+    expect(mockTransform).toHaveBeenCalledWith(
+      ctxPath,
+      ctxResolved,
+      expect.anything(),
+    );
   });
 
   test('remove only one of two references to a context module', async () => {
@@ -3363,38 +3350,16 @@ describe('require.context', () => {
       await graph.initialTraverseDependencies(localOptions);
 
       // The transformer receives the arguments necessary to generate each context module
-      expect(mockTransform).toHaveBeenCalledWith(ctxPath, ctxResolved, {
-        data: {
-          asyncType: null,
-          contextParams: {
-            filter: {flags: '', pattern: '.*'},
-            mode: 'sync',
-            recursive: true,
-          },
-          isESMImport: false,
-          key: 'WxLN/v+WHI8BXfBLpOmUUuSlYX4=',
-          locs: [],
-        },
-        name: 'ctx',
-      });
+      expect(mockTransform).toHaveBeenCalledWith(
+        ctxPath,
+        ctxResolved,
+        expect.anything(),
+      );
 
       expect(mockTransform).toHaveBeenCalledWith(
         narrowCtxPath,
         narrowCtxResolved,
-        {
-          data: {
-            asyncType: null,
-            contextParams: {
-              filter: {flags: '', pattern: '\\./narrow/.*'},
-              mode: 'sync',
-              recursive: true,
-            },
-            isESMImport: false,
-            key: '/ctx2',
-            locs: [],
-          },
-          name: 'ctx',
-        },
+        expect.anything(),
       );
       // Ensure the modules have been created
       expect(graph.dependencies.get(ctxPath)).not.toBe(undefined);
@@ -3644,9 +3609,9 @@ describe('optional dependencies', () => {
     return async function (
       path: string,
       context: ?RequireContext,
-      metadata?: ?Dependency['data'],
+      _futureModules?: ?FutureModulesMap,
     ) {
-      const result = await mockTransform.call(this, path, context, metadata);
+      const result = await mockTransform.call(this, path, context, undefined);
       return {
         ...result,
         dependencies: result.dependencies.map(dep => {

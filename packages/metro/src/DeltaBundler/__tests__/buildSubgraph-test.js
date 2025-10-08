@@ -64,7 +64,7 @@ describe('GraphTraversal', () => {
       ['/contextMatch', []],
     ]);
     params = {
-      resolve: jest.fn((from, dependency) => {
+      resolve: jest.fn((from, dependency, _futureModules) => {
         if (dependency.name === 'does-not-exist') {
           throw new DoesNotExistError();
         }
@@ -73,7 +73,7 @@ describe('GraphTraversal', () => {
           type: 'sourceFile' as const,
         };
       }),
-      transform: jest.fn(async (path, requireContext, metadata) => {
+      transform: jest.fn(async (path, requireContext, futureModules) => {
         if (path === '/bad') {
           throw new BadTransformError();
         }
@@ -133,31 +133,13 @@ describe('GraphTraversal', () => {
     expect(params.transform).toHaveBeenCalledWith(
       '/virtual?ctx=af3bf59b8564d441084c02bdf04c4d662d74d3bd',
       expectedResolvedContext,
-      {
-        data: {
-          asyncType: null,
-          contextParams: {
-            filter: {flags: 'i', pattern: 'contextMatch.*'},
-            mode: 'sync',
-            recursive: true,
-          },
-          isESMImport: false,
-          key: 'key-virtual',
-          locs: [],
-        },
-        name: 'virtual',
-      },
+      undefined,
     );
-    expect(params.transform).toHaveBeenCalledWith('/contextMatch', undefined, {
-      data: {
-        asyncType: null,
-        contextParams: undefined,
-        isESMImport: false,
-        key: 'key-contextMatch',
-        locs: [],
-      },
-      name: 'contextMatch',
-    });
+    expect(params.transform).toHaveBeenCalledWith(
+      '/contextMatch',
+      undefined,
+      undefined,
+    );
     expect(params.transform).toHaveBeenCalledWith(
       '/entryWithContext',
       undefined,

@@ -11,7 +11,7 @@
 
 import type {
   BundlerResolution,
-  Dependency,
+  FutureModulesMap,
   TransformResultDependency,
 } from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
@@ -266,9 +266,9 @@ export default class DependencyGraph extends EventEmitter {
    */
   async getOrComputeSha1(
     mixedPath: string,
-    data?: ?Dependency['data'],
+    futureModules?: ?FutureModulesMap,
   ): Promise<{content?: Buffer, sha1: string}> {
-    if (data?.data?.isFutureModule) {
+    if (futureModules?.has(mixedPath)) {
       // For future modules, we can't compute the sha1 based on the file contents
       // since the file doesn't exist yet. Instead, we generate a sha1 based on
       // the current time to ensure it will force a refresh of the transform cache.
@@ -329,6 +329,7 @@ export default class DependencyGraph extends EventEmitter {
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
+    futureModules?: ?FutureModulesMap,
   ): BundlerResolution {
     const to = dependency.name;
     const isSensitiveToOriginFolder =
@@ -369,6 +370,7 @@ export default class DependencyGraph extends EventEmitter {
           true,
           platform,
           resolverOptions,
+          futureModules,
         );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {

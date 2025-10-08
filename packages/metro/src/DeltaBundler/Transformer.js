@@ -10,7 +10,7 @@
  */
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
-import type {Dependency} from './types';
+import type {FutureModulesMap} from './types';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
@@ -28,7 +28,7 @@ const debug = require('debug')('Metro:Transformer');
 
 type GetOrComputeSha1Fn = (
   path: string,
-  metadata?: ?Dependency['data'],
+  futureModules?: ?FutureModulesMap,
 ) => Promise<$ReadOnly<{content?: Buffer, sha1: string}>>;
 
 export default class Transformer {
@@ -82,7 +82,7 @@ export default class Transformer {
     filePath: string,
     transformerOptions: TransformOptions,
     fileBuffer?: Buffer,
-    datta?: ?Dependency['data'],
+    futureModules?: ?FutureModulesMap,
   ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
@@ -142,7 +142,7 @@ export default class Transformer {
       sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
       content = fileBuffer;
     } else {
-      const result = await this._getSha1(filePath, datta);
+      const result = await this._getSha1(filePath, futureModules);
       sha1 = result.sha1;
       if (result.content) {
         content = result.content;

@@ -70,7 +70,6 @@
     "private/*"
   ],
   "license": "MIT",
-  "dependencies": {},
   "engines": {
     "node": ">=20.19.4"
   }

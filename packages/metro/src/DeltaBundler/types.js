@@ -130,15 +130,22 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
   getSource: () => Buffer,
 }>;
 
+export type FutureModule = $ReadOnly<{
+  fullPath: string,
+}>;
+
+export type FutureModulesMap = Map<string, FutureModule>;
+
 export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
-  ?Dependency['data'],
+  futureModules?: ?FutureModulesMap,
 ) => Promise<TransformResultWithSource<T>>;
 
 export type ResolveFn = (
   from: string,
   dependency: TransformResultDependency,
+  futureModules?: ?FutureModulesMap,
 ) => BundlerResolution;
 
 export type AllowOptionalDependenciesWithOptions = {
