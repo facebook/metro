@@ -73,7 +73,7 @@ describe('GraphTraversal', () => {
           type: 'sourceFile' as const,
         };
       }),
-      transform: jest.fn(async (path, requireContext) => {
+      transform: jest.fn(async (path, requireContext, metadata) => {
         if (path === '/bad') {
           throw new BadTransformError();
         }
@@ -122,6 +122,7 @@ describe('GraphTraversal', () => {
     expect(params.transform).toHaveBeenCalledWith(
       '/entryWithContext',
       undefined,
+      undefined,
     );
     const expectedResolvedContext = {
       filter: /contextMatch.*/i,
@@ -132,10 +133,34 @@ describe('GraphTraversal', () => {
     expect(params.transform).toHaveBeenCalledWith(
       '/virtual?ctx=af3bf59b8564d441084c02bdf04c4d662d74d3bd',
       expectedResolvedContext,
+      {
+        data: {
+          asyncType: null,
+          contextParams: {
+            filter: {flags: 'i', pattern: 'contextMatch.*'},
+            mode: 'sync',
+            recursive: true,
+          },
+          isESMImport: false,
+          key: 'key-virtual',
+          locs: [],
+        },
+        name: 'virtual',
+      },
     );
-    expect(params.transform).toHaveBeenCalledWith('/contextMatch', undefined);
+    expect(params.transform).toHaveBeenCalledWith('/contextMatch', undefined, {
+      data: {
+        asyncType: null,
+        contextParams: undefined,
+        isESMImport: false,
+        key: 'key-contextMatch',
+        locs: [],
+      },
+      name: 'contextMatch',
+    });
     expect(params.transform).toHaveBeenCalledWith(
       '/entryWithContext',
+      undefined,
       undefined,
     );
     expect(moduleData).toEqual(

@@ -11,6 +11,7 @@
 
 import type {
   BundlerResolution,
+  Dependency,
   TransformResultDependency,
 } from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
@@ -265,7 +266,19 @@ export default class DependencyGraph extends EventEmitter {
    */
   async getOrComputeSha1(
     mixedPath: string,
+    data?: ?Dependency['data'],
   ): Promise<{content?: Buffer, sha1: string}> {
+    if (data?.data?.isFutureModule) {
+      // For future modules, we can't compute the sha1 based on the file contents
+      // since the file doesn't exist yet. Instead, we generate a sha1 based on
+      // the current time to ensure it will force a refresh of the transform cache.
+      const createHash = require('crypto').createHash;
+      return {
+        sha1: createHash('sha1')
+          .update(performance.now().toString())
+          .digest('hex'),
+      };
+    }
     const result = await this._fileSystem.getOrComputeSha1(mixedPath);
     if (!result || !result.sha1) {
       throw new Error(`Failed to get the SHA-1 for: ${mixedPath}.

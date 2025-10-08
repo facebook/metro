@@ -350,9 +350,13 @@ export class Graph<T = MixedOutput> {
   ): Promise<Delta<T>> {
     const subGraph = await buildSubgraph(pathsToVisit, this.#resolvedContexts, {
       resolve: options.resolve,
-      transform: async (absolutePath, requireContext) => {
+      transform: async (absolutePath, requireContext, metadata) => {
         options.onDependencyAdd();
-        const result = await options.transform(absolutePath, requireContext);
+        const result = await options.transform(
+          absolutePath,
+          requireContext,
+          metadata,
+        );
         options.onDependencyAdded();
         return result;
       },

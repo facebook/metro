@@ -10,6 +10,7 @@
  */
 
 import type {TransformResultWithSource} from './DeltaBundler';
+import type {Dependency} from './DeltaBundler/types';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type EventEmitter from 'events';
 import type {ConfigT} from 'metro-config';
@@ -35,8 +36,10 @@ export default class Bundler {
       .then(() => {
         config.reporter.update({type: 'transformer_load_started'});
         this._transformer = new Transformer(config, {
-          getOrComputeSha1: filePath =>
-            this._depGraph.getOrComputeSha1(filePath),
+          getOrComputeSha1: (
+            filePath: string,
+            metadata?: ?Dependency['data'],
+          ) => this._depGraph.getOrComputeSha1(filePath, metadata),
         });
         config.reporter.update({type: 'transformer_load_done'});
       })
@@ -71,6 +74,7 @@ export default class Bundler {
     transformOptions: TransformOptions,
     /** Optionally provide the file contents, this can be used to provide virtual contents for a file. */
     fileBuffer?: Buffer,
+    metadata?: ?Dependency['data'],
   ): Promise<TransformResultWithSource<>> {
     // We need to be sure that the DependencyGraph has been initialized.
     // TODO: Remove this ugly hack!
@@ -80,6 +84,7 @@ export default class Bundler {
       filePath,
       transformOptions,
       fileBuffer,
+      metadata,
     );
   }
 

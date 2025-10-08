@@ -56,6 +56,12 @@ export type TransformResultDependency = $ReadOnly<{
 
     /** Context for requiring a collection of modules. */
     contextParams?: RequireContextParams,
+
+    /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
+    isFutureModule?: boolean,
+
+    /** Full path to the module, provided only for future modules. */
+    fullPath?: string,
   }>,
 }>;
 
@@ -127,6 +133,7 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
 export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
+  ?Dependency['data'],
 ) => Promise<TransformResultWithSource<T>>;
 
 export type ResolveFn = (

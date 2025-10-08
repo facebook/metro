@@ -10,6 +10,7 @@
 
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
+import type {FutureModulesMap} from 'metro-babel-transformer';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
@@ -63,6 +64,10 @@ type DependencyData = $ReadOnly<{
   locs: $ReadOnlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
+  /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
+  isFutureModule?: boolean,
+  /** Full path to the module, provided only for future modules. */
+  fullPath?: string,
 }>;
 
 export type MutableInternalDependency = {
@@ -99,6 +104,8 @@ export type Options = $ReadOnly<{
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
   unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
+  /** Map of registered future modules, i.e. modules not yet registered in the Metro file system but available for bundling. */
+  futureModules?: ?FutureModulesMap,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -291,6 +298,11 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
+    if (options.futureModules?.has(name)) {
+      dependencyData.isFutureModule = true;
+      dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
+    }
+
     dependencies[index] = {
       name,
       data: dependencyData,

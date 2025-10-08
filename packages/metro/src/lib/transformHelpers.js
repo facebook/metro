@@ -13,6 +13,7 @@ import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   BundlerResolution,
+  Dependency,
   TransformInputOptions,
   TransformResultDependency,
 } from '../DeltaBundler/types';
@@ -151,7 +152,11 @@ export async function getTransformFn(
   );
   const assetExts = new Set(config.resolver.assetExts);
 
-  return async (modulePath: string, requireContext: ?RequireContext) => {
+  return async (
+    modulePath: string,
+    requireContext: ?RequireContext,
+    metadata?: ?Dependency['data'],
+  ) => {
     let templateBuffer: Buffer;
 
     if (requireContext) {
@@ -188,6 +193,7 @@ export async function getTransformFn(
         ),
       },
       templateBuffer,
+      metadata,
     );
   };
 }

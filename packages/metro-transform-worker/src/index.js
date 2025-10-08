@@ -14,6 +14,7 @@ import type {
   BabelTransformer,
   BabelTransformerArgs,
   CustomTransformOptions,
+  FutureModulesMap,
   TransformProfile,
 } from 'metro-babel-transformer';
 import type {
@@ -151,6 +152,7 @@ type JSFile = $ReadOnly<{
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
   unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
+  futureModules?: ?FutureModulesMap,
 }>;
 
 type JSONFile = {
@@ -405,6 +407,7 @@ async function transformJS(
             ? (loc: BabelSourceLocation) =>
                 importDeclarationLocs.has(locToKey(loc))
             : null,
+        futureModules: file.futureModules,
       };
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -563,6 +566,7 @@ async function transformJSWithBabel(
       null,
     unstable_importDeclarationLocs:
       transformResult.metadata?.metro?.unstable_importDeclarationLocs,
+    futureModules: transformResult.metadata?.metro?.futureModules,
   };
 
   return await transformJS(jsFile, context);

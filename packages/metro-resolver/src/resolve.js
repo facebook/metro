@@ -58,6 +58,17 @@ export default function resolve(
     );
   }
 
+  if (context.dependency?.data?.isFutureModule) {
+    if (!context.dependency.data.fullPath) {
+      throw new Error('Future module is missing fullPath field in data');
+    }
+
+    return {
+      type: 'sourceFile',
+      filePath: context.dependency.data.fullPath,
+    };
+  }
+
   if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
     const result = resolveModulePath(context, moduleName, platform);
     if (result.type === 'failed') {

@@ -114,12 +114,17 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
+    metadata?: ?Dependency['data'],
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
     }
     visitedPaths.add(absolutePath);
-    const transformResult = await transform(absolutePath, requireContext);
+    const transformResult = await transform(
+      absolutePath,
+      requireContext,
+      metadata,
+    );
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
@@ -144,6 +149,7 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
+            dependency.data,
           ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );
