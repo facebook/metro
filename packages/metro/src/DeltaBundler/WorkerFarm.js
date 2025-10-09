@@ -86,7 +86,7 @@ export default class WorkerFarm {
         this._config.projectRoot,
         this._transformerConfig,
         fileBuffer,
-        futureModules?.toRawMap(),
+        futureModules?.toRawMap?.(),
       );
 
       Logger.log(data.transformFileStartLogEntry);

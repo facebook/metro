@@ -48,6 +48,7 @@ import {
   toSegmentTuple,
 } from 'metro-source-map';
 import metroTransformPlugins from 'metro-transform-plugins';
+import {FutureModules} from 'metro/private/DeltaBundler/FutureModules';
 import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
 import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
 import {
@@ -56,7 +57,6 @@ import {
 } from 'metro/private/ModuleGraph/worker/importLocationsPlugin';
 import * as JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
 import nullthrows from 'nullthrows';
-import {FutureModules} from 'metro/private/DeltaBundler/FutureModules';
 
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;

@@ -34,10 +34,11 @@
 
 import type {RequireContext} from '../../lib/contextModule';
 import type {RequireContextParams} from '../../ModuleGraph/worker/collectDependencies';
+import type {FutureModules} from '../FutureModules';
 import type {Result} from '../Graph';
 import type {
   Dependency,
-  FutureModulesMap,
+  FutureModulesRawMap,
   MixedOutput,
   Module,
   Options,
@@ -221,6 +222,8 @@ function deferred(
     getSource: () => Buffer,
     output: $ReadOnlyArray<MixedOutput>,
     unstable_transformResultKey?: ?string,
+    futureModules?: ?FutureModules,
+    futureModulesRawMap?: ?FutureModulesRawMap,
   }>,
 ) {
   let resolve;
@@ -351,14 +354,14 @@ beforeEach(async () => {
 
   mockTransform = jest
     .fn<
-      [string, ?RequireContext, ?FutureModulesMap],
+      [string, ?RequireContext, ?FutureModules],
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(
       async (
         path: string,
         context: ?RequireContext,
-        _futureModules?: ?FutureModulesMap,
+        _futureModules?: ?FutureModules,
       ) => {
         const override = transformOverrides.get(path);
         if (override != null) {
@@ -410,11 +413,7 @@ beforeEach(async () => {
     unstable_enablePackageExports: false,
     lazy: false,
     onProgress: null,
-    resolve: (
-      from: string,
-      to: TransformResultDependency,
-      _futureModules?: ?FutureModulesMap,
-    ) => {
+    resolve: (from: string, to: TransformResultDependency) => {
       const deps = getMockDependency(from);
       const {path} = deps.filter(dep => dep.name === to.name)[0];
 
@@ -2352,7 +2351,7 @@ describe('edge cases', () => {
         async (
           path: string,
           context: ?RequireContext,
-          _futureModules?: ?FutureModulesMap,
+          _futureModules?: ?FutureModules,
         ) => {
           const result = await mockTransform(path, context, undefined);
 
@@ -3609,7 +3608,7 @@ describe('optional dependencies', () => {
     return async function (
       path: string,
       context: ?RequireContext,
-      _futureModules?: ?FutureModulesMap,
+      _futureModules?: ?FutureModules,
     ) {
       const result = await mockTransform.call(this, path, context, undefined);
       return {

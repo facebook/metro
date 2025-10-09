@@ -76,6 +76,7 @@ describe('Worker Farm', function () {
       config.projectRoot,
       transformerConfig,
       undefined,
+      undefined,
     );
   });
 
@@ -97,6 +98,7 @@ describe('Worker Farm', function () {
       '/foo',
       transformerConfig,
       undefined,
+      undefined,
     );
 
     await farm.kill();
@@ -112,6 +114,7 @@ describe('Worker Farm', function () {
       {},
       '/bar',
       transformerConfig,
+      undefined,
       undefined,
     );
   });
