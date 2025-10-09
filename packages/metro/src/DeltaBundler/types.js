@@ -11,6 +11,7 @@
 
 import type {RequireContext} from '../lib/contextModule';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {FutureModules} from './FutureModules';
 import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
@@ -86,6 +87,8 @@ export type Module<T = MixedOutput> = $ReadOnly<{
   path: string,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type ModuleData<T = MixedOutput> = $ReadOnly<{
@@ -94,7 +97,8 @@ export type ModuleData<T = MixedOutput> = $ReadOnly<{
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
@@ -127,7 +131,8 @@ export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
   unstable_transformResultKey?: ?string,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
@@ -140,18 +145,18 @@ export type FutureModule = $ReadOnly<{
   type: 'sourceFile',
 }>;
 
-export type FutureModulesMap = Map<string, FutureModule>;
+export type FutureModulesRawMap = Map<string, FutureModule>;
 
 export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 ) => Promise<TransformResultWithSource<T>>;
 
 export type ResolveFn = (
   from: string,
   dependency: TransformResultDependency,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 ) => BundlerResolution;
 
 export type AllowOptionalDependenciesWithOptions = {

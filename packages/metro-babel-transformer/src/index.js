@@ -56,17 +56,17 @@ export type BabelFileImportLocsMetadata = $ReadOnlySet<string>;
 
 export type FutureModule = $ReadOnly<{
   absolutePath: string,
-  type: string,
+  type: 'sourceFile',
 }>;
 
-export type FutureModulesMap = Map<string, FutureModule>;
+export type FutureModulesRawMap = Map<string, FutureModule>;
 
 export type MetroBabelFileMetadata = {
   ...BabelFileMetadata,
   metro?: ?{
     functionMap?: ?BabelFileFunctionMapMetadata,
     unstable_importDeclarationLocs?: ?BabelFileImportLocsMetadata,
-    futureModules?: FutureModulesMap,
+    futureModulesRawMap?: FutureModulesRawMap,
     ...
   },
   ...

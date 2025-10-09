@@ -10,7 +10,7 @@
  */
 
 import type {TransformResult} from '../DeltaBundler';
-import type {FutureModulesMap} from './types';
+import type {FutureModules} from './FutureModules';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
@@ -77,7 +77,7 @@ export default class WorkerFarm {
     filename: string,
     options: TransformOptions,
     fileBuffer?: Buffer,
-    futureModules?: ?FutureModulesMap,
+    futureModules?: ?FutureModules,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -86,7 +86,7 @@ export default class WorkerFarm {
         this._config.projectRoot,
         this._transformerConfig,
         fileBuffer,
-        futureModules,
+        futureModules?.toRawMap(),
       );
 
       Logger.log(data.transformFileStartLogEntry);

@@ -9,13 +9,14 @@
  * @oncall react_native
  */
 
-import type {FutureModulesMap, TransformResult} from './types';
+import type {FutureModulesRawMap, TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,
   JsTransformOptions,
 } from 'metro-transform-worker';
 
+import {FutureModules} from './FutureModules';
 import traverse from '@babel/traverse';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -30,7 +31,7 @@ type TransformerInterface = {
     string,
     Buffer,
     JsTransformOptions,
-    ?FutureModulesMap,
+    ?FutureModules,
   ): Promise<TransformResult<>>,
 };
 
@@ -73,7 +74,7 @@ export const transform = (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
-  futureModules?: ?FutureModulesMap,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 ): Promise<Data> => {
   let data;
 
@@ -83,6 +84,9 @@ export const transform = (
   } else {
     data = fs.readFileSync(path.resolve(projectRoot, filename));
   }
+
+  const futureModules = new FutureModules(futureModulesRawMap);
+
   return transformFile(
     filename,
     data,
@@ -103,7 +107,7 @@ async function transformFile(
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
   const Transformer: TransformerInterface = require.call(
@@ -130,18 +134,8 @@ async function transformFile(
   );
 
   for (const dependency of result.dependencies) {
-    let futureModule;
     const {name, data: dependencyData} = dependency;
-    if (futureModules != null) {
-      if (futureModules.has(name)) {
-        futureModule = futureModules.get(name);
-      } else {
-        const key = futureModules.keys().find(key => name.includes(key));
-        if (key) {
-          futureModule = futureModules.get(key);
-        }
-      }
-    }
+    const futureModule = futureModules?.get(name);
 
     if (futureModule != null) {
       // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
@@ -165,6 +159,9 @@ async function transformFile(
     transformFileStartLogEntry,
     filename,
   );
+
+  // $FlowFixMe[cannot-write] This has to be mutated in order to serialize it.
+  result.futureModulesRawMap = result.futureModules?.toRawMap();
 
   return {
     result,

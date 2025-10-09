@@ -56,6 +56,7 @@ import {
 } from 'metro/private/ModuleGraph/worker/importLocationsPlugin';
 import * as JsFileWrapping from 'metro/private/ModuleGraph/worker/JsFileWrapping';
 import nullthrows from 'nullthrows';
+import {FutureModules} from 'metro/private/DeltaBundler/FutureModules';
 
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;
@@ -143,13 +144,6 @@ type AssetFile = $ReadOnly<{
   type: 'asset',
 }>;
 
-export type FutureModule = $ReadOnly<{
-  absolutePath: string,
-  type: string,
-}>;
-
-export type FutureModulesMap = Map<string, FutureModule>;
-
 type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
 
 type JSFile = $ReadOnly<{
@@ -158,7 +152,7 @@ type JSFile = $ReadOnly<{
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
   unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 }>;
 
 type JSONFile = {
@@ -185,7 +179,7 @@ export type JsOutput = $ReadOnly<{
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput>,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 }>;
 
 function getDynamicDepsBehavior(
@@ -576,7 +570,9 @@ async function transformJSWithBabel(
       null,
     unstable_importDeclarationLocs:
       transformResult.metadata?.metro?.unstable_importDeclarationLocs,
-    futureModules: transformResult.metadata?.metro?.futureModules,
+    futureModules: new FutureModules(
+      transformResult.metadata?.metro?.futureModulesRawMap,
+    ),
   };
 
   return await transformJS(jsFile, context);

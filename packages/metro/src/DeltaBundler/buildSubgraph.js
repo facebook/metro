@@ -9,9 +9,9 @@
  */
 
 import type {RequireContext} from '../lib/contextModule';
+import type {FutureModules} from './FutureModules';
 import type {
   Dependency,
-  FutureModulesMap,
   ModuleData,
   ResolvedDependency,
   ResolveFn,
@@ -33,7 +33,7 @@ function resolveDependencies(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   resolve: ResolveFn,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 ): {
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
@@ -105,7 +105,7 @@ export async function buildSubgraph<T>(
   entryPaths: $ReadOnlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 ): Promise<{
   moduleData: Map<string, ModuleData<T>>,
   errors: Map<string, Error>,
@@ -117,7 +117,7 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
-    futureModules?: ?FutureModulesMap,
+    futureModules?: ?FutureModules,
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
@@ -129,9 +129,7 @@ export async function buildSubgraph<T>(
       futureModules,
     );
 
-    transformResult?.futureModules?.forEach((fModule, name) => {
-      futureModules?.set(name, fModule);
-    });
+    futureModules?.addRawMap(transformResult?.futureModulesRawMap);
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).

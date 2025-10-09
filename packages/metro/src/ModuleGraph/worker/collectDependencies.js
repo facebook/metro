@@ -8,7 +8,7 @@
  * @flow
  */
 
-import type {FutureModulesMap} from '../../DeltaBundler/types';
+import type {FutureModules} from '../../DeltaBundler/FutureModules';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
@@ -107,7 +107,7 @@ export type Options = $ReadOnly<{
   unstable_allowRequireContext: boolean,
   unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
   /** Map of registered future modules, i.e. modules not yet registered in the Metro file system but available for bundling. */
-  futureModules?: ?FutureModulesMap,
+  futureModules?: ?FutureModules,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -300,19 +300,7 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
-    let futureModule;
-    if (options.futureModules != null) {
-      if (options.futureModules.has(name)) {
-        futureModule = options.futureModules.get(name);
-      } else {
-        const key = options.futureModules
-          .keys()
-          .find(key => name.includes(key));
-        if (key) {
-          futureModule = options.futureModules?.get(key);
-        }
-      }
-    }
+    const futureModule = options.futureModules?.get(name);
 
     if (futureModule != null) {
       dependencyData.isFutureModule = true;

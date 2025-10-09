@@ -34,7 +34,6 @@ import type {RequireContextParams} from '../ModuleGraph/worker/collectDependenci
 import type {
   Dependencies,
   Dependency,
-  FutureModulesMap,
   GraphInputOptions,
   MixedOutput,
   Module,
@@ -48,6 +47,7 @@ import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import {buildSubgraph} from './buildSubgraph';
+import {FutureModules} from './FutureModules';
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 
@@ -134,7 +134,7 @@ export class Graph<T = MixedOutput> {
   +entryPoints: $ReadOnlySet<string>;
   +transformOptions: TransformInputOptions;
   +dependencies: Dependencies<T> = new Map();
-  +futureModules: FutureModulesMap = new Map();
+  +futureModules: FutureModules = new FutureModules();
   +#importBundleNodes: Map<
     string,
     $ReadOnly<{
