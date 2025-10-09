@@ -223,17 +223,11 @@ export async function getResolveDependencyFn(
 > {
   const dependencyGraph = await await bundler.getDependencyGraph();
 
-  return (
-    from: string,
-    dependency: TransformResultDependency,
-    futureModules?: ?FutureModulesMap,
-  ) =>
+  return (from: string, dependency: TransformResultDependency) =>
     dependencyGraph.resolveDependency(
       from,
       dependency,
       platform ?? null,
       resolverOptions,
-      undefined,
-      futureModules,
     );
 }

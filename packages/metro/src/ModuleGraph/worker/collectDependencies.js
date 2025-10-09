@@ -68,6 +68,8 @@ type DependencyData = $ReadOnly<{
   isFutureModule?: boolean,
   /** Full path to the module, provided only for future modules. */
   absolutePath?: string,
+  /** Type of the dependency, provided only for future modules. */
+  type?: 'sourceFile',
 }>;
 
 export type MutableInternalDependency = {
@@ -315,6 +317,7 @@ export default function collectDependencies(
     if (futureModule != null) {
       dependencyData.isFutureModule = true;
       dependencyData.absolutePath = futureModule.absolutePath;
+      dependencyData.type = futureModule.type;
     }
 
     dependencies[index] = {

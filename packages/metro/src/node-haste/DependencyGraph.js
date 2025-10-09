@@ -343,7 +343,6 @@ export default class DependencyGraph extends EventEmitter {
     {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
-    futureModules?: ?FutureModulesMap,
   ): BundlerResolution {
     const to = dependency.name;
     const isSensitiveToOriginFolder =
@@ -384,7 +383,6 @@ export default class DependencyGraph extends EventEmitter {
           true,
           platform,
           resolverOptions,
-          futureModules,
         );
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {

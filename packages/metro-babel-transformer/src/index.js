@@ -56,6 +56,7 @@ export type BabelFileImportLocsMetadata = $ReadOnlySet<string>;
 
 export type FutureModule = $ReadOnly<{
   absolutePath: string,
+  type: string,
 }>;
 
 export type FutureModulesMap = Map<string, FutureModule>;

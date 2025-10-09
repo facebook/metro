@@ -129,8 +129,8 @@ export async function buildSubgraph<T>(
       futureModules,
     );
 
-    transformResult?.futureModules?.forEach((module, name) => {
-      futureModules?.set(name, module);
+    transformResult?.futureModules?.forEach((fModule, name) => {
+      futureModules?.set(name, fModule);
     });
 
     // Get the absolute path of all sub-dependencies (some of them could have been

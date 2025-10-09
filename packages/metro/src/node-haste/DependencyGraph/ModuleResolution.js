@@ -11,7 +11,6 @@
 
 import type {
   BundlerResolution,
-  FutureModulesMap,
   TransformResultDependency,
 } from '../../DeltaBundler/types';
 import type {Reporter} from '../../lib/reporting';
@@ -125,7 +124,6 @@ export class ModuleResolver<TPackage: Packageish> {
     allowHaste: boolean,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
-    futureModules?: ?FutureModulesMap,
   ): BundlerResolution {
     const {
       assetExts,
@@ -180,7 +178,6 @@ export class ModuleResolver<TPackage: Packageish> {
         ),
         dependency.name,
         platform,
-        futureModules,
       );
       return this._getFileResolvedModule(result);
     } catch (error) {

@@ -127,7 +127,6 @@ async function transformFile(
     filename,
     data,
     transformOptions,
-    futureModules,
   );
 
   for (const dependency of result.dependencies) {
@@ -149,6 +148,8 @@ async function transformFile(
       dependencyData.isFutureModule = true;
       // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
       dependencyData.absolutePath = futureModule.absolutePath;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.type = futureModule.type;
     }
   }
 

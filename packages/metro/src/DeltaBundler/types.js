@@ -64,7 +64,7 @@ export type TransformResultDependency = $ReadOnly<{
     absolutePath?: string,
 
     /** Type of the dependency, provided only for future modules. */
-    type?: string,
+    type?: 'sourceFile',
   }>,
 }>;
 
@@ -137,6 +137,7 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
 
 export type FutureModule = $ReadOnly<{
   absolutePath: string,
+  type: 'sourceFile',
 }>;
 
 export type FutureModulesMap = Map<string, FutureModule>;

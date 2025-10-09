@@ -60,10 +60,11 @@ export default function resolve(
 
   if (
     context.dependency?.data.isFutureModule &&
-    context.dependency?.data.absolutePath
+    context.dependency?.data.absolutePath &&
+    context.dependency?.data.type
   ) {
     return {
-      type: 'sourceFile',
+      type: context.dependency.data.type,
       filePath: context.dependency.data.absolutePath,
     };
   }

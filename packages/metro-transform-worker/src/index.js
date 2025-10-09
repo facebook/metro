@@ -145,6 +145,7 @@ type AssetFile = $ReadOnly<{
 
 export type FutureModule = $ReadOnly<{
   absolutePath: string,
+  type: string,
 }>;
 
 export type FutureModulesMap = Map<string, FutureModule>;
@@ -510,10 +511,12 @@ async function transformJS(
     },
   ];
 
+  const {futureModules} = file;
+
   return {
     dependencies,
     output,
-    futureModules: file.futureModules,
+    futureModules,
   };
 }
 
@@ -549,7 +552,6 @@ async function transformAsset(
 async function transformJSWithBabel(
   file: JSFile,
   context: TransformationContext,
-  futureModules?: ?FutureModulesMap,
 ): Promise<TransformResponse> {
   const {babelTransformerPath} = context.config;
   // $FlowFixMe[unsupported-syntax] dynamic require
@@ -563,11 +565,6 @@ async function transformJSWithBabel(
       importLocationsPlugin,
     ]),
   );
-
-  // TODO: Probably unnecessary.
-  transformResult.metadata?.metro?.futureModules?.forEach((module, name) => {
-    futureModules?.set(name, module);
-  });
 
   const jsFile: JSFile = {
     ...file,
@@ -672,7 +669,6 @@ export const transform = async (
   filename: string,
   data: Buffer,
   options: JsTransformOptions,
-  futureModules?: ?FutureModulesMap,
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
     config,
@@ -733,7 +729,7 @@ export const transform = async (
     functionMap: null,
   };
 
-  return await transformJSWithBabel(file, context, futureModules);
+  return await transformJSWithBabel(file, context);
 };
 
 export const getCacheKey = (config: JsTransformerConfig): string => {
