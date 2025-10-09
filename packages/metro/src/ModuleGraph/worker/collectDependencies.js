@@ -67,7 +67,7 @@ type DependencyData = $ReadOnly<{
   /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
   isFutureModule?: boolean,
   /** Full path to the module, provided only for future modules. */
-  fullPath?: string,
+  absolutePath?: string,
 }>;
 
 export type MutableInternalDependency = {
@@ -298,10 +298,24 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
-    // if (options.futureModules?.has(name)) {
-    //   dependencyData.isFutureModule = true;
-    //   dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
-    // }
+    let futureModule;
+    if (options.futureModules != null) {
+      if (options.futureModules.has(name)) {
+        futureModule = options.futureModules.get(name);
+      } else {
+        const key = options.futureModules
+          .keys()
+          .find(key => name.includes(key));
+        if (key) {
+          futureModule = options.futureModules?.get(key);
+        }
+      }
+    }
+
+    if (futureModule != null) {
+      dependencyData.isFutureModule = true;
+      dependencyData.absolutePath = futureModule.absolutePath;
+    }
 
     dependencies[index] = {
       name,

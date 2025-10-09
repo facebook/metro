@@ -144,7 +144,7 @@ type AssetFile = $ReadOnly<{
 }>;
 
 export type FutureModule = $ReadOnly<{
-  fullPath: string,
+  absolutePath: string,
 }>;
 
 export type FutureModulesMap = Map<string, FutureModule>;

@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {FutureModulesMap, TransformResult} from './types.flow';
+import type {FutureModulesMap, TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,
@@ -129,6 +129,28 @@ async function transformFile(
     transformOptions,
     futureModules,
   );
+
+  for (const dependency of result.dependencies) {
+    let futureModule;
+    const {name, data: dependencyData} = dependency;
+    if (futureModules != null) {
+      if (futureModules.has(name)) {
+        futureModule = futureModules.get(name);
+      } else {
+        const key = futureModules.keys().find(key => name.includes(key));
+        if (key) {
+          futureModule = futureModules.get(key);
+        }
+      }
+    }
+
+    if (futureModule != null) {
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.isFutureModule = true;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.absolutePath = futureModule.absolutePath;
+    }
+  }
 
   // The babel cache caches scopes and pathes for already traversed AST nodes.
   // Clearing the cache here since the nodes of the transformed file are no longer referenced.

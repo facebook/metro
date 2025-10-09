@@ -10,8 +10,8 @@
  */
 
 import type {TransformResult} from '../DeltaBundler';
+import type {FutureModulesMap} from './types';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
-import type {FutureModulesMap} from './types.flow';
 import type {ConfigT} from 'metro-config';
 import type {Readable} from 'stream';
 

@@ -61,7 +61,10 @@ export type TransformResultDependency = $ReadOnly<{
     isFutureModule?: boolean,
 
     /** Full path to the module, provided only for future modules. */
-    fullPath?: string,
+    absolutePath?: string,
+
+    /** Type of the dependency, provided only for future modules. */
+    type?: string,
   }>,
 }>;
 
@@ -91,6 +94,7 @@ export type ModuleData<T = MixedOutput> = $ReadOnly<{
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModulesMap,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
@@ -132,7 +136,7 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
 }>;
 
 export type FutureModule = $ReadOnly<{
-  fullPath: string,
+  absolutePath: string,
 }>;
 
 export type FutureModulesMap = Map<string, FutureModule>;
