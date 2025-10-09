@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {TransformResult} from './types';
+import type {FutureModulesMap, TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,
@@ -30,6 +30,7 @@ type TransformerInterface = {
     string,
     Buffer,
     JsTransformOptions,
+    ?FutureModulesMap,
   ): Promise<TransformResult<>>,
 };
 
@@ -72,6 +73,7 @@ export const transform = (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
+  futureModules?: ?FutureModulesMap,
 ): Promise<Data> => {
   let data;
 
@@ -87,6 +89,7 @@ export const transform = (
     transformOptions,
     projectRoot,
     transformerConfig,
+    futureModules,
   );
 };
 
@@ -100,6 +103,7 @@ async function transformFile(
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
+  futureModules?: ?FutureModulesMap,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
   const Transformer: TransformerInterface = require.call(
@@ -123,6 +127,7 @@ async function transformFile(
     filename,
     data,
     transformOptions,
+    futureModules,
   );
 
   // The babel cache caches scopes and pathes for already traversed AST nodes.

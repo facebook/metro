@@ -172,6 +172,7 @@ export default class Transformer {
           localPath,
           transformerOptions,
           content,
+          futureModules,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

@@ -298,10 +298,10 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
-    if (options.futureModules?.has(name)) {
-      dependencyData.isFutureModule = true;
-      dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
-    }
+    // if (options.futureModules?.has(name)) {
+    //   dependencyData.isFutureModule = true;
+    //   dependencyData.fullPath = options.futureModules?.get(name)?.fullPath;
+    // }
 
     dependencies[index] = {
       name,

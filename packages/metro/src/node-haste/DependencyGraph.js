@@ -268,7 +268,21 @@ export default class DependencyGraph extends EventEmitter {
     mixedPath: string,
     futureModules?: ?FutureModulesMap,
   ): Promise<{content?: Buffer, sha1: string}> {
-    if (futureModules?.has(mixedPath)) {
+    let isFutureModule = false;
+    if (futureModules != null) {
+      if (futureModules.has(mixedPath)) {
+        isFutureModule = true;
+      } else {
+        const futureModuleKey = futureModules
+          .keys()
+          .find(key => mixedPath.includes(key));
+        if (futureModuleKey != null) {
+          isFutureModule = true;
+        }
+      }
+    }
+
+    if (isFutureModule) {
       // For future modules, we can't compute the sha1 based on the file contents
       // since the file doesn't exist yet. Instead, we generate a sha1 based on
       // the current time to ensure it will force a refresh of the transform cache.

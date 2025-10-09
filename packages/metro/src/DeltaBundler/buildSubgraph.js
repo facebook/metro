@@ -129,14 +129,22 @@ export async function buildSubgraph<T>(
       futureModules,
     );
 
-    for (const dep of transformResult.dependencies) {
-      if (dep.data.isFutureModule === true) {
-        if (dep.data.fullPath == null) {
-          throw new Error('Future module is missing fullPath');
-        }
-        futureModules?.set(dep.name, {fullPath: dep.data.fullPath});
-      }
-    }
+    transformResult?.futureModules?.forEach((module, name) => {
+      futureModules?.set(name, module);
+    });
+
+    // if(transformResult?.futureModules != null) {
+
+    // }
+
+    // for (const dep of transformResult.dependencies) {
+    //   if (dep.data.isFutureModule === true) {
+    //     if (dep.data.fullPath == null) {
+    //       throw new Error('Future module is missing fullPath');
+    //     }
+    //     futureModules?.set(dep.name, {fullPath: dep.data.fullPath});
+    //   }
+    // }
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).

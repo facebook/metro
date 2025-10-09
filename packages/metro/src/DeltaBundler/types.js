@@ -123,6 +123,7 @@ export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModulesMap,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
