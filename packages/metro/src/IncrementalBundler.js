@@ -131,6 +131,8 @@ export default class IncrementalBundler {
         this._config.transformer.unstable_allowRequireContext,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
+      unstable_incrementalResolution:
+        this._config.resolver.unstable_incrementalResolution,
       shallow: otherOptions.shallow,
     });
 
@@ -179,6 +181,8 @@ export default class IncrementalBundler {
           this._config.transformer.unstable_allowRequireContext,
         unstable_enablePackageExports:
           this._config.resolver.unstable_enablePackageExports,
+        unstable_incrementalResolution:
+          this._config.resolver.unstable_incrementalResolution,
         shallow: otherOptions.shallow,
       },
     );

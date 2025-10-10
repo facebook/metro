@@ -185,6 +185,7 @@ export type ResolutionContext = Readonly<{
     [platform: string]: ReadonlyArray<string>;
   }>;
   unstable_enablePackageExports: boolean;
+  unstable_incrementalResolution: boolean;
   unstable_logWarning: (message: string) => void;
 }>;
 export type CustomResolutionContext = Readonly<

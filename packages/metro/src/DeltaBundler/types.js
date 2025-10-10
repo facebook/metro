@@ -146,16 +146,17 @@ export type BundlerResolution = $ReadOnly<{
   filePath: string,
 }>;
 
-export type Options<T = MixedOutput> = {
-  +resolve: ResolveFn,
-  +transform: TransformFn<T>,
-  +transformOptions: TransformInputOptions,
-  +onProgress: ?(numProcessed: number, total: number) => mixed,
-  +lazy: boolean,
-  +unstable_allowRequireContext: boolean,
-  +unstable_enablePackageExports: boolean,
-  +shallow: boolean,
-};
+export type Options<T = MixedOutput> = $ReadOnly<{
+  resolve: ResolveFn,
+  transform: TransformFn<T>,
+  transformOptions: TransformInputOptions,
+  onProgress: ?(numProcessed: number, total: number) => mixed,
+  lazy: boolean,
+  unstable_allowRequireContext: boolean,
+  unstable_enablePackageExports: boolean,
+  unstable_incrementalResolution: boolean,
+  shallow: boolean,
+}>;
 
 export type DeltaResult<T = MixedOutput> = {
   +added: Map<string, Module<T>>,
