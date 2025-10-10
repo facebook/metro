@@ -36,7 +36,7 @@ const constants/*: HType */ = {
   DEPENDENCIES: 3,
   SHA1: 4,
   SYMLINK: 5,
-  ID: 6,
+  PLUGINDATA: 6,
 
   /* module map attributes */
   PATH: 0,

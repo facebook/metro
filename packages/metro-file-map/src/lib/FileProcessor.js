@@ -239,7 +239,8 @@ function processWorkerReply(
   const metadataId = metadata.id;
 
   if (metadataId != null) {
-    fileMetadata[H.ID] = metadataId;
+    // $FlowFixMe[incompatible-type] - treat inexact tuple as array to set tail entries
+    (fileMetadata as Array<mixed>)[H.PLUGINDATA] = metadataId;
   }
 
   fileMetadata[H.DEPENDENCIES] = metadata.dependencies
