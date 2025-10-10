@@ -18,7 +18,7 @@ export type {PerfLoggerFactory, PerfLogger};
 export type BuildParameters = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
-  enableHastePackages: boolean,
+  // enableHastePackages: boolean,
   enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
@@ -31,15 +31,13 @@ export type BuildParameters = $ReadOnly<{
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor: ?string,
-  hasteImplModulePath: ?string,
+  // hasteImplModulePath: ?string,
 
   cacheBreaker: string,
 }>;
 
 export type BuildResult = {
   fileSystem: FileSystem,
-  hasteMap: HasteMap,
-  mockMap: ?MockMap,
 };
 
 export type CacheData = $ReadOnly<{

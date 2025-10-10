@@ -22,6 +22,8 @@ import type {
   WorkerSetupArgs,
 } from '../flow-types';
 import type {default as FileMapT} from '../index';
+import type {HasteMapOptions} from '../plugins/HastePlugin';
+import type {MockMapOptions} from '../plugins/MockPlugin';
 import typeof WorkerModule from '../worker';
 
 import {AbstractWatcher} from '../watchers/AbstractWatcher';
@@ -256,7 +258,9 @@ let mockEnd;
 let mockProcessFile;
 let buildNewFileMap: (
   overrides?: Partial<InputOptions>,
-) => Promise<{...BuildResult, fileMap: FileMapT}>;
+  hasteOverrides?: Partial<HasteMapOptions>,
+  mocksOverrides?: Partial<MockMapOptions>,
+) => Promise<{...BuildResult, fileMap: FileMapT, hasteMap: HasteMap}>;
 let cacheContent = null;
 
 describe('FileMap', () => {
@@ -328,7 +332,6 @@ describe('FileMap', () => {
     defaultConfig = {
       enableSymlinks: false,
       extensions: ['js', 'json'],
-      hasteImplModulePath,
       healthCheck: {
         enabled: false,
         interval: 10000,
@@ -336,7 +339,6 @@ describe('FileMap', () => {
         filePrefix: '.metro-file-map-health-check',
       },
       maxWorkers: 1,
-      platforms: ['ios', 'android'],
       resetCache: false,
       retainAllFiles: false,
       rootDir: path.join('/', 'project'),
@@ -348,12 +350,41 @@ describe('FileMap', () => {
       cacheManagerFactory: () => mockCacheManager,
     };
 
-    buildNewFileMap = async (overrides: Partial<InputOptions> = {}) => {
+    const defaultHasteConfig: HasteMapOptions = {
+      console: globalThis.console,
+      enableHastePackages: true,
+      rootDir: defaultConfig.rootDir,
+      hasteImplModulePath,
+      platforms: new Set(['ios', 'android']),
+      failValidationOnConflicts: false,
+    };
+
+    const defaultMockConfig: MockMapOptions = {
+      console: globalThis.console,
+      rootDir: defaultConfig.rootDir,
+      mocksPattern: /__mocks__/,
+      throwOnModuleCollision: false,
+    };
+
+    buildNewFileMap = async (
+      overrides = {},
+      hasteOverrides = {},
+      mockOverrides = {},
+    ) => {
+      const hasteMap = new (require('../plugins/HastePlugin').default)({
+        ...defaultHasteConfig,
+        ...hasteOverrides,
+      });
+      const mockMap = new (require('../plugins/MockPlugin').default)({
+        ...defaultMockConfig,
+        ...mockOverrides,
+      });
       const fileMap = new FileMap({
         ...defaultConfig,
         ...overrides,
+        plugins: [hasteMap, mockMap],
       });
-      const {fileSystem, hasteMap, mockMap} = await fileMap.build();
+      const {fileSystem} = await fileMap.build();
       return {
         fileMap,
         fileSystem,
@@ -495,9 +526,13 @@ describe('FileMap', () => {
       // fbjs2
     `;
 
-    const {fileMap, fileSystem, hasteMap, mockMap} = await buildNewFileMap({
-      mocksPattern: '__mocks__',
-    });
+    const {fileMap, fileSystem, hasteMap, mockMap} = await buildNewFileMap(
+      {},
+      {},
+      {
+        mocksPattern: /__mocks__/,
+      },
+    );
 
     expect(cacheContent?.clocks).toEqual(mockClocks);
 
@@ -800,10 +835,11 @@ describe('FileMap', () => {
       // fbjs!
     `;
 
-    const {fileSystem, hasteMap} = await buildNewFileMap({
-      mocksPattern: '__mocks__',
-      retainAllFiles: true,
-    });
+    const {fileSystem, hasteMap} = await buildNewFileMap(
+      {retainAllFiles: true},
+      {},
+      {mocksPattern: /__mocks__/},
+    );
 
     // Expect the node module to be part of files but make sure it wasn't
     // read.
@@ -830,22 +866,17 @@ describe('FileMap', () => {
     );
     mockFs[pathToMock] = '/* empty */';
 
-    const {mockMap} = await buildNewFileMap({
-      mocksPattern: '__mocks__',
-      throwOnModuleCollision: true,
-    });
+    const {mockMap} = await buildNewFileMap(
+      {},
+      {},
+      {
+        mocksPattern: /__mocks__/,
+        throwOnModuleCollision: true,
+      },
+    );
 
     expect(mockMap).not.toBeNull();
     expect(mockMap?.getMockModule('Blueberry')).toEqual(pathToMock);
-  });
-
-  test('returns null mockMap if mocksPattern is empty', async () => {
-    const {mockMap} = await buildNewFileMap({
-      mocksPattern: '',
-      throwOnModuleCollision: true,
-    });
-
-    expect(mockMap).toBeNull();
   });
 
   test('throws on duplicate mock files when throwOnModuleCollision', async () => {
@@ -883,14 +914,20 @@ describe('FileMap', () => {
       '    * <rootDir>/../../fruits2/__mocks__/subdir/Blueberry.js\n';
 
     await expect(() =>
-      buildNewFileMap({
-        mocksPattern: '__mocks__',
-        throwOnModuleCollision: true,
-        console: {
-          ...globalThis.console,
-          warn: mockWarn,
+      buildNewFileMap(
+        {},
+        {
+          console: {
+            ...globalThis.console,
+            warn: mockWarn,
+          },
+          failValidationOnConflicts: true,
         },
-      }),
+        {
+          mocksPattern: /__mocks__/,
+          throwOnModuleCollision: true,
+        },
+      ),
     ).rejects.toThrowError('Mock map has 1 error:\n' + expectedError);
     expect(mockWarn).toHaveBeenCalledWith(expectedError);
   });
@@ -912,7 +949,7 @@ describe('FileMap', () => {
     ).toMatchSnapshot();
   });
 
-  test('throws on duplicate module ids if "throwOnModuleCollision" is set to true', async () => {
+  test('throws on duplicate module ids if "failValidationOnConflicts" is set to true', async () => {
     expect.assertions(2);
     // Raspberry thinks it is a Strawberry
     mockFs[path.join('/', 'project', 'fruits', 'another', 'Strawberry.js')] = `
@@ -920,7 +957,7 @@ describe('FileMap', () => {
     `;
 
     try {
-      await buildNewFileMap({throwOnModuleCollision: true});
+      await buildNewFileMap({}, {failValidationOnConflicts: true});
     } catch (err) {
       expect(err).toBeInstanceOf(HasteConflictsError);
       expect(err.getDetailedMessage()).toMatchSnapshot();
@@ -1434,12 +1471,16 @@ describe('FileMap', () => {
     const jestWorker = require('jest-worker').Worker;
     const path = require('path');
     const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
-    await buildNewFileMap({
-      dependencyExtractor,
-      hasteImplModulePath: undefined,
-      maxWorkers: 4,
-      maxFilesPerWorker: 2,
-    });
+    await buildNewFileMap(
+      {
+        dependencyExtractor,
+        maxWorkers: 4,
+        maxFilesPerWorker: 2,
+      },
+      {
+        hasteImplModulePath: undefined,
+      },
+    );
 
     expect(jestWorker).toHaveBeenCalledTimes(1);
 
@@ -1632,6 +1673,7 @@ describe('FileMap', () => {
       only?: boolean,
       mockFs?: MockFS,
       config?: Partial<InputOptions>,
+      hasteConfig?: Partial<HasteMapOptions>,
     }>;
 
     function fm_it(
@@ -2224,7 +2266,7 @@ describe('FileMap', () => {
       }
 
       fm_it(
-        'does not throw on a duplicate created at runtime even if throwOnModuleCollision: true',
+        'does not throw on a duplicate created at runtime even if failValidationOnConflicts: true',
         async ({fileMap}) => {
           mockFs[path.join('/', 'project', 'fruits', 'Pear.js')] = `
           // Pear!
@@ -2269,8 +2311,8 @@ describe('FileMap', () => {
           ).toBe(true);
         },
         {
-          config: {
-            throwOnModuleCollision: true,
+          hasteConfig: {
+            failValidationOnConflicts: true,
           },
         },
       );
