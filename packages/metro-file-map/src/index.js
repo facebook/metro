@@ -430,7 +430,19 @@ export default class FileMap extends EventEmitter {
           Promise.all(
             plugins.map(plugin =>
               plugin.initialize({
-                files: fileSystem,
+                files: {
+                  lookup: mixedPath => {
+                    const result = fileSystem.lookup(mixedPath);
+                    if (!result.exists) {
+                      return {exists: false};
+                    }
+                    if (result.type === 'd') {
+                      return {exists: true, type: 'd'};
+                    }
+                    return {exists: true, type: 'f', metadata: result.metadata};
+                  },
+                  metadataIterator: opts => fileSystem.metadataIterator(opts),
+                },
                 pluginState: initialData?.plugins.get(plugin.name),
               }),
             ),

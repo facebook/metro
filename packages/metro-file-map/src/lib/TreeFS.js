@@ -134,11 +134,6 @@ export default class TreeFS implements MutableFileSystem {
     return tfs;
   }
 
-  getModuleName(mixedPath: Path): ?string {
-    const fileMetadata = this._getFileData(mixedPath);
-    return (fileMetadata && fileMetadata[H.ID]) ?? null;
-  }
-
   getSize(mixedPath: Path): ?number {
     const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
@@ -267,19 +262,17 @@ export default class TreeFS implements MutableFileSystem {
       };
     }
     const {canonicalPath, node} = result;
-    const type = isDirectory(node) ? 'd' : isRegularFile(node) ? 'f' : 'l';
+    const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
+    if (isDirectory(node)) {
+      return {exists: true, links, realPath, type: 'd'};
+    }
     invariant(
-      type !== 'l',
+      isRegularFile(node),
       'lookup follows symlinks, so should never return one (%s -> %s)',
       mixedPath,
       canonicalPath,
     );
-    return {
-      exists: true,
-      links,
-      realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
-      type,
-    };
+    return {exists: true, links, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {

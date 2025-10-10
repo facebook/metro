@@ -76,6 +76,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
             metadata: hasteMetadata('NameForFoo'),
           },
         ]),
+        lookup: jest.fn(),
       },
       pluginState: null,
     };
@@ -93,7 +94,10 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
       await hasteMap.initialize({
-        files: {metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES)},
+        files: {
+          metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+          lookup: jest.fn(),
+        },
         pluginState: null,
       });
     });
@@ -125,7 +129,10 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
       await hasteMap.initialize({
-        files: {metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES)},
+        files: {
+          metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+          lookup: jest.fn(),
+        },
         pluginState: null,
       });
     });
@@ -159,6 +166,45 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       expect(() => hasteMap.getModule('Bar')).toThrow(
         DuplicateHasteCandidatesError,
       );
+    });
+  });
+
+  describe('getModuleNameByPath', () => {
+    let hasteMap: HasteMapType;
+    let lookup;
+
+    beforeEach(async () => {
+      hasteMap = new HasteMap(opts);
+      lookup = jest.fn().mockReturnValue(null);
+
+      await hasteMap.initialize({
+        files: {
+          metadataIterator: jest.fn().mockReturnValue(INITIAL_FILES),
+          lookup,
+        },
+        pluginState: null,
+      });
+    });
+
+    test('returns the correct module name', () => {
+      lookup.mockImplementation(
+        filePath =>
+          ({
+            [p('/root/Foo.js')]: {
+              exists: true,
+              type: 'f',
+              metadata: hasteMetadata('Foo'),
+            },
+            [p('/root/not-haste.js')]: {
+              exists: true,
+              type: 'f',
+              metadata: hasteMetadata(''),
+            },
+          })[filePath] ?? {exists: false},
+      );
+      expect(hasteMap.getModuleNameByPath(p('/root/Foo.js'))).toBe('Foo');
+      expect(hasteMap.getModuleNameByPath(p('/root/not-haste.js'))).toBe(null);
+      expect(hasteMap.getModuleNameByPath(p('/root/not-exists.js'))).toBe(null);
     });
   });
 });

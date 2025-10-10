@@ -1681,7 +1681,8 @@ describe('FileMap', () => {
     fm_it('build returns a "live" fileSystem and hasteMap', async hm => {
       const {fileSystem, hasteMap} = await hm.build();
       const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
-      expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      expect(fileSystem.exists(filePath)).toBe(true);
+      expect(hasteMap.getModuleNameByPath(filePath)).toBe('Banana');
       expect(hasteMap.getModule('Banana')).toBe(filePath);
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
       mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
@@ -1698,7 +1699,8 @@ describe('FileMap', () => {
       };
       expect(eventsQueue).toEqual([deletedBanana]);
       // Verify that the initial result has been updated
-      expect(fileSystem.getModuleName(filePath)).toBeNull();
+      expect(fileSystem.exists(filePath)).toBe(false);
+      expect(hasteMap.getModuleNameByPath(filePath)).toBeNull();
       expect(hasteMap.getModule('Banana')).toBeNull();
     });
 
@@ -1765,10 +1767,8 @@ describe('FileMap', () => {
         },
       ]);
       expect(
-        fileSystem.getModuleName(
-          path.join('/', 'project', 'fruits', 'Tomato.js'),
-        ),
-      ).not.toBeNull();
+        fileSystem.exists(path.join('/', 'project', 'fruits', 'Tomato.js')),
+      ).toBe(true);
       expect(hasteMap.getModule('Tomato')).toBeDefined();
       expect(hasteMap.getModule('Pear')).toBe(
         path.join('/', 'project', 'fruits', 'Pear.js'),
@@ -1940,7 +1940,7 @@ describe('FileMap', () => {
         expect(eventsQueue).toEqual([
           {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
         ]);
-        expect(fileSystem.getModuleName(filePath)).toBeDefined();
+        expect(fileSystem.exists(filePath)).toBe(true);
       },
     );
 
@@ -1967,7 +1967,7 @@ describe('FileMap', () => {
         expect(eventsQueue).toEqual([
           {filePath, metadata: MOCK_CHANGE_FILE, type: 'change'},
         ]);
-        expect(fileSystem.getModuleName(filePath)).toBeDefined();
+        expect(fileSystem.exists(filePath)).toBe(true);
       },
     );
 
@@ -1990,7 +1990,7 @@ describe('FileMap', () => {
       expect(eventsQueue).toEqual([
         {filePath, metadata: MOCK_DELETE_FILE, type: 'delete'},
       ]);
-      expect(fileSystem.getModuleName(filePath)).toBeDefined();
+      expect(fileSystem.exists(filePath)).toBe(false);
       expect(console.warn).not.toHaveBeenCalled();
       expect(console.error).not.toHaveBeenCalled();
     });
@@ -2025,8 +2025,13 @@ describe('FileMap', () => {
           modifiedTime: 46,
           size: 5,
         });
-        // getModuleName traverses the symlink, verifying the link is read.
-        expect(fileSystem.getModuleName(filePath)).toEqual('Strawberry');
+        // lookup traverses the symlink, verifying the link is read.
+        expect(fileSystem.lookup(filePath)).toEqual(
+          expect.objectContaining({
+            exists: true,
+            realPath: expect.stringMatching(/Strawberry\.js$/),
+          }),
+        );
       },
       {config: {enableSymlinks: true}},
     );
@@ -2044,8 +2049,8 @@ describe('FileMap', () => {
         );
         const realPath = path.join('/', 'project', 'fruits', 'Strawberry.js');
 
-        expect(fileSystem.getModuleName(symlinkPath)).toEqual('Strawberry');
-        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteMap.getModuleNameByPath(symlinkPath)).toEqual('Strawberry');
+        expect(hasteMap.getModuleNameByPath(realPath)).toEqual('Strawberry');
         expect(hasteMap.getModule('Strawberry', 'g')).toEqual(realPath);
 
         // Delete the symlink
@@ -2065,8 +2070,8 @@ describe('FileMap', () => {
         // Symlink is deleted without affecting the Haste module or real file.
         expect(fileSystem.exists(symlinkPath)).toBe(false);
         expect(fileSystem.exists(realPath)).toBe(true);
-        expect(fileSystem.getModuleName(symlinkPath)).toEqual(null);
-        expect(fileSystem.getModuleName(realPath)).toEqual('Strawberry');
+        expect(hasteMap.getModuleNameByPath(symlinkPath)).toEqual(null);
+        expect(hasteMap.getModuleNameByPath(realPath)).toEqual('Strawberry');
         expect(hasteMap.getModule('Strawberry', 'g')).toEqual(realPath);
       },
       {config: {enableSymlinks: true}},
@@ -2075,7 +2080,7 @@ describe('FileMap', () => {
     fm_it(
       'correctly tracks changes to both platform-specific versions of a single module name',
       async hm => {
-        const {hasteMap, fileSystem} = await hm.build();
+        const {hasteMap} = await hm.build();
         expect(hasteMap.getModule('Orange', 'ios')).toBeTruthy();
         expect(hasteMap.getModule('Orange', 'android')).toBeTruthy();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
@@ -2104,12 +2109,12 @@ describe('FileMap', () => {
           },
         ]);
         expect(
-          fileSystem.getModuleName(
+          hasteMap.getModuleNameByPath(
             path.join('/', 'project', 'fruits', 'Orange.ios.js'),
           ),
         ).toBeTruthy();
         expect(
-          fileSystem.getModuleName(
+          hasteMap.getModuleNameByPath(
             path.join('/', 'project', 'fruits', 'Orange.android.js'),
           ),
         ).toBeTruthy();

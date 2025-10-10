@@ -100,6 +100,9 @@ Duplicate manual mock found for \`foo\`:
         metadataIterator: () => {
           throw new Error('should not be used');
         },
+        lookup: () => {
+          throw new Error('should not be used');
+        },
       },
       pluginState: {
         mocks: new Map([
