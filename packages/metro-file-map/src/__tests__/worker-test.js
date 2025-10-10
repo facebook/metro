@@ -13,6 +13,7 @@ import type {WorkerMessage, WorkerMetadata} from '../flow-types';
 import typeof TWorker from '../worker';
 import typeof FS from 'fs';
 
+import {HastePlugin} from '..';
 import {Worker} from '../worker';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -72,6 +73,27 @@ const defaults: WorkerMessage = {
   maybeReturnContent: false,
 };
 
+const defaultHasteConfig = {
+  enableHastePackages: true,
+  failValidationOnConflicts: false,
+  platforms: new Set(['ios', 'android']),
+  rootDir: path.normalize('/project'),
+};
+
+function workerWithHaste(
+  message: WorkerMessage,
+  hasteOverrides: Partial<typeof defaultHasteConfig> = {},
+) {
+  return new Worker({
+    plugins: [
+      new HastePlugin({
+        ...defaultHasteConfig,
+        ...hasteOverrides,
+      }).getWorker(),
+    ],
+  }).processFile(message);
+}
+
 describe('worker', () => {
   let worker: (message: WorkerMessage) => Promise<WorkerMetadata>;
 
@@ -98,6 +120,7 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry'],
+      pluginData: [],
     });
 
     expect(
@@ -108,12 +131,13 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: [],
+      pluginData: [],
     });
   });
 
   test('accepts a custom dependency extractor', async () => {
     expect(
-      new Worker({}).processFile({
+      await worker({
         ...defaults,
         computeDependencies: true,
         dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
@@ -121,12 +145,13 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry', 'Lime'],
+      pluginData: [],
     });
   });
 
   test('delegates to hasteImplModulePath for getting the id', async () => {
     expect(
-      await worker({
+      await workerWithHaste({
         ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
@@ -134,11 +159,11 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry'],
-      id: 'Pear',
+      pluginData: ['Pear'],
     });
 
     expect(
-      await worker({
+      await workerWithHaste({
         ...defaults,
         computeDependencies: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
@@ -146,14 +171,13 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: [],
-      id: 'Strawberry',
+      pluginData: ['Strawberry'],
     });
   });
 
   test('parses package.json files as haste packages when enableHastePackages=true', async () => {
-    const worker = new Worker({});
     expect(
-      worker.processFile({
+      await workerWithHaste({
         ...defaults,
         computeDependencies: true,
         enableHastePackages: true,
@@ -161,14 +185,13 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: undefined,
-      id: 'haste-package',
+      pluginData: ['haste-package'],
     });
   });
 
   test('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
-    const worker = new Worker({});
     expect(
-      worker.processFile({
+      await workerWithHaste({
         ...defaults,
         computeDependencies: true,
         enableHastePackages: false,
@@ -176,7 +199,7 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: undefined,
-      id: undefined,
+      pluginData: [null],
     });
   });
 
@@ -203,7 +226,10 @@ describe('worker', () => {
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'apple.png'),
       }),
-    ).toEqual({sha1: '4caece539b039b16e16206ea2478f8c5ffb2ca05'});
+    ).toEqual({
+      pluginData: [],
+      sha1: '4caece539b039b16e16206ea2478f8c5ffb2ca05',
+    });
 
     expect(
       await worker({
@@ -211,7 +237,7 @@ describe('worker', () => {
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
       }),
-    ).toEqual({sha1: undefined});
+    ).toEqual({pluginData: [], sha1: undefined});
 
     expect(
       await worker({
@@ -219,7 +245,10 @@ describe('worker', () => {
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Banana.js'),
       }),
-    ).toEqual({sha1: '7772b628e422e8cf59c526be4bb9f44c0898e3d1'});
+    ).toEqual({
+      pluginData: [],
+      sha1: '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
+    });
 
     expect(
       await worker({
@@ -227,7 +256,10 @@ describe('worker', () => {
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
-    ).toEqual({sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552'});
+    ).toEqual({
+      pluginData: [],
+      sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552',
+    });
 
     await expect(() =>
       worker({...defaults, computeSha1: true, filePath: '/i/dont/exist.js'}),
@@ -236,7 +268,7 @@ describe('worker', () => {
 
   test('avoids computing dependencies if not requested and Haste does not need it', async () => {
     expect(
-      await worker({
+      await workerWithHaste({
         ...defaults,
         computeDependencies: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
@@ -244,7 +276,7 @@ describe('worker', () => {
       }),
     ).toEqual({
       dependencies: undefined,
-      id: 'Pear',
+      pluginData: ['Pear'],
       sha1: undefined,
     });
 
@@ -255,21 +287,23 @@ describe('worker', () => {
 
   test('returns content if requested and content is read', async () => {
     expect(
-      await worker({
+      await workerWithHaste({
         ...defaults,
         computeSha1: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
+        hasteImplModulePath: require.resolve('./haste_impl.js'),
         maybeReturnContent: true,
       }),
     ).toEqual({
       content: expect.any(Buffer),
+      pluginData: ['Pear'],
       sha1: 'c7a7a68a1c8aaf452669dd2ca52ac4a434d25552',
     });
   });
 
   test('does not return content if maybeReturnContent but content is not read', async () => {
     expect(
-      await worker({
+      await workerWithHaste({
         ...defaults,
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
@@ -279,7 +313,7 @@ describe('worker', () => {
     ).toEqual({
       content: undefined,
       dependencies: undefined,
-      id: 'Pear',
+      pluginData: ['Pear'],
       sha1: undefined,
     });
   });

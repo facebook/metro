@@ -10,6 +10,7 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   WorkerMessage,
   WorkerMetadata,
@@ -30,6 +31,7 @@ const defaultOptions = {
   hasteImplModulePath: null,
   maxWorkers: 5,
   perfLogger: null,
+  pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
 };
 
 describe('processBatch', () => {

@@ -10,6 +10,7 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   PerfLogger,
   WorkerMessage,
@@ -73,6 +74,7 @@ export class FileProcessor {
       hasteImplModulePath: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
+      pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
       perfLogger: ?PerfLogger,
     }>,
   ) {
@@ -82,7 +84,9 @@ export class FileProcessor {
     this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
-    this.#workerArgs = {};
+    this.#workerArgs = {
+      plugins: [...(opts.pluginWorkers ?? [])],
+    };
     this.#inBandWorker = new Worker(this.#workerArgs);
     this.#perfLogger = opts.perfLogger;
   }
@@ -235,12 +239,13 @@ function processWorkerReply(
   fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;
-
-  const metadataId = metadata.id;
-
-  if (metadataId != null) {
+  if (metadata.pluginData) {
     // $FlowFixMe[incompatible-type] - treat inexact tuple as array to set tail entries
-    (fileMetadata as Array<mixed>)[H.PLUGINDATA] = metadataId;
+    (fileMetadata as Array<mixed>).splice(
+      H.PLUGINDATA,
+      metadata.pluginData.length,
+      ...metadata.pluginData,
+    );
   }
 
   fileMetadata[H.DEPENDENCIES] = metadata.dependencies

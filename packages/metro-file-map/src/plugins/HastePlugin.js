@@ -16,6 +16,7 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
+  FileMapPluginWorker,
   HasteConflict,
   HasteMap,
   HasteMapItem,
@@ -43,7 +44,7 @@ const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   enableHastePackages: boolean,
-  perfLogger: ?PerfLogger,
+  perfLogger?: ?PerfLogger,
   platforms: $ReadOnlySet<string>,
   rootDir: Path,
   failValidationOnConflicts: boolean,
@@ -482,5 +483,12 @@ export default class HastePlugin
       this.#enableHastePackages,
       [...this.#platforms].sort(),
     ]);
+  }
+
+  getWorker(): FileMapPluginWorker {
+    return {
+      workerModulePath: require.resolve('./haste/worker.js'),
+      workerSetupArgs: {},
+    };
   }
 }
