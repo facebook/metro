@@ -83,7 +83,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       includeNodeModules: false,
       includeSymlinks: false,
     })) {
-      if (metadata[H.ID]) {
+      if (metadata[H.ID] != null) {
         this.setModule(metadata[H.ID], [
           canonicalPath,
           this.#enableHastePackages && baseName === 'package.json'
@@ -97,7 +97,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     }
     this.#getModuleNameByPath = mixedPath => {
       const result = files.lookup(mixedPath);
-      return result.exists && result.type === 'f' && result.metadata[H.ID] != ''
+      return result.exists && result.type === 'f'
         ? result.metadata[H.ID]
         : null;
     };
@@ -234,8 +234,9 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   }
 
   onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const id = fileMetadata[H.ID] || null; // Empty string indicates no module
+    const id = fileMetadata[H.ID];
     if (id == null) {
+      // Not a Haste module or package
       return;
     }
 
@@ -311,8 +312,9 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   }
 
   onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
+    const moduleName = fileMetadata[H.ID];
     if (moduleName == null) {
+      // Not a Haste module or package
       return;
     }
 
