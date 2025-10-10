@@ -76,11 +76,11 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
       // Otherwise, traverse all files to rebuild
       await this.bulkUpdate({
         addedOrModified: [
-          ...files.metadataIterator({
+          ...files.fileIterator({
             includeNodeModules: false,
             includeSymlinks: false,
           }),
-        ].map(({canonicalPath, metadata}) => [canonicalPath, metadata]),
+        ].map(({canonicalPath}) => [canonicalPath, null]),
         removed: [],
       });
     }
@@ -97,7 +97,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+  async bulkUpdate(delta: FileMapDelta<>): Promise<void> {
     // Process removals first so that moves aren't treated as duplicates.
     for (const [relativeFilePath] of delta.removed) {
       this.onRemovedFile(relativeFilePath);

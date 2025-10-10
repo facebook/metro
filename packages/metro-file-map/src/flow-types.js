@@ -165,50 +165,51 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetadata]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
+export type FileMapDelta<T = null | void> = $ReadOnly<{
+  removed: Iterable<[CanonicalPath, T]>,
+  addedOrModified: Iterable<[CanonicalPath, T]>,
 }>;
 
-interface FileSystemState {
-  metadataIterator(
-    opts: $ReadOnly<{
-      includeNodeModules: boolean,
-      includeSymlinks: boolean,
+export type FileMapPluginInitOptions<
+  SerializableState,
+  PerFileData = void,
+> = $ReadOnly<{
+  files: $ReadOnly<{
+    fileIterator(
+      opts: $ReadOnly<{
+        includeNodeModules: boolean,
+        includeSymlinks: boolean,
+      }>,
+    ): Iterable<{
+      baseName: string,
+      canonicalPath: string,
+      pluginData: ?PerFileData,
     }>,
-  ): Iterable<{
-    baseName: string,
-    canonicalPath: string,
-    metadata: FileMetadata,
-  }>;
-  lookup(
-    mixedPath: string,
-  ):
-    | {exists: false}
-    | {exists: true, type: 'f', metadata: FileMetadata}
-    | {exists: true, type: 'd'};
-}
-
-export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
-  files: FileSystemState,
+    lookup(
+      mixedPath: string,
+    ):
+      | {exists: false}
+      | {exists: true, type: 'f', pluginData: PerFileData}
+      | {exists: true, type: 'd'},
+  }>,
   pluginState: ?SerializableState,
 }>;
 
 type V8Serializable = interface {};
 
-export interface FileMapPlugin<SerializableState = V8Serializable> {
+export interface FileMapPlugin<
+  SerializableState = V8Serializable,
+  PerFileData = void,
+> {
   +name: string;
   initialize(
-    initOptions: FileMapPluginInitOptions<SerializableState>,
+    initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<?PerFileData>): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    fileMetadata: FileMetadata,
-  ): void;
+  onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
+  onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
 }
 
