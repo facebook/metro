@@ -16,6 +16,7 @@ const excludedExtensions = require('../../workerExclusionList');
 const path = require('path');
 
 /*::
+import type {WorkerSetupArgs} from './types';
 import type {MetadataWorker, WorkerMessage, V8Serializable} from '../../flow-types';
 */
 
@@ -26,19 +27,12 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
   #hasteImpl /*: ?$ReadOnly<{getHasteName: string => ?string}> */;
   #hasteImplModulePath /*: ?string */ = null;
 
-  #getHasteImpl(
-    requestedModulePath /*: string */,
-  ) /*: $ReadOnly<{getHasteName: string => ?string}> */ {
-    if (this.#hasteImpl) {
-      if (requestedModulePath !== this.#hasteImplModulePath) {
-        throw new Error('metro-file-map: hasteImplModulePath changed');
-      }
-      return this.#hasteImpl;
+  constructor(setupArgs /*: WorkerSetupArgs */) {
+    this.#enableHastePackages = setupArgs.enableHastePackages;
+    if (setupArgs.hasteImplModulePath) {
+      // $FlowFixMe[unsupported-syntax] - dynamic require
+      this.#hasteImpl = require(setupArgs.hasteImplModulePath);
     }
-    this.#hasteImplModulePath = requestedModulePath;
-    // $FlowFixMe[unsupported-syntax] - dynamic require
-    this.#hasteImpl = require(requestedModulePath);
-    return this.#hasteImpl;
   }
 
   processFile(
@@ -46,8 +40,8 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
     utils /*: $ReadOnly<{getContent: () => Buffer }> */,
   ) /*: V8Serializable */ {
     let hasteName /*: string | null */ = null;
-    const {filePath, enableHastePackages, hasteImplModulePath} = data;
-    if (enableHastePackages && filePath.endsWith(PACKAGE_JSON)) {
+    const {filePath} = data;
+    if (this.#enableHastePackages && filePath.endsWith(PACKAGE_JSON)) {
       // Process a package.json that is returned as a PACKAGE type with its name.
       try {
         const fileData = JSON.parse(utils.getContent().toString());
@@ -58,12 +52,11 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
         throw new Error(`Cannot parse ${filePath} as JSON: ${err.message}`);
       }
     } else if (
-      hasteImplModulePath != null &&
+      this.#hasteImpl != null &&
       !excludedExtensions.has(filePath.substr(filePath.lastIndexOf('.')))
     ) {
       // Process a random file that is returned as a MODULE.
-      hasteName =
-        this.#getHasteImpl(hasteImplModulePath).getHasteName(filePath) || null;
+      hasteName = this.#hasteImpl?.getHasteName(filePath) || null;
     }
     return hasteName;
   }

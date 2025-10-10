@@ -26,9 +26,7 @@ const mockWorkerFn = jest.fn().mockReturnValue({});
 
 const defaultOptions = {
   dependencyExtractor: null,
-  enableHastePackages: false,
   enableWorkerThreads: true,
-  hasteImplModulePath: null,
   maxWorkers: 5,
   perfLogger: null,
   pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
