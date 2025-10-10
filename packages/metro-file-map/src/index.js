@@ -661,10 +661,8 @@ export default class FileMap extends EventEmitter {
         fileData[H.SYMLINK] === 0 &&
         !this._options.computeDependencies &&
         !this._options.computeSha1 &&
-        this._options.hasteImplModulePath == null &&
-        !(
-          this._options.enableHastePackages &&
-          relativeFilePath.endsWith(PACKAGE_JSON)
+        this.#plugins.every(
+          ({plugin}) => plugin.getWorker()?.filter(relativeFilePath) === false,
         )
       ) {
         // Nothing to process

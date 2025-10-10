@@ -196,6 +196,7 @@ export type FileMapPluginInitOptions<
 }>;
 
 export type FileMapPluginWorker = $ReadOnly<{
+  filter: (relativeFilePath: string) => boolean,
   workerModulePath: string,
   workerSetupArgs: JsonData,
 }>;
@@ -523,5 +524,8 @@ export type WorkerMetadata = $ReadOnly<{
 }>;
 
 export type WorkerSetupArgs = $ReadOnly<{
-  plugins?: $ReadOnlyArray<FileMapPluginWorker>,
+  plugins?: $ReadOnlyArray<{
+    workerModulePath: string,
+    workerSetupArgs: JsonData,
+  }>,
 }>;

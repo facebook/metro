@@ -85,13 +85,12 @@ function workerWithHaste(
   message: WorkerMessage,
   hasteOverrides: Partial<typeof defaultHasteConfig> = {},
 ) {
+  const {workerSetupArgs, workerModulePath} = new HastePlugin({
+    ...defaultHasteConfig,
+    ...hasteOverrides,
+  }).getWorker();
   return new Worker({
-    plugins: [
-      new HastePlugin({
-        ...defaultHasteConfig,
-        ...hasteOverrides,
-      }).getWorker(),
-    ],
+    plugins: [{workerSetupArgs, workerModulePath}],
   }).processFile(message);
 }
 

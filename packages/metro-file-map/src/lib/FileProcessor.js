@@ -81,7 +81,12 @@ export class FileProcessor {
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#workerArgs = {
-      plugins: [...(opts.pluginWorkers ?? [])],
+      plugins: (opts.pluginWorkers ?? []).map(
+        ({workerSetupArgs, workerModulePath}) => ({
+          workerSetupArgs,
+          workerModulePath,
+        }),
+      ),
     };
     this.#inBandWorker = new Worker(this.#workerArgs);
     this.#perfLogger = opts.perfLogger;
@@ -162,7 +167,7 @@ export class FileProcessor {
     //
     // Note that we'd only expect node_modules files to reach this point if
     // retainAllFiles is true, or they're touched during watch mode.
-    if (absolutePath.includes(NODE_MODULES)) {
+    if (isNodeModules) {
       if (computeSha1) {
         return {
           computeDependencies: false,

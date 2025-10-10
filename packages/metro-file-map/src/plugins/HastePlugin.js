@@ -506,6 +506,21 @@ export default class HastePlugin
 
   getWorker(): FileMapPluginWorker {
     return {
+      filter: (relativeFilePath: string) => {
+        // Visit all files if we have a haste impl
+        if (this.#hasteImplModulePath != null) {
+          return true;
+        }
+        // Unless Haste packages are enabled, this plugin is a no-op.
+        if (!this.#enableHastePackages) {
+          return false;
+        }
+        // Visit only potential Haste packages.
+        return (
+          relativeFilePath === 'package.json' ||
+          relativeFilePath.endsWith(path.sep + 'package.json')
+        );
+      },
       workerModulePath: require.resolve('./haste/worker.js'),
       workerSetupArgs: {
         enableHastePackages: this.#enableHastePackages,
