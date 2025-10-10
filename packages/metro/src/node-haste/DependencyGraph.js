@@ -227,6 +227,8 @@ export default class DependencyGraph extends EventEmitter {
         this._config.resolver.unstable_conditionsByPlatform,
       unstable_enablePackageExports:
         this._config.resolver.unstable_enablePackageExports,
+      unstable_incrementalResolution:
+        this._config.resolver.unstable_incrementalResolution,
     });
   }
 

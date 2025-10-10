@@ -32,6 +32,7 @@ describe('DeltaBundler', () => {
   const options: Options<MixedOutput> = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: false,
+    unstable_incrementalResolution: false,
     lazy: false,
     onProgress: null,
     resolve: (from: string, dependency: TransformResultDependency) => {
