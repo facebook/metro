@@ -60,7 +60,7 @@ export default function createFileMap(
     throwOnModuleCollision?: boolean,
     cacheFilePrefix?: string,
   }>,
-): MetroFileMap {
+): {fileMap: MetroFileMap} {
   const dependencyExtractor =
     options?.extractDependencies === false
       ? null
@@ -72,7 +72,7 @@ export default function createFileMap(
     config.watcher.unstable_autoSaveCache ?? {};
   const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
 
-  return MetroFileMap.create({
+  const fileMap = new MetroFileMap({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
       (factoryParams =>
@@ -112,4 +112,5 @@ export default function createFileMap(
     watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
+  return {fileMap};
 }
