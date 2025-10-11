@@ -134,9 +134,8 @@ export default class TreeFS implements MutableFileSystem {
     return tfs;
   }
 
-  getModuleName(mixedPath: Path): ?string {
-    const fileMetadata = this._getFileData(mixedPath);
-    return (fileMetadata && fileMetadata[H.ID]) ?? null;
+  getFileMetadata(mixedPath: Path): ?FileMetadata {
+    return this._getFileData(mixedPath, {followLeaf: true});
   }
 
   getSize(mixedPath: Path): ?number {
@@ -1006,7 +1005,7 @@ export default class TreeFS implements MutableFileSystem {
       includeSymlinks: boolean,
       includeNodeModules: boolean,
     }>,
-  ): Iterable<{
+  ): Iterator<{
     baseName: string,
     canonicalPath: string,
     metadata: FileMetadata,

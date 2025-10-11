@@ -13,6 +13,7 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
+  FileMapPluginWorker,
   MockMap as IMockMap,
   Path,
   RawMockMap,
@@ -80,7 +81,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
             includeNodeModules: false,
             includeSymlinks: false,
           }),
-        ].map(({canonicalPath, metadata}) => [canonicalPath, metadata]),
+        ].map(({canonicalPath}) => [canonicalPath, null]),
         removed: [],
       });
     }
@@ -97,7 +98,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+  async bulkUpdate(delta: FileMapDelta<>): Promise<void> {
     // Process removals first so that moves aren't treated as duplicates.
     for (const [relativeFilePath] of delta.removed) {
       this.onRemovedFile(relativeFilePath);
@@ -212,5 +213,9 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
       ',' +
       this.#mocksPattern.flags
     );
+  }
+
+  getWorker(): ?FileMapPluginWorker {
+    return null;
   }
 }

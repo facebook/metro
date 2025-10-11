@@ -123,6 +123,13 @@ type InternalOptions = $ReadOnly<{
   watchmanDeferStates: $ReadOnlyArray<string>,
 }>;
 
+// $FlowFixMe[unclear-type] Plugin types cannot be known statically
+type AnyFileMapPlugin = FileMapPlugin<any, any>;
+type IndexedPlugin = $ReadOnly<{
+  plugin: AnyFileMapPlugin,
+  dataIdx: ?number,
+}>;
+
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
@@ -143,7 +150,7 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '10';
+const CACHE_BREAKER = '11';
 
 const CHANGE_INTERVAL = 30;
 
@@ -252,7 +259,7 @@ export default class FileMap extends EventEmitter {
 
   #hastePlugin: HastePlugin;
   #mockPlugin: ?MockPlugin = null;
-  #plugins: $ReadOnlyArray<FileMapPlugin<>>;
+  #plugins: $ReadOnlyArray<IndexedPlugin>;
 
   static create(options: InputOptions): FileMap {
     return new FileMap(options);
@@ -293,13 +300,14 @@ export default class FileMap extends EventEmitter {
     this.#hastePlugin = new HastePlugin({
       console: this._console,
       enableHastePackages,
+      hasteImplModulePath: options.hasteImplModulePath,
       perfLogger: this._startupPerfLogger,
       platforms: new Set(options.platforms),
       rootDir: options.rootDir,
       failValidationOnConflicts: throwOnModuleCollision,
     });
 
-    const plugins: Array<FileMapPlugin<$FlowFixMe>> = [this.#hastePlugin];
+    const plugins: Array<AnyFileMapPlugin> = [this.#hastePlugin];
 
     if (options.mocksPattern != null && options.mocksPattern !== '') {
       this.#mockPlugin = new MockPlugin({
@@ -311,7 +319,11 @@ export default class FileMap extends EventEmitter {
       plugins.push(this.#mockPlugin);
     }
 
-    this.#plugins = plugins;
+    let dataSlot: number = H.PLUGINDATA;
+    this.#plugins = plugins.map(plugin => ({
+      plugin,
+      dataIdx: isDataPlugin(plugin) ? dataSlot++ : null,
+    }));
 
     const buildParameters: BuildParameters = {
       computeDependencies:
@@ -353,12 +365,11 @@ export default class FileMap extends EventEmitter {
 
     this._fileProcessor = new FileProcessor({
       dependencyExtractor: buildParameters.dependencyExtractor,
-      enableHastePackages: buildParameters.enableHastePackages,
       enableWorkerThreads: options.enableWorkerThreads ?? false,
-      hasteImplModulePath: buildParameters.hasteImplModulePath,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
+      pluginWorkers: plugins.map(plugin => plugin.getWorker()).filter(Boolean),
     });
 
     this._buildPromise = null;
@@ -428,9 +439,28 @@ export default class FileMap extends EventEmitter {
             clocks: initialData?.clocks ?? new Map(),
           }),
           Promise.all(
-            plugins.map(plugin =>
+            plugins.map(({plugin, dataIdx}) =>
               plugin.initialize({
-                files: fileSystem,
+                files: {
+                  getFilePluginData:
+                    dataIdx != null
+                      ? (filePath: string) =>
+                          fileSystem.getFileMetadata(filePath)?.[dataIdx]
+                      : () => {
+                          throw new Error(
+                            'Plugin does not store file metadata',
+                          );
+                        },
+                  metadataIterator: opts =>
+                    mapIterator(
+                      fileSystem.metadataIterator(opts),
+                      ({baseName, canonicalPath, metadata}) => ({
+                        baseName,
+                        canonicalPath,
+                        data: dataIdx != null ? metadata[dataIdx] : null,
+                      }),
+                    ),
+                },
                 pluginState: initialData?.plugins.get(plugin.name),
               }),
             ),
@@ -441,7 +471,7 @@ export default class FileMap extends EventEmitter {
         await this._applyFileDelta(fileSystem, plugins, fileDelta);
 
         // Validate the mock and Haste maps before persisting them.
-        plugins.forEach(plugin => plugin.assertValid());
+        plugins.forEach(({plugin}) => plugin.assertValid());
 
         const watchmanClocks = new Map(fileDelta.clocks ?? []);
         await this._takeSnapshotAndPersist(
@@ -565,7 +595,7 @@ export default class FileMap extends EventEmitter {
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -695,13 +725,18 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_add_end');
 
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
+
     await Promise.all([
-      plugins.map(plugin =>
-        plugin.bulkUpdate({
-          addedOrModified: changedFiles,
-          removed,
-        }),
-      ),
+      plugins.map(({plugin, dataIdx}) => {
+        const mapFn: ([CanonicalPath, FileMetadata]) => [CanonicalPath, mixed] =
+          dataIdx != null
+            ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
+            : ([relativePath, fileData]) => [relativePath, null];
+        return plugin.bulkUpdate({
+          addedOrModified: mapIterator(changedFiles.entries(), mapFn),
+          removed: mapIterator(removed.values(), mapFn),
+        });
+      }),
     ]);
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this._startupPerfLogger?.point('applyFileDelta_end');
@@ -713,7 +748,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -723,7 +758,7 @@ export default class FileMap extends EventEmitter {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
         plugins: new Map(
-          plugins.map(plugin => [
+          plugins.map(({plugin}) => [
             plugin.name,
             plugin.getSerializableSnapshot(),
           ]),
@@ -758,7 +793,7 @@ export default class FileMap extends EventEmitter {
   async _watch(
     fileSystem: MutableFileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
@@ -913,7 +948,7 @@ export default class FileMap extends EventEmitter {
               '',
               null,
               change.metadata.type === 'l' ? 1 : 0,
-              '',
+              null,
             ];
 
             try {
@@ -932,8 +967,13 @@ export default class FileMap extends EventEmitter {
               }
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
               this._updateClock(clocks, change.clock);
-              plugins.forEach(plugin =>
-                plugin.onNewOrModifiedFile(relativeFilePath, fileMetadata),
+              plugins.forEach(({plugin, dataIdx}) =>
+                dataIdx != null
+                  ? plugin.onNewOrModifiedFile(
+                      relativeFilePath,
+                      fileMetadata[dataIdx],
+                    )
+                  : plugin.onNewOrModifiedFile(relativeFilePath),
               );
               enqueueEvent(change.metadata);
             } catch (e) {
@@ -957,8 +997,10 @@ export default class FileMap extends EventEmitter {
             // exists in the file map and remove should always return metadata.
             const metadata = nullthrows(fileSystem.remove(relativeFilePath));
             this._updateClock(clocks, change.clock);
-            plugins.forEach(plugin =>
-              plugin.onRemovedFile(relativeFilePath, metadata),
+            plugins.forEach(({plugin, dataIdx}) =>
+              dataIdx != null
+                ? plugin.onRemovedFile(relativeFilePath, metadata[dataIdx])
+                : plugin.onRemovedFile(relativeFilePath),
             );
 
             enqueueEvent({
@@ -1073,4 +1115,20 @@ export default class FileMap extends EventEmitter {
   }
 
   static H: HType = H;
+}
+
+// TODO: Replace with it.map() from Node 22+
+const mapIterator: <T, S>(Iterator<T>, (T) => S) => Iterable<S> = (it, fn) =>
+  'map' in it
+    ? it.map(fn)
+    : (function* mapped() {
+        for (const item of it) {
+          yield fn(item);
+        }
+      })();
+
+function isDataPlugin(plugin: AnyFileMapPlugin): boolean {
+  // TODO: Allow plugins to declare whether they store per-file data,
+  // remove this special-casing of HastePlugin.
+  return plugin instanceof HastePlugin;
 }

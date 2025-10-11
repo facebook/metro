@@ -10,6 +10,7 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   PerfLogger,
   WorkerMessage,
@@ -68,21 +69,20 @@ export class FileProcessor {
   constructor(
     opts: $ReadOnly<{
       dependencyExtractor: ?string,
-      enableHastePackages: boolean,
       enableWorkerThreads: boolean,
-      hasteImplModulePath: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
+      pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
       perfLogger: ?PerfLogger,
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
-    this.#enableHastePackages = opts.enableHastePackages;
     this.#enableWorkerThreads = opts.enableWorkerThreads;
-    this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
-    this.#workerArgs = {};
+    this.#workerArgs = {
+      plugins: [...(opts.pluginWorkers ?? [])],
+    };
     this.#inBandWorker = new Worker(this.#workerArgs);
     this.#perfLogger = opts.perfLogger;
   }
@@ -153,7 +153,7 @@ export class FileProcessor {
     req: ProcessFileRequest,
   ): ?WorkerMessage {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-
+    const isNodeModules = absolutePath.includes(NODE_MODULES);
     const {computeDependencies, maybeReturnContent} = req;
 
     // Use a cheaper worker configuration for node_modules files, because we
@@ -168,9 +168,8 @@ export class FileProcessor {
           computeDependencies: false,
           computeSha1: true,
           dependencyExtractor: null,
-          enableHastePackages: false,
+          isNodeModules,
           filePath: absolutePath,
-          hasteImplModulePath: null,
           maybeReturnContent,
         };
       }
@@ -181,9 +180,8 @@ export class FileProcessor {
       computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
-      enableHastePackages: this.#enableHastePackages,
+      isNodeModules,
       filePath: absolutePath,
-      hasteImplModulePath: this.#hasteImplModulePath,
       maybeReturnContent,
     };
   }
@@ -235,11 +233,13 @@ function processWorkerReply(
   fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;
-
-  const metadataId = metadata.id;
-
-  if (metadataId != null) {
-    fileMetadata[H.ID] = metadataId;
+  if (metadata.pluginData) {
+    // $FlowFixMe[incompatible-type] - treat inexact tuple as array to set tail entries
+    (fileMetadata as Array<mixed>).splice(
+      H.PLUGINDATA,
+      metadata.pluginData.length,
+      ...metadata.pluginData,
+    );
   }
 
   fileMetadata[H.DEPENDENCIES] = metadata.dependencies
