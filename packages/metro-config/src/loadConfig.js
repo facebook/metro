@@ -221,15 +221,15 @@ function mergeConfig<
   ? T
   : Promise<T> {
   let currentConfig: T = typeof base === 'function' ? base() : base;
-  // Reverse for easy popping
-  const reversedConfigs = configs.toReversed();
+  // Reverse for easy popping - use slice().reverse() for compatibility
+  const reversedConfigs = configs.slice().reverse();
   let next;
   while ((next = reversedConfigs.pop())) {
     const nextConfig: InputConfigT | Promise<InputConfigT> =
       typeof next === 'function' ? next(currentConfig) : next;
     if (nextConfig instanceof Promise) {
       // $FlowFixMe[incompatible-type] Not clear why Flow doesn't like this
-      return mergeConfigAsync(nextConfig, reversedConfigs.toReversed());
+      return mergeConfigAsync(nextConfig, reversedConfigs.slice().reverse());
     }
     currentConfig = mergeConfigObjects(currentConfig, nextConfig) as T;
   }
