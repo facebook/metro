@@ -128,11 +128,18 @@ describe('require', () => {
     expect(mockFactory.mock.calls[0][6]).toEqual([2, 3]);
   });
 
-  test('properly prefixes __d with global prefix', () => {
-    createModuleSystem(moduleSystem, false, '__metro');
-    expect(moduleSystem.__d).toBeUndefined();
-    expect(moduleSystem.__metro__d).not.toBeUndefined();
-  });
+  test.each(
+    [['__r'], ['__d'], ['__c'], ['__registerSegment'], ['__accept']],
+    'properly prefixes %s with global prefix',
+    property => {
+      const prefix = '__metro';
+
+      createModuleSystem(moduleSystem, true, prefix);
+
+      expect(moduleSystem[property]).toBeUndefined();
+      expect(moduleSystem[`${prefix}${property}`]).not.toBeUndefined();
+    },
+  );
 
   test('works with Random Access Modules (RAM) bundles', () => {
     const mockExports = {foo: 'bar'};
@@ -748,7 +755,7 @@ describe('require', () => {
       const warn = console.warn;
       console.warn = jest.fn();
 
-      moduleSystem.__r(0);
+      moduleSystem.__customPrefix__r(0);
       expect(console.warn).toHaveBeenCalledTimes(0);
       console.warn = warn;
     });
