@@ -25,6 +25,7 @@ import type {
   EventsQueue,
   FileData,
   FileMapPlugin,
+  FileMapPluginWorker,
   FileMetadata,
   FileSystem,
   HasteMapData,
@@ -319,10 +320,20 @@ export default class FileMap extends EventEmitter {
     }
 
     let dataSlot: number = H.PLUGINDATA;
-    this.#plugins = plugins.map(plugin => ({
-      plugin,
-      dataIdx: isDataPlugin(plugin) ? dataSlot++ : null,
-    }));
+
+    const indexedPlugins: Array<IndexedPlugin> = [];
+    const pluginWorkers: Array<FileMapPluginWorker> = [];
+    for (const plugin of plugins) {
+      const maybeWorker = plugin.getWorker();
+      indexedPlugins.push({
+        plugin,
+        dataIdx: maybeWorker != null ? dataSlot++ : null,
+      });
+      if (maybeWorker != null) {
+        pluginWorkers.push(maybeWorker);
+      }
+    }
+    this.#plugins = indexedPlugins;
 
     const buildParameters: BuildParameters = {
       computeDependencies:
@@ -370,6 +381,7 @@ export default class FileMap extends EventEmitter {
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
+      pluginWorkers,
     });
 
     this._buildPromise = null;
@@ -1132,9 +1144,3 @@ const mapIterator: <T, S>(Iterator<T>, (T) => S) => Iterable<S> = (it, fn) =>
           yield fn(item);
         }
       })();
-
-function isDataPlugin(plugin: AnyFileMapPlugin): boolean {
-  // TODO: Allow plugins to declare whether they store per-file data,
-  // remove this special-casing of HastePlugin.
-  return plugin instanceof HastePlugin;
-}
