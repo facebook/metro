@@ -44,10 +44,11 @@ const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   enableHastePackages: boolean,
+  hasteImplModulePath?: ?string,
   perfLogger?: ?PerfLogger,
   platforms: $ReadOnlySet<string>,
   rootDir: Path,
-  failValidationOnConflicts: boolean,
+  failValidationOnConflicts?: boolean,
 }>;
 
 export default class HastePlugin
@@ -61,6 +62,8 @@ export default class HastePlugin
 
   +#console: ?Console;
   +#enableHastePackages: boolean;
+  +#hasteImplCacheKey: ?string;
+  +#hasteImplModulePath: ?string;
   +#perfLogger: ?PerfLogger;
   +#pathUtils: RootPathUtils;
   +#platforms: $ReadOnlySet<string>;
@@ -70,11 +73,26 @@ export default class HastePlugin
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
     this.#enableHastePackages = options.enableHastePackages;
+    const hasteImplPath = options.hasteImplModulePath;
+
+    if (hasteImplPath != null) {
+      // $FlowFixMe[unsupported-syntax] - dynamic require
+      const hasteImpl = require(hasteImplPath);
+      if (typeof hasteImpl.getCacheKey !== 'function') {
+        throw new Error(
+          `HasteImpl module ${hasteImplPath} must export a function named "getCacheKey"`,
+        );
+      }
+      this.#hasteImplCacheKey = hasteImpl.getCacheKey();
+      this.#hasteImplModulePath = hasteImplPath;
+    }
+
     this.#perfLogger = options.perfLogger;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
     this.#pathUtils = new RootPathUtils(options.rootDir);
-    this.#failValidationOnConflicts = options.failValidationOnConflicts;
+    this.#failValidationOnConflicts =
+      options.failValidationOnConflicts ?? false;
   }
 
   async initialize({
@@ -481,6 +499,7 @@ export default class HastePlugin
   getCacheKey(): string {
     return JSON.stringify([
       this.#enableHastePackages,
+      this.#hasteImplCacheKey,
       [...this.#platforms].sort(),
     ]);
   }
@@ -488,7 +507,10 @@ export default class HastePlugin
   getWorker(): FileMapPluginWorker {
     return {
       workerModulePath: require.resolve('./haste/worker.js'),
-      workerSetupArgs: {},
+      workerSetupArgs: {
+        enableHastePackages: this.#enableHastePackages,
+        hasteImplModulePath: this.#hasteImplModulePath ?? null,
+      },
     };
   }
 }
