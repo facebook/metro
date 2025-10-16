@@ -138,10 +138,11 @@ describe('worker', () => {
 
   test('accepts a custom dependency extractor', async () => {
     expect(
-      await worker({
+      await new Worker({
+        dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
+      }).processFile({
         ...defaults,
         computeDependencies: true,
-        dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
     ).toEqual({

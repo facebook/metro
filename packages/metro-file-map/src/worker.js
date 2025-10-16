@@ -33,9 +33,11 @@ function sha1hex(content /*: string | Buffer */) /*: string */ {
 }
 
 class Worker {
+  #dependencyExtractorPath /*: ?string */;
   #plugins /*: $ReadOnlyArray<MetadataWorker> */;
 
-  constructor({plugins = []} /*: WorkerSetupArgs */) {
+  constructor({plugins = [], dependencyExtractor} /*: WorkerSetupArgs */) {
+    this.#dependencyExtractorPath = dependencyExtractor;
     this.#plugins = plugins.map(({workerModulePath, workerSetupArgs}) => {
       // $FlowFixMe[unsupported-syntax] - dynamic require
       const PluginWorker = require(workerModulePath);
@@ -68,9 +70,9 @@ class Worker {
       !excludedExtensions.has(filePath.substr(filePath.lastIndexOf('.')))
     ) {
       const dependencyExtractor /*: ?DependencyExtractor */ =
-        data.dependencyExtractor != null
+        this.#dependencyExtractorPath != null
           ? // $FlowFixMe[unsupported-syntax] - dynamic require
-            require(data.dependencyExtractor)
+            require(this.#dependencyExtractorPath)
           : null;
 
       dependencies = Array.from(

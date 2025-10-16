@@ -509,7 +509,6 @@ export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
-  dependencyExtractor?: ?string,
   isNodeModules: boolean,
   filePath: string,
   maybeReturnContent: boolean,
@@ -523,5 +522,6 @@ export type WorkerMetadata = $ReadOnly<{
 }>;
 
 export type WorkerSetupArgs = $ReadOnly<{
+  dependencyExtractor?: ?string,
   plugins?: $ReadOnlyArray<FileMapPluginWorker>,
 }>;

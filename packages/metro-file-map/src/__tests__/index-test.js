@@ -1455,6 +1455,22 @@ describe('FileMap', () => {
       expect.objectContaining({
         // With maxFilesPerWorker = 2 and 5 files, we should have 3 workers.
         numWorkers: 3,
+        setupArgs: [
+          {
+            dependencyExtractor,
+            plugins: [
+              {
+                workerModulePath: expect.stringMatching(
+                  /src[\\\/]plugins[\\\/]haste[\\\/]worker\.js/,
+                ),
+                workerSetupArgs: {
+                  enableHastePackages: true,
+                  hasteImplModulePath: null,
+                },
+              },
+            ],
+          },
+        ],
       }),
     );
 
@@ -1465,7 +1481,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1475,7 +1490,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1485,7 +1499,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1495,7 +1508,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1505,7 +1517,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           isNodeModules: false,
           maybeReturnContent: false,
