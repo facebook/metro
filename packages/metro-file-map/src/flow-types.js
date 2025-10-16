@@ -196,6 +196,8 @@ export type FileMapPluginInitOptions<
 }>;
 
 export type FileMapPluginWorker = $ReadOnly<{
+  lazy: boolean,
+  match: boolean | RegExp,
   workerModulePath: string,
   workerSetupArgs: JsonData,
 }>;

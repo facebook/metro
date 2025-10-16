@@ -506,6 +506,14 @@ export default class HastePlugin
 
   getWorker(): FileMapPluginWorker {
     return {
+      // All files must be visited eagerly.
+      lazy: false,
+      match:
+        this.#hasteImplModulePath != null
+          ? true
+          : this.#enableHastePackages
+            ? /package\.json$/
+            : false,
       workerModulePath: require.resolve('./haste/worker.js'),
       workerSetupArgs: {
         enableHastePackages: this.#enableHastePackages,
