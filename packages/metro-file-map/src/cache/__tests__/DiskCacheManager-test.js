@@ -43,14 +43,12 @@ const buildParameters: BuildParameters = {
   computeDependencies: true,
   computeSha1: true,
   dependencyExtractor: null,
-  enableHastePackages: true,
   enableSymlinks: false,
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,
   retainAllFiles: false,
   skipPackageJson: false,
   extensions: ['js', 'json'],
-  hasteImplModulePath: require.resolve('../../__tests__/haste_impl'),
   plugins: [],
   rootDir: path.join('/', 'project'),
   roots: [
@@ -137,6 +135,9 @@ describe('cacheManager', () => {
       assertValid() {},
       getSerializableSnapshot() {
         return {};
+      },
+      getWorker() {
+        return null;
       },
       onNewOrModifiedFile() {},
       onRemovedFile() {},
