@@ -165,45 +165,75 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetadata]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
+export type FileMapDelta<T = null | void> = $ReadOnly<{
+  removed: Iterable<[CanonicalPath, T]>,
+  addedOrModified: Iterable<[CanonicalPath, T]>,
 }>;
 
-interface FileSystemState {
-  metadataIterator(
-    opts: $ReadOnly<{
-      includeNodeModules: boolean,
-      includeSymlinks: boolean,
+export type FileMapPluginInitOptions<
+  SerializableState,
+  PerFileData = void,
+> = $ReadOnly<{
+  files: $ReadOnly<{
+    fileIterator(
+      opts: $ReadOnly<{
+        includeNodeModules: boolean,
+        includeSymlinks: boolean,
+      }>,
+    ): Iterable<{
+      baseName: string,
+      canonicalPath: string,
+      pluginData: ?PerFileData,
     }>,
-  ): Iterable<{
-    baseName: string,
-    canonicalPath: string,
-    metadata: FileMetadata,
-  }>;
-}
-
-export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
-  files: FileSystemState,
+    lookup(
+      mixedPath: string,
+    ):
+      | {exists: false}
+      | {exists: true, type: 'f', pluginData: PerFileData}
+      | {exists: true, type: 'd'},
+  }>,
   pluginState: ?SerializableState,
 }>;
 
-type V8Serializable = interface {};
+export type FileMapPluginWorker = $ReadOnly<{
+  lazy: boolean,
+  match: boolean | RegExp,
+  workerModulePath: string,
+  workerSetupArgs: JsonData,
+}>;
 
-export interface FileMapPlugin<SerializableState = V8Serializable> {
+export type V8Serializable =
+  | string
+  | number
+  | boolean
+  | null
+  | $ReadOnlyArray<V8Serializable>
+  | $ReadOnlySet<V8Serializable>
+  | $ReadOnlyMap<string, V8Serializable>
+  | {[key: string]: V8Serializable};
+
+export interface FileMapPlugin<
+  SerializableState = V8Serializable,
+  PerFileData = void,
+> {
   +name: string;
   initialize(
-    initOptions: FileMapPluginInitOptions<SerializableState>,
+    initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<?PerFileData>): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    fileMetadata: FileMetadata,
-  ): void;
+  onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
+  onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
+  getWorker(): ?FileMapPluginWorker;
+}
+
+export interface MetadataWorker {
+  processFile(
+    WorkerMessage,
+    $ReadOnly<{getContent: () => Buffer}>,
+  ): V8Serializable;
 }
 
 export type HType = {
@@ -213,7 +243,7 @@ export type HType = {
   DEPENDENCIES: 3,
   SHA1: 4,
   SYMLINK: 5,
-  ID: 6,
+  PLUGINDATA: number,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -236,7 +266,8 @@ export type FileMetadata = [
   /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
-  /* id */ string,
+  /* plugindata */
+  ...
 ];
 
 export type FileStats = $ReadOnly<{
@@ -253,7 +284,6 @@ export interface FileSystem {
     changedFiles: FileData,
     removedFiles: Set<string>,
   };
-  getModuleName(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
   getOrComputeSha1(file: Path): Promise<?{sha1: string, content?: Buffer}>;
@@ -324,6 +354,14 @@ export interface FileSystem {
 
 export type Glob = string;
 
+export type JsonData =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<JsonData>
+  | {[key: string]: JsonData};
+
 export type LookupResult =
   | {
       // The node is missing from the FileSystem implementation (note this
@@ -340,11 +378,23 @@ export type LookupResult =
       exists: true,
       // The real, normal, absolute paths of any symlinks traversed.
       links: $ReadOnlySet<string>,
-      // The real, normal, absolute path of the file or directory.
+      // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
       // directories or regular files, but this may be extended.
-      type: 'd' | 'f',
+      type: 'd',
+    }
+  | {
+      exists: true,
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: $ReadOnlySet<string>,
+      // The real, normal, absolute path of the file.
+      realPath: string,
+      // Currently lookup always follows symlinks, so can only return
+      // directories or regular files, but this may be extended.
+      type: 'f',
+      // The file's metadata tuple. Must only be mutated via FileProcessor.
+      metadata: FileMetadata,
     };
 
 export interface MockMap {
@@ -365,6 +415,8 @@ export interface HasteMap {
     supportsNativePlatform?: ?boolean,
     type?: ?HTypeValue,
   ): ?Path;
+
+  getModuleNameByPath(file: Path): ?string;
 
   getPackage(
     name: string,
@@ -459,18 +511,19 @@ export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
   computeSha1: boolean,
-  dependencyExtractor?: ?string,
-  enableHastePackages: boolean,
+  isNodeModules: boolean,
   filePath: string,
-  hasteImplModulePath?: ?string,
   maybeReturnContent: boolean,
 }>;
 
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
-  id?: ?string,
   sha1?: ?string,
   content?: ?Buffer,
+  pluginData?: $ReadOnlyArray<V8Serializable>,
 }>;
 
-export type WorkerSetupArgs = $ReadOnly<{}>;
+export type WorkerSetupArgs = $ReadOnly<{
+  dependencyExtractor?: ?string,
+  plugins?: $ReadOnlyArray<FileMapPluginWorker>,
+}>;

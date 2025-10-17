@@ -10,6 +10,7 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   WorkerMessage,
   WorkerMetadata,
@@ -25,11 +26,10 @@ const mockWorkerFn = jest.fn().mockReturnValue({});
 
 const defaultOptions = {
   dependencyExtractor: null,
-  enableHastePackages: false,
   enableWorkerThreads: true,
-  hasteImplModulePath: null,
   maxWorkers: 5,
   perfLogger: null,
+  pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
 };
 
 describe('processBatch', () => {
@@ -133,6 +133,6 @@ function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      [123, 234, 0, '', null, 0, ''] as FileMetadata,
+      [123, 234, 0, '', null, 0, null] as FileMetadata,
     ]);
 }
