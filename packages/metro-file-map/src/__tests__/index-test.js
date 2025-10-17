@@ -1460,6 +1460,8 @@ describe('FileMap', () => {
             dependencyExtractor,
             plugins: [
               {
+                lazy: false,
+                match: /package\.json$/,
                 workerModulePath: expect.stringMatching(
                   /src[\\\/]plugins[\\\/]haste[\\\/]worker\.js/,
                 ),

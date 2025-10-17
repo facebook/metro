@@ -88,7 +88,6 @@ export type InputOptions = $ReadOnly<{
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
-  skipPackageJson?: ?boolean,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
@@ -156,7 +155,6 @@ const CACHE_BREAKER = '11';
 const CHANGE_INTERVAL = 30;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const PACKAGE_JSON = path.sep + 'package.json';
 const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 const WATCHMAN_REQUIRED_CAPABILITIES = [
   'field-content.sha1hex',
@@ -647,27 +645,6 @@ export default class FileMap extends EventEmitter {
       // A crawler may preserve the H.VISITED flag to indicate that the file
       // contents are unchaged and it doesn't need visiting again.
       if (fileData[H.VISITED] === 1) {
-        continue;
-      }
-
-      if (
-        this._options.skipPackageJson &&
-        relativeFilePath.endsWith(PACKAGE_JSON)
-      ) {
-        continue;
-      }
-
-      if (
-        fileData[H.SYMLINK] === 0 &&
-        !this._options.computeDependencies &&
-        !this._options.computeSha1 &&
-        this._options.hasteImplModulePath == null &&
-        !(
-          this._options.enableHastePackages &&
-          relativeFilePath.endsWith(PACKAGE_JSON)
-        )
-      ) {
-        // Nothing to process
         continue;
       }
 
