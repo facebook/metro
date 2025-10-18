@@ -33,7 +33,7 @@ type TransformPlugins = {
   getTransformPluginCacheKeyFiles(): $ReadOnlyArray<string>,
 };
 
-module.exports = ({
+module.exports = {
   // $FlowFixMe[unsafe-getters-setters]
   get addParamsToDefineCall() {
     return require('./addParamsToDefineCall').default;
@@ -66,4 +66,4 @@ module.exports = ({
     require.resolve('./inline-requires-plugin'),
     require.resolve('./normalizePseudoGlobals'),
   ],
-}: TransformPlugins);
+} as TransformPlugins;

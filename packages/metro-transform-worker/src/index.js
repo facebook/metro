@@ -190,7 +190,7 @@ function getDynamicDepsBehavior(
       const isPackage = /(?:^|[/\\])node_modules[/\\]/.test(filename);
       return isPackage ? inPackages : 'reject';
     default:
-      (inPackages: empty);
+      inPackages as empty;
       throw new Error(
         `invalid value for dynamic deps behavior: \`${inPackages}\``,
       );

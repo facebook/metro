@@ -67,7 +67,7 @@ export default function rootRelativeCacheKeys(
         case 'dependencyExtractor':
           return moduleCacheKey(buildParameters[key]);
         default:
-          (key: empty);
+          key as empty;
           throw new Error('Unrecognised key in build parameters: ' + key);
       }
     });

@@ -62,7 +62,7 @@ export default class WorkerFarm {
       this._worker = worker;
     } else {
       // eslint-disable-next-line import/no-commonjs
-      this._worker = (require('./Worker'): Worker);
+      this._worker = require('./Worker') as Worker;
     }
   }
 

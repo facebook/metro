@@ -275,7 +275,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
 
     const clock =
       typeof rawClock === 'string' && this.watchProjectInfo != null
-        ? ([this.watchProjectInfo.root, rawClock]: [string, string])
+        ? ([this.watchProjectInfo.root, rawClock] as [string, string])
         : undefined;
 
     if (!exists) {

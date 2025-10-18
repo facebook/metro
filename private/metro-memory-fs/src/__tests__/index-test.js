@@ -218,7 +218,7 @@ describe('posix support', () => {
         let closed = false;
         st.on('open', () => (opened = true));
         st.on('close', () => (closed = true));
-        expect((st: any).path).toBe(filePath);
+        expect((st as any).path).toBe(filePath);
         let str = '';
         st.on('data', chunk => {
           expect(opened).toBe(true);
@@ -251,7 +251,7 @@ describe('posix support', () => {
       let closed = false;
       st.on('open', () => (opened = true));
       st.on('close', () => (closed = true));
-      expect((st: any).path).toBe('/foo.txt');
+      expect((st as any).path).toBe('/foo.txt');
       let str = '';
       st.on('data', chunk => {
         str += chunk;
@@ -276,7 +276,7 @@ describe('posix support', () => {
       let closed = false;
       st.on('open', () => (opened = true));
       st.on('close', () => (closed = true));
-      expect((st: any).path).toBe('/foo.txt');
+      expect((st as any).path).toBe('/foo.txt');
       let str = '';
       st.on('data', chunk => {
         str += chunk;
@@ -427,9 +427,9 @@ describe('posix support', () => {
         fs.writeFileSync('/baz/bar.txt', 'boop');
         fs.symlinkSync('glo', '/baz/glo.txt');
         fs.mkdirSync('/baz/subdir');
-        entries = (fs.readdirSync('/baz', {
+        entries = fs.readdirSync('/baz', {
           withFileTypes: true,
-        }): $FlowFixMe);
+        }) as $FlowFixMe;
       });
 
       test('returns Dirent objects', () => {
@@ -488,10 +488,10 @@ describe('posix support', () => {
       });
 
       test('Buffer support', () => {
-        const entriesWithBuffers: Array<fs.Dirent> = (fs.readdirSync('/baz', {
+        const entriesWithBuffers: Array<fs.Dirent> = fs.readdirSync('/baz', {
           withFileTypes: true,
           encoding: 'buffer',
-        }): $FlowFixMe);
+        }) as $FlowFixMe;
         for (const [i, name] of [
           'foo.txt',
           'bar.txt',

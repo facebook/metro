@@ -249,7 +249,7 @@ export default class HttpStore<T> {
             const buffer = Buffer.concat(data);
 
             if (buffer.length > 0 && buffer[0] === NULL_BYTE) {
-              resolve((buffer.slice(1): any));
+              resolve(buffer.slice(1) as any);
             } else {
               resolve(JSON.parse(buffer.toString('utf8')));
             }

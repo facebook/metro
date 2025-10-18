@@ -76,7 +76,7 @@ export default (): {
       type: 'string',
       array: true,
       alias: 'transformer-option',
-      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      coerce: parseKeyValueParamArray as $FlowFixMe,
       describe:
         'Custom transform options of the form key=value. URL-encoded. May be specified multiple times.',
     });
@@ -84,7 +84,7 @@ export default (): {
     yargs.option('resolver-option', {
       type: 'string',
       array: true,
-      coerce: (parseKeyValueParamArray: $FlowFixMe),
+      coerce: parseKeyValueParamArray as $FlowFixMe,
       describe:
         'Custom resolver options of the form key=value. URL-encoded. May be specified multiple times.',
     });

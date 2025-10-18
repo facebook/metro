@@ -286,7 +286,7 @@ export class ModuleResolver<TPackage: Packageish> {
       case 'empty':
         return this._getEmptyModule();
       default:
-        (resolution.type: empty);
+        resolution.type as empty;
         throw new Error('invalid type');
     }
   }

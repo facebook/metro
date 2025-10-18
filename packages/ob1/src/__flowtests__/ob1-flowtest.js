@@ -18,21 +18,21 @@ const FORTY_TWO_1 = add1(42);
 
 export default {
   testSafeOps() {
-    (add(FORTY_TWO_0, FORTY_TWO_0): Number0);
-    (add(FORTY_TWO_0, FORTY_TWO_1): Number1);
-    (add(FORTY_TWO_1, FORTY_TWO_0): Number1);
-    (sub(FORTY_TWO_1, FORTY_TWO_1): Number0);
-    (add(FORTY_TWO_0, 9000): Number0);
-    (add(FORTY_TWO_0, 9000): Number0);
-    (add(FORTY_TWO_1, 9000): Number1);
-    (sub(FORTY_TWO_1, 9000): Number1);
-    (get0(FORTY_TWO_0): number);
-    (get1(FORTY_TWO_1): number);
-    (neg(FORTY_TWO_0): Number0);
-    (add1(FORTY_TWO_0): Number1);
-    (sub1(FORTY_TWO_1): Number0);
-    (inc(FORTY_TWO_0): Number0);
-    (inc(FORTY_TWO_1): Number1);
+    add(FORTY_TWO_0, FORTY_TWO_0) as Number0;
+    add(FORTY_TWO_0, FORTY_TWO_1) as Number1;
+    add(FORTY_TWO_1, FORTY_TWO_0) as Number1;
+    sub(FORTY_TWO_1, FORTY_TWO_1) as Number0;
+    add(FORTY_TWO_0, 9000) as Number0;
+    add(FORTY_TWO_0, 9000) as Number0;
+    add(FORTY_TWO_1, 9000) as Number1;
+    sub(FORTY_TWO_1, 9000) as Number1;
+    get0(FORTY_TWO_0) as number;
+    get1(FORTY_TWO_1) as number;
+    neg(FORTY_TWO_0) as Number0;
+    add1(FORTY_TWO_0) as Number1;
+    sub1(FORTY_TWO_1) as Number0;
+    inc(FORTY_TWO_0) as Number0;
+    inc(FORTY_TWO_1) as Number1;
   },
   testUnsafeOps() {
     // $FlowExpectedError[incompatible-type]  - adding two 1-based offsets.

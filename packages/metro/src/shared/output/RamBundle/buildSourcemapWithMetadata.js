@@ -25,12 +25,12 @@ type Params = {
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
 };
 
-export default (({
+export default ({
   fixWrapperOffset,
   lazyModules,
   moduleGroups,
   startupModules,
-}: Params) => {
+}: Params): IndexMap => {
   const options = fixWrapperOffset ? {fixWrapperOffset: true} : undefined;
   const startupModule: ModuleTransportLike = {
     code: joinModules(startupModules),
@@ -59,4 +59,4 @@ export default (({
   }
 
   return map;
-}: Params => IndexMap);
+};

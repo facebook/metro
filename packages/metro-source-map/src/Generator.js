@@ -199,7 +199,7 @@ export default class Generator {
         }
       : {};
 
-    return ({
+    return {
       version: 3,
       file,
       sources: this.sources.slice(),
@@ -208,7 +208,7 @@ export default class Generator {
       ...ignoreList,
       names: this.names.items(),
       mappings: this.builder.toString(),
-    }: BasicSourceMap);
+    } as BasicSourceMap;
   }
 
   /**

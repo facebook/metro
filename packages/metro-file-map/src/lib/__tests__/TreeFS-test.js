@@ -307,29 +307,31 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       tfs = new TreeFS({
         rootDir: p('/A/B/C'),
         files: new Map<CanonicalPath, FileMetadata>(
-          ([
+          (
             [
-              p('a/1/package.json'),
-              [0, 0, 0, '', '', './real-package.json', ''],
-            ],
-            [
-              p('a/2/package.json'),
-              [0, 0, 0, '', '', './notexist-package.json', ''],
-            ],
-            [p('a/b/c/d/link-to-C'), [0, 0, 0, '', '', p('../../../..'), '']],
-            [
-              p('a/b/c/d/link-to-B'),
-              [0, 0, 0, '', '', p('../../../../..'), ''],
-            ],
-            [
-              p('a/b/c/d/link-to-A'),
-              [0, 0, 0, '', '', p('../../../../../..'), ''],
-            ],
-            [
-              p('n_m/workspace/link-to-pkg'),
-              [0, 0, 0, '', '', p('../../../workspace-pkg'), ''],
-            ],
-          ]: Array<[CanonicalPath, FileMetadata]>).concat(
+              [
+                p('a/1/package.json'),
+                [0, 0, 0, '', '', './real-package.json', ''],
+              ],
+              [
+                p('a/2/package.json'),
+                [0, 0, 0, '', '', './notexist-package.json', ''],
+              ],
+              [p('a/b/c/d/link-to-C'), [0, 0, 0, '', '', p('../../../..'), '']],
+              [
+                p('a/b/c/d/link-to-B'),
+                [0, 0, 0, '', '', p('../../../../..'), ''],
+              ],
+              [
+                p('a/b/c/d/link-to-A'),
+                [0, 0, 0, '', '', p('../../../../../..'), ''],
+              ],
+              [
+                p('n_m/workspace/link-to-pkg'),
+                [0, 0, 0, '', '', p('../../../workspace-pkg'), ''],
+              ],
+            ] as Array<[CanonicalPath, FileMetadata]>
+          ).concat(
             [
               'a/package.json',
               // A directory named package.json should never match

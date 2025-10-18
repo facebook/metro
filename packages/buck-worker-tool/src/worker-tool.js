@@ -181,7 +181,7 @@ function handshakeResponse(message: IncomingMessage) {
     id: message.id,
     type: 'handshake' as const,
     protocol_version: '0' as const,
-    capabilities: ([]: []),
+    capabilities: [] as [],
   };
 }
 

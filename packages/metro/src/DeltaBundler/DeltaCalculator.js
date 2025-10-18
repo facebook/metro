@@ -234,7 +234,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
         this._addedFiles.delete(filePath);
         break;
       default:
-        (nextState: empty);
+        nextState as empty;
     }
 
     // Notify users that there is a change in some of the bundle files. This

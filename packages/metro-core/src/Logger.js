@@ -97,7 +97,7 @@ function createActionEndEntry(
   const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
 
   return createEntry({
-    log_entry_label: (action_name: ?string),
+    log_entry_label: action_name as ?string,
     ...logEntry,
     action_name,
     action_phase: 'end',

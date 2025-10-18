@@ -667,8 +667,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: ([]: Array<string>),
-            sources: ([]: Array<string>),
+            names: [] as Array<string>,
+            sources: [] as Array<string>,
             mappings: 'A',
           },
         },
@@ -699,7 +699,7 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 0},
           map: {
             version: 3,
-            names: ([]: Array<string>),
+            names: [] as Array<string>,
             sources: ['foo.js'],
             mappings: 'AAAA',
           },
@@ -808,8 +808,8 @@ describe('known bugs in source-map', () => {
           offset: {line: 0, column: 2},
           map: {
             version: 3,
-            names: ([]: Array<string>),
-            sources: ([]: Array<string>),
+            names: [] as Array<string>,
+            sources: [] as Array<string>,
             mappings: '',
           },
         },

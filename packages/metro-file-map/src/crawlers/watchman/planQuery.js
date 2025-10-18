@@ -100,7 +100,7 @@ export function planQuery({
       allOfTerms.push([
         'anyof',
         ...directoryFilters.map(
-          dir => (['dirname', dir]: WatchmanDirnameExpression),
+          dir => ['dirname', dir] as WatchmanDirnameExpression,
         ),
       ]);
     }

@@ -11,7 +11,7 @@ None of these files exist:
 > 15 | const DoesNotExist = require('./does-not-exist');
      |                               ^
   16 |
-  17 | global.x = (DoesNotExist: DoesNotExistT);
+  17 | global.x = DoesNotExist as DoesNotExistT;
   18 |
 `;
 
@@ -26,7 +26,7 @@ None of these files exist:
 > 15 | import DoesNotExist from './does-not-exist';
      |                           ^
   16 |
-  17 | global.x = (DoesNotExist: DoesNotExistT);
+  17 | global.x = DoesNotExist as DoesNotExistT;
   18 |
 `;
 
@@ -41,7 +41,7 @@ None of these files exist:
 > 15 | const DoesNotExist = require('./does-not-exist');
      |                               ^
   16 |
-  17 | global.x = (DoesNotExist: DoesNotExistT);
+  17 | global.x = DoesNotExist as DoesNotExistT;
   18 |
 `;
 
@@ -56,7 +56,7 @@ None of these files exist:
 > 15 | import DoesNotExist from './does-not-exist';
      |                           ^
   16 |
-  17 | global.x = (DoesNotExist: DoesNotExistT);
+  17 | global.x = DoesNotExist as DoesNotExistT;
   18 |
 `;
 
@@ -86,7 +86,7 @@ None of these files exist:
 > 17 | import {DoesNotExist} from './does-not/'"-exist';
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   18 |
-  19 | global.x = (DoesNotExist: DoesNotExistT);
+  19 | global.x = DoesNotExist as DoesNotExistT;
   20 |
 `;
 
@@ -101,7 +101,7 @@ None of these files exist:
 > 15 | const DoesNotExist = require('./foo' /* ./foo */);
      |                               ^
   16 |
-  17 | global.x = (DoesNotExist: DoesNotExistT);
+  17 | global.x = DoesNotExist as DoesNotExistT;
   18 |
 `;
 
@@ -116,6 +116,6 @@ None of these files exist:
 > 27 | } from './does-not-exist';
      |         ^
   28 |
-  29 | global.x = (aaaaaaaaaa: DoesNotExistT);
+  29 | global.x = aaaaaaaaaa as DoesNotExistT;
   30 |
 `;

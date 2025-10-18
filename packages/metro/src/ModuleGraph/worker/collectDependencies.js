@@ -732,11 +732,11 @@ const DefaultDependencyTransformer: DependencyTransformer = {
     state: State,
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
-    path.node.arguments = ([moduleIDExpression]: Array<
+    path.node.arguments = [moduleIDExpression] as Array<
       | BabelNodeExpression
       | BabelNodeSpreadElement
       | BabelNodeArgumentPlaceholder,
-    >);
+    >;
     // Always add the debug name argument last
     if (state.keepRequireNames) {
       path.node.arguments.push(types.stringLiteral(dependency.name));

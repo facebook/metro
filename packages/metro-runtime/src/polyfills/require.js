@@ -80,8 +80,8 @@ export type DefineFn = (
 type VerboseModuleNameForDev = string;
 type ModuleDefiner = (moduleId: ModuleID) => void;
 
-global.__r = (metroRequire: RequireFn);
-global[`${__METRO_GLOBAL_PREFIX__}__d`] = (define: DefineFn);
+global.__r = metroRequire as RequireFn;
+global[`${__METRO_GLOBAL_PREFIX__}__d`] = define as DefineFn;
 global.__c = clear;
 global.__registerSegment = registerSegment;
 
@@ -291,7 +291,7 @@ function metroImportAll(
   if (exports && exports.__esModule) {
     importedAll = exports;
   } else {
-    importedAll = ({}: {[string]: any});
+    importedAll = {} as {[string]: any};
 
     // Refrain from using Object.assign, it has to work in ES3 environments.
     if (exports) {

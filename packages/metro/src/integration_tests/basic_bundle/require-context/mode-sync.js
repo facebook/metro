@@ -21,4 +21,4 @@ function main(): mixed {
   );
 }
 
-module.exports = (main(): mixed);
+module.exports = main() as mixed;
