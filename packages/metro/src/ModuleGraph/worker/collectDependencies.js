@@ -8,6 +8,7 @@
  * @flow
  */
 
+import type {FutureModules} from '../../DeltaBundler/FutureModules';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
@@ -63,6 +64,12 @@ type DependencyData = $ReadOnly<{
   locs: $ReadOnlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
+  /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
+  isFutureModule?: boolean,
+  /** Full path to the module, provided only for future modules. */
+  absolutePath?: string,
+  /** Type of the dependency, provided only for future modules. */
+  type?: 'sourceFile',
 }>;
 
 export type MutableInternalDependency = {
@@ -99,6 +106,8 @@ export type Options = $ReadOnly<{
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
   unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
+  /** Map of registered future modules, i.e. modules not yet registered in the Metro file system but available for bundling. */
+  futureModules?: ?FutureModules,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -291,6 +300,14 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
+    const futureModule = options.futureModules?.get(name);
+
+    if (futureModule != null) {
+      dependencyData.isFutureModule = true;
+      dependencyData.absolutePath = futureModule.absolutePath;
+      dependencyData.type = futureModule.type;
+    }
+
     dependencies[index] = {
       name,
       data: dependencyData,

@@ -9,13 +9,14 @@
  * @oncall react_native
  */
 
-import type {TransformResult} from './types';
+import type {FutureModulesRawMap, TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,
   JsTransformOptions,
 } from 'metro-transform-worker';
 
+import {FutureModules} from './FutureModules';
 import traverse from '@babel/traverse';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -30,6 +31,7 @@ type TransformerInterface = {
     string,
     Buffer,
     JsTransformOptions,
+    ?FutureModules,
   ): Promise<TransformResult<>>,
 };
 
@@ -72,6 +74,7 @@ export const transform = (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 ): Promise<Data> => {
   let data;
 
@@ -81,12 +84,16 @@ export const transform = (
   } else {
     data = fs.readFileSync(path.resolve(projectRoot, filename));
   }
+
+  const futureModules = new FutureModules(futureModulesRawMap);
+
   return transformFile(
     filename,
     data,
     transformOptions,
     projectRoot,
     transformerConfig,
+    futureModules,
   );
 };
 
@@ -100,6 +107,7 @@ async function transformFile(
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
+  futureModules?: ?FutureModules,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
   const Transformer: TransformerInterface = require.call(
@@ -125,6 +133,20 @@ async function transformFile(
     transformOptions,
   );
 
+  for (const dependency of result.dependencies) {
+    const {name, data: dependencyData} = dependency;
+    const futureModule = futureModules?.get(name);
+
+    if (futureModule != null) {
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.isFutureModule = true;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.absolutePath = futureModule.absolutePath;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
+      dependencyData.type = futureModule.type;
+    }
+  }
+
   // The babel cache caches scopes and pathes for already traversed AST nodes.
   // Clearing the cache here since the nodes of the transformed file are no longer referenced.
   // This isn't stritcly necessary since the cache uses a WeakMap. However, WeakMap only permit
@@ -137,6 +159,9 @@ async function transformFile(
     transformFileStartLogEntry,
     filename,
   );
+
+  // $FlowFixMe[cannot-write] This has to be mutated in order to serialize it.
+  result.futureModulesRawMap = result.futureModules?.toRawMap();
 
   return {
     result,

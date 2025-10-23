@@ -11,6 +11,7 @@
 
 import type {RequireContext} from '../lib/contextModule';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {FutureModules} from './FutureModules';
 import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
@@ -56,6 +57,15 @@ export type TransformResultDependency = $ReadOnly<{
 
     /** Context for requiring a collection of modules. */
     contextParams?: RequireContextParams,
+
+    /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
+    isFutureModule?: boolean,
+
+    /** Full path to the module, provided only for future modules. */
+    absolutePath?: string,
+
+    /** Type of the dependency, provided only for future modules. */
+    type?: 'sourceFile',
   }>,
 }>;
 
@@ -77,6 +87,8 @@ export type Module<T = MixedOutput> = $ReadOnly<{
   path: string,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type ModuleData<T = MixedOutput> = $ReadOnly<{
@@ -85,6 +97,8 @@ export type ModuleData<T = MixedOutput> = $ReadOnly<{
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
@@ -117,6 +131,8 @@ export type TransformResult<T = MixedOutput> = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
   unstable_transformResultKey?: ?string,
+  futureModules?: ?FutureModules,
+  futureModulesRawMap?: ?FutureModulesRawMap,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
@@ -124,14 +140,23 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
   getSource: () => Buffer,
 }>;
 
+export type FutureModule = $ReadOnly<{
+  absolutePath: string,
+  type: 'sourceFile',
+}>;
+
+export type FutureModulesRawMap = Map<string, FutureModule>;
+
 export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
+  futureModules?: ?FutureModules,
 ) => Promise<TransformResultWithSource<T>>;
 
 export type ResolveFn = (
   from: string,
   dependency: TransformResultDependency,
+  futureModules?: ?FutureModules,
 ) => BundlerResolution;
 
 export type AllowOptionalDependenciesWithOptions = {

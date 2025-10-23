@@ -48,6 +48,7 @@ import {
   toSegmentTuple,
 } from 'metro-source-map';
 import metroTransformPlugins from 'metro-transform-plugins';
+import {FutureModules} from 'metro/private/DeltaBundler/FutureModules';
 import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
 import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
 import {
@@ -151,6 +152,7 @@ type JSFile = $ReadOnly<{
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
   unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
+  futureModules?: ?FutureModules,
 }>;
 
 type JSONFile = {
@@ -177,6 +179,7 @@ export type JsOutput = $ReadOnly<{
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput>,
+  futureModules?: ?FutureModules,
 }>;
 
 function getDynamicDepsBehavior(
@@ -405,6 +408,7 @@ async function transformJS(
             ? (loc: BabelSourceLocation) =>
                 importDeclarationLocs.has(locToKey(loc))
             : null,
+        futureModules: file.futureModules,
       };
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -501,9 +505,12 @@ async function transformJS(
     },
   ];
 
+  const {futureModules} = file;
+
   return {
     dependencies,
     output,
+    futureModules,
   };
 }
 
@@ -563,6 +570,9 @@ async function transformJSWithBabel(
       null,
     unstable_importDeclarationLocs:
       transformResult.metadata?.metro?.unstable_importDeclarationLocs,
+    futureModules: new FutureModules(
+      transformResult.metadata?.metro?.futureModulesRawMap,
+    ),
   };
 
   return await transformJS(jsFile, context);
