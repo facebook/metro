@@ -217,6 +217,11 @@ export default class IncrementalBundler {
       this._deltaBundler,
     );
 
+    graph.dependencies.forEach(module => {
+      // $FlowFixMe[cannot-write] We need to mark the module as virtual
+      module.isVirtualModule = graph.virtualModules.get(module.path) != null;
+    });
+
     return {
       prepend,
       graph,
