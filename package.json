@@ -73,5 +73,8 @@
   "dependencies": {},
   "engines": {
     "node": ">=20.19.4"
+  },
+  "resolutions": {
+    "**/json5": "2.2.3"
   }
 }
