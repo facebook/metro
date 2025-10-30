@@ -119,7 +119,6 @@ TestGraph {
   "entryPoints": Set {
     "/bundle",
   },
-  "futureModules": FutureModules {},
   "transformOptions": Object {
     "dev": false,
     "minify": false,
@@ -167,7 +166,6 @@ TestGraph {
   "entryPoints": Set {
     "/bundle",
   },
-  "futureModules": FutureModules {},
   "transformOptions": Object {
     "dev": false,
     "minify": false,

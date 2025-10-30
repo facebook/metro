@@ -48,7 +48,7 @@ import {
   toSegmentTuple,
 } from 'metro-source-map';
 import metroTransformPlugins from 'metro-transform-plugins';
-import {VirtualModules} from 'metro/private/DeltaBundler/FutureModules';
+import {VirtualModules} from 'metro/private/DeltaBundler/VirtualModules';
 import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
 import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
 import {
@@ -572,6 +572,7 @@ async function transformJSWithBabel(
       transformResult.metadata?.metro?.unstable_importDeclarationLocs,
     virtualModules: new VirtualModules(
       // TODO: use raw map here
+      // $FlowFixMe[prop-missing] we need to update the type of metadata.metro.virtualModules
       transformResult.metadata?.metro?.virtualModules,
     ),
   };

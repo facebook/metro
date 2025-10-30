@@ -9,7 +9,6 @@
  */
 
 import type {RequireContext} from '../lib/contextModule';
-import type {VirtualModules} from './FutureModules';
 import type {
   Dependency,
   ModuleData,
@@ -18,6 +17,7 @@ import type {
   TransformFn,
   TransformResultDependency,
 } from './types';
+import type {VirtualModules} from './VirtualModules';
 
 import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
@@ -49,8 +49,9 @@ function resolveDependencies(
     const {contextParams} = dep.data;
     const {isVirtualModule} = dep.data;
     if (isVirtualModule === true) {
+      // $FlowFixMe[incompatible-type] Can't assert that `absolutePath` is defined.
       maybeResolvedDep = {
-        absolutePath: dep.data.absolutePath ?? '',
+        absolutePath: dep.data.absolutePath,
         data: dep,
       };
     } else if (contextParams) {
@@ -98,6 +99,7 @@ function resolveDependencies(
         `resolveDependencies: Found duplicate dependency key '${key}' in ${parentPath}`,
       );
     }
+    // $FlowFixMe[incompatible-type] Flow doesn't like `absolutePath` here.
     maybeResolvedDeps.set(key, maybeResolvedDep);
   }
 

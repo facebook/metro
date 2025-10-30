@@ -8,7 +8,7 @@
  * @flow
  */
 
-import type {VirtualModules} from '../../DeltaBundler/FutureModules';
+import type {VirtualModules} from '../../DeltaBundler/VirtualModules';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {

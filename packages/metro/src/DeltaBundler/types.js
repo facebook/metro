@@ -11,8 +11,8 @@
 
 import type {RequireContext} from '../lib/contextModule';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
-import type {VirtualModules} from './FutureModules';
 import type {Graph} from './Graph';
+import type {VirtualModules} from './VirtualModules';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';

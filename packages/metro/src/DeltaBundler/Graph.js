@@ -47,7 +47,7 @@ import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import {buildSubgraph} from './buildSubgraph';
-import {VirtualModules} from './FutureModules';
+import {VirtualModules} from './VirtualModules';
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 

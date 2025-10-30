@@ -11,12 +11,12 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {VirtualModules} from '../DeltaBundler/FutureModules';
 import type {
   BundlerResolution,
   TransformInputOptions,
   TransformResultDependency,
 } from '../DeltaBundler/types';
+import type {VirtualModules} from '../DeltaBundler/VirtualModules';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ResolverInputOptions} from '../shared/types';
 import type {RequireContext} from './contextModule';

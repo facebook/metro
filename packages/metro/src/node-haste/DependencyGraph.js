@@ -9,11 +9,11 @@
  * @oncall react_native
  */
 
-import type {VirtualModules} from '../DeltaBundler/FutureModules';
 import type {
   BundlerResolution,
   TransformResultDependency,
 } from '../DeltaBundler/types';
+import type {VirtualModules} from '../DeltaBundler/VirtualModules';
 import type {ResolverInputOptions} from '../shared/types';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config';
@@ -270,19 +270,6 @@ export default class DependencyGraph extends EventEmitter {
     mixedPath: string,
     virtualModules?: ?VirtualModules,
   ): Promise<{content?: Buffer, sha1: string}> {
-    // let isFutureModule = false;
-    // if (futureModules != null) {
-    //   if (futureModules.has(mixedPath)) {
-    //     isFutureModule = true;
-    //   } else {
-    //     const futureModuleKey = futureModules
-    //       .keys()
-    //       .find(key => mixedPath.includes(key));
-    //     if (futureModuleKey != null) {
-    //       isFutureModule = true;
-    //     }
-    //   }
-    // }
     const virtualModule = virtualModules?.get(mixedPath);
 
     if (virtualModule) {

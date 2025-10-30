@@ -16,7 +16,7 @@ import type {
   JsTransformOptions,
 } from 'metro-transform-worker';
 
-import {VirtualModules} from './FutureModules';
+import {VirtualModules} from './VirtualModules';
 import traverse from '@babel/traverse';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -146,7 +146,9 @@ async function transformFile(
       dependencyData.code = virtualModule.code;
       // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
       dependencyData.type = virtualModule.type;
-      dependencyData.sourceURL = virtualModule.sourceURL;
+      // TODO: Figure out sourceURL for virtual modules.
+      // // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
+      // dependencyData.sourceURL = virtualModule.sourceURL;
     }
   }
 

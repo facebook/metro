@@ -1177,6 +1177,8 @@ export default class Server {
   _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
     const modules = [...graph.dependencies.values()];
     graph.dependencies.forEach(module => {
+      // $FlowFixMe[cannot-write]
+      // $FlowFixMe[prop-missing] We need to mark the module as virtual
       module.isVirtualModule = graph.virtualModules.get(module.path) != null;
     });
 

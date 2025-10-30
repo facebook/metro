@@ -10,7 +10,7 @@
  */
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
-import type {VirtualModules} from './FutureModules';
+import type {VirtualModules} from './VirtualModules';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 

@@ -20,7 +20,7 @@ import type {
 import type EventEmitter from 'events';
 
 import DeltaCalculator from './DeltaBundler/DeltaCalculator';
-import {VirtualModules} from './DeltaBundler/FutureModules';
+import {VirtualModules} from './DeltaBundler/VirtualModules';
 
 export type {
   DeltaResult,
@@ -74,6 +74,7 @@ export default class DeltaBundler<T = MixedOutput> {
     this._virtualModules.addRawMap(graph.virtualModules.toRawMap());
 
     graph.dependencies.forEach((value, key) => {
+      // $FlowFixMe[cannot-write] We need to mark the module as virtual
       value.isVirtualModule = graph.virtualModules.get(key) != null;
     });
 

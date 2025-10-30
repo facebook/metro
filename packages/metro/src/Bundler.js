@@ -10,7 +10,7 @@
  */
 
 import type {TransformResultWithSource} from './DeltaBundler';
-import type {VirtualModules} from './DeltaBundler/FutureModules';
+import type {VirtualModules} from './DeltaBundler/VirtualModules';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type EventEmitter from 'events';
 import type {ConfigT} from 'metro-config';

@@ -83,7 +83,7 @@ describe('Transformer', function () {
     await transformerInstance.transformFile('./foo.js', {});
 
     // We got the SHA-1 of the file from the dependency graph.
-    expect(getOrComputeSha1).toBeCalledWith('./foo.js', undefined);
+    expect(getOrComputeSha1).toBeCalledWith('./foo.js');
 
     // Only one get, with the original SHA-1.
     expect(get).toHaveBeenCalledTimes(1);
