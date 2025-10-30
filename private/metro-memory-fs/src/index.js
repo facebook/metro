@@ -267,8 +267,8 @@ class MemoryFs {
     this._pathSep = this._platform === 'win32' ? '\\' : '/';
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
-      const func = (this: $FlowFixMe)[`${funcName}Sync`];
-      (this: $FlowFixMe)[funcName] = function (...args) {
+      const func = (this as $FlowFixMe)[`${funcName}Sync`];
+      (this as $FlowFixMe)[funcName] = function (...args) {
         const callback = args.pop();
         process.nextTick(() => {
           let retval;
@@ -283,7 +283,7 @@ class MemoryFs {
       };
     });
     NATIVE_FUNC_NAMES.forEach(funcName => {
-      const func = (this: $FlowFixMe)[funcName];
+      const func = (this as $FlowFixMe)[funcName];
       func.native = func;
     });
     this.promises = PROMISE_FUNC_NAMES.filter(
@@ -612,9 +612,9 @@ class MemoryFs {
     if (typeof bufferOrString === 'string') {
       position = offsetOrPosition;
       encoding = lengthOrEncoding;
-      buffer = (Buffer: $FlowFixMe).from(
+      buffer = (Buffer as $FlowFixMe).from(
         bufferOrString,
-        (encoding: $FlowFixMe) || 'utf8',
+        (encoding as $FlowFixMe) || 'utf8',
       );
     } else {
       offset = offsetOrPosition;
@@ -666,7 +666,7 @@ class MemoryFs {
       encoding = 'utf8';
     }
     if (typeof data === 'string') {
-      data = (Buffer: $FlowFixMe).from(data, encoding);
+      data = (Buffer as $FlowFixMe).from(data, encoding);
     }
     const fd: number =
       typeof filePathOrFd === 'number'
@@ -896,7 +896,7 @@ class MemoryFs {
     let st = null;
     if (fd == null) {
       fd = this._open(pathStr(filePath), flags || 'r', mode);
-      process.nextTick(() => (st: any).emit('open', fd));
+      process.nextTick(() => (st as any).emit('open', fd));
     }
     const ffd = fd;
     const {readSync} = this;
@@ -1129,7 +1129,7 @@ class MemoryFs {
     let st = null;
     if (fd == null) {
       fd = this._open(pathStr(filePath), flags || 'w', mode);
-      process.nextTick(() => (st: any).emit('open', fd));
+      process.nextTick(() => (st as any).emit('open', fd));
     }
     const ffd = fd;
     const rst = new WriteFileStream({

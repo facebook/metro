@@ -21,10 +21,10 @@ declare function isMutableArray<T: $ReadOnlyArray<mixed>>(
 ): T extends Array<mixed> ? true : false;
 
 // Ensure ConfigT satisfies InputConfigT
-(config: InputConfigT);
+config as InputConfigT;
 
 // Ensure empty config satisfies InputConfigT
-({}: InputConfigT);
+({}) as InputConfigT;
 // And it may be partial
 ({
   resolver: {},
@@ -32,15 +32,15 @@ declare function isMutableArray<T: $ReadOnlyArray<mixed>>(
   serializer: {},
   server: {},
   symbolicator: {},
-}: InputConfigT);
+}) as InputConfigT;
 
 // Both are deep read-only
-(isMutableArray(config.cacheStores): false);
+isMutableArray(config.cacheStores) as false;
 if (
   inputConfig.cacheStores != null &&
   typeof inputConfig.cacheStores !== 'function'
 ) {
-  (isMutableArray(inputConfig.cacheStores): false);
+  isMutableArray(inputConfig.cacheStores) as false;
 }
 
 // ConfigT is completely hydrated (no errors accessing deep props)

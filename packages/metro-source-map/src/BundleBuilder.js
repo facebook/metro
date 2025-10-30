@@ -13,8 +13,8 @@ import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
   version: 3,
-  sources: ([]: Array<string>),
-  names: ([]: Array<string>),
+  sources: [] as Array<string>,
+  names: [] as Array<string>,
   mappings: 'A',
 };
 

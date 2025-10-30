@@ -80,6 +80,7 @@ type Options<TPackage> = $ReadOnly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
+  unstable_incrementalResolution: boolean,
 }>;
 
 export class ModuleResolver<TPackage: Packageish> {
@@ -140,6 +141,7 @@ export class ModuleResolver<TPackage: Packageish> {
       unstable_conditionNames,
       unstable_conditionsByPlatform,
       unstable_enablePackageExports,
+      unstable_incrementalResolution,
     } = this._options;
 
     try {
@@ -163,6 +165,7 @@ export class ModuleResolver<TPackage: Packageish> {
             unstable_conditionNames,
             unstable_conditionsByPlatform,
             unstable_enablePackageExports,
+            unstable_incrementalResolution,
             unstable_logWarning: this._logWarning,
             customResolverOptions: resolverOptions.customResolverOptions ?? {},
             originModulePath,
@@ -283,7 +286,7 @@ export class ModuleResolver<TPackage: Packageish> {
       case 'empty':
         return this._getEmptyModule();
       default:
-        (resolution.type: empty);
+        resolution.type as empty;
         throw new Error('invalid type');
     }
   }

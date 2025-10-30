@@ -133,7 +133,7 @@ export function getJsOutput(
     } has ${jsModules.length} JS outputs.`,
   );
 
-  const jsOutput: JsOutput = (jsModules[0]: any);
+  const jsOutput: JsOutput = jsModules[0] as any;
 
   invariant(
     Number.isFinite(jsOutput.data.lineCount),

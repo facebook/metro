@@ -411,6 +411,7 @@ beforeEach(async () => {
   options = {
     unstable_allowRequireContext: false,
     unstable_enablePackageExports: false,
+    unstable_incrementalResolution: false,
     lazy: false,
     onProgress: null,
     resolve: (from: string, to: TransformResultDependency) => {

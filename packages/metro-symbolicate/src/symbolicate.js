@@ -56,7 +56,7 @@ export default async function main(
     stderr: stream$Writable,
     stdout: stream$Writable,
     ...
-  }> = (process: $FlowFixMe),
+  }> = process as $FlowFixMe,
 ): Promise<number> {
   const argv = argvInput.slice();
   function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {

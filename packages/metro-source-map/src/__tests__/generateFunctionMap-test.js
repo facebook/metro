@@ -1440,7 +1440,7 @@ function parent2() {
     const sourceMap: MixedSourceMap = {
       version: 3,
       sources: ['input.js'],
-      names: ([]: Array<string>),
+      names: [] as Array<string>,
       mappings: '',
       x_facebook_sources: [[encoded]],
     };

@@ -221,7 +221,7 @@ describe('composeSourceMaps', () => {
           map: {
             version: 3,
             sources: ['src.js', 'other.js'],
-            x_google_ignoreList: ([]: Array<number>),
+            x_google_ignoreList: [] as Array<number>,
             names: ['global'],
 
             mappings:
@@ -264,7 +264,7 @@ describe('composeSourceMaps', () => {
             version: 3,
             sources: ['1.js', '2.js'],
             sourcesContent: ['content of 1.js', 'content of 2.js'],
-            names: ([]: Array<string>),
+            names: [] as Array<string>,
             // One column from 2.js, one column from 1.js
             mappings: 'ACAA,CDAA',
           },
@@ -275,7 +275,7 @@ describe('composeSourceMaps', () => {
     const map2: MixedSourceMap = {
       version: 3,
       sources: ['transformed.js'],
-      names: ([]: Array<string>),
+      names: [] as Array<string>,
       // Two consecutive columns from transformed.js
       mappings: 'AAAA,CAAC',
     };

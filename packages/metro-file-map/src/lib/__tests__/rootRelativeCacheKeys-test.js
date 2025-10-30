@@ -100,7 +100,7 @@ test('returns a distinct cache key for any change', () => {
       case 'ignorePattern':
         return varyDefault(key, /foo/);
       default:
-        (key: empty);
+        key as empty;
         throw new Error('Unrecognised key in build parameters: ' + key);
     }
   });

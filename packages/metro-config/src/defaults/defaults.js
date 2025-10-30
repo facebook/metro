@@ -56,9 +56,9 @@ export const sourceExts: Array<string> = ['js', 'jsx', 'json', 'ts', 'tsx'];
 
 export const additionalExts: Array<string> = ['cjs', 'mjs'];
 
-export const moduleSystem = (require.resolve(
+export const moduleSystem: string = require.resolve(
   'metro-runtime/src/polyfills/require.js',
-): string);
+);
 
 export const platforms: Array<string> = ['ios', 'android', 'windows', 'web'];
 

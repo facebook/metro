@@ -1052,10 +1052,10 @@ export default class TreeFS implements MutableFileSystem {
     ancestorOfRootIdx: ?number,
   ): Iterator<[string, MixedNode]> {
     if (ancestorOfRootIdx != null && ancestorOfRootIdx > 0 && parent) {
-      yield ([
+      yield [
         this.#pathUtils.getBasenameOfNthAncestor(ancestorOfRootIdx - 1),
         parent,
-      ]: [string, MixedNode]);
+      ] as [string, MixedNode];
     }
     yield* node.entries();
   }

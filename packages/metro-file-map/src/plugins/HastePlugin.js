@@ -238,7 +238,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     let hasteMapItem = this.#map.get(id);
     if (!hasteMapItem) {
       // $FlowFixMe[unclear-type] - Add type coverage
-      hasteMapItem = (Object.create(null): any);
+      hasteMapItem = Object.create(null) as any;
       this.#map.set(id, hasteMapItem);
     }
     const platform =
@@ -369,7 +369,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     let dedupMap: ?HasteMapItem = this.#map.get(moduleName);
 
     if (dedupMap == null) {
-      dedupMap = (Object.create(null): HasteMapItem);
+      dedupMap = Object.create(null) as HasteMapItem;
       this.#map.set(moduleName, dedupMap);
     }
     dedupMap[platform] = uniqueModule;

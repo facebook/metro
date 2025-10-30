@@ -17,14 +17,14 @@ import invariant from 'invariant';
 describe('MultipartResponse', () => {
   test('forwards calls to response', () => {
     const {nreq, nres} = getMockedReqRes({accept: 'text/html'});
-    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    const res = MultipartResponse.wrapIfSupported(nreq as any, nres as any);
 
     expect(res).toBe(nres);
   });
 
   test('writes multipart response', () => {
     const {nreq, nres} = getMockedReqRes();
-    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    const res = MultipartResponse.wrapIfSupported(nreq as any, nres as any);
 
     expect(res).not.toBe(nres);
     expect(res).toBeInstanceOf(MultipartResponse);
@@ -66,7 +66,7 @@ describe('MultipartResponse', () => {
 
   test('sends status code as last chunk header', () => {
     const {nreq, nres} = getMockedReqRes();
-    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    const res = MultipartResponse.wrapIfSupported(nreq as any, nres as any);
     invariant(res instanceof MultipartResponse, 'It must be MultipartResponse');
 
     res.writeChunk({foo: 'bar'}, 'first chunk');
@@ -98,7 +98,7 @@ describe('MultipartResponse', () => {
 
   test('supports empty responses', () => {
     const {nreq, nres} = getMockedReqRes();
-    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    const res = MultipartResponse.wrapIfSupported(nreq as any, nres as any);
 
     res.writeHead(304, {
       'Content-Type': 'application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
@@ -124,7 +124,7 @@ describe('MultipartResponse', () => {
 
   test('passes data directly through to the response object', () => {
     const {nreq, nres} = getMockedReqRes();
-    const res = MultipartResponse.wrapIfSupported((nreq: any), (nres: any));
+    const res = MultipartResponse.wrapIfSupported(nreq as any, nres as any);
     invariant(res instanceof MultipartResponse, 'It must be MultipartResponse');
     const buffer = Buffer.from([1, 2, 3, 4]);
 

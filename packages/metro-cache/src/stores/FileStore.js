@@ -31,7 +31,7 @@ export default class FileStore<T> {
       const data = await fs.promises.readFile(this.#getFilePath(key));
 
       if (data[0] === NULL_BYTE) {
-        return (data.slice(1): any);
+        return data.slice(1) as any;
       }
 
       return JSON.parse(data.toString('utf8'));
