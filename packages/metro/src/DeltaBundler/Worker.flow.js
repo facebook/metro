@@ -146,6 +146,7 @@ async function transformFile(
       dependencyData.code = virtualModule.code;
       // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
       dependencyData.type = virtualModule.type;
+      dependencyData.sourceURL = virtualModule.sourceURL;
     }
   }
 
