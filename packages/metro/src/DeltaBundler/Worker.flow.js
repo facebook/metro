@@ -9,14 +9,14 @@
  * @oncall react_native
  */
 
-import type {FutureModulesRawMap, TransformResult} from './types';
+import type {TransformResult, VirtualModulesRawMap} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
   JsTransformerConfig,
   JsTransformOptions,
 } from 'metro-transform-worker';
 
-import {FutureModules} from './FutureModules';
+import {VirtualModules} from './FutureModules';
 import traverse from '@babel/traverse';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -31,7 +31,7 @@ type TransformerInterface = {
     string,
     Buffer,
     JsTransformOptions,
-    ?FutureModules,
+    ?VirtualModules,
   ): Promise<TransformResult<>>,
 };
 
@@ -74,7 +74,7 @@ export const transform = (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
-  futureModulesRawMap?: ?FutureModulesRawMap,
+  virtualModulesRawMap?: ?VirtualModulesRawMap,
 ): Promise<Data> => {
   let data;
 
@@ -85,7 +85,7 @@ export const transform = (
     data = fs.readFileSync(path.resolve(projectRoot, filename));
   }
 
-  const futureModules = new FutureModules(futureModulesRawMap);
+  const virtualModules = new VirtualModules(virtualModulesRawMap);
 
   return transformFile(
     filename,
@@ -93,7 +93,7 @@ export const transform = (
     transformOptions,
     projectRoot,
     transformerConfig,
-    futureModules,
+    virtualModules,
   );
 };
 
@@ -107,7 +107,7 @@ async function transformFile(
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
-  futureModules?: ?FutureModules,
+  virtualModules?: ?VirtualModules,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
   const Transformer: TransformerInterface = require.call(
@@ -135,15 +135,17 @@ async function transformFile(
 
   for (const dependency of result.dependencies) {
     const {name, data: dependencyData} = dependency;
-    const futureModule = futureModules?.get(name);
+    const virtualModule = virtualModules?.get(name);
 
-    if (futureModule != null) {
-      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
-      dependencyData.isFutureModule = true;
-      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
-      dependencyData.absolutePath = futureModule.absolutePath;
-      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Future Modules is up to date
-      dependencyData.type = futureModule.type;
+    if (virtualModule != null) {
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
+      dependencyData.isVirtualModule = true;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
+      dependencyData.absolutePath = virtualModule.absolutePath;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
+      dependencyData.code = virtualModule.code;
+      // $FlowFixMe[cannot-write] we update the dependency data here because now we have a guarantee that the map of Virtual Modules is up to date
+      dependencyData.type = virtualModule.type;
     }
   }
 
@@ -161,7 +163,7 @@ async function transformFile(
   );
 
   // $FlowFixMe[cannot-write] This has to be mutated in order to serialize it.
-  result.futureModulesRawMap = result.futureModules?.toRawMap();
+  result.virtualModulesRawMap = result.virtualModules?.toRawMap();
 
   return {
     result,

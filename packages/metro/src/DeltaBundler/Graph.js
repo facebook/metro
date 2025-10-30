@@ -47,7 +47,7 @@ import {fileMatchesContext} from '../lib/contextModule';
 import CountingSet from '../lib/CountingSet';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import {buildSubgraph} from './buildSubgraph';
-import {FutureModules} from './FutureModules';
+import {VirtualModules} from './FutureModules';
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 
@@ -134,7 +134,7 @@ export class Graph<T = MixedOutput> {
   +entryPoints: $ReadOnlySet<string>;
   +transformOptions: TransformInputOptions;
   +dependencies: Dependencies<T> = new Map();
-  +futureModules: FutureModules = new FutureModules();
+  +virtualModules: VirtualModules = new VirtualModules();
   +#importBundleNodes: Map<
     string,
     $ReadOnly<{
@@ -355,12 +355,12 @@ export class Graph<T = MixedOutput> {
       this.#resolvedContexts,
       {
         resolve: options.resolve,
-        transform: async (absolutePath, requireContext, futureModules) => {
+        transform: async (absolutePath, requireContext, virtualModules) => {
           options.onDependencyAdd();
           const result = await options.transform(
             absolutePath,
             requireContext,
-            futureModules,
+            virtualModules,
           );
           options.onDependencyAdded();
           return result;
@@ -372,7 +372,7 @@ export class Graph<T = MixedOutput> {
           return moduleFilter == null || moduleFilter(dependency.absolutePath);
         },
       },
-      this.futureModules,
+      this.virtualModules,
     );
 
     return {

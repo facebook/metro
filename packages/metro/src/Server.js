@@ -1176,6 +1176,10 @@ export default class Server {
   // order as in a plain JS bundle.
   _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
     const modules = [...graph.dependencies.values()];
+    graph.dependencies.forEach(module => {
+      module.isVirtualModule = graph.virtualModules.get(module.path) != null;
+    });
+
     // Assign IDs to modules in a consistent order
     for (const module of modules) {
       this._createModuleId(module.path);

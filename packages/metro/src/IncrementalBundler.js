@@ -217,6 +217,10 @@ export default class IncrementalBundler {
       this._deltaBundler,
     );
 
+    graph.dependencies.forEach(module => {
+      module.isVirtualModule = graph.virtualModules.get(module.path) != null;
+    });
+
     return {
       prepend,
       graph,

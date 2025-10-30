@@ -9,24 +9,24 @@
  * @oncall react_native
  */
 
-import type {FutureModule, FutureModulesRawMap} from './types';
+import type {VirtualModule, VirtualModulesRawMap} from './types';
 
-export class FutureModules {
-  #map_: FutureModulesRawMap;
+export class VirtualModules {
+  #map_: VirtualModulesRawMap;
 
-  constructor(initialMap?: ?FutureModulesRawMap) {
+  constructor(initialMap?: ?VirtualModulesRawMap) {
     this.#map_ = new Map(initialMap ?? []);
   }
 
-  toRawMap(): FutureModulesRawMap {
+  toRawMap(): VirtualModulesRawMap {
     return this.#map_;
   }
 
-  addRawMap(other: ?FutureModulesRawMap) {
+  addRawMap(other: ?VirtualModulesRawMap) {
     other?.forEach((value, key) => this.#map_.set(key, value));
   }
 
-  get(mixedPath: string): ?FutureModule {
+  get(mixedPath: string): ?VirtualModule {
     if (this.#map_.has(mixedPath)) {
       return this.#map_.get(mixedPath);
     }
@@ -42,7 +42,7 @@ export class FutureModules {
     return this.#map_.get(key);
   }
 
-  set(relativePath: string, fModule: FutureModule): void {
-    this.#map_.set(relativePath, fModule);
+  set(relativePath: string, vModule: VirtualModule): void {
+    this.#map_.set(relativePath, vModule);
   }
 }

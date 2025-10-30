@@ -42,9 +42,11 @@
     "jsonc-eslint-parser": "^2.3.0",
     "metro-babel-register": "*",
     "micromatch": "^4.0.4",
+    "patch-package": "^8.0.1",
     "prettier": "3.6.2",
     "prettier-plugin-hermes-parser": "0.32.0",
     "progress": "^2.0.0",
+    "react-native-worklets": "0.6.0",
     "typescript": "5.8.3"
   },
   "scripts": {
@@ -70,8 +72,8 @@
     "private/*"
   ],
   "license": "MIT",
-  "dependencies": {},
   "engines": {
     "node": ">=20.19.4"
-  }
+  },
+  "packageManager": "yarn@4.10.3"
 }

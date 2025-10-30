@@ -9,7 +9,7 @@
  */
 
 import type {RequireContext} from '../lib/contextModule';
-import type {FutureModules} from './FutureModules';
+import type {VirtualModules} from './FutureModules';
 import type {
   Dependency,
   ModuleData,
@@ -33,7 +33,7 @@ function resolveDependencies(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   resolve: ResolveFn,
-  futureModules?: ?FutureModules,
+  virtualModules?: ?VirtualModules,
 ): {
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
@@ -47,7 +47,13 @@ function resolveDependencies(
 
     // `require.context`
     const {contextParams} = dep.data;
-    if (contextParams) {
+    const {isVirtualModule} = dep.data;
+    if (isVirtualModule === true) {
+      maybeResolvedDep = {
+        absolutePath: dep.data.absolutePath ?? '',
+        data: dep,
+      };
+    } else if (contextParams) {
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
       const from = path.join(parentPath, '..', dep.name);
@@ -72,7 +78,7 @@ function resolveDependencies(
     } else {
       try {
         maybeResolvedDep = {
-          absolutePath: resolve(parentPath, dep, futureModules).filePath,
+          absolutePath: resolve(parentPath, dep, virtualModules).filePath,
           data: dep,
         };
       } catch (error) {
@@ -105,7 +111,7 @@ export async function buildSubgraph<T>(
   entryPaths: $ReadOnlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
-  futureModules?: ?FutureModules,
+  virtualModules?: ?VirtualModules,
 ): Promise<{
   moduleData: Map<string, ModuleData<T>>,
   errors: Map<string, Error>,
@@ -117,7 +123,7 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
-    futureModules?: ?FutureModules,
+    virtualModules?: ?VirtualModules,
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
@@ -126,10 +132,10 @@ export async function buildSubgraph<T>(
     const transformResult = await transform(
       absolutePath,
       requireContext,
-      futureModules,
+      virtualModules,
     );
 
-    futureModules?.addRawMap(transformResult?.futureModulesRawMap);
+    virtualModules?.addRawMap(transformResult?.virtualModulesRawMap);
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
@@ -137,7 +143,7 @@ export async function buildSubgraph<T>(
       absolutePath,
       transformResult.dependencies,
       resolve,
-      futureModules,
+      virtualModules,
     );
 
     moduleData.set(absolutePath, {
@@ -155,7 +161,7 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
-            futureModules,
+            virtualModules,
           ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );
@@ -166,7 +172,7 @@ export async function buildSubgraph<T>(
       visit(
         absolutePath,
         resolvedContexts.get(absolutePath),
-        futureModules,
+        virtualModules,
       ).catch(error => errors.set(absolutePath, error)),
     ),
   );

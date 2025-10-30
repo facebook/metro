@@ -1,0 +1,29 @@
+diff --git a/node_modules/react-native-worklets/plugin/index.js b/node_modules/react-native-worklets/plugin/index.js
+index 6419dc4..f90872e 100644
+--- a/node_modules/react-native-worklets/plugin/index.js
++++ b/node_modules/react-native-worklets/plugin/index.js
+@@ -560,7 +560,15 @@ var require_generate = __commonJS({
+         (0, fs_1.mkdirSync)(filesDirPath, {});
+       }
+       const dedicatedFilePath = (0, path_1.resolve)(filesDirPath, `${workletHash}.js`);
+-      (0, fs_1.writeFileSync)(dedicatedFilePath, transformedProg);
++      const requirePath = `react-native-worklets/__generatedWorklets/${workletHash}.js`;
++      if (!state.file.metadata.metro.virtualModules) {
++        state.file.metadata.metro.virtualModules = /* @__PURE__ */ new Map();
++      }
++      state.file.metadata.metro.virtualModules.set(requirePath, {
++        absolutePath: dedicatedFilePath,
++        code: transformedProg,
++        type: "sourceFile"
++      });
+     }
+   }
+ });
+@@ -1727,6 +1735,7 @@ module.exports = function WorkletsBabelPlugin() {
+     pre() {
+       runWithTaggedExceptions(() => {
+         (0, globals_1.initializeState)(this);
++        this.opts.bundleMode = true;
+       });
+     },
+     visitor: {

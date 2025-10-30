@@ -48,7 +48,7 @@ import {
   toSegmentTuple,
 } from 'metro-source-map';
 import metroTransformPlugins from 'metro-transform-plugins';
-import {FutureModules} from 'metro/private/DeltaBundler/FutureModules';
+import {VirtualModules} from 'metro/private/DeltaBundler/FutureModules';
 import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
 import generateImportNames from 'metro/private/ModuleGraph/worker/generateImportNames';
 import {
@@ -152,7 +152,7 @@ type JSFile = $ReadOnly<{
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
   unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
-  futureModules?: ?FutureModules,
+  virtualModules?: ?VirtualModules,
 }>;
 
 type JSONFile = {
@@ -179,7 +179,7 @@ export type JsOutput = $ReadOnly<{
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput>,
-  futureModules?: ?FutureModules,
+  virtualModules?: ?VirtualModules,
 }>;
 
 function getDynamicDepsBehavior(
@@ -408,7 +408,7 @@ async function transformJS(
             ? (loc: BabelSourceLocation) =>
                 importDeclarationLocs.has(locToKey(loc))
             : null,
-        futureModules: file.futureModules,
+        virtualModules: file.virtualModules,
       };
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -505,12 +505,12 @@ async function transformJS(
     },
   ];
 
-  const {futureModules} = file;
+  const {virtualModules} = file;
 
   return {
     dependencies,
     output,
-    futureModules,
+    virtualModules,
   };
 }
 
@@ -570,8 +570,9 @@ async function transformJSWithBabel(
       null,
     unstable_importDeclarationLocs:
       transformResult.metadata?.metro?.unstable_importDeclarationLocs,
-    futureModules: new FutureModules(
-      transformResult.metadata?.metro?.futureModulesRawMap,
+    virtualModules: new VirtualModules(
+      // TODO: use raw map here
+      transformResult.metadata?.metro?.virtualModules,
     ),
   };
 

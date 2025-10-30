@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {FutureModules} from '../DeltaBundler/FutureModules';
+import type {VirtualModules} from '../DeltaBundler/FutureModules';
 import type {
   BundlerResolution,
   TransformResultDependency,
@@ -268,7 +268,7 @@ export default class DependencyGraph extends EventEmitter {
    */
   async getOrComputeSha1(
     mixedPath: string,
-    futureModules?: ?FutureModules,
+    virtualModules?: ?VirtualModules,
   ): Promise<{content?: Buffer, sha1: string}> {
     // let isFutureModule = false;
     // if (futureModules != null) {
@@ -283,9 +283,9 @@ export default class DependencyGraph extends EventEmitter {
     //     }
     //   }
     // }
-    const futureModule = futureModules?.get(mixedPath);
+    const virtualModule = virtualModules?.get(mixedPath);
 
-    if (futureModule) {
+    if (virtualModule) {
       // For future modules, we can't compute the sha1 based on the file contents
       // since the file doesn't exist yet. Instead, we generate a sha1 based on
       // the current time to ensure it will force a refresh of the transform cache.
@@ -294,6 +294,7 @@ export default class DependencyGraph extends EventEmitter {
         sha1: createHash('sha1')
           .update(performance.now().toString())
           .digest('hex'),
+        content: Buffer.from(virtualModule.code, 'utf8'),
       };
     }
     const result = await this._fileSystem.getOrComputeSha1(mixedPath);

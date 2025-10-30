@@ -24,6 +24,7 @@ const plugins = [
   '@babel/plugin-transform-modules-commonjs',
   '@babel/plugin-syntax-class-properties',
   '@babel/plugin-transform-react-jsx',
+  'react-native-worklets/plugin',
 ];
 
 const presets /*: Array<string> */ = [];

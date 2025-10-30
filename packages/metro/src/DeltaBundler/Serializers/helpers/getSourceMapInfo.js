@@ -37,7 +37,10 @@ export default function getSourceMapInfo(
     ...getJsOutput(module).data,
     isIgnored: options.shouldAddToIgnoreList(module),
     path: options?.getSourceUrl?.(module) ?? module.path,
-    source: options.excludeSource ? '' : getModuleSource(module),
+    source:
+      options.excludeSource || module.isVirtualModule === true
+        ? ''
+        : getModuleSource(module),
   };
 }
 

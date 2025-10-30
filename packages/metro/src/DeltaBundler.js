@@ -20,6 +20,7 @@ import type {
 import type EventEmitter from 'events';
 
 import DeltaCalculator from './DeltaBundler/DeltaCalculator';
+import {VirtualModules} from './DeltaBundler/FutureModules';
 
 export type {
   DeltaResult,
@@ -43,9 +44,11 @@ export type {
 export default class DeltaBundler<T = MixedOutput> {
   _changeEventSource: EventEmitter;
   _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
+  _virtualModules: VirtualModules;
 
   constructor(changeEventSource: EventEmitter) {
     this._changeEventSource = changeEventSource;
+    this._virtualModules = new VirtualModules();
   }
 
   end(): void {
@@ -67,6 +70,12 @@ export default class DeltaBundler<T = MixedOutput> {
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
+
+    this._virtualModules.addRawMap(graph.virtualModules.toRawMap());
+
+    graph.dependencies.forEach((value, key) => {
+      value.isVirtualModule = graph.virtualModules.get(key) != null;
+    });
 
     deltaCalculator.end();
     return graph.dependencies;

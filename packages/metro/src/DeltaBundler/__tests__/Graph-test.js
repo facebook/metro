@@ -34,11 +34,11 @@
 
 import type {RequireContext} from '../../lib/contextModule';
 import type {RequireContextParams} from '../../ModuleGraph/worker/collectDependencies';
-import type {FutureModules} from '../FutureModules';
+import type {VirtualModules} from '../FutureModules';
 import type {Result} from '../Graph';
 import type {
   Dependency,
-  FutureModulesRawMap,
+  VirtualModulesRawMap,
   MixedOutput,
   Module,
   Options,
@@ -222,8 +222,8 @@ function deferred(
     getSource: () => Buffer,
     output: $ReadOnlyArray<MixedOutput>,
     unstable_transformResultKey?: ?string,
-    futureModules?: ?FutureModules,
-    futureModulesRawMap?: ?FutureModulesRawMap,
+    futureModules?: ?VirtualModules,
+    futureModulesRawMap?: ?VirtualModulesRawMap,
   }>,
 ) {
   let resolve;
@@ -354,14 +354,14 @@ beforeEach(async () => {
 
   mockTransform = jest
     .fn<
-      [string, ?RequireContext, ?FutureModules],
+      [string, ?RequireContext, ?VirtualModules],
       Promise<TransformResultWithSource<MixedOutput>>,
     >()
     .mockImplementation(
       async (
         path: string,
         context: ?RequireContext,
-        _futureModules?: ?FutureModules,
+        _futureModules?: ?VirtualModules,
       ) => {
         const override = transformOverrides.get(path);
         if (override != null) {
@@ -2352,7 +2352,7 @@ describe('edge cases', () => {
         async (
           path: string,
           context: ?RequireContext,
-          _futureModules?: ?FutureModules,
+          _futureModules?: ?VirtualModules,
         ) => {
           const result = await mockTransform(path, context, undefined);
 
@@ -3609,7 +3609,7 @@ describe('optional dependencies', () => {
     return async function (
       path: string,
       context: ?RequireContext,
-      _futureModules?: ?FutureModules,
+      _futureModules?: ?VirtualModules,
     ) {
       const result = await mockTransform.call(this, path, context, undefined);
       return {
