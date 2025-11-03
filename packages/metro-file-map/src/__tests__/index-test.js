@@ -94,7 +94,7 @@ jest.mock('../crawlers/watchman', () => ({
               '', // dependencies
               hash,
               typeof contentOrLink !== 'string' ? 1 : 0,
-              '', // Haste name
+              null, // Haste name
             ]);
           }
         } else {
@@ -524,7 +524,7 @@ describe('FileMap', () => {
           'Melon',
           null,
           0,
-          '',
+          null,
         ],
         [path.join('vegetables', 'Melon.js')]: [
           32,
@@ -582,7 +582,7 @@ describe('FileMap', () => {
         // $FlowFixMe[missing-local-annot]
         node.mockImplementation(options => {
           // The node crawler returns "null" for the SHA-1.
-          const changedFiles = createMap({
+          const changedFiles = createMap<FileMetadata>({
             [path.join('fruits', 'Banana.js')]: [
               32,
               42,
@@ -617,7 +617,7 @@ describe('FileMap', () => {
               'Melon',
               null,
               0,
-              '',
+              null,
             ],
             [path.join('vegetables', 'Melon.js')]: [
               32,
@@ -637,7 +637,7 @@ describe('FileMap', () => {
                     '',
                     null,
                     1,
-                    '',
+                    null,
                   ],
                 }
               : null),
@@ -695,7 +695,7 @@ describe('FileMap', () => {
               'Melon',
               '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
               0,
-              '',
+              null,
             ],
             [path.join('vegetables', 'Melon.js')]: [
               32,
@@ -714,7 +714,7 @@ describe('FileMap', () => {
                     1,
                     '',
                     null,
-                    '',
+                    null,
                   ],
                 }
               : null),
@@ -1422,7 +1422,7 @@ describe('FileMap', () => {
     // $FlowFixMe[missing-local-annot]
     watchman.mockImplementation(async options => {
       const {changedFiles} = await mockImpl(options);
-      changedFiles.set(invalidFilePath, [34, 44, 0, '', null, 0, '']);
+      changedFiles.set(invalidFilePath, [34, 44, 0, '', null, 0, null]);
       return {
         changedFiles,
         removedFiles: new Set(),
@@ -1533,7 +1533,7 @@ describe('FileMap', () => {
     node.mockImplementation((() => {
       return Promise.resolve({
         changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, ''],
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, null],
         }),
         removedFiles: new Set(),
       });
@@ -1575,7 +1575,7 @@ describe('FileMap', () => {
     node.mockImplementation(() => {
       return Promise.resolve({
         changedFiles: createMap<FileMetadata>({
-          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, ''],
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, null],
         }),
         removedFiles: new Set(),
       });
