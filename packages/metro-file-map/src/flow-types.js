@@ -194,7 +194,20 @@ export type FileMapPluginInitOptions<
   pluginState: ?SerializableState,
 }>;
 
-type V8Serializable = interface {};
+export type FileMapPluginWorker = $ReadOnly<{
+  workerModulePath: string,
+  workerSetupArgs: JsonData,
+}>;
+
+export type V8Serializable =
+  | string
+  | number
+  | boolean
+  | null
+  | $ReadOnlyArray<V8Serializable>
+  | $ReadOnlySet<V8Serializable>
+  | $ReadOnlyMap<string, V8Serializable>
+  | {[key: string]: V8Serializable};
 
 export interface FileMapPlugin<
   SerializableState = V8Serializable,
@@ -210,6 +223,14 @@ export interface FileMapPlugin<
   onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
+  getWorker(): ?FileMapPluginWorker;
+}
+
+export interface MetadataWorker {
+  processFile(
+    WorkerMessage,
+    $ReadOnly<{getContent: () => Buffer}>,
+  ): V8Serializable;
 }
 
 export type HType = {
@@ -329,6 +350,14 @@ export interface FileSystem {
 }
 
 export type Glob = string;
+
+export type JsonData =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<JsonData>
+  | {[key: string]: JsonData};
 
 export type LookupResult =
   | {
@@ -488,9 +517,11 @@ export type WorkerMessage = $ReadOnly<{
 
 export type WorkerMetadata = $ReadOnly<{
   dependencies?: ?$ReadOnlyArray<string>,
-  id?: ?string,
   sha1?: ?string,
   content?: ?Buffer,
+  pluginData?: $ReadOnlyArray<V8Serializable>,
 }>;
 
-export type WorkerSetupArgs = $ReadOnly<{}>;
+export type WorkerSetupArgs = $ReadOnly<{
+  plugins?: $ReadOnlyArray<FileMapPluginWorker>,
+}>;

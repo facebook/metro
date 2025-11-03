@@ -13,6 +13,7 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
+  FileMapPluginWorker,
   MockMap as IMockMap,
   Path,
   RawMockMap,
@@ -212,5 +213,9 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
       ',' +
       this.#mocksPattern.flags
     );
+  }
+
+  getWorker(): ?FileMapPluginWorker {
+    return null;
   }
 }
