@@ -27,7 +27,6 @@ const buildParameters: BuildParameters = {
   retainAllFiles: false,
   rootDir: '/root',
   roots: ['a', 'b'],
-  skipPackageJson: false,
   cacheBreaker: 'a',
 };
 
@@ -87,7 +86,6 @@ test('returns a distinct cache key for any change', () => {
       case 'enableSymlinks':
       case 'forceNodeFilesystemAPI':
       case 'retainAllFiles':
-      case 'skipPackageJson':
         return varyDefault(key, !buildParameters[key]);
       // Strings
       case 'cacheBreaker':

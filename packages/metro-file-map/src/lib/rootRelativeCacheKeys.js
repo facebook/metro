@@ -59,7 +59,6 @@ export default function rootRelativeCacheKeys(
         case 'enableSymlinks':
         case 'forceNodeFilesystemAPI':
         case 'retainAllFiles':
-        case 'skipPackageJson':
           return buildParameters[key] ?? null;
         case 'ignorePattern':
           return buildParameters[key].toString();

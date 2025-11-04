@@ -48,7 +48,6 @@ const buildParameters: BuildParameters = {
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,
   retainAllFiles: false,
-  skipPackageJson: false,
   extensions: ['js', 'json'],
   hasteImplModulePath: require.resolve('../../__tests__/haste_impl'),
   plugins: [],

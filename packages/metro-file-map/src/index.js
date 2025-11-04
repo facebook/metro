@@ -87,7 +87,6 @@ export type InputOptions = $ReadOnly<{
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
-  skipPackageJson?: ?boolean,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
@@ -330,7 +329,6 @@ export default class FileMap extends EventEmitter {
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
-      skipPackageJson: !!options.skipPackageJson,
       cacheBreaker: CACHE_BREAKER,
     };
 
@@ -604,7 +602,7 @@ export default class FileMap extends EventEmitter {
       }
 
       if (
-        this._options.skipPackageJson &&
+        !this._options.enableHastePackages &&
         relativeFilePath.endsWith(PACKAGE_JSON)
       ) {
         continue;

@@ -29,7 +29,6 @@ export type BuildParameters = Readonly<{
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
-  skipPackageJson: boolean;
   dependencyExtractor: string | null;
   hasteImplModulePath: string | null;
   cacheBreaker: string;

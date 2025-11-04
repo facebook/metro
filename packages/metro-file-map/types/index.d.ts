@@ -47,7 +47,6 @@ export type InputOptions = Readonly<{
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
-  skipPackageJson?: boolean | null;
 
   /** Module paths that should export a 'getCacheKey' method */
   dependencyExtractor?: string | null;

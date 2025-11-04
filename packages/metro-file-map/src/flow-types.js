@@ -27,7 +27,6 @@ export type BuildParameters = $ReadOnly<{
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
-  skipPackageJson: boolean,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor: ?string,
