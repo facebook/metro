@@ -32,6 +32,7 @@ export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-core/**',
   'packages/metro-resolver/**',
   'packages/metro-source-map/**',
+  'packages/metro-transform-worker/**',
   'packages/ob1/**',
 ];
 
