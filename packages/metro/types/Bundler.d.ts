@@ -33,7 +33,7 @@ export default class Bundler {
     transformOptions: TransformOptions,
     /** Optionally provide the file contents, this can be used to provide virtual contents for a file. */
     fileBuffer?: Buffer,
-  ): Promise<TransformResultWithSource<void>>;
+  ): Promise<TransformResultWithSource>;
 
   ready(): Promise<void>;
 }
