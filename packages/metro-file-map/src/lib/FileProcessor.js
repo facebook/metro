@@ -72,9 +72,7 @@ export class FileProcessor {
   constructor(
     opts: $ReadOnly<{
       dependencyExtractor: ?string,
-      enableHastePackages: boolean,
       enableWorkerThreads: boolean,
-      hasteImplModulePath: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
       pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
@@ -83,9 +81,7 @@ export class FileProcessor {
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
-    this.#enableHastePackages = opts.enableHastePackages;
     this.#enableWorkerThreads = opts.enableWorkerThreads;
-    this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#workerArgs = {
@@ -209,9 +205,8 @@ export class FileProcessor {
           computeDependencies: false,
           computeSha1: true,
           dependencyExtractor: null,
-          enableHastePackages: false,
+          isNodeModules: true,
           filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
-          hasteImplModulePath: null,
           maybeReturnContent,
         };
       }
@@ -222,9 +217,8 @@ export class FileProcessor {
       computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
-      enableHastePackages: this.#enableHastePackages,
+      isNodeModules,
       filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
-      hasteImplModulePath: this.#hasteImplModulePath,
       maybeReturnContent,
     };
   }
