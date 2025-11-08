@@ -100,7 +100,7 @@ describe('worker', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    const workerInstance = new Worker({});
+    const workerInstance = new Worker({plugins: []});
     worker = async message => workerInstance.processFile(message);
   });
 
@@ -138,7 +138,9 @@ describe('worker', () => {
 
   test('accepts a custom dependency extractor', async () => {
     expect(
-      await worker({
+      await new Worker({
+        plugins: [],
+      }).processFile({
         ...defaults,
         computeDependencies: true,
         dependencyExtractor: path.join(__dirname, 'dependencyExtractor.js'),
@@ -341,15 +343,15 @@ describe('jest-worker interface', () => {
   });
 
   test('setup cannot be called twice', () => {
-    workerModule.setup({});
-    expect(() => workerModule.setup({})).toThrow(
+    workerModule.setup({plugins: []});
+    expect(() => workerModule.setup({plugins: []})).toThrow(
       new Error('metro-file-map: setup() should only be called once'),
     );
   });
 
   test('processFile may be called after setup', () => {
     jest.mock('mock-haste-impl', () => {}, {virtual: true});
-    workerModule.setup({});
+    workerModule.setup({plugins: []});
     workerModule.processFile(defaults);
   });
 });

@@ -36,6 +36,7 @@ import path from 'path';
 
 const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetadata}> = {};
 const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
+const PACKAGE_JSON = /[/\\^]package\.json$/;
 
 // Periodically yield to the event loop to allow parallel I/O, etc.
 // Based on 200k files taking up to 800ms => max 40ms between yields.
@@ -506,6 +507,12 @@ export default class HastePlugin
 
   getWorker(): FileMapPluginWorker {
     return {
+      match:
+        this.#hasteImplModulePath != null
+          ? true
+          : this.#enableHastePackages
+            ? PACKAGE_JSON
+            : false,
       workerModulePath: require.resolve('./haste/worker.js'),
       workerSetupArgs: {
         enableHastePackages: this.#enableHastePackages,

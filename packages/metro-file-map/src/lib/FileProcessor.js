@@ -54,13 +54,10 @@ interface MaybeCodedError extends Error {
 }
 
 const NODE_MODULES_SEP = 'node_modules' + sep;
-const PACKAGE_JSON = /[/\\^]package\.json$/;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
-  #enableHastePackages: boolean;
-  #hasteImplModulePath: ?string;
   #enableWorkerThreads: boolean;
   #maxFilesPerWorker: number;
   #maxWorkers: number;
@@ -180,8 +177,11 @@ export class FileProcessor {
     if (
       !computeDependencies &&
       !computeSha1 &&
-      this.#hasteImplModulePath == null &&
-      !(this.#enableHastePackages && PACKAGE_JSON.test(normalPath))
+      !this.#workerArgs.plugins.some(plugin =>
+        typeof plugin.match === 'boolean'
+          ? plugin.match
+          : plugin.match.test(normalPath),
+      )
     ) {
       // Nothing to process
       return null;

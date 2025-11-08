@@ -195,6 +195,7 @@ export type FileMapPluginInitOptions<
 }>;
 
 export type FileMapPluginWorker = $ReadOnly<{
+  match: boolean | RegExp,
   workerModulePath: string,
   workerSetupArgs: JsonData,
 }>;
@@ -522,5 +523,5 @@ export type WorkerMetadata = $ReadOnly<{
 }>;
 
 export type WorkerSetupArgs = $ReadOnly<{
-  plugins?: $ReadOnlyArray<FileMapPluginWorker>,
+  plugins: $ReadOnlyArray<FileMapPluginWorker>,
 }>;

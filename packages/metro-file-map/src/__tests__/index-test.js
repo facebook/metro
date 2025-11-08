@@ -1455,6 +1455,22 @@ describe('FileMap', () => {
       expect.objectContaining({
         // With maxFilesPerWorker = 2 and 5 files, we should have 3 workers.
         numWorkers: 3,
+        setupArgs: [
+          {
+            plugins: [
+              {
+                match: /[/\\^]package\.json$/,
+                workerModulePath: expect.stringMatching(
+                  /src[/\\]plugins[/\\]haste[/\\]worker\.js$/,
+                ),
+                workerSetupArgs: {
+                  enableHastePackages: true,
+                  hasteImplModulePath: null,
+                },
+              },
+            ],
+          },
+        ],
       }),
     );
 
