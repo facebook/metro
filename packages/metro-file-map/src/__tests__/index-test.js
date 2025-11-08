@@ -1457,6 +1457,7 @@ describe('FileMap', () => {
         numWorkers: 3,
         setupArgs: [
           {
+            dependencyExtractor,
             plugins: [
               {
                 match: /[/\\^]package\.json$/,
@@ -1481,7 +1482,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1491,7 +1491,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1501,7 +1500,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1511,7 +1509,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           isNodeModules: false,
           maybeReturnContent: false,
@@ -1521,7 +1518,6 @@ describe('FileMap', () => {
         {
           computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           isNodeModules: false,
           maybeReturnContent: false,

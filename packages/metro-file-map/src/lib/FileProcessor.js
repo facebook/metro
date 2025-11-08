@@ -82,6 +82,7 @@ export class FileProcessor {
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#workerArgs = {
+      dependencyExtractor: this.#dependencyExtractor ?? null,
       plugins: [...(opts.pluginWorkers ?? [])],
     };
     this.#inBandWorker = new Worker(this.#workerArgs);
@@ -204,7 +205,6 @@ export class FileProcessor {
         return {
           computeDependencies: false,
           computeSha1: true,
-          dependencyExtractor: null,
           isNodeModules: true,
           filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
           maybeReturnContent,
@@ -216,7 +216,6 @@ export class FileProcessor {
     return {
       computeDependencies,
       computeSha1,
-      dependencyExtractor: this.#dependencyExtractor,
       isNodeModules,
       filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
       maybeReturnContent,
