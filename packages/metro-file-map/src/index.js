@@ -155,7 +155,7 @@ const CACHE_BREAKER = '11';
 const CHANGE_INTERVAL = 30;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const PACKAGE_JSON = path.sep + 'package.json';
+const PACKAGE_JSON = /[/\\^]package\.json$/;
 const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 const WATCHMAN_REQUIRED_CAPABILITIES = [
   'field-content.sha1hex',
@@ -380,6 +380,7 @@ export default class FileMap extends EventEmitter {
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
       pluginWorkers,
+      rootDir: options.rootDir,
     });
 
     this._buildPromise = null;
@@ -406,12 +407,12 @@ export default class FileMap extends EventEmitter {
         const rootDir = this._options.rootDir;
         this._startupPerfLogger?.point('constructFileSystem_start');
         const processFile: ProcessFileFunction = (
-          absolutePath,
+          normalPath,
           metadata,
           opts,
         ) => {
           const result = this._fileProcessor.processRegularFile(
-            absolutePath,
+            normalPath,
             metadata,
             {
               computeSha1: opts.computeSha1,
@@ -419,7 +420,7 @@ export default class FileMap extends EventEmitter {
               maybeReturnContent: true,
             },
           );
-          debug('Lazily processed file: %s', absolutePath);
+          debug('Lazily processed file: %s', normalPath);
           // Emit an event to inform caches that there is new data to save.
           this.emit('metadata');
           return result?.content;
@@ -597,14 +598,16 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  _maybeReadLink(filePath: Path, fileMetadata: FileMetadata): ?Promise<void> {
+  _maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
     // If we only need to read a link, it's more efficient to do it in-band
     // (with async file IO) than to have the overhead of worker IO.
     if (fileMetadata[H.SYMLINK] === 1) {
-      return fsPromises.readlink(filePath).then(symlinkTarget => {
-        fileMetadata[H.VISITED] = 1;
-        fileMetadata[H.SYMLINK] = symlinkTarget;
-      });
+      return fsPromises
+        .readlink(this._pathUtils.normalToAbsolute(normalPath))
+        .then(symlinkTarget => {
+          fileMetadata[H.VISITED] = 1;
+          fileMetadata[H.SYMLINK] = symlinkTarget;
+        });
     }
     return null;
   }
@@ -637,12 +640,12 @@ export default class FileMap extends EventEmitter {
 
     const readLinkPromises = [];
     const readLinkErrors: Array<{
-      absolutePath: string,
+      normalFilePath: string,
       error: Error & {code?: string},
     }> = [];
     const filesToProcess: Array<[string, FileMetadata]> = [];
 
-    for (const [relativeFilePath, fileData] of changedFiles) {
+    for (const [normalFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
       // contents are unchaged and it doesn't need visiting again.
       if (fileData[H.VISITED] === 1) {
@@ -655,25 +658,21 @@ export default class FileMap extends EventEmitter {
         !this._options.computeSha1 &&
         this._options.hasteImplModulePath == null &&
         !(
-          this._options.enableHastePackages &&
-          relativeFilePath.endsWith(PACKAGE_JSON)
+          this._options.enableHastePackages && PACKAGE_JSON.test(normalFilePath)
         )
       ) {
         // Nothing to process
         continue;
       }
 
-      // SHA-1, if requested, should already be present thanks to the crawler.
-      const absolutePath = this._pathUtils.normalToAbsolute(relativeFilePath);
-
       if (fileData[H.SYMLINK] === 0) {
-        filesToProcess.push([absolutePath, fileData]);
+        filesToProcess.push([normalFilePath, fileData]);
       } else {
-        const maybeReadLink = this._maybeReadLink(absolutePath, fileData);
+        const maybeReadLink = this._maybeReadLink(normalFilePath, fileData);
         if (maybeReadLink) {
           readLinkPromises.push(
             maybeReadLink.catch(error =>
-              readLinkErrors.push({absolutePath, error}),
+              readLinkErrors.push({normalFilePath, error}),
             ),
           );
         }
@@ -708,13 +707,13 @@ export default class FileMap extends EventEmitter {
     // it if it already exists. We're not emitting events at this point in
     // startup, so there's nothing more to do.
     this._startupPerfLogger?.point('applyFileDelta_missing_start');
-    for (const {absolutePath, error} of batchResult.errors.concat(
+    for (const {normalFilePath, error} of batchResult.errors.concat(
       readLinkErrors,
     )) {
       /* $FlowFixMe[incompatible-type] Error exposed after improved typing of
        * Array.{includes,indexOf,lastIndexOf} */
       if (['ENOENT', 'EACCESS'].includes(error.code)) {
-        missingFiles.add(this._pathUtils.absoluteToNormal(absolutePath));
+        missingFiles.add(normalFilePath);
       } else {
         // Anything else is fatal.
         throw error;
@@ -962,10 +961,10 @@ export default class FileMap extends EventEmitter {
 
             try {
               if (change.metadata.type === 'l') {
-                await this._maybeReadLink(absoluteFilePath, fileMetadata);
+                await this._maybeReadLink(relativeFilePath, fileMetadata);
               } else {
                 await this._fileProcessor.processRegularFile(
-                  absoluteFilePath,
+                  relativeFilePath,
                   fileMetadata,
                   {
                     computeSha1: this._options.computeSha1,

@@ -441,7 +441,7 @@ export interface MutableFileSystem extends FileSystem {
 export type Path = string;
 
 export type ProcessFileFunction = (
-  absolutePath: string,
+  normalPath: string,
   metadata: FileMetadata,
   request: $ReadOnly<{computeSha1: boolean}>,
 ) => ?Buffer;

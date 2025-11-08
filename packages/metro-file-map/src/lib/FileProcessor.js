@@ -20,6 +20,7 @@ import type {
 
 import H from '../constants';
 import {Worker} from '../worker';
+import {RootPathUtils} from './RootPathUtils';
 import {Worker as JestWorker} from 'jest-worker';
 import {sep} from 'path';
 
@@ -52,7 +53,7 @@ interface MaybeCodedError extends Error {
   code?: string;
 }
 
-const NODE_MODULES = sep + 'node_modules' + sep;
+const NODE_MODULES_SEP = 'node_modules' + sep;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
@@ -65,6 +66,7 @@ export class FileProcessor {
   #perfLogger: ?PerfLogger;
   #workerArgs: WorkerSetupArgs;
   #inBandWorker: Worker;
+  #rootPathUtils: RootPathUtils;
 
   constructor(
     opts: $ReadOnly<{
@@ -76,6 +78,7 @@ export class FileProcessor {
       maxWorkers: number,
       pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
       perfLogger: ?PerfLogger,
+      rootDir: string,
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
@@ -89,23 +92,24 @@ export class FileProcessor {
     };
     this.#inBandWorker = new Worker(this.#workerArgs);
     this.#perfLogger = opts.perfLogger;
+    this.#rootPathUtils = new RootPathUtils(opts.rootDir);
   }
 
   async processBatch(
-    files: $ReadOnlyArray<[string /*absolutePath*/, FileMetadata]>,
+    files: $ReadOnlyArray<[string /*relativePath*/, FileMetadata]>,
     req: ProcessFileRequest,
   ): Promise<{
     errors: Array<{
-      absolutePath: string,
+      normalFilePath: string,
       error: MaybeCodedError,
     }>,
   }> {
     const errors = [];
 
     const workerJobs = files
-      .map(([absolutePath, fileMetadata]) => {
+      .map(([relativePath, fileMetadata]) => {
         const maybeWorkerInput = this.#getWorkerInput(
-          absolutePath,
+          relativePath,
           fileMetadata,
           req,
         );
@@ -135,7 +139,9 @@ export class FileProcessor {
           .then(reply => processWorkerReply(reply, fileMetadata))
           .catch(error =>
             errors.push({
-              absolutePath: workerInput.filePath,
+              normalFilePath: this.#rootPathUtils.absoluteToNormal(
+                workerInput.filePath,
+              ),
               error: normalizeWorkerError(error),
             }),
           );
@@ -146,11 +152,11 @@ export class FileProcessor {
   }
 
   processRegularFile(
-    absolutePath: string,
+    normalPath: string,
     fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?{content: ?Buffer} {
-    const workerInput = this.#getWorkerInput(absolutePath, fileMetadata, req);
+    const workerInput = this.#getWorkerInput(normalPath, fileMetadata, req);
     return workerInput
       ? {
           content: processWorkerReply(
@@ -162,12 +168,16 @@ export class FileProcessor {
   }
 
   #getWorkerInput(
-    absolutePath: string,
+    normalPath: string,
     fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?WorkerMessage {
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-
+    const nodeModulesIndex = normalPath.indexOf(NODE_MODULES_SEP);
+    const isNodeModules =
+      // Path may begin 'node_modules/' or contain '/node_modules/'.
+      nodeModulesIndex === 0 ||
+      (nodeModulesIndex > 0 && normalPath[nodeModulesIndex - 1] === sep);
     const {computeDependencies, maybeReturnContent} = req;
 
     // Use a cheaper worker configuration for node_modules files, because we
@@ -176,14 +186,14 @@ export class FileProcessor {
     //
     // Note that we'd only expect node_modules files to reach this point if
     // retainAllFiles is true, or they're touched during watch mode.
-    if (absolutePath.includes(NODE_MODULES)) {
+    if (isNodeModules) {
       if (computeSha1) {
         return {
           computeDependencies: false,
           computeSha1: true,
           dependencyExtractor: null,
           enableHastePackages: false,
-          filePath: absolutePath,
+          filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
           hasteImplModulePath: null,
           maybeReturnContent,
         };
@@ -196,7 +206,7 @@ export class FileProcessor {
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
       enableHastePackages: this.#enableHastePackages,
-      filePath: absolutePath,
+      filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
       hasteImplModulePath: this.#hasteImplModulePath,
       maybeReturnContent,
     };
