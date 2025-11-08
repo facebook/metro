@@ -42,7 +42,7 @@ const PACKAGE_JSON = /[/\\^]package\.json$/;
 // Based on 200k files taking up to 800ms => max 40ms between yields.
 const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 
-type HasteMapOptions = $ReadOnly<{
+export type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   enableHastePackages: boolean,
   hasteImplModulePath?: ?string,

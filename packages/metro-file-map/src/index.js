@@ -76,22 +76,22 @@ export type {
 export type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
-  enableHastePackages?: boolean,
+  // enableHastePackages?: boolean,
   enableSymlinks?: ?boolean,
   enableWorkerThreads?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
-  mocksPattern?: ?string,
-  platforms: $ReadOnlyArray<string>,
-  plugins?: $ReadOnlyArray<FileMapPlugin<>>,
+  // mocksPattern?: ?string,
+  // platforms: $ReadOnlyArray<string>,
+  plugins?: $ReadOnlyArray<AnyFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
-  hasteImplModulePath?: ?string,
+  // hasteImplModulePath?: ?string,
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
@@ -100,7 +100,7 @@ export type InputOptions = $ReadOnly<{
   maxWorkers: number,
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
-  throwOnModuleCollision?: ?boolean,
+  // throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
   watchmanDeferStates?: $ReadOnlyArray<string>,
@@ -256,8 +256,6 @@ export default class FileMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
-  #hastePlugin: HastePlugin;
-  #mockPlugin: ?MockPlugin = null;
   #plugins: $ReadOnlyArray<IndexedPlugin>;
 
   static create(options: InputOptions): FileMap {
@@ -292,36 +290,23 @@ export default class FileMap extends EventEmitter {
     }
 
     this._console = options.console || global.console;
-    const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
+    // const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
 
-    const enableHastePackages = options.enableHastePackages ?? true;
-
-    this.#hastePlugin = new HastePlugin({
-      console: this._console,
-      enableHastePackages,
-      hasteImplModulePath: options.hasteImplModulePath,
-      perfLogger: this._startupPerfLogger,
-      platforms: new Set(options.platforms),
-      rootDir: options.rootDir,
-      failValidationOnConflicts: throwOnModuleCollision,
-    });
-
-    const plugins: Array<AnyFileMapPlugin> = [this.#hastePlugin];
-
-    if (options.mocksPattern != null && options.mocksPattern !== '') {
-      this.#mockPlugin = new MockPlugin({
-        console: this._console,
-        mocksPattern: new RegExp(options.mocksPattern),
-        rootDir: options.rootDir,
-        throwOnModuleCollision,
-      });
-      plugins.push(this.#mockPlugin);
-    }
+    // this.#hastePlugin = new HastePlugin({
+    //   console: this._console,
+    //   enableHastePackages,
+    //   hasteImplModulePath: options.hasteImplModulePath,
+    //   perfLogger: this._startupPerfLogger,
+    //   platforms: new Set(options.platforms),
+    //   rootDir: options.rootDir,
+    //   failValidationOnConflicts: throwOnModuleCollision,
+    // });
 
     let dataSlot: number = H.PLUGINDATA;
 
     const indexedPlugins: Array<IndexedPlugin> = [];
     const pluginWorkers: Array<FileMapPluginWorker> = [];
+    const plugins = options.plugins ?? [];
     for (const plugin of plugins) {
       const maybeWorker = plugin.getWorker();
       indexedPlugins.push({
@@ -341,13 +326,11 @@ export default class FileMap extends EventEmitter {
           : options.computeDependencies,
       computeSha1: options.computeSha1 || false,
       dependencyExtractor: options.dependencyExtractor ?? null,
-      enableHastePackages,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
-      hasteImplModulePath: options.hasteImplModulePath,
       ignorePattern,
-      plugins: options.plugins ?? [],
+      plugins,
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
@@ -503,11 +486,7 @@ export default class FileMap extends EventEmitter {
         );
 
         await this._watch(fileSystem, watchmanClocks, plugins);
-        return {
-          fileSystem,
-          hasteMap: this.#hastePlugin,
-          mockMap: this.#mockPlugin,
-        };
+        return {fileSystem};
       })();
     }
     return this._buildPromise.then(result => {
