@@ -10,7 +10,7 @@
  */
 
 import type {ConfigT} from 'metro-config';
-import type {HasteMap} from 'metro-file-map';
+import type {HasteMap, InputOptions} from 'metro-file-map';
 
 import ci from 'ci-info';
 import MetroFileMap, {DiskCacheManager, HastePlugin} from 'metro-file-map';
@@ -60,6 +60,7 @@ export default function createFileMap(
     watch?: boolean,
     throwOnModuleCollision?: boolean,
     cacheFilePrefix?: string,
+    extraPlugins?: InputOptions['plugins'],
   }>,
 ): {fileMap: MetroFileMap, hasteMap: HasteMap} {
   const dependencyExtractor =
@@ -111,7 +112,7 @@ export default function createFileMap(
     healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
-    plugins: [hasteMap],
+    plugins: [hasteMap, ...(options?.extraPlugins ?? [])],
     retainAllFiles: true,
     resetCache: config.resetCache,
     rootDir: config.projectRoot,

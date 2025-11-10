@@ -223,7 +223,7 @@ export default class TreeFS implements MutableFileSystem {
     // by only mutating the original metadata, we don't risk caching a stale
     // SHA-1 after a change event.
     const maybeContent = await this.#processFile(canonicalPath, fileMetadata, {
-      computeSha1: true,
+      dataIdx: H.SHA1,
     });
     const sha1 = fileMetadata[H.SHA1];
     invariant(

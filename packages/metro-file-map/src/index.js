@@ -390,14 +390,15 @@ export default class FileMap extends EventEmitter {
         const processFile: ProcessFileFunction = (
           normalPath,
           metadata,
-          opts,
+          dataIdx,
         ) => {
           const result = this._fileProcessor.processRegularFile(
             normalPath,
             metadata,
             {
-              computeSha1: opts.computeSha1,
+              computeSha1: true,
               computeDependencies: false,
+              dataIdx,
               maybeReturnContent: true,
             },
           );
@@ -460,6 +461,22 @@ export default class FileMap extends EventEmitter {
                     ),
                 },
                 pluginState: initialData?.plugins.get(plugin.name),
+                processFile: (mixedPath: string) => {
+                  if (dataIdx == null) {
+                    throw new Error(
+                      `File map plugin "${plugin.name}" does not provide a worker.`,
+                    );
+                  }
+                  const result = fileSystem.lookup(mixedPath);
+                  if (!result.exists) {
+                    throw new Error('File does not exist');
+                  }
+                  if (result.type !== 'f') {
+                    throw new Error(`${result.realPath} is not a regular file`);
+                  }
+                  processFile(result.realPath, result.metadata);
+                  return result.metadata[dataIdx];
+                },
               }),
             ),
           ),

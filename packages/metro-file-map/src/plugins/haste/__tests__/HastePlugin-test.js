@@ -78,6 +78,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
         lookup: jest.fn(),
       },
       pluginState: null,
+      processFile: jest.fn(),
     };
     await hasteMap.initialize(initialState);
     expect(initialState.files.fileIterator).toHaveBeenCalledWith({
@@ -98,6 +99,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
           lookup: jest.fn(),
         },
         pluginState: null,
+        processFile: jest.fn(),
       });
     });
 
@@ -130,6 +132,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
           lookup: jest.fn(),
         },
         pluginState: null,
+        processFile: jest.fn(),
       });
     });
 
@@ -179,6 +182,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
           lookup,
         },
         pluginState: null,
+        processFile: jest.fn(),
       });
     });
 

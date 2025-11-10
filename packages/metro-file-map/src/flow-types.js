@@ -188,6 +188,9 @@ export type FileMapPluginInitOptions<
       | {exists: true, type: 'd'},
   }>,
   pluginState: ?SerializableState,
+  ...PerFileData extends void
+    ? {}
+    : {processFile: (mixedPath: string) => PerFileData},
 }>;
 
 export type FileMapPluginWorker = $ReadOnly<{
@@ -440,7 +443,7 @@ export type Path = string;
 export type ProcessFileFunction = (
   normalPath: string,
   metadata: FileMetadata,
-  request: $ReadOnly<{computeSha1: boolean}>,
+  fields: $ReadOnlyArray<number>,
 ) => ?Buffer;
 
 export type RawMockMap = $ReadOnly<{

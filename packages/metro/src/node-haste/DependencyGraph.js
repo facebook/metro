@@ -103,9 +103,12 @@ export default class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
+    this.#packageCache = this._createPackageCache();
+
     const {fileMap, hasteMap} = createFileMap(config, {
       throwOnModuleCollision: false,
       watch,
+      extraPlugins: [this.#packageCache],
     });
 
     // We can have a lot of graphs listening to Haste for changes.
@@ -127,7 +130,6 @@ export default class DependencyGraph extends EventEmitter {
         this._onWatcherHealthCheck(result),
       );
       this._resolutionCache = new Map();
-      this.#packageCache = this._createPackageCache();
       this._createModuleResolver();
     });
   }

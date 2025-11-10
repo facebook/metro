@@ -38,6 +38,10 @@ type ProcessFileRequest = $ReadOnly<{
    */
   computeDependencies: boolean,
   /**
+   * The specific plugin that requested the worker, if any.
+   */
+  dataIdx?: ?number,
+  /**
    * Only if processing has already required reading the file's contents, return
    * the contents as a Buffer - null otherwise. Not supported for batches.
    */
@@ -173,7 +177,7 @@ export class FileProcessor {
     }
 
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-    const {computeDependencies, maybeReturnContent} = req;
+    const {computeDependencies, dataIdx, maybeReturnContent} = req;
 
     if (
       !computeDependencies &&
@@ -201,7 +205,7 @@ export class FileProcessor {
     // Note that we'd only expect node_modules files to reach this point if
     // retainAllFiles is true, or they're touched during watch mode.
     if (isNodeModules) {
-      if (computeSha1) {
+      if (computeSha1 || dataIdx != null) {
         return {
           computeDependencies: false,
           computeSha1: true,
