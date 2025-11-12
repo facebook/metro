@@ -8,7 +8,6 @@
  * @oncall react_native
  */
 
-import type {DynamicRequiresBehavior} from 'metro';
 import type {
   CustomTransformOptions,
   TransformProfile,
@@ -20,28 +19,21 @@ import type {
 } from 'metro-source-map';
 import type {TransformResultDependency} from 'metro/private/DeltaBundler';
 import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types';
+import type {DynamicRequiresBehavior} from 'metro/private/ModuleGraph/worker/collectDependencies';
 
-export type MinifierConfig = Readonly<Record<string, unknown>>;
-
-export interface MinifierOptions {
+type MinifierConfig = Readonly<{[$$Key$$: string]: unknown}>;
+export type MinifierOptions = {
   code: string;
-  map?: BasicSourceMap;
+  map: null | undefined | BasicSourceMap;
   filename: string;
   reserved: ReadonlyArray<string>;
   config: MinifierConfig;
-}
-
-export interface MinifierResult {
-  code: string;
-  map?: BasicSourceMap;
-}
-
+};
+export type MinifierResult = {code: string; map?: BasicSourceMap};
 export type Minifier = (
-  options: MinifierOptions,
+  $$PARAM_0$$: MinifierOptions,
 ) => MinifierResult | Promise<MinifierResult>;
-
 export type Type = 'script' | 'module' | 'asset';
-
 export type JsTransformerConfig = Readonly<{
   assetPlugins: ReadonlyArray<string>;
   assetRegistryPath: string;
@@ -49,7 +41,7 @@ export type JsTransformerConfig = Readonly<{
   babelTransformerPath: string;
   dynamicDepsInPackages: DynamicRequiresBehavior;
   enableBabelRCLookup: boolean;
-  enableBabelRuntime: boolean;
+  enableBabelRuntime: boolean | string;
   globalPrefix: string;
   hermesParser: boolean;
   minifierConfig: MinifierConfig;
@@ -57,8 +49,7 @@ export type JsTransformerConfig = Readonly<{
   optimizationSizeLimit: number;
   publicPath: string;
   allowOptionalDependencies: AllowOptionalDependencies;
-  unstable_collectDependenciesPath: string;
-  unstable_dependencyMapReservedName?: string;
+  unstable_dependencyMapReservedName: null | undefined | string;
   unstable_disableModuleWrapping: boolean;
   unstable_disableNormalizePseudoGlobals: boolean;
   unstable_compactOutput: boolean;
@@ -71,9 +62,7 @@ export type JsTransformerConfig = Readonly<{
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean;
 }>;
-
-export {CustomTransformOptions} from 'metro-babel-transformer';
-
+export type {CustomTransformOptions} from 'metro-babel-transformer';
 export type JsTransformOptions = Readonly<{
   customTransformOptions?: CustomTransformOptions;
   dev: boolean;
@@ -82,47 +71,37 @@ export type JsTransformOptions = Readonly<{
   inlineRequires: boolean;
   minify: boolean;
   nonInlinedRequires?: ReadonlyArray<string>;
-  platform?: string;
-  runtimeBytecodeVersion?: number;
+  platform: null | undefined | string;
   type: Type;
+  unstable_memoizeInlineRequires?: boolean;
+  unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
+  unstable_staticHermesOptimizedRequire?: boolean;
   unstable_transformProfile: TransformProfile;
 }>;
-
-export type BytecodeFileType =
-  | 'bytecode/module'
-  | 'bytecode/module/asset'
-  | 'bytecode/script';
-
-export type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
-
+type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
 export type JsOutput = Readonly<{
   data: Readonly<{
     code: string;
     lineCount: number;
-    map: MetroSourceMapSegmentTuple[];
-    functionMap: FBSourceFunctionMap | null;
+    map: Array<MetroSourceMapSegmentTuple>;
+    functionMap: null | undefined | FBSourceFunctionMap;
   }>;
   type: JSFileType;
 }>;
-
-// Hermes byte-code output type
-export type BytecodeOutput = unknown;
-
-export type TransformResponse = Readonly<{
+type TransformResponse = Readonly<{
   dependencies: ReadonlyArray<TransformResultDependency>;
-  output: ReadonlyArray<JsOutput | BytecodeOutput>;
+  output: ReadonlyArray<JsOutput>;
 }>;
-
-export function transform(
+export declare const transform: (
   config: JsTransformerConfig,
   projectRoot: string,
   filename: string,
   data: Buffer,
   options: JsTransformOptions,
-): Promise<TransformResponse>;
-
-export function getCacheKey(config: JsTransformerConfig): string;
-
+) => Promise<TransformResponse>;
+export declare type transform = typeof transform;
+export declare const getCacheKey: (config: JsTransformerConfig) => string;
+export declare type getCacheKey = typeof getCacheKey;
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.
