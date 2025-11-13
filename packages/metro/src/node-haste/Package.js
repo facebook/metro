@@ -11,7 +11,6 @@
 
 import type {PackageJson} from 'metro-resolver/private/types';
 
-import fs from 'fs';
 import path from 'path';
 
 export default class Package {
@@ -19,11 +18,20 @@ export default class Package {
 
   _root: string;
   _content: ?PackageJson;
+  #readAndParse: () => PackageJson;
 
-  constructor({file}: {file: string, ...}) {
+  constructor({
+    file,
+    readAndParse,
+  }: {
+    file: string,
+    readAndParse: () => PackageJson,
+    ...
+  }) {
     this.path = path.resolve(file);
     this._root = path.dirname(this.path);
     this._content = null;
+    this.#readAndParse = readAndParse;
   }
 
   invalidate() {
@@ -32,7 +40,7 @@ export default class Package {
 
   read(): PackageJson {
     if (this._content == null) {
-      this._content = JSON.parse(fs.readFileSync(this.path, 'utf8'));
+      this._content = this.#readAndParse();
     }
     return this._content;
   }

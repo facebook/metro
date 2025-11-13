@@ -25,6 +25,7 @@ import type {
   EventsQueue,
   FileData,
   FileMapPlugin,
+  FileMapPluginWorker,
   FileMetadata,
   FileSystem,
   HasteMapData,
@@ -75,22 +76,22 @@ export type {
 export type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
-  enableHastePackages?: boolean,
+  // enableHastePackages?: boolean,
   enableSymlinks?: ?boolean,
   enableWorkerThreads?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
-  mocksPattern?: ?string,
-  platforms: $ReadOnlyArray<string>,
-  plugins?: $ReadOnlyArray<FileMapPlugin<>>,
+  // mocksPattern?: ?string,
+  // platforms: $ReadOnlyArray<string>,
+  plugins?: $ReadOnlyArray<AnyFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
-  hasteImplModulePath?: ?string,
+  // hasteImplModulePath?: ?string,
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
@@ -99,7 +100,7 @@ export type InputOptions = $ReadOnly<{
   maxWorkers: number,
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
-  throwOnModuleCollision?: ?boolean,
+  // throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
   watchmanDeferStates?: $ReadOnlyArray<string>,
@@ -122,6 +123,13 @@ type InternalOptions = $ReadOnly<{
   watchmanDeferStates: $ReadOnlyArray<string>,
 }>;
 
+// $FlowFixMe[unclear-type] Plugin types cannot be known statically
+type AnyFileMapPlugin = FileMapPlugin<any, any>;
+type IndexedPlugin = $ReadOnly<{
+  plugin: AnyFileMapPlugin,
+  dataIdx: ?number,
+}>;
+
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
@@ -142,12 +150,11 @@ export type {
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '10';
+const CACHE_BREAKER = '11';
 
 const CHANGE_INTERVAL = 30;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const PACKAGE_JSON = path.sep + 'package.json';
 const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 const WATCHMAN_REQUIRED_CAPABILITIES = [
   'field-content.sha1hex',
@@ -249,9 +256,7 @@ export default class FileMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
-  #hastePlugin: HastePlugin;
-  #mockPlugin: ?MockPlugin = null;
-  #plugins: $ReadOnlyArray<FileMapPlugin<>>;
+  #plugins: $ReadOnlyArray<IndexedPlugin>;
 
   static create(options: InputOptions): FileMap {
     return new FileMap(options);
@@ -285,32 +290,34 @@ export default class FileMap extends EventEmitter {
     }
 
     this._console = options.console || global.console;
-    const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
+    // const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
 
-    const enableHastePackages = options.enableHastePackages ?? true;
+    // this.#hastePlugin = new HastePlugin({
+    //   console: this._console,
+    //   enableHastePackages,
+    //   hasteImplModulePath: options.hasteImplModulePath,
+    //   perfLogger: this._startupPerfLogger,
+    //   platforms: new Set(options.platforms),
+    //   rootDir: options.rootDir,
+    //   failValidationOnConflicts: throwOnModuleCollision,
+    // });
 
-    this.#hastePlugin = new HastePlugin({
-      console: this._console,
-      enableHastePackages,
-      perfLogger: this._startupPerfLogger,
-      platforms: new Set(options.platforms),
-      rootDir: options.rootDir,
-      failValidationOnConflicts: throwOnModuleCollision,
-    });
+    let dataSlot: number = H.PLUGINDATA;
 
-    const plugins: Array<FileMapPlugin<$FlowFixMe>> = [this.#hastePlugin];
-
-    if (options.mocksPattern != null && options.mocksPattern !== '') {
-      this.#mockPlugin = new MockPlugin({
-        console: this._console,
-        mocksPattern: new RegExp(options.mocksPattern),
-        rootDir: options.rootDir,
-        throwOnModuleCollision,
+    const indexedPlugins: Array<IndexedPlugin> = [];
+    const pluginWorkers: Array<FileMapPluginWorker> = [];
+    const plugins = options.plugins ?? [];
+    for (const plugin of plugins) {
+      const maybeWorker = plugin.getWorker();
+      indexedPlugins.push({
+        plugin,
+        dataIdx: maybeWorker != null ? dataSlot++ : null,
       });
-      plugins.push(this.#mockPlugin);
+      if (maybeWorker != null) {
+        pluginWorkers.push(maybeWorker);
+      }
     }
-
-    this.#plugins = plugins;
+    this.#plugins = indexedPlugins;
 
     const buildParameters: BuildParameters = {
       computeDependencies:
@@ -319,13 +326,11 @@ export default class FileMap extends EventEmitter {
           : options.computeDependencies,
       computeSha1: options.computeSha1 || false,
       dependencyExtractor: options.dependencyExtractor ?? null,
-      enableHastePackages,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
-      hasteImplModulePath: options.hasteImplModulePath,
       ignorePattern,
-      plugins: options.plugins ?? [],
+      plugins,
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
@@ -351,12 +356,12 @@ export default class FileMap extends EventEmitter {
 
     this._fileProcessor = new FileProcessor({
       dependencyExtractor: buildParameters.dependencyExtractor,
-      enableHastePackages: buildParameters.enableHastePackages,
       enableWorkerThreads: options.enableWorkerThreads ?? false,
-      hasteImplModulePath: buildParameters.hasteImplModulePath,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
+      pluginWorkers,
+      rootDir: options.rootDir,
     });
 
     this._buildPromise = null;
@@ -383,20 +388,21 @@ export default class FileMap extends EventEmitter {
         const rootDir = this._options.rootDir;
         this._startupPerfLogger?.point('constructFileSystem_start');
         const processFile: ProcessFileFunction = (
-          absolutePath,
+          normalPath,
           metadata,
-          opts,
+          dataIdx,
         ) => {
           const result = this._fileProcessor.processRegularFile(
-            absolutePath,
+            normalPath,
             metadata,
             {
-              computeSha1: opts.computeSha1,
+              computeSha1: true,
               computeDependencies: false,
+              dataIdx,
               maybeReturnContent: true,
             },
           );
-          debug('Lazily processed file: %s', absolutePath);
+          debug('Lazily processed file: %s', normalPath);
           // Emit an event to inform caches that there is new data to save.
           this.emit('metadata');
           return result?.content;
@@ -426,10 +432,51 @@ export default class FileMap extends EventEmitter {
             clocks: initialData?.clocks ?? new Map(),
           }),
           Promise.all(
-            plugins.map(plugin =>
+            plugins.map(({plugin, dataIdx}) =>
               plugin.initialize({
-                files: fileSystem,
+                files: {
+                  lookup: mixedPath => {
+                    const result = fileSystem.lookup(mixedPath);
+                    if (!result.exists) {
+                      return {exists: false};
+                    }
+                    if (result.type === 'd') {
+                      return {exists: true, type: 'd'};
+                    }
+                    return {
+                      exists: true,
+                      type: 'f',
+                      pluginData:
+                        dataIdx != null ? result.metadata[dataIdx] : null,
+                    };
+                  },
+                  fileIterator: opts =>
+                    mapIterator(
+                      fileSystem.metadataIterator(opts),
+                      ({baseName, canonicalPath, metadata}) => ({
+                        baseName,
+                        canonicalPath,
+                        pluginData: dataIdx != null ? metadata[dataIdx] : null,
+                      }),
+                    ),
+                },
                 pluginState: initialData?.plugins.get(plugin.name),
+                processFile: (mixedPath: string) => {
+                  if (dataIdx == null) {
+                    throw new Error(
+                      `File map plugin "${plugin.name}" does not provide a worker.`,
+                    );
+                  }
+                  const result = fileSystem.lookup(mixedPath);
+                  if (!result.exists) {
+                    throw new Error('File does not exist');
+                  }
+                  if (result.type !== 'f') {
+                    throw new Error(`${result.realPath} is not a regular file`);
+                  }
+                  processFile(result.realPath, result.metadata);
+                  return result.metadata[dataIdx];
+                },
               }),
             ),
           ),
@@ -439,7 +486,7 @@ export default class FileMap extends EventEmitter {
         await this._applyFileDelta(fileSystem, plugins, fileDelta);
 
         // Validate the mock and Haste maps before persisting them.
-        plugins.forEach(plugin => plugin.assertValid());
+        plugins.forEach(({plugin}) => plugin.assertValid());
 
         const watchmanClocks = new Map(fileDelta.clocks ?? []);
         await this._takeSnapshotAndPersist(
@@ -456,11 +503,7 @@ export default class FileMap extends EventEmitter {
         );
 
         await this._watch(fileSystem, watchmanClocks, plugins);
-        return {
-          fileSystem,
-          hasteMap: this.#hastePlugin,
-          mockMap: this.#mockPlugin,
-        };
+        return {fileSystem};
       })();
     }
     return this._buildPromise.then(result => {
@@ -549,21 +592,23 @@ export default class FileMap extends EventEmitter {
     });
   }
 
-  _maybeReadLink(filePath: Path, fileMetadata: FileMetadata): ?Promise<void> {
+  _maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
     // If we only need to read a link, it's more efficient to do it in-band
     // (with async file IO) than to have the overhead of worker IO.
     if (fileMetadata[H.SYMLINK] === 1) {
-      return fsPromises.readlink(filePath).then(symlinkTarget => {
-        fileMetadata[H.VISITED] = 1;
-        fileMetadata[H.SYMLINK] = symlinkTarget;
-      });
+      return fsPromises
+        .readlink(this._pathUtils.normalToAbsolute(normalPath))
+        .then(symlinkTarget => {
+          fileMetadata[H.VISITED] = 1;
+          fileMetadata[H.SYMLINK] = symlinkTarget;
+        });
     }
     return null;
   }
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
     delta: $ReadOnly<{
       changedFiles: FileData,
       removedFiles: $ReadOnlySet<CanonicalPath>,
@@ -589,50 +634,26 @@ export default class FileMap extends EventEmitter {
 
     const readLinkPromises = [];
     const readLinkErrors: Array<{
-      absolutePath: string,
+      normalFilePath: string,
       error: Error & {code?: string},
     }> = [];
     const filesToProcess: Array<[string, FileMetadata]> = [];
 
-    for (const [relativeFilePath, fileData] of changedFiles) {
+    for (const [normalFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
       // contents are unchaged and it doesn't need visiting again.
       if (fileData[H.VISITED] === 1) {
         continue;
       }
 
-      if (
-        !this._options.enableHastePackages &&
-        relativeFilePath.endsWith(PACKAGE_JSON)
-      ) {
-        continue;
-      }
-
-      if (
-        fileData[H.SYMLINK] === 0 &&
-        !this._options.computeDependencies &&
-        !this._options.computeSha1 &&
-        this._options.hasteImplModulePath == null &&
-        !(
-          this._options.enableHastePackages &&
-          relativeFilePath.endsWith(PACKAGE_JSON)
-        )
-      ) {
-        // Nothing to process
-        continue;
-      }
-
-      // SHA-1, if requested, should already be present thanks to the crawler.
-      const absolutePath = this._pathUtils.normalToAbsolute(relativeFilePath);
-
       if (fileData[H.SYMLINK] === 0) {
-        filesToProcess.push([absolutePath, fileData]);
+        filesToProcess.push([normalFilePath, fileData]);
       } else {
-        const maybeReadLink = this._maybeReadLink(absolutePath, fileData);
+        const maybeReadLink = this._maybeReadLink(normalFilePath, fileData);
         if (maybeReadLink) {
           readLinkPromises.push(
             maybeReadLink.catch(error =>
-              readLinkErrors.push({absolutePath, error}),
+              readLinkErrors.push({normalFilePath, error}),
             ),
           );
         }
@@ -641,7 +662,7 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
 
     debug(
-      'Visiting %d added/modified files and %d symlinks.',
+      'Found %d added/modified files and %d symlinks.',
       filesToProcess.length,
       readLinkPromises.length,
     );
@@ -667,13 +688,13 @@ export default class FileMap extends EventEmitter {
     // it if it already exists. We're not emitting events at this point in
     // startup, so there's nothing more to do.
     this._startupPerfLogger?.point('applyFileDelta_missing_start');
-    for (const {absolutePath, error} of batchResult.errors.concat(
+    for (const {normalFilePath, error} of batchResult.errors.concat(
       readLinkErrors,
     )) {
       /* $FlowFixMe[incompatible-type] Error exposed after improved typing of
        * Array.{includes,indexOf,lastIndexOf} */
       if (['ENOENT', 'EACCESS'].includes(error.code)) {
-        missingFiles.add(this._pathUtils.absoluteToNormal(absolutePath));
+        missingFiles.add(normalFilePath);
       } else {
         // Anything else is fatal.
         throw error;
@@ -693,13 +714,18 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_add_end');
 
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
+
     await Promise.all([
-      plugins.map(plugin =>
-        plugin.bulkUpdate({
-          addedOrModified: changedFiles,
-          removed,
-        }),
-      ),
+      plugins.map(({plugin, dataIdx}) => {
+        const mapFn: ([CanonicalPath, FileMetadata]) => [CanonicalPath, mixed] =
+          dataIdx != null
+            ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
+            : ([relativePath, fileData]) => [relativePath, null];
+        return plugin.bulkUpdate({
+          addedOrModified: mapIterator(changedFiles.entries(), mapFn),
+          removed: mapIterator(removed.values(), mapFn),
+        });
+      }),
     ]);
     this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this._startupPerfLogger?.point('applyFileDelta_end');
@@ -711,7 +737,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -721,7 +747,7 @@ export default class FileMap extends EventEmitter {
         fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
         plugins: new Map(
-          plugins.map(plugin => [
+          plugins.map(({plugin}) => [
             plugin.name,
             plugin.getSerializableSnapshot(),
           ]),
@@ -756,7 +782,7 @@ export default class FileMap extends EventEmitter {
   async _watch(
     fileSystem: MutableFileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<FileMapPlugin<>>,
+    plugins: $ReadOnlyArray<IndexedPlugin>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {
@@ -911,15 +937,15 @@ export default class FileMap extends EventEmitter {
               '',
               null,
               change.metadata.type === 'l' ? 1 : 0,
-              '',
+              null,
             ];
 
             try {
               if (change.metadata.type === 'l') {
-                await this._maybeReadLink(absoluteFilePath, fileMetadata);
+                await this._maybeReadLink(relativeFilePath, fileMetadata);
               } else {
                 await this._fileProcessor.processRegularFile(
-                  absoluteFilePath,
+                  relativeFilePath,
                   fileMetadata,
                   {
                     computeSha1: this._options.computeSha1,
@@ -930,8 +956,13 @@ export default class FileMap extends EventEmitter {
               }
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
               this._updateClock(clocks, change.clock);
-              plugins.forEach(plugin =>
-                plugin.onNewOrModifiedFile(relativeFilePath, fileMetadata),
+              plugins.forEach(({plugin, dataIdx}) =>
+                dataIdx != null
+                  ? plugin.onNewOrModifiedFile(
+                      relativeFilePath,
+                      fileMetadata[dataIdx],
+                    )
+                  : plugin.onNewOrModifiedFile(relativeFilePath),
               );
               enqueueEvent(change.metadata);
             } catch (e) {
@@ -955,8 +986,10 @@ export default class FileMap extends EventEmitter {
             // exists in the file map and remove should always return metadata.
             const metadata = nullthrows(fileSystem.remove(relativeFilePath));
             this._updateClock(clocks, change.clock);
-            plugins.forEach(plugin =>
-              plugin.onRemovedFile(relativeFilePath, metadata),
+            plugins.forEach(({plugin, dataIdx}) =>
+              dataIdx != null
+                ? plugin.onRemovedFile(relativeFilePath, metadata[dataIdx])
+                : plugin.onRemovedFile(relativeFilePath),
             );
 
             enqueueEvent({
@@ -1072,3 +1105,13 @@ export default class FileMap extends EventEmitter {
 
   static H: HType = H;
 }
+
+// TODO: Replace with it.map() from Node 22+
+const mapIterator: <T, S>(Iterator<T>, (T) => S) => Iterable<S> = (it, fn) =>
+  'map' in it
+    ? it.map(fn)
+    : (function* mapped() {
+        for (const item of it) {
+          yield fn(item);
+        }
+      })();

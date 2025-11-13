@@ -8,22 +8,25 @@
  * @format
  */
 
-import type {BuildParameters} from '../../flow-types';
+import type {BuildParameters, FileMapPlugin} from '../../flow-types';
 import typeof PathModule from 'path';
 
 import rootRelativeCacheKeys from '../rootRelativeCacheKeys';
+
+// $FlowExpectedError[incompatible-type] Partial mock
+const getMockPlugin = (cacheKey: string): FileMapPlugin<> => ({
+  getCacheKey: jest.fn(() => cacheKey),
+});
 
 const buildParameters: BuildParameters = {
   computeDependencies: false,
   computeSha1: false,
   dependencyExtractor: null,
-  enableHastePackages: true,
   enableSymlinks: false,
   extensions: ['a'],
   forceNodeFilesystemAPI: false,
-  hasteImplModulePath: null,
   ignorePattern: /a/,
-  plugins: [],
+  plugins: [getMockPlugin('1')],
   retainAllFiles: false,
   rootDir: '/root',
   roots: ['a', 'b'],
@@ -61,10 +64,9 @@ jest.mock(
 
 test('returns a distinct cache key for any change', () => {
   const {
-    hasteImplModulePath: _,
-    dependencyExtractor: __,
-    rootDir: ___,
-    plugins: ____,
+    dependencyExtractor: _,
+    rootDir: __,
+    plugins: ___,
     ...simpleParameters
   } = buildParameters;
 
@@ -82,7 +84,6 @@ test('returns a distinct cache key for any change', () => {
       // Boolean
       case 'computeDependencies':
       case 'computeSha1':
-      case 'enableHastePackages':
       case 'enableSymlinks':
       case 'forceNodeFilesystemAPI':
       case 'retainAllFiles':
@@ -105,8 +106,8 @@ test('returns a distinct cache key for any change', () => {
   configs.push(buildParameters);
   configs.push({...buildParameters, dependencyExtractor: '/extractor/1'});
   configs.push({...buildParameters, dependencyExtractor: '/extractor/2'});
-  configs.push({...buildParameters, hasteImplModulePath: '/haste/1'});
-  configs.push({...buildParameters, hasteImplModulePath: '/haste/2'});
+  configs.push({...buildParameters, plugins: []});
+  configs.push({...buildParameters, plugins: [getMockPlugin('2')]});
 
   // Generate hashes for each config
   const configHashes = configs.map(
