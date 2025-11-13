@@ -154,7 +154,7 @@ export function runBuild(
 export function buildGraph(
   config: ConfigT,
   options: BuildGraphOptions,
-): Promise<ReadOnlyGraph<void>>;
+): Promise<ReadOnlyGraph>;
 
 type BuildCommandOptions = Record<string, unknown> | null;
 type ServeCommandOptions = Record<string, unknown> | null;
