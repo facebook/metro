@@ -19,4 +19,6 @@ const getMockName = (filePath: string): string => {
     .replaceAll('\\', '/');
 };
 
-export default getMockName;
+export default getMockName as interface {
+  (filePath: string): string,
+};

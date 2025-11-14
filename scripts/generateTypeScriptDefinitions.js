@@ -31,6 +31,7 @@ export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-config/**',
   'packages/metro-core/**',
   'packages/metro-resolver/**',
+  'packages/metro-file-map/**',
   'packages/metro-source-map/**',
   'packages/metro-transform-worker/**',
   'packages/ob1/**',
@@ -47,6 +48,9 @@ const IGNORED_PATTERNS = [
   'packages/metro-babel-register/**',
   'packages/*/build/**',
   'packages/metro/src/integration_tests/**',
+  'packages/metro-file-map/src/watchers/WatchmanWatcher.js',
+  'packages/metro-file-map/src/watchers/FallbackWatcher.js',
+  'packages/metro-file-map/src/crawlers/watchman/**',
 ];
 
 export async function generateTsDefsForJsGlobs(

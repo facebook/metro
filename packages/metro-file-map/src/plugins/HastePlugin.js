@@ -26,7 +26,7 @@ import type {
   PerfLogger,
 } from '../flow-types';
 
-import H from '../constants';
+import H from '../constants.flow';
 import {RootPathUtils} from '../lib/RootPathUtils';
 import {chainComparators, compareStrings} from '../lib/sorting';
 import {DuplicateHasteCandidatesError} from './haste/DuplicateHasteCandidatesError';
@@ -51,7 +51,7 @@ type HasteMapOptions = $ReadOnly<{
 }>;
 
 export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
-  +name = 'haste';
+  +name: 'haste' = 'haste';
 
   +#rootDir: Path;
   +#map: Map<string, HasteMapItem> = new Map();

@@ -40,7 +40,7 @@ import type {
 } from './flow-types';
 
 import {DiskCacheManager} from './cache/DiskCacheManager';
-import H from './constants';
+import H from './constants.flow';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import {FileProcessor} from './lib/FileProcessor';
 import normalizePathSeparatorsToPosix from './lib/normalizePathSeparatorsToPosix';
@@ -238,7 +238,9 @@ export default class FileMap extends EventEmitter {
   _buildPromise: ?Promise<BuildResult>;
   _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
+  /*::
   _changeInterval: ?IntervalID;
+  */
   _fileProcessor: FileProcessor;
   _console: Console;
   _options: InternalOptions;
@@ -246,7 +248,9 @@ export default class FileMap extends EventEmitter {
   _watcher: ?Watcher;
   _cacheManager: CacheManager;
   _crawlerAbortController: AbortController;
+  /*::
   _healthCheckInterval: ?IntervalID;
+  */
   _startupPerfLogger: ?PerfLogger;
 
   #hastePlugin: HastePlugin;

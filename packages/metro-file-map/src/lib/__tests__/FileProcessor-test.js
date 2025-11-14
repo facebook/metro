@@ -15,7 +15,7 @@ import type {
   WorkerMetadata,
 } from '../../flow-types';
 
-import H from '../../constants';
+import H from '../../constants.flow';
 
 const MockJestWorker = jest.fn().mockImplementation(() => ({
   processFile: async () => ({}),
@@ -41,7 +41,7 @@ describe('processBatch', () => {
     jest.mock('jest-worker', () => ({
       Worker: MockJestWorker,
     }));
-    jest.mock('../../worker.js', () => ({
+    jest.mock('../../worker.flow.js', () => ({
       setup: () => {},
       processFile: mockWorkerFn,
       Worker: class {
@@ -97,7 +97,7 @@ describe('processRegularFile', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
-    jest.unmock('../../worker.js');
+    jest.unmock('../../worker.flow.js');
     jest.mock('fs', () => ({
       readFileSync: mockReadFileSync,
     }));

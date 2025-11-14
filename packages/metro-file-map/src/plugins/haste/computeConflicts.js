@@ -10,7 +10,7 @@
 
 import type {HasteMapItem} from '../../flow-types';
 
-import H from '../../constants';
+import H from '../../constants.flow';
 import {chainComparators, compareStrings} from '../../lib/sorting';
 import path from 'path';
 

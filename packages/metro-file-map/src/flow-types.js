@@ -187,7 +187,9 @@ export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
   pluginState: ?SerializableState,
 }>;
 
-type V8Serializable = interface {};
+// While I could use `interface {}`, this does not translate nicely to TypeScript.
+// $FlowFixMe[unclear-type] - using Object type here to represent an arbitrary object
+type V8Serializable = Object;
 
 export interface FileMapPlugin<SerializableState = V8Serializable> {
   +name: string;
@@ -378,7 +380,10 @@ export type HasteMapData = Map<string, HasteMapItem>;
 
 export type HasteMapItem = {
   [platform: string]: HasteMapItemMetadata,
+  // Modeling __proto__: null is not representable by TypeScript type system.
+  /*::
   __proto__: null,
+  */
 };
 export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
@@ -472,4 +477,4 @@ export type WorkerMetadata = $ReadOnly<{
   content?: ?Buffer,
 }>;
 
-export type WorkerSetupArgs = $ReadOnly<{}>;
+export type WorkerSetupArgs = $ReadOnly<Record<string, mixed>>;

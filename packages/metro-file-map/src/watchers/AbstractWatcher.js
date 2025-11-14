@@ -63,7 +63,7 @@ export class AbstractWatcher implements WatcherBackend {
     // Must be implemented by subclasses
   }
 
-  async stopWatching() {
+  async stopWatching(): Promise<void> {
     this.#emitter.removeAllListeners();
   }
 

@@ -29,7 +29,8 @@
     "walker": "^1.0.7"
   },
   "devDependencies": {
-    "slash": "^3.0.0"
+    "slash": "^3.0.0",
+    "metro-babel-register": "0.83.3"
   },
   "engines": {
     "node": ">=20.19.4"

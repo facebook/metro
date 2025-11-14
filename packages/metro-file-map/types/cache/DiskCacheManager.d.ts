@@ -12,27 +12,31 @@ import type {
   BuildParameters,
   CacheData,
   CacheManager,
+  CacheManagerFactoryOptions,
   CacheManagerWriteOptions,
 } from '../flow-types';
 
-export interface DiskCacheConfig {
-  buildParameters: BuildParameters;
-  cacheFilePrefix?: string | null;
-  cacheDirectory?: string | null;
-}
-
-export class DiskCacheManager implements CacheManager {
-  constructor(options: DiskCacheConfig);
+type AutoSaveOptions = Readonly<{debounceMs: number}>;
+type DiskCacheConfig = Readonly<{
+  autoSave?: Partial<AutoSaveOptions> | boolean;
+  cacheFilePrefix?: null | undefined | string;
+  cacheDirectory?: null | undefined | string;
+}>;
+export declare class DiskCacheManager implements CacheManager {
+  constructor(
+    $$PARAM_0$$: CacheManagerFactoryOptions,
+    $$PARAM_1$$: DiskCacheConfig,
+  );
   static getCacheFilePath(
     buildParameters: BuildParameters,
-    cacheFilePrefix?: string | null,
-    cacheDirectory?: string | null,
+    cacheFilePrefix?: null | undefined | string,
+    cacheDirectory?: null | undefined | string,
   ): string;
   getCacheFilePath(): string;
-  read(): Promise<CacheData | null>;
+  read(): Promise<null | undefined | CacheData>;
   write(
     getSnapshot: () => CacheData,
-    opts: CacheManagerWriteOptions,
+    $$PARAM_1$$: CacheManagerWriteOptions,
   ): Promise<void>;
   end(): Promise<void>;
 }

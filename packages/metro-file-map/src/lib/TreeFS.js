@@ -19,7 +19,7 @@ import type {
   ProcessFileFunction,
 } from '../flow-types';
 
-import H from '../constants';
+import H from '../constants.flow';
 import {RootPathUtils} from './RootPathUtils';
 import invariant from 'invariant';
 import path from 'path';

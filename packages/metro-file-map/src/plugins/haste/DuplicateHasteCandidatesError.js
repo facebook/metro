@@ -11,7 +11,7 @@
 
 import type {DuplicatesSet} from '../../flow-types';
 
-import H from '../../constants';
+import H from '../../constants.flow';
 
 export class DuplicateHasteCandidatesError extends Error {
   hasteName: string;

@@ -17,8 +17,8 @@ import type {
   WorkerSetupArgs,
 } from '../flow-types';
 
-import H from '../constants';
-import {Worker} from '../worker';
+import H from '../constants.flow';
+import {Worker} from '../worker.flow';
 import {Worker as JestWorker} from 'jest-worker';
 import {sep} from 'path';
 

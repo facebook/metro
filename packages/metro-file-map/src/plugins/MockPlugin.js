@@ -28,7 +28,7 @@ import path from 'path';
 export const CACHE_VERSION = 2;
 
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
-  +name = 'mocks';
+  +name: 'mocks' = 'mocks';
 
   +#mocksPattern: RegExp;
   #raw: RawMockMap;

@@ -181,8 +181,8 @@ jest.mock('fs', () => ({
 
 const hasteImplModulePath = require.resolve('./haste_impl.js');
 let inBandWorker;
-jest.mock('../worker.js', () => {
-  const {setup, Worker} = jest.requireActual('../worker') as WorkerModule;
+jest.mock('../worker.flow.js', () => {
+  const {setup, Worker} = jest.requireActual('../worker.flow') as WorkerModule;
   return {
     setup,
     processFile: mockProcessFileFn,
@@ -198,7 +198,7 @@ jest.mock('../worker.js', () => {
 const mockProcessFileFn = jest
   .fn()
   .mockImplementation((...args) =>
-    jest.requireActual<WorkerModule>('../worker').processFile(...args),
+    jest.requireActual<WorkerModule>('../worker.flow').processFile(...args),
   );
 
 const object = <T>(data: $ReadOnly<{[key: string]: T}>): {[key: string]: T} =>
@@ -351,7 +351,7 @@ describe('FileMap', () => {
   });
 
   test('exports constants', () => {
-    expect(FileMap.H).toBe(require('../constants'));
+    expect(FileMap.H).toBe(require('../constants').default);
   });
 
   test('ignores files given a pattern', async () => {

@@ -12,7 +12,7 @@
 import type {CanonicalPath, FileData, FileMetadata} from '../../flow-types';
 import type TreeFSType from '../TreeFS';
 
-import H from '../../constants';
+import H from '../../constants.flow';
 
 let mockPathModule;
 jest.mock('path', () => mockPathModule);

@@ -49,7 +49,7 @@ export default class FallbackWatcher extends AbstractWatcher {
   } = Object.create(null);
   +watched: {[key: string]: FSWatcher, __proto__: null} = Object.create(null);
 
-  async startWatching() {
+  async startWatching(): Promise<void> {
     this._watchdir(this.root);
 
     await new Promise(resolve => {
