@@ -124,7 +124,7 @@ function getInverseDependencies(
   graph: ReadOnlyGraph<>,
   inverseDependencies: {[key: string]: Array<string>, ...} = {},
 ): {[key: string]: Array<string>, ...} {
-  // Dependency alredy traversed.
+  // Dependency already traversed.
   if (path in inverseDependencies) {
     return inverseDependencies;
   }
