@@ -150,17 +150,6 @@ export default class DependencyGraph extends EventEmitter {
     await this._initializedPromise;
   }
 
-  // Creates the dependency graph and waits for it to become ready.
-  // @deprecated Use the constructor + ready() directly.
-  static async load(
-    config: ConfigT,
-    options?: {+hasReducedPerformance?: boolean, +watch?: boolean},
-  ): Promise<DependencyGraph> {
-    const self = new DependencyGraph(config, options);
-    await self.ready();
-    return self;
-  }
-
   _onHasteChange({eventsQueue}: ChangeEvent) {
     this._resolutionCache = new Map();
     eventsQueue.forEach(({filePath}) =>
