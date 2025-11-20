@@ -13,6 +13,7 @@ import type {
   BundlerResolution,
   TransformResultDependency,
 } from '../DeltaBundler/types';
+import type {VirtualModules} from '../DeltaBundler/VirtualModules';
 import type {ResolverInputOptions} from '../shared/types';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config';
@@ -256,7 +257,22 @@ export default class DependencyGraph extends EventEmitter {
    */
   async getOrComputeSha1(
     mixedPath: string,
+    virtualModules?: ?VirtualModules,
   ): Promise<{content?: Buffer, sha1: string}> {
+    const virtualModule = virtualModules?.get(mixedPath);
+
+    if (virtualModule) {
+      // For future modules, we can't compute the sha1 based on the file contents
+      // since the file doesn't exist yet. Instead, we generate a sha1 based on
+      // the current time to ensure it will force a refresh of the transform cache.
+      const createHash = require('crypto').createHash;
+      return {
+        sha1: createHash('sha1')
+          .update(performance.now().toString())
+          .digest('hex'),
+        content: Buffer.from(virtualModule.code, 'utf8'),
+      };
+    }
     const result = await this._fileSystem.getOrComputeSha1(mixedPath);
     if (!result || !result.sha1) {
       throw new Error(`Failed to get the SHA-1 for: ${mixedPath}.

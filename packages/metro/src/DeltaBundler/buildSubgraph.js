@@ -17,6 +17,7 @@ import type {
   TransformFn,
   TransformResultDependency,
 } from './types';
+import type {VirtualModules} from './VirtualModules';
 
 import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
@@ -32,6 +33,7 @@ function resolveDependencies(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   resolve: ResolveFn,
+  virtualModules?: ?VirtualModules,
 ): {
   dependencies: Map<string, Dependency>,
   resolvedContexts: Map<string, RequireContext>,
@@ -45,7 +47,14 @@ function resolveDependencies(
 
     // `require.context`
     const {contextParams} = dep.data;
-    if (contextParams) {
+    const {isVirtualModule} = dep.data;
+    if (isVirtualModule === true) {
+      // $FlowFixMe[incompatible-type] Can't assert that `absolutePath` is defined.
+      maybeResolvedDep = {
+        absolutePath: dep.data.absolutePath,
+        data: dep,
+      };
+    } else if (contextParams) {
       // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
       // statements can be used to target the same file with different properties.
       const from = path.join(parentPath, '..', dep.name);
@@ -70,7 +79,7 @@ function resolveDependencies(
     } else {
       try {
         maybeResolvedDep = {
-          absolutePath: resolve(parentPath, dep).filePath,
+          absolutePath: resolve(parentPath, dep, virtualModules).filePath,
           data: dep,
         };
       } catch (error) {
@@ -90,6 +99,7 @@ function resolveDependencies(
         `resolveDependencies: Found duplicate dependency key '${key}' in ${parentPath}`,
       );
     }
+    // $FlowFixMe[incompatible-type] Flow doesn't like `absolutePath` here.
     maybeResolvedDeps.set(key, maybeResolvedDep);
   }
 
@@ -103,6 +113,7 @@ export async function buildSubgraph<T>(
   entryPaths: $ReadOnlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
+  virtualModules?: ?VirtualModules,
 ): Promise<{
   moduleData: Map<string, ModuleData<T>>,
   errors: Map<string, Error>,
@@ -114,12 +125,19 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
+    virtualModules?: ?VirtualModules,
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
     }
     visitedPaths.add(absolutePath);
-    const transformResult = await transform(absolutePath, requireContext);
+    const transformResult = await transform(
+      absolutePath,
+      requireContext,
+      virtualModules,
+    );
+
+    virtualModules?.addRawMap(transformResult?.virtualModulesRawMap);
 
     // Get the absolute path of all sub-dependencies (some of them could have been
     // moved but maintain the same relative path).
@@ -127,6 +145,7 @@ export async function buildSubgraph<T>(
       absolutePath,
       transformResult.dependencies,
       resolve,
+      virtualModules,
     );
 
     moduleData.set(absolutePath, {
@@ -144,6 +163,7 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
+            virtualModules,
           ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );
@@ -151,9 +171,11 @@ export async function buildSubgraph<T>(
 
   await Promise.all(
     [...entryPaths].map(absolutePath =>
-      visit(absolutePath, resolvedContexts.get(absolutePath)).catch(error =>
-        errors.set(absolutePath, error),
-      ),
+      visit(
+        absolutePath,
+        resolvedContexts.get(absolutePath),
+        virtualModules,
+      ).catch(error => errors.set(absolutePath, error)),
     ),
   );
 

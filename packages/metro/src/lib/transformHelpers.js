@@ -16,6 +16,7 @@ import type {
   TransformInputOptions,
   TransformResultDependency,
 } from '../DeltaBundler/types';
+import type {VirtualModules} from '../DeltaBundler/VirtualModules';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ResolverInputOptions} from '../shared/types';
 import type {RequireContext} from './contextModule';
@@ -153,7 +154,11 @@ export async function getTransformFn(
   );
   const assetExts = new Set(config.resolver.assetExts);
 
-  return async (modulePath: string, requireContext: ?RequireContext) => {
+  return async (
+    modulePath: string,
+    requireContext: ?RequireContext,
+    virtualModules?: ?VirtualModules,
+  ) => {
     let templateBuffer: Buffer;
 
     if (requireContext) {
@@ -190,6 +195,7 @@ export async function getTransformFn(
         ),
       },
       templateBuffer,
+      virtualModules,
     );
   };
 }

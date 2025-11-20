@@ -8,6 +8,7 @@
  * @flow
  */
 
+import type {VirtualModules} from '../../DeltaBundler/VirtualModules';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
@@ -63,6 +64,14 @@ type DependencyData = $ReadOnly<{
   locs: $ReadOnlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
+  /** True if the dependency is a future module, i.e. it's not yet registered in the Metro file system but it will be at the moment it's accessed. */
+  isVirtualModule?: boolean,
+  /** Code of the module, provided only for future modules. */
+  code?: string,
+  /** Full path to the module, provided only for future modules. */
+  absolutePath?: string,
+  /** Type of the dependency, provided only for future modules. */
+  type?: 'sourceFile',
 }>;
 
 export type MutableInternalDependency = {
@@ -99,6 +108,8 @@ export type Options = $ReadOnly<{
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
   unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
+  /** Map of registered virtual modules, i.e. modules not yet registered in the Metro file system but available for bundling. */
+  virtualModules?: ?VirtualModules,
 }>;
 
 export type CollectedDependencies = $ReadOnly<{
@@ -291,6 +302,15 @@ export default function collectDependencies(
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
   for (const {index, name, ...dependencyData} of collectedDependencies) {
+    const virtualModule = options.virtualModules?.get(name);
+
+    if (virtualModule != null) {
+      dependencyData.isVirtualModule = true;
+      dependencyData.absolutePath = virtualModule.absolutePath;
+      dependencyData.code = virtualModule.code;
+      dependencyData.type = virtualModule.type;
+    }
+
     dependencies[index] = {
       name,
       data: dependencyData,
