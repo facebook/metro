@@ -97,7 +97,10 @@ Duplicate manual mock found for \`foo\`:
     const mockMap = new MockMap(opts);
     await mockMap.initialize({
       files: {
-        metadataIterator: () => {
+        fileIterator: () => {
+          throw new Error('should not be used');
+        },
+        lookup: () => {
           throw new Error('should not be used');
         },
       },

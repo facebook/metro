@@ -9,14 +9,17 @@
  * @oncall react_native
  */
 
+import type {PackageJson} from 'metro-resolver/private/types';
+
 import Package from './Package';
+import AbstractDataPlugin from 'metro-file-map/private/plugins/AbstractDataPlugin';
 
 type GetClosestPackageFn = (absoluteFilePath: string) => ?{
   packageJsonPath: string,
   packageRelativePath: string,
 };
 
-export class PackageCache {
+export class PackageCache extends AbstractDataPlugin<PackageJson> {
   _getClosestPackage: GetClosestPackageFn;
   _packageCache: {
     [filePath: string]: Package,
@@ -40,6 +43,14 @@ export class PackageCache {
   };
 
   constructor(options: {getClosestPackage: GetClosestPackageFn, ...}) {
+    super({
+      name: 'package-cache',
+      workerParams: {
+        workerModulePath: require.resolve('./lib/packageJsonWorker'),
+        workerSetupArgs: {},
+        filter: filePath => filePath.endsWith('package.json'),
+      },
+    });
     this._getClosestPackage = options.getClosestPackage;
     this._packageCache = Object.create(null);
     this._packagePathAndSubpathByModulePath = Object.create(null);
@@ -50,9 +61,24 @@ export class PackageCache {
     if (!this._packageCache[filePath]) {
       this._packageCache[filePath] = new Package({
         file: filePath,
+        readAndParse: () => {
+          const result = this.lookup(filePath);
+          if (result.exists == false || result.type !== 'f') {
+            throw new Error('missing');
+          }
+          // In lazy mode, we haven't read the file yet.
+          if (typeof result.pluginData === 'undefined') {
+            return this.processFile(filePath);
+          }
+          return result.pluginData;
+        },
       });
     }
     return this._packageCache[filePath];
+  }
+
+  getCacheKey(): string {
+    return 'package-cache-1';
   }
 
   getPackageOf(

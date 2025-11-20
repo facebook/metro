@@ -16,7 +16,7 @@ exports[`FileMap file system changes processing recovery from duplicate module I
 "
 `;
 
-exports[`FileMap throws on duplicate module ids if "throwOnModuleCollision" is set to true 1`] = `
+exports[`FileMap throws on duplicate module ids if "failValidationOnConflicts" is set to true 1`] = `
 "Advice: Resolve conflicts of type \\"duplicate\\" by renaming one or both of the conflicting modules, or by excluding conflicting paths from Haste.
 
 1. Strawberry (duplicate)

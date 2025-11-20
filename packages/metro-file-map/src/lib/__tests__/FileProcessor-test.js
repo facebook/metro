@@ -10,12 +10,14 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   WorkerMessage,
   WorkerMetadata,
 } from '../../flow-types';
 
 import H from '../../constants';
+import path from 'path';
 
 const MockJestWorker = jest.fn().mockImplementation(() => ({
   processFile: async () => ({}),
@@ -25,11 +27,11 @@ const mockWorkerFn = jest.fn().mockReturnValue({});
 
 const defaultOptions = {
   dependencyExtractor: null,
-  enableHastePackages: false,
   enableWorkerThreads: true,
-  hasteImplModulePath: null,
   maxWorkers: 5,
   perfLogger: null,
+  pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
+  rootDir: process.platform === 'win32' ? 'C:\\root' : '/root',
 };
 
 describe('processBatch', () => {
@@ -106,19 +108,21 @@ describe('processRegularFile', () => {
 
   test('synchronously populates metadata', () => {
     const processor = new FileProcessor(defaultOptions);
-    const [filename, metadata] = getNMockFiles(1)[0];
+    const [normalFilePath, metadata] = getNMockFiles(1)[0];
     expect(metadata[H.SHA1]).toBeFalsy();
 
     const fileContent = Buffer.from('hello world');
     mockReadFileSync.mockReturnValue(fileContent);
 
-    const result = processor.processRegularFile(filename, metadata, {
+    const result = processor.processRegularFile(normalFilePath, metadata, {
       computeSha1: true,
       computeDependencies: false,
       maybeReturnContent: true,
     });
 
-    expect(mockReadFileSync).toHaveBeenCalledWith(filename);
+    expect(mockReadFileSync).toHaveBeenCalledWith(
+      path.resolve(defaultOptions.rootDir, normalFilePath),
+    );
 
     expect(result).toEqual({
       content: fileContent,
@@ -133,6 +137,6 @@ function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      [123, 234, 0, '', null, 0, ''] as FileMetadata,
+      [123, 234, 0, '', null, 0, null] as FileMetadata,
     ]);
 }

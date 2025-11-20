@@ -103,9 +103,12 @@ export default class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const fileMap = createFileMap(config, {
+    this.#packageCache = this._createPackageCache();
+
+    const {fileMap, hasteMap} = createFileMap(config, {
       throwOnModuleCollision: false,
       watch,
+      extraPlugins: [this.#packageCache],
     });
 
     // We can have a lot of graphs listening to Haste for changes.
@@ -115,25 +118,20 @@ export default class DependencyGraph extends EventEmitter {
     this._haste = fileMap;
     this._haste.on('status', status => this._onWatcherStatus(status));
 
-    this._initializedPromise = fileMap
-      .build()
-      .then(({fileSystem, hasteMap}) => {
-        log(createActionEndEntry(initializingMetroLogEntry));
-        config.reporter.update({type: 'dep_graph_loaded'});
+    this._initializedPromise = fileMap.build().then(({fileSystem}) => {
+      log(createActionEndEntry(initializingMetroLogEntry));
+      config.reporter.update({type: 'dep_graph_loaded'});
 
-        this._fileSystem = fileSystem;
-        this._hasteMap = hasteMap;
+      this._fileSystem = fileSystem;
+      this._hasteMap = hasteMap;
 
-        this._haste.on('change', changeEvent =>
-          this._onHasteChange(changeEvent),
-        );
-        this._haste.on('healthCheck', result =>
-          this._onWatcherHealthCheck(result),
-        );
-        this._resolutionCache = new Map();
-        this.#packageCache = this._createPackageCache();
-        this._createModuleResolver();
-      });
+      this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
+      this._haste.on('healthCheck', result =>
+        this._onWatcherHealthCheck(result),
+      );
+      this._resolutionCache = new Map();
+      this._createModuleResolver();
+    });
   }
 
   _onWatcherHealthCheck(result: HealthCheckResult) {
@@ -372,7 +370,7 @@ export default class DependencyGraph extends EventEmitter {
   };
 
   getHasteName(filePath: string): string {
-    const hasteName = this._fileSystem.getModuleName(filePath);
+    const hasteName = this._hasteMap.getModuleNameByPath(filePath);
 
     if (hasteName) {
       return hasteName;
