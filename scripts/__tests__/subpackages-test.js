@@ -29,7 +29,7 @@ const readJsonSync = (absOrRelativePath: string) =>
   );
 const workspaceRootPackageJson = readJsonSync('package.json');
 
-const ALL_PACKAGES: $ReadOnlySet<string> = new Set(
+const ALL_PACKAGES: ReadonlySet<string> = new Set(
   Array.isArray(workspaceRootPackageJson.workspaces)
     ? workspaceRootPackageJson.workspaces
         .flatMap(relativeGlob => glob.sync(relativeGlob, {cwd: WORKSPACE_ROOT}))
@@ -118,14 +118,14 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
 
   test('all .flow.js files have an adjacent babel-registering entry point', async () => {
     const flowFiles: Array<string> = await globAsync('src/**/*.flow.js', {
+      absolute: true,
       cwd: path.resolve(WORKSPACE_ROOT, packagePath),
       ignore: ['node_modules'],
-      absolute: true,
     });
 
     const filePaths = flowFiles.map(flowFilePath => ({
-      flowFilePath,
       entryFilePath: flowFilePath.replace(/\.flow\.js$/, '.js'),
+      flowFilePath,
     }));
 
     const unmatchedFlowFiles = filePaths
@@ -142,8 +142,8 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
       filePaths.map(async ({entryFilePath}) => {
         const content = await fs.promises.readFile(entryFilePath, 'utf-8');
         return {
-          entryFilePath,
           content,
+          entryFilePath,
         };
       }),
     );
@@ -178,8 +178,8 @@ module.exports = require('./${flowFileBaseName}');
       test('has prepare-release and cleanup-release scripts', () => {
         expect(packageJson.scripts).toEqual(
           expect.objectContaining({
-            'prepare-release': expect.any(String),
             'cleanup-release': expect.any(String),
+            'prepare-release': expect.any(String),
           }),
         );
       });

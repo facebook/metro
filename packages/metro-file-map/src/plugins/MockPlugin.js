@@ -41,8 +41,8 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     console,
     mocksPattern,
     rawMockMap = {
-      mocks: new Map(),
       duplicates: new Map(),
+      mocks: new Map(),
       version: CACHE_VERSION,
     },
     rootDir,
@@ -160,10 +160,10 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
 
   getSerializableSnapshot(): RawMockMap {
     return {
-      mocks: new Map(this.#raw.mocks),
       duplicates: new Map(
         [...this.#raw.duplicates].map(([k, v]) => [k, new Set(v)]),
       ),
+      mocks: new Map(this.#raw.mocks),
       version: this.#raw.version,
     };
   }
@@ -186,7 +186,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
 
   #getMessageForDuplicates(
     mockName: string,
-    relativePosixPaths: $ReadOnlySet<string>,
+    relativePosixPaths: ReadonlySet<string>,
   ): string {
     return (
       'Duplicate manual mock found for `' +

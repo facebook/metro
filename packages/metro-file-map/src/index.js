@@ -292,10 +292,10 @@ export default class FileMap extends EventEmitter {
     this.#hastePlugin = new HastePlugin({
       console: this._console,
       enableHastePackages,
+      failValidationOnConflicts: throwOnModuleCollision,
       perfLogger: this._startupPerfLogger,
       platforms: new Set(options.platforms),
       rootDir: options.rootDir,
-      failValidationOnConflicts: throwOnModuleCollision,
     });
 
     const plugins: Array<FileMapPlugin<$FlowFixMe>> = [this.#hastePlugin];
@@ -313,6 +313,7 @@ export default class FileMap extends EventEmitter {
     this.#plugins = plugins;
 
     const buildParameters: BuildParameters = {
+      cacheBreaker: CACHE_BREAKER,
       computeDependencies:
         options.computeDependencies == null
           ? true
@@ -329,7 +330,6 @@ export default class FileMap extends EventEmitter {
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
-      cacheBreaker: CACHE_BREAKER,
     };
 
     this._options = {
@@ -391,8 +391,8 @@ export default class FileMap extends EventEmitter {
             absolutePath,
             metadata,
             {
-              computeSha1: opts.computeSha1,
               computeDependencies: false,
+              computeSha1: opts.computeSha1,
               maybeReturnContent: true,
             },
           );
@@ -404,15 +404,15 @@ export default class FileMap extends EventEmitter {
         const fileSystem =
           initialData != null
             ? TreeFS.fromDeserializedSnapshot({
-                rootDir,
                 // Typed `mixed` because we've read this from an external
                 // source. It'd be too expensive to validate at runtime, so
                 // trust our cache manager that this is correct.
                 // $FlowFixMe[incompatible-type]
                 fileSystemData: initialData.fileSystemData,
                 processFile,
+                rootDir,
               })
-            : new TreeFS({rootDir, processFile});
+            : new TreeFS({processFile, rootDir});
         this._startupPerfLogger?.point('constructFileSystem_end');
 
         const plugins = this.#plugins;
@@ -422,8 +422,8 @@ export default class FileMap extends EventEmitter {
         // is not mutated during either operation.
         const [fileDelta] = await Promise.all([
           this._buildFileDelta({
-            fileSystem,
             clocks: initialData?.clocks ?? new Map(),
+            fileSystem,
           }),
           Promise.all(
             plugins.map(plugin =>
@@ -533,8 +533,8 @@ export default class FileMap extends EventEmitter {
       ignorePatternForWatch: ignorePattern,
       perfLogger: this._startupPerfLogger,
       previousState,
-      roots,
       rootDir,
+      roots,
       useWatchman: await this._shouldUseWatchman(),
       watch,
       watchmanDeferStates,
@@ -566,7 +566,7 @@ export default class FileMap extends EventEmitter {
     plugins: $ReadOnlyArray<FileMapPlugin<>>,
     delta: $ReadOnly<{
       changedFiles: FileData,
-      removedFiles: $ReadOnlySet<CanonicalPath>,
+      removedFiles: ReadonlySet<CanonicalPath>,
       clocks?: WatchmanClocks,
     }>,
   ): Promise<void> {
@@ -649,8 +649,8 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_process_start');
     const [batchResult] = await Promise.all([
       this._fileProcessor.processBatch(filesToProcess, {
-        computeSha1: this._options.computeSha1,
         computeDependencies: this._options.computeDependencies,
+        computeSha1: this._options.computeSha1,
         maybeReturnContent: false,
       }),
       Promise.all(readLinkPromises),
@@ -718,8 +718,8 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('persist_start');
     await this._cacheManager.write(
       () => ({
-        fileSystemData: fileSystem.getSerializableSnapshot(),
         clocks: new Map(clocks),
+        fileSystemData: fileSystem.getSerializableSnapshot(),
         plugins: new Map(
           plugins.map(plugin => [
             plugin.name,
@@ -796,8 +796,8 @@ export default class FileMap extends EventEmitter {
         hmrPerfLogger.point('fileChange_start');
       }
       const changeEvent: ChangeEvent = {
-        logger: hmrPerfLogger,
         eventsQueue,
+        logger: hmrPerfLogger,
       };
       this.emit('change', changeEvent);
       nextEmit = null;
@@ -887,9 +887,9 @@ export default class FileMap extends EventEmitter {
             if (nextEmit == null) {
               nextEmit = {
                 eventsQueue: [event],
-                firstEventTimestamp: onChangeStartTime,
                 firstEnqueuedTimestamp:
                   performance.timeOrigin + performance.now(),
+                firstEventTimestamp: onChangeStartTime,
               };
             } else {
               nextEmit.eventsQueue.push(event);
@@ -922,8 +922,8 @@ export default class FileMap extends EventEmitter {
                   absoluteFilePath,
                   fileMetadata,
                   {
-                    computeSha1: this._options.computeSha1,
                     computeDependencies: this._options.computeDependencies,
+                    computeSha1: this._options.computeSha1,
                     maybeReturnContent: false,
                   },
                 );

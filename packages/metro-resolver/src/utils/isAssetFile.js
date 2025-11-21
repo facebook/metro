@@ -17,7 +17,7 @@ import path from 'path';
  */
 export default function isAssetFile(
   filePath: string,
-  assetExts: $ReadOnlySet<string>,
+  assetExts: ReadonlySet<string>,
 ): boolean {
   const baseName = path.basename(filePath);
 

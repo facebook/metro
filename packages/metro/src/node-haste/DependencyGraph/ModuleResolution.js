@@ -57,7 +57,7 @@ export type PackageishCache<TPackage> = interface {
 };
 
 type Options<TPackage> = $ReadOnly<{
-  assetExts: $ReadOnlySet<string>,
+  assetExts: ReadonlySet<string>,
   dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
@@ -102,13 +102,13 @@ export class ModuleResolver<TPackage: Packageish> {
       emptyModule = this.resolveDependency(
         this._projectRootFakeModulePath,
         {
-          name: this._options.emptyModulePath,
           data: {
-            key: this._options.emptyModulePath,
             asyncType: null,
             isESMImport: false,
+            key: this._options.emptyModulePath,
             locs: [],
           },
+          name: this._options.emptyModulePath,
         },
         false,
         null,
@@ -150,16 +150,25 @@ export class ModuleResolver<TPackage: Packageish> {
           {
             allowHaste,
             assetExts,
+            customResolverOptions: resolverOptions.customResolverOptions ?? {},
             dev: resolverOptions.dev,
             disableHierarchicalLookup,
             doesFileExist,
             extraNodeModules,
             fileSystemLookup,
+            getPackage: this._getPackage,
+            getPackageForModule: (absoluteModulePath: string) =>
+              this._getPackageForModule(absoluteModulePath),
             isESMImport: dependency.data.isESMImport,
             mainFields,
             nodeModulesPaths,
+            originModulePath,
             preferNativePlatform,
             resolveAsset,
+            resolveHasteModule: (name: string) =>
+              this._options.getHasteModulePath(name, platform),
+            resolveHastePackage: (name: string) =>
+              this._options.getHastePackagePath(name, platform),
             resolveRequest,
             sourceExts,
             unstable_conditionNames,
@@ -167,15 +176,6 @@ export class ModuleResolver<TPackage: Packageish> {
             unstable_enablePackageExports,
             unstable_incrementalResolution,
             unstable_logWarning: this._logWarning,
-            customResolverOptions: resolverOptions.customResolverOptions ?? {},
-            originModulePath,
-            resolveHasteModule: (name: string) =>
-              this._options.getHasteModulePath(name, platform),
-            resolveHastePackage: (name: string) =>
-              this._options.getHastePackagePath(name, platform),
-            getPackage: this._getPackage,
-            getPackageForModule: (absoluteModulePath: string) =>
-              this._getPackageForModule(absoluteModulePath),
           },
           dependency,
         ),
@@ -263,9 +263,9 @@ export class ModuleResolver<TPackage: Packageish> {
 
     return result != null
       ? {
-          rootPath: path.dirname(result.pkg.path),
           packageJson: result.pkg.read(),
           packageRelativePath: result.packageRelativePath,
+          rootPath: path.dirname(result.pkg.path),
         }
       : null;
   };
@@ -282,7 +282,7 @@ export class ModuleResolver<TPackage: Packageish> {
         // not just an arbitrary item!
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
-        return {type: 'sourceFile', filePath: arbitrary};
+        return {filePath: arbitrary, type: 'sourceFile'};
       case 'empty':
         return this._getEmptyModule();
       default:
@@ -293,8 +293,8 @@ export class ModuleResolver<TPackage: Packageish> {
 
   _logWarning = (message: string): void => {
     this._options.reporter.update({
-      type: 'resolver_warning',
       message,
+      type: 'resolver_warning',
     });
   };
 
@@ -432,8 +432,8 @@ function refineDependencyLocation(
       if (isQuote(maybeQuoteBefore) && maybeQuoteBefore === maybeQuoteAfter) {
         return {
           start: {
-            line: line + 1,
             column: minColumn + offset + 1,
+            line: line + 1,
           },
         };
       }
@@ -442,13 +442,13 @@ function refineDependencyLocation(
   // Otherwise, if this is a single-line loc, return it exactly, as a range.
   if (loc.start.line === loc.end.line) {
     return {
-      start: {
-        line: loc.start.line,
-        column: loc.start.column + 1,
-      },
       end: {
-        line: loc.end.line,
         column: loc.end.column + 1,
+        line: loc.end.line,
+      },
+      start: {
+        column: loc.start.column + 1,
+        line: loc.start.line,
       },
     };
   }
@@ -456,8 +456,8 @@ function refineDependencyLocation(
   // much unnecessary context.
   return {
     start: {
-      line: loc.start.line,
       column: loc.start.column + 1,
+      line: loc.start.line,
     },
   };
 }

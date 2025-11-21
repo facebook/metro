@@ -43,7 +43,7 @@ type EndpointOptions = {
    */
   maxAttempts?: number,
   retryNetworkErrors?: boolean,
-  retryStatuses?: $ReadOnlySet<number>,
+  retryStatuses?: ReadonlySet<number>,
   socketPath?: string,
   proxy?: string,
 };
@@ -57,7 +57,7 @@ type Endpoint = {
   params: URLSearchParams,
   headers?: {[string]: string},
   timeout: number,
-  additionalSuccessStatuses: $ReadOnlySet<number>,
+  additionalSuccessStatuses: ReadonlySet<number>,
   debug: boolean,
 
   /**
@@ -65,7 +65,7 @@ type Endpoint = {
    */
   maxAttempts: number,
   retryNetworkErrors: boolean,
-  retryStatuses: $ReadOnlySet<number>,
+  retryStatuses: ReadonlySet<number>,
 };
 
 const ZLIB_OPTIONS: zlib$options = {
@@ -96,8 +96,8 @@ export default class HttpStore<T> {
       family: options.family,
       keepAlive: true,
       keepAliveMsecs: options.timeout || 5000,
-      maxSockets: 64,
       maxFreeSockets: 64,
+      maxSockets: 64,
     };
 
     if (options.key != null) {
@@ -133,21 +133,21 @@ export default class HttpStore<T> {
     }
 
     return {
-      agent,
-      headers: options.headers,
-      host: uri.hostname,
-      path: uri.pathname,
-      port: +uri.port,
-      params: new URLSearchParams(options.params),
-      timeout: options.timeout || 5000,
-      module: uri.protocol === 'http:' ? http : https,
       additionalSuccessStatuses: new Set(
         options.additionalSuccessStatuses ?? [],
       ),
+      agent,
       debug: options.debug ?? false,
+      headers: options.headers,
+      host: uri.hostname,
       maxAttempts: options.maxAttempts ?? 1,
-      retryStatuses: new Set(options.retryStatuses ?? []),
+      module: uri.protocol === 'http:' ? http : https,
+      params: new URLSearchParams(options.params),
+      path: uri.pathname,
+      port: +uri.port,
       retryNetworkErrors: options.retryNetworkErrors ?? false,
+      retryStatuses: new Set(options.retryStatuses ?? []),
+      timeout: options.timeout || 5000,
     };
   }
 

@@ -330,7 +330,7 @@ export type LookupResult =
       // files).
       exists: false,
       // The real, normal, absolute paths of any symlinks traversed.
-      links: $ReadOnlySet<string>,
+      links: ReadonlySet<string>,
       // The real, normal, absolute path of the first path segment
       // encountered that does not exist, or cannot be navigated through.
       missing: string,
@@ -338,7 +338,7 @@ export type LookupResult =
   | {
       exists: true,
       // The real, normal, absolute paths of any symlinks traversed.
-      links: $ReadOnlySet<string>,
+      links: ReadonlySet<string>,
       // The real, normal, absolute path of the file or directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -409,7 +409,7 @@ export type RawMockMap = $ReadOnly<{
 }>;
 
 export type ReadOnlyRawMockMap = $ReadOnly<{
-  duplicates: $ReadOnlyMap<string, $ReadOnlySet<string>>,
+  duplicates: $ReadOnlyMap<string, ReadonlySet<string>>,
   mocks: $ReadOnlyMap<string, Path>,
   version: number,
 }>;

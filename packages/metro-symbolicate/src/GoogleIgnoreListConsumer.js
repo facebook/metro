@@ -75,7 +75,7 @@ export default class GoogleIgnoreListConsumer {
   /**
    * Prepares and caches a set of ignored sources for this map.
    */
-  _getIgnoredSourceSet(): $ReadOnlySet<string> {
+  _getIgnoredSourceSet(): ReadonlySet<string> {
     if (!this._ignoredSourceSet) {
       const ignoredSourceSet = new Set<string>();
 

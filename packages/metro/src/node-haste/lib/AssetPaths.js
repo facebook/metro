@@ -35,10 +35,10 @@ function parseBaseName(baseName: string): {
   if (match[3] != null) {
     const resolution = parseFloat(match[3]);
     if (!Number.isNaN(resolution)) {
-      return {rootName, resolution};
+      return {resolution, rootName};
     }
   }
-  return {rootName, resolution: 1};
+  return {resolution: 1, rootName};
 }
 
 /**
@@ -47,7 +47,7 @@ function parseBaseName(baseName: string): {
  */
 export function tryParse(
   filePath: string,
-  platforms: $ReadOnlySet<string>,
+  platforms: ReadonlySet<string>,
 ): ?AssetPath {
   const result = parsePlatformFilePath(filePath, platforms);
   const {dirPath, baseName, platform, extension} = result;
@@ -66,7 +66,7 @@ export function tryParse(
 
 export function parse(
   filePath: string,
-  platforms: $ReadOnlySet<string>,
+  platforms: ReadonlySet<string>,
 ): AssetPath {
   const result = tryParse(filePath, platforms);
   if (result == null) {

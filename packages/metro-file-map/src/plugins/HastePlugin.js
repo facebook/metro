@@ -45,7 +45,7 @@ type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   enableHastePackages: boolean,
   perfLogger: ?PerfLogger,
-  platforms: $ReadOnlySet<string>,
+  platforms: ReadonlySet<string>,
   rootDir: Path,
   failValidationOnConflicts: boolean,
 }>;
@@ -61,7 +61,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   +#enableHastePackages: boolean;
   +#perfLogger: ?PerfLogger;
   +#pathUtils: RootPathUtils;
-  +#platforms: $ReadOnlySet<string>;
+  +#platforms: ReadonlySet<string>;
   +#failValidationOnConflicts: boolean;
 
   constructor(options: HasteMapOptions) {
@@ -386,12 +386,12 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     for (const [id, dupsByPlatform] of this.#duplicates.entries()) {
       for (const [platform, conflictingModules] of dupsByPlatform) {
         conflicts.push({
-          id,
-          platform: platform === H.GENERIC_PLATFORM ? null : platform,
           absolutePaths: [...conflictingModules.keys()]
             .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
             // Sort for ease of testing
             .sort(),
+          id,
+          platform: platform === H.GENERIC_PLATFORM ? null : platform,
           type: 'duplicate',
         });
       }
@@ -428,12 +428,12 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       }
       if (conflictPaths.size) {
         conflicts.push({
-          id,
-          platform: null,
           absolutePaths: [...new Set([...conflictPaths, ...basePaths])]
             .map(modulePath => this.#pathUtils.normalToAbsolute(modulePath))
             // Sort for ease of testing
             .sort(),
+          id,
+          platform: null,
           type: 'shadowing',
         });
       }

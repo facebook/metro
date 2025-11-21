@@ -129,7 +129,7 @@ export default class TreeFS implements MutableFileSystem {
     fileSystemData: DirectoryNode,
     processFile: ProcessFileFunction,
   }): TreeFS {
-    const tfs = new TreeFS({rootDir, processFile});
+    const tfs = new TreeFS({processFile, rootDir});
     tfs.#rootNode = fileSystemData;
     return tfs;
   }
@@ -163,8 +163,8 @@ export default class TreeFS implements MutableFileSystem {
     const changedFiles: FileData = new Map(files);
     const removedFiles: Set<string> = new Set();
     for (const {canonicalPath, metadata} of this.metadataIterator({
-      includeSymlinks: true,
       includeNodeModules: true,
+      includeSymlinks: true,
     })) {
       const newMetadata = files.get(canonicalPath);
       if (newMetadata) {
@@ -240,8 +240,8 @@ export default class TreeFS implements MutableFileSystem {
 
     return maybeContent
       ? {
-          sha1,
           content: maybeContent,
+          sha1,
         }
       : {sha1};
   }
@@ -285,8 +285,8 @@ export default class TreeFS implements MutableFileSystem {
   getAllFiles(): Array<Path> {
     return Array.from(
       this.metadataIterator({
-        includeSymlinks: false,
         includeNodeModules: true,
+        includeSymlinks: false,
       }),
       ({canonicalPath}) => this.#pathUtils.normalToAbsolute(canonicalPath),
     );
@@ -1035,7 +1035,7 @@ export default class TreeFS implements MutableFileSystem {
       if (isDirectory(node)) {
         yield* this._metadataIterator(node, opts, prefixedName);
       } else if (isRegularFile(node) || opts.includeSymlinks) {
-        yield {canonicalPath: prefixedName, metadata: node, baseName: name};
+        yield {baseName: name, canonicalPath: prefixedName, metadata: node};
       }
     }
   }
@@ -1076,7 +1076,7 @@ export default class TreeFS implements MutableFileSystem {
       subtreeOnly: boolean,
     }>,
     pathPrefix: string = '',
-    followedLinks: $ReadOnlySet<FileMetadata> = new Set(),
+    followedLinks: ReadonlySet<FileMetadata> = new Set(),
   ): Iterable<Path> {
     const pathSep = opts.alwaysYieldPosix ? '/' : path.sep;
     const prefixWithSep = pathPrefix === '' ? pathPrefix : pathPrefix + pathSep;

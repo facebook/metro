@@ -39,7 +39,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
   _graph: Graph<T>;
 
   constructor(
-    entryPoints: $ReadOnlySet<string>,
+    entryPoints: ReadonlySet<string>,
     changeEventSource: EventEmitter,
     options: Options<T>,
   ) {
@@ -154,8 +154,8 @@ export default class DeltaCalculator<T> extends EventEmitter {
 
       return {
         added: this._graph.dependencies,
-        modified: new Map(),
         deleted: new Set(),
+        modified: new Map(),
         reset: true,
       };
     }
@@ -256,8 +256,8 @@ export default class DeltaCalculator<T> extends EventEmitter {
 
       return {
         added,
-        modified: new Map(),
         deleted: new Set(),
+        modified: new Map(),
         reset: true,
       };
     }
@@ -297,8 +297,8 @@ export default class DeltaCalculator<T> extends EventEmitter {
     if (modifiedDependencies.length === 0) {
       return {
         added: new Map(),
-        modified: new Map(),
         deleted: new Set(),
+        modified: new Map(),
         reset: false,
       };
     }
@@ -317,8 +317,8 @@ export default class DeltaCalculator<T> extends EventEmitter {
 
     return {
       added,
-      modified,
       deleted,
+      modified,
       reset: false,
     };
   }

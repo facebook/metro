@@ -11,7 +11,7 @@
 // Extract platform extension: index.ios.js -> ios
 export default function getPlatformExtension(
   file: string,
-  platforms: $ReadOnlySet<string>,
+  platforms: ReadonlySet<string>,
 ): ?string {
   const last = file.lastIndexOf('.');
   const secondToLast = file.lastIndexOf('.', last - 1);

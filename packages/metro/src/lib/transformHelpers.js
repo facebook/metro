@@ -54,8 +54,8 @@ async function calcTransformerOptions(
   const baseOptions = {
     customTransformOptions: options.customTransformOptions,
     dev: options.dev,
-    inlineRequires: false,
     inlinePlatform: true,
+    inlineRequires: false,
     minify: options.minify,
     platform: options.platform,
     unstable_transformProfile: options.unstable_transformProfile,
@@ -73,11 +73,14 @@ async function calcTransformerOptions(
 
   const getDependencies = async (path: string) => {
     const dependencies = await deltaBundler.getDependencies([path], {
+      lazy: false,
+      onProgress: null,
       resolve: await getResolveDependencyFn(
         bundler,
         options.platform,
         resolverOptions,
       ),
+      shallow: false,
       transform: await getTransformFn(
         [path],
         bundler,
@@ -90,15 +93,12 @@ async function calcTransformerOptions(
         resolverOptions,
       ),
       transformOptions: options,
-      onProgress: null,
-      lazy: false,
       unstable_allowRequireContext:
         config.transformer.unstable_allowRequireContext,
       unstable_enablePackageExports:
         config.resolver.unstable_enablePackageExports,
       unstable_incrementalResolution:
         config.resolver.unstable_incrementalResolution,
-      shallow: false,
     });
 
     return Array.from(dependencies.keys());
@@ -112,15 +112,15 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    inlineRequires: transform?.inlineRequires || false,
     experimentalImportSupport: transform?.experimentalImportSupport || false,
+    inlineRequires: transform?.inlineRequires || false,
+    nonInlinedRequires:
+      transform?.nonInlinedRequires || baseIgnoredInlineRequires,
+    type: 'module',
     unstable_memoizeInlineRequires:
       transform?.unstable_memoizeInlineRequires || false,
     unstable_nonMemoizedInlineRequires:
       transform?.unstable_nonMemoizedInlineRequires || [],
-    nonInlinedRequires:
-      transform?.nonInlinedRequires || baseIgnoredInlineRequires,
-    type: 'module',
   };
 }
 
@@ -183,11 +183,11 @@ export async function getTransformFn(
       modulePath,
       {
         ...transformOptions,
-        type: getType(transformOptions.type, modulePath, assetExts),
         inlineRequires: removeInlineRequiresBlockListFromOptions(
           modulePath,
           inlineRequires,
         ),
+        type: getType(transformOptions.type, modulePath, assetExts),
       },
       templateBuffer,
     );
@@ -197,7 +197,7 @@ export async function getTransformFn(
 function getType(
   type: string,
   filePath: string,
-  assetExts: $ReadOnlySet<string>,
+  assetExts: ReadonlySet<string>,
 ): Type {
   if (type === 'script') {
     return type;

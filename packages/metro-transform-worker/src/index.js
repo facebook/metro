@@ -150,7 +150,7 @@ type JSFile = $ReadOnly<{
   ast?: ?BabelNodeFile,
   type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
-  unstable_importDeclarationLocs?: ?$ReadOnlySet<string>,
+  unstable_importDeclarationLocs?: ?ReadonlySet<string>,
 }>;
 
 type JSONFile = {
@@ -213,13 +213,13 @@ const minifyCode = async (
   const sourceMap = fromRawMappings([
     {
       code,
-      source,
-      map,
       // functionMap is overridden by the serializer
       functionMap: null,
-      path: filename,
       // isIgnored is overriden by the serializer
       isIgnored: false,
+      map,
+      path: filename,
+      source,
     },
   ]).toMap(undefined, {});
 
@@ -228,10 +228,10 @@ const minifyCode = async (
   try {
     const minified = await minify({
       code,
-      map: sourceMap,
-      filename,
-      reserved,
       config: config.minifierConfig,
+      filename,
+      map: sourceMap,
+      reserved,
     });
 
     return {
@@ -252,11 +252,11 @@ const minifyCode = async (
 };
 
 const disabledDependencyTransformer: DependencyTransformer = {
-  transformSyncRequire: () => void 0,
+  transformIllegalDynamicRequire: () => void 0,
   transformImportCall: () => void 0,
   transformImportMaybeSyncCall: () => void 0,
   transformPrefetch: () => void 0,
-  transformIllegalDynamicRequire: () => void 0,
+  transformSyncRequire: () => void 0,
 };
 
 class InvalidRequireCallError extends Error {
@@ -337,18 +337,18 @@ async function transformJS(
     transformFromAstSync(ast, '', {
       ast: true,
       babelrc: false,
-      code: false,
-      configFile: false,
-      comments: true,
-      filename: file.filename,
-      plugins,
-      sourceMaps: false,
       // Not-Cloning the input AST here should be safe because other code paths above this call
       // are mutating the AST as well and no code is depending on the original AST.
       // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/facebook/metro/issues/641
       // either because one of the plugins is doing something funky or Babel messes up some caches.
       // Make sure to test the above mentioned case before flipping the flag back to false.
       cloneInputAst: true,
+      code: false,
+      comments: true,
+      configFile: false,
+      filename: file.filename,
+      plugins,
+      sourceMaps: false,
     }).ast,
   );
 
@@ -360,13 +360,13 @@ async function transformJS(
       transformFromAstSync(ast, '', {
         ast: true,
         babelrc: false,
+        cloneInputAst: false,
         code: false,
-        configFile: false,
         comments: true,
+        configFile: false,
         filename: file.filename,
         plugins: [metroTransformPlugins.constantFoldingPlugin],
         sourceMaps: false,
-        cloneInputAst: false,
       }).ast,
     );
   }
@@ -386,7 +386,9 @@ async function transformJS(
     try {
       const importDeclarationLocs = file.unstable_importDeclarationLocs ?? null;
       const opts = {
+        allowOptionalDependencies: config.allowOptionalDependencies,
         asyncRequireModulePath: config.asyncRequireModulePath,
+        dependencyMapName: config.unstable_dependencyMapReservedName,
         dependencyTransformer:
           config.unstable_disableModuleWrapping === true
             ? disabledDependencyTransformer
@@ -397,8 +399,6 @@ async function transformJS(
         ),
         inlineableCalls: [importDefault, importAll],
         keepRequireNames: options.dev,
-        allowOptionalDependencies: config.allowOptionalDependencies,
-        dependencyMapName: config.unstable_dependencyMapReservedName,
         unstable_allowRequireContext: config.unstable_allowRequireContext,
         unstable_isESMImportAtSource:
           importDeclarationLocs != null
@@ -493,9 +493,9 @@ async function transformJS(
     {
       data: {
         code,
+        functionMap: file.functionMap,
         lineCount,
         map,
-        functionMap: file.functionMap,
       },
       type: file.type,
     },
@@ -524,9 +524,9 @@ async function transformAsset(
 
   const jsFile = {
     ...file,
-    type: 'js/module/asset' as const,
     ast: result.ast,
     functionMap: null,
+    type: 'js/module/asset' as const,
   };
 
   return transformJS(jsFile, context);
@@ -616,7 +616,7 @@ async function transformJSON(
   ({lineCount, map} = countLinesAndTerminateMap(code, map));
   const output: Array<JsOutput> = [
     {
-      data: {code, lineCount, map, functionMap: null},
+      data: {code, functionMap: null, lineCount, map},
       type: jsType,
     },
   ];
@@ -658,8 +658,8 @@ export const transform = async (
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
     config,
-    projectRoot,
     options,
+    projectRoot,
   };
   const sourceCode = data.toString('utf8');
 
@@ -687,9 +687,9 @@ export const transform = async (
 
   if (filename.endsWith('.json')) {
     const jsonFile: JSONFile = {
+      code: sourceCode,
       filename,
       inputFileSize: data.length,
-      code: sourceCode,
       type: options.type,
     };
 
@@ -698,9 +698,9 @@ export const transform = async (
 
   if (options.type === 'asset') {
     const file: AssetFile = {
+      code: sourceCode,
       filename,
       inputFileSize: data.length,
-      code: sourceCode,
       type: options.type,
     };
 
@@ -708,11 +708,11 @@ export const transform = async (
   }
 
   const file: JSFile = {
-    filename,
-    inputFileSize: data.length,
     code: sourceCode,
-    type: options.type === 'script' ? 'js/script' : 'js/module',
+    filename,
     functionMap: null,
+    inputFileSize: data.length,
+    type: options.type === 'script' ? 'js/script' : 'js/module',
   };
 
   return await transformJSWithBabel(file, context);

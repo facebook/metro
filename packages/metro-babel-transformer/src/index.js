@@ -52,7 +52,7 @@ export type BabelFileFunctionMapMetadata = $ReadOnly<{
   mappings: string,
 }>;
 
-export type BabelFileImportLocsMetadata = $ReadOnlySet<string>;
+export type BabelFileImportLocsMetadata = ReadonlySet<string>;
 
 export type MetroBabelFileMetadata = {
   ...BabelFileMetadata,
@@ -90,21 +90,20 @@ function transform({
 
   try {
     const babelConfig: BabelCoreOptions = {
-      caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
       babelrc: options.enableBabelRCLookup,
-      code: false,
-      cwd: options.projectRoot,
-      highlightCode: true,
-      filename,
-      plugins,
-      sourceType: 'module',
-
+      caller: {bundler: 'metro', name: 'metro', platform: options.platform},
       // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
       // Hermes parsing, but this defaults to cloning the AST which increases
       // the transformation time by a fair amount.
       // You get this behavior by default when using Babel's `transform` method directly.
       cloneInputAst: false,
+      code: false,
+      cwd: options.projectRoot,
+      filename,
+      highlightCode: true,
+      plugins,
+      sourceType: 'module',
     };
     const sourceAst = options.hermesParser
       ? // eslint-disable-next-line import/no-commonjs

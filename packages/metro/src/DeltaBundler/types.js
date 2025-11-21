@@ -99,13 +99,13 @@ export type TransformInputOptions = Omit<
 >;
 
 export type GraphInputOptions = $ReadOnly<{
-  entryPoints: $ReadOnlySet<string>,
+  entryPoints: ReadonlySet<string>,
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions,
 }>;
 
 export interface ReadOnlyGraph<T = MixedOutput> {
-  +entryPoints: $ReadOnlySet<string>;
+  +entryPoints: ReadonlySet<string>;
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   +transformOptions: $ReadOnly<TransformInputOptions>;
   +dependencies: ReadOnlyDependencies<T>;

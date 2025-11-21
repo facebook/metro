@@ -52,13 +52,13 @@ function resolveDependencies(
       const absolutePath = deriveAbsolutePathFromContext(from, contextParams);
 
       const resolvedContext: RequireContext = {
-        from,
-        mode: contextParams.mode,
-        recursive: contextParams.recursive,
         filter: new RegExp(
           contextParams.filter.pattern,
           contextParams.filter.flags,
         ),
+        from,
+        mode: contextParams.mode,
+        recursive: contextParams.recursive,
       };
 
       resolvedContexts.set(key, resolvedContext);
@@ -100,7 +100,7 @@ function resolveDependencies(
 }
 
 export async function buildSubgraph<T>(
-  entryPaths: $ReadOnlySet<string>,
+  entryPaths: ReadonlySet<string>,
   resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
 ): Promise<{
@@ -157,5 +157,5 @@ export async function buildSubgraph<T>(
     ),
   );
 
-  return {moduleData, errors};
+  return {errors, moduleData};
 }

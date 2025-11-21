@@ -21,7 +21,7 @@ import type {
 
 export function reduceExportsLikeMap(
   exportsLikeMap: NormalizedExportsLikeMap,
-  conditionNames: $ReadOnlySet<string>,
+  conditionNames: ReadonlySet<string>,
   createConfigError: (reason: string) => Error,
 ): FlattenedExportMap {
   const result = new Map<string, string | null>();
@@ -60,7 +60,7 @@ export function reduceExportsLikeMap(
  */
 function reduceConditionalExport(
   subpathValue: $Values<ExportsLikeMap>,
-  conditionNames: $ReadOnlySet<string>,
+  conditionNames: ReadonlySet<string>,
 ): string | null | 'no-match' {
   let reducedValue = subpathValue;
 

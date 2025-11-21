@@ -113,11 +113,11 @@ function getInternalOptions<T>({
 
   return {
     lazy,
-    transform,
-    resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
     onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
+    resolve,
     shallow,
+    transform,
   };
 }
 
@@ -130,7 +130,7 @@ function isWeakOrLazy<T>(
 }
 
 export class Graph<T = MixedOutput> {
-  +entryPoints: $ReadOnlySet<string>;
+  +entryPoints: ReadonlySet<string>;
   +transformOptions: TransformInputOptions;
   +dependencies: Dependencies<T> = new Map();
   +#importBundleNodes: Map<
@@ -246,11 +246,11 @@ export class Graph<T = MixedOutput> {
       // Roll back to base before re-throwing.
       const rollbackDelta: Delta<T> = {
         added: delta.added,
+        baseModuleData: new Map(),
         deleted: delta.deleted,
+        errors: new Map(),
         touched: new Set(),
         updatedModuleData: delta.baseModuleData,
-        baseModuleData: new Map(),
-        errors: new Map(),
       };
       for (const modified of modifiedPathsInBaseGraph) {
         const module = this.dependencies.get(modified);
@@ -295,8 +295,8 @@ export class Graph<T = MixedOutput> {
 
     return {
       added,
-      modified,
       deleted: delta.deleted,
+      modified,
     };
   }
 
@@ -338,39 +338,39 @@ export class Graph<T = MixedOutput> {
 
     return {
       added: this.dependencies,
-      modified: new Map(),
       deleted: new Set(),
+      modified: new Map(),
     };
   }
 
   async _buildDelta(
-    pathsToVisit: $ReadOnlySet<string>,
+    pathsToVisit: ReadonlySet<string>,
     options: InternalOptions<T>,
     moduleFilter?: (path: string) => boolean,
   ): Promise<Delta<T>> {
     const subGraph = await buildSubgraph(pathsToVisit, this.#resolvedContexts, {
       resolve: options.resolve,
-      transform: async (absolutePath, requireContext) => {
-        options.onDependencyAdd();
-        const result = await options.transform(absolutePath, requireContext);
-        options.onDependencyAdded();
-        return result;
-      },
       shouldTraverse: (dependency: ResolvedDependency) => {
         if (options.shallow || isWeakOrLazy(dependency, options)) {
           return false;
         }
         return moduleFilter == null || moduleFilter(dependency.absolutePath);
       },
+      transform: async (absolutePath, requireContext) => {
+        options.onDependencyAdd();
+        const result = await options.transform(absolutePath, requireContext);
+        options.onDependencyAdded();
+        return result;
+      },
     });
 
     return {
       added: new Set(),
-      touched: new Set(),
-      deleted: new Set(),
-      updatedModuleData: subGraph.moduleData,
       baseModuleData: new Map(),
+      deleted: new Set(),
       errors: subGraph.errors,
+      touched: new Set(),
+      updatedModuleData: subGraph.moduleData,
     };
   }
 
@@ -775,9 +775,9 @@ export class Graph<T = MixedOutput> {
     }
     return {
       dependencies: new Map(dependencies),
-      resolvedContexts,
       getSource,
       output,
+      resolvedContexts,
       unstable_transformResultKey,
     };
   }

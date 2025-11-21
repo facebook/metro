@@ -130,7 +130,7 @@ export type ResolveAsset = (
 
 export type ResolutionContext = $ReadOnly<{
   allowHaste: boolean,
-  assetExts: $ReadOnlySet<string>,
+  assetExts: ReadonlySet<string>,
   customResolverOptions: CustomResolverOptions,
   disableHierarchicalLookup: boolean,
 
