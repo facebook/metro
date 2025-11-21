@@ -22,13 +22,17 @@ import type {HandleFunction} from 'connect';
 import type {EventEmitter} from 'events';
 import type {IncomingMessage, Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-import type {CustomTransformOptions} from 'metro-babel-transformer';
+import type {
+  CustomTransformOptions,
+  TransformProfile,
+} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
   MetroConfig,
   Middleware,
 } from 'metro-config';
+import type {CustomResolverOptions} from 'metro-resolver';
 import type {Duplex} from 'stream';
 import type Yargs from 'yargs';
 
@@ -89,8 +93,11 @@ export interface RunServerResult {
 
 export interface RunBuildOptions {
   entry: string;
+  assets?: boolean;
   dev?: boolean;
   out?: string;
+  bundleOut?: string;
+  sourceMapOut?: string;
   onBegin?: () => void;
   onComplete?: () => void;
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
@@ -117,6 +124,9 @@ export interface RunBuildOptions {
   platform?: string;
   sourceMap?: boolean;
   sourceMapUrl?: string;
+  customResolverOptions?: CustomResolverOptions;
+  customTransformOptions?: CustomTransformOptions;
+  unstable_transformProfile?: TransformProfile;
 }
 
 interface BuildGraphOptions {
