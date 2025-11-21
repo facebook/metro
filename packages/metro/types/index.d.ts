@@ -129,6 +129,13 @@ export interface RunBuildOptions {
   unstable_transformProfile?: TransformProfile;
 }
 
+export interface RunBuildResult {
+  code: string;
+  map: string;
+  assets?: ReadonlyArray<AssetData>;
+  [key: string]: unknown;
+}
+
 interface BuildGraphOptions {
   entries: ReadonlyArray<string>;
   customTransformOptions?: CustomTransformOptions;
@@ -159,7 +166,7 @@ export function runServer(
 export function runBuild(
   config: ConfigT,
   options: RunBuildOptions,
-): Promise<void>;
+): Promise<RunBuildResult>;
 
 export function buildGraph(
   config: ConfigT,
