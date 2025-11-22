@@ -24,7 +24,7 @@ jobs:
           '20.19.4', # minimum supported
           'lts/-1',  # previous lts
           'lts/*',   # latest lts
-          # 'latest'   # latest node version
+          'latest'   # latest node version
         ]
         no-lockfile: ['false', 'true']
     uses: ./.github/workflows/test.yml
