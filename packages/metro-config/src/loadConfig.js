@@ -18,6 +18,8 @@ import {validate} from 'jest-validate';
 import * as MetroCache from 'metro-cache';
 import {homedir} from 'os';
 import * as path from 'path';
+// eslint-disable-next-line no-restricted-imports
+import {pathToFileURL} from 'url';
 import {parse as parseYaml} from 'yaml';
 
 type ResolveConfigResult = {
@@ -397,7 +399,11 @@ export async function loadConfigFile(
     } catch (e) {
       try {
         // $FlowExpectedError[unsupported-syntax]
-        const configModule = await import(absolutePath);
+        const configModule = await import(
+          path.isAbsolute(absolutePath)
+            ? pathToFileURL(absolutePath).toString()
+            : absolutePath
+        );
         // The default export is a promise in the case of top-level await
         config = await configModule.default;
       } catch (error) {
