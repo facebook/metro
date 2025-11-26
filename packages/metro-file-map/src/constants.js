@@ -18,14 +18,11 @@
  * This constant key map allows to keep the map smaller without having to build
  * a custom serialization library.
  */
-
-/*::
 import type {HType} from './flow-types';
-*/
 
 'use strict';
 
-const constants/*: HType */ = {
+export const constants: HType = {
   /* dependency serialization */
   DEPENDENCY_DELIM: '\0',
 
@@ -51,4 +48,4 @@ const constants/*: HType */ = {
   NATIVE_PLATFORM: 'native',
 };
 
-module.exports = constants;
+export default constants;

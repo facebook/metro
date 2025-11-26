@@ -18,4 +18,6 @@ if (path.sep === '/') {
     filePath.replace(/\\/g, '/');
 }
 
-export default normalizePathSeparatorsToPosix;
+export default normalizePathSeparatorsToPosix as interface {
+  (filePath: string): string,
+};

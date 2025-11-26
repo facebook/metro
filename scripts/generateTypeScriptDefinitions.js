@@ -33,6 +33,7 @@ export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-resolver/**',
   'packages/metro-source-map/**',
   'packages/metro-transform-worker/**',
+  'packages/metro-file-map/**',
   'packages/ob1/**',
 ];
 
@@ -46,6 +47,7 @@ const IGNORED_PATTERNS = [
   '**/node_modules/**',
   'packages/metro-babel-register/**',
   'packages/*/build/**',
+  'packages/metro-file-map/src/worker.js',
   'packages/metro/src/integration_tests/**',
 ];
 

@@ -46,22 +46,23 @@ function makeWatchmanError(error: Error): Error {
   return error;
 }
 
-export default async function watchmanCrawl({
-  abortSignal,
-  computeSha1,
-  extensions,
-  ignore,
-  includeSymlinks,
-  onStatus,
-  perfLogger,
-  previousState,
-  rootDir,
-  roots,
-}: CrawlerOptions): Promise<{
+export default async function watchmanCrawl(options: CrawlerOptions): Promise<{
   changedFiles: FileData,
   removedFiles: Set<CanonicalPath>,
   clocks: WatchmanClocks,
 }> {
+  const {
+    abortSignal,
+    computeSha1,
+    extensions,
+    ignore,
+    includeSymlinks,
+    onStatus,
+    perfLogger,
+    previousState,
+    rootDir,
+    roots,
+  } = options;
   abortSignal?.throwIfAborted();
 
   const client = new watchman.Client();

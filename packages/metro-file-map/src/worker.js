@@ -22,7 +22,7 @@ import type {
 'use strict';
 
 const defaultDependencyExtractor = require('./lib/dependencyExtractor');
-const excludedExtensions = require('./workerExclusionList');
+const {extensions: excludedExtensions} = require('./workerExclusionList');
 const {createHash} = require('crypto');
 const fs = require('graceful-fs');
 const path = require('path');

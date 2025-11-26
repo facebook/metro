@@ -32,7 +32,8 @@ export class AbstractWatcher implements WatcherBackend {
 
   #emitter: EventEmitter = new EventEmitter();
 
-  constructor(dir: string, {ignored, globs, dot}: WatcherBackendOptions) {
+  constructor(dir: string, opts: WatcherBackendOptions) {
+    const {ignored, globs, dot} = opts;
     this.dot = dot || false;
     this.ignored = ignored;
     this.globs = globs;
@@ -63,7 +64,7 @@ export class AbstractWatcher implements WatcherBackend {
     // Must be implemented by subclasses
   }
 
-  async stopWatching() {
+  async stopWatching(): Promise<void> {
     this.#emitter.removeAllListeners();
   }
 

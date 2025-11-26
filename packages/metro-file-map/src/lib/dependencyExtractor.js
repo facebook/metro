@@ -14,7 +14,7 @@
 'use strict';
 
 const NOT_A_DOT = '(?<!\\.\\s*)';
-const CAPTURE_STRING_LITERAL = (pos /*: number */) =>
+const CAPTURE_STRING_LITERAL = (pos: number) =>
   `([\`'"])([^'"\`]*?)(?:\\${pos})`;
 const WORD_SEPARATOR = '\\b';
 const LEFT_PARENTHESIS = '\\(';
@@ -22,18 +22,15 @@ const RIGHT_PARENTHESIS = '\\)';
 const WHITESPACE = '\\s*';
 const OPTIONAL_COMMA = '(:?,\\s*)?';
 
-function createRegExp(
-  parts /*: $ReadOnlyArray<string> */,
-  flags /*: string */,
-) {
+function createRegExp(parts: $ReadOnlyArray<string>, flags: string) {
   return new RegExp(parts.join(''), flags);
 }
 
-function alternatives(...parts /*: $ReadOnlyArray<string> */) {
+function alternatives(...parts: $ReadOnlyArray<string>) {
   return `(?:${parts.join('|')})`;
 }
 
-function functionCallStart(...names /*: $ReadOnlyArray<string> */) {
+function functionCallStart(...names: $ReadOnlyArray<string>) {
   return [
     NOT_A_DOT,
     WORD_SEPARATOR,
@@ -79,14 +76,10 @@ const JEST_EXTENSIONS_RE = createRegExp(
   'g',
 );
 
-function extract(code /*: string */) /*: Set<string> */ {
-  const dependencies /*: Set<string> */ = new Set();
+export function extract(code: string): Set<string> {
+  const dependencies: Set<string> = new Set();
 
-  const addDependency = (
-    match /*: string */,
-    _ /*: string */,
-    dep /*: string */,
-  ) => {
+  const addDependency = (match: string, _: string, dep: string) => {
     dependencies.add(dep);
     return match;
   };
@@ -101,4 +94,4 @@ function extract(code /*: string */) /*: Set<string> */ {
   return dependencies;
 }
 
-module.exports = {extract};
+export default {extract};

@@ -28,7 +28,7 @@ import path from 'path';
 export const CACHE_VERSION = 2;
 
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
-  +name = 'mocks';
+  +name: 'mocks' = 'mocks';
 
   +#mocksPattern: RegExp;
   #raw: RawMockMap;
@@ -37,23 +37,26 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   +#console: typeof console;
   #throwOnModuleCollision: boolean;
 
-  constructor({
-    console,
-    mocksPattern,
-    rawMockMap = {
-      duplicates: new Map(),
-      mocks: new Map(),
-      version: CACHE_VERSION,
-    },
-    rootDir,
-    throwOnModuleCollision,
-  }: $ReadOnly<{
-    console: typeof console,
-    mocksPattern: RegExp,
-    rawMockMap?: RawMockMap,
-    rootDir: Path,
-    throwOnModuleCollision: boolean,
-  }>) {
+  constructor(
+    options: $ReadOnly<{
+      console: typeof console,
+      mocksPattern: RegExp,
+      rawMockMap?: RawMockMap,
+      rootDir: Path,
+      throwOnModuleCollision: boolean,
+    }>,
+  ) {
+    const {
+      console,
+      mocksPattern,
+      rawMockMap = {
+        duplicates: new Map(),
+        mocks: new Map(),
+        version: CACHE_VERSION,
+      },
+      rootDir,
+      throwOnModuleCollision,
+    } = options;
     this.#mocksPattern = mocksPattern;
     if (rawMockMap.version !== CACHE_VERSION) {
       throw new Error('Incompatible state passed to MockPlugin');
@@ -65,10 +68,10 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     this.#throwOnModuleCollision = throwOnModuleCollision;
   }
 
-  async initialize({
-    files,
-    pluginState,
-  }: FileMapPluginInitOptions<RawMockMap>): Promise<void> {
+  async initialize(
+    initOptions: FileMapPluginInitOptions<RawMockMap>,
+  ): Promise<void> {
+    const {files, pluginState} = initOptions;
     if (pluginState != null && pluginState.version === this.#raw.version) {
       // Use cached state directly if available
       this.#raw = pluginState;

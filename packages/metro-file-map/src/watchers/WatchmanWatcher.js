@@ -49,8 +49,9 @@ export default class WatchmanWatcher extends AbstractWatcher {
   +watchmanDeferStates: $ReadOnlyArray<string>;
   #deferringStates: ?Set<string> = null;
 
-  constructor(dir: string, {watchmanDeferStates, ...opts}: WatcherOptions) {
-    super(dir, opts);
+  constructor(dir: string, opts: WatcherOptions) {
+    const {watchmanDeferStates, ...baseOpts} = opts;
+    super(dir, baseOpts);
 
     this.watchmanDeferStates = watchmanDeferStates;
 
@@ -62,7 +63,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
     this.subscriptionName = `${SUB_PREFIX}-${process.pid}-${readablePath}-${watchKey}`;
   }
 
-  async startWatching() {
+  async startWatching(): Promise<void> {
     await new Promise((resolve, reject) => this._init(resolve, reject));
   }
 
@@ -313,7 +314,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
   /**
    * Closes the watcher.
    */
-  async stopWatching() {
+  async stopWatching(): Promise<void> {
     await super.stopWatching();
     if (this.client) {
       this.client.removeAllListeners();

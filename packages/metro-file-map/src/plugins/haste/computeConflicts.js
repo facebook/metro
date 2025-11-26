@@ -21,18 +21,17 @@ type Conflict = {
   type: 'duplicate' | 'shadowing',
 };
 
-export function computeHasteConflicts({
-  duplicates,
-  map,
-  rootDir,
-}: $ReadOnly<{
-  duplicates: $ReadOnlyMap<
-    string,
-    $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
-  >,
-  map: $ReadOnlyMap<string, HasteMapItem>,
-  rootDir: string,
-}>): Array<Conflict> {
+export function computeHasteConflicts(
+  options: $ReadOnly<{
+    duplicates: $ReadOnlyMap<
+      string,
+      $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
+    >,
+    map: $ReadOnlyMap<string, HasteMapItem>,
+    rootDir: string,
+  }>,
+): Array<Conflict> {
+  const {duplicates, map, rootDir} = options;
   const conflicts: Array<Conflict> = [];
 
   // Add duplicates reported by metro-file-map

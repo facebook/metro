@@ -51,7 +51,7 @@ type WatcherOptions = {
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   healthCheckFilePrefix: string,
-  ignoreForCrawl: string => boolean,
+  ignoreForCrawl: (filePath: string) => boolean,
   ignorePatternForWatch: RegExp,
   previousState: CrawlerOptions['previousState'],
   perfLogger: ?PerfLogger,
