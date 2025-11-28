@@ -42,6 +42,49 @@ type NormalizedSymlinkTarget = {
   startOfBasenameIdx: number,
 };
 
+type DeserializedSnapshotInput = {
+  rootDir: string,
+  fileSystemData: DirectoryNode,
+  processFile: ProcessFileFunction,
+};
+
+type TreeFSOptions = {
+  rootDir: Path,
+  files?: FileData,
+  processFile: ProcessFileFunction,
+};
+
+type MatchFilesOptions = $ReadOnly<{
+  /* Filter relative paths against a pattern. */
+  filter?: ?RegExp,
+  /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
+  filterCompareAbsolute?: boolean,
+  /* `filter` is applied against posix-delimited paths, even on Windows. (default: false) */
+  filterComparePosix?: boolean,
+  /* Follow symlinks when enumerating paths. (default: false) */
+  follow?: boolean,
+  /* Should search for files recursively. (default: true) */
+  recursive?: boolean,
+  /* Match files under a given root, or null for all files */
+  rootDir?: ?Path,
+}>;
+
+type MetadataIteratorOptions = $ReadOnly<{
+  includeSymlinks: boolean,
+  includeNodeModules: boolean,
+}>;
+
+type PathIteratorOptions = $ReadOnly<{
+  alwaysYieldPosix: boolean,
+  canonicalPathOfRoot: string,
+  follow: boolean,
+  recursive: boolean,
+  subtreeOnly: boolean,
+}>;
+
+type GetFileDataOptions = {
+  followLeaf: boolean,
+};
 /**
  * OVERVIEW:
  *
@@ -99,15 +142,8 @@ export default class TreeFS implements MutableFileSystem {
   #pathUtils: RootPathUtils;
   #processFile: ProcessFileFunction;
 
-  constructor({
-    rootDir,
-    files,
-    processFile,
-  }: {
-    rootDir: Path,
-    files?: FileData,
-    processFile: ProcessFileFunction,
-  }) {
+  constructor(opts: TreeFSOptions) {
+    const {rootDir, files, processFile} = opts;
     this.#rootDir = rootDir;
     this.#pathUtils = new RootPathUtils(rootDir);
     this.#processFile = processFile;
@@ -120,15 +156,8 @@ export default class TreeFS implements MutableFileSystem {
     return this._cloneTree(this.#rootNode);
   }
 
-  static fromDeserializedSnapshot({
-    rootDir,
-    fileSystemData,
-    processFile,
-  }: {
-    rootDir: string,
-    fileSystemData: DirectoryNode,
-    processFile: ProcessFileFunction,
-  }): TreeFS {
+  static fromDeserializedSnapshot(args: DeserializedSnapshotInput): TreeFS {
+    const {rootDir, fileSystemData, processFile} = args;
     const tfs = new TreeFS({processFile, rootDir});
     tfs.#rootNode = fileSystemData;
     return tfs;
@@ -310,27 +339,15 @@ export default class TreeFS implements MutableFileSystem {
    * The query matches against normalized paths which start with `./`,
    * for example: `a/b.js` -> `./a/b.js`
    */
-  *matchFiles({
-    filter = null,
-    filterCompareAbsolute = false,
-    filterComparePosix = false,
-    follow = false,
-    recursive = true,
-    rootDir = null,
-  }: $ReadOnly<{
-    /* Filter relative paths against a pattern. */
-    filter?: ?RegExp,
-    /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
-    filterCompareAbsolute?: boolean,
-    /* `filter` is applied against posix-delimited paths, even on Windows. (default: false) */
-    filterComparePosix?: boolean,
-    /* Follow symlinks when enumerating paths. (default: false) */
-    follow?: boolean,
-    /* Should search for files recursively. (default: true) */
-    recursive?: boolean,
-    /* Match files under a given root, or null for all files */
-    rootDir?: ?Path,
-  }>): Iterable<Path> {
+  *matchFiles(opts: MatchFilesOptions): Iterable<Path> {
+    const {
+      filter = null,
+      filterCompareAbsolute = false,
+      filterComparePosix = false,
+      follow = false,
+      recursive = true,
+      rootDir = null,
+    } = opts;
     const normalRoot = rootDir == null ? '' : this._normalizePath(rootDir);
     const contextRootResult = this._lookupByNormalPath(normalRoot);
     if (!contextRootResult.exists) {
@@ -1001,12 +1018,7 @@ export default class TreeFS implements MutableFileSystem {
     return null;
   }
 
-  *metadataIterator(
-    opts: $ReadOnly<{
-      includeSymlinks: boolean,
-      includeNodeModules: boolean,
-    }>,
-  ): Iterable<{
+  *metadataIterator(opts: MetadataIteratorOptions): Iterable<{
     baseName: string,
     canonicalPath: string,
     metadata: FileMetadata,
@@ -1016,7 +1028,7 @@ export default class TreeFS implements MutableFileSystem {
 
   *_metadataIterator(
     rootNode: DirectoryNode,
-    opts: $ReadOnly<{includeSymlinks: boolean, includeNodeModules: boolean}>,
+    opts: MetadataIteratorOptions,
     prefix: string = '',
   ): Iterable<{
     baseName: string,
@@ -1068,13 +1080,7 @@ export default class TreeFS implements MutableFileSystem {
     iterationRootNode: DirectoryNode,
     iterationRootParentNode: ?DirectoryNode,
     ancestorOfRootIdx: ?number,
-    opts: $ReadOnly<{
-      alwaysYieldPosix: boolean,
-      canonicalPathOfRoot: string,
-      follow: boolean,
-      recursive: boolean,
-      subtreeOnly: boolean,
-    }>,
+    opts: PathIteratorOptions,
     pathPrefix: string = '',
     followedLinks: ReadonlySet<FileMetadata> = new Set(),
   ): Iterable<Path> {
@@ -1193,7 +1199,7 @@ export default class TreeFS implements MutableFileSystem {
 
   _getFileData(
     filePath: Path,
-    opts: {followLeaf: boolean} = {followLeaf: true},
+    opts: GetFileDataOptions = {followLeaf: true},
   ): ?FileMetadata {
     const normalPath = this._normalizePath(filePath);
     const result = this._lookupByNormalPath(normalPath, {

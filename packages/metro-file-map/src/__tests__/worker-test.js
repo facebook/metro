@@ -297,6 +297,7 @@ describe('jest-worker interface', () => {
 
   beforeEach(() => {
     jest.resetModules();
+    // Re-require the worker module to reset its internal state.
     workerModule = require('../worker');
   });
 
