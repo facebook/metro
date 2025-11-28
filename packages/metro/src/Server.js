@@ -615,6 +615,13 @@ export default class Server {
       debug('Rewritten to:    %s', req.url);
     }
     const reqHost = req.headers['x-forwarded-host'] || req.headers['host'];
+    debug('Request host is:    %s', req.headers['host']);
+    if (req.headers['x-forwarded-host']) {
+      debug(
+        'Request x-forwarded-host is:    %s',
+        req.headers['x-forwarded-host'],
+      );
+    }
     if (!reqHost) {
       throw new Error('No host header was found.');
     }
