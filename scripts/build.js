@@ -28,10 +28,10 @@ const getPackages = require('./_getPackages');
 const babel = require('@babel/core');
 const chalk = require('chalk');
 const fs = require('fs');
-const glob = require('glob');
 const micromatch = require('micromatch');
 const path = require('path');
 const prettier = require('prettier');
+const {globSync} = require('tinyglobby');
 
 const SRC_DIR = 'src';
 const TYPES_DIR = 'types';
@@ -72,8 +72,8 @@ function buildPackage(p /*: string */) {
   const typesDir = path.resolve(p, TYPES_DIR);
   const buildDir = path.resolve(p, BUILD_DIR);
   const pattern = path.resolve(srcDir, '**/*');
-  const files = glob.sync(pattern, {nodir: true});
-  const typescriptDefs = glob.sync(path.join(typesDir, '**/*.d.ts'));
+  const files = globSync(pattern, {onlyFiles: true});
+  const typescriptDefs = globSync(path.join(typesDir, '**/*.d.ts'));
 
   process.stdout.write(fixedWidth(`${path.basename(p)}\n`));
 

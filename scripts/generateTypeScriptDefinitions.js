@@ -16,11 +16,11 @@ import {
   translateFlowToFlowDef,
 } from 'flow-api-translator';
 import fs from 'fs';
-// $FlowFixMe[untyped-import] in OSS only
-import glob from 'glob';
 import nullthrows from 'nullthrows';
 import path from 'path';
 import * as prettier from 'prettier';
+// $FlowFixMe[untyped-import] in OSS only
+import {globSync} from 'tinyglobby';
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
@@ -69,7 +69,7 @@ export async function generateTsDefsForJsGlobs(
     Array.from(
       globPatterns
         .flatMap(pattern =>
-          glob.sync(pattern, {
+          globSync(pattern, {
             ignore: IGNORED_PATTERNS,
             cwd: WORKSPACE_ROOT,
           }),
