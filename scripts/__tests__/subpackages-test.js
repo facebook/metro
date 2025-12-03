@@ -10,13 +10,12 @@
  */
 
 import fs from 'fs';
+import path from 'path';
 // TODO: Replace with fs.globSync once Flow knows about it
 // $FlowFixMe[untyped-import] glob in OSS
-import glob from 'glob';
-import path from 'path';
-import {promisify} from 'util';
+import {glob, globSync} from 'tinyglobby';
 
-const globAsync = promisify(glob);
+const globAsync = glob;
 
 // For promisified glob
 jest.useRealTimers();
@@ -32,7 +31,12 @@ const workspaceRootPackageJson = readJsonSync('package.json');
 const ALL_PACKAGES: ReadonlySet<string> = new Set(
   Array.isArray(workspaceRootPackageJson.workspaces)
     ? workspaceRootPackageJson.workspaces
-        .flatMap(relativeGlob => glob.sync(relativeGlob, {cwd: WORKSPACE_ROOT}))
+        .flatMap(relativeGlob =>
+          globSync(relativeGlob, {
+            cwd: WORKSPACE_ROOT,
+            onlyDirectories: true,
+          }),
+        )
         // Glob returns posix separators, we want system-native
         .map(relativePath => path.normalize(relativePath))
     : [],
