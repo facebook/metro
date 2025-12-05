@@ -23,7 +23,7 @@
 
 'use strict';
 
-const extensions /*: $ReadOnlySet<string> */ = new Set([
+export const extensions: $ReadOnlySet<string> = new Set([
   // JSONs are never haste modules, except for "package.json", which is handled.
   '.json',
 
@@ -67,4 +67,4 @@ const extensions /*: $ReadOnlySet<string> */ = new Set([
   '.woff2',
 ]);
 
-module.exports = extensions;
+export default extensions;
