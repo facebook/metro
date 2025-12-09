@@ -28,6 +28,14 @@ import path from 'path';
 
 export const CACHE_VERSION = 2;
 
+export type MockMapOptions = $ReadOnly<{
+  console: typeof console,
+  mocksPattern: RegExp,
+  rawMockMap?: RawMockMap,
+  rootDir: Path,
+  throwOnModuleCollision: boolean,
+}>;
+
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   +name = 'mocks';
 
@@ -48,13 +56,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     },
     rootDir,
     throwOnModuleCollision,
-  }: $ReadOnly<{
-    console: typeof console,
-    mocksPattern: RegExp,
-    rawMockMap?: RawMockMap,
-    rootDir: Path,
-    throwOnModuleCollision: boolean,
-  }>) {
+  }: MockMapOptions) {
     this.#mocksPattern = mocksPattern;
     if (rawMockMap.version !== CACHE_VERSION) {
       throw new Error('Incompatible state passed to MockPlugin');
