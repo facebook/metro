@@ -135,6 +135,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           links: new Set(expectedSymlinks),
           realPath: expectedRealPath,
           type: 'f',
+          metadata: expect.any(Array),
         }),
     );
 
@@ -242,6 +243,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           realPath: expectedRealPath,
           links: new Set(expectedSymlinks),
           type: 'f',
+          metadata: expect.any(Array),
         });
       },
     );

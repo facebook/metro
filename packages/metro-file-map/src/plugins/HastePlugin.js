@@ -63,6 +63,7 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   +#pathUtils: RootPathUtils;
   +#platforms: ReadonlySet<string>;
   +#failValidationOnConflicts: boolean;
+  #getModuleNameByPath: string => ?string;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
@@ -94,6 +95,12 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
         }
       }
     }
+    this.#getModuleNameByPath = mixedPath => {
+      const result = files.lookup(mixedPath);
+      return result.exists && result.type === 'f' && result.metadata[H.ID] != ''
+        ? result.metadata[H.ID]
+        : null;
+    };
     this.#perfLogger?.point('constructHasteMap_end');
     this.#perfLogger?.annotate({int: {hasteFiles}});
   }
@@ -124,6 +131,15 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       return modulePath && this.#pathUtils.normalToAbsolute(modulePath);
     }
     return null;
+  }
+
+  getModuleNameByPath(mixedPath: Path): ?string {
+    if (this.#getModuleNameByPath == null) {
+      throw new Error(
+        'HastePlugin has not been initialized before getModuleNameByPath',
+      );
+    }
+    return this.#getModuleNameByPath(mixedPath);
   }
 
   getPackage(
