@@ -1459,10 +1459,8 @@ describe('FileMap', () => {
           {
             plugins: [
               {
-                workerModulePath: expect.stringMatching(
-                  /haste[\\/]worker\.js$/,
-                ),
-                workerSetupArgs: {
+                modulePath: expect.stringMatching(/haste[\\/]worker\.js$/),
+                setupArgs: {
                   hasteImplModulePath: null,
                 },
               },
@@ -1478,51 +1476,51 @@ describe('FileMap', () => {
       [
         {
           computeDependencies: true,
-          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           maybeReturnContent: false,
+          pluginsToRun: [],
         },
       ],
       [
         {
           computeDependencies: true,
-          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           maybeReturnContent: false,
+          pluginsToRun: [],
         },
       ],
       [
         {
           computeDependencies: true,
-          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           maybeReturnContent: false,
+          pluginsToRun: [],
         },
       ],
       [
         {
           computeDependencies: true,
-          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           maybeReturnContent: false,
+          pluginsToRun: [],
         },
       ],
       [
         {
           computeDependencies: true,
-          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           maybeReturnContent: false,
+          pluginsToRun: [],
         },
       ],
     ]);

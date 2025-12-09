@@ -373,9 +373,7 @@ export default class FileMap extends EventEmitter {
 
     this._fileProcessor = new FileProcessor({
       dependencyExtractor: buildParameters.dependencyExtractor,
-      enableHastePackages: buildParameters.enableHastePackages,
       enableWorkerThreads: options.enableWorkerThreads ?? false,
-      hasteImplModulePath: buildParameters.hasteImplModulePath,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
