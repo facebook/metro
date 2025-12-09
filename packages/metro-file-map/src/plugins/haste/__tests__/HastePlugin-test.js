@@ -48,6 +48,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 
   const opts = {
     enableHastePackages: false,
+    hasteImplModulePath: null,
     failValidationOnConflicts: false,
     perfLogger: null,
     platforms: new Set(['ios', 'android']),

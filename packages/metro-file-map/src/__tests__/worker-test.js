@@ -67,14 +67,15 @@ jest.mock('fs', () => {
 
 const defaults: WorkerMessage = {
   computeDependencies: false,
+  computeHaste: false,
   computeSha1: false,
-  enableHastePackages: false,
   filePath: path.join('/project', 'notexist.js'),
   maybeReturnContent: false,
 };
 
 const defaultHasteConfig = {
   enableHastePackages: true,
+  hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
   failValidationOnConflicts: false,
   platforms: new Set(['ios', 'android']),
   rootDir: path.normalize('/project'),
@@ -105,8 +106,8 @@ describe('worker', () => {
 
   const defaults: WorkerMessage = {
     computeDependencies: false,
+    computeHaste: false,
     computeSha1: false,
-    enableHastePackages: false,
     filePath: path.join('/project', 'notexist.js'),
     maybeReturnContent: false,
   };
@@ -154,8 +155,9 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
+        computeHaste: true,
+
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        hasteImplModulePath: require.resolve('./haste_impl.js'),
       }),
     ).toEqual({
       dependencies: ['Banana', 'Strawberry'],
@@ -166,8 +168,8 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
+        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
-        hasteImplModulePath: require.resolve('./haste_impl.js'),
       }),
     ).toEqual({
       dependencies: [],
@@ -175,12 +177,12 @@ describe('worker', () => {
     });
   });
 
-  test('parses package.json files as haste packages when enableHastePackages=true', async () => {
+  test('parses package.json files as haste packages when computeHaste=true', async () => {
     expect(
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
-        enableHastePackages: true,
+        computeHaste: true,
         filePath: path.join('/project', 'package.json'),
       }),
     ).toEqual({
@@ -189,12 +191,12 @@ describe('worker', () => {
     });
   });
 
-  test('does not parse package.json files as haste packages when enableHastePackages=false', async () => {
+  test('does not parse package.json files as haste packages when computeHaste=false', async () => {
     expect(
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
-        enableHastePackages: false,
+        computeHaste: false,
         filePath: path.join('/project', 'package.json'),
       }),
     ).toEqual({
@@ -271,8 +273,8 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: false,
+        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
       }),
     ).toEqual({
       dependencies: undefined,
@@ -290,8 +292,8 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeSha1: true,
+        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        hasteImplModulePath: require.resolve('./haste_impl.js'),
         maybeReturnContent: true,
       }),
     ).toEqual({
@@ -305,9 +307,9 @@ describe('worker', () => {
     expect(
       await workerWithHaste({
         ...defaults,
+        computeHaste: true,
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
-        hasteImplModulePath: path.resolve(__dirname, 'haste_impl.js'),
         maybeReturnContent: true,
       }),
     ).toEqual({

@@ -299,6 +299,7 @@ export default class FileMap extends EventEmitter {
     this.#hastePlugin = new HastePlugin({
       console: this._console,
       enableHastePackages,
+      hasteImplModulePath: options.hasteImplModulePath,
       failValidationOnConflicts: throwOnModuleCollision,
       perfLogger: this._startupPerfLogger,
       platforms: new Set(options.platforms),

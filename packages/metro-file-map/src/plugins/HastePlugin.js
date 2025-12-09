@@ -44,6 +44,7 @@ const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 type HasteMapOptions = $ReadOnly<{
   console?: ?Console,
   enableHastePackages: boolean,
+  hasteImplModulePath: ?string,
   perfLogger?: ?PerfLogger,
   platforms: ReadonlySet<string>,
   rootDir: Path,
@@ -61,6 +62,7 @@ export default class HastePlugin
 
   +#console: ?Console;
   +#enableHastePackages: boolean;
+  +#hasteImplModulePath: ?string;
   +#perfLogger: ?PerfLogger;
   +#pathUtils: RootPathUtils;
   +#platforms: ReadonlySet<string>;
@@ -70,6 +72,7 @@ export default class HastePlugin
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? null;
     this.#enableHastePackages = options.enableHastePackages;
+    this.#hasteImplModulePath = options.hasteImplModulePath;
     this.#perfLogger = options.perfLogger;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
@@ -481,6 +484,10 @@ export default class HastePlugin
   getCacheKey(): string {
     return JSON.stringify([
       this.#enableHastePackages,
+      this.#hasteImplModulePath != null
+        ? // $FlowFixMe[unsupported-syntax] - dynamic require
+          require(this.#hasteImplModulePath).getCacheKey()
+        : null,
       [...this.#platforms].sort(),
     ]);
   }
@@ -488,7 +495,9 @@ export default class HastePlugin
   getWorker(): FileMapPluginWorker {
     return {
       workerModulePath: require.resolve('./haste/worker.js'),
-      workerSetupArgs: {},
+      workerSetupArgs: {
+        hasteImplModulePath: this.#hasteImplModulePath ?? null,
+      },
     };
   }
 }
