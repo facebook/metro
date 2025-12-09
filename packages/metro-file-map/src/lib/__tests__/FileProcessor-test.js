@@ -90,6 +90,42 @@ describe('processBatch', () => {
     expect(MockJestWorker).not.toHaveBeenCalled();
     expect(mockWorkerFn).toHaveBeenCalledTimes(50);
   });
+
+  test('calculates number of workers based on actual jobs after filtering no-ops', async () => {
+    const processor = new FileProcessor({
+      ...defaultOptions,
+      maxWorkers: 5,
+      maxFilesPerWorker: 10,
+    });
+
+    // Create 100 files, but some already have SHA1 hashes (no-op jobs)
+    const filesWithSomeAlreadyHashed = new Array<?[string, FileMetadata]>(100)
+      .fill(null)
+      .map((_, i) => {
+        const metadata: FileMetadata =
+          i < 50
+            ? // First 50 files already have SHA1 hashes
+              [123, 234, 0, '', null, 0, 'existing-sha1-hash']
+            : // Last 50 files need SHA1 computation
+              [123, 234, 0, '', null, 0, null];
+        return [`file${i}.js`, metadata];
+      });
+
+    await processor.processBatch(filesWithSomeAlreadyHashed, {
+      computeDependencies: false,
+      computeSha1: true,
+      maybeReturnContent: false,
+    });
+
+    // Should create workers based on 50 actual jobs, not 100 total files
+    // 50 jobs / 10 maxFilesPerWorker = 5 workers
+    expect(MockJestWorker).toHaveBeenCalledWith(
+      expect.stringContaining('worker.js'),
+      expect.objectContaining({
+        numWorkers: 5,
+      }),
+    );
+  });
 });
 
 describe('processRegularFile', () => {
