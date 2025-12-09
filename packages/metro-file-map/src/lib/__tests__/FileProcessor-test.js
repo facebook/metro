@@ -17,6 +17,7 @@ import type {
 } from '../../flow-types';
 
 import H from '../../constants';
+import path from 'path';
 
 const MockJestWorker = jest.fn().mockImplementation(() => ({
   processFile: async () => ({}),
@@ -32,6 +33,7 @@ const defaultOptions = {
   maxWorkers: 5,
   perfLogger: null,
   pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
+  rootDir: process.platform === 'win32' ? 'C:\\root' : '/root',
 };
 
 describe('processBatch', () => {
@@ -144,19 +146,21 @@ describe('processRegularFile', () => {
 
   test('synchronously populates metadata', () => {
     const processor = new FileProcessor(defaultOptions);
-    const [filename, metadata] = getNMockFiles(1)[0];
+    const [normalFilePath, metadata] = getNMockFiles(1)[0];
     expect(metadata[H.SHA1]).toBeFalsy();
 
     const fileContent = Buffer.from('hello world');
     mockReadFileSync.mockReturnValue(fileContent);
 
-    const result = processor.processRegularFile(filename, metadata, {
+    const result = processor.processRegularFile(normalFilePath, metadata, {
       computeSha1: true,
       computeDependencies: false,
       maybeReturnContent: true,
     });
 
-    expect(mockReadFileSync).toHaveBeenCalledWith(filename);
+    expect(mockReadFileSync).toHaveBeenCalledWith(
+      path.resolve(defaultOptions.rootDir, normalFilePath),
+    );
 
     expect(result).toEqual({
       content: fileContent,

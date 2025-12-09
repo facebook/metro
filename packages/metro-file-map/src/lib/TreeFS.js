@@ -217,20 +217,19 @@ export default class TreeFS implements MutableFileSystem {
     if (existing != null && existing.length > 0) {
       return {sha1: existing};
     }
-    const absolutePath = this.#pathUtils.normalToAbsolute(canonicalPath);
 
     // Mutate the metadata we first retrieved. This may be orphaned or about
     // to be overwritten if the file changes while we are processing it -
     // by only mutating the original metadata, we don't risk caching a stale
     // SHA-1 after a change event.
-    const maybeContent = await this.#processFile(absolutePath, fileMetadata, {
+    const maybeContent = await this.#processFile(canonicalPath, fileMetadata, {
       computeSha1: true,
     });
     const sha1 = fileMetadata[H.SHA1];
     invariant(
       sha1 != null && sha1.length > 0,
       "File processing didn't populate a SHA-1 hash for %s",
-      absolutePath,
+      canonicalPath,
     );
 
     return maybeContent
