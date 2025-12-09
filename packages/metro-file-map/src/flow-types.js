@@ -241,7 +241,7 @@ export type FileMetadata = [
   /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
-  /* id */ string,
+  /* id */ ?string, // Haste module/package name, or null for non-Haste
 ];
 
 export type FileStats = $ReadOnly<{
