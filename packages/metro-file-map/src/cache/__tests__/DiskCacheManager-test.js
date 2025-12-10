@@ -137,6 +137,9 @@ describe('cacheManager', () => {
       getSerializableSnapshot() {
         return {};
       },
+      getWorker() {
+        return null;
+      },
       onNewOrModifiedFile() {},
       onRemovedFile() {},
       getCacheKey() {
