@@ -3376,7 +3376,7 @@ declare module 'util' {
     text: string,
     options?: $ReadOnly<{
       stream?: ?stream$Stream,
-      validStream?: ?boolean,
+      validateStream?: ?boolean,
     }>,
   ): string;
 }
