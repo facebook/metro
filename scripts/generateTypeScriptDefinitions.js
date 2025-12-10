@@ -25,6 +25,7 @@ import {globSync} from 'tinyglobby';
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
 const TYPES_DIR = 'types';
+const SRC_DIR = 'src';
 
 export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
   'packages/metro-cache/**',
@@ -49,6 +50,16 @@ const IGNORED_PATTERNS = [
   'packages/metro/src/integration_tests/**',
 ];
 
+function isSourceTSDeclaration(filePath: string): boolean {
+  const parts = filePath.split(path.sep);
+  return filePath.endsWith('.d.ts') && parts[2] === SRC_DIR;
+}
+
+function isExistingTSDeclaration(filePath: string): boolean {
+  const parts = filePath.split(path.sep);
+  return filePath.endsWith('.d.ts') && parts[2] === TYPES_DIR;
+}
+
 export async function generateTsDefsForJsGlobs(
   globPattern: string | $ReadOnlyArray<string>,
   opts: $ReadOnly<{
@@ -65,6 +76,7 @@ export async function generateTsDefsForJsGlobs(
   const globPatterns = Array.isArray(globPattern) ? globPattern : [globPattern];
 
   const existingDefs = new Set<string>();
+  const sourceDefs = new Set<string>();
   const filesToProcess: Array<[jsFile: string, flowSourceFile: string]> =
     Array.from(
       globPatterns
@@ -83,10 +95,9 @@ export async function generateTsDefsForJsGlobs(
             toProcess.set(filePath.replace(/\.flow\.js$/, '.js'), filePath);
           } else if (filePath.endsWith('.js') && !toProcess.has(filePath)) {
             toProcess.set(filePath, filePath);
-          } else if (
-            filePath.endsWith('.d.ts') &&
-            filePath.split(path.sep)[2] === TYPES_DIR
-          ) {
+          } else if (isSourceTSDeclaration(filePath)) {
+            sourceDefs.add(path.resolve(WORKSPACE_ROOT, filePath));
+          } else if (isExistingTSDeclaration(filePath)) {
             existingDefs.add(path.resolve(WORKSPACE_ROOT, filePath));
           }
           return toProcess;
@@ -95,10 +106,65 @@ export async function generateTsDefsForJsGlobs(
     );
 
   const errors = [];
+
+  async function writeOutputFile(
+    sourceContent: string,
+    absoluteTsFile: string,
+    sourceFile: string,
+  ) {
+    // Lint and fix the generated output
+    const [lintResult] = await linter.lintText(sourceContent, {
+      filePath: absoluteTsFile,
+    });
+
+    if (lintResult.messages.length > 0) {
+      console.warn(sourceFile, lintResult.messages);
+    }
+
+    const finalOutput = await prettier.format(
+      lintResult.output ?? sourceContent,
+      prettierConfig,
+    );
+
+    existingDefs.delete(absoluteTsFile);
+
+    if (opts.verifyOnly) {
+      let existingFile = null;
+      try {
+        existingFile = await fs.promises.readFile(absoluteTsFile, 'utf-8');
+        if (finalOutput !== existingFile) {
+          errors.push({
+            sourceFile,
+            error: new Error('.d.ts file is out of sync'),
+          });
+        }
+      } catch {
+        errors.push({sourceFile, error: new Error('.d.ts file missing')});
+      }
+    } else {
+      await fs.promises.mkdir(path.dirname(absoluteTsFile), {
+        recursive: true,
+      });
+      await fs.promises.writeFile(absoluteTsFile, finalOutput);
+    }
+  }
+
   await Promise.all(
     filesToProcess.map(async ([jsFile, sourceFile]) => {
       const absoluteTsFile = getTSDeclAbsolutePath(jsFile);
+      const sourceTSDeclationPath = absoluteTsFile.replace(TYPES_DIR, SRC_DIR);
       const absoluteSourceFile = path.resolve(WORKSPACE_ROOT, sourceFile);
+
+      // If a source .d.ts file exists, copy it directly.
+      if (sourceDefs.has(sourceTSDeclationPath)) {
+        const source = await fs.promises.readFile(
+          sourceTSDeclationPath,
+          'utf-8',
+        );
+        await writeOutputFile(source, absoluteTsFile, sourceFile);
+        return;
+      }
+
       const source = await fs.promises.readFile(absoluteSourceFile, 'utf-8');
       if (!source.includes('@flow')) {
         errors.push({
@@ -121,44 +187,7 @@ export async function generateTsDefsForJsGlobs(
 
           // Fix up gap left in license header by removal of atflow
           const beforeLint = tsDef.replace('\n *\n *\n', '\n *\n');
-
-          const [lintResult] = await linter.lintText(beforeLint, {
-            filePath: absoluteTsFile,
-          });
-
-          if (lintResult.messages.length > 0) {
-            console.warn(sourceFile, lintResult.messages);
-          }
-
-          const finalOutput = await prettier.format(
-            lintResult.output ?? beforeLint,
-            prettierConfig,
-          );
-
-          existingDefs.delete(absoluteTsFile);
-
-          if (opts.verifyOnly) {
-            let existingFile = null;
-            try {
-              existingFile = await fs.promises.readFile(
-                absoluteTsFile,
-                'utf-8',
-              );
-              if (finalOutput !== existingFile) {
-                errors.push({
-                  sourceFile,
-                  error: new Error('.d.ts file is out of sync'),
-                });
-              }
-            } catch {
-              errors.push({sourceFile, error: new Error('.d.ts file missing')});
-            }
-          } else {
-            await fs.promises.mkdir(path.dirname(absoluteTsFile), {
-              recursive: true,
-            });
-            await fs.promises.writeFile(absoluteTsFile, finalOutput);
-          }
+          await writeOutputFile(beforeLint, absoluteTsFile, sourceFile);
         }
       } catch (error) {
         errors.push({sourceFile, error});
@@ -182,7 +211,6 @@ export async function generateTsDefsForJsGlobs(
       );
     }
   }
-
   if (errors.length > 0) {
     errors.sort((a, b) => a.sourceFile.localeCompare(b.sourceFile));
     throw new AggregateError(
