@@ -305,12 +305,7 @@ export default class FileMap extends EventEmitter {
       rootDir: options.rootDir,
     });
 
-    const plugins: Array<IndexedPlugin> = [
-      {
-        plugin: this.#hastePlugin,
-        dataIdx: H.ID,
-      },
-    ];
+    const plugins: Array<AnyFileMapPlugin> = [this.#hastePlugin];
 
     if (options.mocksPattern != null && options.mocksPattern !== '') {
       this.#mockPlugin = new MockPlugin({
@@ -319,13 +314,14 @@ export default class FileMap extends EventEmitter {
         rootDir: options.rootDir,
         throwOnModuleCollision,
       });
-      plugins.push({
-        plugin: this.#mockPlugin,
-        dataIdx: null,
-      });
+      plugins.push(this.#mockPlugin);
     }
 
-    this.#plugins = plugins;
+    let dataSlot: number = H.PLUGINDATA;
+    this.#plugins = plugins.map(plugin => ({
+      plugin,
+      dataIdx: isDataPlugin(plugin) ? dataSlot++ : null,
+    }));
 
     const buildParameters: BuildParameters = {
       cacheBreaker: CACHE_BREAKER,
@@ -1134,3 +1130,9 @@ const mapIterator: <T, S>(Iterator<T>, (T) => S) => Iterable<S> = (it, fn) =>
           yield fn(item);
         }
       })();
+
+function isDataPlugin(plugin: AnyFileMapPlugin): boolean {
+  // TODO: Allow plugins to declare whether they store per-file data,
+  // remove this special-casing of HastePlugin.
+  return plugin instanceof HastePlugin;
+}
