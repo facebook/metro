@@ -180,6 +180,12 @@ interface FileSystemState {
     canonicalPath: string,
     metadata: FileMetadata,
   }>;
+  lookup(
+    mixedPath: string,
+  ):
+    | {exists: false}
+    | {exists: true, type: 'f', metadata: FileMetadata}
+    | {exists: true, type: 'd'};
 }
 
 export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
@@ -252,7 +258,6 @@ export interface FileSystem {
     changedFiles: FileData,
     removedFiles: Set<string>,
   };
-  getModuleName(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
   getOrComputeSha1(file: Path): Promise<?{sha1: string, content?: Buffer}>;
@@ -339,11 +344,23 @@ export type LookupResult =
       exists: true,
       // The real, normal, absolute paths of any symlinks traversed.
       links: ReadonlySet<string>,
-      // The real, normal, absolute path of the file or directory.
+      // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
       // directories or regular files, but this may be extended.
-      type: 'd' | 'f',
+      type: 'd',
+    }
+  | {
+      exists: true,
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: $ReadOnlySet<string>,
+      // The real, normal, absolute path of the file.
+      realPath: string,
+      // Currently lookup always follows symlinks, so can only return
+      // directories or regular files, but this may be extended.
+      type: 'f',
+      // The file's metadata tuple. Must only be mutated via FileProcessor.
+      metadata: FileMetadata,
     };
 
 export interface MockMap {
@@ -364,6 +381,8 @@ export interface HasteMap {
     supportsNativePlatform?: ?boolean,
     type?: ?HTypeValue,
   ): ?Path;
+
+  getModuleNameByPath(file: Path): ?string;
 
   getPackage(
     name: string,
