@@ -88,7 +88,8 @@ class Worker {
     ) {
       // Process a random file that is returned as a MODULE.
       if (data.hasteImplModulePath != null) {
-        id = getHasteImpl(data.hasteImplModulePath).getHasteName(filePath);
+        id =
+          getHasteImpl(data.hasteImplModulePath).getHasteName(filePath) || null;
       }
 
       if (computeDependencies) {

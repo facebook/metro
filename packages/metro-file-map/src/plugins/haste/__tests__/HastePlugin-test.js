@@ -198,7 +198,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
             [p('/root/not-haste.js')]: {
               exists: true,
               type: 'f',
-              metadata: hasteMetadata(''),
+              metadata: hasteMetadata(null),
             },
           })[filePath] ?? {exists: false},
       );
@@ -209,6 +209,6 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
   });
 });
 
-function hasteMetadata(hasteName: string): FileMetadata {
+function hasteMetadata(hasteName: ?string): FileMetadata {
   return [0, 0, 0, '', '', 0, hasteName];
 }
