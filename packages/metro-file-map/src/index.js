@@ -48,8 +48,6 @@ import normalizePathSeparatorsToPosix from './lib/normalizePathSeparatorsToPosix
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './lib/RootPathUtils';
 import TreeFS from './lib/TreeFS';
-import HastePlugin from './plugins/HastePlugin';
-import MockPlugin from './plugins/MockPlugin';
 import {Watcher} from './Watcher';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
@@ -76,22 +74,18 @@ export type {
 export type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
-  enableHastePackages?: boolean,
   enableSymlinks?: ?boolean,
   enableWorkerThreads?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
-  mocksPattern?: ?string,
-  platforms: $ReadOnlyArray<string>,
-  plugins?: $ReadOnlyArray<FileMapPlugin<>>,
+  plugins?: $ReadOnlyArray<AnyFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
-  hasteImplModulePath?: ?string,
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
@@ -100,7 +94,6 @@ export type InputOptions = $ReadOnly<{
   maxWorkers: number,
   perfLoggerFactory?: ?PerfLoggerFactory,
   resetCache?: ?boolean,
-  throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
   watchmanDeferStates?: $ReadOnlyArray<string>,
@@ -171,7 +164,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * hundreds of thousands of files. This implementation is scalable and provides
  * predictable performance.
  *
- * Because the haste map creation and synchronization is critical to startup
+ * Because the file map creation and synchronization is critical to startup
  * performance and most tasks are blocked by I/O this class makes heavy use of
  * synchronous operations. It uses worker processes for parallelizing file
  * access and metadata extraction.
@@ -220,7 +213,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  * representation is similar to `['flatMap', 3421, 42, 1, []]` to save storage space
  * and reduce parse and write time of a big JSON blob.
  *
- * The HasteMap is created as follows:
+ * The FileMap is created as follows:
  *  1. read data from the cache or create an empty structure.
  *
  *  2. crawl the file system.
@@ -229,16 +222,17 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *       * if watchman is available: get file system delta changes.
  *       * if watchman is unavailable: crawl the entire file system.
  *     * build metadata objects for every file. This builds the `files` part of
- *       the `HasteMap`.
+ *       the `FileMap`.
  *
- *  3. parse and extract metadata from changed files.
+ *  3. visit and extract metadata from changed files, including sha1,
+ *     depedendencies, and any plugins.
  *     * this is done in parallel over worker processes to improve performance.
- *     * the worst case is to parse all files.
+ *     * the worst case is to visit all files.
  *     * the best case is no file system access and retrieving all data from
  *       the cache.
  *     * the average case is a small number of changed files.
  *
- *  4. serialize the new `HasteMap` in a cache file.
+ *  4. serialize the new `FileMap` in a cache file.
  *
  */
 export default class FileMap extends EventEmitter {
@@ -256,8 +250,6 @@ export default class FileMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
-  #hastePlugin: HastePlugin;
-  #mockPlugin: ?MockPlugin = null;
   #plugins: $ReadOnlyArray<IndexedPlugin>;
 
   static create(options: InputOptions): FileMap {
@@ -292,36 +284,12 @@ export default class FileMap extends EventEmitter {
     }
 
     this._console = options.console || global.console;
-    const throwOnModuleCollision = Boolean(options.throwOnModuleCollision);
-
-    const enableHastePackages = options.enableHastePackages ?? true;
-
-    this.#hastePlugin = new HastePlugin({
-      console: this._console,
-      enableHastePackages,
-      hasteImplModulePath: options.hasteImplModulePath,
-      failValidationOnConflicts: throwOnModuleCollision,
-      perfLogger: this._startupPerfLogger,
-      platforms: new Set(options.platforms),
-      rootDir: options.rootDir,
-    });
-
-    const plugins: Array<AnyFileMapPlugin> = [this.#hastePlugin];
-
-    if (options.mocksPattern != null && options.mocksPattern !== '') {
-      this.#mockPlugin = new MockPlugin({
-        console: this._console,
-        mocksPattern: new RegExp(options.mocksPattern),
-        rootDir: options.rootDir,
-        throwOnModuleCollision,
-      });
-      plugins.push(this.#mockPlugin);
-    }
 
     let dataSlot: number = H.PLUGINDATA;
 
     const indexedPlugins: Array<IndexedPlugin> = [];
     const pluginWorkers: Array<FileMapPluginWorker> = [];
+    const plugins = options.plugins ?? [];
     for (const plugin of plugins) {
       const maybeWorker = plugin.getWorker();
       indexedPlugins.push({
@@ -342,13 +310,11 @@ export default class FileMap extends EventEmitter {
           : options.computeDependencies,
       computeSha1: options.computeSha1 || false,
       dependencyExtractor: options.dependencyExtractor ?? null,
-      enableHastePackages,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
-      hasteImplModulePath: options.hasteImplModulePath,
       ignorePattern,
-      plugins: options.plugins ?? [],
+      plugins,
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
@@ -482,10 +448,10 @@ export default class FileMap extends EventEmitter {
           ),
         ]);
 
-        // Update `fileSystem`, `hasteMap` and `mocks` based on the file delta.
+        // Update `fileSystem` and plugins based on the file delta.
         await this._applyFileDelta(fileSystem, plugins, fileDelta);
 
-        // Validate the mock and Haste maps before persisting them.
+        // Validate plugins before persisting them.
         plugins.forEach(({plugin}) => plugin.assertValid());
 
         const watchmanClocks = new Map(fileDelta.clocks ?? []);
@@ -503,11 +469,7 @@ export default class FileMap extends EventEmitter {
         );
 
         await this._watch(fileSystem, watchmanClocks, plugins);
-        return {
-          fileSystem,
-          hasteMap: this.#hastePlugin,
-          mockMap: this.#mockPlugin,
-        };
+        return {fileSystem};
       })();
     }
     return this._buildPromise.then(result => {
@@ -624,7 +586,7 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_preprocess_start');
     const missingFiles: Set<string> = new Set();
 
-    // Remove files first so that we don't mistake moved mocks or Haste
+    // Remove files first so that we don't mistake moved modules
     // modules as duplicates.
     this._startupPerfLogger?.point('applyFileDelta_remove_start');
     const removed: Array<[string, FileMetadata]> = [];
@@ -928,7 +890,7 @@ export default class FileMap extends EventEmitter {
           };
 
           // If the file was added or modified,
-          // parse it and update the haste map.
+          // parse it and update the file map.
           if (change.event === 'touch') {
             invariant(
               change.metadata.size != null,

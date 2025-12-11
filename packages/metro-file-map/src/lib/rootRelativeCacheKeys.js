@@ -55,14 +55,12 @@ export default function rootRelativeCacheKeys(
         case 'extensions':
         case 'computeDependencies':
         case 'computeSha1':
-        case 'enableHastePackages':
         case 'enableSymlinks':
         case 'forceNodeFilesystemAPI':
         case 'retainAllFiles':
           return buildParameters[key] ?? null;
         case 'ignorePattern':
           return buildParameters[key].toString();
-        case 'hasteImplModulePath':
         case 'dependencyExtractor':
           return moduleCacheKey(buildParameters[key]);
         default:
