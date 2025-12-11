@@ -1430,7 +1430,15 @@ describe('FileMap', () => {
     });
 
     const {fileSystem} = await new FileMap(defaultConfig).build();
-    expect(fileSystem.getDifference(new Map()).removedFiles.size).toBe(5);
+    expect(fileSystem.getDifference(new Map()).removedFiles).toEqual(
+      new Set([
+        'fruits/Banana.js',
+        'fruits/Pear.js',
+        'fruits/Strawberry.js',
+        'fruits/__mocks__/Pear.js',
+        'vegetables/Melon.js',
+      ]),
+    );
 
     // Ensure this file is not part of the file list.
     expect(fileSystem.exists(invalidFilePath)).toBe(false);

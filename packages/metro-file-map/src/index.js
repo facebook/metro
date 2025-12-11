@@ -650,13 +650,6 @@ export default class FileMap extends EventEmitter {
       }
 
       if (
-        !this._options.enableHastePackages &&
-        relativeFilePath.endsWith(PACKAGE_JSON)
-      ) {
-        continue;
-      }
-
-      if (
         fileData[H.SYMLINK] === 0 &&
         !this._options.computeDependencies &&
         !this._options.computeSha1 &&
