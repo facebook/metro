@@ -54,6 +54,7 @@ interface MaybeCodedError extends Error {
 }
 
 const NODE_MODULES_SEP = 'node_modules' + sep;
+const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
@@ -163,13 +164,29 @@ export class FileProcessor {
     fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?WorkerMessage {
+    if (fileMetadata[H.SYMLINK] !== 0) {
+      // Only process regular files
+      return null;
+    }
+
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-    const nodeModulesIndex = normalPath.indexOf(NODE_MODULES_SEP);
-    const isNodeModules =
-      // Path may begin 'node_modules/' or contain '/node_modules/'.
-      nodeModulesIndex === 0 ||
-      (nodeModulesIndex > 0 && normalPath[nodeModulesIndex - 1] === sep);
     const {computeDependencies, maybeReturnContent} = req;
+
+    if (
+      !computeDependencies &&
+      !computeSha1 &&
+      this.#hasteImplModulePath == null &&
+      !(this.#enableHastePackages && PACKAGE_JSON.test(normalPath))
+    ) {
+      // Nothing to process
+      return null;
+    }
+
+    const nodeModulesIdx = normalPath.indexOf(NODE_MODULES_SEP);
+    // Path may begin 'node_modules/' or contain '/node_modules/'.
+    const isNodeModules =
+      nodeModulesIdx === 0 ||
+      (nodeModulesIdx > 0 && normalPath[nodeModulesIdx - 1] === sep);
 
     // Use a cheaper worker configuration for node_modules files, because we
     // never care about extracting dependencies, and they may never be Haste

@@ -155,7 +155,6 @@ const CACHE_BREAKER = '11';
 const CHANGE_INTERVAL = 30;
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 const VCS_DIRECTORIES = /[/\\]\.(git|hg)[/\\]/.source;
 const WATCHMAN_REQUIRED_CAPABILITIES = [
   'field-content.sha1hex',
@@ -652,19 +651,6 @@ export default class FileMap extends EventEmitter {
         continue;
       }
 
-      if (
-        fileData[H.SYMLINK] === 0 &&
-        !this._options.computeDependencies &&
-        !this._options.computeSha1 &&
-        this._options.hasteImplModulePath == null &&
-        !(
-          this._options.enableHastePackages && PACKAGE_JSON.test(normalFilePath)
-        )
-      ) {
-        // Nothing to process
-        continue;
-      }
-
       if (fileData[H.SYMLINK] === 0) {
         filesToProcess.push([normalFilePath, fileData]);
       } else {
@@ -681,7 +667,7 @@ export default class FileMap extends EventEmitter {
     this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
 
     debug(
-      'Visiting %d added/modified files and %d symlinks.',
+      'Found %d added/modified files and %d symlinks.',
       filesToProcess.length,
       readLinkPromises.length,
     );
