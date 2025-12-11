@@ -103,7 +103,7 @@ export default class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const fileMap = createFileMap(config, {
+    const {fileMap} = createFileMap(config, {
       throwOnModuleCollision: false,
       watch,
     });
