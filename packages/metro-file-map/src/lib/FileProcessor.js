@@ -106,9 +106,24 @@ export class FileProcessor {
     }>,
   }> {
     const errors = [];
+
+    const workerJobs = files
+      .map(([normalFilePath, fileMetadata]) => {
+        const maybeWorkerInput = this.#getWorkerInput(
+          normalFilePath,
+          fileMetadata,
+          req,
+        );
+        if (!maybeWorkerInput) {
+          return null;
+        }
+        return [maybeWorkerInput, fileMetadata];
+      })
+      .filter(Boolean);
+
     const numWorkers = Math.min(
       this.#maxWorkers,
-      Math.ceil(files.length / this.#maxFilesPerWorker),
+      Math.ceil(workerJobs.length / this.#maxFilesPerWorker),
     );
     const batchWorker = this.#getBatchWorker(numWorkers);
 
@@ -119,21 +134,15 @@ export class FileProcessor {
     }
 
     await Promise.all(
-      files.map(([normalFilePath, fileMetadata]) => {
-        const maybeWorkerInput = this.#getWorkerInput(
-          normalFilePath,
-          fileMetadata,
-          req,
-        );
-        if (!maybeWorkerInput) {
-          return null;
-        }
+      workerJobs.map(([workerInput, fileMetadata]) => {
         return batchWorker
-          .processFile(maybeWorkerInput)
+          .processFile(workerInput)
           .then(reply => processWorkerReply(reply, fileMetadata))
           .catch(error =>
             errors.push({
-              normalFilePath,
+              normalFilePath: this.#rootPathUtils.absoluteToNormal(
+                workerInput.filePath,
+              ),
               error: normalizeWorkerError(error),
             }),
           );
