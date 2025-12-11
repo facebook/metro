@@ -67,10 +67,10 @@ jest.mock('fs', () => {
 
 const defaults: WorkerMessage = {
   computeDependencies: false,
-  computeHaste: false,
   computeSha1: false,
   filePath: path.join('/project', 'notexist.js'),
   maybeReturnContent: false,
+  pluginsToRun: [],
 };
 
 const defaultHasteConfig = {
@@ -90,9 +90,12 @@ function workerWithHaste(
       new HastePlugin({
         ...defaultHasteConfig,
         ...hasteOverrides,
-      }).getWorker(),
+      }).getWorker().worker,
     ],
-  }).processFile(message);
+  }).processFile({
+    ...message,
+    pluginsToRun: [0], // Run Haste
+  });
 }
 
 describe('worker', () => {
@@ -106,10 +109,10 @@ describe('worker', () => {
 
   const defaults: WorkerMessage = {
     computeDependencies: false,
-    computeHaste: false,
     computeSha1: false,
     filePath: path.join('/project', 'notexist.js'),
     maybeReturnContent: false,
+    pluginsToRun: [],
   };
 
   test('parses JavaScript files and extracts module information', async () => {
@@ -155,8 +158,6 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
-        computeHaste: true,
-
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
     ).toEqual({
@@ -168,7 +169,6 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
-        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Strawberry.js'),
       }),
     ).toEqual({
@@ -177,31 +177,16 @@ describe('worker', () => {
     });
   });
 
-  test('parses package.json files as haste packages when computeHaste=true', async () => {
+  test('parses package.json files as haste packages', async () => {
     expect(
       await workerWithHaste({
         ...defaults,
         computeDependencies: true,
-        computeHaste: true,
         filePath: path.join('/project', 'package.json'),
       }),
     ).toEqual({
       dependencies: undefined,
       pluginData: ['haste-package'],
-    });
-  });
-
-  test('does not parse package.json files as haste packages when computeHaste=false', async () => {
-    expect(
-      await workerWithHaste({
-        ...defaults,
-        computeDependencies: true,
-        computeHaste: false,
-        filePath: path.join('/project', 'package.json'),
-      }),
-    ).toEqual({
-      dependencies: undefined,
-      pluginData: [null],
     });
   });
 
@@ -273,7 +258,6 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeDependencies: false,
-        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
       }),
     ).toEqual({
@@ -292,7 +276,6 @@ describe('worker', () => {
       await workerWithHaste({
         ...defaults,
         computeSha1: true,
-        computeHaste: true,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         maybeReturnContent: true,
       }),
@@ -307,7 +290,6 @@ describe('worker', () => {
     expect(
       await workerWithHaste({
         ...defaults,
-        computeHaste: true,
         computeSha1: false,
         filePath: path.join('/project', 'fruits', 'Pear.js'),
         maybeReturnContent: true,

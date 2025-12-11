@@ -195,8 +195,11 @@ export type FileMapPluginInitOptions<
 }>;
 
 export type FileMapPluginWorker = $ReadOnly<{
-  workerModulePath: string,
-  workerSetupArgs: JsonData,
+  worker: $ReadOnly<{
+    modulePath: string,
+    setupArgs: JsonData,
+  }>,
+  filter: ({normalPath: string, isNodeModules: boolean}) => boolean,
 }>;
 
 export type V8Serializable =
@@ -507,11 +510,11 @@ export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
-  computeHaste: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
   filePath: string,
   maybeReturnContent: boolean,
+  pluginsToRun: $ReadOnlyArray<number>,
 }>;
 
 export type WorkerMetadata = $ReadOnly<{
@@ -522,5 +525,5 @@ export type WorkerMetadata = $ReadOnly<{
 }>;
 
 export type WorkerSetupArgs = $ReadOnly<{
-  plugins?: $ReadOnlyArray<FileMapPluginWorker>,
+  plugins?: $ReadOnlyArray<FileMapPluginWorker['worker']>,
 }>;

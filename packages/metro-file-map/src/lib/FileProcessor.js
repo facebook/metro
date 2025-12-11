@@ -54,27 +54,22 @@ interface MaybeCodedError extends Error {
 }
 
 const NODE_MODULES_SEP = 'node_modules' + sep;
-const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
-  #enableHastePackages: boolean;
-  #hasteImplModulePath: ?string;
   #enableWorkerThreads: boolean;
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
-  #workerArgs: WorkerSetupArgs;
+  #pluginWorkers: $ReadOnlyArray<FileMapPluginWorker>;
   #inBandWorker: Worker;
   #rootPathUtils: RootPathUtils;
 
   constructor(
     opts: $ReadOnly<{
       dependencyExtractor: ?string,
-      enableHastePackages: boolean,
       enableWorkerThreads: boolean,
-      hasteImplModulePath: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
       pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
@@ -83,15 +78,13 @@ export class FileProcessor {
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
-    this.#enableHastePackages = opts.enableHastePackages;
     this.#enableWorkerThreads = opts.enableWorkerThreads;
-    this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
-    this.#workerArgs = {
-      plugins: [...(opts.pluginWorkers ?? [])],
-    };
-    this.#inBandWorker = new Worker(this.#workerArgs);
+    this.#pluginWorkers = opts.pluginWorkers ?? [];
+    this.#inBandWorker = new Worker({
+      plugins: this.#pluginWorkers.map(plugin => plugin.worker),
+    });
     this.#perfLogger = opts.perfLogger;
     this.#rootPathUtils = new RootPathUtils(opts.rootDir);
   }
@@ -137,7 +130,9 @@ export class FileProcessor {
       workerJobs.map(([workerInput, fileMetadata]) => {
         return batchWorker
           .processFile(workerInput)
-          .then(reply => processWorkerReply(reply, fileMetadata))
+          .then(reply =>
+            processWorkerReply(reply, workerInput.pluginsToRun, fileMetadata),
+          )
           .catch(error =>
             errors.push({
               normalFilePath: this.#rootPathUtils.absoluteToNormal(
@@ -162,6 +157,7 @@ export class FileProcessor {
       ? {
           content: processWorkerReply(
             this.#inBandWorker.processFile(workerInput),
+            workerInput.pluginsToRun,
             fileMetadata,
           ),
         }
@@ -180,20 +176,26 @@ export class FileProcessor {
 
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
     const {computeDependencies, maybeReturnContent} = req;
-    const computeHaste = PACKAGE_JSON.test(normalPath)
-      ? this.#enableHastePackages
-      : this.#hasteImplModulePath != null;
-
-    if (!computeDependencies && !computeSha1 && !computeHaste) {
-      // Nothing to process
-      return null;
-    }
 
     const nodeModulesIdx = normalPath.indexOf(NODE_MODULES_SEP);
     // Path may begin 'node_modules/' or contain '/node_modules/'.
     const isNodeModules =
       nodeModulesIdx === 0 ||
       (nodeModulesIdx > 0 && normalPath[nodeModulesIdx - 1] === sep);
+
+    // Indices of plugins with a passing filter
+    const pluginsToRun =
+      this.#pluginWorkers?.reduce((prev, plugin, idx) => {
+        if (plugin.filter({isNodeModules, normalPath})) {
+          prev.push(idx);
+        }
+        return prev;
+      }, [] as Array<number>) ?? [];
+
+    if (!computeDependencies && !computeSha1 && pluginsToRun.length === 0) {
+      // Nothing to process
+      return null;
+    }
 
     // Use a cheaper worker configuration for node_modules files, because we
     // never care about extracting dependencies, and they may never be Haste
@@ -205,11 +207,11 @@ export class FileProcessor {
       if (computeSha1) {
         return {
           computeDependencies: false,
-          computeHaste: false,
           computeSha1: true,
           dependencyExtractor: null,
           filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
           maybeReturnContent,
+          pluginsToRun,
         };
       }
       return null;
@@ -217,11 +219,11 @@ export class FileProcessor {
 
     return {
       computeDependencies,
-      computeHaste,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
       filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
       maybeReturnContent,
+      pluginsToRun,
     };
   }
 
@@ -256,7 +258,11 @@ export class FileProcessor {
         // source (our worker is plain CommonJS).
         execArgv: [],
       },
-      setupArgs: [this.#workerArgs],
+      setupArgs: [
+        {
+          plugins: this.#pluginWorkers.map(plugin => plugin.worker),
+        } as WorkerSetupArgs,
+      ],
     });
     this.#perfLogger?.point('initWorkers_end');
     // Only log worker init once
@@ -269,16 +275,16 @@ export class FileProcessor {
 
 function processWorkerReply(
   metadata: WorkerMetadata,
+  pluginsRun: $ReadOnlyArray<number>,
   fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;
-  if (metadata.pluginData) {
-    // $FlowFixMe[incompatible-type] - treat inexact tuple as array to set tail entries
-    (fileMetadata as Array<mixed>).splice(
-      H.PLUGINDATA,
-      metadata.pluginData.length,
-      ...metadata.pluginData,
-    );
+  const pluginData = metadata.pluginData;
+  if (pluginData) {
+    for (const [i, pluginIdx] of pluginsRun.entries()) {
+      // $FlowFixMe[invalid-tuple-index]
+      fileMetadata[H.PLUGINDATA + pluginIdx] = pluginData[i];
+    }
   }
 
   fileMetadata[H.DEPENDENCIES] = metadata.dependencies

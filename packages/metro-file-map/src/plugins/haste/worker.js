@@ -38,9 +38,6 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
     data /*: WorkerMessage */,
     utils /*: $ReadOnly<{getContent: () => Buffer }> */,
   ) /*: V8Serializable */ {
-    if (!data.computeHaste) {
-      return null;
-    }
     let hasteName /*: string | null */ = null;
     const {filePath} = data;
     if (filePath.endsWith(PACKAGE_JSON)) {

@@ -36,10 +36,10 @@ class Worker {
   #plugins /*: $ReadOnlyArray<MetadataWorker> */;
 
   constructor({plugins = []} /*: WorkerSetupArgs */) {
-    this.#plugins = plugins.map(({workerModulePath, workerSetupArgs}) => {
+    this.#plugins = plugins.map(({modulePath, setupArgs}) => {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      const PluginWorker = require(workerModulePath);
-      return new PluginWorker(workerSetupArgs);
+      const PluginWorker = require(modulePath);
+      return new PluginWorker(setupArgs);
     });
   }
 
@@ -48,7 +48,7 @@ class Worker {
     let dependencies /*: WorkerMetadata['dependencies'] */;
     let sha1 /*: WorkerMetadata['sha1'] */;
 
-    const {computeDependencies, computeSha1, filePath} = data;
+    const {computeDependencies, computeSha1, filePath, pluginsToRun} = data;
 
     const getContent = () /*: Buffer */ => {
       if (content == null) {
@@ -59,8 +59,8 @@ class Worker {
     };
 
     const workerUtils = {getContent};
-    const pluginData = this.#plugins.map(plugin =>
-      plugin.processFile(data, workerUtils),
+    const pluginData = pluginsToRun.map(pluginIdx =>
+      this.#plugins[pluginIdx].processFile(data, workerUtils),
     );
 
     if (
