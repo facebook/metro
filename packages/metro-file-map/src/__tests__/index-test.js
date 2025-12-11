@@ -1451,7 +1451,7 @@ describe('FileMap', () => {
     await new FileMap({
       ...defaultConfig,
       dependencyExtractor,
-      hasteImplModulePath: undefined,
+      hasteImplModulePath: null,
       maxWorkers: 4,
       maxFilesPerWorker: 2,
     }).build();
@@ -1463,6 +1463,20 @@ describe('FileMap', () => {
       expect.objectContaining({
         // With maxFilesPerWorker = 2 and 5 files, we should have 3 workers.
         numWorkers: 3,
+        setupArgs: [
+          {
+            plugins: [
+              {
+                workerModulePath: expect.stringMatching(
+                  /haste[\\/]worker\.js$/,
+                ),
+                workerSetupArgs: {
+                  hasteImplModulePath: null,
+                },
+              },
+            ],
+          },
+        ],
       }),
     );
 
@@ -1472,55 +1486,50 @@ describe('FileMap', () => {
       [
         {
           computeDependencies: true,
+          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
-          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
-          hasteImplModulePath: undefined,
           maybeReturnContent: false,
         },
       ],
       [
         {
           computeDependencies: true,
+          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
-          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
-          hasteImplModulePath: undefined,
           maybeReturnContent: false,
         },
       ],
       [
         {
           computeDependencies: true,
+          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
-          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
-          hasteImplModulePath: undefined,
           maybeReturnContent: false,
         },
       ],
       [
         {
           computeDependencies: true,
+          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
-          enableHastePackages: true,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
-          hasteImplModulePath: undefined,
           maybeReturnContent: false,
         },
       ],
       [
         {
           computeDependencies: true,
+          computeHaste: false,
           computeSha1: false,
           dependencyExtractor,
-          enableHastePackages: true,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
-          hasteImplModulePath: undefined,
           maybeReturnContent: false,
         },
       ],

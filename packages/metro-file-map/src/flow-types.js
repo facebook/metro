@@ -507,11 +507,10 @@ export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = $ReadOnly<{
   computeDependencies: boolean,
+  computeHaste: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
-  enableHastePackages: boolean,
   filePath: string,
-  hasteImplModulePath?: ?string,
   maybeReturnContent: boolean,
 }>;
 

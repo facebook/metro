@@ -180,13 +180,11 @@ export class FileProcessor {
 
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
     const {computeDependencies, maybeReturnContent} = req;
+    const computeHaste = PACKAGE_JSON.test(normalPath)
+      ? this.#enableHastePackages
+      : this.#hasteImplModulePath != null;
 
-    if (
-      !computeDependencies &&
-      !computeSha1 &&
-      this.#hasteImplModulePath == null &&
-      !(this.#enableHastePackages && PACKAGE_JSON.test(normalPath))
-    ) {
+    if (!computeDependencies && !computeSha1 && !computeHaste) {
       // Nothing to process
       return null;
     }
@@ -207,11 +205,10 @@ export class FileProcessor {
       if (computeSha1) {
         return {
           computeDependencies: false,
+          computeHaste: false,
           computeSha1: true,
           dependencyExtractor: null,
-          enableHastePackages: false,
           filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
-          hasteImplModulePath: null,
           maybeReturnContent,
         };
       }
@@ -220,11 +217,10 @@ export class FileProcessor {
 
     return {
       computeDependencies,
+      computeHaste,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
-      enableHastePackages: this.#enableHastePackages,
       filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
-      hasteImplModulePath: this.#hasteImplModulePath,
       maybeReturnContent,
     };
   }
