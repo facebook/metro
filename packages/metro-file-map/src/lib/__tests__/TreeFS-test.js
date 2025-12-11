@@ -918,7 +918,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     test('calls processFile exactly once if SHA-1 not initially set', async () => {
       expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
       expect(mockProcessFile).toHaveBeenCalledWith(
-        p('/project/bar.js'),
+        p('bar.js'),
         expect.any(Array),
         {computeSha1: true},
       );
@@ -937,7 +937,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         content: Buffer.from('content'),
       });
       expect(mockProcessFile).toHaveBeenCalledWith(
-        p('/project/bar.js'),
+        p('bar.js'),
         expect.any(Array),
         {computeSha1: true},
       );
@@ -954,7 +954,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         sha1: 'abc123',
       });
       expect(mockProcessFile).toHaveBeenCalledWith(
-        p('/project/bar.js'),
+        p('bar.js'),
         expect.any(Array),
         {computeSha1: true},
       );
@@ -968,7 +968,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       });
       const getOrComputePromise = tfs.getOrComputeSha1(p('bar.js'));
       expect(mockProcessFile).toHaveBeenCalledWith(
-        p('/project/bar.js'),
+        p('bar.js'),
         expect.any(Array),
         {computeSha1: true},
       );
