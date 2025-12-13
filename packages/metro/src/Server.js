@@ -1382,7 +1382,7 @@ export default class Server {
         const body = await req.rawBody;
         parsedBody = JSON.parse(body);
       } else {
-        parsedBody = (await parseJsonBody(req)) as {
+        parsedBody = (await parseJsonBody(req, {strict: false})) as {
           stack: $ReadOnlyArray<StackFrameInput>,
           extraData: {[string]: mixed},
         };
