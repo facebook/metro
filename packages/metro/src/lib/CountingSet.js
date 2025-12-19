@@ -88,6 +88,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
 
   /*::
   // For Flow's benefit
+  // $FlowFixMe[duplicate-class-member]
   @@iterator(): Iterator<T> {
     return this.values();
   }

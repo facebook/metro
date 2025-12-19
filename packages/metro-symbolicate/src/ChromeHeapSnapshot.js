@@ -605,6 +605,7 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowFixMe[unsupported-syntax]
+  // $FlowFixMe[incompatible-type]
   [Symbol.iterator](): this {
     return this;
   }
