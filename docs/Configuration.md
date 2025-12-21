@@ -82,9 +82,9 @@ export default {
 ### TypeScript Example (`metro.config.ts`)
 
 ```typescript
-import type {ConfigT} from 'metro-config';
+import type {MetroConfig} from 'metro-config';
 
-const config: ConfigT = {
+const config: MetroConfig = {
   /* general options */
 
   resolver: {
@@ -836,7 +836,7 @@ const configB = {
 // Function forms may be used to access the previous configuration
 configCFn = (previousConfig /* result of mergeConfig(configA, configB) */) => {
   return {
-    watchFolders: [...previousConfig.watchFolders, 'my-watch-folder'],
+    watchFolders: [...previousConfig.watchFolders ?? [], 'my-watch-folder'],
   }
 }
 
@@ -847,10 +847,10 @@ module.exports = mergeConfig(configA, configB, configCFn);
 
 ```typescript
 // metro.config.ts
-import type {ConfigT} from 'metro-config';
+import type {MetroConfig} from 'metro-config';
 import {mergeConfig} from 'metro-config';
 
-const configA: ConfigT = {
+const configA: MetroConfig = {
   /* general options */
 
   resolver: {
@@ -859,7 +859,7 @@ const configA: ConfigT = {
   // ... other options
 };
 
-const configB: ConfigT = {
+const configB: MetroConfig = {
   /* general options */
 
   resolver: {
@@ -869,7 +869,7 @@ const configB: ConfigT = {
 };
 
 // Function forms may be used to access the previous configuration
-const configCFn = (previousConfig: ConfigT): Partial<ConfigT> => {
+const configCFn = (previousConfig: MetroConfig): MetroConfig => {
   return {
     watchFolders: [...(previousConfig.watchFolders ?? []), 'my-watch-folder'],
   };
