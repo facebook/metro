@@ -186,7 +186,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
   _handleFileChange = (
     {type, filePath, metadata}: ChangeEvent['eventsQueue'][number],
     logger: ?RootPerfLogger,
-  ): mixed => {
+  ): unknown => {
     debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
     if (
       metadata.type === 'l' ||

@@ -58,15 +58,15 @@ const FIXTURES_DIR = join(__dirname, '..', '__fixtures__');
 // defer to the caller. This matcher helps with nested expectations.
 declare var expect: {
   /** The object that you want to make assertions against */
-  (value: mixed, description?: string): JestExpectType,
+  (value: unknown, description?: string): JestExpectType,
   extend(matchers: {[name: string]: JestMatcher, ...}): void,
   assertions(expectedAssertions: number): void,
-  any(value: mixed): JestAsymmetricEqualityType,
-  oneOf: (mixed, mixed) => boolean,
+  any(value: unknown): JestAsymmetricEqualityType,
+  oneOf: (unknown, unknown) => boolean,
   ...
 };
 
-function oneOf(this: $FlowFixMe, actual: mixed, ...expectOneOf: mixed[]) {
+function oneOf(this: $FlowFixMe, actual: unknown, ...expectOneOf: unknown[]) {
   const pass = expectOneOf.includes(actual);
   return {
     pass,

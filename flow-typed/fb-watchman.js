@@ -55,7 +55,7 @@ declare module 'fb-watchman' {
     }>,
   };
 
-  declare type WatchmanLogEvent = mixed;
+  declare type WatchmanLogEvent = unknown;
 
   declare type SavedStateInfo = $ReadOnly<{
     'manifold-path': ?string,

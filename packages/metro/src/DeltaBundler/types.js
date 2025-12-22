@@ -17,7 +17,7 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 import CountingSet from '../lib/CountingSet';
 
 export type MixedOutput = {
-  +data: mixed,
+  +data: unknown,
   +type: string,
 };
 
@@ -150,7 +150,7 @@ export type Options<T = MixedOutput> = $ReadOnly<{
   resolve: ResolveFn,
   transform: TransformFn<T>,
   transformOptions: TransformInputOptions,
-  onProgress: ?(numProcessed: number, total: number) => mixed,
+  onProgress: ?(numProcessed: number, total: number) => unknown,
   lazy: boolean,
   unstable_allowRequireContext: boolean,
   unstable_enablePackageExports: boolean,

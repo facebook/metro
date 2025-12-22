@@ -33,7 +33,7 @@ export default function debounceAsyncQueue<T>(
   }
 
   return () =>
-    new Promise((resolve: T => void, reject: mixed => void) => {
+    new Promise((resolve: T => void, reject: unknown => void) => {
       callbacks.push(resolve);
 
       if (!executing) {

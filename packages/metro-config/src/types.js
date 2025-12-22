@@ -136,7 +136,7 @@ type SerializerConfigT = {
   experimentalSerializerHook: (
     graph: ReadOnlyGraph<>,
     delta: DeltaResult<>,
-  ) => mixed,
+  ) => unknown,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (
@@ -195,7 +195,7 @@ type SymbolicatorConfigT = {
   }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
   customizeStack: (
     Array<IntermediateStackFrame>,
-    mixed,
+    unknown,
   ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>,
 };
 

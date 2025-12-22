@@ -26,7 +26,7 @@ declare module 'jest-worker' {
     | typeof PARENT_MESSAGE_SETUP_ERROR;
 
   declare export type WorkerPoolOptions = $ReadOnly<{
-    setupArgs: $ReadOnlyArray<mixed>,
+    setupArgs: $ReadOnlyArray<unknown>,
     forkOptions: child_process$forkOpts,
     maxRetries: number,
     numWorkers: number,
@@ -37,7 +37,7 @@ declare module 'jest-worker' {
     typeof CHILD_MESSAGE_INITIALIZE, // type
     boolean, // processed
     string, // file
-    Array<mixed> | void, // setupArgs
+    Array<unknown> | void, // setupArgs
     number | void, // workerId
   ];
 
@@ -45,7 +45,7 @@ declare module 'jest-worker' {
     typeof CHILD_MESSAGE_CALL, // type
     boolean, // processed
     string, // method
-    Array<mixed>, // args
+    Array<unknown>, // args
   ];
 
   declare export type ChildMessageEnd = [
@@ -70,12 +70,12 @@ declare module 'jest-worker' {
 
   declare export type ParentMessageOk = [
     typeof PARENT_MESSAGE_OK, // type
-    mixed, // result
+    unknown, // result
   ];
 
   declare export type ParentMessageCustom = [
     typeof PARENT_MESSAGE_CUSTOM, // type
-    mixed, // result
+    unknown, // result
   ];
 
   declare export type ParentMessageMemUsage = [
@@ -88,7 +88,7 @@ declare module 'jest-worker' {
     string, // constructor
     string, // message
     string, // stack
-    mixed, // extra
+    unknown, // extra
   ];
 
   declare export type ParentMessage =
@@ -131,9 +131,9 @@ declare module 'jest-worker' {
   }
 
   declare export type OnStart = (worker: WorkerInterface) => void;
-  declare export type OnEnd = (err: Error | null, result: mixed) => void;
+  declare export type OnEnd = (err: Error | null, result: unknown) => void;
   declare export type OnCustomMessage = (
-    message: $ReadOnlyArray<mixed> | mixed,
+    message: $ReadOnlyArray<unknown> | unknown,
   ) => void;
 
   declare export interface WorkerPoolInterface {
@@ -157,10 +157,10 @@ declare module 'jest-worker' {
   declare export type WorkerOptions = $ReadOnly<{
     forkOptions: child_process$forkOpts,
     resourceLimits: ResourceLimits,
-    setupArgs: $ReadOnlyArray<mixed>,
+    setupArgs: $ReadOnlyArray<unknown>,
     maxRetries: number,
     workerId: number,
-    workerData?: mixed,
+    workerData?: unknown,
     workerPath: string,
     /**
      * After a job has executed the memory usage it should return to.
@@ -237,11 +237,11 @@ declare module 'jest-worker' {
     dequeue(workerId: number): QueueChildMessage | null;
   }
 
-  declare export type FarmOptions<TSetupArgs: $ReadOnlyArray<mixed>> =
+  declare export type FarmOptions<TSetupArgs: $ReadOnlyArray<unknown>> =
     $ReadOnly<{
       computeWorkerKey?: (
         method: string,
-        ...args: $ReadOnlyArray<mixed>
+        ...args: $ReadOnlyArray<unknown>
       ) => string | null,
       exposedMethods?: $ReadOnlyArray<string>,
       forkOptions?: child_process$forkOpts,
@@ -273,7 +273,7 @@ declare module 'jest-worker' {
     TExposed: $ReadOnly<{
       [string]: (...Array<$FlowFixMe>) => Promise<$FlowFixMe>,
     }> = {},
-    TSetupArgs: $ReadOnlyArray<mixed> = $ReadOnlyArray<mixed>,
+    TSetupArgs: $ReadOnlyArray<unknown> = $ReadOnlyArray<unknown>,
   > {
     constructor(
       workerPath: string,

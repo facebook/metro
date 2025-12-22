@@ -38,7 +38,7 @@ export default class RecrawlWarning {
     return undefined;
   }
 
-  static isRecrawlWarningDupe(warningMessage: mixed): boolean {
+  static isRecrawlWarningDupe(warningMessage: unknown): boolean {
     if (typeof warningMessage !== 'string') {
       return false;
     }

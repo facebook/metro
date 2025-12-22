@@ -43,10 +43,10 @@ export function wrapModule(module: Module<>, options: Options): string {
 export function getModuleParams(
   module: Module<>,
   options: Options,
-): Array<mixed> {
+): Array<unknown> {
   const moduleId = options.createModuleId(module.path);
 
-  const paths: {[moduleID: number | string]: mixed} = {};
+  const paths: {[moduleID: number | string]: unknown} = {};
   let hasPaths = false;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {

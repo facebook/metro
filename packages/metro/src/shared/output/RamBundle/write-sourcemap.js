@@ -15,7 +15,7 @@ export default function writeSourcemap(
   fileName: string,
   contents: string,
   log: (...args: Array<string>) => void,
-): Promise<mixed> {
+): Promise<unknown> {
   if (!fileName) {
     return Promise.resolve();
   }

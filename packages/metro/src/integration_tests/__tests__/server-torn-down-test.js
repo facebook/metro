@@ -20,7 +20,7 @@ jest.setTimeout(10000);
 describe('Server torn down test', () => {
   const active = new Map<
     number,
-    {type: string, callStack: string, resource: mixed},
+    {type: string, callStack: string, resource: unknown},
   >();
   const hook = asyncHooks.createHook({
     init(asyncId, type, _triggerAsyncId, resource) {

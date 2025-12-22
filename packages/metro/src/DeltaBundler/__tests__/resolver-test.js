@@ -161,10 +161,8 @@ function dep(name: string): TransformResultDependency {
       });
 
       if (osPlatform === 'win32') {
-        jest.mock(
-          'path',
-          () => jest.requireActual<{win32: mixed}>('path').win32,
-        );
+        const mockPath = jest.requireActual<{win32: unknown}>('path');
+        jest.mock('path', () => mockPath.win32);
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),

@@ -683,7 +683,9 @@ export default class FileMap extends EventEmitter {
 
     await Promise.all([
       plugins.map(({plugin, dataIdx}) => {
-        const mapFn: ([CanonicalPath, FileMetadata]) => [CanonicalPath, mixed] =
+        const mapFn: (
+          [CanonicalPath, FileMetadata],
+        ) => [CanonicalPath, unknown] =
           dataIdx != null
             ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
             : ([relativePath, fileData]) => [relativePath, null];

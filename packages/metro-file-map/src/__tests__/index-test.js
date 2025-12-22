@@ -221,7 +221,7 @@ const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
 
 // Jest toEqual does not match Map instances from different contexts
 // This normalizes them for the uses cases in this test
-const deepNormalize = <T: mixed>(value: T): T => {
+const deepNormalize = <T: unknown>(value: T): T => {
   // $FlowFixMe[method-unbinding]
   const stringTag = Object.prototype.toString.call(value);
   switch (stringTag) {
@@ -1708,7 +1708,7 @@ describe('FileMap', () => {
 
     function fm_it(
       title: string,
-      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => mixed,
+      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
       options?: FileMapTestOptions = {},
     ): void {
       options = options || {};
@@ -1731,7 +1731,7 @@ describe('FileMap', () => {
 
     fm_it.only = (
       title: string,
-      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => mixed,
+      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
       options?: FileMapTestOptions,
     ): void => fm_it(title, fn, {...options, only: true});
 

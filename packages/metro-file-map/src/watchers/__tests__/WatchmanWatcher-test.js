@@ -19,7 +19,7 @@ import WatchmanWatcher from '../WatchmanWatcher';
 import EventEmitter from 'events';
 
 class MockClient extends EventEmitter {
-  command: JestMockFn<$ReadOnlyArray<$FlowFixMe>, mixed> = jest.fn();
+  command: JestMockFn<$ReadOnlyArray<$FlowFixMe>, unknown> = jest.fn();
 }
 const mockClient = new MockClient();
 

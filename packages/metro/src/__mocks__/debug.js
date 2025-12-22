@@ -11,12 +11,12 @@
 'use strict';
 
 interface DebugFN {
-  (...args: Array<mixed>): void;
+  (...args: Array<unknown>): void;
   enabled: () => boolean;
 }
 
 function debug(namespace: string): DebugFN {
-  const fn = (...args: Array<mixed>) => {};
+  const fn = (...args: Array<unknown>) => {};
   fn.enabled = () => false;
   return fn;
 }

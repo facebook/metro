@@ -18,7 +18,7 @@ import util from 'util';
 const groupStack = [];
 let collapsedGuardTimer;
 
-export default (terminal: Terminal, level: string, ...data: Array<mixed>) => {
+export default (terminal: Terminal, level: string, ...data: Array<unknown>) => {
   // $FlowFixMe[invalid-computed-prop]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =

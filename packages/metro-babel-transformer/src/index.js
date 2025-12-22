@@ -15,7 +15,7 @@ import {parseSync, transformFromAstSync} from '@babel/core';
 import nullthrows from 'nullthrows';
 
 export type CustomTransformOptions = {
-  [string]: mixed,
+  [string]: unknown,
   __proto__: null,
   ...
 };

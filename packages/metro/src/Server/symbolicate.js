@@ -60,7 +60,7 @@ export default async function symbolicate(
   stack: $ReadOnlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
-  extraData: mixed,
+  extraData: unknown,
 ): Promise<$ReadOnlyArray<StackFrameOutput>> {
   const mapsByUrl = new Map<?string, ExplodedSourceMap>();
   for (const [url, map] of maps) {

@@ -198,8 +198,8 @@ describe('processRequest', () => {
       async (
         entryPoints: $ReadOnlyArray<string>,
         options: Options<>,
-        resolverOptions: mixed,
-        otherOptions: mixed,
+        resolverOptions: unknown,
+        otherOptions: unknown,
       ) => {
         dependencies = new Map<string, Module<>>([
           [

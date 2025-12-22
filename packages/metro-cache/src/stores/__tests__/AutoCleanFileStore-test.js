@@ -27,7 +27,7 @@ describe('AutoCleanFileStore', () => {
   });
 
   test('sets and writes into the cache', async () => {
-    const fileStore = new AutoCleanFileStore<mixed>({
+    const fileStore = new AutoCleanFileStore<unknown>({
       root: '/root',
       intervalMs: 49,
       cleanupThresholdMs: 90,
@@ -65,7 +65,7 @@ describe('AutoCleanFileStore', () => {
   });
 
   test('returns null when reading a non-existing file', async () => {
-    const fileStore = new AutoCleanFileStore<mixed>({root: '/root'});
+    const fileStore = new AutoCleanFileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     expect(await fileStore.get(cache)).toEqual(null);

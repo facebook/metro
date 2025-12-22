@@ -94,8 +94,8 @@ type Delta<T> = $ReadOnly<{
 
 type InternalOptions<T> = $ReadOnly<{
   lazy: boolean,
-  onDependencyAdd: () => mixed,
-  onDependencyAdded: () => mixed,
+  onDependencyAdd: () => unknown,
+  onDependencyAdded: () => unknown,
   resolve: Options<T>['resolve'],
   transform: Options<T>['transform'],
   shallow: boolean,

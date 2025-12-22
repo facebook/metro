@@ -49,7 +49,7 @@
  * Associate this with the THIRD_PARTY_LICENCE type to ensure it isn't
  * stripped by flow-api-translator.
  */
-export type THIRD_PARTY_LICENSE = mixed;
+export type THIRD_PARTY_LICENSE = unknown;
 
 /* eslint-disable no-bitwise */
 

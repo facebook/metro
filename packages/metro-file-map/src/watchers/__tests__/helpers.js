@@ -73,7 +73,7 @@ export type EventHelpers = {
 
 export const createTempWatchRoot = async (
   watcherName: string,
-  watchmanConfig: {[key: string]: mixed} | false = {},
+  watchmanConfig: {[key: string]: unknown} | false = {},
 ): Promise<string> => {
   const tmpDir = await mkdtemp(
     join(os.tmpdir(), `metro-watcher-${watcherName}-test-`),

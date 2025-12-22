@@ -18,7 +18,7 @@ import invariant from 'invariant';
 
 export default function createConsumer(sourceMap: MixedSourceMap): IConsumer {
   invariant(
-    (sourceMap.version as mixed) === '3' || sourceMap.version === 3,
+    (sourceMap.version as unknown) === '3' || sourceMap.version === 3,
     `Unrecognized source map format version: ${sourceMap.version}`,
   );
 

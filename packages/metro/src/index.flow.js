@@ -127,7 +127,7 @@ export type RunBuildOptions = {
       },
       OutputOptions,
       (logMessage: string) => void,
-    ) => Promise<mixed>,
+    ) => Promise<unknown>,
     ...
   }>,
   platform?: string,

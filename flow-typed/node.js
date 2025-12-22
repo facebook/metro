@@ -28,18 +28,18 @@ declare module 'timers' {
     // [key: $SymbolDispose]: () => void;
   }
 
-  declare export function setTimeout<TArgs = $ReadOnlyArray<mixed>>(
-    callback: (...args: TArgs) => mixed,
+  declare export function setTimeout<TArgs = $ReadOnlyArray<unknown>>(
+    callback: (...args: TArgs) => unknown,
     delay: ?number /* default: 1 */,
     ...args: TArgs
   ): Timeout;
-  declare export function setInterval<TArgs = $ReadOnlyArray<mixed>>(
-    callback: (...args: TArgs) => mixed,
+  declare export function setInterval<TArgs = $ReadOnlyArray<unknown>>(
+    callback: (...args: TArgs) => unknown,
     delay: ?number /* default: 1 */,
     ...args: TArgs
   ): Timeout;
-  declare export function setImmediate<TArgs = $ReadOnlyArray<mixed>>(
-    callback: (...args: TArgs) => mixed,
+  declare export function setImmediate<TArgs = $ReadOnlyArray<unknown>>(
+    callback: (...args: TArgs) => unknown,
     ...args: TArgs
   ): Immediate;
 

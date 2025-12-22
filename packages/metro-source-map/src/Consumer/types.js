@@ -51,8 +51,8 @@ export interface IConsumer {
   generatedMappings(): Iterable<Mapping>;
 
   eachMapping(
-    callback: (mapping: Mapping) => mixed,
-    context?: mixed,
+    callback: (mapping: Mapping) => unknown,
+    context?: unknown,
     order?: IterationOrder,
   ): void;
 

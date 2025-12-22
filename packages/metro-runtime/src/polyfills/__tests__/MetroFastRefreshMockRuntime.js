@@ -142,7 +142,7 @@ const moduleSystemCode = (() => {
   }).code;
 })();
 
-const createModuleSystem: (RuntimeGlobal, boolean, string) => mixed =
+const createModuleSystem: (RuntimeGlobal, boolean, string) => unknown =
   // eslint-disable-next-line no-new-func
   new Function(
     'global',

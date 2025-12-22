@@ -1914,7 +1914,7 @@ window.foo();
     });
 
     test('does not reset the path cache', () => {
-      const dummyCache: Map<mixed, mixed> = new Map();
+      const dummyCache: Map<unknown, unknown> = new Map();
       // $FlowFixMe[prop-missing] - Writing to readonly map for test purposes.
       traverse.cache.path.set(ast, dummyCache);
 

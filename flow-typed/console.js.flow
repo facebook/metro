@@ -13,24 +13,28 @@
 // $FlowFixMe[unsupported-syntax]
 declare module 'console' {
   declare export class Console {
-    constructor(stdout: mixed, stderr: mixed): void;
-    assert(value: mixed, message?: string, ...messageParts: Array<mixed>): void;
-    dir(data: mixed, options?: Object): void;
+    constructor(stdout: unknown, stderr: unknown): void;
+    assert(
+      value: unknown,
+      message?: string,
+      ...messageParts: Array<unknown>
+    ): void;
+    dir(data: unknown, options?: Object): void;
 
-    error(msg: string, ...msgParts: Array<mixed>): void;
-    error(data: mixed): void;
+    error(msg: string, ...msgParts: Array<unknown>): void;
+    error(data: unknown): void;
 
-    info(msg: string, ...msgParts: Array<mixed>): void;
-    info(data: mixed): void;
+    info(msg: string, ...msgParts: Array<unknown>): void;
+    info(data: unknown): void;
 
-    log(msg: string, ...msgParts: Array<mixed>): void;
-    log(data: mixed): void;
+    log(msg: string, ...msgParts: Array<unknown>): void;
+    log(data: unknown): void;
 
     time(label: string): void;
     timeEnd(label: string): void;
-    trace(msg: string, ...msgParts: Array<mixed>): void;
+    trace(msg: string, ...msgParts: Array<unknown>): void;
 
-    warn(msg: string, ...msgParts: Array<mixed>): void;
-    warn(data: mixed): void;
+    warn(msg: string, ...msgParts: Array<unknown>): void;
+    warn(data: unknown): void;
   }
 }

@@ -10,14 +10,14 @@
  */
 
 type MetroRequire = {
-  (number): mixed,
+  (number): unknown,
   importAll: <T>(number) => T,
   ...
 };
 
 declare var require: MetroRequire;
 
-type DependencyMapPaths = ?$ReadOnly<{[moduleID: number | string]: mixed}>;
+type DependencyMapPaths = ?$ReadOnly<{[moduleID: number | string]: unknown}>;
 
 declare var __METRO_GLOBAL_PREFIX__: string;
 
@@ -25,7 +25,7 @@ function maybeLoadBundle(
   moduleID: number,
   paths: DependencyMapPaths,
 ): void | Promise<void> {
-  const loadBundle: (bundlePath: mixed) => Promise<void> =
+  const loadBundle: (bundlePath: unknown) => Promise<void> =
     global[`${__METRO_GLOBAL_PREFIX__}__loadBundleAsync`];
 
   if (loadBundle != null) {

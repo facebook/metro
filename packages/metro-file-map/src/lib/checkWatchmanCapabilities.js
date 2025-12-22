@@ -37,7 +37,7 @@ export default async function checkWatchmanCapabilities(
 
   let parsedResponse;
   try {
-    parsedResponse = JSON.parse(rawResponse) as mixed;
+    parsedResponse = JSON.parse(rawResponse) as unknown;
   } catch {
     throw new Error(
       'Failed to parse response from `watchman list-capabilities`',

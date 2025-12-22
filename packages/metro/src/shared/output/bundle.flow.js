@@ -69,7 +69,7 @@ export async function save(
   },
   options: OutputOptions,
   log: string => void,
-): Promise<mixed> {
+): Promise<unknown> {
   const {
     bundleOutput,
     bundleEncoding: encoding,
@@ -101,7 +101,7 @@ export async function save(
   }
 
   // Wait until everything is written to disk.
-  await Promise.all(writeFns.map((cb: void => mixed) => cb()));
+  await Promise.all(writeFns.map((cb: void => unknown) => cb()));
 }
 
 export const formatName = 'bundle';

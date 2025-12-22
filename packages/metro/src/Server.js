@@ -1384,7 +1384,7 @@ export default class Server {
       } else {
         parsedBody = (await parseJsonBody(req, {strict: false})) as {
           stack: $ReadOnlyArray<StackFrameInput>,
-          extraData: {[string]: mixed},
+          extraData: {[string]: unknown},
         };
       }
 

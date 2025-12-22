@@ -45,7 +45,7 @@ export type BundleOptions = {
   +lazy: boolean,
   minify: boolean,
   +modulesOnly: boolean,
-  onProgress: ?(doneCont: number, totalCount: number) => mixed,
+  onProgress: ?(doneCont: number, totalCount: number) => unknown,
   +platform: ?string,
   +runModule: boolean,
   +shallow: boolean,

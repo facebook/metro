@@ -30,7 +30,7 @@ export default function constantFoldingPlugin(context: {
 
   const evaluate = function (path: NodePath<>): {
     confident: boolean,
-    value: mixed,
+    value: unknown,
   } {
     const state = {safe: true};
     const unsafe = (

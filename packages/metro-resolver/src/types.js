@@ -63,7 +63,7 @@ export type ExportMapWithFallbacks = $ReadOnly<{
 export type ExportValueWithFallback =
   | $ReadOnlyArray<ExportsLikeMap | string>
   // JSON can also contain exotic nested array structure, which will not be parsed
-  | $ReadOnlyArray<$ReadOnlyArray<mixed>>;
+  | $ReadOnlyArray<$ReadOnlyArray<unknown>>;
 
 export type ExportsField =
   | string
@@ -239,6 +239,6 @@ export type CustomResolver = (
 
 export type CustomResolverOptions = {
   __proto__: null,
-  +[string]: mixed,
+  +[string]: unknown,
   ...
 };

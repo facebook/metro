@@ -283,8 +283,8 @@ declare module 'prettier' {
      * Specify where the cursor is.
      */
     cursorOffset: number,
-    rangeStart?: mixed,
-    rangeEnd?: mixed,
+    rangeStart?: unknown,
+    rangeEnd?: unknown,
   }>;
 
   declare export type CursorResult = {

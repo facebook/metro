@@ -33,7 +33,7 @@ export function save(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (x: string) => void,
-): Promise<mixed> {
+): Promise<unknown> {
   // We fork here depending on the platform: while Android is pretty good at
   // loading individual assets, iOS has a large overhead when reading hundreds
   // of assets from disk.

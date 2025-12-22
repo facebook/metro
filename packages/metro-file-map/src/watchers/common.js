@@ -33,7 +33,7 @@ export type WatcherOptions = $ReadOnly<{
   dot: boolean,
   ignored: ?RegExp,
   watchmanDeferStates: $ReadOnlyArray<string>,
-  watchman?: mixed,
+  watchman?: unknown,
   watchmanPath?: string,
 }>;
 

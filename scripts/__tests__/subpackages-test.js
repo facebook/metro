@@ -66,8 +66,8 @@ test('workspaces are enumerated from root package.json', () => {
 describe.each([...ALL_PACKAGES])('%s', packagePath => {
   let packageJson: {
     name: string,
-    dependencies: {[key: string]: mixed},
-    [key: string]: mixed,
+    dependencies: {[key: string]: unknown},
+    [key: string]: unknown,
   };
 
   beforeAll(() => {

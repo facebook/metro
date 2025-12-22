@@ -16,13 +16,13 @@ type WebsocketServiceInterface<T> = interface {
     url: string,
     sendFn: (data: string) => void,
   ) => Promise<?T>,
-  +onClientDisconnect?: (client: T) => mixed,
-  +onClientError?: (client: T, e: ErrorEvent) => mixed,
+  +onClientDisconnect?: (client: T) => unknown,
+  +onClientError?: (client: T, e: ErrorEvent) => unknown,
   +onClientMessage?: (
     client: T,
     message: string | Buffer | ArrayBuffer | Array<Buffer>,
     sendFn: (data: string) => void,
-  ) => mixed,
+  ) => unknown,
 };
 
 type HMROptions<TClient> = {

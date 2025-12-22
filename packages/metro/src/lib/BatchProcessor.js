@@ -24,8 +24,8 @@ type BatchProcessorOptions = {
 
 type QueueItem<TItem, TResult> = {
   item: TItem,
-  reject: (error: mixed) => mixed,
-  resolve: (result: TResult) => mixed,
+  reject: (error: unknown) => unknown,
+  resolve: (result: TResult) => unknown,
   ...
 };
 
@@ -70,7 +70,7 @@ export default class BatchProcessor<TItem, TResult> {
     this._onBatchFinished();
   }
 
-  _onBatchError(jobs: Array<QueueItem<TItem, TResult>>, error: mixed): void {
+  _onBatchError(jobs: Array<QueueItem<TItem, TResult>>, error: unknown): void {
     for (let i = 0; i < jobs.length; ++i) {
       jobs[i].reject(error);
     }
@@ -109,8 +109,8 @@ export default class BatchProcessor<TItem, TResult> {
   queue(item: TItem): Promise<TResult> {
     return new Promise(
       (
-        resolve: (result: TResult) => mixed,
-        reject: (error: mixed) => mixed,
+        resolve: (result: TResult) => unknown,
+        reject: (error: unknown) => unknown,
       ) => {
         this._queue.push({item, resolve, reject});
         this._processQueueOnceReady();

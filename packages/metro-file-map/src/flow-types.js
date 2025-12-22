@@ -39,7 +39,7 @@ export type BuildResult = {
 
 export type CacheData = $ReadOnly<{
   clocks: WatchmanClocks,
-  fileSystemData: mixed,
+  fileSystemData: unknown,
   plugins: $ReadOnlyMap<string, V8Serializable>,
 }>;
 
@@ -147,7 +147,7 @@ export type WatcherStatus =
     }
   | {
       type: 'watchman_warning',
-      warning: mixed,
+      warning: unknown,
       command: 'watch-project' | 'query',
     };
 

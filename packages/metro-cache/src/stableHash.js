@@ -12,7 +12,7 @@
 import crypto from 'crypto';
 import canonicalize from 'metro-core/private/canonicalize';
 
-export default function stableHash(value: mixed): Buffer {
+export default function stableHash(value: unknown): Buffer {
   return (
     crypto
       .createHash('md5')

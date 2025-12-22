@@ -27,7 +27,7 @@ describe('FileStore', () => {
   });
 
   test('sets and writes into the cache', async () => {
-    const fileStore = new FileStore<mixed>({root: '/root'});
+    const fileStore = new FileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     await fileStore.set(cache, {foo: 42});
@@ -35,14 +35,14 @@ describe('FileStore', () => {
   });
 
   test('returns null when reading a non-existing file', async () => {
-    const fileStore = new FileStore<mixed>({root: '/root'});
+    const fileStore = new FileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     expect(await fileStore.get(cache)).toEqual(null);
   });
 
   test('returns null when reading a empty file', async () => {
-    const fileStore = new FileStore<mixed>({root: '/root'});
+    const fileStore = new FileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     jest.spyOn(fs.promises, 'readFile').mockImplementation(async () => '');
     expect(await fileStore.get(cache)).toEqual(null);
@@ -50,7 +50,7 @@ describe('FileStore', () => {
   });
 
   test('writes into cache if folder is missing', async () => {
-    const fileStore = new FileStore<mixed>({root: '/root'});
+    const fileStore = new FileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);
 
@@ -60,7 +60,7 @@ describe('FileStore', () => {
   });
 
   test('reads and writes binary data', async () => {
-    const fileStore = new FileStore<mixed>({root: '/root'});
+    const fileStore = new FileStore<unknown>({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);
 

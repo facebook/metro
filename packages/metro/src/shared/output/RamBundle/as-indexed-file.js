@@ -37,7 +37,7 @@ export function save(
   bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
-): Promise<mixed> {
+): Promise<unknown> {
   const {
     bundleOutput,
     bundleEncoding: encoding,
@@ -96,7 +96,7 @@ function writeBuffers(
   buffers: Array<Buffer>,
 ): Promise<void> {
   buffers.forEach((buffer: Buffer) => stream.write(buffer));
-  return new Promise((resolve: () => void, reject: mixed => mixed) => {
+  return new Promise((resolve: () => void, reject: unknown => unknown) => {
     stream.on('error', reject);
     stream.on('finish', () => resolve());
     stream.end();

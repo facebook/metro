@@ -94,7 +94,7 @@ export default class MultipartResponse {
     this.res.end();
   }
 
-  once(name: string, fn: () => mixed): this {
+  once(name: string, fn: () => unknown): this {
     this.res.once(name, fn);
     return this;
   }

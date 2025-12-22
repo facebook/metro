@@ -213,7 +213,7 @@ export default class Terminal {
    * non-interactive terminal: for example, if the output is redirected to a
    * file, then we don't care too much about having a progress bar.
    */
-  status(format: string, ...args: Array<mixed>): string {
+  status(format: string, ...args: Array<unknown>): string {
     const nextStatusStr = this.#nextStatusStr;
 
     const statusStr = util.format(format, ...args);
@@ -231,7 +231,7 @@ export default class Terminal {
    * the way correctly. In non-interactive terminals this is the same as
    * `console.log`.
    */
-  log(format: string, ...args: Array<mixed>): void {
+  log(format: string, ...args: Array<unknown>): void {
     this.#logLines.push(util.format(format, ...args));
     this.#scheduleUpdate();
   }

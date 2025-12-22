@@ -346,7 +346,7 @@ export default class IncrementalBundler {
     await Promise.all(
       absoluteEntryFiles.map(
         (entryFile: string) =>
-          new Promise((resolve: void => void, reject: mixed => mixed) => {
+          new Promise((resolve: void => void, reject: unknown => unknown) => {
             // This should throw an error if the file doesn't exist.
             // Using this instead of fs.exists to account for SimLinks.
             fs.realpath(entryFile, err => {

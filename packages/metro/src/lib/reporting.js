@@ -126,7 +126,7 @@ export type ReportableEvent =
         | 'groupCollapsed'
         | 'groupEnd'
         | 'debug',
-      data: Array<mixed>,
+      data: Array<unknown>,
       ...
     }
   | {
@@ -187,7 +187,7 @@ export type Reporter = interface {update(event: ReportableEvent): void};
 export function logWarning(
   terminal: Terminal,
   format: string,
-  ...args: Array<mixed>
+  ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
   terminal.log('%s %s', chalk.yellow.inverse.bold(' WARN '), str);
@@ -199,7 +199,7 @@ export function logWarning(
 export function logError(
   terminal: Terminal,
   format: string,
-  ...args: Array<mixed>
+  ...args: Array<unknown>
 ): void {
   terminal.log(
     '%s %s',
@@ -221,7 +221,7 @@ export function logError(
 export function logInfo(
   terminal: Terminal,
   format: string,
-  ...args: Array<mixed>
+  ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
   terminal.log('%s %s', chalk.cyan.inverse.bold(' INFO '), str);

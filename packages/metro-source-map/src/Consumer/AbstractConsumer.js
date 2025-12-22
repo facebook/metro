@@ -39,8 +39,8 @@ export default class AbstractConsumer implements IConsumer {
   }
 
   eachMapping(
-    callback: (mapping: Mapping) => mixed,
-    context?: mixed = null,
+    callback: (mapping: Mapping) => unknown,
+    context?: unknown = null,
     order?: IterationOrder = GENERATED_ORDER,
   ): void {
     invariant(

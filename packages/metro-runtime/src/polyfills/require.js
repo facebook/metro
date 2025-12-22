@@ -799,8 +799,8 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): Array<T> {
     const result = [];
-    const visited = new Set<mixed>();
-    const stack = new Set<mixed>();
+    const visited = new Set<unknown>();
+    const stack = new Set<unknown>();
     function traverseDependentNodes(node: T): void {
       if (stack.has(node)) {
         throw CYCLE_DETECTED;
@@ -996,7 +996,7 @@ if (__DEV__) {
   var getRefreshBoundarySignature = (
     Refresh: any,
     moduleExports: Exports,
-  ): Array<mixed> => {
+  ): Array<unknown> => {
     const signature = [];
     signature.push(Refresh.getFamilyByType(moduleExports));
     if (moduleExports == null || typeof moduleExports !== 'object') {

@@ -14,7 +14,7 @@ declare module 'babel-plugin-tester' {
   import typeof * as Babel from '@babel/core';
   import type {BabelCoreOptions, PluginObj} from '@babel/core';
 
-  declare type PluginTesterOptions<TOpts = mixed, TState = mixed> = {
+  declare type PluginTesterOptions<TOpts = unknown, TState = unknown> = {
     babelOptions?: BabelCoreOptions,
     plugin: (babel: Babel) => PluginObj<TState>,
     pluginOptions?: TOpts,
@@ -29,7 +29,7 @@ declare module 'babel-plugin-tester' {
     }>,
   };
 
-  declare function pluginTester<TOpts = mixed, TState = mixed>(
+  declare function pluginTester<TOpts = unknown, TState = unknown>(
     opts: PluginTesterOptions<TOpts, TState>,
   ): void;
 

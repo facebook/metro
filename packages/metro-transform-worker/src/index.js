@@ -60,7 +60,7 @@ import nullthrows from 'nullthrows';
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;
 
-type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
+type MinifierConfig = $ReadOnly<{[string]: unknown, ...}>;
 
 export type MinifierOptions = {
   code: string,

@@ -340,7 +340,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
 /**
  * Handles a warning in the watchman resp object.
  */
-function handleWarning(resp: $ReadOnly<{warning?: mixed, ...}>) {
+function handleWarning(resp: $ReadOnly<{warning?: unknown, ...}>) {
   if ('warning' in resp) {
     if (RecrawlWarning.isRecrawlWarningDupe(resp.warning)) {
       return true;

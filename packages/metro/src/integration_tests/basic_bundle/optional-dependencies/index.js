@@ -10,7 +10,7 @@
 
 'use strict';
 
-let shouldBeB: mixed, shouldBeC: mixed;
+let shouldBeB: unknown, shouldBeC: unknown;
 try {
   // $FlowExpectedError[cannot-resolve-module]
   shouldBeB = require('./not-exists');

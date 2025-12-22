@@ -9,6 +9,6 @@
  */
 
 export type RequireWithUnstableImportMaybeSync = {
-  (id: string | number): mixed,
-  unstable_importMaybeSync: (id: string) => mixed,
+  (id: string | number): unknown,
+  unstable_importMaybeSync: (id: string) => unknown,
 };

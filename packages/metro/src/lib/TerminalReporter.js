@@ -41,7 +41,7 @@ export type TerminalReportableEvent =
   | {
       type: 'unstable_server_log',
       level: 'info' | 'warn' | 'error',
-      data: string | Array<mixed>,
+      data: string | Array<unknown>,
       ...
     }
   | {
