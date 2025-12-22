@@ -61,7 +61,69 @@ declare module 'perf_hooks' {
     disable(): boolean;
   }
 
-  declare export function monitorEventLoopDelay({
+  declare export class PerformanceEntry {
+    +duration: DOMHighResTimeStamp;
+    +entryType: string;
+    +name: string;
+    +startTime: DOMHighResTimeStamp;
+  }
+
+  declare export class PerformanceMark<T = mixed> extends PerformanceEntry {
+    +detail: T;
+  }
+
+  declare export class PerformanceMeasure<T = mixed> extends PerformanceEntry {
+    +detail: T;
+  }
+
+  declare export class PerformanceNodeEntry extends PerformanceEntry {
+    +detail: mixed;
+  }
+
+  declare export class PerformanceObserverEntryList {
+    getEntries: () => Array<PerformanceEntry>;
+    getEntriesByName: (name: string, type?: string) => Array<PerformanceEntry>;
+    getEntriesByType: (type: string) => Array<PerformanceEntry>;
+  }
+
+  declare export class PerformanceObserver {
+    static supportedEntryTypes: $ReadOnlyArray<string>;
+    constructor(callback: PerformanceObserverCallback): this;
+    observe(
+      options: $ReadOnly<{
+        entryTypes: $ReadOnlyArray<string>,
+        buffered?: boolean,
+      }>,
+    ): void;
+    takeRecords(): Array<PerformanceEntry>;
+    disconnect(): void;
+  }
+
+  export type PerformanceObserverCallback = (
+    list: PerformanceObserverEntryList,
+    observer: PerformanceObserver,
+  ) => void;
+
+  export type PerformanceEntryFilterOptions = $ReadOnly<{
+    entryType: string,
+    initiatorType: string,
+    name: string,
+    ...
+  }>;
+
+  export type PerformanceMarkOptions<T = mixed> = $ReadOnly<{
+    detail?: T,
+    startTime?: number,
+  }>;
+
+  export type PerformanceMeasureOptions<T = mixed> = $ReadOnly<{
+    detail?: T,
+    duration?: number,
+    end?: number | string,
+    start?: number | string,
+  }>;
+
+  declare export function monitorEventLoopDelay(options?: {
     /**
      * The sampling rate in milliseconds.
      * Must be greater than zero.
@@ -78,17 +140,38 @@ declare module 'perf_hooks' {
 
   declare export var performance: {
     clearMarks(name?: string): void,
-    mark(name?: string): void,
-    measure(name: string, startMark?: string, endMark?: string): void,
-    nodeTiming: mixed /* FIXME */,
-    now(): number,
-    timeOrigin: number,
-    timerify<TArgs: Iterable<mixed>, TReturn>(
-      f: (...TArgs) => TReturn,
-    ): (...TArgs) => TReturn,
+    clearMeasures(name?: string): void,
+    clearResourceTimings(): void,
+
+    eventCounts: EventCounts,
+    getEntries: (
+      options?: PerformanceEntryFilterOptions,
+    ) => Array<PerformanceEntry>,
+    getEntriesByName: (name: string, type?: string) => Array<PerformanceEntry>,
+    getEntriesByType: (type: string) => Array<PerformanceEntry>,
+    mark<T>(
+      name: string,
+      options?: PerformanceMarkOptions<T>,
+    ): PerformanceMark<T>,
+    measure<T>(
+      name: string,
+      startMarkOrOptions?: string | PerformanceMeasureOptions<T>,
+      endMark?: string,
+    ): PerformanceMeasure<T>,
+    now: () => DOMHighResTimeStamp,
+    setResourceTimingBufferSize(maxSize: number): void,
+    +timeOrigin: DOMHighResTimeStamp,
+    timing: PerformanceTiming,
+    toJSON(): string,
+
+    // Node.js-specific extensions
     eventLoopUtilization(
       elu1?: EventLoopUtilization,
       elu2?: EventLoopUtilization,
     ): EventLoopUtilization,
+    nodeTiming: PerformanceNodeEntry,
+    timerify<TArgs: Iterable<mixed>, TReturn>(
+      f: (...TArgs) => TReturn,
+    ): (...TArgs) => TReturn,
   };
 }
