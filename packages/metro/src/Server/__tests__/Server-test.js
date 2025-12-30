@@ -1349,20 +1349,53 @@ describe('processRequest', () => {
   );
 
   describe('/symbolicate handles errors', () => {
-    test('should symbolicate given stack trace', async () => {
-      const body = 'clearly-not-json';
-      // $FlowFixMe[cannot-write]
-      console.error = jest.fn();
+    test.each([
+      ['clearly-not-json'],
+      ...['a string', null, [], 47, {}].map(input => [JSON.stringify(input)]),
+    ])('should respond 400 on invalid input: %s', async body => {
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const response = await makeRequest('/symbolicate', {
         headers: {'content-type': 'application/json'},
         data: body,
       });
-      expect(response.statusCode).toEqual(500);
+      expect(response.statusCode).toEqual(400);
       expect(response._getJSON()).toEqual({
-        error: expect.any(String),
+        error:
+          body === 'clearly-not-json'
+            ? expect.stringContaining('not valid JSON')
+            : 'Bad symbolication input, expected object with stack array, got: ' +
+              body,
       });
-      expect(console.error).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
     });
+
+    test.each([
+      [[], 'frame to be a JSON object'],
+      ['', 'frame to be a JSON object'],
+      [{file: 2}, 'file to be string or nullish'],
+      [{methodName: 2}, 'methodName to be string or nullish'],
+      [{lineNumber: 'foo'}, 'lineNumber to be number or nullish'],
+      [{column: 'bar'}, 'column to be number or nullish'],
+    ])(
+      'should respond 400 on an invalid frame input: %s',
+      async (frame, expectedReason) => {
+        const errorSpy = jest
+          .spyOn(console, 'error')
+          .mockImplementation(() => {});
+
+        const response = await makeRequest('/symbolicate', {
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({stack: [frame]}),
+        });
+        expect(response.statusCode).toEqual(400);
+        expect(response._getJSON()).toEqual({
+          error: 'Bad frame at line 0: Expected ' + expectedReason,
+        });
+        expect(errorSpy).not.toBeCalled();
+      },
+    );
   });
 });

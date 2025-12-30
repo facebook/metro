@@ -14,13 +14,23 @@ import type {IncomingMessage} from 'http';
 const CONTENT_TYPE = 'application/json';
 const SIZE_LIMIT = 100 * 1024 * 1024; // 100MB
 
+export type JsonData =
+  | {
+      [string]: JsonData,
+    }
+  | Array<JsonData>
+  | string
+  | number
+  | boolean
+  | null;
+
 /**
  * Attempt to parse a request body as JSON.
  */
 export default function parseJsonBody(
   req: IncomingMessage,
   options: {strict?: boolean} = {},
-): Promise<$FlowFixMe> {
+): Promise<JsonData> {
   const {strict = true} = options;
 
   return new Promise((resolve, reject) => {

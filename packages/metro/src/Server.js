@@ -22,6 +22,7 @@ import type {
 } from './DeltaBundler/types';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
+import type {JsonData} from './lib/parseJsonBody';
 import type {Reporter} from './lib/reporting';
 import type {StackFrameInput, StackFrameOutput} from './Server/symbolicate';
 import type {
@@ -65,7 +66,6 @@ import symbolicate from './Server/symbolicate';
 import {SourcePathsMode} from './shared/types';
 import {codeFrameColumns} from '@babel/code-frame';
 import * as fs from 'graceful-fs';
-import invariant from 'invariant';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {Logger} from 'metro-core';
 import mime from 'mime-types';
@@ -98,6 +98,7 @@ export type BundleMetadata = {
 };
 
 type ProcessStartContext = {
+  ...SplitBundleOptions,
   +buildNumber: number,
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
@@ -107,7 +108,6 @@ type ProcessStartContext = {
   +revisionId?: ?RevisionId,
   +bundlePerfLogger: RootPerfLogger,
   +requestStartTimestamp: number,
-  ...SplitBundleOptions,
 };
 
 type ProcessDeleteContext = {
@@ -1316,7 +1316,7 @@ export default class Server {
     },
   });
 
-  async _symbolicate(req: IncomingMessage, res: ServerResponse) {
+  async _symbolicate(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const getCodeFrame = (
       urls: Set<string>,
       symbolicatedStack: $ReadOnlyArray<StackFrameOutput>,
@@ -1368,6 +1368,7 @@ export default class Server {
       return null;
     };
 
+    let inputValidated = false;
     try {
       const symbolicatingLogEntry = log(
         createActionStartEntry('Symbolicating'),
@@ -1380,35 +1381,78 @@ export default class Server {
         // < 0.80 and Expo SDK < 53
         // $FlowFixMe[prop-missing] - rawBody assigned by legacy CLI integrations
         const body = await req.rawBody;
-        parsedBody = JSON.parse(body);
+        parsedBody = JSON.parse(body) as JsonData;
       } else {
-        parsedBody = (await parseJsonBody(req, {strict: false})) as {
-          stack: $ReadOnlyArray<StackFrameInput>,
-          extraData: {[string]: unknown},
-        };
+        parsedBody = await parseJsonBody(req, {strict: false});
       }
 
-      const rewriteAndNormalizeStackFrame = <T>(
-        frame: T,
-        lineNumber: number,
-      ): T => {
-        invariant(
-          frame != null && typeof frame === 'object',
-          'Bad stack frame at line %d, expected object, received: %s',
-          lineNumber,
-          typeof frame,
-        );
-        const frameFile = frame.file;
-        if (typeof frameFile === 'string' && frameFile.includes('://')) {
-          return {
-            ...frame,
-            file: this._rewriteAndNormalizeUrl(frameFile),
-          };
-        }
-        return frame;
+      let validatedBody: {
+        stack: ReadonlyArray<JsonData>,
+        extraData?: JsonData,
       };
 
-      const stack = parsedBody.stack.map(rewriteAndNormalizeStackFrame);
+      if (
+        parsedBody != null &&
+        typeof parsedBody === 'object' &&
+        !Array.isArray(parsedBody) &&
+        Array.isArray(parsedBody['stack'])
+      ) {
+        const maybeStack: Array<JsonData> = parsedBody['stack'];
+        const extraData = parsedBody['extraData'];
+        validatedBody = {
+          stack: maybeStack,
+          extraData,
+        };
+      } else {
+        throw new Error(
+          `Bad symbolication input, expected object with stack array, got: ${JSON.stringify(parsedBody)}`,
+        );
+      }
+
+      const validateAndNormalizeStackFrame = (
+        frame: JsonData,
+      ): StackFrameInput => {
+        if (
+          frame == null ||
+          typeof frame !== 'object' ||
+          Array.isArray(frame)
+        ) {
+          throw new Error('Expected frame to be a JSON object');
+        }
+        if (frame.file != null && typeof frame.file !== 'string') {
+          throw new Error('Expected file to be string or nullish');
+        }
+        let frameFile = frame.file;
+        if (frameFile != null && frameFile.includes('://')) {
+          frameFile = this._rewriteAndNormalizeUrl(frameFile);
+        }
+        if (frame.methodName != null && typeof frame.methodName !== 'string') {
+          throw new Error('Expected methodName to be string or nullish');
+        }
+        if (frame.lineNumber != null && typeof frame.lineNumber !== 'number') {
+          throw new Error('Expected lineNumber to be number or nullish');
+        }
+        if (frame.column != null && typeof frame.column !== 'number') {
+          throw new Error('Expected column to be number or nullish');
+        }
+        return {
+          ...frame,
+          file: frameFile,
+          lineNumber: frame.lineNumber,
+          column: frame.column,
+          methodName: frame.methodName,
+        };
+      };
+
+      const stack = validatedBody.stack.map((frame, lineNumber) => {
+        try {
+          return validateAndNormalizeStackFrame(frame);
+        } catch (e) {
+          throw new Error(`Bad frame at line ${lineNumber}: ${e.message}`);
+        }
+      });
+
+      inputValidated = true;
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
       const urls = new Set<string>();
 
@@ -1440,7 +1484,7 @@ export default class Server {
         stack,
         zip(urls.values(), sourceMaps),
         this._config,
-        parsedBody.extraData ?? {},
+        validatedBody.extraData ?? {},
       );
 
       debug('Symbolication done');
@@ -1455,7 +1499,7 @@ export default class Server {
       });
     } catch (error) {
       debug('Symbolication failed', error.stack || error);
-      res.statusCode = 500;
+      res.statusCode = inputValidated ? 500 : 400;
       res.end(JSON.stringify({error: error.message}));
     }
   }

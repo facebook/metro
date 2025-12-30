@@ -1036,7 +1036,9 @@ declare var describe: {
    * @param {table} table of Test
    */
   each(
-    ...table: Array<Array<unknown> | unknown> | [Array<string>, string]
+    ...table:
+      | ReadonlyArray<ReadonlyArray<unknown> | unknown>
+      | [ReadonlyArray<string>, string]
   ): (
     name: JestTestName,
     fn?: (...args: Array<any>) => ?Promise<unknown>,
@@ -1073,7 +1075,9 @@ declare var it: {
       timeout?: number,
     ): void,
     each(
-      ...table: Array<Array<unknown> | unknown> | [Array<string>, string]
+      ...table:
+        | ReadonlyArray<ReadonlyArray<unknown> | unknown>
+        | [ReadonlyArray<string>, string]
     ): (
       name: JestTestName,
       fn?: (...args: Array<any>) => ?Promise<unknown>,
@@ -1094,7 +1098,9 @@ declare var it: {
       timeout?: number,
     ): void,
     each(
-      ...table: Array<Array<unknown> | unknown> | [Array<string>, string]
+      ...table:
+        | ReadonlyArray<ReadonlyArray<unknown> | unknown>
+        | [ReadonlyArray<string>, string]
     ): (
       name: JestTestName,
       fn?: (...args: Array<any>) => ?Promise<unknown>,
@@ -1125,7 +1131,9 @@ declare var it: {
    * @param {table} table of Test
    */
   each(
-    ...table: Array<Array<unknown> | unknown> | [Array<string>, string]
+    ...table:
+      | ReadonlyArray<ReadonlyArray<unknown> | unknown>
+      | [ReadonlyArray<string>, string]
   ): (
     name: JestTestName,
     fn?: (...args: Array<any>) => ?Promise<unknown>,
