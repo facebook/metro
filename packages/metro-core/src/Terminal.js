@@ -232,7 +232,14 @@ export default class Terminal {
    * `console.log`.
    */
   log(format: string, ...args: Array<unknown>): void {
-    this.#logLines.push(util.format(format, ...args));
+    const line = util.format(format, ...args);
+
+    if (this.#ttyStream) {
+      this.#logLines.push(line);
+    } else {
+      void streamWrite(this.#stream, line + '\n');
+    }
+
     this.#scheduleUpdate();
   }
 
