@@ -277,7 +277,7 @@ export default class DependencyGraph extends EventEmitter {
   /** Given a search context, return a list of file paths matching the query. */
   matchFilesWithContext(
     from: string,
-    context: $ReadOnly<{
+    context: Readonly<{
       /* Should search for files recursively. */
       recursive: boolean,
       /* Filter relative paths against a pattern. */

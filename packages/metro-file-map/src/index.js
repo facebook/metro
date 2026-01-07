@@ -71,7 +71,7 @@ export type {
   HasteMapItem,
 };
 
-export type InputOptions = $ReadOnly<{
+export type InputOptions = Readonly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
@@ -99,14 +99,14 @@ export type InputOptions = $ReadOnly<{
   watchmanDeferStates?: $ReadOnlyArray<string>,
 }>;
 
-type HealthCheckOptions = $ReadOnly<{
+type HealthCheckOptions = Readonly<{
   enabled: boolean,
   interval: number,
   timeout: number,
   filePrefix: string,
 }>;
 
-type InternalOptions = $ReadOnly<{
+type InternalOptions = Readonly<{
   ...BuildParameters,
   healthCheck: HealthCheckOptions,
   perfLoggerFactory: ?PerfLoggerFactory,
@@ -118,7 +118,7 @@ type InternalOptions = $ReadOnly<{
 
 // $FlowFixMe[unclear-type] Plugin types cannot be known statically
 type AnyFileMapPlugin = FileMapPlugin<any, any>;
-type IndexedPlugin = $ReadOnly<{
+type IndexedPlugin = Readonly<{
   plugin: AnyFileMapPlugin,
   dataIdx: ?number,
 }>;
@@ -575,7 +575,7 @@ export default class FileMap extends EventEmitter {
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
     plugins: $ReadOnlyArray<IndexedPlugin>,
-    delta: $ReadOnly<{
+    delta: Readonly<{
       changedFiles: FileData,
       removedFiles: ReadonlySet<CanonicalPath>,
       clocks?: WatchmanClocks,

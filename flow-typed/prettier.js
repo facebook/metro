@@ -72,7 +72,7 @@ declare module 'prettier' {
   ) => AST;
 
   declare export type Options = Partial<RequiredOptions>;
-  declare export type RequiredOptions = $ReadOnly<{
+  declare export type RequiredOptions = Readonly<{
     ...DocPrinterOptions,
     /**
      * Print semicolons at the ends of statements.
@@ -277,7 +277,7 @@ declare module 'prettier' {
     } | void,
   };
 
-  declare export type CursorOptions = $ReadOnly<{
+  declare export type CursorOptions = Readonly<{
     ...Options,
     /**
      * Specify where the cursor is.

@@ -31,7 +31,7 @@ import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import path from 'path';
 
-type ParsedBareSpecifier = $ReadOnly<{
+type ParsedBareSpecifier = Readonly<{
   isSinglePart: boolean,
   isValidPackageName: boolean,
   firstPart: string,
@@ -544,14 +544,14 @@ function resolveFile(
   return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
 
-type SourceFileContext = $ReadOnly<{
+type SourceFileContext = Readonly<{
   ...ResolutionContext,
   candidateExts: Array<string>,
   filePathPrefix: string,
 }>;
 
 // Either a full path, or a restricted subset of Resolution.
-type SourceFileResolution = ?string | $ReadOnly<{type: 'empty'}>;
+type SourceFileResolution = ?string | Readonly<{type: 'empty'}>;
 
 /**
  * A particular 'base path' can resolve to a number of possibilities depending

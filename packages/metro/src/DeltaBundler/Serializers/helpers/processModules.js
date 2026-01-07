@@ -23,7 +23,7 @@ export default function processModules(
     projectRoot,
     serverRoot,
     sourceUrl,
-  }: $ReadOnly<{
+  }: Readonly<{
     filter?: (module: Module<>) => boolean,
     createModuleId: string => number,
     dev: boolean,

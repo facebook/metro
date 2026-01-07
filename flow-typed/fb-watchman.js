@@ -10,24 +10,24 @@
  */
 
 declare module 'fb-watchman' {
-  declare type WatchmanBaseResponse = $ReadOnly<{
+  declare type WatchmanBaseResponse = Readonly<{
     version: string,
     clock: string,
   }>;
 
-  declare type WatchmanClockResponse = $ReadOnly<{
+  declare type WatchmanClockResponse = Readonly<{
     ...WatchmanBaseResponse,
     warning?: string,
   }>;
 
-  declare type WatchmanSubscribeResponse = $ReadOnly<{
+  declare type WatchmanSubscribeResponse = Readonly<{
     ...WatchmanBaseResponse,
     subscribe: string,
     warning?: string,
     'asserted-states'?: $ReadOnlyArray<string>,
   }>;
 
-  declare type WatchmanWatchResponse = $ReadOnly<{
+  declare type WatchmanWatchResponse = Readonly<{
     ...WatchmanBaseResponse,
     watch: string,
     watcher: string,
@@ -35,7 +35,7 @@ declare module 'fb-watchman' {
     warning?: string,
   }>;
 
-  declare type WatchmanWatchListResponse = $ReadOnly<{
+  declare type WatchmanWatchListResponse = Readonly<{
     ...WatchmanBaseResponse,
     roots: $ReadOnlyArray<string>,
   }>;
@@ -46,7 +46,7 @@ declare module 'fb-watchman' {
     files: $ReadOnlyArray<WatchmanFileChange>,
     'state-enter'?: ?string,
     'state-leave'?: ?string,
-    clock?: $ReadOnly<{
+    clock?: Readonly<{
       scm: {
         'mergebase-with'?: string,
         mergebase?: string,
@@ -57,7 +57,7 @@ declare module 'fb-watchman' {
 
   declare type WatchmanLogEvent = unknown;
 
-  declare type SavedStateInfo = $ReadOnly<{
+  declare type SavedStateInfo = Readonly<{
     'manifold-path': ?string,
     'manifold-bucket': ?string,
     error: ?string,
@@ -74,7 +74,7 @@ declare module 'fb-watchman' {
     | 'D' // Solaris Door
     | '?'; // An unknown file type
 
-  declare type WatchmanFile = $ReadOnly<{
+  declare type WatchmanFile = Readonly<{
     name: string,
     exists: boolean,
     dev?: number,
@@ -83,7 +83,7 @@ declare module 'fb-watchman' {
     ino?: number,
     type?: WatchmanFileType,
     mode?: number,
-    mtime_ms?: number | $ReadOnly<{toNumber: () => number}>,
+    mtime_ms?: number | Readonly<{toNumber: () => number}>,
     mtime?: number,
     mtime_us?: number,
     mtime_ns?: number,
@@ -96,12 +96,12 @@ declare module 'fb-watchman' {
     symlink_target?: string,
   }>;
 
-  declare type WatchmanFileChange = $ReadOnly<{
+  declare type WatchmanFileChange = Readonly<{
     ...WatchmanFile,
     new: boolean,
   }>;
 
-  declare type WatchmanQueryResponse = $ReadOnly<{
+  declare type WatchmanQueryResponse = Readonly<{
     'saved-state-info'?: SavedStateInfo,
     files: $ReadOnlyArray<WatchmanFile>,
     clock: {
@@ -122,7 +122,7 @@ declare module 'fb-watchman' {
         'match' | 'imatch',
         string,
         'basename' | 'wholename',
-        $ReadOnly<{includedotfiles?: boolean, noescape?: boolean}>,
+        Readonly<{includedotfiles?: boolean, noescape?: boolean}>,
       ];
 
   declare type WatchmanNotExpression = ['not', WatchmanExpression];
@@ -158,9 +158,9 @@ declare module 'fb-watchman' {
 
   declare type WatchmanQuerySince =
     | string
-    | $ReadOnly<{
+    | Readonly<{
         clock?: string,
-        scm: $ReadOnly<{
+        scm: Readonly<{
           'mergebase-with': string,
           'saved-state'?: {
             storage: string,
@@ -186,7 +186,7 @@ declare module 'fb-watchman' {
 
   declare class Client {
     capabilityCheck(
-      config: $ReadOnly<{
+      config: Readonly<{
         optional?: $ReadOnlyArray<string>,
         required?: $ReadOnlyArray<string>,
       }>,
@@ -194,7 +194,7 @@ declare module 'fb-watchman' {
         error: ?Error,
         response: ?{
           version: string,
-          capabilities: $ReadOnly<{[string]: boolean}>,
+          capabilities: Readonly<{[string]: boolean}>,
         },
       ) => void,
     ): void;

@@ -51,7 +51,7 @@ export default class NativeWatcher extends AbstractWatcher {
 
   constructor(
     dir: string,
-    opts: $ReadOnly<{
+    opts: Readonly<{
       ignored: ?RegExp,
       globs: $ReadOnlyArray<string>,
       dot: boolean,

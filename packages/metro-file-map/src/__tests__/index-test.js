@@ -207,10 +207,10 @@ const mockProcessFileFn = jest
     jest.requireActual<WorkerModule>('../worker').processFile(...args),
   );
 
-const object = <T>(data: $ReadOnly<{[key: string]: T}>): {[key: string]: T} =>
+const object = <T>(data: Readonly<{[key: string]: T}>): {[key: string]: T} =>
   // $FlowFixMe[unsafe-object-assign]
   Object.assign(Object.create(null), data);
-const createMap = <T>(obj: $ReadOnly<{[key: string]: T}>): Map<string, T> =>
+const createMap = <T>(obj: Readonly<{[key: string]: T}>): Map<string, T> =>
   new Map(Object.entries(obj));
 const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
   expect(fileSystem.getDifference(fileData)).toEqual({
@@ -1699,7 +1699,7 @@ describe('FileMap', () => {
       e.emitFileEvent({event: 'delete', relativePath});
     }
 
-    type FileMapTestOptions = $ReadOnly<{
+    type FileMapTestOptions = Readonly<{
       only?: boolean,
       mockFs?: MockFS,
       config?: Partial<InputOptions>,
@@ -1708,7 +1708,7 @@ describe('FileMap', () => {
 
     function fm_it(
       title: string,
-      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
+      fn: (fm: Readonly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
       options?: FileMapTestOptions = {},
     ): void {
       options = options || {};
@@ -1731,7 +1731,7 @@ describe('FileMap', () => {
 
     fm_it.only = (
       title: string,
-      fn: (fm: $ReadOnly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
+      fn: (fm: Readonly<{fileMap: FileMap, hasteMap: HasteMap}>) => unknown,
       options?: FileMapTestOptions,
     ): void => fm_it(title, fn, {...options, only: true});
 

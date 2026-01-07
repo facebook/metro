@@ -15,7 +15,7 @@ import getSourceMapInfo from './helpers/getSourceMapInfo';
 import {isJsModule} from './helpers/js';
 import {fromRawMappings, fromRawMappingsNonBlocking} from 'metro-source-map';
 
-export type SourceMapGeneratorOptions = $ReadOnly<{
+export type SourceMapGeneratorOptions = Readonly<{
   excludeSource: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   shouldAddToIgnoreList: (module: Module<>) => boolean,

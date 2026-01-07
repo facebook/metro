@@ -121,7 +121,7 @@ type ProcessEndContext<T> = {
   +result: T,
 };
 
-export type ServerOptions = $ReadOnly<{
+export type ServerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   onBundleBuilt?: (bundlePath: string) => void,
   watch?: boolean,
@@ -208,7 +208,7 @@ export default class Server {
     splitOptions,
     prepend,
     graph,
-  }: $ReadOnly<{
+  }: Readonly<{
     splitOptions: SplitBundleOptions,
     prepend: $ReadOnlyArray<Module<>>,
     graph: ReadOnlyGraph<>,
@@ -766,7 +766,7 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
+    buildContext: Readonly<{
       buildNumber: number,
       bundlePerfLogger: RootPerfLogger,
     }>,
@@ -776,7 +776,7 @@ export default class Server {
       req: IncomingMessage,
       res: ServerResponse,
       bundleOptions: BundleOptions,
-      buildContext: $ReadOnly<{
+      buildContext: Readonly<{
         buildNumber: number,
         bundlePerfLogger: RootPerfLogger,
       }>,
@@ -987,7 +987,7 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
+    buildContext: Readonly<{
       buildNumber: number,
       bundlePerfLogger: RootPerfLogger,
     }>,
@@ -1198,7 +1198,7 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
+    buildContext: Readonly<{
       buildNumber: number,
       bundlePerfLogger: RootPerfLogger,
     }>,
@@ -1270,7 +1270,7 @@ export default class Server {
     req: IncomingMessage,
     res: ServerResponse,
     bundleOptions: BundleOptions,
-    buildContext: $ReadOnly<{
+    buildContext: Readonly<{
       buildNumber: number,
       bundlePerfLogger: RootPerfLogger,
     }>,
@@ -1569,7 +1569,7 @@ export default class Server {
       relativeTo,
       resolverOptions,
       transformOptions,
-    }: $ReadOnly<{
+    }: Readonly<{
       relativeTo: 'project' | 'server',
       resolverOptions: ResolverInputOptions,
       transformOptions: TransformInputOptions,
@@ -1602,7 +1602,7 @@ export default class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS: $ReadOnly<{
+  static DEFAULT_GRAPH_OPTIONS: Readonly<{
     customResolverOptions: CustomResolverOptions,
     customTransformOptions: CustomTransformOptions,
     dev: boolean,

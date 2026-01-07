@@ -55,7 +55,7 @@ function getIgnorePattern(config: ConfigT): RegExp {
 
 export default function createFileMap(
   config: ConfigT,
-  options?: $ReadOnly<{
+  options?: Readonly<{
     extractDependencies?: boolean,
     watch?: boolean,
     throwOnModuleCollision?: boolean,

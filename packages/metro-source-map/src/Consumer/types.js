@@ -33,7 +33,7 @@ export type GeneratedPositionLookup = {
   ...
 };
 
-export type Mapping = $ReadOnly<{
+export type Mapping = Readonly<{
   source: ?string,
   generatedLine: Number1,
   generatedColumn: Number0,

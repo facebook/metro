@@ -27,11 +27,11 @@ import {deserialize, serialize} from 'v8';
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:FileMapCache');
 
-type AutoSaveOptions = $ReadOnly<{
+type AutoSaveOptions = Readonly<{
   debounceMs: number,
 }>;
 
-type DiskCacheConfig = $ReadOnly<{
+type DiskCacheConfig = Readonly<{
   autoSave?: Partial<AutoSaveOptions> | boolean,
   cacheFilePrefix?: ?string,
   cacheDirectory?: ?string,

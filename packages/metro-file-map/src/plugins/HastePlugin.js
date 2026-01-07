@@ -34,7 +34,7 @@ import getPlatformExtension from './haste/getPlatformExtension';
 import {HasteConflictsError} from './haste/HasteConflictsError';
 import path from 'path';
 
-const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetadata}> = {};
+const EMPTY_OBJ: Readonly<{[string]: HasteMapItemMetadata}> = {};
 const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
 const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 
@@ -42,7 +42,7 @@ const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 // Based on 200k files taking up to 800ms => max 40ms between yields.
 const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 
-export type HasteMapOptions = $ReadOnly<{
+export type HasteMapOptions = Readonly<{
   console?: ?Console,
   enableHastePackages: boolean,
   hasteImplModulePath: ?string,

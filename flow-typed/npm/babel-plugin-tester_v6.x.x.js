@@ -18,8 +18,8 @@ declare module 'babel-plugin-tester' {
     babelOptions?: BabelCoreOptions,
     plugin: (babel: Babel) => PluginObj<TState>,
     pluginOptions?: TOpts,
-    tests: $ReadOnly<{
-      [title: string]: $ReadOnly<{
+    tests: Readonly<{
+      [title: string]: Readonly<{
         code: string,
         output?: string,
         error?: string,

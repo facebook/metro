@@ -46,7 +46,7 @@ jest.setTimeout(10000);
 let fs;
 let resolver;
 
-type MockFSDirContents = $ReadOnly<{
+type MockFSDirContents = Readonly<{
   [name: string]: string | MockFSDirContents,
 }>;
 

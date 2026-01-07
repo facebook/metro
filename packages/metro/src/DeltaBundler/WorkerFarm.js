@@ -24,7 +24,7 @@ type WorkerInterface = {
   ...Worker,
 };
 
-type TransformerResult = $ReadOnly<{
+type TransformerResult = Readonly<{
   result: TransformResult<>,
   sha1: string,
 }>;

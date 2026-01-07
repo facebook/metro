@@ -62,7 +62,7 @@ function isExistingTSDeclaration(filePath: string): boolean {
 
 export async function generateTsDefsForJsGlobs(
   globPattern: string | $ReadOnlyArray<string>,
-  opts: $ReadOnly<{
+  opts: Readonly<{
     verifyOnly: boolean,
   }> = {verifyOnly: false},
 ) {

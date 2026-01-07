@@ -24,12 +24,12 @@ import crypto from 'crypto';
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 
-type ImportDependencyOptions = $ReadOnly<{
+type ImportDependencyOptions = Readonly<{
   asyncType: AsyncDependencyType,
   isESMImport: boolean,
 }>;
 
-export type Dependency = $ReadOnly<{
+export type Dependency = Readonly<{
   data: DependencyData,
   name: string,
 }>;
@@ -37,18 +37,18 @@ export type Dependency = $ReadOnly<{
 // TODO: Convert to a Flow enum
 export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
-type ContextFilter = $ReadOnly<{pattern: string, flags: string}>;
+type ContextFilter = Readonly<{pattern: string, flags: string}>;
 
-export type RequireContextParams = $ReadOnly<{
+export type RequireContextParams = Readonly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
-  filter: $ReadOnly<ContextFilter>,
+  filter: Readonly<ContextFilter>,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
 }>;
 
-type DependencyData = $ReadOnly<{
+type DependencyData = Readonly<{
   // A locally unique key for this dependency within the current module.
   key: string,
   // If null, then the dependency is synchronous.
@@ -72,7 +72,7 @@ export type MutableInternalDependency = {
   name: string,
 };
 
-export type InternalDependency = $ReadOnly<MutableInternalDependency>;
+export type InternalDependency = Readonly<MutableInternalDependency>;
 
 export type State = {
   asyncRequireModulePathStringLiteral: ?StringLiteral,
@@ -88,7 +88,7 @@ export type State = {
   unstable_isESMImportAtSource: ?(BabelSourceLocation) => boolean,
 };
 
-export type Options = $ReadOnly<{
+export type Options = Readonly<{
   asyncRequireModulePath: string,
   dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
@@ -101,7 +101,7 @@ export type Options = $ReadOnly<{
   unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
 }>;
 
-export type CollectedDependencies = $ReadOnly<{
+export type CollectedDependencies = Readonly<{
   ast: BabelNodeFile,
   dependencyMapName: string,
   dependencies: $ReadOnlyArray<Dependency>,
@@ -582,7 +582,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
   );
 }
 
-export type ImportQualifier = $ReadOnly<{
+export type ImportQualifier = Readonly<{
   name: string,
   asyncType: AsyncDependencyType | null,
   isESMImport: boolean,

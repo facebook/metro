@@ -27,7 +27,7 @@ import {sep} from 'path';
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:FileMap');
 
-type ProcessFileRequest = $ReadOnly<{
+type ProcessFileRequest = Readonly<{
   /**
    * Populate metadata[H.SHA1] with the SHA1 of the file's contents.
    */
@@ -67,7 +67,7 @@ export class FileProcessor {
   #rootPathUtils: RootPathUtils;
 
   constructor(
-    opts: $ReadOnly<{
+    opts: Readonly<{
       dependencyExtractor: ?string,
       enableWorkerThreads: boolean,
       maxFilesPerWorker?: ?number,

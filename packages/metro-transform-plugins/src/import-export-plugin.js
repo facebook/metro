@@ -25,7 +25,7 @@ import typeof * as Types from '@babel/types';
 import template from '@babel/template';
 import nullthrows from 'nullthrows';
 
-export type Options = $ReadOnly<{
+export type Options = Readonly<{
   importDefault: string,
   importAll: string,
   resolve: boolean,

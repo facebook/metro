@@ -26,7 +26,7 @@ declare module 'memfs' {
 
     fromJSON(json: DirectoryJSON, cwd?: string): void;
     fromNestedJSON(json: NestedDirectoryJSON, cwd?: string): void;
-    toTree(opts?: $ReadOnly<{separator: PathSep}>): string;
+    toTree(opts?: Readonly<{separator: PathSep}>): string;
     reset(): void;
   }
 

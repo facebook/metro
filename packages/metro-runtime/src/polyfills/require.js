@@ -23,7 +23,7 @@ declare var __METRO_GLOBAL_PREFIX__: string;
 type ArrayIndexable<T> = interface {
   +[indexer: number]: T,
 };
-type DependencyMap = $ReadOnly<
+type DependencyMap = Readonly<
   ArrayIndexable<ModuleID> & {
     paths?: {[id: ModuleID]: string},
   },
@@ -902,7 +902,7 @@ if (__DEV__) {
 
   const performFullRefresh = (
     reason: string,
-    modules: $ReadOnly<{
+    modules: Readonly<{
       source?: ModuleDefinition,
       failed?: ModuleDefinition,
     }>,

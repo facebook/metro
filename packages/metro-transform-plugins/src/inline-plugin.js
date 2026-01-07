@@ -23,7 +23,7 @@ import typeof * as Types from '@babel/types';
 
 import createInlinePlatformChecks from './utils/createInlinePlatformChecks';
 
-export type Options = $ReadOnly<{
+export type Options = Readonly<{
   dev: boolean,
   inlinePlatform: boolean,
   isWrapped: boolean,

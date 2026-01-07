@@ -165,9 +165,9 @@ describe('processRequest', () => {
 
   const makeRequest = (
     requrl: string,
-    options?: ?$ReadOnly<{
+    options?: ?Readonly<{
       method?: string,
-      headers?: $ReadOnly<{[string]: string}>,
+      headers?: Readonly<{[string]: string}>,
       data?: string,
     }>,
   ) =>

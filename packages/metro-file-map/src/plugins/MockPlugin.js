@@ -28,7 +28,7 @@ import path from 'path';
 
 export const CACHE_VERSION = 2;
 
-export type MockMapOptions = $ReadOnly<{
+export type MockMapOptions = Readonly<{
   console: typeof console,
   mocksPattern: RegExp,
   rawMockMap?: RawMockMap,

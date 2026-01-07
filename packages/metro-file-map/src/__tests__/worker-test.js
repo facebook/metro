@@ -24,7 +24,7 @@ jest.mock('fs', () => {
   const mockFs = {
     [path.join('/project', 'fruits', 'Banana.js')]: `
         const Strawberry = require("Strawberry");
-      ` as Buffer | string | $ReadOnly<{link: string}>,
+      ` as Buffer | string | Readonly<{link: string}>,
     [path.join('/project', 'fruits', 'Pear.js')]: `
         const Banana = require("Banana");
         const Strawberry = require('Strawberry');

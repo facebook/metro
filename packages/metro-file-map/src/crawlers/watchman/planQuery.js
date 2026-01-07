@@ -21,7 +21,7 @@ export function planQuery({
   extensions,
   includeSha1,
   includeSymlinks,
-}: $ReadOnly<{
+}: Readonly<{
   since: ?WatchmanQuerySince,
   directoryFilters: $ReadOnlyArray<string>,
   extensions: $ReadOnlyArray<string>,

@@ -17,7 +17,7 @@ import type {ConfigT} from 'metro-config';
 import Transformer from './DeltaBundler/Transformer';
 import DependencyGraph from './node-haste/DependencyGraph';
 
-export type BundlerOptions = $ReadOnly<{
+export type BundlerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   watch?: boolean,
 }>;

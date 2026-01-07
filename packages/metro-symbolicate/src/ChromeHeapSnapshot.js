@@ -185,7 +185,7 @@ type ChromeHeapSnapshotFieldType =
   | string;
 
 // The input type to functions that accept record objects.
-type DenormalizedRecordInput = $ReadOnly<{
+type DenormalizedRecordInput = Readonly<{
   [field: string]: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
 }>;
 
@@ -230,7 +230,7 @@ class ChromeHeapSnapshotRecordAccessor {
     // Fields with unknown types are assumed to be numeric.
     recordTypes:
       | Array<ChromeHeapSnapshotFieldType>
-      | $ReadOnly<{
+      | Readonly<{
           [string]: ChromeHeapSnapshotFieldType,
         }>
       | null,
@@ -575,7 +575,7 @@ class ChromeHeapSnapshotRecordIterator
     recordFields: Array<string>,
     recordTypes:
       | Array<ChromeHeapSnapshotFieldType>
-      | $ReadOnly<{
+      | Readonly<{
           [string]: ChromeHeapSnapshotFieldType,
         }>
       | null,

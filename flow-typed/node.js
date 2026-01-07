@@ -49,7 +49,7 @@ declare module 'timers' {
 }
 
 declare module 'timers/promises' {
-  type TimerOptions = $ReadOnly<{
+  type TimerOptions = Readonly<{
     ref?: boolean,
     signal?: AbortSignal,
   }>;

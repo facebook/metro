@@ -309,7 +309,7 @@ export default class TreeFS implements MutableFileSystem {
     follow = false,
     recursive = true,
     rootDir = null,
-  }: $ReadOnly<{
+  }: Readonly<{
     /* Filter relative paths against a pattern. */
     filter?: ?RegExp,
     /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
@@ -994,7 +994,7 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   *metadataIterator(
-    opts: $ReadOnly<{
+    opts: Readonly<{
       includeSymlinks: boolean,
       includeNodeModules: boolean,
     }>,
@@ -1008,7 +1008,7 @@ export default class TreeFS implements MutableFileSystem {
 
   *_metadataIterator(
     rootNode: DirectoryNode,
-    opts: $ReadOnly<{includeSymlinks: boolean, includeNodeModules: boolean}>,
+    opts: Readonly<{includeSymlinks: boolean, includeNodeModules: boolean}>,
     prefix: string = '',
   ): Iterable<{
     baseName: string,
@@ -1060,7 +1060,7 @@ export default class TreeFS implements MutableFileSystem {
     iterationRootNode: DirectoryNode,
     iterationRootParentNode: ?DirectoryNode,
     ancestorOfRootIdx: ?number,
-    opts: $ReadOnly<{
+    opts: Readonly<{
       alwaysYieldPosix: boolean,
       canonicalPathOfRoot: string,
       follow: boolean,

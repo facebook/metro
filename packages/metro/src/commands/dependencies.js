@@ -20,7 +20,7 @@ import {loadConfig} from 'metro-config';
 import path from 'path';
 import {promisify} from 'util';
 
-type Args = $ReadOnly<{
+type Args = Readonly<{
   entryFile: string,
   output?: string,
   platform?: string,

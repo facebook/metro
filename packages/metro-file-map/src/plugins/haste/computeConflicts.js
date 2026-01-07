@@ -25,7 +25,7 @@ export function computeHasteConflicts({
   duplicates,
   map,
   rootDir,
-}: $ReadOnly<{
+}: Readonly<{
   duplicates: $ReadOnlyMap<
     string,
     $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,

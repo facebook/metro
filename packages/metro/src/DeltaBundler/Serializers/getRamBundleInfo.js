@@ -22,7 +22,7 @@ import {sourceMapObject} from './sourceMapObject';
 import nullthrows from 'nullthrows';
 import path from 'path';
 
-type Options = $ReadOnly<{
+type Options = Readonly<{
   ...SerializerOptions,
   ...SourceMapGeneratorOptions,
   getTransformOptions: ?GetTransformOptions,
@@ -142,8 +142,8 @@ async function _getRamOptions(
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
 ): Promise<
-  $ReadOnly<{
-    preloadedModules: $ReadOnly<{[string]: true, ...}>,
+  Readonly<{
+    preloadedModules: Readonly<{[string]: true, ...}>,
     ramGroups: $ReadOnlyArray<string>,
   }>,
 > {

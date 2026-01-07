@@ -25,7 +25,7 @@ declare module 'jest-worker' {
     | typeof PARENT_MESSAGE_CLIENT_ERROR
     | typeof PARENT_MESSAGE_SETUP_ERROR;
 
-  declare export type WorkerPoolOptions = $ReadOnly<{
+  declare export type WorkerPoolOptions = Readonly<{
     setupArgs: $ReadOnlyArray<unknown>,
     forkOptions: child_process$forkOpts,
     maxRetries: number,
@@ -154,7 +154,7 @@ declare module 'jest-worker' {
     }>;
   }
 
-  declare export type WorkerOptions = $ReadOnly<{
+  declare export type WorkerOptions = Readonly<{
     forkOptions: child_process$forkOpts,
     resourceLimits: ResourceLimits,
     setupArgs: $ReadOnlyArray<unknown>,
@@ -212,7 +212,7 @@ declare module 'jest-worker' {
     onCustomMessage: OnCustomMessage,
   };
 
-  declare export type ResourceLimits = $ReadOnly<{
+  declare export type ResourceLimits = Readonly<{
     maxYoungGenerationSizeMb?: number,
     maxOldGenerationSizeMb?: number,
     codeRangeSizeMb?: number,
@@ -238,7 +238,7 @@ declare module 'jest-worker' {
   }
 
   declare export type FarmOptions<TSetupArgs: $ReadOnlyArray<unknown>> =
-    $ReadOnly<{
+    Readonly<{
       computeWorkerKey?: (
         method: string,
         ...args: $ReadOnlyArray<unknown>
@@ -259,7 +259,7 @@ declare module 'jest-worker' {
       workerSchedulingPolicy?: 'round-robin' | 'in-order',
     }>;
 
-  declare export type IJestWorker<TExposed: {...} = {}> = $ReadOnly<{
+  declare export type IJestWorker<TExposed: {...} = {}> = Readonly<{
     // dynamically exposed methods from the worker
     // $FlowFixMe[incompatible-exact]
     ...TExposed,
@@ -270,7 +270,7 @@ declare module 'jest-worker' {
   }>;
 
   declare export class Worker<
-    TExposed: $ReadOnly<{
+    TExposed: Readonly<{
       [string]: (...Array<$FlowFixMe>) => Promise<$FlowFixMe>,
     }> = {},
     TSetupArgs: $ReadOnlyArray<unknown> = $ReadOnlyArray<unknown>,

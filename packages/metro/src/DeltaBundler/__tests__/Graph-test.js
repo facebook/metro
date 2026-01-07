@@ -61,7 +61,7 @@ let mockedDependencies: Set<string> = new Set();
 let mockedDependencyTree: Map<
   string,
   Array<
-    $ReadOnly<{
+    Readonly<{
       name: string,
       path: string,
       data: DependencyDataInput,
@@ -215,7 +215,7 @@ const Actions = {
 };
 
 function deferred(
-  value: $ReadOnly<{
+  value: Readonly<{
     dependencies: $ReadOnlyArray<TransformResultDependency>,
     getSource: () => Buffer,
     output: $ReadOnlyArray<MixedOutput>,

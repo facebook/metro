@@ -41,7 +41,7 @@ const isWatchmanOnPath = () => {
 };
 
 // `null` Watchers will be marked as skipped tests.
-export const WATCHERS: $ReadOnly<{
+export const WATCHERS: Readonly<{
   [key: string]:
     | Class<FallbackWatcher>
     | Class<NativeWatcher>

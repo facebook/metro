@@ -17,7 +17,7 @@ type MetroRequire = {
 
 declare var require: MetroRequire;
 
-type DependencyMapPaths = ?$ReadOnly<{[moduleID: number | string]: unknown}>;
+type DependencyMapPaths = ?Readonly<{[moduleID: number | string]: unknown}>;
 
 declare var __METRO_GLOBAL_PREFIX__: string;
 

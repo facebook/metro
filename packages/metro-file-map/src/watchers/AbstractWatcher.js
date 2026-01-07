@@ -18,7 +18,7 @@ import {posixPathMatchesPattern} from './common';
 import EventEmitter from 'events';
 import * as path from 'path';
 
-export type Listeners = $ReadOnly<{
+export type Listeners = Readonly<{
   onFileEvent: (event: WatcherBackendChangeEvent) => void,
   onError: (error: Error) => void,
 }>;

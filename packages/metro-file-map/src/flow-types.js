@@ -15,7 +15,7 @@ export type {PerfLoggerFactory, PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
-export type BuildParameters = $ReadOnly<{
+export type BuildParameters = Readonly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   enableSymlinks: boolean,
@@ -37,7 +37,7 @@ export type BuildResult = {
   fileSystem: FileSystem,
 };
 
-export type CacheData = $ReadOnly<{
+export type CacheData = Readonly<{
   clocks: WatchmanClocks,
   fileSystemData: unknown,
   plugins: $ReadOnlyMap<string, V8Serializable>,
@@ -78,11 +78,11 @@ export type CacheManagerFactory = (
   options: CacheManagerFactoryOptions,
 ) => CacheManager;
 
-export type CacheManagerFactoryOptions = $ReadOnly<{
+export type CacheManagerFactoryOptions = Readonly<{
   buildParameters: BuildParameters,
 }>;
 
-export type CacheManagerWriteOptions = $ReadOnly<{
+export type CacheManagerWriteOptions = Readonly<{
   changedSinceCacheRead: boolean,
   eventSource: CacheManagerEventSource,
   onWriteError: Error => void,
@@ -116,7 +116,7 @@ export type CrawlerOptions = {
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
-  previousState: $ReadOnly<{
+  previousState: Readonly<{
     clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
     fileSystem: FileSystem,
   }>,
@@ -160,7 +160,7 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta<T = null | void> = $ReadOnly<{
+export type FileMapDelta<T = null | void> = Readonly<{
   removed: Iterable<[CanonicalPath, T]>,
   addedOrModified: Iterable<[CanonicalPath, T]>,
 }>;
@@ -168,10 +168,10 @@ export type FileMapDelta<T = null | void> = $ReadOnly<{
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
-> = $ReadOnly<{
-  files: $ReadOnly<{
+> = Readonly<{
+  files: Readonly<{
     fileIterator(
-      opts: $ReadOnly<{
+      opts: Readonly<{
         includeNodeModules: boolean,
         includeSymlinks: boolean,
       }>,
@@ -190,8 +190,8 @@ export type FileMapPluginInitOptions<
   pluginState: ?SerializableState,
 }>;
 
-export type FileMapPluginWorker = $ReadOnly<{
-  worker: $ReadOnly<{
+export type FileMapPluginWorker = Readonly<{
+  worker: Readonly<{
     modulePath: string,
     setupArgs: JsonData,
   }>,
@@ -228,7 +228,7 @@ export interface FileMapPlugin<
 export interface MetadataWorker {
   processFile(
     WorkerMessage,
-    $ReadOnly<{getContent: () => Buffer}>,
+    Readonly<{getContent: () => Buffer}>,
   ): V8Serializable;
 }
 
@@ -266,7 +266,7 @@ export type FileMetadata = [
   ...
 ];
 
-export type FileStats = $ReadOnly<{
+export type FileStats = Readonly<{
   fileType: 'f' | 'l',
   modifiedTime: ?number,
   size: ?number,
@@ -442,10 +442,10 @@ export type Path = string;
 export type ProcessFileFunction = (
   normalPath: string,
   metadata: FileMetadata,
-  request: $ReadOnly<{computeSha1: boolean}>,
+  request: Readonly<{computeSha1: boolean}>,
 ) => ?Buffer;
 
-export type RawMockMap = $ReadOnly<{
+export type RawMockMap = Readonly<{
   duplicates: Map<
     string, // posix-separated mock name
     Set<string>, // posix-separated, project-relative paths
@@ -457,7 +457,7 @@ export type RawMockMap = $ReadOnly<{
   version: number,
 }>;
 
-export type ReadOnlyRawMockMap = $ReadOnly<{
+export type ReadOnlyRawMockMap = Readonly<{
   duplicates: $ReadOnlyMap<string, ReadonlySet<string>>,
   mocks: $ReadOnlyMap<string, Path>,
   version: number,
@@ -477,14 +477,14 @@ export type ChangeEventClock = [
 ];
 
 export type WatcherBackendChangeEvent =
-  | $ReadOnly<{
+  | Readonly<{
       event: 'touch',
       clock?: ChangeEventClock,
       relativePath: string,
       root: string,
       metadata: ChangeEventMetadata,
     }>
-  | $ReadOnly<{
+  | Readonly<{
       event: 'delete',
       clock?: ChangeEventClock,
       relativePath: string,
@@ -492,7 +492,7 @@ export type WatcherBackendChangeEvent =
       metadata?: void,
     }>;
 
-export type WatcherBackendOptions = $ReadOnly<{
+export type WatcherBackendOptions = Readonly<{
   ignored: ?RegExp,
   globs: $ReadOnlyArray<string>,
   dot: boolean,
@@ -501,10 +501,10 @@ export type WatcherBackendOptions = $ReadOnly<{
 
 export type WatchmanClockSpec =
   | string
-  | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
+  | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
-export type WorkerMessage = $ReadOnly<{
+export type WorkerMessage = Readonly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
@@ -513,13 +513,13 @@ export type WorkerMessage = $ReadOnly<{
   pluginsToRun: $ReadOnlyArray<number>,
 }>;
 
-export type WorkerMetadata = $ReadOnly<{
+export type WorkerMetadata = Readonly<{
   dependencies?: ?$ReadOnlyArray<string>,
   sha1?: ?string,
   content?: ?Buffer,
   pluginData?: $ReadOnlyArray<V8Serializable>,
 }>;
 
-export type WorkerSetupArgs = $ReadOnly<{
+export type WorkerSetupArgs = Readonly<{
   plugins?: $ReadOnlyArray<FileMapPluginWorker['worker']>,
 }>;

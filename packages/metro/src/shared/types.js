@@ -56,11 +56,11 @@ export type BundleOptions = {
   +sourcePaths: SourcePathsMode,
 };
 
-export type BuildOptions = $ReadOnly<{
+export type BuildOptions = Readonly<{
   withAssets?: boolean,
 }>;
 
-export type ResolverInputOptions = $ReadOnly<{
+export type ResolverInputOptions = Readonly<{
   customResolverOptions?: CustomResolverOptions,
   dev: boolean,
 }>;
@@ -81,7 +81,7 @@ export type GraphOptions = {
 };
 
 // Stricter representation of BundleOptions.
-export type SplitBundleOptions = $ReadOnly<{
+export type SplitBundleOptions = Readonly<{
   entryFile: string,
   resolverOptions: ResolverInputOptions,
   transformOptions: TransformInputOptions,
@@ -129,7 +129,7 @@ export type OutputOptions = {
   ...
 };
 
-export type RequestOptions = $ReadOnly<
+export type RequestOptions = Readonly<
   SafeOptionalProps<{
     entryFile: string,
     inlineSourceMap?: boolean,

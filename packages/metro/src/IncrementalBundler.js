@@ -33,7 +33,7 @@ export opaque type RevisionId: string = string;
 
 export type OutputGraph = Graph<>;
 
-type OtherOptions = $ReadOnly<{
+type OtherOptions = Readonly<{
   onProgress: DeltaBundlerOptions<>['onProgress'],
   shallow: boolean,
   lazy: boolean,
@@ -48,7 +48,7 @@ export type GraphRevision = {
   +prepend: $ReadOnlyArray<Module<>>,
 };
 
-export type IncrementalBundlerOptions = $ReadOnly<{
+export type IncrementalBundlerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   watch?: boolean,
 }>;

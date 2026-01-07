@@ -88,7 +88,7 @@ const WATCH_PROJECTS = new Map([
 describe('Watchman crawler', () => {
   let expectedQueries: Map<
     string /* watch root */,
-    $ReadOnly<{query: unknown, result: unknown}>,
+    Readonly<{query: unknown, result: unknown}>,
   >;
   beforeEach(() => {
     expectedQueries = new Map();

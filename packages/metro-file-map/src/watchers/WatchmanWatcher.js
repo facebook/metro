@@ -42,7 +42,7 @@ const SUB_PREFIX = 'metro-file-map';
 export default class WatchmanWatcher extends AbstractWatcher {
   client: Client;
   +subscriptionName: string;
-  watchProjectInfo: ?$ReadOnly<{
+  watchProjectInfo: ?Readonly<{
     relativePath: string,
     root: string,
   }>;
@@ -340,7 +340,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
 /**
  * Handles a warning in the watchman resp object.
  */
-function handleWarning(resp: $ReadOnly<{warning?: unknown, ...}>) {
+function handleWarning(resp: Readonly<{warning?: unknown, ...}>) {
   if ('warning' in resp) {
     if (RecrawlWarning.isRecrawlWarningDupe(resp.warning)) {
       return true;

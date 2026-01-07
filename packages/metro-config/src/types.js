@@ -25,14 +25,14 @@ import type {Reporter} from 'metro/private/lib/reporting';
 import type MetroServer from 'metro/private/Server';
 import type {IntermediateStackFrame} from 'metro/private/Server/symbolicate';
 
-export type ExtraTransformOptions = $ReadOnly<{
-  preloadedModules?: $ReadOnly<{[path: string]: true, ...}> | false,
+export type ExtraTransformOptions = Readonly<{
+  preloadedModules?: Readonly<{[path: string]: true, ...}> | false,
   ramGroups?: $ReadOnlyArray<string>,
-  transform?: $ReadOnly<{
+  transform?: Readonly<{
     experimentalImportSupport?: boolean,
     inlineRequires?:
-      | $ReadOnly<{
-          blockList: $ReadOnly<{[absoluteModulePath: string]: true, ...}>,
+      | Readonly<{
+          blockList: Readonly<{[absoluteModulePath: string]: true, ...}>,
           ...
         }>
       | boolean,
@@ -61,17 +61,17 @@ export type GetTransformOptions = (
 export type Middleware = HandleFunction;
 
 type PerfAnnotations = Partial<{
-  string: $ReadOnly<{[key: string]: string}>,
-  int: $ReadOnly<{[key: string]: number}>,
-  double: $ReadOnly<{[key: string]: number}>,
-  bool: $ReadOnly<{[key: string]: boolean}>,
-  string_array: $ReadOnly<{[key: string]: $ReadOnlyArray<string>}>,
-  int_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
-  double_array: $ReadOnly<{[key: string]: $ReadOnlyArray<number>}>,
-  bool_array: $ReadOnly<{[key: string]: $ReadOnlyArray<boolean>}>,
+  string: Readonly<{[key: string]: string}>,
+  int: Readonly<{[key: string]: number}>,
+  double: Readonly<{[key: string]: number}>,
+  bool: Readonly<{[key: string]: boolean}>,
+  string_array: Readonly<{[key: string]: $ReadOnlyArray<string>}>,
+  int_array: Readonly<{[key: string]: $ReadOnlyArray<number>}>,
+  double_array: Readonly<{[key: string]: $ReadOnlyArray<number>}>,
+  bool_array: Readonly<{[key: string]: $ReadOnlyArray<boolean>}>,
 }>;
 
-type PerfLoggerPointOptions = $ReadOnly<{
+type PerfLoggerPointOptions = Readonly<{
   // The time this event point occurred, if it differs from the time the point was logged.
   timestamp?: number,
 }>;
@@ -90,7 +90,7 @@ export interface RootPerfLogger extends PerfLogger {
   ): void;
 }
 
-export type PerfLoggerFactoryOptions = $ReadOnly<{
+export type PerfLoggerFactoryOptions = Readonly<{
   key?: number,
 }>;
 
@@ -116,7 +116,7 @@ type ResolverConfigT = {
   resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
   unstable_conditionNames: $ReadOnlyArray<string>,
-  unstable_conditionsByPlatform: $ReadOnly<{
+  unstable_conditionsByPlatform: Readonly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
@@ -145,7 +145,7 @@ type SerializerConfigT = {
   ) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
-  isThirdPartyModule: (module: $ReadOnly<{path: string, ...}>) => boolean,
+  isThirdPartyModule: (module: Readonly<{path: string, ...}>) => boolean,
 };
 
 type TransformerConfigT = {
@@ -201,43 +201,43 @@ type SymbolicatorConfigT = {
 
 type WatcherConfigT = {
   additionalExts: $ReadOnlyArray<string>,
-  healthCheck: $ReadOnly<{
+  healthCheck: Readonly<{
     enabled: boolean,
     interval: number,
     timeout: number,
     filePrefix: string,
   }>,
-  unstable_autoSaveCache: $ReadOnly<{
+  unstable_autoSaveCache: Readonly<{
     enabled: boolean,
     debounceMs?: number,
   }>,
   unstable_lazySha1: boolean,
   unstable_workerThreads: boolean,
-  watchman: $ReadOnly<{
+  watchman: Readonly<{
     deferStates: $ReadOnlyArray<string>,
   }>,
 };
 
 export type InputConfigT = Partial<
-  $ReadOnly<
+  Readonly<
     MetalConfigT & {
       cacheStores: CacheStoresConfigT | (MetroCache => CacheStoresConfigT),
-      resolver: $ReadOnly<Partial<ResolverConfigT>>,
-      server: $ReadOnly<Partial<ServerConfigT>>,
-      serializer: $ReadOnly<Partial<SerializerConfigT>>,
-      symbolicator: $ReadOnly<Partial<SymbolicatorConfigT>>,
-      transformer: $ReadOnly<Partial<TransformerConfigT>>,
+      resolver: Readonly<Partial<ResolverConfigT>>,
+      server: Readonly<Partial<ServerConfigT>>,
+      serializer: Readonly<Partial<SerializerConfigT>>,
+      symbolicator: Readonly<Partial<SymbolicatorConfigT>>,
+      transformer: Readonly<Partial<TransformerConfigT>>,
       watcher: Partial<
-        $ReadOnly<
+        Readonly<
           Omit<
             WatcherConfigT,
             'healthCheck' | 'unstable_autoSaveCache' | 'watchman',
           > & {
-            healthCheck: Partial<$ReadOnly<WatcherConfigT['healthCheck']>>,
+            healthCheck: Partial<Readonly<WatcherConfigT['healthCheck']>>,
             unstable_autoSaveCache: Partial<
-              $ReadOnly<WatcherConfigT['unstable_autoSaveCache']>,
+              Readonly<WatcherConfigT['unstable_autoSaveCache']>,
             >,
-            watchman: Partial<$ReadOnly<WatcherConfigT['watchman']>>,
+            watchman: Partial<Readonly<WatcherConfigT['watchman']>>,
           },
         >,
       >,
@@ -247,19 +247,19 @@ export type InputConfigT = Partial<
 
 export type MetroConfig = InputConfigT;
 
-export type ConfigT = $ReadOnly<
+export type ConfigT = Readonly<
   MetalConfigT & {
     cacheStores: CacheStoresConfigT,
-    resolver: $ReadOnly<ResolverConfigT>,
-    server: $ReadOnly<ServerConfigT>,
-    serializer: $ReadOnly<SerializerConfigT>,
-    symbolicator: $ReadOnly<SymbolicatorConfigT>,
-    transformer: $ReadOnly<TransformerConfigT>,
-    watcher: $ReadOnly<WatcherConfigT>,
+    resolver: Readonly<ResolverConfigT>,
+    server: Readonly<ServerConfigT>,
+    serializer: Readonly<SerializerConfigT>,
+    symbolicator: Readonly<SymbolicatorConfigT>,
+    transformer: Readonly<TransformerConfigT>,
+    watcher: Readonly<WatcherConfigT>,
   },
 >;
 
-export type YargArguments = $ReadOnly<{
+export type YargArguments = Readonly<{
   config?: string,
   cwd?: string,
   port?: string | number,

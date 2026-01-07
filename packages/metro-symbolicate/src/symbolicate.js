@@ -51,7 +51,7 @@ export default async function main(
     stdin,
     stderr,
     stdout,
-  }: $ReadOnly<{
+  }: Readonly<{
     stdin: stream$Readable | tty$ReadStream,
     stderr: stream$Writable,
     stdout: stream$Writable,

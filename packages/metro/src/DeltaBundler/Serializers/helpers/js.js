@@ -19,7 +19,7 @@ import * as jscSafeUrl from 'jsc-safe-url';
 import {addParamsToDefineCall} from 'metro-transform-plugins';
 import path from 'path';
 
-export type Options = $ReadOnly<{
+export type Options = Readonly<{
   createModuleId: string => number | string,
   dev: boolean,
   includeAsyncPaths: boolean,
@@ -118,7 +118,7 @@ export function getModuleParams(
 }
 
 export function getJsOutput(
-  module: $ReadOnly<{
+  module: Readonly<{
     output: $ReadOnlyArray<MixedOutput>,
     path?: string,
     ...

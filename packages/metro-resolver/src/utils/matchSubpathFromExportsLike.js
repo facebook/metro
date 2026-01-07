@@ -30,7 +30,7 @@ export function matchSubpathFromExportsLike(
   exportsLikeMap: NormalizedExportsLikeMap,
   platform: string | null,
   createConfigError: (reason: string) => Error,
-): $ReadOnly<{
+): Readonly<{
   target: string | null,
   patternMatch: string | null,
 }> {

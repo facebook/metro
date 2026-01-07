@@ -22,7 +22,7 @@ import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import path from 'path';
 
-type Parameters<T> = $ReadOnly<{
+type Parameters<T> = Readonly<{
   resolve: ResolveFn,
   transform: TransformFn<T>,
   shouldTraverse: ResolvedDependency => boolean,

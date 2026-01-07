@@ -18,7 +18,7 @@ import crypto from 'crypto';
 import nullthrows from 'nullthrows';
 import path from 'path';
 
-export type RequireContext = $ReadOnly<{
+export type RequireContext = Readonly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */

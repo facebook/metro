@@ -15,7 +15,7 @@ import FileStore from './FileStore';
 import fs from 'fs';
 import path from 'path';
 
-type CleanOptions = $ReadOnly<{
+type CleanOptions = Readonly<{
   ...Options,
   intervalMs?: number,
   cleanupThresholdMs?: number,

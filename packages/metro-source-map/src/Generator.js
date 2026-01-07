@@ -17,7 +17,7 @@ import type {
 
 import B64Builder from './B64Builder';
 
-type FileFlags = $ReadOnly<{
+type FileFlags = Readonly<{
   addToIgnoreList?: boolean,
 }>;
 
