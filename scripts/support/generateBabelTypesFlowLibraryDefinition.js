@@ -237,7 +237,7 @@ function main() {
     exit?: TraversalHandler<T>,
   };`.replace(/(^|\n) {2}/g, '$1'),
     // eslint-disable-next-line
-    `declare export function traverse<T>(n: BabelNode, TraversalHandler<T> | TraversalHandlers<T>, state?: T): void;`,
+    `declare export function traverse<T>(n: BabelNode, handler: TraversalHandler<T> | TraversalHandlers<T>, state?: T): void;`,
     `declare export function traverseFast<T>(n: Node, h: TraversalHandler<T>, state?: T): void;`,
 
     // utils/
