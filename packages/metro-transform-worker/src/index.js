@@ -718,7 +718,10 @@ export const transform = async (
   return await transformJSWithBabel(file, context);
 };
 
-export const getCacheKey = (config: JsTransformerConfig): string => {
+export const getCacheKey = (
+  config: JsTransformerConfig,
+  projectRoot: string,
+): string => {
   const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
   const filesKey = metroGetCacheKey([
@@ -734,10 +737,19 @@ export const getCacheKey = (config: JsTransformerConfig): string => {
 
   // $FlowFixMe[unsupported-syntax]
   const babelTransformer = require(babelTransformerPath);
+
+  // Get cache key from babel transformer, which may include user's babel config files
+  const babelTransformerCacheKey = babelTransformer.getCacheKey
+    ? babelTransformer.getCacheKey({
+        projectRoot,
+        enableBabelRCLookup: config.enableBabelRCLookup,
+      })
+    : '';
+
   return [
     filesKey,
     stableHash(remainingConfig).toString('hex'),
-    babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
+    babelTransformerCacheKey,
   ].join('$');
 };
 
