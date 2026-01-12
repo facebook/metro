@@ -34,7 +34,6 @@ const p: string => string = filePath =>
 
 const defaultOptions = {
   dependencyExtractor: null,
-  enableWorkerThreads: true,
   maxWorkers: 5,
   perfLogger: null,
   pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,

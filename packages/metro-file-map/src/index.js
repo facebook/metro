@@ -75,7 +75,6 @@ export type InputOptions = Readonly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
-  enableWorkerThreads?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
@@ -339,7 +338,6 @@ export default class FileMap extends EventEmitter {
 
     this._fileProcessor = new FileProcessor({
       dependencyExtractor: buildParameters.dependencyExtractor,
-      enableWorkerThreads: options.enableWorkerThreads ?? false,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this._startupPerfLogger,
