@@ -204,7 +204,7 @@ export type V8Serializable =
   | boolean
   | null
   | $ReadOnlyArray<V8Serializable>
-  | $ReadOnlySet<V8Serializable>
+  | ReadonlySet<V8Serializable>
   | ReadonlyMap<string, V8Serializable>
   | {[key: string]: V8Serializable};
 
@@ -383,7 +383,7 @@ export type LookupResult =
   | {
       exists: true,
       // The real, normal, absolute paths of any symlinks traversed.
-      links: $ReadOnlySet<string>,
+      links: ReadonlySet<string>,
       // The real, normal, absolute path of the file.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
