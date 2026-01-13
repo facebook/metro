@@ -202,8 +202,8 @@ type DenormalizedRecordInput = Readonly<{
 class ChromeHeapSnapshotRecordAccessor {
   // Fast lookup tables from field names to their offsets (required) and types
   // (optional). These are shared with any child iterators.
-  +_fieldToOffset: $ReadOnlyMap<string, number>;
-  +_fieldToType: $ReadOnlyMap<string, ChromeHeapSnapshotFieldType>;
+  +_fieldToOffset: ReadonlyMap<string, number>;
+  +_fieldToType: ReadonlyMap<string, ChromeHeapSnapshotFieldType>;
 
   // The number of fields in every record (i.e. K).
   +_recordSize: number;

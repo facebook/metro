@@ -87,9 +87,9 @@ type Delta<T> = Readonly<{
   touched: Set<string>,
   deleted: Set<string>,
 
-  updatedModuleData: $ReadOnlyMap<string, ModuleData<T>>,
+  updatedModuleData: ReadonlyMap<string, ModuleData<T>>,
   baseModuleData: Map<string, ModuleData<T>>,
-  errors: $ReadOnlyMap<string, Error>,
+  errors: ReadonlyMap<string, Error>,
 }>;
 
 type InternalOptions<T> = Readonly<{

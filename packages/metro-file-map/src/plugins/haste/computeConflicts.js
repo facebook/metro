@@ -26,11 +26,11 @@ export function computeHasteConflicts({
   map,
   rootDir,
 }: Readonly<{
-  duplicates: $ReadOnlyMap<
+  duplicates: ReadonlyMap<
     string,
-    $ReadOnlyMap<string, $ReadOnlyMap<string, number>>,
+    ReadonlyMap<string, ReadonlyMap<string, number>>,
   >,
-  map: $ReadOnlyMap<string, HasteMapItem>,
+  map: ReadonlyMap<string, HasteMapItem>,
   rootDir: string,
 }>): Array<Conflict> {
   const conflicts: Array<Conflict> = [];

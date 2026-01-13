@@ -35,7 +35,7 @@ import {HasteConflictsError} from './haste/HasteConflictsError';
 import path from 'path';
 
 const EMPTY_OBJ: Readonly<{[string]: HasteMapItemMetadata}> = {};
-const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
+const EMPTY_MAP: ReadonlyMap<string, DuplicatesSet> = new Map();
 const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 
 // Periodically yield to the event loop to allow parallel I/O, etc.

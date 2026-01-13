@@ -40,7 +40,7 @@ export type BuildResult = {
 export type CacheData = Readonly<{
   clocks: WatchmanClocks,
   fileSystemData: unknown,
-  plugins: $ReadOnlyMap<string, V8Serializable>,
+  plugins: ReadonlyMap<string, V8Serializable>,
 }>;
 
 export interface CacheManager {
@@ -117,7 +117,7 @@ export type CrawlerOptions = {
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
   previousState: Readonly<{
-    clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
+    clocks: ReadonlyMap<CanonicalPath, WatchmanClockSpec>,
     fileSystem: FileSystem,
   }>,
   rootDir: string,
@@ -205,7 +205,7 @@ export type V8Serializable =
   | null
   | $ReadOnlyArray<V8Serializable>
   | $ReadOnlySet<V8Serializable>
-  | $ReadOnlyMap<string, V8Serializable>
+  | ReadonlyMap<string, V8Serializable>
   | {[key: string]: V8Serializable};
 
 export interface FileMapPlugin<
@@ -458,8 +458,8 @@ export type RawMockMap = Readonly<{
 }>;
 
 export type ReadOnlyRawMockMap = Readonly<{
-  duplicates: $ReadOnlyMap<string, ReadonlySet<string>>,
-  mocks: $ReadOnlyMap<string, Path>,
+  duplicates: ReadonlyMap<string, ReadonlySet<string>>,
+  mocks: ReadonlyMap<string, Path>,
   version: number,
 }>;
 

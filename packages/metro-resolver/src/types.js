@@ -72,7 +72,7 @@ export type ExportsField =
   | ExportsLikeMap
   | ExportMapWithFallbacks;
 
-export type FlattenedExportMap = $ReadOnlyMap<
+export type FlattenedExportMap = ReadonlyMap<
   string /* subpath */,
   string | null,
 >;

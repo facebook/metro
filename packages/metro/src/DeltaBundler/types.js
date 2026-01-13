@@ -80,15 +80,15 @@ export type Module<T = MixedOutput> = Readonly<{
 }>;
 
 export type ModuleData<T = MixedOutput> = Readonly<{
-  dependencies: $ReadOnlyMap<string, Dependency>,
-  resolvedContexts: $ReadOnlyMap<string, RequireContext>,
+  dependencies: ReadonlyMap<string, Dependency>,
+  resolvedContexts: ReadonlyMap<string, RequireContext>,
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
-export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
+export type ReadOnlyDependencies<T = MixedOutput> = ReadonlyMap<
   string,
   Module<T>,
 >;
