@@ -212,7 +212,6 @@ type WatcherConfigT = {
     debounceMs?: number,
   }>,
   unstable_lazySha1: boolean,
-  unstable_workerThreads: boolean,
   watchman: Readonly<{
     deferStates: $ReadOnlyArray<string>,
   }>,

@@ -58,7 +58,6 @@ const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
-  #enableWorkerThreads: boolean;
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
@@ -69,7 +68,6 @@ export class FileProcessor {
   constructor(
     opts: Readonly<{
       dependencyExtractor: ?string,
-      enableWorkerThreads: boolean,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
       pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
@@ -78,7 +76,6 @@ export class FileProcessor {
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
-    this.#enableWorkerThreads = opts.enableWorkerThreads;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#pluginWorkers = opts.pluginWorkers ?? [];
@@ -239,11 +236,7 @@ export class FileProcessor {
       };
     }
     const workerPath = require.resolve('../worker');
-    debug(
-      'Creating worker farm of %d worker %s',
-      numWorkers,
-      this.#enableWorkerThreads ? 'threads' : 'processes',
-    );
+    debug('Creating worker farm of %d worker threads', numWorkers);
     this.#perfLogger?.point('initWorkers_start');
     const jestWorker = new JestWorker<{
       processFile: WorkerMessage => Promise<WorkerMetadata>,
@@ -251,7 +244,7 @@ export class FileProcessor {
       exposedMethods: ['processFile'],
       maxRetries: 3,
       numWorkers,
-      enableWorkerThreads: this.#enableWorkerThreads,
+      enableWorkerThreads: true,
       forkOptions: {
         // Don't pass Node arguments down to workers. In particular, avoid
         // unnecessarily registering Babel when we're running Metro from

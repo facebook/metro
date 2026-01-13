@@ -99,7 +99,6 @@ export default function createFileMap(
     computeSha1: !config.watcher.unstable_lazySha1,
     dependencyExtractor: config.resolver.dependencyExtractor,
     enableSymlinks: true,
-    enableWorkerThreads: config.watcher.unstable_workerThreads,
     extensions: Array.from(
       new Set([
         ...config.resolver.sourceExts,
