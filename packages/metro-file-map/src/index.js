@@ -236,7 +236,7 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  */
 export default class FileMap extends EventEmitter {
   _buildPromise: ?Promise<BuildResult>;
-  canUseWatchmanPromise: Promise<boolean>;
+  _canUseWatchmanPromise: Promise<boolean>;
   _changeID: number;
   /*::
   _changeInterval: ?IntervalID;

@@ -1010,7 +1010,7 @@ export default class TreeFS implements MutableFileSystem {
     return null;
   }
 
-  *metadataIterator(opts: MetadataIteratorOptions): Iterable<{
+  *metadataIterator(opts: MetadataIteratorOptions): Iterator<{
     baseName: string,
     canonicalPath: string,
     metadata: FileMetadata,
