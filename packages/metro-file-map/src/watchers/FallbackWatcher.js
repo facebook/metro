@@ -52,7 +52,7 @@ export default class FallbackWatcher extends AbstractWatcher {
       __proto__: null
       */
     },
-     /*::
+    /*::
     __proto__: null,
     */
   } = Object.create(null);
@@ -61,7 +61,7 @@ export default class FallbackWatcher extends AbstractWatcher {
     /*::
      __proto__: null
      */
-    } = Object.create(null);
+  } = Object.create(null);
 
   async startWatching(): Promise<void> {
     this._watchdir(this.root);

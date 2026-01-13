@@ -52,7 +52,9 @@ export type HasteMapOptions = Readonly<{
   failValidationOnConflicts: boolean,
 }>;
 
-export default class HastePlugin implements HasteMap, FileMapPlugin<null, string | null> {
+export default class HastePlugin
+  implements HasteMap, FileMapPlugin<null, string | null>
+{
   +name: 'haste' = 'haste';
 
   +#rootDir: Path;
@@ -79,7 +81,9 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null, string
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize(initOptions: FileMapPluginInitOptions<null, string | null>): Promise<void> {
+  async initialize(
+    initOptions: FileMapPluginInitOptions<null, string | null>,
+  ): Promise<void> {
     const {files} = initOptions;
     this.#perfLogger?.point('constructHasteMap_start');
     let hasteFiles = 0;
