@@ -56,7 +56,7 @@ export type ExportsLikeMap = Readonly<{
 
 /** "exports" mapping where values may be legacy Node.js <13.7 array format. */
 export type ExportMapWithFallbacks = Readonly<{
-  [subpath: string]: $Values<ExportsLikeMap> | ExportValueWithFallback,
+  [subpath: string]: Values<ExportsLikeMap> | ExportValueWithFallback,
 }>;
 
 /** "exports" subpath value when in legacy Node.js <13.7 array format. */
