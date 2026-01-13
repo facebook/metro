@@ -18,7 +18,7 @@ import nullthrows from 'nullthrows';
 import path from 'path';
 
 class MockClient extends EventEmitter {
-  command: JestMockFn<$ReadOnlyArray<$FlowFixMe>, mixed> = jest.fn();
+  command: JestMockFn<$ReadOnlyArray<$FlowFixMe>, unknown> = jest.fn();
   end: JestMockFn<[], void> = jest.fn();
 }
 const mockClient = new MockClient();
@@ -88,7 +88,7 @@ const WATCH_PROJECTS = new Map([
 describe('Watchman crawler', () => {
   let expectedQueries: Map<
     string /* watch root */,
-    $ReadOnly<{query: mixed, result: mixed}>,
+    Readonly<{query: unknown, result: unknown}>,
   >;
   beforeEach(() => {
     expectedQueries = new Map();

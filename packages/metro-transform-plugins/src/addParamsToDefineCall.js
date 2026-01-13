@@ -17,7 +17,7 @@
  */
 export default function addParamsToDefineCall(
   code: string,
-  ...paramsToAdd: Array<mixed>
+  ...paramsToAdd: Array<unknown>
 ): string {
   const index = code.lastIndexOf(')');
   const params = paramsToAdd.map(param =>

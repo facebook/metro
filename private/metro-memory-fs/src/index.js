@@ -199,23 +199,23 @@ class MemoryFs {
   promises: {[funcName: string]: (...args: Array<any>) => Promise<any>, ...};
   Dirent: typeof Dirent = Dirent;
 
-  close: (fd: number, callback: (error: ?Error) => mixed) => void;
+  close: (fd: number, callback: (error: ?Error) => unknown) => void;
   copyFile: ((
     src: FilePath,
     dest: FilePath,
-    callback: (error: Error) => mixed,
+    callback: (error: Error) => unknown,
   ) => void) &
     ((
       src: FilePath,
       dest: FilePath,
       flags?: number,
-      callback: (error: ?Error) => mixed,
+      callback: (error: ?Error) => unknown,
     ) => void);
   open: (
     filePath: FilePath,
     flag: string | number,
     mode?: number,
-    callback: (error: ?Error, fd: ?number) => mixed,
+    callback: (error: ?Error, fd: ?number) => unknown,
   ) => void;
   read: (
     fd: number,
@@ -223,7 +223,7 @@ class MemoryFs {
     offset: number,
     length: number,
     position: ?number,
-    callback: (?Error, ?number) => mixed,
+    callback: (?Error, ?number) => unknown,
   ) => void;
   readFile: (
     filePath: FilePath,
@@ -234,17 +234,20 @@ class MemoryFs {
           ...
         }
       | Encoding
-      | ((?Error, ?Buffer | string) => mixed),
-    callback?: (?Error, ?Buffer | string) => mixed,
+      | ((?Error, ?Buffer | string) => unknown),
+    callback?: (?Error, ?Buffer | string) => unknown,
   ) => void;
-  realpath: (filePath: FilePath, callback: (?Error, ?string) => mixed) => void;
+  realpath: (
+    filePath: FilePath,
+    callback: (?Error, ?string) => unknown,
+  ) => void;
   write: (
     fd: number,
     bufferOrString: Buffer | string,
-    offsetOrPosition?: number | ((?Error, number) => mixed),
-    lengthOrEncoding?: number | string | ((?Error, number) => mixed),
-    position?: number | ((?Error, number) => mixed),
-    callback?: (?Error, number) => mixed,
+    offsetOrPosition?: number | ((?Error, number) => unknown),
+    lengthOrEncoding?: number | string | ((?Error, number) => unknown),
+    position?: number | ((?Error, number) => unknown),
+    callback?: (?Error, number) => unknown,
   ) => void;
   writeFile: (
     filePath: FilePath,
@@ -257,8 +260,8 @@ class MemoryFs {
           ...
         }
       | Encoding
-      | ((?Error) => mixed),
-    callback?: (?Error) => mixed,
+      | ((?Error) => unknown),
+    callback?: (?Error) => unknown,
   ) => void;
 
   constructor(options?: ?Options) {
@@ -1164,7 +1167,7 @@ class MemoryFs {
     listener?: (
       eventType: 'rename' | 'change',
       filePath: ?(string | Buffer),
-    ) => mixed,
+    ) => unknown,
   ) => FSWatcher = (
     filePath: FilePath,
     options?:
@@ -1178,7 +1181,7 @@ class MemoryFs {
     listener?: (
       eventType: 'rename' | 'change',
       filePath: ?string | Buffer,
-    ) => mixed,
+    ) => unknown,
   ) => {
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath);

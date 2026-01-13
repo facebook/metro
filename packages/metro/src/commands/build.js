@@ -24,7 +24,7 @@ import {Terminal} from 'metro-core';
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
-type Args = $ReadOnly<{
+type Args = Readonly<{
   config?: string,
   dev?: boolean,
   entry: string,

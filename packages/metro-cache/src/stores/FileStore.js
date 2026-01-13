@@ -15,7 +15,7 @@ import path from 'path';
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
-export type Options = $ReadOnly<{
+export type Options = Readonly<{
   root: string,
 }>;
 

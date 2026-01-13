@@ -26,10 +26,10 @@ import {getContextModuleTemplate} from './contextModuleTemplates';
 import isAssetFile from 'metro-resolver/private/utils/isAssetFile';
 
 type InlineRequiresRaw =
-  | $ReadOnly<{blockList: $ReadOnly<{[string]: true, ...}>, ...}>
+  | Readonly<{blockList: Readonly<{[string]: true, ...}>, ...}>
   | boolean;
 
-type TransformOptionsWithRawInlines = $ReadOnly<{
+type TransformOptionsWithRawInlines = Readonly<{
   ...TransformOptions,
   inlineRequires: InlineRequiresRaw,
 }>;

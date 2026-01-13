@@ -13,6 +13,7 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
+  FileMapPluginWorker,
   MockMap as IMockMap,
   Path,
   RawMockMap,
@@ -27,6 +28,14 @@ import path from 'path';
 
 export const CACHE_VERSION = 2;
 
+export type MockMapOptions = Readonly<{
+  console: typeof console,
+  mocksPattern: RegExp,
+  rawMockMap?: RawMockMap,
+  rootDir: Path,
+  throwOnModuleCollision: boolean,
+}>;
+
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   +name: 'mocks' = 'mocks';
 
@@ -37,26 +46,17 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
   +#console: typeof console;
   #throwOnModuleCollision: boolean;
 
-  constructor(
-    options: $ReadOnly<{
-      console: typeof console,
-      mocksPattern: RegExp,
-      rawMockMap?: RawMockMap,
-      rootDir: Path,
-      throwOnModuleCollision: boolean,
-    }>,
-  ) {
-    const {
-      console,
-      mocksPattern,
-      rawMockMap = {
-        duplicates: new Map(),
-        mocks: new Map(),
-        version: CACHE_VERSION,
-      },
-      rootDir,
-      throwOnModuleCollision,
-    } = options;
+  constructor({
+    console,
+    mocksPattern,
+    rawMockMap = {
+      duplicates: new Map(),
+      mocks: new Map(),
+      version: CACHE_VERSION,
+    },
+    rootDir,
+    throwOnModuleCollision,
+  }: MockMapOptions) {
     this.#mocksPattern = mocksPattern;
     if (rawMockMap.version !== CACHE_VERSION) {
       throw new Error('Incompatible state passed to MockPlugin');
@@ -79,11 +79,11 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
       // Otherwise, traverse all files to rebuild
       await this.bulkUpdate({
         addedOrModified: [
-          ...files.metadataIterator({
+          ...files.fileIterator({
             includeNodeModules: false,
             includeSymlinks: false,
           }),
-        ].map(({canonicalPath, metadata}) => [canonicalPath, metadata]),
+        ].map(({canonicalPath}) => [canonicalPath, null]),
         removed: [],
       });
     }
@@ -100,7 +100,7 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+  async bulkUpdate(delta: FileMapDelta<>): Promise<void> {
     // Process removals first so that moves aren't treated as duplicates.
     for (const [relativeFilePath] of delta.removed) {
       this.onRemovedFile(relativeFilePath);
@@ -215,5 +215,9 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
       ',' +
       this.#mocksPattern.flags
     );
+  }
+
+  getWorker(): ?FileMapPluginWorker {
+    return null;
   }
 }

@@ -23,7 +23,7 @@ declare var __METRO_GLOBAL_PREFIX__: string;
 type ArrayIndexable<T> = interface {
   +[indexer: number]: T,
 };
-type DependencyMap = $ReadOnly<
+type DependencyMap = Readonly<
   ArrayIndexable<ModuleID> & {
     paths?: {[id: ModuleID]: string},
   },
@@ -799,8 +799,8 @@ if (__DEV__) {
     earlyStop: T => boolean,
   ): Array<T> {
     const result = [];
-    const visited = new Set<mixed>();
-    const stack = new Set<mixed>();
+    const visited = new Set<unknown>();
+    const stack = new Set<unknown>();
     function traverseDependentNodes(node: T): void {
       if (stack.has(node)) {
         throw CYCLE_DETECTED;
@@ -902,7 +902,7 @@ if (__DEV__) {
 
   const performFullRefresh = (
     reason: string,
-    modules: $ReadOnly<{
+    modules: Readonly<{
       source?: ModuleDefinition,
       failed?: ModuleDefinition,
     }>,
@@ -996,7 +996,7 @@ if (__DEV__) {
   var getRefreshBoundarySignature = (
     Refresh: any,
     moduleExports: Exports,
-  ): Array<mixed> => {
+  ): Array<unknown> => {
     const signature = [];
     signature.push(Refresh.getFamilyByType(moduleExports));
     if (moduleExports == null || typeof moduleExports !== 'object') {

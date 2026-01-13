@@ -82,7 +82,7 @@ function find(
                   '',
                   null,
                   stat.isSymbolicLink() ? 1 : 0,
-                  '',
+                  null,
                 ]);
               }
             }
@@ -160,7 +160,7 @@ function findNative(
               '',
               null,
               stat.isSymbolicLink() ? 1 : 0,
-              '',
+              null,
             ]);
           }
           if (--count === 0) {

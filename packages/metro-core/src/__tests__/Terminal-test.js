@@ -10,6 +10,8 @@
 
 'use strict';
 
+const Terminal = require('../Terminal').default;
+
 jest.useRealTimers();
 
 jest.mock('readline', () => ({
@@ -44,12 +46,7 @@ jest.mock('readline', () => ({
 describe.each([false, true])(
   'Terminal, TTY print allowed: %s',
   (ttyPrint: boolean) => {
-    beforeEach(() => {
-      jest.resetModules();
-    });
-
     function prepare({isTTY, ttyPrint}) {
-      const Terminal = require('../Terminal').default;
       const lines = 10;
       const columns = 10;
       const stream = Object.create(
@@ -73,13 +70,10 @@ describe.each([false, true])(
         },
       });
       const terminal = new Terminal(stream, {ttyPrint});
-      const waitForAllOutputs = async () => {
-        await terminal.waitForUpdates();
-      };
-      return {stream, terminal, waitForAllOutputs};
+      return {stream, terminal};
     }
 
-    test('is not printing status to non-interactive terminal', async () => {
+    test('is not printing older consecutive status to non-interactive terminal', async () => {
       const {stream, terminal} = prepare({
         isTTY: false,
         ttyPrint,
@@ -88,9 +82,8 @@ describe.each([false, true])(
       terminal.status('status');
       terminal.status('status2');
       terminal.log('bar');
-      await terminal.waitForUpdates();
       expect(stream.buffer.join('').trim()).toEqual('foo smth  bar');
-      await terminal.flush();
+      await terminal.waitForUpdates();
       expect(stream.buffer.join('').trim()).toEqual(
         'foo smth  bar       status2',
       );
@@ -100,11 +93,10 @@ describe.each([false, true])(
       const {stream, terminal} = prepare({isTTY: true, ttyPrint});
       terminal.log('foo');
       terminal.status('status');
-      await terminal.waitForUpdates();
       if (!ttyPrint) {
         expect(stream.buffer.join('').trim()).toEqual('foo');
-        await terminal.flush();
       }
+      await terminal.waitForUpdates();
       expect(stream.buffer.join('').trim()).toEqual('foo       status');
     });
 
@@ -114,11 +106,10 @@ describe.each([false, true])(
       terminal.status('status');
       terminal.status('status2');
       terminal.log('bar');
-      await terminal.waitForUpdates();
       if (!ttyPrint) {
         expect(stream.buffer.join('').trim()).toEqual('foo       bar');
-        await terminal.flush();
       }
+      await terminal.waitForUpdates();
       expect(stream.buffer.join('').trim()).toEqual(
         'foo       bar       status2',
       );
@@ -145,11 +136,10 @@ describe.each([false, true])(
       terminal.log('foo');
       terminal.status('status\nanother');
       terminal.log('bar');
-      await terminal.waitForUpdates();
       if (!ttyPrint) {
         expect(stream.buffer.join('').trim()).toEqual('foo       bar');
-        await terminal.flush();
       }
+      await terminal.waitForUpdates();
       expect(stream.buffer.join('').trim()).toEqual(
         'foo       bar       status    another',
       );

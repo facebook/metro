@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Type check, lint, smoke test"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/yarn-install
       - run: yarn typecheck
       - run: yarn typecheck-ts
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Tests with coverage"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/yarn-install
       - run: yarn test-coverage
       - run: "./.github/scripts/install_codecov.sh"
@@ -56,7 +56,7 @@ jobs:
           '20.19.4', # minimum supported
           'lts/-1',  # previous lts
           'lts/*',   # latest lts
-          # 'latest'   # latest node version
+          'latest'   # latest node version
         ]
     uses: ./.github/workflows/test.yml
     with:
@@ -70,7 +70,7 @@ jobs:
     name: "Deploy"
     needs: [run-js-checks, test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/yarn-install
       - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
       - run: "./.github/scripts/publish.sh"

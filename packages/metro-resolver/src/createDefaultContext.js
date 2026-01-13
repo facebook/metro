@@ -14,7 +14,7 @@ import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
 import {redirectModulePath} from './PackageResolve';
 
-type PartialContext = $ReadOnly<{
+type PartialContext = Readonly<{
   ...ResolutionContext,
   redirectModulePath?: ResolutionContext['redirectModulePath'],
 }>;

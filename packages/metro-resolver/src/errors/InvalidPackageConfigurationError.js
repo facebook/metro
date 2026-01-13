@@ -24,7 +24,7 @@ export default class InvalidPackageConfigurationError extends Error {
   packagePath: string;
 
   constructor(
-    opts: $ReadOnly<{
+    opts: Readonly<{
       reason: string,
       packagePath: string,
     }>,

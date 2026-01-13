@@ -17,12 +17,12 @@ export type Result<+TResolution, +TCandidates> =
 
 export type Resolution = FileResolution | {+type: 'empty'};
 
-export type SourceFileResolution = $ReadOnly<{
+export type SourceFileResolution = Readonly<{
   type: 'sourceFile',
   filePath: string,
 }>;
 export type AssetFileResolution = $ReadOnlyArray<string>;
-export type AssetResolution = $ReadOnly<{
+export type AssetResolution = Readonly<{
   type: 'assetFiles',
   filePaths: AssetFileResolution,
 }>;
@@ -50,20 +50,20 @@ export type FileCandidates =
       +candidateExts: $ReadOnlyArray<string>,
     };
 
-export type ExportsLikeMap = $ReadOnly<{
+export type ExportsLikeMap = Readonly<{
   [subpathOrCondition: string]: string | ExportsLikeMap | null,
 }>;
 
 /** "exports" mapping where values may be legacy Node.js <13.7 array format. */
-export type ExportMapWithFallbacks = $ReadOnly<{
-  [subpath: string]: $Values<ExportsLikeMap> | ExportValueWithFallback,
+export type ExportMapWithFallbacks = Readonly<{
+  [subpath: string]: Values<ExportsLikeMap> | ExportValueWithFallback,
 }>;
 
 /** "exports" subpath value when in legacy Node.js <13.7 array format. */
 export type ExportValueWithFallback =
   | $ReadOnlyArray<ExportsLikeMap | string>
   // JSON can also contain exotic nested array structure, which will not be parsed
-  | $ReadOnlyArray<$ReadOnlyArray<mixed>>;
+  | $ReadOnlyArray<$ReadOnlyArray<unknown>>;
 
 export type ExportsField =
   | string
@@ -72,7 +72,7 @@ export type ExportsField =
   | ExportsLikeMap
   | ExportMapWithFallbacks;
 
-export type FlattenedExportMap = $ReadOnlyMap<
+export type FlattenedExportMap = ReadonlyMap<
   string /* subpath */,
   string | null,
 >;
@@ -82,7 +82,7 @@ export type NormalizedExportsLikeMap = Map<
   null | string | ExportsLikeMap,
 >;
 
-export type PackageJson = $ReadOnly<{
+export type PackageJson = Readonly<{
   name?: string,
   main?: string,
   exports?: ExportsField,
@@ -90,12 +90,12 @@ export type PackageJson = $ReadOnly<{
   ...
 }>;
 
-export type PackageInfo = $ReadOnly<{
+export type PackageInfo = Readonly<{
   packageJson: PackageJson,
   rootPath: string,
 }>;
 
-export type PackageForModule = $ReadOnly<{
+export type PackageForModule = Readonly<{
   ...PackageInfo,
   /* A system-separated subpath (with no './' prefix) that reflects the subpath
      of the given candidate relative to the returned rootPath. */
@@ -128,7 +128,7 @@ export type ResolveAsset = (
   extension: string,
 ) => ?$ReadOnlyArray<string>;
 
-export type ResolutionContext = $ReadOnly<{
+export type ResolutionContext = Readonly<{
   allowHaste: boolean,
   assetExts: ReadonlySet<string>,
   customResolverOptions: CustomResolverOptions,
@@ -218,7 +218,7 @@ export type ResolutionContext = $ReadOnly<{
   resolveRequest?: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
   unstable_conditionNames: $ReadOnlyArray<string>,
-  unstable_conditionsByPlatform: $ReadOnly<{
+  unstable_conditionsByPlatform: Readonly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
@@ -226,7 +226,7 @@ export type ResolutionContext = $ReadOnly<{
   unstable_logWarning: (message: string) => void,
 }>;
 
-export type CustomResolutionContext = $ReadOnly<{
+export type CustomResolutionContext = Readonly<{
   ...ResolutionContext,
   resolveRequest: CustomResolver,
 }>;
@@ -239,6 +239,6 @@ export type CustomResolver = (
 
 export type CustomResolverOptions = {
   __proto__: null,
-  +[string]: mixed,
+  +[string]: unknown,
   ...
 };

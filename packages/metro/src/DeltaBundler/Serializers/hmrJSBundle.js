@@ -20,7 +20,7 @@ import path from 'path';
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:HMR');
 
-type Options = $ReadOnly<{
+type Options = Readonly<{
   clientUrl: URL,
   createModuleId: string => number,
   includeAsyncPaths: boolean,

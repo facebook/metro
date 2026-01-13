@@ -16,9 +16,9 @@ import {mergeConfig} from '../loadConfig';
 declare var config: ConfigT;
 declare var inputConfig: InputConfigT;
 
-declare function isMutableArray<T: $ReadOnlyArray<mixed>>(
+declare function isMutableArray<T: $ReadOnlyArray<unknown>>(
   arr: T,
-): T extends Array<mixed> ? true : false;
+): T extends Array<unknown> ? true : false;
 
 // Ensure ConfigT satisfies InputConfigT
 config as InputConfigT;

@@ -56,7 +56,7 @@ export type PackageishCache<TPackage> = interface {
   },
 };
 
-type Options<TPackage> = $ReadOnly<{
+type Options<TPackage> = Readonly<{
   assetExts: ReadonlySet<string>,
   dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
@@ -76,7 +76,7 @@ type Options<TPackage> = $ReadOnly<{
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
   unstable_conditionNames: $ReadOnlyArray<string>,
-  unstable_conditionsByPlatform: $ReadOnly<{
+  unstable_conditionsByPlatform: Readonly<{
     [platform: string]: $ReadOnlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
@@ -346,7 +346,7 @@ export class UnableToResolveError extends Error {
     originModulePath: string,
     targetModuleName: string,
     message: string,
-    options?: $ReadOnly<{
+    options?: Readonly<{
       dependency?: ?TransformResultDependency,
       cause?: Error,
     }>,

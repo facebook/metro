@@ -79,7 +79,7 @@ export type HmrClientMessage =
         | 'groupCollapsed'
         | 'groupEnd'
         | 'debug',
-      +data: Array<mixed>,
+      +data: Array<unknown>,
     }
   | {
       +type: 'log-opt-in',

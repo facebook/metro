@@ -145,7 +145,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       timeout: 5000,
     },
     unstable_lazySha1: true,
-    unstable_workerThreads: false,
     unstable_autoSaveCache: {
       enabled: true,
       debounceMs: 5000,

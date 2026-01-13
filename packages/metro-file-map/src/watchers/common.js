@@ -28,12 +28,12 @@ export const DELETE_EVENT = 'delete';
 export const TOUCH_EVENT = 'touch';
 export const ALL_EVENT = 'all';
 
-export type WatcherOptions = $ReadOnly<{
+export type WatcherOptions = Readonly<{
   globs: $ReadOnlyArray<string>,
   dot: boolean,
   ignored: ?RegExp,
   watchmanDeferStates: $ReadOnlyArray<string>,
-  watchman?: mixed,
+  watchman?: unknown,
   watchmanPath?: string,
 }>;
 

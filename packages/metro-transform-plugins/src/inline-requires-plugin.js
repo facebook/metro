@@ -15,7 +15,7 @@ import type {Program} from '@babel/types';
 
 type Types = Babel['types'];
 
-export type PluginOptions = $ReadOnly<{
+export type PluginOptions = Readonly<{
   ignoredRequires?: $ReadOnlyArray<string>,
   inlineableCalls?: $ReadOnlyArray<string>,
   nonMemoizedModules?: $ReadOnlyArray<string>,

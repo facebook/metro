@@ -203,7 +203,6 @@ type WatcherConfigT = {
   }>;
   unstable_autoSaveCache: Readonly<{enabled: boolean; debounceMs?: number}>;
   unstable_lazySha1: boolean;
-  unstable_workerThreads: boolean;
   watchman: Readonly<{deferStates: ReadonlyArray<string>}>;
 };
 export type InputConfigT = Partial<

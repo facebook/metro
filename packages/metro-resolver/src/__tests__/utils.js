@@ -18,8 +18,8 @@ import path from 'path';
  * Data structure approximating a file tree. Should be populated with complete
  * paths mapping to file contents.
  */
-type MockFileMap = $ReadOnly<{
-  [path: string]: ?(string | $ReadOnly<{realPath: ?string}>),
+type MockFileMap = Readonly<{
+  [path: string]: ?(string | Readonly<{realPath: ?string}>),
 }>;
 
 /**
@@ -102,7 +102,7 @@ export function createResolutionContext(
  */
 export function createPackageAccessors(
   fileOrPackageJsonMap: MockFileMap | {[path: string]: PackageJson},
-): $ReadOnly<{
+): Readonly<{
   getPackage: ResolutionContext['getPackage'],
   getPackageForModule: ResolutionContext['getPackageForModule'],
 }> {

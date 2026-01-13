@@ -33,7 +33,7 @@ export type GeneratedPositionLookup = {
   ...
 };
 
-export type Mapping = $ReadOnly<{
+export type Mapping = Readonly<{
   source: ?string,
   generatedLine: Number1,
   generatedColumn: Number0,
@@ -51,8 +51,8 @@ export interface IConsumer {
   generatedMappings(): Iterable<Mapping>;
 
   eachMapping(
-    callback: (mapping: Mapping) => mixed,
-    context?: mixed,
+    callback: (mapping: Mapping) => unknown,
+    context?: unknown,
     order?: IterationOrder,
   ): void;
 

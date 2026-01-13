@@ -44,9 +44,9 @@ export type FBSourceFunctionMap = {
   +mappings: string,
 };
 
-export type BabelSourceMapSegment = $ReadOnly<{
-  generated: $ReadOnly<{column: number, line: number, ...}>,
-  original?: $ReadOnly<{column: number, line: number, ...}>,
+export type BabelSourceMapSegment = Readonly<{
+  generated: Readonly<{column: number, line: number, ...}>,
+  original?: Readonly<{column: number, line: number, ...}>,
   source?: ?string,
   name?: ?string,
   ...

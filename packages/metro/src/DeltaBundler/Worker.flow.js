@@ -39,7 +39,7 @@ export type TransformerConfig = {
   ...
 };
 
-type Data = $ReadOnly<{
+type Data = Readonly<{
   result: TransformResult<>,
   sha1: string,
   transformFileStartLogEntry: LogEntry,

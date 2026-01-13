@@ -10,9 +10,10 @@
  */
 
 import type {ConfigT} from 'metro-config';
+import type {HasteMap} from 'metro-file-map';
 
 import ci from 'ci-info';
-import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
+import MetroFileMap, {DiskCacheManager, HastePlugin} from 'metro-file-map';
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
@@ -54,13 +55,13 @@ function getIgnorePattern(config: ConfigT): RegExp {
 
 export default function createFileMap(
   config: ConfigT,
-  options?: $ReadOnly<{
+  options?: Readonly<{
     extractDependencies?: boolean,
     watch?: boolean,
     throwOnModuleCollision?: boolean,
     cacheFilePrefix?: string,
   }>,
-): MetroFileMap {
+): {fileMap: MetroFileMap, hasteMap: HasteMap} {
   const dependencyExtractor =
     options?.extractDependencies === false
       ? null
@@ -72,7 +73,18 @@ export default function createFileMap(
     config.watcher.unstable_autoSaveCache ?? {};
   const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
 
-  return MetroFileMap.create({
+  const hasteMap = new HastePlugin({
+    platforms: new Set([
+      ...config.resolver.platforms,
+      MetroFileMap.H.NATIVE_PLATFORM,
+    ]),
+    hasteImplModulePath: config.resolver.hasteImplModulePath,
+    enableHastePackages: config.resolver.enableGlobalPackages,
+    rootDir: config.projectRoot,
+    failValidationOnConflicts: options?.throwOnModuleCollision ?? true,
+  });
+
+  const fileMap = new MetroFileMap({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
       (factoryParams =>
@@ -86,9 +98,7 @@ export default function createFileMap(
     computeDependencies,
     computeSha1: !config.watcher.unstable_lazySha1,
     dependencyExtractor: config.resolver.dependencyExtractor,
-    enableHastePackages: config?.resolver.enableGlobalPackages,
     enableSymlinks: true,
-    enableWorkerThreads: config.watcher.unstable_workerThreads,
     extensions: Array.from(
       new Set([
         ...config.resolver.sourceExts,
@@ -97,19 +107,17 @@ export default function createFileMap(
       ]),
     ),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
-    hasteImplModulePath: config.resolver.hasteImplModulePath,
     healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
-    mocksPattern: '',
-    platforms: [...config.resolver.platforms, MetroFileMap.H.NATIVE_PLATFORM],
+    plugins: [hasteMap],
     retainAllFiles: true,
     resetCache: config.resetCache,
     rootDir: config.projectRoot,
     roots: config.watchFolders,
-    throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
     useWatchman: config.resolver.useWatchman,
     watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
+  return {fileMap, hasteMap};
 }

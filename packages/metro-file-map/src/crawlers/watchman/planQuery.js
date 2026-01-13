@@ -15,10 +15,10 @@ import type {
   WatchmanQuerySince,
 } from 'fb-watchman';
 
-type PlanQueryArgs = $ReadOnly<{
+type PlanQueryArgs = Readonly<{
   since: ?WatchmanQuerySince,
-  directoryFilters: $ReadOnlyArray<string>,
-  extensions: $ReadOnlyArray<string>,
+  directoryFilters: ReadonlyArray<string>,
+  extensions: ReadonlyArray<string>,
   includeSha1: boolean,
   includeSymlinks: boolean,
 }>;

@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import {clearInterval, setInterval} from 'timers';
 import ws from 'ws';
 
 type WebsocketServiceInterface<T> = interface {
@@ -16,19 +17,21 @@ type WebsocketServiceInterface<T> = interface {
     url: string,
     sendFn: (data: string) => void,
   ) => Promise<?T>,
-  +onClientDisconnect?: (client: T) => mixed,
-  +onClientError?: (client: T, e: ErrorEvent) => mixed,
+  +onClientDisconnect?: (client: T) => unknown,
+  +onClientError?: (client: T, e: ErrorEvent) => unknown,
   +onClientMessage?: (
     client: T,
     message: string | Buffer | ArrayBuffer | Array<Buffer>,
     sendFn: (data: string) => void,
-  ) => mixed,
+  ) => unknown,
 };
 
 type HMROptions<TClient> = {
   websocketServer: WebsocketServiceInterface<TClient>,
   ...
 };
+
+const KEEP_ALIVE_INTERVAL_MS = 20000;
 
 /**
  * Returns a WebSocketServer to be attached to an existing HTTP instance. It forwards
@@ -66,12 +69,18 @@ export default function createWebsocketServer<TClient: Object>({
       return;
     }
 
+    const keepAliveInterval = setInterval(
+      () => ws.ping(),
+      KEEP_ALIVE_INTERVAL_MS,
+    ).unref();
+
     ws.on('error', e => {
       // $FlowFixMe[incompatible-type]
       websocketServer.onClientError && websocketServer.onClientError(client, e);
     });
 
     ws.on('close', () => {
+      clearInterval(keepAliveInterval);
       websocketServer.onClientDisconnect &&
         websocketServer.onClientDisconnect(client);
       connected = false;

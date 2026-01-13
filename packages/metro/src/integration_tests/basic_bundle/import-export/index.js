@@ -37,7 +37,7 @@ export const extraData = {
 export const asyncImportCJS = import('./export-5');
 export const asyncImportESM = import('./export-6');
 
-export const asyncImportMaybeSyncCJS: mixed =
+export const asyncImportMaybeSyncCJS: unknown =
   require.unstable_importMaybeSync('./export-7');
-export const asyncImportMaybeSyncESM: mixed =
+export const asyncImportMaybeSyncESM: unknown =
   require.unstable_importMaybeSync('./export-8');

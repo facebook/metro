@@ -24,7 +24,7 @@ export opaque type LookupBias = 'GREATEST_LOWER_BOUND' | 'LEAST_UPPER_BOUND';
 const GREATEST_LOWER_BOUND: LookupBias = 'GREATEST_LOWER_BOUND';
 const LEAST_UPPER_BOUND: LookupBias = 'LEAST_UPPER_BOUND';
 
-const EMPTY_POSITION: $ReadOnly<{
+const EMPTY_POSITION: Readonly<{
   source: null,
   name: null,
   line: null,

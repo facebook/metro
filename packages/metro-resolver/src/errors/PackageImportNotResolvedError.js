@@ -26,7 +26,7 @@ export default class PackageImportNotResolvedError extends Error {
   +reason: string;
 
   constructor(
-    opts: $ReadOnly<{
+    opts: Readonly<{
       importSpecifier: string,
       reason: string,
     }>,

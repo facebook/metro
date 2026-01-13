@@ -26,7 +26,7 @@ import path from 'path';
 const debug = require('debug')('Metro:Transformer');
 
 type GetOrComputeSha1Fn = string => Promise<
-  $ReadOnly<{content?: Buffer, sha1: string}>,
+  Readonly<{content?: Buffer, sha1: string}>,
 >;
 
 export default class Transformer {
@@ -38,7 +38,7 @@ export default class Transformer {
 
   constructor(
     config: ConfigT,
-    opts: $ReadOnly<{getOrComputeSha1: GetOrComputeSha1Fn}>,
+    opts: Readonly<{getOrComputeSha1: GetOrComputeSha1Fn}>,
   ) {
     this._config = config;
 
@@ -160,7 +160,7 @@ export default class Transformer {
 
     // A valid result from the cache is used directly; otherwise we call into
     // the transformer to computed the corresponding result.
-    const data: $ReadOnly<{
+    const data: Readonly<{
       result: TransformResult<>,
       sha1: string,
     }> = result

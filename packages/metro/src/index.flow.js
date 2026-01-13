@@ -65,7 +65,7 @@ export type RunMetroOptions = {
   waitForBundler?: boolean,
 };
 
-export type RunServerOptions = $ReadOnly<{
+export type RunServerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   host?: string,
   onError?: (Error & {code?: string}) => void,
@@ -78,7 +78,7 @@ export type RunServerOptions = $ReadOnly<{
   unstable_extraMiddleware?: $ReadOnlyArray<HandleFunction>,
   waitForBundler?: boolean,
   watch?: boolean,
-  websocketEndpoints?: $ReadOnly<{
+  websocketEndpoints?: Readonly<{
     [path: string]: ws$WebSocketServer,
   }>,
 }>;
@@ -108,7 +108,7 @@ export type RunBuildOptions = {
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   minify?: boolean,
-  output?: $ReadOnly<{
+  output?: Readonly<{
     build: (
       MetroServer,
       RequestOptions,
@@ -127,7 +127,7 @@ export type RunBuildOptions = {
       },
       OutputOptions,
       (logMessage: string) => void,
-    ) => Promise<mixed>,
+    ) => Promise<unknown>,
     ...
   }>,
   platform?: string,

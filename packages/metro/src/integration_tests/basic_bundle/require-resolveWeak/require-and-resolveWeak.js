@@ -30,4 +30,4 @@ function main() {
   };
 }
 
-module.exports = main() as mixed;
+module.exports = main() as unknown;

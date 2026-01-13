@@ -31,7 +31,7 @@ export type IntermediateStackFrame = {
   collapse?: boolean,
   ...
 };
-export type StackFrameOutput = $ReadOnly<IntermediateStackFrame>;
+export type StackFrameOutput = Readonly<IntermediateStackFrame>;
 type ExplodedSourceMapModule = ExplodedSourceMap[number];
 type Position = {+line1Based: number, column0Based: number};
 
@@ -60,7 +60,7 @@ export default async function symbolicate(
   stack: $ReadOnlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
-  extraData: mixed,
+  extraData: unknown,
 ): Promise<$ReadOnlyArray<StackFrameOutput>> {
   const mapsByUrl = new Map<?string, ExplodedSourceMap>();
   for (const [url, map] of maps) {

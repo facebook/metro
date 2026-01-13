@@ -24,7 +24,7 @@ jobs:
           '20.19.4', # minimum supported
           'lts/-1',  # previous lts
           'lts/*',   # latest lts
-          # 'latest'   # latest node version
+          'latest'   # latest node version
         ]
         no-lockfile: ['false', 'true']
     uses: ./.github/workflows/test.yml
@@ -38,7 +38,7 @@ jobs:
     needs: [test]
     if: ${{ always() && needs.test.result == 'failure' }}
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({

@@ -15,10 +15,9 @@ export type {PerfLoggerFactory, PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
-export type BuildParameters = $ReadOnly<{
+export type BuildParameters = Readonly<{
   computeDependencies: boolean,
   computeSha1: boolean,
-  enableHastePackages: boolean,
   enableSymlinks: boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
@@ -30,21 +29,18 @@ export type BuildParameters = $ReadOnly<{
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor: ?string,
-  hasteImplModulePath: ?string,
 
   cacheBreaker: string,
 }>;
 
 export type BuildResult = {
   fileSystem: FileSystem,
-  hasteMap: HasteMap,
-  mockMap: ?MockMap,
 };
 
-export type CacheData = $ReadOnly<{
+export type CacheData = Readonly<{
   clocks: WatchmanClocks,
-  fileSystemData: mixed,
-  plugins: $ReadOnlyMap<string, V8Serializable>,
+  fileSystemData: unknown,
+  plugins: ReadonlyMap<string, V8Serializable>,
 }>;
 
 export interface CacheManager {
@@ -82,11 +78,11 @@ export type CacheManagerFactory = (
   options: CacheManagerFactoryOptions,
 ) => CacheManager;
 
-export type CacheManagerFactoryOptions = $ReadOnly<{
+export type CacheManagerFactoryOptions = Readonly<{
   buildParameters: BuildParameters,
 }>;
 
-export type CacheManagerWriteOptions = $ReadOnly<{
+export type CacheManagerWriteOptions = Readonly<{
   changedSinceCacheRead: boolean,
   eventSource: CacheManagerEventSource,
   onWriteError: (error: Error) => void,
@@ -120,8 +116,8 @@ export type CrawlerOptions = {
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
-  previousState: $ReadOnly<{
-    clocks: $ReadOnlyMap<CanonicalPath, WatchmanClockSpec>,
+  previousState: Readonly<{
+    clocks: ReadonlyMap<CanonicalPath, WatchmanClockSpec>,
     fileSystem: FileSystem,
   }>,
   rootDir: string,
@@ -151,7 +147,7 @@ export type WatcherStatus =
     }
   | {
       type: 'watchman_warning',
-      warning: mixed,
+      warning: unknown,
       command: 'watch-project' | 'query',
     };
 
@@ -164,45 +160,76 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta = $ReadOnly<{
-  removed: Iterable<[CanonicalPath, FileMetadata]>,
-  addedOrModified: Iterable<[CanonicalPath, FileMetadata]>,
+export type FileMapDelta<T = null | void> = Readonly<{
+  removed: Iterable<[CanonicalPath, T]>,
+  addedOrModified: Iterable<[CanonicalPath, T]>,
 }>;
 
-interface FileSystemState {
-  metadataIterator(
-    opts: $ReadOnly<{
-      includeNodeModules: boolean,
-      includeSymlinks: boolean,
+export type FileMapPluginInitOptions<
+  SerializableState,
+  PerFileData = void,
+> = Readonly<{
+  files: Readonly<{
+    fileIterator(
+      opts: Readonly<{
+        includeNodeModules: boolean,
+        includeSymlinks: boolean,
+      }>,
+    ): Iterable<{
+      baseName: string,
+      canonicalPath: string,
+      pluginData: ?PerFileData,
     }>,
-  ): Iterable<{
-    baseName: string,
-    canonicalPath: string,
-    metadata: FileMetadata,
-  }>;
-}
-
-export type FileMapPluginInitOptions<SerializableState> = $ReadOnly<{
-  files: FileSystemState,
+    lookup(
+      mixedPath: string,
+    ):
+      | {exists: false}
+      | {exists: true, type: 'f', pluginData: PerFileData}
+      | {exists: true, type: 'd'},
+  }>,
   pluginState: ?SerializableState,
 }>;
 
-type V8Serializable = unknown;
+export type FileMapPluginWorker = Readonly<{
+  worker: Readonly<{
+    modulePath: string,
+    setupArgs: JsonData,
+  }>,
+  filter: ({normalPath: string, isNodeModules: boolean}) => boolean,
+}>;
 
-export interface FileMapPlugin<SerializableState = V8Serializable> {
+export type V8Serializable =
+  | string
+  | number
+  | boolean
+  | null
+  | $ReadOnlyArray<V8Serializable>
+  | ReadonlySet<V8Serializable>
+  | ReadonlyMap<string, V8Serializable>
+  | {[key: string]: V8Serializable};
+
+export interface FileMapPlugin<
+  SerializableState = V8Serializable,
+  PerFileData = void,
+> {
   +name: string;
   initialize(
-    initOptions: FileMapPluginInitOptions<SerializableState>,
+    initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<?PerFileData>): Promise<void>;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    fileMetadata: FileMetadata,
-  ): void;
+  onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
+  onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
+  getWorker(): ?FileMapPluginWorker;
+}
+
+export interface MetadataWorker {
+  processFile(
+    WorkerMessage,
+    Readonly<{getContent: () => Buffer}>,
+  ): V8Serializable;
 }
 
 export type HType = {
@@ -212,7 +239,7 @@ export type HType = {
   DEPENDENCIES: 3,
   SHA1: 4,
   SYMLINK: 5,
-  ID: 6,
+  PLUGINDATA: number,
   PATH: 0,
   TYPE: 1,
   MODULE: 0,
@@ -235,10 +262,11 @@ export type FileMetadata = [
   /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
-  /* id */ string,
+  /* plugindata */
+  ...
 ];
 
-export type FileStats = $ReadOnly<{
+export type FileStats = Readonly<{
   fileType: 'f' | 'l',
   modifiedTime: ?number,
   size: ?number,
@@ -252,7 +280,6 @@ export interface FileSystem {
     changedFiles: FileData,
     removedFiles: Set<string>,
   };
-  getModuleName(file: Path): ?string;
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): ?string;
   getOrComputeSha1(file: Path): Promise<?{sha1: string, content?: Buffer}>;
@@ -323,6 +350,14 @@ export interface FileSystem {
 
 export type Glob = string;
 
+export type JsonData =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<JsonData>
+  | {[key: string]: JsonData};
+
 export type LookupResult =
   | {
       // The node is missing from the FileSystem implementation (note this
@@ -339,11 +374,23 @@ export type LookupResult =
       exists: true,
       // The real, normal, absolute paths of any symlinks traversed.
       links: ReadonlySet<string>,
-      // The real, normal, absolute path of the file or directory.
+      // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
       // directories or regular files, but this may be extended.
-      type: 'd' | 'f',
+      type: 'd',
+    }
+  | {
+      exists: true,
+      // The real, normal, absolute paths of any symlinks traversed.
+      links: ReadonlySet<string>,
+      // The real, normal, absolute path of the file.
+      realPath: string,
+      // Currently lookup always follows symlinks, so can only return
+      // directories or regular files, but this may be extended.
+      type: 'f',
+      // The file's metadata tuple. Must only be mutated via FileProcessor.
+      metadata: FileMetadata,
     };
 
 export interface MockMap {
@@ -364,6 +411,8 @@ export interface HasteMap {
     supportsNativePlatform?: ?boolean,
     type?: ?HTypeValue,
   ): ?Path;
+
+  getModuleNameByPath(file: Path): ?string;
 
   getPackage(
     name: string,
@@ -393,12 +442,12 @@ export interface MutableFileSystem extends FileSystem {
 export type Path = string;
 
 export type ProcessFileFunction = (
-  absolutePath: string,
+  normalPath: string,
   metadata: FileMetadata,
-  request: $ReadOnly<{computeSha1: boolean}>,
+  request: Readonly<{computeSha1: boolean}>,
 ) => ?Buffer;
 
-export type RawMockMap = $ReadOnly<{
+export type RawMockMap = Readonly<{
   duplicates: Map<
     string, // posix-separated mock name
     Set<string>, // posix-separated, project-relative paths
@@ -410,9 +459,9 @@ export type RawMockMap = $ReadOnly<{
   version: number,
 }>;
 
-export type ReadOnlyRawMockMap = $ReadOnly<{
-  duplicates: $ReadOnlyMap<string, ReadonlySet<string>>,
-  mocks: $ReadOnlyMap<string, Path>,
+export type ReadOnlyRawMockMap = Readonly<{
+  duplicates: ReadonlyMap<string, ReadonlySet<string>>,
+  mocks: ReadonlyMap<string, Path>,
   version: number,
 }>;
 
@@ -430,14 +479,14 @@ export type ChangeEventClock = [
 ];
 
 export type WatcherBackendChangeEvent =
-  | $ReadOnly<{
+  | Readonly<{
       event: 'touch',
       clock?: ChangeEventClock,
       relativePath: string,
       root: string,
       metadata: ChangeEventMetadata,
     }>
-  | $ReadOnly<{
+  | Readonly<{
       event: 'delete',
       clock?: ChangeEventClock,
       relativePath: string,
@@ -445,7 +494,7 @@ export type WatcherBackendChangeEvent =
       metadata?: void,
     }>;
 
-export type WatcherBackendOptions = $ReadOnly<{
+export type WatcherBackendOptions = Readonly<{
   ignored: ?RegExp,
   globs: $ReadOnlyArray<string>,
   dot: boolean,
@@ -454,26 +503,25 @@ export type WatcherBackendOptions = $ReadOnly<{
 
 export type WatchmanClockSpec =
   | string
-  | $ReadOnly<{scm: $ReadOnly<{'mergebase-with': string}>}>;
+  | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
-export type WorkerMessage = $ReadOnly<{
+export type WorkerMessage = Readonly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   dependencyExtractor?: ?string,
-  enableHastePackages: boolean,
   filePath: string,
-  hasteImplModulePath?: ?string,
   maybeReturnContent: boolean,
+  pluginsToRun: $ReadOnlyArray<number>,
 }>;
 
-export type WorkerMetadata = $ReadOnly<{
+export type WorkerMetadata = Readonly<{
   dependencies?: ?$ReadOnlyArray<string>,
-  id?: ?string,
   sha1?: ?string,
   content?: ?Buffer,
+  pluginData?: $ReadOnlyArray<V8Serializable>,
 }>;
 
-export interface WorkerSetupArgs {
-  __future__?: false;
-}
+export type WorkerSetupArgs = Readonly<{
+  plugins?: ReadonlyArray<FileMapPluginWorker['worker']>,
+}>;

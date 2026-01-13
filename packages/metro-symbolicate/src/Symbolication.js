@@ -68,7 +68,7 @@ type HermesMinidumpCrashInfo = {
   ...
 };
 
-type HermesMinidumpStackFrame = $ReadOnly<{
+type HermesMinidumpStackFrame = Readonly<{
   ByteCodeOffset: number,
   FunctionID: number,
   // NOTE: CJSModuleOffset has been renamed to SegmentID. Support both formats for now.
@@ -83,13 +83,13 @@ type HermesCoverageInfo = {
   +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
 };
 
-type HermesCoverageStackFrame = $ReadOnly<{
+type HermesCoverageStackFrame = Readonly<{
   line: number, // SegmentID or zero-based line,
   column: number, // VirtualOffset or zero-based column,
   SourceURL: ?string,
 }>;
 
-type NativeCodeStackFrame = $ReadOnly<{
+type NativeCodeStackFrame = Readonly<{
   NativeCode: true,
   StackFrameRegOffs: string,
 }>;
@@ -98,7 +98,7 @@ type SymbolicatedStackTrace = $ReadOnlyArray<
   SymbolicatedStackFrame | NativeCodeStackFrame,
 >;
 
-type SymbolicatedStackFrame = $ReadOnly<{
+type SymbolicatedStackFrame = Readonly<{
   line: ?number,
   column: ?number,
   source: ?string,

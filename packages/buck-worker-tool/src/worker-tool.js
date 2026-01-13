@@ -20,7 +20,7 @@ import invariant from 'invariant';
 
 export type Command = (
   argv: Array<string>,
-  structuredArgs: mixed,
+  structuredArgs: unknown,
   console: Console,
 ) => Promise<void> | void;
 export type Commands = {[key: string]: Command, ...};
@@ -67,8 +67,8 @@ type IncomingMessage = HandshakeMessage | CommandMessage;
 type Response = HandshakeReponse | CommandResponse | ErrorResponse;
 type RespondFn = (response: Response) => void;
 
-type JSONReaderDataHandler = IncomingMessage => mixed;
-type JSONReaderEndHandler = () => mixed;
+type JSONReaderDataHandler = IncomingMessage => unknown;
+type JSONReaderEndHandler = () => unknown;
 
 type JSONReaderDataListener = ('data', JSONReaderDataHandler) => JSONReader;
 type JSONReaderEndListener = ('end', JSONReaderEndHandler) => JSONReader;
@@ -253,7 +253,7 @@ async function execCommand(
   commandName: string,
   argsString: string,
   args: Array<string>,
-  structuredArgs: mixed,
+  structuredArgs: unknown,
   commandSpecificConsole: Console,
   respond: RespondFn,
   messageId: number,

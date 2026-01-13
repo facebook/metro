@@ -15,7 +15,7 @@ export default function getPreludeCode({
   globalPrefix,
   requireCycleIgnorePatterns,
 }: {
-  +extraVars?: {[string]: mixed, ...},
+  +extraVars?: {[string]: unknown, ...},
   +isDev: boolean,
   +globalPrefix: string,
   +requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
@@ -47,7 +47,7 @@ export default function getPreludeCode({
 
 const excluded = new Set(['__BUNDLE_START_TIME__', '__DEV__', 'process']);
 
-function formatExtraVars(extraVars: ?{[string]: mixed, ...}): Array<string> {
+function formatExtraVars(extraVars: ?{[string]: unknown, ...}): Array<string> {
   const assignments = [];
 
   for (const key in extraVars) {

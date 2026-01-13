@@ -78,7 +78,7 @@ export type Result<T> = {
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta<T> = $ReadOnly<{
+type Delta<T> = Readonly<{
   // `added` and `deleted` are mutually exclusive.
   // Internally, a module can be in both `touched` and (either) `added` or
   // `deleted`. Before returning the result, we'll calculate
@@ -87,15 +87,15 @@ type Delta<T> = $ReadOnly<{
   touched: Set<string>,
   deleted: Set<string>,
 
-  updatedModuleData: $ReadOnlyMap<string, ModuleData<T>>,
+  updatedModuleData: ReadonlyMap<string, ModuleData<T>>,
   baseModuleData: Map<string, ModuleData<T>>,
-  errors: $ReadOnlyMap<string, Error>,
+  errors: ReadonlyMap<string, Error>,
 }>;
 
-type InternalOptions<T> = $ReadOnly<{
+type InternalOptions<T> = Readonly<{
   lazy: boolean,
-  onDependencyAdd: () => mixed,
-  onDependencyAdded: () => mixed,
+  onDependencyAdd: () => unknown,
+  onDependencyAdded: () => unknown,
   resolve: Options<T>['resolve'],
   transform: Options<T>['transform'],
   shallow: boolean,
@@ -135,7 +135,7 @@ export class Graph<T = MixedOutput> {
   +dependencies: Dependencies<T> = new Map();
   +#importBundleNodes: Map<
     string,
-    $ReadOnly<{
+    Readonly<{
       inverseDependencies: CountingSet<string>,
     }>,
   > = new Map();
@@ -378,7 +378,7 @@ export class Graph<T = MixedOutput> {
     path: string,
     delta: Delta<T>,
     options: InternalOptions<T>,
-    commitOptions: $ReadOnly<{
+    commitOptions: Readonly<{
       onlyRemove: boolean,
     }> = {onlyRemove: false},
   ): Module<T> {
@@ -936,7 +936,7 @@ export class Graph<T = MixedOutput> {
 function dependenciesEqual(
   a: Dependency,
   b: Dependency,
-  options: $ReadOnly<{lazy: boolean, ...}>,
+  options: Readonly<{lazy: boolean, ...}>,
 ): boolean {
   return (
     a === b ||

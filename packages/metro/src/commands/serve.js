@@ -16,7 +16,7 @@ import {makeAsyncCommand, watchFile} from '../cli-utils';
 import {loadConfig, resolveConfig} from 'metro-config';
 import {promisify} from 'util';
 
-type Args = $ReadOnly<{
+type Args = Readonly<{
   projectRoots?: $ReadOnlyArray<string>,
   host: string,
   port: number,

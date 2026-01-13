@@ -24,7 +24,7 @@ export default function getGraphId(
     lazy,
     unstable_allowRequireContext,
     resolverOptions,
-  }: $ReadOnly<{
+  }: Readonly<{
     shallow: boolean,
     lazy: boolean,
     unstable_allowRequireContext: boolean,

@@ -58,15 +58,15 @@ const FIXTURES_DIR = join(__dirname, '..', '__fixtures__');
 // defer to the caller. This matcher helps with nested expectations.
 declare var expect: {
   /** The object that you want to make assertions against */
-  (value: mixed, description?: string): JestExpectType,
+  (value: unknown, description?: string): JestExpectType,
   extend(matchers: {[name: string]: JestMatcher, ...}): void,
   assertions(expectedAssertions: number): void,
-  any(value: mixed): JestAsymmetricEqualityType,
-  oneOf: (mixed, mixed) => boolean,
+  any(value: unknown): JestAsymmetricEqualityType,
+  oneOf: (unknown, unknown) => boolean,
   ...
 };
 
-function oneOf(this: $FlowFixMe, actual: mixed, ...expectOneOf: mixed[]) {
+function oneOf(this: $FlowFixMe, actual: unknown, ...expectOneOf: unknown[]) {
   const pass = expectOneOf.includes(actual);
   return {
     pass,
@@ -84,18 +84,26 @@ const CASES = [
   [
     true,
     new Map([
-      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, '']],
+      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, null]],
       [
         join('directory', 'bar.js'),
-        [expect.any(Number), 245, 0, '', null, 0, ''],
+        [expect.any(Number), 245, 0, '', null, 0, null],
       ],
       [
         'link-to-directory',
-        [expect.any(Number), 9, 0, '', null, expect.oneOf(1, 'directory'), ''],
+        [
+          expect.any(Number),
+          9,
+          0,
+          '',
+          null,
+          expect.oneOf(1, 'directory'),
+          null,
+        ],
       ],
       [
         'link-to-foo.js',
-        [expect.any(Number), 6, 0, '', null, expect.oneOf(1, 'foo.js'), ''],
+        [expect.any(Number), 6, 0, '', null, expect.oneOf(1, 'foo.js'), null],
       ],
     ]),
   ],
@@ -104,9 +112,9 @@ const CASES = [
     new Map([
       [
         join('directory', 'bar.js'),
-        [expect.any(Number), 245, 0, '', null, 0, ''],
+        [expect.any(Number), 245, 0, '', null, 0, null],
       ],
-      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, '']],
+      ['foo.js', [expect.any(Number), 245, 0, '', null, 0, null]],
     ]),
   ],
 ];
@@ -126,7 +134,9 @@ describe.each(Object.keys(CRAWLERS))(
           previousState: {
             fileSystem: new TreeFS({
               rootDir: FIXTURES_DIR,
-              files: new Map([['removed.js', [123, 234, 0, '', null, 0, '']]]),
+              files: new Map([
+                ['removed.js', [123, 234, 0, '', null, 0, null]],
+              ]),
               processFile: () => {
                 throw new Error('Not implemented');
               },

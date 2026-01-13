@@ -10,6 +10,7 @@
  */
 
 import type {
+  FileMapPluginWorker,
   FileMetadata,
   PerfLogger,
   WorkerMessage,
@@ -19,13 +20,14 @@ import type {
 
 import H from '../constants';
 import {Worker} from '../worker';
+import {RootPathUtils} from './RootPathUtils';
 import {Worker as JestWorker} from 'jest-worker';
 import {sep} from 'path';
 
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:FileMap');
 
-type ProcessFileRequest = $ReadOnly<{
+type ProcessFileRequest = Readonly<{
   /**
    * Populate metadata[H.SHA1] with the SHA1 of the file's contents.
    */
@@ -51,55 +53,67 @@ interface MaybeCodedError extends Error {
   code?: string;
 }
 
-const NODE_MODULES = sep + 'node_modules' + sep;
+const NODE_MODULES_SEP = 'node_modules' + sep;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
   #dependencyExtractor: ?string;
-  #enableHastePackages: boolean;
-  #hasteImplModulePath: ?string;
-  #enableWorkerThreads: boolean;
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
-  #workerArgs: WorkerSetupArgs;
+  #pluginWorkers: $ReadOnlyArray<FileMapPluginWorker>;
   #inBandWorker: Worker;
+  #rootPathUtils: RootPathUtils;
 
   constructor(
-    opts: $ReadOnly<{
+    opts: Readonly<{
       dependencyExtractor: ?string,
-      enableHastePackages: boolean,
-      enableWorkerThreads: boolean,
-      hasteImplModulePath: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
+      pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
       perfLogger: ?PerfLogger,
+      rootDir: string,
     }>,
   ) {
     this.#dependencyExtractor = opts.dependencyExtractor;
-    this.#enableHastePackages = opts.enableHastePackages;
-    this.#enableWorkerThreads = opts.enableWorkerThreads;
-    this.#hasteImplModulePath = opts.hasteImplModulePath;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
-    this.#workerArgs = {};
-    this.#inBandWorker = new Worker(this.#workerArgs);
+    this.#pluginWorkers = opts.pluginWorkers ?? [];
+    this.#inBandWorker = new Worker({
+      plugins: this.#pluginWorkers.map(plugin => plugin.worker),
+    });
     this.#perfLogger = opts.perfLogger;
+    this.#rootPathUtils = new RootPathUtils(opts.rootDir);
   }
 
   async processBatch(
-    files: $ReadOnlyArray<[string /*absolutePath*/, FileMetadata]>,
+    files: $ReadOnlyArray<[string /*relativePath*/, FileMetadata]>,
     req: ProcessFileRequest,
   ): Promise<{
     errors: Array<{
-      absolutePath: string,
+      normalFilePath: string,
       error: MaybeCodedError,
     }>,
   }> {
     const errors = [];
+
+    const workerJobs = files
+      .map(([normalFilePath, fileMetadata]) => {
+        const maybeWorkerInput = this.#getWorkerInput(
+          normalFilePath,
+          fileMetadata,
+          req,
+        );
+        if (!maybeWorkerInput) {
+          return null;
+        }
+        return [maybeWorkerInput, fileMetadata];
+      })
+      .filter(Boolean);
+
     const numWorkers = Math.min(
       this.#maxWorkers,
-      Math.ceil(files.length / this.#maxFilesPerWorker),
+      Math.ceil(workerJobs.length / this.#maxFilesPerWorker),
     );
     const batchWorker = this.#getBatchWorker(numWorkers);
 
@@ -110,20 +124,19 @@ export class FileProcessor {
     }
 
     await Promise.all(
-      files.map(([absolutePath, fileMetadata]) => {
-        const maybeWorkerInput = this.#getWorkerInput(
-          absolutePath,
-          fileMetadata,
-          req,
-        );
-        if (!maybeWorkerInput) {
-          return null;
-        }
+      workerJobs.map(([workerInput, fileMetadata]) => {
         return batchWorker
-          .processFile(maybeWorkerInput)
-          .then(reply => processWorkerReply(reply, fileMetadata))
+          .processFile(workerInput)
+          .then(reply =>
+            processWorkerReply(reply, workerInput.pluginsToRun, fileMetadata),
+          )
           .catch(error =>
-            errors.push({absolutePath, error: normalizeWorkerError(error)}),
+            errors.push({
+              normalFilePath: this.#rootPathUtils.absoluteToNormal(
+                workerInput.filePath,
+              ),
+              error: normalizeWorkerError(error),
+            }),
           );
       }),
     );
@@ -132,15 +145,16 @@ export class FileProcessor {
   }
 
   processRegularFile(
-    absolutePath: string,
+    normalPath: string,
     fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?{content: ?Buffer} {
-    const workerInput = this.#getWorkerInput(absolutePath, fileMetadata, req);
+    const workerInput = this.#getWorkerInput(normalPath, fileMetadata, req);
     return workerInput
       ? {
           content: processWorkerReply(
             this.#inBandWorker.processFile(workerInput),
+            workerInput.pluginsToRun,
             fileMetadata,
           ),
         }
@@ -148,13 +162,37 @@ export class FileProcessor {
   }
 
   #getWorkerInput(
-    absolutePath: string,
+    normalPath: string,
     fileMetadata: FileMetadata,
     req: ProcessFileRequest,
   ): ?WorkerMessage {
-    const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
+    if (fileMetadata[H.SYMLINK] !== 0) {
+      // Only process regular files
+      return null;
+    }
 
+    const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
     const {computeDependencies, maybeReturnContent} = req;
+
+    const nodeModulesIdx = normalPath.indexOf(NODE_MODULES_SEP);
+    // Path may begin 'node_modules/' or contain '/node_modules/'.
+    const isNodeModules =
+      nodeModulesIdx === 0 ||
+      (nodeModulesIdx > 0 && normalPath[nodeModulesIdx - 1] === sep);
+
+    // Indices of plugins with a passing filter
+    const pluginsToRun =
+      this.#pluginWorkers?.reduce((prev, plugin, idx) => {
+        if (plugin.filter({isNodeModules, normalPath})) {
+          prev.push(idx);
+        }
+        return prev;
+      }, [] as Array<number>) ?? [];
+
+    if (!computeDependencies && !computeSha1 && pluginsToRun.length === 0) {
+      // Nothing to process
+      return null;
+    }
 
     // Use a cheaper worker configuration for node_modules files, because we
     // never care about extracting dependencies, and they may never be Haste
@@ -162,16 +200,15 @@ export class FileProcessor {
     //
     // Note that we'd only expect node_modules files to reach this point if
     // retainAllFiles is true, or they're touched during watch mode.
-    if (absolutePath.includes(NODE_MODULES)) {
+    if (isNodeModules) {
       if (computeSha1) {
         return {
           computeDependencies: false,
           computeSha1: true,
           dependencyExtractor: null,
-          enableHastePackages: false,
-          filePath: absolutePath,
-          hasteImplModulePath: null,
+          filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
           maybeReturnContent,
+          pluginsToRun,
         };
       }
       return null;
@@ -181,10 +218,9 @@ export class FileProcessor {
       computeDependencies,
       computeSha1,
       dependencyExtractor: this.#dependencyExtractor,
-      enableHastePackages: this.#enableHastePackages,
-      filePath: absolutePath,
-      hasteImplModulePath: this.#hasteImplModulePath,
+      filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
       maybeReturnContent,
+      pluginsToRun,
     };
   }
 
@@ -200,11 +236,7 @@ export class FileProcessor {
       };
     }
     const workerPath = require.resolve('../worker');
-    debug(
-      'Creating worker farm of %d worker %s',
-      numWorkers,
-      this.#enableWorkerThreads ? 'threads' : 'processes',
-    );
+    debug('Creating worker farm of %d worker threads', numWorkers);
     this.#perfLogger?.point('initWorkers_start');
     const jestWorker = new JestWorker<{
       processFile: WorkerMessage => Promise<WorkerMetadata>,
@@ -212,14 +244,18 @@ export class FileProcessor {
       exposedMethods: ['processFile'],
       maxRetries: 3,
       numWorkers,
-      enableWorkerThreads: this.#enableWorkerThreads,
+      enableWorkerThreads: true,
       forkOptions: {
         // Don't pass Node arguments down to workers. In particular, avoid
         // unnecessarily registering Babel when we're running Metro from
         // source (our worker is plain CommonJS).
         execArgv: [],
       },
-      setupArgs: [this.#workerArgs],
+      setupArgs: [
+        {
+          plugins: this.#pluginWorkers.map(plugin => plugin.worker),
+        } as WorkerSetupArgs,
+      ],
     });
     this.#perfLogger?.point('initWorkers_end');
     // Only log worker init once
@@ -232,14 +268,16 @@ export class FileProcessor {
 
 function processWorkerReply(
   metadata: WorkerMetadata,
+  pluginsRun: $ReadOnlyArray<number>,
   fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;
-
-  const metadataId = metadata.id;
-
-  if (metadataId != null) {
-    fileMetadata[H.ID] = metadataId;
+  const pluginData = metadata.pluginData;
+  if (pluginData) {
+    for (const [i, pluginIdx] of pluginsRun.entries()) {
+      // $FlowFixMe[invalid-tuple-index]
+      fileMetadata[H.PLUGINDATA + pluginIdx] = pluginData[i];
+    }
   }
 
   fileMetadata[H.DEPENDENCIES] = metadata.dependencies

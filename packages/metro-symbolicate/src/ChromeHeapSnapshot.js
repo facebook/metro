@@ -185,7 +185,7 @@ type ChromeHeapSnapshotFieldType =
   | string;
 
 // The input type to functions that accept record objects.
-type DenormalizedRecordInput = $ReadOnly<{
+type DenormalizedRecordInput = Readonly<{
   [field: string]: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
 }>;
 
@@ -202,8 +202,8 @@ type DenormalizedRecordInput = $ReadOnly<{
 class ChromeHeapSnapshotRecordAccessor {
   // Fast lookup tables from field names to their offsets (required) and types
   // (optional). These are shared with any child iterators.
-  +_fieldToOffset: $ReadOnlyMap<string, number>;
-  +_fieldToType: $ReadOnlyMap<string, ChromeHeapSnapshotFieldType>;
+  +_fieldToOffset: ReadonlyMap<string, number>;
+  +_fieldToType: ReadonlyMap<string, ChromeHeapSnapshotFieldType>;
 
   // The number of fields in every record (i.e. K).
   +_recordSize: number;
@@ -230,7 +230,7 @@ class ChromeHeapSnapshotRecordAccessor {
     // Fields with unknown types are assumed to be numeric.
     recordTypes:
       | Array<ChromeHeapSnapshotFieldType>
-      | $ReadOnly<{
+      | Readonly<{
           [string]: ChromeHeapSnapshotFieldType,
         }>
       | null,
@@ -575,7 +575,7 @@ class ChromeHeapSnapshotRecordIterator
     recordFields: Array<string>,
     recordTypes:
       | Array<ChromeHeapSnapshotFieldType>
-      | $ReadOnly<{
+      | Readonly<{
           [string]: ChromeHeapSnapshotFieldType,
         }>
       | null,
@@ -605,6 +605,7 @@ class ChromeHeapSnapshotRecordIterator
 
   // JS Iterable protocol
   // $FlowFixMe[unsupported-syntax]
+  // $FlowFixMe[incompatible-type]
   [Symbol.iterator](): this {
     return this;
   }

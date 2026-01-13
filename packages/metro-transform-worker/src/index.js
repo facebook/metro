@@ -60,7 +60,7 @@ import nullthrows from 'nullthrows';
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;
 
-type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
+type MinifierConfig = Readonly<{[string]: unknown, ...}>;
 
 export type MinifierOptions = {
   code: string,
@@ -83,7 +83,7 @@ export type Minifier = MinifierOptions =>
 
 export type Type = 'script' | 'module' | 'asset';
 
-export type JsTransformerConfig = $ReadOnly<{
+export type JsTransformerConfig = Readonly<{
   assetPlugins: $ReadOnlyArray<string>,
   assetRegistryPath: string,
   asyncRequireModulePath: string,
@@ -114,7 +114,7 @@ export type JsTransformerConfig = $ReadOnly<{
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
-export type JsTransformOptions = $ReadOnly<{
+export type JsTransformOptions = Readonly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
@@ -132,20 +132,20 @@ export type JsTransformOptions = $ReadOnly<{
 
 opaque type Path = string;
 
-type BaseFile = $ReadOnly<{
+type BaseFile = Readonly<{
   code: string,
   filename: Path,
   inputFileSize: number,
 }>;
 
-type AssetFile = $ReadOnly<{
+type AssetFile = Readonly<{
   ...BaseFile,
   type: 'asset',
 }>;
 
 type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
 
-type JSFile = $ReadOnly<{
+type JSFile = Readonly<{
   ...BaseFile,
   ast?: ?BabelNodeFile,
   type: JSFileType,
@@ -158,14 +158,14 @@ type JSONFile = {
   type: Type,
 };
 
-type TransformationContext = $ReadOnly<{
+type TransformationContext = Readonly<{
   config: JsTransformerConfig,
   projectRoot: Path,
   options: JsTransformOptions,
 }>;
 
-export type JsOutput = $ReadOnly<{
-  data: $ReadOnly<{
+export type JsOutput = Readonly<{
+  data: Readonly<{
     code: string,
     lineCount: number,
     map: Array<MetroSourceMapSegmentTuple>,
@@ -174,7 +174,7 @@ export type JsOutput = $ReadOnly<{
   type: JSFileType,
 }>;
 
-type TransformResponse = $ReadOnly<{
+type TransformResponse = Readonly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput>,
 }>;
@@ -628,7 +628,7 @@ async function transformJSON(
 }
 
 function getBabelTransformArgs(
-  file: $ReadOnly<{filename: Path, code: string, ...}>,
+  file: Readonly<{filename: Path, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {

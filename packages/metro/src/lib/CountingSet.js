@@ -20,7 +20,7 @@ export interface ReadOnlyCountingSet<T> extends Iterable<T> {
       value: T,
       key: T,
       set: ReadOnlyCountingSet<T>,
-    ) => mixed,
+    ) => unknown,
 
     // NOTE: Should be optional, but Flow seems happy to infer undefined here
     // which is what we want.
@@ -88,6 +88,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
 
   /*::
   // For Flow's benefit
+  // $FlowFixMe[duplicate-class-member]
   @@iterator(): Iterator<T> {
     return this.values();
   }
@@ -108,7 +109,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
   }
 
   forEach<ThisT>(
-    callbackFn: (this: ThisT, value: T, key: T, set: CountingSet<T>) => mixed,
+    callbackFn: (this: ThisT, value: T, key: T, set: CountingSet<T>) => unknown,
     thisArg: ThisT,
   ): void {
     for (const item of this) {
@@ -121,7 +122,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
   // extend to custom collection classes. Instead let's assume values are
   // sortable ( = strings) and make this look like an array with some stable
   // order.
-  toJSON(): mixed {
+  toJSON(): unknown {
     return [...this].sort();
   }
 }

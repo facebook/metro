@@ -43,13 +43,11 @@ const buildParameters: BuildParameters = {
   computeDependencies: true,
   computeSha1: true,
   dependencyExtractor: null,
-  enableHastePackages: true,
   enableSymlinks: false,
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,
   retainAllFiles: false,
   extensions: ['js', 'json'],
-  hasteImplModulePath: require.resolve('../../__tests__/haste_impl'),
   plugins: [],
   rootDir: path.join('/', 'project'),
   roots: [
@@ -137,6 +135,9 @@ describe('cacheManager', () => {
       getSerializableSnapshot() {
         return {};
       },
+      getWorker() {
+        return null;
+      },
       onNewOrModifiedFile() {},
       onRemovedFile() {},
       getCacheKey() {
@@ -182,23 +183,6 @@ describe('cacheManager', () => {
           computeDependencies: false,
         },
       },
-      defaultConfig,
-    );
-    expect(cacheManager1.getCacheFilePath()).not.toBe(
-      cacheManager2.getCacheFilePath(),
-    );
-  });
-
-  test('creates different cache file paths for different hasteImplModulePath cache keys', () => {
-    const hasteImpl = require('../../__tests__/haste_impl');
-    hasteImpl.setCacheKey('foo');
-    const cacheManager1 = new DiskCacheManager(
-      {buildParameters},
-      defaultConfig,
-    );
-    hasteImpl.setCacheKey('bar');
-    const cacheManager2 = new DiskCacheManager(
-      {buildParameters},
       defaultConfig,
     );
     expect(cacheManager1.getCacheFilePath()).not.toBe(

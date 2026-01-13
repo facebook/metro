@@ -41,7 +41,7 @@ const isWatchmanOnPath = () => {
 };
 
 // `null` Watchers will be marked as skipped tests.
-export const WATCHERS: $ReadOnly<{
+export const WATCHERS: Readonly<{
   [key: string]:
     | Class<FallbackWatcher>
     | Class<NativeWatcher>
@@ -73,7 +73,7 @@ export type EventHelpers = {
 
 export const createTempWatchRoot = async (
   watcherName: string,
-  watchmanConfig: {[key: string]: mixed} | false = {},
+  watchmanConfig: {[key: string]: unknown} | false = {},
 ): Promise<string> => {
   const tmpDir = await mkdtemp(
     join(os.tmpdir(), `metro-watcher-${watcherName}-test-`),

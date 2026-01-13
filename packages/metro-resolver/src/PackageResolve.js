@@ -71,7 +71,7 @@ export function getPackageEntryPoint(
  * ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec).
  */
 export function redirectModulePath(
-  context: $ReadOnly<{
+  context: Readonly<{
     getPackageForModule: ResolutionContext['getPackageForModule'],
     mainFields: ResolutionContext['mainFields'],
     originModulePath: ResolutionContext['originModulePath'],

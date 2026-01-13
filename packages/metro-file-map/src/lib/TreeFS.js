@@ -54,7 +54,7 @@ type TreeFSOptions = {
   processFile: ProcessFileFunction,
 };
 
-type MatchFilesOptions = $ReadOnly<{
+type MatchFilesOptions = Readonly<{
   /* Filter relative paths against a pattern. */
   filter?: ?RegExp,
   /* `filter` is applied against absolute paths, vs rootDir-relative. (default: false) */
@@ -69,12 +69,12 @@ type MatchFilesOptions = $ReadOnly<{
   rootDir?: ?Path,
 }>;
 
-type MetadataIteratorOptions = $ReadOnly<{
+type MetadataIteratorOptions = Readonly<{
   includeSymlinks: boolean,
   includeNodeModules: boolean,
 }>;
 
-type PathIteratorOptions = $ReadOnly<{
+type PathIteratorOptions = Readonly<{
   alwaysYieldPosix: boolean,
   canonicalPathOfRoot: string,
   follow: boolean,
@@ -163,11 +163,6 @@ export default class TreeFS implements MutableFileSystem {
     return tfs;
   }
 
-  getModuleName(mixedPath: Path): ?string {
-    const fileMetadata = this._getFileData(mixedPath);
-    return (fileMetadata && fileMetadata[H.ID]) ?? null;
-  }
-
   getSize(mixedPath: Path): ?number {
     const fileMetadata = this._getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
@@ -251,20 +246,19 @@ export default class TreeFS implements MutableFileSystem {
     if (existing != null && existing.length > 0) {
       return {sha1: existing};
     }
-    const absolutePath = this.#pathUtils.normalToAbsolute(canonicalPath);
 
     // Mutate the metadata we first retrieved. This may be orphaned or about
     // to be overwritten if the file changes while we are processing it -
     // by only mutating the original metadata, we don't risk caching a stale
     // SHA-1 after a change event.
-    const maybeContent = await this.#processFile(absolutePath, fileMetadata, {
+    const maybeContent = await this.#processFile(canonicalPath, fileMetadata, {
       computeSha1: true,
     });
     const sha1 = fileMetadata[H.SHA1];
     invariant(
       sha1 != null && sha1.length > 0,
       "File processing didn't populate a SHA-1 hash for %s",
-      absolutePath,
+      canonicalPath,
     );
 
     return maybeContent
@@ -296,19 +290,17 @@ export default class TreeFS implements MutableFileSystem {
       };
     }
     const {canonicalPath, node} = result;
-    const type = isDirectory(node) ? 'd' : isRegularFile(node) ? 'f' : 'l';
+    const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
+    if (isDirectory(node)) {
+      return {exists: true, links, realPath, type: 'd'};
+    }
     invariant(
-      type !== 'l',
+      isRegularFile(node),
       'lookup follows symlinks, so should never return one (%s -> %s)',
       mixedPath,
       canonicalPath,
     );
-    return {
-      exists: true,
-      links,
-      realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
-      type,
-    };
+    return {exists: true, links, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {

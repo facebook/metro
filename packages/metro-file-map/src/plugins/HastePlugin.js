@@ -16,7 +16,7 @@ import type {
   FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
-  FileMetadata,
+  FileMapPluginWorker,
   HasteConflict,
   HasteMap,
   HasteMapItem,
@@ -34,23 +34,25 @@ import getPlatformExtension from './haste/getPlatformExtension';
 import {HasteConflictsError} from './haste/HasteConflictsError';
 import path from 'path';
 
-const EMPTY_OBJ: $ReadOnly<{[string]: HasteMapItemMetadata}> = {};
-const EMPTY_MAP: $ReadOnlyMap<string, DuplicatesSet> = new Map();
+const EMPTY_OBJ: Readonly<{[string]: HasteMapItemMetadata}> = {};
+const EMPTY_MAP: ReadonlyMap<string, DuplicatesSet> = new Map();
+const PACKAGE_JSON = /(?:[/\\]|^)package\.json$/;
 
 // Periodically yield to the event loop to allow parallel I/O, etc.
 // Based on 200k files taking up to 800ms => max 40ms between yields.
 const YIELD_EVERY_NUM_HASTE_FILES = 10000;
 
-type HasteMapOptions = $ReadOnly<{
+export type HasteMapOptions = Readonly<{
   console?: ?Console,
   enableHastePackages: boolean,
-  perfLogger: ?PerfLogger,
+  hasteImplModulePath: ?string,
+  perfLogger?: ?PerfLogger,
   platforms: ReadonlySet<string>,
   rootDir: Path,
   failValidationOnConflicts: boolean,
 }>;
 
-export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
+export default class HastePlugin implements HasteMap, FileMapPlugin<null, string | null> {
   +name: 'haste' = 'haste';
 
   +#rootDir: Path;
@@ -59,14 +61,17 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
 
   +#console: ?Console;
   +#enableHastePackages: boolean;
+  +#hasteImplModulePath: ?string;
   +#perfLogger: ?PerfLogger;
   +#pathUtils: RootPathUtils;
   +#platforms: ReadonlySet<string>;
   +#failValidationOnConflicts: boolean;
+  #getModuleNameByPath: string => ?string;
 
   constructor(options: HasteMapOptions) {
-    this.#console = options.console ?? null;
+    this.#console = options.console ?? global.console;
     this.#enableHastePackages = options.enableHastePackages;
+    this.#hasteImplModulePath = options.hasteImplModulePath;
     this.#perfLogger = options.perfLogger;
     this.#platforms = options.platforms;
     this.#rootDir = options.rootDir;
@@ -74,27 +79,40 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize(initOptions: FileMapPluginInitOptions<null>): Promise<void> {
+  async initialize(initOptions: FileMapPluginInitOptions<null, string | null>): Promise<void> {
     const {files} = initOptions;
     this.#perfLogger?.point('constructHasteMap_start');
     let hasteFiles = 0;
-    for (const {baseName, canonicalPath, metadata} of files.metadataIterator({
+    for (const {
+      baseName,
+      canonicalPath,
+      pluginData: hasteId,
+    } of files.fileIterator({
       // Symlinks and node_modules are never Haste modules or packages.
       includeNodeModules: false,
       includeSymlinks: false,
     })) {
-      if (metadata[H.ID]) {
-        this.setModule(metadata[H.ID], [
-          canonicalPath,
-          this.#enableHastePackages && baseName === 'package.json'
-            ? H.PACKAGE
-            : H.MODULE,
-        ]);
-        if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
-          await new Promise(setImmediate);
-        }
+      if (hasteId == null) {
+        continue;
+      }
+      this.setModule(hasteId, [
+        canonicalPath,
+        this.#enableHastePackages && baseName === 'package.json'
+          ? H.PACKAGE
+          : H.MODULE,
+      ]);
+      if (++hasteFiles % YIELD_EVERY_NUM_HASTE_FILES === 0) {
+        await new Promise(setImmediate);
       }
     }
+    this.#getModuleNameByPath = mixedPath => {
+      const result = files.lookup(mixedPath);
+      return result.exists &&
+        result.type === 'f' &&
+        typeof result.pluginData === 'string'
+        ? result.pluginData
+        : null;
+    };
     this.#perfLogger?.point('constructHasteMap_end');
     this.#perfLogger?.annotate({int: {hasteFiles}});
   }
@@ -125,6 +143,15 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
       return modulePath && this.#pathUtils.normalToAbsolute(modulePath);
     }
     return null;
+  }
+
+  getModuleNameByPath(mixedPath: Path): ?string {
+    if (this.#getModuleNameByPath == null) {
+      throw new Error(
+        'HastePlugin has not been initialized before getModuleNameByPath',
+      );
+    }
+    return this.#getModuleNameByPath(mixedPath) ?? null;
   }
 
   getPackage(
@@ -208,19 +235,19 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta): Promise<void> {
+  async bulkUpdate(delta: FileMapDelta<?string>): Promise<void> {
     // Process removals first so that moves aren't treated as duplicates.
-    for (const [normalPath, metadata] of delta.removed) {
-      this.onRemovedFile(normalPath, metadata);
+    for (const [normalPath, maybeHasteId] of delta.removed) {
+      this.onRemovedFile(normalPath, maybeHasteId);
     }
-    for (const [normalPath, metadata] of delta.addedOrModified) {
-      this.onNewOrModifiedFile(normalPath, metadata);
+    for (const [normalPath, maybeHasteId] of delta.addedOrModified) {
+      this.onNewOrModifiedFile(normalPath, maybeHasteId);
     }
   }
 
-  onNewOrModifiedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const id = fileMetadata[H.ID] || null; // Empty string indicates no module
+  onNewOrModifiedFile(relativeFilePath: string, id: ?string) {
     if (id == null) {
+      // Not a Haste module or package
       return;
     }
 
@@ -295,9 +322,9 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
     hasteMapItem[platform] = module;
   }
 
-  onRemovedFile(relativeFilePath: string, fileMetadata: FileMetadata) {
-    const moduleName = fileMetadata[H.ID] || null; // Empty string indicates no module
+  onRemovedFile(relativeFilePath: string, moduleName: ?string) {
     if (moduleName == null) {
+      // Not a Haste module or package
       return;
     }
 
@@ -455,7 +482,31 @@ export default class HastePlugin implements HasteMap, FileMapPlugin<null> {
   getCacheKey(): string {
     return JSON.stringify([
       this.#enableHastePackages,
+      this.#hasteImplModulePath != null
+        ? // $FlowFixMe[unsupported-syntax] - dynamic require
+          require(this.#hasteImplModulePath).getCacheKey()
+        : null,
       [...this.#platforms].sort(),
     ]);
+  }
+
+  getWorker(): FileMapPluginWorker {
+    return {
+      worker: {
+        modulePath: require.resolve('./haste/worker.js'),
+        setupArgs: {
+          hasteImplModulePath: this.#hasteImplModulePath ?? null,
+        },
+      },
+      filter: ({isNodeModules, normalPath}) => {
+        if (isNodeModules) {
+          return false;
+        }
+        if (PACKAGE_JSON.test(normalPath)) {
+          return this.#enableHastePackages;
+        }
+        return this.#hasteImplModulePath != null;
+      },
+    };
   }
 }

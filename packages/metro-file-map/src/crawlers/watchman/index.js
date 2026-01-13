@@ -31,7 +31,7 @@ import {performance} from 'perf_hooks';
 
 type WatchmanRoots = Map<
   string, // Posix-separated absolute path
-  $ReadOnly<{directoryFilters: Array<string>, watcher: string}>,
+  Readonly<{directoryFilters: Array<string>, watcher: string}>,
 >;
 
 const WATCHMAN_WARNING_INITIAL_DELAY_MILLISECONDS = 10000;
@@ -340,7 +340,7 @@ export default async function watchmanCrawl(options: CrawlerOptions): Promise<{
           '',
           sha1hex ?? null,
           symlinkInfo,
-          '',
+          null,
         ];
 
         // If watchman is fresh, the removed files map starts with all files

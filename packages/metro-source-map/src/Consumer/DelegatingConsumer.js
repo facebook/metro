@@ -57,8 +57,8 @@ export default class DelegatingConsumer implements IConsumer {
   }
 
   eachMapping(
-    callback: (mapping: Mapping) => mixed,
-    context?: mixed,
+    callback: (mapping: Mapping) => unknown,
+    context?: unknown,
     order?: IterationOrder,
   ): void {
     return this._rootConsumer.eachMapping(callback, context, order);

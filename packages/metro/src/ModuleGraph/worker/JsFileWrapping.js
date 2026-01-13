@@ -33,7 +33,7 @@ function wrapModule(
   skipRequireRename: boolean,
   {
     unstable_useStaticHermesModuleFactory = false,
-  }: $ReadOnly<{unstable_useStaticHermesModuleFactory?: boolean}> = {},
+  }: Readonly<{unstable_useStaticHermesModuleFactory?: boolean}> = {},
 ): {
   ast: BabelNodeFile,
   requireName: string,

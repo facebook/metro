@@ -17,13 +17,13 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 import CountingSet from '../lib/CountingSet';
 
 export type MixedOutput = {
-  +data: mixed,
+  +data: unknown,
   +type: string,
 };
 
 export type AsyncDependencyType = 'async' | 'maybeSync' | 'prefetch' | 'weak';
 
-export type TransformResultDependency = $ReadOnly<{
+export type TransformResultDependency = Readonly<{
   /**
    * The literal name provided to a require or import call. For example 'foo' in
    * case of `require('foo')`.
@@ -33,7 +33,7 @@ export type TransformResultDependency = $ReadOnly<{
   /**
    * Extra data returned by the dependency extractor.
    */
-  data: $ReadOnly<{
+  data: Readonly<{
     /**
      * A locally unique key for this dependency within the current module.
      */
@@ -59,18 +59,18 @@ export type TransformResultDependency = $ReadOnly<{
   }>,
 }>;
 
-export type ResolvedDependency = $ReadOnly<{
+export type ResolvedDependency = Readonly<{
   absolutePath: string,
   data: TransformResultDependency,
 }>;
 
 export type Dependency =
   | ResolvedDependency
-  | $ReadOnly<{
+  | Readonly<{
       data: TransformResultDependency,
     }>;
 
-export type Module<T = MixedOutput> = $ReadOnly<{
+export type Module<T = MixedOutput> = Readonly<{
   dependencies: Map<string, Dependency>,
   inverseDependencies: CountingSet<string>,
   output: $ReadOnlyArray<T>,
@@ -79,16 +79,16 @@ export type Module<T = MixedOutput> = $ReadOnly<{
   unstable_transformResultKey?: ?string,
 }>;
 
-export type ModuleData<T = MixedOutput> = $ReadOnly<{
-  dependencies: $ReadOnlyMap<string, Dependency>,
-  resolvedContexts: $ReadOnlyMap<string, RequireContext>,
+export type ModuleData<T = MixedOutput> = Readonly<{
+  dependencies: ReadonlyMap<string, Dependency>,
+  resolvedContexts: ReadonlyMap<string, RequireContext>,
   output: $ReadOnlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
-export type ReadOnlyDependencies<T = MixedOutput> = $ReadOnlyMap<
+export type ReadOnlyDependencies<T = MixedOutput> = ReadonlyMap<
   string,
   Module<T>,
 >;
@@ -98,7 +98,7 @@ export type TransformInputOptions = Omit<
   'inlinePlatform' | 'inlineRequires',
 >;
 
-export type GraphInputOptions = $ReadOnly<{
+export type GraphInputOptions = Readonly<{
   entryPoints: ReadonlySet<string>,
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions,
@@ -107,19 +107,19 @@ export type GraphInputOptions = $ReadOnly<{
 export interface ReadOnlyGraph<T = MixedOutput> {
   +entryPoints: ReadonlySet<string>;
   // Unused in core but useful for custom serializers / experimentalSerializerHook
-  +transformOptions: $ReadOnly<TransformInputOptions>;
+  +transformOptions: Readonly<TransformInputOptions>;
   +dependencies: ReadOnlyDependencies<T>;
 }
 
 export type {Graph};
 
-export type TransformResult<T = MixedOutput> = $ReadOnly<{
+export type TransformResult<T = MixedOutput> = Readonly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
   unstable_transformResultKey?: ?string,
 }>;
 
-export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{
+export type TransformResultWithSource<T = MixedOutput> = Readonly<{
   ...TransformResult<T>,
   getSource: () => Buffer,
 }>;
@@ -141,16 +141,16 @@ export type AllowOptionalDependencies =
   | boolean
   | AllowOptionalDependenciesWithOptions;
 
-export type BundlerResolution = $ReadOnly<{
+export type BundlerResolution = Readonly<{
   type: 'sourceFile',
   filePath: string,
 }>;
 
-export type Options<T = MixedOutput> = $ReadOnly<{
+export type Options<T = MixedOutput> = Readonly<{
   resolve: ResolveFn,
   transform: TransformFn<T>,
   transformOptions: TransformInputOptions,
-  onProgress: ?(numProcessed: number, total: number) => mixed,
+  onProgress: ?(numProcessed: number, total: number) => unknown,
   lazy: boolean,
   unstable_allowRequireContext: boolean,
   unstable_enablePackageExports: boolean,
@@ -165,7 +165,7 @@ export type DeltaResult<T = MixedOutput> = {
   +reset: boolean,
 };
 
-export type SerializerOptions = $ReadOnly<{
+export type SerializerOptions = Readonly<{
   asyncRequireModulePath: string,
   createModuleId: string => number,
   dev: boolean,

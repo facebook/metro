@@ -22,7 +22,7 @@ import {deriveAbsolutePathFromContext} from '../lib/contextModule';
 import {isResolvedDependency} from '../lib/isResolvedDependency';
 import path from 'path';
 
-type Parameters<T> = $ReadOnly<{
+type Parameters<T> = Readonly<{
   resolve: ResolveFn,
   transform: TransformFn<T>,
   shouldTraverse: ResolvedDependency => boolean,
@@ -101,7 +101,7 @@ function resolveDependencies(
 
 export async function buildSubgraph<T>(
   entryPaths: ReadonlySet<string>,
-  resolvedContexts: $ReadOnlyMap<string, ?RequireContext>,
+  resolvedContexts: ReadonlyMap<string, ?RequireContext>,
   {resolve, transform, shouldTraverse}: Parameters<T>,
 ): Promise<{
   moduleData: Map<string, ModuleData<T>>,
