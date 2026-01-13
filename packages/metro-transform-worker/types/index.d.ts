@@ -100,7 +100,10 @@ export declare const transform: (
   options: JsTransformOptions,
 ) => Promise<TransformResponse>;
 export declare type transform = typeof transform;
-export declare const getCacheKey: (config: JsTransformerConfig) => string;
+export declare const getCacheKey: (
+  config: JsTransformerConfig,
+  projectRoot: string,
+) => string;
 export declare type getCacheKey = typeof getCacheKey;
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.

@@ -19,7 +19,7 @@ import {getCacheKey} from 'metro-cache-key';
 const VERSION = require('../../package.json').version;
 
 type CacheKeyProvider = {
-  getCacheKey?: JsTransformerConfig => string,
+  getCacheKey?: (config: JsTransformerConfig, projectRoot: string) => string,
 };
 
 export default function getTransformCacheKey(opts: {
@@ -32,7 +32,7 @@ export default function getTransformCacheKey(opts: {
   // eslint-disable-next-line no-useless-call
   const Transformer: CacheKeyProvider = require.call(null, transformerPath);
   const transformerKey = Transformer.getCacheKey
-    ? Transformer.getCacheKey(transformerConfig)
+    ? Transformer.getCacheKey(transformerConfig, opts.projectRoot)
     : '';
 
   return crypto

@@ -37,15 +37,21 @@ export interface BabelTransformerArgs {
   readonly src: string;
 }
 
+export interface BabelTransformerCacheKeyOptions {
+  readonly projectRoot: string;
+  readonly enableBabelRCLookup?: boolean;
+}
+
 export interface BabelTransformer {
   transform: (args: BabelTransformerArgs) => {
     ast: unknown;
     metadata: unknown;
   };
-  getCacheKey?: () => string;
+  getCacheKey?: (options: BabelTransformerCacheKeyOptions) => string;
 }
 
 export const transform: BabelTransformer['transform'];
+export const getCacheKey: (options: BabelTransformerCacheKeyOptions) => string;
 
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
@@ -53,7 +59,10 @@ export const transform: BabelTransformer['transform'];
  *
  * @deprecated Default import from 'metro-babel-transformer' is deprecated, use named exports.
  */
-declare const $$EXPORT_DEFAULT_DECLARATION$$: {transform: typeof transform};
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  transform: typeof transform;
+  getCacheKey: typeof getCacheKey;
+};
 declare type $$EXPORT_DEFAULT_DECLARATION$$ =
   typeof $$EXPORT_DEFAULT_DECLARATION$$;
 export default $$EXPORT_DEFAULT_DECLARATION$$;
