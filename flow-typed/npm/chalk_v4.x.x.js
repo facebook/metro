@@ -69,7 +69,7 @@ declare module 'chalk' {
 
   declare type TemplateStringsArray = $ReadOnlyArray<string>;
 
-  declare type Level = $Values<{
+  declare type Level = Values<{
     None: 0,
     Basic: 1,
     Ansi256: 2,

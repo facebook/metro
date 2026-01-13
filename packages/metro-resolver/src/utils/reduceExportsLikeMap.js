@@ -59,7 +59,7 @@ export function reduceExportsLikeMap(
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports.
  */
 function reduceConditionalExport(
-  subpathValue: $Values<ExportsLikeMap>,
+  subpathValue: Values<ExportsLikeMap>,
   conditionNames: ReadonlySet<string>,
 ): string | null | 'no-match' {
   let reducedValue = subpathValue;
