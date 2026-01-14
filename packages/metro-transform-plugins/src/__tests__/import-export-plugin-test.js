@@ -392,7 +392,7 @@ function showTransformedDeps(code: string) {
 }
 
 function formatDependencyLocs(
-  dependencies: $ReadOnlyArray<Dependency>,
+  dependencies: ReadonlyArray<Dependency>,
   code: string,
 ) {
   return (

@@ -30,8 +30,8 @@ const debug = require('debug')('Metro:NodeCrawler');
 type Callback = (result: FileData) => void;
 
 function find(
-  roots: $ReadOnlyArray<string>,
-  extensions: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
+  extensions: ReadonlyArray<string>,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   rootDir: string,
@@ -108,8 +108,8 @@ function find(
 }
 
 function findNative(
-  roots: $ReadOnlyArray<string>,
-  extensions: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
+  extensions: ReadonlyArray<string>,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   rootDir: string,

@@ -104,7 +104,7 @@ export default class WorkerFarm {
 
   _makeFarm(
     absoluteWorkerPath: string,
-    exposedMethods: $ReadOnlyArray<string>,
+    exposedMethods: ReadonlyArray<string>,
     numWorkers: number,
   ): any {
     const env = {

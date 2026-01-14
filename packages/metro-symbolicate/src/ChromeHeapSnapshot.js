@@ -186,7 +186,7 @@ type ChromeHeapSnapshotFieldType =
 
 // The input type to functions that accept record objects.
 type DenormalizedRecordInput = Readonly<{
-  [field: string]: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+  [field: string]: string | number | ReadonlyArray<DenormalizedRecordInput>,
 }>;
 
 // A cursor pointing to a record-aligned position in a 1D array of N records
@@ -480,7 +480,7 @@ class ChromeHeapSnapshotRecordAccessor {
   // based on the runtime type of `value`.
   _set(
     field: string,
-    value: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+    value: string | number | ReadonlyArray<DenormalizedRecordInput>,
   ): void {
     if (typeof value === 'string') {
       this.setString(field, value);
@@ -497,7 +497,7 @@ class ChromeHeapSnapshotRecordAccessor {
   // a new buffer using `append()`s semantics.
   _setChildren(
     field: string,
-    value: $ReadOnlyArray<DenormalizedRecordInput>,
+    value: ReadonlyArray<DenormalizedRecordInput>,
   ): void {
     const fieldType = this._fieldToType.get(field);
     if (fieldType !== CHILDREN_FIELD_TYPE) {

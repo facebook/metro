@@ -27,12 +27,12 @@ type EndpointOptions = {
   endpoint: string,
   family?: 4 | 6,
   timeout?: number,
-  key?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-  cert?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-  ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
+  key?: string | ReadonlyArray<string> | Buffer | ReadonlyArray<Buffer>,
+  cert?: string | ReadonlyArray<string> | Buffer | ReadonlyArray<Buffer>,
+  ca?: string | ReadonlyArray<string> | Buffer | ReadonlyArray<Buffer>,
   params?: URLSearchParams,
   headers?: {[string]: string},
-  additionalSuccessStatuses?: $ReadOnlyArray<number>,
+  additionalSuccessStatuses?: ReadonlyArray<number>,
   /**
    * Whether to include additional debug information in error messages.
    */

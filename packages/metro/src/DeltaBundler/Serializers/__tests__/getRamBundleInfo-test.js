@@ -17,7 +17,7 @@ import getRamBundleInfo from '../getRamBundleInfo';
 
 function createModule(
   name: string,
-  dependencies: $ReadOnlyArray<string>,
+  dependencies: ReadonlyArray<string>,
   type: JsOutput['type'] = 'js/module',
 ): [string, Module<>] {
   return [

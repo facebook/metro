@@ -27,7 +27,7 @@ export default async function getPrependedScripts(
   resolverOptions: ResolverInputOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
-): Promise<$ReadOnlyArray<Module<>>> {
+): Promise<ReadonlyArray<Module<>>> {
   // Get all the polyfills from the relevant option params (the
   // `getPolyfills()` method and the `polyfillModuleNames` variable).
   const polyfillModuleNames = config.serializer
@@ -87,7 +87,7 @@ function _getPrelude({
 }: {
   dev: boolean,
   globalPrefix: string,
-  requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
+  requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
   ...
 }): Module<> {
   const code = getPreludeCode({

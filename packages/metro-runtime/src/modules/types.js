@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-export type ModuleMap = $ReadOnlyArray<[number, string]>;
+export type ModuleMap = ReadonlyArray<[number, string]>;
 
 export type Bundle = {
   +modules: ModuleMap,
@@ -20,7 +20,7 @@ export type Bundle = {
 export type DeltaBundle = {
   +added: ModuleMap,
   +modified: ModuleMap,
-  +deleted: $ReadOnlyArray<number>,
+  +deleted: ReadonlyArray<number>,
 };
 
 export type BundleVariant =
@@ -30,7 +30,7 @@ export type BundleVariant =
 export type BundleMetadata = {
   +pre: number,
   +post: number,
-  +modules: $ReadOnlyArray<[number, number]>,
+  +modules: ReadonlyArray<[number, number]>,
 };
 
 export type FormattedError = {
@@ -46,10 +46,10 @@ export type HmrModule = {
 };
 
 export type HmrUpdate = {
-  +added: $ReadOnlyArray<HmrModule>,
-  +deleted: $ReadOnlyArray<number>,
+  +added: ReadonlyArray<HmrModule>,
+  +deleted: ReadonlyArray<number>,
   +isInitialUpdate: boolean,
-  +modified: $ReadOnlyArray<HmrModule>,
+  +modified: ReadonlyArray<HmrModule>,
   +revisionId: string,
 };
 

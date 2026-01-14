@@ -92,7 +92,7 @@ export type AssetDataPlugin = (
 
 function buildAssetMap(
   dir: string,
-  files: $ReadOnlyArray<string>,
+  files: ReadonlyArray<string>,
   platform: ?string,
 ): Map<string, {files: Array<string>, scales: Array<number>}> {
   const platforms = new Set(platform != null ? [platform] : []);
@@ -200,7 +200,7 @@ async function getAbsoluteAssetInfo(
 export async function getAssetData(
   assetPath: string,
   localPath: string,
-  assetDataPlugins: $ReadOnlyArray<string>,
+  assetDataPlugins: ReadonlyArray<string>,
   platform: ?string = null,
   publicPath: string,
 ): Promise<AssetData> {
@@ -239,7 +239,7 @@ export async function getAssetData(
 }
 
 async function applyAssetDataPlugins(
-  assetDataPlugins: $ReadOnlyArray<string>,
+  assetDataPlugins: ReadonlyArray<string>,
   assetData: AssetData,
 ): Promise<AssetData> {
   if (!assetDataPlugins.length) {
@@ -279,9 +279,9 @@ export async function getAssetFiles(
 export async function getAsset(
   relativePath: string,
   projectRoot: string,
-  watchFolders: $ReadOnlyArray<string>,
+  watchFolders: ReadonlyArray<string>,
   platform: ?string = null,
-  assetExts: $ReadOnlyArray<string>,
+  assetExts: ReadonlyArray<string>,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
     relativePath,
@@ -315,7 +315,7 @@ export async function getAsset(
 
 function pathBelongsToRoots(
   pathToCheck: string,
-  roots: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
 ): boolean {
   for (const rootFolder of roots) {
     if (pathToCheck.startsWith(path.resolve(rootFolder))) {

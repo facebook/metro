@@ -10,7 +10,7 @@
  */
 
 export function greatestLowerBound<T, U>(
-  elements: $ReadOnlyArray<T>,
+  elements: ReadonlyArray<T>,
   target: U,
   comparator: (U, T) => number,
 ): ?number {

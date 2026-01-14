@@ -18,7 +18,7 @@ import nullthrows from 'nullthrows';
 import path from 'path';
 
 class MockClient extends EventEmitter {
-  command: JestMockFn<$ReadOnlyArray<$FlowFixMe>, unknown> = jest.fn();
+  command: JestMockFn<ReadonlyArray<$FlowFixMe>, unknown> = jest.fn();
   end: JestMockFn<[], void> = jest.fn();
 }
 const mockClient = new MockClient();

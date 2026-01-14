@@ -66,7 +66,7 @@ export type EventHelpers = {
   ) => Promise<void>,
   allEvents: (
     afterFn: () => Promise<void>,
-    events: $ReadOnlyArray<[string, 'touch' | 'delete']>,
+    events: ReadonlyArray<[string, 'touch' | 'delete']>,
     opts?: {rejectUnexpected: boolean},
   ) => Promise<void>,
 };
@@ -149,8 +149,7 @@ export const startWatching = async (
     allEvents: (afterFn, expectedEvents, {rejectUnexpected = true} = {}) =>
       Promise.all([
         new Promise((resolve, reject) => {
-          const tupleToKey = (tuple: $ReadOnlyArray<string>) =>
-            tuple.join('\0');
+          const tupleToKey = (tuple: ReadonlyArray<string>) => tuple.join('\0');
           const allEventKeys = new Set(
             expectedEvents.map(tuple => tupleToKey(tuple)),
           );

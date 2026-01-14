@@ -20,9 +20,9 @@ import {
 
 type Params = {
   fixWrapperOffset: boolean,
-  lazyModules: $ReadOnlyArray<ModuleTransportLike>,
+  lazyModules: ReadonlyArray<ModuleTransportLike>,
   moduleGroups: ?ModuleGroups,
-  startupModules: $ReadOnlyArray<ModuleTransportLike>,
+  startupModules: ReadonlyArray<ModuleTransportLike>,
 };
 
 export default ({

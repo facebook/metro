@@ -35,12 +35,12 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
-export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>, ...};
+export type HermesFunctionOffsets = {[number]: ReadonlyArray<number>, ...};
 
-export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
+export type FBSourcesArray = ReadonlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {
-  +names: $ReadOnlyArray<string>,
+  +names: ReadonlyArray<string>,
   +mappings: string,
 };
 
@@ -108,8 +108,8 @@ type SourceMapConsumerMapping = {
 function fromRawMappingsImpl(
   isBlocking: boolean,
   onDone: Generator => void,
-  modules: $ReadOnlyArray<{
-    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
+  modules: ReadonlyArray<{
+    +map: ?ReadonlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -179,8 +179,8 @@ function fromRawMappingsImpl(
  * the resulting bundle, e.g. by some prefix code.
  */
 function fromRawMappings(
-  modules: $ReadOnlyArray<{
-    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
+  modules: ReadonlyArray<{
+    +map: ?ReadonlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
@@ -206,8 +206,8 @@ function fromRawMappings(
 }
 
 async function fromRawMappingsNonBlocking(
-  modules: $ReadOnlyArray<{
-    +map: ?$ReadOnlyArray<MetroSourceMapSegmentTuple>,
+  modules: ReadonlyArray<{
+    +map: ?ReadonlyArray<MetroSourceMapSegmentTuple>,
     +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,

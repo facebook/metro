@@ -64,7 +64,7 @@ type ChromeTrace = {
 };
 
 type HermesMinidumpCrashInfo = {
-  +callstack: $ReadOnlyArray<HermesMinidumpStackFrame | NativeCodeStackFrame>,
+  +callstack: ReadonlyArray<HermesMinidumpStackFrame | NativeCodeStackFrame>,
   ...
 };
 
@@ -80,7 +80,7 @@ type HermesMinidumpStackFrame = Readonly<{
 }>;
 
 type HermesCoverageInfo = {
-  +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
+  +executedFunctions: ReadonlyArray<HermesCoverageStackFrame>,
 };
 
 type HermesCoverageStackFrame = Readonly<{
@@ -94,7 +94,7 @@ type NativeCodeStackFrame = Readonly<{
   StackFrameRegOffs: string,
 }>;
 
-type SymbolicatedStackTrace = $ReadOnlyArray<
+type SymbolicatedStackTrace = ReadonlyArray<
   SymbolicatedStackFrame | NativeCodeStackFrame,
 >;
 
@@ -499,7 +499,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     +[id: string]: {
       // $FlowFixMe[value-as-type]
       +consumer: SourceMapConsumer,
-      +moduleOffsets: $ReadOnlyArray<number>,
+      +moduleOffsets: ReadonlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
       +googleIgnoreListConsumer: GoogleIgnoreListConsumer,

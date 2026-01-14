@@ -24,8 +24,8 @@ export type SourceMapGeneratorOptions = Readonly<{
 
 function getSourceMapInfosImpl(
   isBlocking: boolean,
-  onDone: ($ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>) => void,
-  modules: $ReadOnlyArray<Module<>>,
+  onDone: (ReadonlyArray<ReturnType<typeof getSourceMapInfo>>) => void,
+  modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
 ): void {
   const sourceMapInfos = [];
@@ -76,7 +76,7 @@ function getSourceMapInfosImpl(
 }
 
 function sourceMapGenerator(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
 ): ReturnType<typeof fromRawMappings> {
   let sourceMapInfos;
@@ -97,11 +97,11 @@ function sourceMapGenerator(
 }
 
 async function sourceMapGeneratorNonBlocking(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
 ): ReturnType<typeof fromRawMappingsNonBlocking> {
   const sourceMapInfos = await new Promise<
-    $ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>,
+    ReadonlyArray<ReturnType<typeof getSourceMapInfo>>,
   >(resolve => {
     getSourceMapInfosImpl(false, resolve, modules, options);
   });

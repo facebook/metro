@@ -45,7 +45,7 @@ export type GraphRevision = {
   +date: Date,
   +graphId: GraphId,
   +graph: OutputGraph,
-  +prepend: $ReadOnlyArray<Module<>>,
+  +prepend: ReadonlyArray<Module<>>,
 };
 
 export type IncrementalBundlerOptions = Readonly<{
@@ -99,7 +99,7 @@ export default class IncrementalBundler {
   }
 
   async buildGraphForEntries(
-    entryFiles: $ReadOnlyArray<string>,
+    entryFiles: ReadonlyArray<string>,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
@@ -147,7 +147,7 @@ export default class IncrementalBundler {
   }
 
   async getDependencies(
-    entryFiles: $ReadOnlyArray<string>,
+    entryFiles: ReadonlyArray<string>,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions = {
@@ -199,7 +199,7 @@ export default class IncrementalBundler {
       shallow: false,
       lazy: false,
     },
-  ): Promise<{+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>}> {
+  ): Promise<{+graph: OutputGraph, +prepend: ReadonlyArray<Module<>>}> {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,
@@ -334,8 +334,8 @@ export default class IncrementalBundler {
   }
 
   async _getAbsoluteEntryFiles(
-    entryFiles: $ReadOnlyArray<string>,
-  ): Promise<$ReadOnlyArray<string>> {
+    entryFiles: ReadonlyArray<string>,
+  ): Promise<ReadonlyArray<string>> {
     const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
       path.resolve(
         this._config.server.unstable_serverRoot ?? this._config.projectRoot,

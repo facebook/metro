@@ -30,7 +30,7 @@ type Parameters<T> = Readonly<{
 
 function resolveDependencies(
   parentPath: string,
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
+  dependencies: ReadonlyArray<TransformResultDependency>,
   resolve: ResolveFn,
 ): {
   dependencies: Map<string, Dependency>,

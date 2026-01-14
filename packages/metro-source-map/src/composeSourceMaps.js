@@ -21,7 +21,7 @@ Consumer;
 
 // Originally based on https://github.com/jakobwesthoff/source-map-merger
 export default function composeSourceMaps(
-  maps: $ReadOnlyArray<MixedSourceMap>,
+  maps: ReadonlyArray<MixedSourceMap>,
 ): MixedSourceMap {
   // NOTE: require() here to break dependency cycle
   const SourceMetadataMapConsumer =
@@ -93,7 +93,7 @@ export default function composeSourceMaps(
 }
 
 function findOriginalPosition(
-  consumers: $ReadOnlyArray<IConsumer>,
+  consumers: ReadonlyArray<IConsumer>,
   generatedLine: Number1,
   generatedColumn: Number0,
 ): {

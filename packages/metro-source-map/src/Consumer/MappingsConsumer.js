@@ -41,8 +41,8 @@ export default class MappingsConsumer
   implements IConsumer
 {
   _sourceMap: BasicSourceMap;
-  _decodedMappings: ?$ReadOnlyArray<Mapping>;
-  _normalizedSources: ?$ReadOnlyArray<string>;
+  _decodedMappings: ?ReadonlyArray<Mapping>;
+  _normalizedSources: ?ReadonlyArray<string>;
 
   constructor(sourceMap: BasicSourceMap) {
     super(sourceMap);
@@ -175,7 +175,7 @@ export default class MappingsConsumer
     }
   }
 
-  _normalizeAndCacheSources(): $ReadOnlyArray<string> {
+  _normalizeAndCacheSources(): ReadonlyArray<string> {
     if (!this._normalizedSources) {
       this._normalizedSources = this._sourceMap.sources.map(source =>
         normalizeSourcePath(source, this._sourceMap),
@@ -184,7 +184,7 @@ export default class MappingsConsumer
     return this._normalizedSources;
   }
 
-  _decodeAndCacheMappings(): $ReadOnlyArray<Mapping> {
+  _decodeAndCacheMappings(): ReadonlyArray<Mapping> {
     if (!this._decodedMappings) {
       this._decodedMappings = [...this._decodeMappings()];
     }

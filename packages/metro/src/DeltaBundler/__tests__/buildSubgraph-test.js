@@ -34,7 +34,7 @@ class BadTransformError extends Error {}
 class DoesNotExistError extends Error {}
 
 describe('GraphTraversal', () => {
-  let transformDeps: Map<string, $ReadOnlyArray<TransformResultDependency>>;
+  let transformDeps: Map<string, ReadonlyArray<TransformResultDependency>>;
 
   let params;
 

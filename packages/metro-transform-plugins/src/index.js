@@ -30,7 +30,7 @@ type TransformPlugins = {
   inlinePlugin: InlinePlugin,
   inlineRequiresPlugin: InlineRequiresPlugin,
   normalizePseudoGlobals: NormalizePseudoGlobalsFn,
-  getTransformPluginCacheKeyFiles(): $ReadOnlyArray<string>,
+  getTransformPluginCacheKeyFiles(): ReadonlyArray<string>,
 };
 
 module.exports = {

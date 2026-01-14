@@ -44,7 +44,7 @@ const baseIgnoredInlineRequires = [
 ];
 
 async function calcTransformerOptions(
-  entryFiles: $ReadOnlyArray<string>,
+  entryFiles: ReadonlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
@@ -136,7 +136,7 @@ function removeInlineRequiresBlockListFromOptions(
 }
 
 export async function getTransformFn(
-  entryFiles: $ReadOnlyArray<string>,
+  entryFiles: ReadonlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
   config: ConfigT,

@@ -24,7 +24,7 @@ type Options<T: number | string> = Readonly<{
   getRunModuleStatement: (moduleId: T, globalPrefix: string) => string,
   globalPrefix: string,
   inlineSourceMap: ?boolean,
-  runBeforeMainModule: $ReadOnlyArray<string>,
+  runBeforeMainModule: ReadonlyArray<string>,
   runModule: boolean,
   shouldAddToIgnoreList: (Module<>) => boolean,
   sourceMapUrl: ?string,
@@ -35,9 +35,9 @@ type Options<T: number | string> = Readonly<{
 
 export default function getAppendScripts<T: number | string>(
   entryPoint: string,
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: Options<T>,
-): $ReadOnlyArray<Module<>> {
+): ReadonlyArray<Module<>> {
   const output: Array<Module<>> = [];
 
   if (options.runModule) {

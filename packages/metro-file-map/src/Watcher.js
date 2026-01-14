@@ -48,18 +48,18 @@ type WatcherOptions = {
   computeSha1: boolean,
   console: Console,
   enableSymlinks: boolean,
-  extensions: $ReadOnlyArray<string>,
+  extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   healthCheckFilePrefix: string,
   ignoreForCrawl: string => boolean,
   ignorePatternForWatch: RegExp,
   previousState: CrawlerOptions['previousState'],
   perfLogger: ?PerfLogger,
-  roots: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
   rootDir: string,
   useWatchman: boolean,
   watch: boolean,
-  watchmanDeferStates: $ReadOnlyArray<string>,
+  watchmanDeferStates: ReadonlyArray<string>,
 };
 
 let nextInstanceId = 0;
@@ -71,7 +71,7 @@ export type HealthCheckResult =
 
 export class Watcher extends EventEmitter {
   _options: WatcherOptions;
-  _backends: $ReadOnlyArray<WatcherBackend> = [];
+  _backends: ReadonlyArray<WatcherBackend> = [];
   _instanceId: number;
   _nextHealthCheckId: number = 0;
   _pendingHealthChecks: Map</* basename */ string, /* resolve */ () => void> =

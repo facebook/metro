@@ -17,7 +17,7 @@ import {loadConfig, resolveConfig} from 'metro-config';
 import {promisify} from 'util';
 
 type Args = Readonly<{
-  projectRoots?: $ReadOnlyArray<string>,
+  projectRoots?: ReadonlyArray<string>,
   host: string,
   port: number,
   maxWorkers?: number,

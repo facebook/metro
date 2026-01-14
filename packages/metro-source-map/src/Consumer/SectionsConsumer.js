@@ -33,7 +33,7 @@ export default class SectionsConsumer
   extends AbstractConsumer
   implements IConsumer
 {
-  _consumers: $ReadOnlyArray<[GeneratedOffset, IConsumer]>;
+  _consumers: ReadonlyArray<[GeneratedOffset, IConsumer]>;
 
   constructor(sourceMap: IndexMap) {
     super(sourceMap);

@@ -60,7 +60,7 @@ type DependencyData = Readonly<{
   // and subpath imports.
   isESMImport: boolean,
   isOptional?: boolean,
-  locs: $ReadOnlyArray<BabelSourceLocation>,
+  locs: ReadonlyArray<BabelSourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
 }>;
@@ -92,7 +92,7 @@ export type Options = Readonly<{
   asyncRequireModulePath: string,
   dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
-  inlineableCalls: $ReadOnlyArray<string>,
+  inlineableCalls: ReadonlyArray<string>,
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
   dependencyTransformer?: DependencyTransformer,
@@ -104,7 +104,7 @@ export type Options = Readonly<{
 export type CollectedDependencies = Readonly<{
   ast: BabelNodeFile,
   dependencyMapName: string,
-  dependencies: $ReadOnlyArray<Dependency>,
+  dependencies: ReadonlyArray<Dependency>,
 }>;
 
 export interface DependencyTransformer {

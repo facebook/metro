@@ -67,8 +67,8 @@ function filterObject(
 }
 
 export function createRamBundleGroups<T: ModuleTransportLike>(
-  ramGroups: $ReadOnlyArray<string>,
-  groupableModules: $ReadOnlyArray<T>,
+  ramGroups: ReadonlyArray<string>,
+  groupableModules: ReadonlyArray<T>,
   subtree: SubTree<T>,
 ): Map<number, Set<number>> {
   // build two maps that allow to lookup module data

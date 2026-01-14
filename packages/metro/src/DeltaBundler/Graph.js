@@ -169,7 +169,7 @@ export class Graph<T = MixedOutput> {
    * since the last traversal.
    */
   async traverseDependencies(
-    paths: $ReadOnlyArray<string>,
+    paths: ReadonlyArray<string>,
     options: Options<T>,
   ): Promise<Result<T>> {
     const internalOptions = getInternalOptions(options);

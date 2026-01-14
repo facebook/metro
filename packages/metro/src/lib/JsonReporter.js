@@ -14,7 +14,7 @@ import type {Writable} from 'stream';
 export type SerializedError = {
   message: string,
   stack: string,
-  errors?: $ReadOnlyArray<SerializedError>,
+  errors?: ReadonlyArray<SerializedError>,
   cause?: SerializedError,
   ...
 };

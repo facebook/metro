@@ -24,7 +24,7 @@ declare module 'fb-watchman' {
     ...WatchmanBaseResponse,
     subscribe: string,
     warning?: string,
-    'asserted-states'?: $ReadOnlyArray<string>,
+    'asserted-states'?: ReadonlyArray<string>,
   }>;
 
   declare type WatchmanWatchResponse = Readonly<{
@@ -37,13 +37,13 @@ declare module 'fb-watchman' {
 
   declare type WatchmanWatchListResponse = Readonly<{
     ...WatchmanBaseResponse,
-    roots: $ReadOnlyArray<string>,
+    roots: ReadonlyArray<string>,
   }>;
 
   declare type WatchmanSubscriptionEvent = {
     subscription: string,
     is_fresh_instance: boolean,
-    files: $ReadOnlyArray<WatchmanFileChange>,
+    files: ReadonlyArray<WatchmanFileChange>,
     'state-enter'?: ?string,
     'state-leave'?: ?string,
     clock?: Readonly<{
@@ -103,7 +103,7 @@ declare module 'fb-watchman' {
 
   declare type WatchmanQueryResponse = Readonly<{
     'saved-state-info'?: SavedStateInfo,
-    files: $ReadOnlyArray<WatchmanFile>,
+    files: ReadonlyArray<WatchmanFile>,
     clock: {
       scm: {'mergebase-with': string, mergebase: string},
       clock: string,
@@ -129,13 +129,13 @@ declare module 'fb-watchman' {
 
   declare type WatchmanSuffixExpression = [
     'suffix',
-    string | $ReadOnlyArray<string>,
+    string | ReadonlyArray<string>,
   ];
   declare type WatchmanNameExpression =
-    | ['name' | 'iname', string | $ReadOnlyArray<string>]
+    | ['name' | 'iname', string | ReadonlyArray<string>]
     | [
         'name' | 'iname',
-        string | $ReadOnlyArray<string>,
+        string | ReadonlyArray<string>,
         'basename' | 'wholename',
       ];
 
@@ -170,25 +170,25 @@ declare module 'fb-watchman' {
       }>;
 
   declare type WatchmanQuery = {
-    defer?: $ReadOnlyArray<string>,
+    defer?: ReadonlyArray<string>,
     expression?: WatchmanExpression,
-    fields: $ReadOnlyArray<string>,
-    glob?: $ReadOnlyArray<string>,
+    fields: ReadonlyArray<string>,
+    glob?: ReadonlyArray<string>,
     glob_includedotfiles?: boolean,
-    path?: $ReadOnlyArray<string>,
+    path?: ReadonlyArray<string>,
     // A repo-root-relative path to a subdirectory within which
     // the query will be constrained.  Returned file names in
     // WatchmanFile will be relative to this location.
     relative_root?: string,
     since?: WatchmanQuerySince,
-    suffix?: string | $ReadOnlyArray<string>,
+    suffix?: string | ReadonlyArray<string>,
   };
 
   declare class Client {
     capabilityCheck(
       config: Readonly<{
-        optional?: $ReadOnlyArray<string>,
-        required?: $ReadOnlyArray<string>,
+        optional?: ReadonlyArray<string>,
+        required?: ReadonlyArray<string>,
       }>,
       callback: (
         error: ?Error,

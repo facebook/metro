@@ -16,13 +16,13 @@ import traverse from '@babel/traverse';
 import nullthrows from 'nullthrows';
 
 export type Options = {
-  reservedNames: $ReadOnlyArray<string>,
+  reservedNames: ReadonlyArray<string>,
 };
 
 export default function normalizePseudoglobals(
   ast: BabelNode,
   options?: Options,
-): $ReadOnlyArray<string> {
+): ReadonlyArray<string> {
   const reservedNames = new Set<
     | void
     | string

@@ -196,7 +196,7 @@ function groupCode(
 }
 
 function buildModuleBuffers(
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: ReadonlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
 ): Array<{
@@ -217,7 +217,7 @@ function buildModuleBuffers(
 
 export function buildTableAndContents(
   startupCode: string,
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: ReadonlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
   encoding?: 'utf8' | 'utf16le' | 'ascii',
 ): Array<Buffer> {
@@ -242,7 +242,7 @@ export function buildTableAndContents(
 
 export function createModuleGroups(
   groups: Map<number, Set<number>>,
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: ReadonlyArray<ModuleTransportLike>,
 ): ModuleGroups {
   return {
     groups,

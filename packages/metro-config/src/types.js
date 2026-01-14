@@ -27,7 +27,7 @@ import type {IntermediateStackFrame} from 'metro/private/Server/symbolicate';
 
 export type ExtraTransformOptions = Readonly<{
   preloadedModules?: Readonly<{[path: string]: true, ...}> | false,
-  ramGroups?: $ReadOnlyArray<string>,
+  ramGroups?: ReadonlyArray<string>,
   transform?: Readonly<{
     experimentalImportSupport?: boolean,
     inlineRequires?:
@@ -36,9 +36,9 @@ export type ExtraTransformOptions = Readonly<{
           ...
         }>
       | boolean,
-    nonInlinedRequires?: $ReadOnlyArray<string>,
+    nonInlinedRequires?: ReadonlyArray<string>,
     unstable_memoizeInlineRequires?: boolean,
-    unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
+    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
   }>,
   ...
 }>;
@@ -53,7 +53,7 @@ export type GetTransformOptionsOpts = {
 };
 
 export type GetTransformOptions = (
-  entryPoints: $ReadOnlyArray<string>,
+  entryPoints: ReadonlyArray<string>,
   options: GetTransformOptionsOpts,
   getDependenciesOf: (absoluteFilePath: string) => Promise<Array<string>>,
 ) => Promise<Partial<ExtraTransformOptions>>;
@@ -65,10 +65,10 @@ type PerfAnnotations = Partial<{
   int: Readonly<{[key: string]: number}>,
   double: Readonly<{[key: string]: number}>,
   bool: Readonly<{[key: string]: boolean}>,
-  string_array: Readonly<{[key: string]: $ReadOnlyArray<string>}>,
-  int_array: Readonly<{[key: string]: $ReadOnlyArray<number>}>,
-  double_array: Readonly<{[key: string]: $ReadOnlyArray<number>}>,
-  bool_array: Readonly<{[key: string]: $ReadOnlyArray<boolean>}>,
+  string_array: Readonly<{[key: string]: ReadonlyArray<string>}>,
+  int_array: Readonly<{[key: string]: ReadonlyArray<number>}>,
+  double_array: Readonly<{[key: string]: ReadonlyArray<number>}>,
+  bool_array: Readonly<{[key: string]: ReadonlyArray<boolean>}>,
 }>;
 
 type PerfLoggerPointOptions = Readonly<{
@@ -100,8 +100,8 @@ export type PerfLoggerFactory = (
 ) => RootPerfLogger;
 
 type ResolverConfigT = {
-  assetExts: $ReadOnlyArray<string>,
-  assetResolutions: $ReadOnlyArray<string>,
+  assetExts: ReadonlyArray<string>,
+  assetResolutions: ReadonlyArray<string>,
   blacklistRE?: RegExp | Array<RegExp>,
   blockList: RegExp | Array<RegExp>,
   disableHierarchicalLookup: boolean,
@@ -110,26 +110,26 @@ type ResolverConfigT = {
   enableGlobalPackages: boolean,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
-  nodeModulesPaths: $ReadOnlyArray<string>,
-  platforms: $ReadOnlyArray<string>,
+  nodeModulesPaths: ReadonlyArray<string>,
+  platforms: ReadonlyArray<string>,
   resolveRequest: ?CustomResolver,
-  resolverMainFields: $ReadOnlyArray<string>,
-  sourceExts: $ReadOnlyArray<string>,
-  unstable_conditionNames: $ReadOnlyArray<string>,
+  resolverMainFields: ReadonlyArray<string>,
+  sourceExts: ReadonlyArray<string>,
+  unstable_conditionNames: ReadonlyArray<string>,
   unstable_conditionsByPlatform: Readonly<{
-    [platform: string]: $ReadOnlyArray<string>,
+    [platform: string]: ReadonlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
   unstable_incrementalResolution: boolean,
   useWatchman: boolean,
-  requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
+  requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
 };
 
 type SerializerConfigT = {
   createModuleIdFactory: () => (path: string) => number,
   customSerializer: ?(
     entryPoint: string,
-    preModules: $ReadOnlyArray<Module<>>,
+    preModules: ReadonlyArray<Module<>>,
     graph: ReadOnlyGraph<>,
     options: SerializerOptions,
   ) => Promise<string | {code: string, map: string}>,
@@ -138,12 +138,12 @@ type SerializerConfigT = {
     delta: DeltaResult<>,
   ) => unknown,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
+  getPolyfills: ({platform: ?string, ...}) => ReadonlyArray<string>,
   getRunModuleStatement: (
     moduleId: number | string,
     globalPrefix: string,
   ) => string,
-  polyfillModuleNames: $ReadOnlyArray<string>,
+  polyfillModuleNames: ReadonlyArray<string>,
   processModuleFilter: (modules: Module<>) => boolean,
   isThirdPartyModule: (module: Readonly<{path: string, ...}>) => boolean,
 };
@@ -169,10 +169,10 @@ type MetalConfigT = {
   transformerPath: string,
   reporter: Reporter,
   resetCache: boolean,
-  watchFolders: $ReadOnlyArray<string>,
+  watchFolders: ReadonlyArray<string>,
 };
 
-type CacheStoresConfigT = $ReadOnlyArray<CacheStore<TransformResult<>>>;
+type CacheStoresConfigT = ReadonlyArray<CacheStore<TransformResult<>>>;
 
 type ServerConfigT = {
   /** @deprecated */
@@ -200,7 +200,7 @@ type SymbolicatorConfigT = {
 };
 
 type WatcherConfigT = {
-  additionalExts: $ReadOnlyArray<string>,
+  additionalExts: ReadonlyArray<string>,
   healthCheck: Readonly<{
     enabled: boolean,
     interval: number,
@@ -213,7 +213,7 @@ type WatcherConfigT = {
   }>,
   unstable_lazySha1: boolean,
   watchman: Readonly<{
-    deferStates: $ReadOnlyArray<string>,
+    deferStates: ReadonlyArray<string>,
   }>,
 };
 

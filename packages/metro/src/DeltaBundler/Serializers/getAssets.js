@@ -18,7 +18,7 @@ import path from 'path';
 
 type Options = {
   +processModuleFilter: (module: Module<>) => boolean,
-  assetPlugins: $ReadOnlyArray<string>,
+  assetPlugins: ReadonlyArray<string>,
   platform: ?string,
   projectRoot: string,
   publicPath: string,
@@ -27,7 +27,7 @@ type Options = {
 export default async function getAssets(
   dependencies: ReadOnlyDependencies<>,
   options: Options,
-): Promise<$ReadOnlyArray<AssetData>> {
+): Promise<ReadonlyArray<AssetData>> {
   const promises = [];
   const {processModuleFilter} = options;
 

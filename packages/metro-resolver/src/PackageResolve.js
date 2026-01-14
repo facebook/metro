@@ -170,9 +170,9 @@ function matchSubpathFromMainFields(
    * package-relative subpath (beginning with '.') or a bare import specifier
    * which may replace a module in another package.
    */
-  subpath: string | $ReadOnlyArray<string>,
+  subpath: string | ReadonlyArray<string>,
   pkg: PackageJson,
-  mainFields: $ReadOnlyArray<string>,
+  mainFields: ReadonlyArray<string>,
 ): string | false | null {
   const fieldValues = mainFields
     // $FlowFixMe[invalid-computed-prop]

@@ -48,8 +48,8 @@ const CURRENT_FRAGMENT = '.' + path.sep;
 
 export class RootPathUtils {
   #rootDir: string;
-  #rootDirnames: $ReadOnlyArray<string>;
-  #rootParts: $ReadOnlyArray<string>;
+  #rootDirnames: ReadonlyArray<string>;
+  #rootParts: ReadonlyArray<string>;
   #rootDepth: number;
 
   constructor(rootDir: string) {
@@ -80,7 +80,7 @@ export class RootPathUtils {
     return this.#rootParts[this.#rootParts.length - 1 - n];
   }
 
-  getParts(): $ReadOnlyArray<string> {
+  getParts(): ReadonlyArray<string> {
     return this.#rootParts;
   }
 

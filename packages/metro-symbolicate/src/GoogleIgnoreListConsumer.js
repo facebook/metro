@@ -61,7 +61,7 @@ export default class GoogleIgnoreListConsumer {
    * This array can be used as the `x_google_ignoreList` field of a map whose
    * `sources` field is the array that was passed into this method.
    */
-  toArray(sources: $ReadOnlyArray<?string>): Array<number> {
+  toArray(sources: ReadonlyArray<?string>): Array<number> {
     const ignoredSourceSet = this._getIgnoredSourceSet();
     const encoded = [];
     for (const [sourceIndex, source] of sources.entries()) {

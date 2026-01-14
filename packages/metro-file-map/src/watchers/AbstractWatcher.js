@@ -26,7 +26,7 @@ export type Listeners = Readonly<{
 export class AbstractWatcher implements WatcherBackend {
   +root: string;
   +ignored: ?RegExp;
-  +globs: $ReadOnlyArray<string>;
+  +globs: ReadonlyArray<string>;
   +dot: boolean;
   +doIgnore: (path: string) => boolean;
 

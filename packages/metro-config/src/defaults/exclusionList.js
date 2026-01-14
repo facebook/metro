@@ -41,7 +41,7 @@ function escapeRegExp(pattern: RegExp | string) {
 }
 
 export default function exclusionList(
-  additionalExclusions?: $ReadOnlyArray<RegExp | string>,
+  additionalExclusions?: ReadonlyArray<RegExp | string>,
 ): RegExp {
   return new RegExp(
     '(' +

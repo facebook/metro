@@ -56,7 +56,7 @@ export default class DeltaBundler<T = MixedOutput> {
   }
 
   async getDependencies(
-    entryPoints: $ReadOnlyArray<string>,
+    entryPoints: ReadonlyArray<string>,
     options: Options<T>,
   ): Promise<ReadOnlyGraph<T>['dependencies']> {
     const deltaCalculator = new DeltaCalculator(
@@ -76,7 +76,7 @@ export default class DeltaBundler<T = MixedOutput> {
   // so that we don't leak graphs that are not reachable.
   // To get just the dependencies, use getDependencies which will not leak graphs.
   async buildGraph(
-    entryPoints: $ReadOnlyArray<string>,
+    entryPoints: ReadonlyArray<string>,
     options: Options<T>,
   ): Promise<Graph<T>> {
     const deltaCalculator = new DeltaCalculator(

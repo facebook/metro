@@ -33,7 +33,7 @@ function generateModules(
   sourceModules: Iterable<Module<>>,
   graph: ReadOnlyGraph<>,
   options: Options,
-): $ReadOnlyArray<HmrModule> {
+): ReadonlyArray<HmrModule> {
   const modules = [];
 
   for (const module of sourceModules) {
@@ -148,9 +148,9 @@ export default function hmrJSBundle(
   graph: ReadOnlyGraph<>,
   options: Options,
 ): {
-  +added: $ReadOnlyArray<HmrModule>,
-  +deleted: $ReadOnlyArray<number>,
-  +modified: $ReadOnlyArray<HmrModule>,
+  +added: ReadonlyArray<HmrModule>,
+  +deleted: ReadonlyArray<number>,
+  +modified: ReadonlyArray<HmrModule>,
 } {
   return {
     added: generateModules(delta.added.values(), graph, options),

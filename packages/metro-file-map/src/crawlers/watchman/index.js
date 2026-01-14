@@ -132,7 +132,7 @@ export default async function watchmanCrawl({
   };
 
   async function getWatchmanRoots(
-    roots: $ReadOnlyArray<Path>,
+    roots: ReadonlyArray<Path>,
   ): Promise<WatchmanRoots> {
     perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
     const watchmanRoots: WatchmanRoots = new Map();

@@ -19,7 +19,7 @@ import path from 'path';
 export async function transform(
   {filename, options, src}: BabelTransformerArgs,
   assetRegistryPath: string,
-  assetDataPlugins: $ReadOnlyArray<string>,
+  assetDataPlugins: ReadonlyArray<string>,
 ): Promise<{ast: File, ...}> {
   options = options || {
     platform: '',

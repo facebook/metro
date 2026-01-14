@@ -26,7 +26,7 @@ export function build(
 ): Promise<{
   code: string,
   map: string,
-  assets?: $ReadOnlyArray<AssetData>,
+  assets?: ReadonlyArray<AssetData>,
   ...
 }> {
   return packagerClient.build(

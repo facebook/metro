@@ -14,9 +14,9 @@ import type {HasteConflict} from '../../flow-types';
 import path from 'path';
 
 export class HasteConflictsError extends Error {
-  #conflicts: $ReadOnlyArray<HasteConflict>;
+  #conflicts: ReadonlyArray<HasteConflict>;
 
-  constructor(conflicts: $ReadOnlyArray<HasteConflict>) {
+  constructor(conflicts: ReadonlyArray<HasteConflict>) {
     super(
       `Found ${conflicts.length} Haste conflict(s). Haste module IDs must be globally unique in the codebase.`,
     );

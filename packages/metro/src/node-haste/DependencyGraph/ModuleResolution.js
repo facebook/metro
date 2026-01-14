@@ -66,18 +66,18 @@ type Options<TPackage> = Readonly<{
   fileSystemLookup: FileSystemLookup,
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
-  mainFields: $ReadOnlyArray<string>,
+  mainFields: ReadonlyArray<string>,
   packageCache: PackageishCache<TPackage>,
-  nodeModulesPaths: $ReadOnlyArray<string>,
+  nodeModulesPaths: ReadonlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
   reporter: Reporter,
   resolveAsset: ResolveAsset,
   resolveRequest: ?CustomResolver,
-  sourceExts: $ReadOnlyArray<string>,
-  unstable_conditionNames: $ReadOnlyArray<string>,
+  sourceExts: ReadonlyArray<string>,
+  unstable_conditionNames: ReadonlyArray<string>,
   unstable_conditionsByPlatform: Readonly<{
-    [platform: string]: $ReadOnlyArray<string>,
+    [platform: string]: ReadonlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
   unstable_incrementalResolution: boolean,
@@ -309,7 +309,7 @@ export class ModuleResolver<TPackage: Packageish> {
   }
 }
 
-function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
+function getArrayLowestItem(a: ReadonlyArray<string>): string | void {
   if (a.length === 0) {
     return undefined;
   }

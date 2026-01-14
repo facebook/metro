@@ -196,7 +196,7 @@ describe('processRequest', () => {
     const currentGraphs = new Set<ReadOnlyGraph<>>();
     buildGraph.mockImplementation(
       async (
-        entryPoints: $ReadOnlyArray<string>,
+        entryPoints: ReadonlyArray<string>,
         options: Options<>,
         resolverOptions: unknown,
         otherOptions: unknown,

@@ -48,7 +48,7 @@ export type BabelTransformerArgs = Readonly<{
 }>;
 
 export type BabelFileFunctionMapMetadata = Readonly<{
-  names: $ReadOnlyArray<string>,
+  names: ReadonlyArray<string>,
   mappings: string,
 }>;
 

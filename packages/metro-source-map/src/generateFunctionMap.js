@@ -98,7 +98,7 @@ function generateFunctionMap(
 function generateFunctionMappingsArray(
   ast: BabelNode,
   context?: Context,
-): $ReadOnlyArray<RangeMapping> {
+): ReadonlyArray<RangeMapping> {
   const mappings = [];
   forEachMapping(ast, context, mapping => {
     mappings.push(mapping);
@@ -416,7 +416,7 @@ function getNameFromId(id: BabelNode): ?string {
   return parts.join('.');
 }
 
-function getNamePartsFromId(id: BabelNode): $ReadOnlyArray<string> {
+function getNamePartsFromId(id: BabelNode): ReadonlyArray<string> {
   if (!id) {
     return [];
   }

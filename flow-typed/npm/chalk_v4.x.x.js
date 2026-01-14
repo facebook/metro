@@ -67,7 +67,7 @@ declare module 'chalk' {
     | 'strikethrough'
     | 'visible';
 
-  declare type TemplateStringsArray = $ReadOnlyArray<string>;
+  declare type TemplateStringsArray = ReadonlyArray<string>;
 
   declare type Level = Values<{
     None: 0,

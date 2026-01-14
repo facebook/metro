@@ -140,8 +140,8 @@ export default class Server {
   _platforms: Set<string>;
   _reporter: Reporter;
   _serverOptions: ServerOptions | void;
-  _allowedSuffixesForSourceRequests: $ReadOnlyArray<string>;
-  _sourceRequestRoutingMap: $ReadOnlyArray<
+  _allowedSuffixesForSourceRequests: ReadonlyArray<string>;
+  _sourceRequestRoutingMap: ReadonlyArray<
     [pathnamePrefix: string, normalizedRootDir: string],
   >;
 
@@ -210,7 +210,7 @@ export default class Server {
     graph,
   }: Readonly<{
     splitOptions: SplitBundleOptions,
-    prepend: $ReadOnlyArray<Module<>>,
+    prepend: ReadonlyArray<Module<>>,
     graph: ReadOnlyGraph<>,
   }>): Promise<{code: string, map: string}> {
     const {
@@ -299,7 +299,7 @@ export default class Server {
   ): Promise<{
     code: string,
     map: string,
-    assets?: $ReadOnlyArray<AssetData>,
+    assets?: ReadonlyArray<AssetData>,
     ...
   }> {
     const splitOptions = splitBundleOptions(bundleOptions);
@@ -403,7 +403,7 @@ export default class Server {
     });
   }
 
-  async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
+  async getAssets(options: BundleOptions): Promise<ReadonlyArray<AssetData>> {
     const {entryFile, onProgress, resolverOptions, transformOptions} =
       splitBundleOptions(options);
 
@@ -423,7 +423,7 @@ export default class Server {
   async _getAssetsFromDependencies(
     dependencies: ReadOnlyDependencies<>,
     platform: ?string,
-  ): Promise<$ReadOnlyArray<AssetData>> {
+  ): Promise<ReadonlyArray<AssetData>> {
     return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
@@ -1181,7 +1181,7 @@ export default class Server {
 
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
-  _getSortedModules(graph: ReadOnlyGraph<>): $ReadOnlyArray<Module<>> {
+  _getSortedModules(graph: ReadOnlyGraph<>): ReadonlyArray<Module<>> {
     const modules = [...graph.dependencies.values()];
     // Assign IDs to modules in a consistent order
     for (const module of modules) {
@@ -1284,7 +1284,7 @@ export default class Server {
         bundler: 'delta',
       };
     },
-    createEndEntry(context: ProcessEndContext<$ReadOnlyArray<AssetData>>) {
+    createEndEntry(context: ProcessEndContext<ReadonlyArray<AssetData>>) {
       return {
         bundler: 'delta',
       };
@@ -1319,7 +1319,7 @@ export default class Server {
   async _symbolicate(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const getCodeFrame = (
       urls: Set<string>,
-      symbolicatedStack: $ReadOnlyArray<StackFrameOutput>,
+      symbolicatedStack: ReadonlyArray<StackFrameOutput>,
     ) => {
       const allFramesCollapsed = symbolicatedStack.every(
         ({collapse}) => collapse,
@@ -1594,11 +1594,11 @@ export default class Server {
     return this._nextBundleBuildNumber++;
   }
 
-  getPlatforms(): $ReadOnlyArray<string> {
+  getPlatforms(): ReadonlyArray<string> {
     return this._config.resolver.platforms;
   }
 
-  getWatchFolders(): $ReadOnlyArray<string> {
+  getWatchFolders(): ReadonlyArray<string> {
     return this._config.watchFolders;
   }
 

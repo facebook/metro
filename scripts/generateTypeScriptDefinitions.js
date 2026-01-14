@@ -27,7 +27,7 @@ const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 const TYPES_DIR = 'types';
 const SRC_DIR = 'src';
 
-export const AUTO_GENERATED_PATTERNS: $ReadOnlyArray<string> = [
+export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = [
   'packages/metro-cache/**',
   'packages/metro-config/**',
   'packages/metro-core/**',
@@ -61,7 +61,7 @@ function isExistingTSDeclaration(filePath: string): boolean {
 }
 
 export async function generateTsDefsForJsGlobs(
-  globPattern: string | $ReadOnlyArray<string>,
+  globPattern: string | ReadonlyArray<string>,
   opts: Readonly<{
     verifyOnly: boolean,
   }> = {verifyOnly: false},

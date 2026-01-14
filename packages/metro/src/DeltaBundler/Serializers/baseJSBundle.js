@@ -22,7 +22,7 @@ import processModules from './helpers/processModules';
 
 export default function baseJSBundle(
   entryPoint: string,
-  preModules: $ReadOnlyArray<Module<>>,
+  preModules: ReadonlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: SerializerOptions,
 ): Bundle {

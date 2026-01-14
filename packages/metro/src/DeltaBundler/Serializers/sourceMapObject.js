@@ -19,7 +19,7 @@ import {
 } from './sourceMapGenerator';
 
 function sourceMapObject(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
 ): MixedSourceMap {
   const generator = sourceMapGenerator(modules, options);
@@ -29,7 +29,7 @@ function sourceMapObject(
 }
 
 async function sourceMapObjectNonBlocking(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
 ): Promise<MixedSourceMap> {
   const generator = await sourceMapGeneratorNonBlocking(modules, options);

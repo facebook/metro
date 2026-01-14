@@ -14,7 +14,7 @@ import type {Module} from '../../types';
 import {isJsModule, wrapModule} from './js';
 
 export default function processModules(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   {
     filter = () => true,
     createModuleId,
@@ -32,7 +32,7 @@ export default function processModules(
     serverRoot: string,
     sourceUrl: ?string,
   }>,
-): $ReadOnlyArray<[Module<>, string]> {
+): ReadonlyArray<[Module<>, string]> {
   return [...modules]
     .filter(isJsModule)
     .filter(filter)

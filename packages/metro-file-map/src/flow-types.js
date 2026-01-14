@@ -19,13 +19,13 @@ export type BuildParameters = Readonly<{
   computeDependencies: boolean,
   computeSha1: boolean,
   enableSymlinks: boolean,
-  extensions: $ReadOnlyArray<string>,
+  extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignorePattern: RegExp,
-  plugins: $ReadOnlyArray<FileMapPlugin<>>,
+  plugins: ReadonlyArray<FileMapPlugin<>>,
   retainAllFiles: boolean,
   rootDir: string,
-  roots: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor: ?string,
@@ -111,7 +111,7 @@ export type CrawlerOptions = {
   abortSignal: ?AbortSignal,
   computeSha1: boolean,
   console: Console,
-  extensions: $ReadOnlyArray<string>,
+  extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
@@ -121,7 +121,7 @@ export type CrawlerOptions = {
     fileSystem: FileSystem,
   }>,
   rootDir: string,
-  roots: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
   onStatus: (status: WatcherStatus) => void,
 };
 
@@ -203,7 +203,7 @@ export type V8Serializable =
   | number
   | boolean
   | null
-  | $ReadOnlyArray<V8Serializable>
+  | ReadonlyArray<V8Serializable>
   | ReadonlySet<V8Serializable>
   | ReadonlyMap<string, V8Serializable>
   | {[key: string]: V8Serializable};
@@ -494,7 +494,7 @@ export type WatcherBackendChangeEvent =
 
 export type WatcherBackendOptions = Readonly<{
   ignored: ?RegExp,
-  globs: $ReadOnlyArray<string>,
+  globs: ReadonlyArray<string>,
   dot: boolean,
   ...
 }>;
@@ -510,16 +510,16 @@ export type WorkerMessage = Readonly<{
   dependencyExtractor?: ?string,
   filePath: string,
   maybeReturnContent: boolean,
-  pluginsToRun: $ReadOnlyArray<number>,
+  pluginsToRun: ReadonlyArray<number>,
 }>;
 
 export type WorkerMetadata = Readonly<{
-  dependencies?: ?$ReadOnlyArray<string>,
+  dependencies?: ?ReadonlyArray<string>,
   sha1?: ?string,
   content?: ?Buffer,
-  pluginData?: $ReadOnlyArray<V8Serializable>,
+  pluginData?: ReadonlyArray<V8Serializable>,
 }>;
 
 export type WorkerSetupArgs = Readonly<{
-  plugins?: $ReadOnlyArray<FileMapPluginWorker['worker']>,
+  plugins?: ReadonlyArray<FileMapPluginWorker['worker']>,
 }>;

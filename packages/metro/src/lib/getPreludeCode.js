@@ -18,7 +18,7 @@ export default function getPreludeCode({
   +extraVars?: {[string]: unknown, ...},
   +isDev: boolean,
   +globalPrefix: string,
-  +requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
+  +requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
 }): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime

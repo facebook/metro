@@ -75,7 +75,7 @@ export type RunServerOptions = Readonly<{
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
-  unstable_extraMiddleware?: $ReadOnlyArray<HandleFunction>,
+  unstable_extraMiddleware?: ReadonlyArray<HandleFunction>,
   waitForBundler?: boolean,
   watch?: boolean,
   websocketEndpoints?: Readonly<{
@@ -88,7 +88,7 @@ export type RunServerResult = {
 };
 
 type BuildGraphOptions = {
-  entries: $ReadOnlyArray<string>,
+  entries: ReadonlyArray<string>,
   customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
   minify?: boolean,
@@ -116,7 +116,7 @@ export type RunBuildOptions = {
     ) => Promise<{
       code: string,
       map: string,
-      assets?: $ReadOnlyArray<AssetData>,
+      assets?: ReadonlyArray<AssetData>,
       ...
     }>,
     save: (
@@ -141,7 +141,7 @@ export type RunBuildOptions = {
 export type RunBuildResult = {
   code: string,
   map: string,
-  assets?: $ReadOnlyArray<AssetData>,
+  assets?: ReadonlyArray<AssetData>,
   ...
 };
 

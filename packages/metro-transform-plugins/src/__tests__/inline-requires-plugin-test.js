@@ -257,7 +257,7 @@ describe.each([true, false])('memoizeCalls=%s:', memoizeCalls => {
 
 describe('inline-requires', () => {
   const transform = (
-    source: $ReadOnlyArray<string>,
+    source: ReadonlyArray<string>,
     plugins?: Plugins = [[inlineRequiresPlugin, {}]],
   ) =>
     babel.transformSync(source.join('\n'), {
@@ -267,8 +267,8 @@ describe('inline-requires', () => {
     });
 
   const compare = (
-    input: $ReadOnlyArray<string>,
-    output: $ReadOnlyArray<string>,
+    input: ReadonlyArray<string>,
+    output: ReadonlyArray<string>,
     plugins?: Plugins = [[inlineRequiresPlugin, {}]],
   ) => {
     expect(transform(input, plugins).code).toBe(

@@ -21,7 +21,7 @@ export type SourceFileResolution = Readonly<{
   type: 'sourceFile',
   filePath: string,
 }>;
-export type AssetFileResolution = $ReadOnlyArray<string>;
+export type AssetFileResolution = ReadonlyArray<string>;
 export type AssetResolution = Readonly<{
   type: 'assetFiles',
   filePaths: AssetFileResolution,
@@ -47,7 +47,7 @@ export type FileCandidates =
   | {
       +type: 'sourceFile',
       filePathPrefix: string,
-      +candidateExts: $ReadOnlyArray<string>,
+      +candidateExts: ReadonlyArray<string>,
     };
 
 export type ExportsLikeMap = Readonly<{
@@ -61,13 +61,13 @@ export type ExportMapWithFallbacks = Readonly<{
 
 /** "exports" subpath value when in legacy Node.js <13.7 array format. */
 export type ExportValueWithFallback =
-  | $ReadOnlyArray<ExportsLikeMap | string>
+  | ReadonlyArray<ExportsLikeMap | string>
   // JSON can also contain exotic nested array structure, which will not be parsed
-  | $ReadOnlyArray<$ReadOnlyArray<unknown>>;
+  | ReadonlyArray<ReadonlyArray<unknown>>;
 
 export type ExportsField =
   | string
-  | $ReadOnlyArray<string>
+  | ReadonlyArray<string>
   | ExportValueWithFallback
   | ExportsLikeMap
   | ExportMapWithFallbacks;
@@ -126,7 +126,7 @@ export type ResolveAsset = (
   dirPath: string,
   assetName: string,
   extension: string,
-) => ?$ReadOnlyArray<string>;
+) => ?ReadonlyArray<string>;
 
 export type ResolutionContext = Readonly<{
   allowHaste: boolean,
@@ -188,7 +188,7 @@ export type ResolutionContext = Readonly<{
    * The ordered list of fields to read in `package.json` to resolve a main
    * entry point based on the "browser" field spec.
    */
-  mainFields: $ReadOnlyArray<string>,
+  mainFields: ReadonlyArray<string>,
 
   /**
    * Full path of the module that is requiring or importing the module to be
@@ -197,7 +197,7 @@ export type ResolutionContext = Readonly<{
    */
   originModulePath: string,
 
-  nodeModulesPaths: $ReadOnlyArray<string>,
+  nodeModulesPaths: ReadonlyArray<string>,
   preferNativePlatform: boolean,
   resolveAsset: ResolveAsset,
   redirectModulePath: (modulePath: string) => string | false,
@@ -216,10 +216,10 @@ export type ResolutionContext = Readonly<{
   resolveHastePackage: (name: string) => ?string,
 
   resolveRequest?: ?CustomResolver,
-  sourceExts: $ReadOnlyArray<string>,
-  unstable_conditionNames: $ReadOnlyArray<string>,
+  sourceExts: ReadonlyArray<string>,
+  unstable_conditionNames: ReadonlyArray<string>,
   unstable_conditionsByPlatform: Readonly<{
-    [platform: string]: $ReadOnlyArray<string>,
+    [platform: string]: ReadonlyArray<string>,
   }>,
   unstable_enablePackageExports: boolean,
   unstable_incrementalResolution: boolean,

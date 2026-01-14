@@ -1349,7 +1349,7 @@ describe('optional dependencies', () => {
     unstable_allowRequireContext: false,
   };
   const validateDependencies = (
-    dependencies: $ReadOnlyArray<Dependency>,
+    dependencies: ReadonlyArray<Dependency>,
     expectedCount: number,
   ) => {
     let hasAsync = false;
@@ -1652,7 +1652,7 @@ test('collects require.resolveWeak calls', () => {
 });
 
 function formatDependencyLocs(
-  dependencies: $ReadOnlyArray<Dependency>,
+  dependencies: ReadonlyArray<Dependency>,
   code: any,
 ) {
   return (

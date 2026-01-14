@@ -216,9 +216,9 @@ const Actions = {
 
 function deferred(
   value: Readonly<{
-    dependencies: $ReadOnlyArray<TransformResultDependency>,
+    dependencies: ReadonlyArray<TransformResultDependency>,
     getSource: () => Buffer,
-    output: $ReadOnlyArray<MixedOutput>,
+    output: ReadonlyArray<MixedOutput>,
     unstable_transformResultKey?: ?string,
   }>,
 ) {
@@ -303,7 +303,7 @@ function computeInverseDependencies(
 
 class TestGraph extends Graph<> {
   async traverseDependencies(
-    paths: $ReadOnlyArray<string>,
+    paths: ReadonlyArray<string>,
     options: Options<>,
   ): Promise<Result<MixedOutput>> {
     // Get a snapshot of the graph before the traversal.

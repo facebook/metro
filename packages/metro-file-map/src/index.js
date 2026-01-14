@@ -75,13 +75,13 @@ export type InputOptions = Readonly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
-  extensions: $ReadOnlyArray<string>,
+  extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
-  plugins?: $ReadOnlyArray<AnyFileMapPlugin>,
+  plugins?: ReadonlyArray<AnyFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
-  roots: $ReadOnlyArray<string>,
+  roots: ReadonlyArray<string>,
 
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor?: ?string,
@@ -95,7 +95,7 @@ export type InputOptions = Readonly<{
   resetCache?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
-  watchmanDeferStates?: $ReadOnlyArray<string>,
+  watchmanDeferStates?: ReadonlyArray<string>,
 }>;
 
 type HealthCheckOptions = Readonly<{
@@ -112,7 +112,7 @@ type InternalOptions = Readonly<{
   resetCache: ?boolean,
   useWatchman: boolean,
   watch: boolean,
-  watchmanDeferStates: $ReadOnlyArray<string>,
+  watchmanDeferStates: ReadonlyArray<string>,
 }>;
 
 // $FlowFixMe[unclear-type] Plugin types cannot be known statically
@@ -249,7 +249,7 @@ export default class FileMap extends EventEmitter {
   _healthCheckInterval: ?IntervalID;
   _startupPerfLogger: ?PerfLogger;
 
-  #plugins: $ReadOnlyArray<IndexedPlugin>;
+  #plugins: ReadonlyArray<IndexedPlugin>;
 
   static create(options: InputOptions): FileMap {
     return new FileMap(options);
@@ -572,7 +572,7 @@ export default class FileMap extends EventEmitter {
 
   async _applyFileDelta(
     fileSystem: MutableFileSystem,
-    plugins: $ReadOnlyArray<IndexedPlugin>,
+    plugins: ReadonlyArray<IndexedPlugin>,
     delta: Readonly<{
       changedFiles: FileData,
       removedFiles: ReadonlySet<CanonicalPath>,
@@ -703,7 +703,7 @@ export default class FileMap extends EventEmitter {
   async _takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<IndexedPlugin>,
+    plugins: ReadonlyArray<IndexedPlugin>,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
@@ -748,7 +748,7 @@ export default class FileMap extends EventEmitter {
   async _watch(
     fileSystem: MutableFileSystem,
     clocks: WatchmanClocks,
-    plugins: $ReadOnlyArray<IndexedPlugin>,
+    plugins: ReadonlyArray<IndexedPlugin>,
   ): Promise<void> {
     this._startupPerfLogger?.point('watch_start');
     if (!this._options.watch) {

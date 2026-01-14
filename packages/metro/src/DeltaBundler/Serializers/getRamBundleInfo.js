@@ -31,18 +31,18 @@ type Options = Readonly<{
 
 export type RamBundleInfo = {
   getDependencies: string => Set<string>,
-  startupModules: $ReadOnlyArray<ModuleTransportLike>,
-  lazyModules: $ReadOnlyArray<ModuleTransportLike>,
+  startupModules: ReadonlyArray<ModuleTransportLike>,
+  lazyModules: ReadonlyArray<ModuleTransportLike>,
   groups: Map<number, Set<number>>,
 };
 
 export default async function getRamBundleInfo(
   entryPoint: string,
-  pre: $ReadOnlyArray<Module<>>,
+  pre: ReadonlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
-  let modules: $ReadOnlyArray<Module<>> = [
+  let modules: ReadonlyArray<Module<>> = [
     ...pre,
     ...graph.dependencies.values(),
   ];
@@ -144,7 +144,7 @@ async function _getRamOptions(
 ): Promise<
   Readonly<{
     preloadedModules: Readonly<{[string]: true, ...}>,
-    ramGroups: $ReadOnlyArray<string>,
+    ramGroups: ReadonlyArray<string>,
   }>,
 > {
   if (getTransformOptions == null) {

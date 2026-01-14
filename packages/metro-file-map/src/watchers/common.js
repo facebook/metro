@@ -29,10 +29,10 @@ export const TOUCH_EVENT = 'touch';
 export const ALL_EVENT = 'all';
 
 export type WatcherOptions = Readonly<{
-  globs: $ReadOnlyArray<string>,
+  globs: ReadonlyArray<string>,
   dot: boolean,
   ignored: ?RegExp,
-  watchmanDeferStates: $ReadOnlyArray<string>,
+  watchmanDeferStates: ReadonlyArray<string>,
   watchman?: unknown,
   watchmanPath?: string,
 }>;
@@ -42,7 +42,7 @@ export type WatcherOptions = Readonly<{
  */
 export function includedByGlob(
   type: ?('f' | 'l' | 'd'),
-  globs: $ReadOnlyArray<string>,
+  globs: ReadonlyArray<string>,
   dot: boolean,
   relativePath: string,
 ): boolean {

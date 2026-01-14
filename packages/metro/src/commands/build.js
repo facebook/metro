@@ -34,7 +34,7 @@ type Args = Readonly<{
   out: string,
   outputType?: string,
   platform?: string,
-  projectRoots?: $ReadOnlyArray<string>,
+  projectRoots?: ReadonlyArray<string>,
   resetCache?: boolean,
   sourceMap?: boolean,
   sourceMapUrl?: string,

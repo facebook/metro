@@ -185,7 +185,7 @@ function mergeConfigObjects<T: InputConfigT>(
 
 async function mergeConfigAsync<T: InputConfigT>(
   baseConfig: Promise<T>,
-  ...reversedConfigs: $ReadOnlyArray<
+  ...reversedConfigs: ReadonlyArray<
     InputConfigT | (T => InputConfigT) | (T => Promise<InputConfigT>),
   >
 ): Promise<T> {
@@ -211,7 +211,7 @@ async function mergeConfigAsync<T: InputConfigT>(
  */
 function mergeConfig<
   T: InputConfigT,
-  R: $ReadOnlyArray<
+  R: ReadonlyArray<
     | InputConfigT
     | ((baseConfig: T) => InputConfigT)
     | ((baseConfig: T) => Promise<InputConfigT>),
@@ -219,7 +219,7 @@ function mergeConfig<
 >(
   base: T | (() => T),
   ...configs: R
-): R extends $ReadOnlyArray<InputConfigT | ((baseConfig: T) => InputConfigT)>
+): R extends ReadonlyArray<InputConfigT | ((baseConfig: T) => InputConfigT)>
   ? T
   : Promise<T> {
   let currentConfig: T = typeof base === 'function' ? base() : base;

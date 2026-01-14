@@ -106,7 +106,7 @@ function writeModuleFile(
 }
 
 function writeModules(
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: ReadonlyArray<ModuleTransportLike>,
   modulesDir: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
 ): Promise<Array<unknown>> {

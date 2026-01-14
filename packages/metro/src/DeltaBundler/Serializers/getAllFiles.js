@@ -20,10 +20,10 @@ type Options = {
 };
 
 export default async function getAllFiles(
-  pre: $ReadOnlyArray<Module<>>,
+  pre: ReadonlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: Options,
-): Promise<$ReadOnlyArray<string>> {
+): Promise<ReadonlyArray<string>> {
   const modules = graph.dependencies;
   const {processModuleFilter} = options;
 

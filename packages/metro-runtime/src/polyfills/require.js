@@ -222,7 +222,7 @@ function metroRequire(
 
 // We print require cycles unless they match a pattern in the
 // `requireCycleIgnorePatterns` configuration.
-function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
+function shouldPrintRequireCycle(modules: ReadonlyArray<?string>): boolean {
   const regExps =
     global[__METRO_GLOBAL_PREFIX__ + '__requireCycleIgnorePatterns'];
   if (!Array.isArray(regExps)) {
@@ -387,7 +387,7 @@ const definingSegmentByModuleID: Map<ModuleID, number> = new Map();
 function registerSegment(
   segmentId: number,
   moduleDefiner: ModuleDefiner,
-  moduleIds: ?$ReadOnlyArray<ModuleID>,
+  moduleIds: ?ReadonlyArray<ModuleID>,
 ): void {
   moduleDefinersBySegmentID[segmentId] = moduleDefiner;
   if (__DEV__) {

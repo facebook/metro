@@ -106,7 +106,7 @@ function wrapJson(
 
 function functionFromProgram(
   program: Program,
-  parameters: $ReadOnlyArray<string>,
+  parameters: ReadonlyArray<string>,
 ): FunctionExpression {
   return t.functionExpression(
     undefined,
@@ -123,7 +123,7 @@ function buildParameters(
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
-): $ReadOnlyArray<string> {
+): ReadonlyArray<string> {
   return [
     'global',
     'require',

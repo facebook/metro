@@ -66,7 +66,7 @@ export type MinifierOptions = {
   code: string,
   map: ?BasicSourceMap,
   filename: string,
-  reserved: $ReadOnlyArray<string>,
+  reserved: ReadonlyArray<string>,
   config: MinifierConfig,
   ...
 };
@@ -84,7 +84,7 @@ export type Minifier = MinifierOptions =>
 export type Type = 'script' | 'module' | 'asset';
 
 export type JsTransformerConfig = Readonly<{
-  assetPlugins: $ReadOnlyArray<string>,
+  assetPlugins: ReadonlyArray<string>,
   assetRegistryPath: string,
   asyncRequireModulePath: string,
   babelTransformerPath: string,
@@ -107,7 +107,7 @@ export type JsTransformerConfig = Readonly<{
   /** With inlineRequires, enable a module-scope memo var and inline as (v || v=require('foo')) */
   unstable_memoizeInlineRequires?: boolean,
   /** With inlineRequires, do not memoize these module specifiers */
-  unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
+  unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean,
 }>;
@@ -121,11 +121,11 @@ export type JsTransformOptions = Readonly<{
   inlinePlatform: boolean,
   inlineRequires: boolean,
   minify: boolean,
-  nonInlinedRequires?: $ReadOnlyArray<string>,
+  nonInlinedRequires?: ReadonlyArray<string>,
   platform: ?string,
   type: Type,
   unstable_memoizeInlineRequires?: boolean,
-  unstable_nonMemoizedInlineRequires?: $ReadOnlyArray<string>,
+  unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
   unstable_staticHermesOptimizedRequire?: boolean,
   unstable_transformProfile: TransformProfile,
 }>;
@@ -175,8 +175,8 @@ export type JsOutput = Readonly<{
 }>;
 
 type TransformResponse = Readonly<{
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<JsOutput>,
+  dependencies: ReadonlyArray<TransformResultDependency>,
+  output: ReadonlyArray<JsOutput>,
 }>;
 
 function getDynamicDepsBehavior(
@@ -204,7 +204,7 @@ const minifyCode = async (
   code: string,
   source: string,
   map: Array<MetroSourceMapSegmentTuple>,
-  reserved?: $ReadOnlyArray<string> = [],
+  reserved?: ReadonlyArray<string> = [],
 ): Promise<{
   code: string,
   map: Array<MetroSourceMapSegmentTuple>,
@@ -743,7 +743,7 @@ export const getCacheKey = (config: JsTransformerConfig): string => {
 
 function countLinesAndTerminateMap(
   code: string,
-  map: $ReadOnlyArray<MetroSourceMapSegmentTuple>,
+  map: ReadonlyArray<MetroSourceMapSegmentTuple>,
 ): {
   lineCount: number,
   map: Array<MetroSourceMapSegmentTuple>,

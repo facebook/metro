@@ -131,13 +131,13 @@ declare function withLocation<TNode: BabelNode>(
 
 // eslint-disable-next-line no-redeclare
 declare function withLocation<TNode: BabelNode>(
-  node: $ReadOnlyArray<TNode>,
+  node: ReadonlyArray<TNode>,
   loc: ?BabelSourceLocation,
 ): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
 function withLocation(
-  node: BabelNode | $ReadOnlyArray<BabelNode>,
+  node: BabelNode | ReadonlyArray<BabelNode>,
   loc: ?BabelNodeSourceLocation,
 ): Array<BabelNode> | BabelNode {
   if (Array.isArray(node)) {

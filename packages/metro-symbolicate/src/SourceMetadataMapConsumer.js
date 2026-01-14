@@ -62,7 +62,7 @@ export default class SourceMetadataMapConsumer {
   }
 
   _sourceMap: MixedSourceMap;
-  _decodedFunctionMapCache: Map<string, ?$ReadOnlyArray<FunctionMapping>>;
+  _decodedFunctionMapCache: Map<string, ?ReadonlyArray<FunctionMapping>>;
   _normalizeSource: SourceNameNormalizer;
   _metadataBySource: ?MetadataMap;
 
@@ -98,7 +98,7 @@ export default class SourceMetadataMapConsumer {
    * This array can be used as the `x_facebook_sources` field of a map whose
    * `sources` field is the array that was passed into this method.
    */
-  toArray(sources: $ReadOnlyArray<string>): FBSourcesArray {
+  toArray(sources: ReadonlyArray<string>): FBSourcesArray {
     const metadataBySource = this._getMetadataBySource();
     const encoded = [];
     for (const source of sources) {
@@ -124,7 +124,7 @@ export default class SourceMetadataMapConsumer {
    * Decodes the function name mappings for the given source if needed, and
    * retrieves a sorted, searchable array of mappings.
    */
-  _getFunctionMappings(source: string): ?$ReadOnlyArray<FunctionMapping> {
+  _getFunctionMappings(source: string): ?ReadonlyArray<FunctionMapping> {
     if (this._decodedFunctionMapCache.has(source)) {
       return this._decodedFunctionMapCache.get(source);
     }
@@ -180,7 +180,7 @@ export default class SourceMetadataMapConsumer {
 
 function decodeFunctionMap(
   functionMap: ?FBSourceFunctionMap,
-): $ReadOnlyArray<FunctionMapping> {
+): ReadonlyArray<FunctionMapping> {
   if (!functionMap) {
     return [];
   }
@@ -201,7 +201,7 @@ function decodeFunctionMap(
 }
 
 function findEnclosingMapping(
-  mappings: $ReadOnlyArray<FunctionMapping>,
+  mappings: ReadonlyArray<FunctionMapping>,
   target: Position,
 ): ?FunctionMapping {
   let first = 0;

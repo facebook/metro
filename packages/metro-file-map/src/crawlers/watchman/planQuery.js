@@ -23,8 +23,8 @@ export function planQuery({
   includeSymlinks,
 }: Readonly<{
   since: ?WatchmanQuerySince,
-  directoryFilters: $ReadOnlyArray<string>,
-  extensions: $ReadOnlyArray<string>,
+  directoryFilters: ReadonlyArray<string>,
+  extensions: ReadonlyArray<string>,
   includeSha1: boolean,
   includeSymlinks: boolean,
 }>): {

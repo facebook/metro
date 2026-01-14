@@ -52,7 +52,7 @@ export type TransformResultDependency = Readonly<{
      */
     isOptional?: boolean,
 
-    locs: $ReadOnlyArray<BabelSourceLocation>,
+    locs: ReadonlyArray<BabelSourceLocation>,
 
     /** Context for requiring a collection of modules. */
     contextParams?: RequireContextParams,
@@ -73,7 +73,7 @@ export type Dependency =
 export type Module<T = MixedOutput> = Readonly<{
   dependencies: Map<string, Dependency>,
   inverseDependencies: CountingSet<string>,
-  output: $ReadOnlyArray<T>,
+  output: ReadonlyArray<T>,
   path: string,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
@@ -82,7 +82,7 @@ export type Module<T = MixedOutput> = Readonly<{
 export type ModuleData<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyMap<string, Dependency>,
   resolvedContexts: ReadonlyMap<string, RequireContext>,
-  output: $ReadOnlyArray<T>,
+  output: ReadonlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
 }>;
@@ -114,8 +114,8 @@ export interface ReadOnlyGraph<T = MixedOutput> {
 export type {Graph};
 
 export type TransformResult<T = MixedOutput> = Readonly<{
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<T>,
+  dependencies: ReadonlyArray<TransformResultDependency>,
+  output: ReadonlyArray<T>,
   unstable_transformResultKey?: ?string,
 }>;
 
@@ -179,7 +179,7 @@ export type SerializerOptions = Readonly<{
   modulesOnly: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   projectRoot: string,
-  runBeforeMainModule: $ReadOnlyArray<string>,
+  runBeforeMainModule: ReadonlyArray<string>,
   runModule: boolean,
   serverRoot: string,
   shouldAddToIgnoreList: (Module<>) => boolean,

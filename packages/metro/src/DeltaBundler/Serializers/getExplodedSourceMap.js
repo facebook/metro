@@ -17,7 +17,7 @@ import type {
 
 import {getJsOutput, isJsModule} from './helpers/js';
 
-export type ExplodedSourceMap = $ReadOnlyArray<{
+export type ExplodedSourceMap = ReadonlyArray<{
   +map: Array<MetroSourceMapSegmentTuple>,
   +firstLine1Based: number,
   +functionMap: ?FBSourceFunctionMap,
@@ -25,7 +25,7 @@ export type ExplodedSourceMap = $ReadOnlyArray<{
 }>;
 
 export function getExplodedSourceMap(
-  modules: $ReadOnlyArray<Module<>>,
+  modules: ReadonlyArray<Module<>>,
   options: {
     +processModuleFilter: (module: Module<>) => boolean,
   },

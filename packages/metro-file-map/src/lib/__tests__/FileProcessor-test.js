@@ -36,7 +36,7 @@ const defaultOptions = {
   dependencyExtractor: null,
   maxWorkers: 5,
   perfLogger: null,
-  pluginWorkers: [] as $ReadOnlyArray<FileMapPluginWorker>,
+  pluginWorkers: [] as ReadonlyArray<FileMapPluginWorker>,
   rootDir: process.platform === 'win32' ? 'C:\\root' : '/root',
 };
 

@@ -26,7 +26,7 @@ declare module 'jest-worker' {
     | typeof PARENT_MESSAGE_SETUP_ERROR;
 
   declare export type WorkerPoolOptions = Readonly<{
-    setupArgs: $ReadOnlyArray<unknown>,
+    setupArgs: ReadonlyArray<unknown>,
     forkOptions: child_process$forkOpts,
     maxRetries: number,
     numWorkers: number,
@@ -133,7 +133,7 @@ declare module 'jest-worker' {
   declare export type OnStart = (worker: WorkerInterface) => void;
   declare export type OnEnd = (err: Error | null, result: unknown) => void;
   declare export type OnCustomMessage = (
-    message: $ReadOnlyArray<unknown> | unknown,
+    message: ReadonlyArray<unknown> | unknown,
   ) => void;
 
   declare export interface WorkerPoolInterface {
@@ -157,7 +157,7 @@ declare module 'jest-worker' {
   declare export type WorkerOptions = Readonly<{
     forkOptions: child_process$forkOpts,
     resourceLimits: ResourceLimits,
-    setupArgs: $ReadOnlyArray<unknown>,
+    setupArgs: ReadonlyArray<unknown>,
     maxRetries: number,
     workerId: number,
     workerData?: unknown,
@@ -188,7 +188,7 @@ declare module 'jest-worker' {
     on?: {
       'state-change':
         | OnStateChangeHandler
-        | $ReadOnlyArray<OnStateChangeHandler>,
+        | ReadonlyArray<OnStateChangeHandler>,
     },
   }>;
 
@@ -237,13 +237,13 @@ declare module 'jest-worker' {
     dequeue(workerId: number): QueueChildMessage | null;
   }
 
-  declare export type FarmOptions<TSetupArgs: $ReadOnlyArray<unknown>> =
+  declare export type FarmOptions<TSetupArgs: ReadonlyArray<unknown>> =
     Readonly<{
       computeWorkerKey?: (
         method: string,
-        ...args: $ReadOnlyArray<unknown>
+        ...args: ReadonlyArray<unknown>
       ) => string | null,
-      exposedMethods?: $ReadOnlyArray<string>,
+      exposedMethods?: ReadonlyArray<string>,
       forkOptions?: child_process$forkOpts,
       setupArgs?: TSetupArgs,
       maxRetries?: number,
@@ -273,7 +273,7 @@ declare module 'jest-worker' {
     TExposed: Readonly<{
       [string]: (...Array<$FlowFixMe>) => Promise<$FlowFixMe>,
     }> = {},
-    TSetupArgs: $ReadOnlyArray<unknown> = $ReadOnlyArray<unknown>,
+    TSetupArgs: ReadonlyArray<unknown> = ReadonlyArray<unknown>,
   > {
     constructor(
       workerPath: string,

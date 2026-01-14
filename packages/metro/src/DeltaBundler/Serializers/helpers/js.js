@@ -119,7 +119,7 @@ export function getModuleParams(
 
 export function getJsOutput(
   module: Readonly<{
-    output: $ReadOnlyArray<MixedOutput>,
+    output: ReadonlyArray<MixedOutput>,
     path?: string,
     ...
   }>,

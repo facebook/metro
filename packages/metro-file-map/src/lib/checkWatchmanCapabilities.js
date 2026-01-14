@@ -12,11 +12,11 @@ import {execFile} from 'child_process';
 import {promisify} from 'util';
 
 export default async function checkWatchmanCapabilities(
-  requiredCapabilities: $ReadOnlyArray<string>,
+  requiredCapabilities: ReadonlyArray<string>,
 ): Promise<{version: string}> {
   const execFilePromise: (
     cmd: string,
-    args: $ReadOnlyArray<string>,
+    args: ReadonlyArray<string>,
   ) => Promise<{stdout: string}> = promisify(execFile);
 
   let rawResponse;

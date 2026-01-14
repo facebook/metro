@@ -53,7 +53,7 @@ export default class NativeWatcher extends AbstractWatcher {
     dir: string,
     opts: Readonly<{
       ignored: ?RegExp,
-      globs: $ReadOnlyArray<string>,
+      globs: ReadonlyArray<string>,
       dot: boolean,
       ...
     }>,

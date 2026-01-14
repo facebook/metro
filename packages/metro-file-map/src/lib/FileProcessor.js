@@ -61,7 +61,7 @@ export class FileProcessor {
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
-  #pluginWorkers: $ReadOnlyArray<FileMapPluginWorker>;
+  #pluginWorkers: ReadonlyArray<FileMapPluginWorker>;
   #inBandWorker: Worker;
   #rootPathUtils: RootPathUtils;
 
@@ -70,7 +70,7 @@ export class FileProcessor {
       dependencyExtractor: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
-      pluginWorkers: ?$ReadOnlyArray<FileMapPluginWorker>,
+      pluginWorkers: ?ReadonlyArray<FileMapPluginWorker>,
       perfLogger: ?PerfLogger,
       rootDir: string,
     }>,
@@ -87,7 +87,7 @@ export class FileProcessor {
   }
 
   async processBatch(
-    files: $ReadOnlyArray<[string /*relativePath*/, FileMetadata]>,
+    files: ReadonlyArray<[string /*relativePath*/, FileMetadata]>,
     req: ProcessFileRequest,
   ): Promise<{
     errors: Array<{
@@ -268,7 +268,7 @@ export class FileProcessor {
 
 function processWorkerReply(
   metadata: WorkerMetadata,
-  pluginsRun: $ReadOnlyArray<number>,
+  pluginsRun: ReadonlyArray<number>,
   fileMetadata: FileMetadata,
 ) {
   fileMetadata[H.VISITED] = 1;

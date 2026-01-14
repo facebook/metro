@@ -57,11 +57,11 @@ function createFunctionNameGetter(
 }
 
 export default async function symbolicate(
-  stack: $ReadOnlyArray<StackFrameInput>,
+  stack: ReadonlyArray<StackFrameInput>,
   maps: Iterable<[string, ExplodedSourceMap]>,
   config: ConfigT,
   extraData: unknown,
-): Promise<$ReadOnlyArray<StackFrameOutput>> {
+): Promise<ReadonlyArray<StackFrameOutput>> {
   const mapsByUrl = new Map<?string, ExplodedSourceMap>();
   for (const [url, map] of maps) {
     mapsByUrl.set(url, map);

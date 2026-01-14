@@ -10,12 +10,12 @@
  */
 
 export default class FailedToResolveNameError extends Error {
-  dirPaths: $ReadOnlyArray<string>;
-  extraPaths: $ReadOnlyArray<string>;
+  dirPaths: ReadonlyArray<string>;
+  extraPaths: ReadonlyArray<string>;
 
   constructor(
-    dirPaths: $ReadOnlyArray<string>,
-    extraPaths: $ReadOnlyArray<string>,
+    dirPaths: ReadonlyArray<string>,
+    extraPaths: ReadonlyArray<string>,
   ) {
     const displayDirPaths = dirPaths.concat(extraPaths);
     const hint = displayDirPaths.length ? ' or in these directories:' : '';

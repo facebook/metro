@@ -404,7 +404,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
 
     traverseDependencies.mockImplementation(async function <T>(
       this: GraphType<T>,
-      paths: $ReadOnlyArray<string>,
+      paths: ReadonlyArray<string>,
       options: Options<T>,
     ): Promise<Result<T>> {
       this.dependencies.set(p('/qux'), quxModule);
