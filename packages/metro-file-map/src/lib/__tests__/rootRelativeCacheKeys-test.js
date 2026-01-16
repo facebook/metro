@@ -70,7 +70,7 @@ test('returns a distinct cache key for any change', () => {
     ...simpleParameters
   } = buildParameters;
 
-  const varyDefault = <T: $Keys<typeof simpleParameters>>(
+  const varyDefault = <T: keyof typeof simpleParameters>(
     key: T,
     newVal: BuildParameters[T],
   ): BuildParameters => {

@@ -249,7 +249,7 @@ export type HType = {
   DEPENDENCY_DELIM: '\0',
 };
 
-export type HTypeValue = $Values<HType>;
+export type HTypeValue = Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
