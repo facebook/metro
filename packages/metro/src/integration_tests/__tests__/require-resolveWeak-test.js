@@ -56,7 +56,7 @@ test('calling both import() and resolveWeak() with the same module', async () =>
   });
 });
 
-async function buildTest(entry, {dev = true}: $ReadOnly<{dev: boolean}> = {}) {
+async function buildTest(entry, {dev = true}: Readonly<{dev: boolean}> = {}) {
   const config = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
   });
@@ -70,7 +70,7 @@ async function buildTest(entry, {dev = true}: $ReadOnly<{dev: boolean}> = {}) {
   return result;
 }
 
-async function execTest(entry, {dev = true}: $ReadOnly<{dev: boolean}> = {}) {
+async function execTest(entry, {dev = true}: Readonly<{dev: boolean}> = {}) {
   const result = await buildTest(entry, {dev});
   return execBundle(result.code);
 }

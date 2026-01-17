@@ -31,10 +31,10 @@ type _Options = {
               debug?: boolean,
               keep_quoted?: boolean,
               regex?: RegExp,
-              reserved?: $ReadOnlyArray<string>,
+              reserved?: ReadonlyArray<string>,
               ...
             },
-        reserved?: $ReadOnlyArray<string>,
+        reserved?: ReadonlyArray<string>,
         safari10?: boolean,
         toplevel?: boolean,
         ...

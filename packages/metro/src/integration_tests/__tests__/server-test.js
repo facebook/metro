@@ -30,7 +30,7 @@ describe('Metro development server serves bundles via HTTP', () => {
   const bundlesDownloaded = new Set();
   let serverClosedPromise;
 
-  async function downloadAndExec(pathname: string, context = {}): mixed {
+  async function downloadAndExec(pathname: string, context = {}): unknown {
     const response = await fetchAndClose(
       'http://localhost:' + httpServer.address().port + pathname,
     );

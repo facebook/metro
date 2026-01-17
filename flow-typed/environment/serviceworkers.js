@@ -29,7 +29,7 @@ declare class Client {
 }
 
 declare class ExtendableEvent extends Event {
-  waitUntil(f: Promise<mixed>): void;
+  waitUntil(f: Promise<unknown>): void;
 }
 
 type NotificationEvent$Init = {
@@ -154,7 +154,7 @@ declare class ServiceWorkerRegistration extends EventTarget {
 
   getNotifications?: (
     filter?: GetNotificationOptions,
-  ) => Promise<$ReadOnlyArray<Notification>>;
+  ) => Promise<ReadonlyArray<Notification>>;
   showNotification?: (
     title: string,
     options?: NotificationOptions,
