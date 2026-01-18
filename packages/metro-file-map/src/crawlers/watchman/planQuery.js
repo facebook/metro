@@ -15,22 +15,20 @@ import type {
   WatchmanQuerySince,
 } from 'fb-watchman';
 
-export function planQuery({
-  since,
-  directoryFilters,
-  extensions,
-  includeSha1,
-  includeSymlinks,
-}: Readonly<{
+type PlanQueryArgs = Readonly<{
   since: ?WatchmanQuerySince,
   directoryFilters: ReadonlyArray<string>,
   extensions: ReadonlyArray<string>,
   includeSha1: boolean,
   includeSymlinks: boolean,
-}>): {
+}>;
+
+export function planQuery(args: PlanQueryArgs): {
   query: WatchmanQuery,
   queryGenerator: string,
 } {
+  const {since, directoryFilters, extensions, includeSha1, includeSymlinks} =
+    args;
   const fields = ['name', 'exists', 'mtime_ms', 'size'];
   if (includeSha1) {
     fields.push('content.sha1hex');

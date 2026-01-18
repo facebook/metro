@@ -37,7 +37,7 @@ export type MockMapOptions = Readonly<{
 }>;
 
 export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
-  +name = 'mocks';
+  +name: 'mocks' = 'mocks';
 
   +#mocksPattern: RegExp;
   #raw: RawMockMap;
@@ -68,10 +68,10 @@ export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
     this.#throwOnModuleCollision = throwOnModuleCollision;
   }
 
-  async initialize({
-    files,
-    pluginState,
-  }: FileMapPluginInitOptions<RawMockMap>): Promise<void> {
+  async initialize(
+    initOptions: FileMapPluginInitOptions<RawMockMap>,
+  ): Promise<void> {
+    const {files, pluginState} = initOptions;
     if (pluginState != null && pluginState.version === this.#raw.version) {
       // Use cached state directly if available
       this.#raw = pluginState;

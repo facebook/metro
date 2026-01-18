@@ -55,7 +55,7 @@ export type HasteMapOptions = Readonly<{
 export default class HastePlugin
   implements HasteMap, FileMapPlugin<null, string | null>
 {
-  +name = 'haste';
+  +name: 'haste' = 'haste';
 
   +#rootDir: Path;
   +#map: Map<string, HasteMapItem> = new Map();
@@ -81,9 +81,10 @@ export default class HastePlugin
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize({
-    files,
-  }: FileMapPluginInitOptions<null, string | null>): Promise<void> {
+  async initialize(
+    initOptions: FileMapPluginInitOptions<null, string | null>,
+  ): Promise<void> {
+    const {files} = initOptions;
     this.#perfLogger?.point('constructHasteMap_start');
     let hasteFiles = 0;
     for (const {
