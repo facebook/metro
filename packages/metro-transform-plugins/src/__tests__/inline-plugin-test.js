@@ -299,6 +299,32 @@ describe('inline constants', () => {
     );
   });
 
+  test('replaces _arbitraryName.Platform.OS when _arbitraryName is bound to require("react-native")', () => {
+    // This pattern is produced by @react-native/babel-preset when transforming:
+    //   import {Platform} from 'react-native';
+    // into:
+    //   var _reactNative = require('react-native');
+    //   _reactNative.Platform.OS
+    const code = `
+      var _reactNative = require('react-native');
+
+      function a() {
+        if (_reactNative.Platform.OS === 'android') {
+          a = function() {};
+        }
+
+        var b = a._reactNative.Platform.OS;
+      }
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/_reactNative\.Platform\.OS/, '"ios"'),
+      {inlinePlatform: true, platform: 'ios'},
+    );
+  });
+
   test('inlines Platform.select in the code if Platform is a global and the argument is an object literal', () => {
     const code = `
       function a() {
@@ -647,6 +673,26 @@ describe('inline constants', () => {
       code.replace(/require\('react-native'\)\.Platform\.select[^;]+/, '2'),
 
       {inlinePlatform: true, platform: 'android'},
+    );
+  });
+
+  test('replaces _arbitraryName.Platform.select when _arbitraryName is bound to require("react-native")', () => {
+    // This pattern is produced by @react-native/babel-preset when transforming:
+    //   import {Platform} from 'react-native';
+    // into:
+    //   var _reactNative = require('react-native');
+    //   _reactNative.Platform.select({...})
+    const code = `
+      var _reactNative = require('react-native');
+      var a = _reactNative.Platform.select({ios: 1, android: 2});
+      var b = a._reactNative.Platform.select({});
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/_reactNative\.Platform\.select[^;]+/, '1'),
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
