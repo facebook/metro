@@ -142,14 +142,30 @@ export default function createInlinePlatformChecks(
     const identifier = patterns.find((pattern: {name: string}) =>
       isIdentifier(node, pattern),
     );
-    return (
-      (!!identifier &&
-        isToplevelBinding(
-          scope.getBinding(identifier.name),
-          isWrappedModule,
-        )) ||
-      isImport(node, scope, patterns)
-    );
+    if (
+      !!identifier &&
+      isToplevelBinding(scope.getBinding(identifier.name), isWrappedModule)
+    ) {
+      return true;
+    }
+    if (isImport(node, scope, patterns)) {
+      return true;
+    }
+    if (isIdentifier(node)) {
+      const binding = scope.getBinding(node.name);
+      if (
+        binding != null &&
+        isToplevelBinding(binding, isWrappedModule) &&
+        binding.path.isVariableDeclarator()
+      ) {
+        const init = binding.path.node.init;
+        // $FlowFixMe[incompatible-type] Flow doesn't narrow binding.path.node through isVariableDeclarator()
+        if (init != null && isImport(init, scope, patterns)) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
   const checkRequireArgs = (
