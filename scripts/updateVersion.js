@@ -36,7 +36,7 @@ function updateVersion(version /*: ?string */) {
 function updateAllPackageManifests(
   metroDirPath /*: string */,
   newVersion /*: string */,
-  subPackageNameSet /*: $ReadOnlySet<string> */,
+  subPackageNameSet /*: ReadonlySet<string> */,
 ) {
   subPackageNameSet.forEach(pkgName => {
     const subPackagePackPath = path.join(
@@ -68,7 +68,7 @@ function updateAllPackageManifests(
 // given a dependency object (from package.json) update version for local pkgs
 function updateCrossDepsInline(
   allDeps /*: {[string]: mixed, ...} */, // json object
-  subDeps /*: $ReadOnlySet<string> */,
+  subDeps /*: ReadonlySet<string> */,
   version /*: string */,
 ) {
   if (allDeps) {
