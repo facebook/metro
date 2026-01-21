@@ -22,11 +22,11 @@ import type {MetadataWorker, WorkerMessage, V8Serializable} from '../../flow-typ
 const PACKAGE_JSON = path.sep + 'package.json';
 
 module.exports = class Worker /*:: implements MetadataWorker */ {
-  /*:: + */ #hasteImpl /*: ?$ReadOnly<{getHasteName: string => ?string}>  */ =
+  /*:: + */ #hasteImpl /*: ?Readonly<{getHasteName: string => ?string}>  */ =
     null;
 
   constructor(
-    {hasteImplModulePath} /*: $ReadOnly<{hasteImplModulePath: ?string}> */,
+    {hasteImplModulePath} /*: Readonly<{hasteImplModulePath: ?string}> */,
   ) {
     if (hasteImplModulePath != null) {
       // $FlowFixMe[unsupported-syntax] - dynamic require
@@ -36,7 +36,7 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
 
   processFile(
     data /*: WorkerMessage */,
-    utils /*: $ReadOnly<{getContent: () => Buffer }> */,
+    utils /*: Readonly<{getContent: () => Buffer }> */,
   ) /*: V8Serializable */ {
     let hasteName /*: string | null */ = null;
     const {filePath} = data;

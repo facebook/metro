@@ -33,7 +33,7 @@ function sha1hex(content /*: string | Buffer */) /*: string */ {
 }
 
 class Worker {
-  #plugins /*: $ReadOnlyArray<MetadataWorker> */;
+  #plugins /*: ReadonlyArray<MetadataWorker> */;
 
   constructor({plugins = []} /*: WorkerSetupArgs */) {
     this.#plugins = plugins.map(({modulePath, setupArgs}) => {

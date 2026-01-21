@@ -55,7 +55,7 @@ if (process.env.NIGHTLY_TESTS_NO_LOCKFILE != null) {
 }
 
 module.exports = (
-  absoluteTestPaths /*: $ReadOnlyArray<string> */,
+  absoluteTestPaths /*: ReadonlyArray<string> */,
 ) /*: {filtered: Array<{test: string}>}*/ => {
   const skippedPathsSet = new Set(
     SKIPPED_PATHS.map(relativePath =>

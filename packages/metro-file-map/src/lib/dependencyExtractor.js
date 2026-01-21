@@ -22,18 +22,15 @@ const RIGHT_PARENTHESIS = '\\)';
 const WHITESPACE = '\\s*';
 const OPTIONAL_COMMA = '(:?,\\s*)?';
 
-function createRegExp(
-  parts /*: $ReadOnlyArray<string> */,
-  flags /*: string */,
-) {
+function createRegExp(parts /*: ReadonlyArray<string> */, flags /*: string */) {
   return new RegExp(parts.join(''), flags);
 }
 
-function alternatives(...parts /*: $ReadOnlyArray<string> */) {
+function alternatives(...parts /*: ReadonlyArray<string> */) {
   return `(?:${parts.join('|')})`;
 }
 
-function functionCallStart(...names /*: $ReadOnlyArray<string> */) {
+function functionCallStart(...names /*: ReadonlyArray<string> */) {
   return [
     NOT_A_DOT,
     WORD_SEPARATOR,
