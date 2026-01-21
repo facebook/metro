@@ -839,6 +839,7 @@ describe('processRequest', () => {
         ['/root'],
         'ios',
         expect.any(Array),
+        expect.any(Function),
       );
     });
 
@@ -856,6 +857,7 @@ describe('processRequest', () => {
         ['/root'],
         'ios',
         expect.any(Array),
+        expect.any(Function),
       );
       expect(response._getString()).toBe(mockData.slice(0, 4));
     });
@@ -912,6 +914,7 @@ describe('processRequest', () => {
         ['/root'],
         null,
         expect.any(Array),
+        expect.any(Function),
       );
     });
 
@@ -936,6 +939,7 @@ describe('processRequest', () => {
         ['/root'],
         'ios',
         expect.any(Array),
+        expect.any(Function),
       );
       expect(response._getString()).toBe('i am image');
     });
@@ -953,6 +957,7 @@ describe('processRequest', () => {
         ['/root'],
         null,
         expect.any(Array),
+        expect.any(Function),
       );
       expect(response._getString()).toBe('i am image');
     });

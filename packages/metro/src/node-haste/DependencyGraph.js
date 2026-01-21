@@ -178,7 +178,7 @@ export default class DependencyGraph extends EventEmitter {
       },
       disableHierarchicalLookup:
         this._config.resolver.disableHierarchicalLookup,
-      doesFileExist: this._doesFileExist,
+      doesFileExist: this.doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
       fileSystemLookup,
@@ -363,7 +363,7 @@ export default class DependencyGraph extends EventEmitter {
     return resolution;
   }
 
-  _doesFileExist = (filePath: string): boolean => {
+  doesFileExist = (filePath: string): boolean => {
     return this._fileSystem.exists(filePath);
   };
 

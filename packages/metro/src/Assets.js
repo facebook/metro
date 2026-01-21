@@ -282,6 +282,7 @@ export async function getAsset(
   watchFolders: ReadonlyArray<string>,
   platform: ?string = null,
   assetExts: ReadonlyArray<string>,
+  fileExistsInFileMap?: (absolutePath: string) => boolean,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
     relativePath,
@@ -296,10 +297,19 @@ export async function getAsset(
     );
   }
 
-  if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
-    throw new Error(
-      `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
-    );
+  // NOTE: If fileExistsInFileMap is not provided, we fall back to pathBelongsToRoots for backward compatibility, as getAsset is part of the public API.
+  if (fileExistsInFileMap != null) {
+    if (!fileExistsInFileMap(absolutePath)) {
+      throw new Error(
+        `'${relativePath}' could not be found, because it is not within the projectRoot or watchFolders, or it is blocked via the resolver.blockList config`,
+      );
+    }
+  } else {
+    if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
+      throw new Error(
+        `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
+      );
+    }
   }
 
   const record = await getAbsoluteAssetRecord(absolutePath, platform);

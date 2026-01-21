@@ -150,6 +150,22 @@ describe('getAsset', () => {
       getAssetStr('../anotherfolder/b.png', '/root', [], null, ['png']),
     ).rejects.toBeInstanceOf(Error);
   });
+
+  test('should find an image when fileExistsInFileMap returns true', async () => {
+    writeImages({'b.png': 'b image'});
+
+    expect(
+      await getAssetStr('imgs/b.png', '/root', [], null, ['png'], () => true),
+    ).toBe('b image');
+  });
+
+  test('should throw an error when fileExistsInFileMap returns false', async () => {
+    writeImages({'b.png': 'b image'});
+
+    await expect(
+      getAssetStr('imgs/b.png', '/root', [], null, ['png'], () => false),
+    ).rejects.toBeInstanceOf(Error);
+  });
 });
 
 describe('getAssetData', () => {
