@@ -21,11 +21,11 @@ const escapeRegExp = require('escape-string-regexp');
 const fs = require('fs');
 const path = require('path');
 
-let _only /*: $ReadOnlyArray<RegExp | string> */ = [];
+let _only /*: ReadonlyArray<RegExp | string> */ = [];
 
 function register(
-  onlyList /*: $ReadOnlyArray<RegExp | string> */,
-  opts /*: ?$ReadOnly<{earlyPlugins?: BabelCoreOptions['plugins']}> */ = {},
+  onlyList /*: ReadonlyArray<RegExp | string> */,
+  opts /*: ?Readonly<{earlyPlugins?: BabelCoreOptions['plugins']}> */ = {},
 ) {
   // NB: `require('@babel/register')` registers Babel as a side-effect, and
   // also returns a register function that overrides the first registration
@@ -58,8 +58,8 @@ function register(
 }
 
 function config(
-  onlyList /*: $ReadOnlyArray<RegExp | string> */,
-  options /*: ?$ReadOnly<{
+  onlyList /*: ReadonlyArray<RegExp | string> */,
+  options /*: ?Readonly<{
     lazy?: boolean,
     earlyPlugins?: BabelCoreOptions['plugins'],
   }> */,
@@ -124,8 +124,8 @@ function config(
  */
 function buildRegExps(
   basePath /*: string */,
-  dirPaths /*: $ReadOnlyArray<RegExp | string> */,
-) /*: $ReadOnlyArray<RegExp> */ {
+  dirPaths /*: ReadonlyArray<RegExp | string> */,
+) /*: ReadonlyArray<RegExp> */ {
   return dirPaths.map(folderPath =>
     // Babel cares about Windows/Unix paths since v7b44
     // https://github.com/babel/babel/issues/8184
