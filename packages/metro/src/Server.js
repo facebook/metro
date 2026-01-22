@@ -549,12 +549,14 @@ export default class Server {
     );
 
     try {
+      const depGraph = await this._bundler.getBundler().getDependencyGraph();
       const data = await getAsset(
         assetPath,
         this._config.projectRoot,
         this._config.watchFolders,
         urlObj.searchParams.get('platform'),
         this._config.resolver.assetExts,
+        filePath => depGraph.doesFileExist(filePath),
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
