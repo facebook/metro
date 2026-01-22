@@ -302,7 +302,7 @@ If set to `false`, prevents Metro from using Watchman (even if it's installed).
 
 Type: `RegExp` or `Array<RegExp>`
 
-A regular expression (or list of regular expressions) defining which paths to exclude from Metro's file map. Files whose absolute paths match these patterns are effectively hidden from Metro and cannot be resolved or imported in the current project.
+A regular expression (or list of regular expressions) defining which paths to exclude from Metro's file map. Files whose absolute paths match these patterns are effectively hidden from Metro and cannot be resolved or imported in the current project. Additionally, blocked files cannot be served via the `/assets/` endpoint.
 
 #### `hasteImplModulePath`
 
