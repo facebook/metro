@@ -235,21 +235,20 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *
  */
 export default class FileMap extends EventEmitter {
-  _buildPromise: ?Promise<BuildResult>;
-  _canUseWatchmanPromise: Promise<boolean>;
-  _changeID: number;
-  _changeInterval: ?IntervalID;
-  _fileProcessor: FileProcessor;
-  _console: Console;
-  _options: InternalOptions;
-  _pathUtils: RootPathUtils;
-  _watcher: ?Watcher;
-  _cacheManager: CacheManager;
-  _crawlerAbortController: AbortController;
-  _healthCheckInterval: ?IntervalID;
-  _startupPerfLogger: ?PerfLogger;
-
-  #plugins: ReadonlyArray<IndexedPlugin>;
+  #buildPromise: ?Promise<BuildResult>;
+  +#cacheManager: CacheManager;
+  #canUseWatchmanPromise: Promise<boolean>;
+  #changeID: number;
+  #changeInterval: ?IntervalID;
+  +#console: Console;
+  +#crawlerAbortController: AbortController;
+  +#fileProcessor: FileProcessor;
+  #healthCheckInterval: ?IntervalID;
+  +#options: InternalOptions;
+  +#pathUtils: RootPathUtils;
+  +#plugins: ReadonlyArray<IndexedPlugin>;
+  +#startupPerfLogger: ?PerfLogger;
+  #watcher: ?Watcher;
 
   static create(options: InputOptions): FileMap {
     return new FileMap(options);
@@ -259,9 +258,9 @@ export default class FileMap extends EventEmitter {
     super();
 
     if (options.perfLoggerFactory) {
-      this._startupPerfLogger =
+      this.#startupPerfLogger =
         options.perfLoggerFactory?.('START_UP').subSpan('fileMap') ?? null;
-      this._startupPerfLogger?.point('constructor_start');
+      this.#startupPerfLogger?.point('constructor_start');
     }
 
     // Add VCS_DIRECTORIES to provided ignorePattern
@@ -282,7 +281,7 @@ export default class FileMap extends EventEmitter {
       ignorePattern = new RegExp(VCS_DIRECTORIES);
     }
 
-    this._console = options.console || global.console;
+    this.#console = options.console || global.console;
 
     let dataSlot: number = H.PLUGINDATA;
 
@@ -319,7 +318,7 @@ export default class FileMap extends EventEmitter {
       roots: Array.from(new Set(options.roots)),
     };
 
-    this._options = {
+    this.#options = {
       ...buildParameters,
       healthCheck: options.healthCheck,
       perfLoggerFactory: options.perfLoggerFactory,
@@ -332,32 +331,32 @@ export default class FileMap extends EventEmitter {
     const cacheFactoryOptions: CacheManagerFactoryOptions = {
       buildParameters,
     };
-    this._cacheManager = options.cacheManagerFactory
+    this.#cacheManager = options.cacheManagerFactory
       ? options.cacheManagerFactory.call(null, cacheFactoryOptions)
       : new DiskCacheManager(cacheFactoryOptions, {});
 
-    this._fileProcessor = new FileProcessor({
+    this.#fileProcessor = new FileProcessor({
       dependencyExtractor: buildParameters.dependencyExtractor,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
-      perfLogger: this._startupPerfLogger,
+      perfLogger: this.#startupPerfLogger,
       pluginWorkers,
       rootDir: options.rootDir,
     });
 
-    this._buildPromise = null;
-    this._pathUtils = new RootPathUtils(options.rootDir);
-    this._startupPerfLogger?.point('constructor_end');
-    this._crawlerAbortController = new AbortController();
-    this._changeID = 0;
+    this.#buildPromise = null;
+    this.#pathUtils = new RootPathUtils(options.rootDir);
+    this.#startupPerfLogger?.point('constructor_end');
+    this.#crawlerAbortController = new AbortController();
+    this.#changeID = 0;
   }
 
   build(): Promise<BuildResult> {
-    this._startupPerfLogger?.point('build_start');
-    if (!this._buildPromise) {
-      this._buildPromise = (async () => {
+    this.#startupPerfLogger?.point('build_start');
+    if (!this.#buildPromise) {
+      this.#buildPromise = (async () => {
         let initialData: ?CacheData;
-        if (this._options.resetCache !== true) {
+        if (this.#options.resetCache !== true) {
           initialData = await this.read();
         }
         if (!initialData) {
@@ -366,14 +365,14 @@ export default class FileMap extends EventEmitter {
           debug('Cache loaded (%d clock(s))', initialData.clocks.size);
         }
 
-        const rootDir = this._options.rootDir;
-        this._startupPerfLogger?.point('constructFileSystem_start');
+        const rootDir = this.#options.rootDir;
+        this.#startupPerfLogger?.point('constructFileSystem_start');
         const processFile: ProcessFileFunction = (
           normalPath,
           metadata,
           opts,
         ) => {
-          const result = this._fileProcessor.processRegularFile(
+          const result = this.#fileProcessor.processRegularFile(
             normalPath,
             metadata,
             {
@@ -399,7 +398,7 @@ export default class FileMap extends EventEmitter {
                 rootDir,
               })
             : new TreeFS({processFile, rootDir});
-        this._startupPerfLogger?.point('constructFileSystem_end');
+        this.#startupPerfLogger?.point('constructFileSystem_end');
 
         const plugins = this.#plugins;
 
@@ -407,7 +406,7 @@ export default class FileMap extends EventEmitter {
         // crawling to build a diff of current state vs cached. `fileSystem`
         // is not mutated during either operation.
         const [fileDelta] = await Promise.all([
-          this._buildFileDelta({
+          this.#buildFileDelta({
             clocks: initialData?.clocks ?? new Map(),
             fileSystem,
           }),
@@ -447,13 +446,13 @@ export default class FileMap extends EventEmitter {
         ]);
 
         // Update `fileSystem` and plugins based on the file delta.
-        await this._applyFileDelta(fileSystem, plugins, fileDelta);
+        await this.#applyFileDelta(fileSystem, plugins, fileDelta);
 
         // Validate plugins before persisting them.
         plugins.forEach(({plugin}) => plugin.assertValid());
 
         const watchmanClocks = new Map(fileDelta.clocks ?? []);
-        await this._takeSnapshotAndPersist(
+        await this.#takeSnapshotAndPersist(
           fileSystem,
           watchmanClocks,
           plugins,
@@ -466,12 +465,12 @@ export default class FileMap extends EventEmitter {
           fileDelta.removedFiles.size,
         );
 
-        await this._watch(fileSystem, watchmanClocks, plugins);
+        await this.#watch(fileSystem, watchmanClocks, plugins);
         return {fileSystem};
       })();
     }
-    return this._buildPromise.then(result => {
-      this._startupPerfLogger?.point('build_end');
+    return this.#buildPromise.then(result => {
+      this.#startupPerfLogger?.point('build_end');
       return result;
     });
   }
@@ -481,33 +480,33 @@ export default class FileMap extends EventEmitter {
    */
   async read(): Promise<?CacheData> {
     let data: ?CacheData;
-    this._startupPerfLogger?.point('read_start');
+    this.#startupPerfLogger?.point('read_start');
     try {
-      data = await this._cacheManager.read();
+      data = await this.#cacheManager.read();
     } catch (e) {
-      this._console.warn(
+      this.#console.warn(
         'Error while reading cache, falling back to a full crawl:\n',
         e,
       );
-      this._startupPerfLogger?.annotate({
+      this.#startupPerfLogger?.annotate({
         string: {cacheReadError: e.toString()},
       });
     }
-    this._startupPerfLogger?.point('read_end');
+    this.#startupPerfLogger?.point('read_end');
     return data;
   }
 
   /**
    * 2. crawl the file system.
    */
-  async _buildFileDelta(
+  async #buildFileDelta(
     previousState: CrawlerOptions['previousState'],
   ): Promise<{
     removedFiles: Set<CanonicalPath>,
     changedFiles: FileData,
     clocks?: WatchmanClocks,
   }> {
-    this._startupPerfLogger?.point('buildFileDelta_start');
+    this.#startupPerfLogger?.point('buildFileDelta_start');
 
     const {
       computeSha1,
@@ -520,16 +519,16 @@ export default class FileMap extends EventEmitter {
       rootDir,
       watch,
       watchmanDeferStates,
-    } = this._options;
+    } = this.#options;
 
-    this._watcher = new Watcher({
-      abortSignal: this._crawlerAbortController.signal,
+    this.#watcher = new Watcher({
+      abortSignal: this.#crawlerAbortController.signal,
       computeSha1,
-      console: this._console,
+      console: this.#console,
       enableSymlinks,
       extensions,
       forceNodeFilesystemAPI,
-      healthCheckFilePrefix: this._options.healthCheck.filePrefix,
+      healthCheckFilePrefix: this.#options.healthCheck.filePrefix,
       // TODO: Refactor out the two different ignore strategies here.
       ignoreForCrawl: filePath => {
         const ignoreMatched = ignorePattern.test(filePath);
@@ -538,30 +537,30 @@ export default class FileMap extends EventEmitter {
         );
       },
       ignorePatternForWatch: ignorePattern,
-      perfLogger: this._startupPerfLogger,
+      perfLogger: this.#startupPerfLogger,
       previousState,
       rootDir,
       roots,
-      useWatchman: await this._shouldUseWatchman(),
+      useWatchman: await this.#shouldUseWatchman(),
       watch,
       watchmanDeferStates,
     });
-    const watcher = this._watcher;
+    const watcher = this.#watcher;
 
     watcher.on('status', status => this.emit('status', status));
 
     return watcher.crawl().then(result => {
-      this._startupPerfLogger?.point('buildFileDelta_end');
+      this.#startupPerfLogger?.point('buildFileDelta_end');
       return result;
     });
   }
 
-  _maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
+  #maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
     // If we only need to read a link, it's more efficient to do it in-band
     // (with async file IO) than to have the overhead of worker IO.
     if (fileMetadata[H.SYMLINK] === 1) {
       return fsPromises
-        .readlink(this._pathUtils.normalToAbsolute(normalPath))
+        .readlink(this.#pathUtils.normalToAbsolute(normalPath))
         .then(symlinkTarget => {
           fileMetadata[H.VISITED] = 1;
           fileMetadata[H.SYMLINK] = symlinkTarget;
@@ -570,7 +569,7 @@ export default class FileMap extends EventEmitter {
     return null;
   }
 
-  async _applyFileDelta(
+  async #applyFileDelta(
     fileSystem: MutableFileSystem,
     plugins: ReadonlyArray<IndexedPlugin>,
     delta: Readonly<{
@@ -579,14 +578,14 @@ export default class FileMap extends EventEmitter {
       clocks?: WatchmanClocks,
     }>,
   ): Promise<void> {
-    this._startupPerfLogger?.point('applyFileDelta_start');
+    this.#startupPerfLogger?.point('applyFileDelta_start');
     const {changedFiles, removedFiles} = delta;
-    this._startupPerfLogger?.point('applyFileDelta_preprocess_start');
+    this.#startupPerfLogger?.point('applyFileDelta_preprocess_start');
     const missingFiles: Set<string> = new Set();
 
     // Remove files first so that we don't mistake moved modules
     // modules as duplicates.
-    this._startupPerfLogger?.point('applyFileDelta_remove_start');
+    this.#startupPerfLogger?.point('applyFileDelta_remove_start');
     const removed: Array<[string, FileMetadata]> = [];
     for (const relativeFilePath of removedFiles) {
       const metadata = fileSystem.remove(relativeFilePath);
@@ -594,7 +593,7 @@ export default class FileMap extends EventEmitter {
         removed.push([relativeFilePath, metadata]);
       }
     }
-    this._startupPerfLogger?.point('applyFileDelta_remove_end');
+    this.#startupPerfLogger?.point('applyFileDelta_remove_end');
 
     const readLinkPromises = [];
     const readLinkErrors: Array<{
@@ -613,7 +612,7 @@ export default class FileMap extends EventEmitter {
       if (fileData[H.SYMLINK] === 0) {
         filesToProcess.push([normalFilePath, fileData]);
       } else {
-        const maybeReadLink = this._maybeReadLink(normalFilePath, fileData);
+        const maybeReadLink = this.#maybeReadLink(normalFilePath, fileData);
         if (maybeReadLink) {
           readLinkPromises.push(
             maybeReadLink.catch(error =>
@@ -623,7 +622,7 @@ export default class FileMap extends EventEmitter {
         }
       }
     }
-    this._startupPerfLogger?.point('applyFileDelta_preprocess_end');
+    this.#startupPerfLogger?.point('applyFileDelta_preprocess_end');
 
     debug(
       'Found %d added/modified files and %d symlinks.',
@@ -631,16 +630,16 @@ export default class FileMap extends EventEmitter {
       readLinkPromises.length,
     );
 
-    this._startupPerfLogger?.point('applyFileDelta_process_start');
+    this.#startupPerfLogger?.point('applyFileDelta_process_start');
     const [batchResult] = await Promise.all([
-      this._fileProcessor.processBatch(filesToProcess, {
-        computeDependencies: this._options.computeDependencies,
-        computeSha1: this._options.computeSha1,
+      this.#fileProcessor.processBatch(filesToProcess, {
+        computeDependencies: this.#options.computeDependencies,
+        computeSha1: this.#options.computeSha1,
         maybeReturnContent: false,
       }),
       Promise.all(readLinkPromises),
     ]);
-    this._startupPerfLogger?.point('applyFileDelta_process_end');
+    this.#startupPerfLogger?.point('applyFileDelta_process_end');
 
     // It's possible that a file could be deleted between being seen by the
     // crawler and our attempt to process it. For our purposes, this is
@@ -651,7 +650,7 @@ export default class FileMap extends EventEmitter {
     // Treat the file accordingly - don't add it to `FileSystem`, and remove
     // it if it already exists. We're not emitting events at this point in
     // startup, so there's nothing more to do.
-    this._startupPerfLogger?.point('applyFileDelta_missing_start');
+    this.#startupPerfLogger?.point('applyFileDelta_missing_start');
     for (const {normalFilePath, error} of batchResult.errors.concat(
       readLinkErrors,
     )) {
@@ -671,13 +670,13 @@ export default class FileMap extends EventEmitter {
         removed.push([relativeFilePath, metadata]);
       }
     }
-    this._startupPerfLogger?.point('applyFileDelta_missing_end');
+    this.#startupPerfLogger?.point('applyFileDelta_missing_end');
 
-    this._startupPerfLogger?.point('applyFileDelta_add_start');
+    this.#startupPerfLogger?.point('applyFileDelta_add_start');
     fileSystem.bulkAddOrModify(changedFiles);
-    this._startupPerfLogger?.point('applyFileDelta_add_end');
+    this.#startupPerfLogger?.point('applyFileDelta_add_end');
 
-    this._startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
+    this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
 
     await Promise.all([
       plugins.map(({plugin, dataIdx}) => {
@@ -693,22 +692,22 @@ export default class FileMap extends EventEmitter {
         });
       }),
     ]);
-    this._startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
-    this._startupPerfLogger?.point('applyFileDelta_end');
+    this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
+    this.#startupPerfLogger?.point('applyFileDelta_end');
   }
 
   /**
    * 4. Serialize a snapshot of our raw data via the configured cache manager
    */
-  async _takeSnapshotAndPersist(
+  async #takeSnapshotAndPersist(
     fileSystem: FileSystem,
     clocks: WatchmanClocks,
     plugins: ReadonlyArray<IndexedPlugin>,
     changed: FileData,
     removed: Set<CanonicalPath>,
   ) {
-    this._startupPerfLogger?.point('persist_start');
-    await this._cacheManager.write(
+    this.#startupPerfLogger?.point('persist_start');
+    await this.#cacheManager.write(
       () => ({
         clocks: new Map(clocks),
         fileSystemData: fileSystem.getSerializableSnapshot(),
@@ -735,29 +734,29 @@ export default class FileMap extends EventEmitter {
           },
         },
         onWriteError: error => {
-          this._console.warn('[metro-file-map] Cache write error\n:', error);
+          this.#console.warn('[metro-file-map] Cache write error\n:', error);
         },
       },
     );
-    this._startupPerfLogger?.point('persist_end');
+    this.#startupPerfLogger?.point('persist_end');
   }
 
   /**
    * Watch mode
    */
-  async _watch(
+  async #watch(
     fileSystem: MutableFileSystem,
     clocks: WatchmanClocks,
     plugins: ReadonlyArray<IndexedPlugin>,
   ): Promise<void> {
-    this._startupPerfLogger?.point('watch_start');
-    if (!this._options.watch) {
-      this._startupPerfLogger?.point('watch_end');
+    this.#startupPerfLogger?.point('watch_start');
+    if (!this.#options.watch) {
+      this.#startupPerfLogger?.point('watch_end');
       return;
     }
 
     const hasWatchedExtension = (filePath: string) =>
-      this._options.extensions.some(ext => filePath.endsWith(ext));
+      this.#options.extensions.some(ext => filePath.endsWith(ext));
 
     let changeQueue: Promise<null | void> = Promise.resolve();
     let nextEmit: ?{
@@ -773,8 +772,8 @@ export default class FileMap extends EventEmitter {
       }
       const {eventsQueue, firstEventTimestamp, firstEnqueuedTimestamp} =
         nextEmit;
-      const hmrPerfLogger = this._options.perfLoggerFactory?.('HMR', {
-        key: this._getNextChangeID(),
+      const hmrPerfLogger = this.#options.perfLoggerFactory?.('HMR', {
+        key: this.#getNextChangeID(),
       });
       if (hmrPerfLogger != null) {
         hmrPerfLogger.start({timestamp: firstEventTimestamp});
@@ -804,7 +803,7 @@ export default class FileMap extends EventEmitter {
           (change.metadata.type === 'f' &&
             !hasWatchedExtension(change.relativePath)) ||
           // Don't emit events relating to symlinks if enableSymlinks: false
-          (!this._options.enableSymlinks && change.metadata?.type === 'l'))
+          (!this.#options.enableSymlinks && change.metadata?.type === 'l'))
       ) {
         return;
       }
@@ -816,12 +815,12 @@ export default class FileMap extends EventEmitter {
 
       // Ignore files (including symlinks) whose path matches ignorePattern
       // (we don't ignore node_modules in watch mode)
-      if (this._options.ignorePattern.test(absoluteFilePath)) {
+      if (this.#options.ignorePattern.test(absoluteFilePath)) {
         return;
       }
 
       const relativeFilePath =
-        this._pathUtils.absoluteToNormal(absoluteFilePath);
+        this.#pathUtils.absoluteToNormal(absoluteFilePath);
       const linkStats = fileSystem.linkStats(relativeFilePath);
 
       // The file has been accessed, not modified. If the modified time is
@@ -908,20 +907,20 @@ export default class FileMap extends EventEmitter {
 
             try {
               if (change.metadata.type === 'l') {
-                await this._maybeReadLink(relativeFilePath, fileMetadata);
+                await this.#maybeReadLink(relativeFilePath, fileMetadata);
               } else {
-                await this._fileProcessor.processRegularFile(
+                await this.#fileProcessor.processRegularFile(
                   relativeFilePath,
                   fileMetadata,
                   {
-                    computeDependencies: this._options.computeDependencies,
-                    computeSha1: this._options.computeSha1,
+                    computeDependencies: this.#options.computeDependencies,
+                    computeSha1: this.#options.computeSha1,
                     maybeReturnContent: false,
                   },
                 );
               }
               fileSystem.addOrModify(relativeFilePath, fileMetadata);
-              this._updateClock(clocks, change.clock);
+              this.#updateClock(clocks, change.clock);
               plugins.forEach(({plugin, dataIdx}) =>
                 dataIdx != null
                   ? plugin.onNewOrModifiedFile(
@@ -951,7 +950,7 @@ export default class FileMap extends EventEmitter {
             // We've already checked linkStats != null above, so the file
             // exists in the file map and remove should always return metadata.
             const metadata = nullthrows(fileSystem.remove(relativeFilePath));
-            this._updateClock(clocks, change.clock);
+            this.#updateClock(clocks, change.clock);
             plugins.forEach(({plugin, dataIdx}) =>
               dataIdx != null
                 ? plugin.onRemovedFile(relativeFilePath, metadata[dataIdx])
@@ -971,68 +970,68 @@ export default class FileMap extends EventEmitter {
           return null;
         })
         .catch((error: Error) => {
-          this._console.error(
+          this.#console.error(
             `metro-file-map: watch error:\n  ${error.stack}\n`,
           );
         });
     };
 
-    this._changeInterval = setInterval(emitChange, CHANGE_INTERVAL);
+    this.#changeInterval = setInterval(emitChange, CHANGE_INTERVAL);
 
     invariant(
-      this._watcher != null,
-      'Expected _watcher to have been initialised by build()',
+      this.#watcher != null,
+      'Expected #watcher to have been initialised by build()',
     );
-    await this._watcher.watch(onChange);
+    await this.#watcher.watch(onChange);
 
-    if (this._options.healthCheck.enabled) {
+    if (this.#options.healthCheck.enabled) {
       const performHealthCheck = () => {
-        if (!this._watcher) {
+        if (!this.#watcher) {
           return;
         }
         // $FlowFixMe[unused-promise]
-        this._watcher
-          .checkHealth(this._options.healthCheck.timeout)
+        this.#watcher
+          .checkHealth(this.#options.healthCheck.timeout)
           .then(result => {
             this.emit('healthCheck', result);
           });
       };
       performHealthCheck();
-      this._healthCheckInterval = setInterval(
+      this.#healthCheckInterval = setInterval(
         performHealthCheck,
-        this._options.healthCheck.interval,
+        this.#options.healthCheck.interval,
       );
     }
-    this._startupPerfLogger?.point('watch_end');
+    this.#startupPerfLogger?.point('watch_end');
   }
 
   async end(): Promise<void> {
-    if (this._changeInterval) {
-      clearInterval(this._changeInterval);
+    if (this.#changeInterval) {
+      clearInterval(this.#changeInterval);
     }
-    if (this._healthCheckInterval) {
-      clearInterval(this._healthCheckInterval);
+    if (this.#healthCheckInterval) {
+      clearInterval(this.#healthCheckInterval);
     }
 
-    this._crawlerAbortController.abort();
+    this.#crawlerAbortController.abort();
 
     await Promise.all([
-      this._fileProcessor.end(),
-      this._watcher?.close(),
-      this._cacheManager.end(),
+      this.#fileProcessor.end(),
+      this.#watcher?.close(),
+      this.#cacheManager.end(),
     ]);
   }
 
-  async _shouldUseWatchman(): Promise<boolean> {
-    if (!this._options.useWatchman) {
+  async #shouldUseWatchman(): Promise<boolean> {
+    if (!this.#options.useWatchman) {
       return false;
     }
-    if (!this._canUseWatchmanPromise) {
-      this._canUseWatchmanPromise = checkWatchmanCapabilities(
+    if (!this.#canUseWatchmanPromise) {
+      this.#canUseWatchmanPromise = checkWatchmanCapabilities(
         WATCHMAN_REQUIRED_CAPABILITIES,
       )
         .then(({version}) => {
-          this._startupPerfLogger?.annotate({
+          this.#startupPerfLogger?.annotate({
             string: {
               watchmanVersion: version,
             },
@@ -1042,7 +1041,7 @@ export default class FileMap extends EventEmitter {
         .catch(e => {
           // TODO: Advise people to either install Watchman or set
           // `useWatchman: false` here?
-          this._startupPerfLogger?.annotate({
+          this.#startupPerfLogger?.annotate({
             string: {
               watchmanFailedCapabilityCheck: e?.message ?? '[missing]',
             },
@@ -1050,22 +1049,22 @@ export default class FileMap extends EventEmitter {
           return false;
         });
     }
-    return this._canUseWatchmanPromise;
+    return this.#canUseWatchmanPromise;
   }
 
-  _getNextChangeID(): number {
-    if (this._changeID >= Number.MAX_SAFE_INTEGER) {
-      this._changeID = 0;
+  #getNextChangeID(): number {
+    if (this.#changeID >= Number.MAX_SAFE_INTEGER) {
+      this.#changeID = 0;
     }
-    return ++this._changeID;
+    return ++this.#changeID;
   }
 
-  _updateClock(clocks: WatchmanClocks, newClock?: ?ChangeEventClock): void {
+  #updateClock(clocks: WatchmanClocks, newClock?: ?ChangeEventClock): void {
     if (newClock == null) {
       return;
     }
     const [absoluteWatchRoot, clockSpec] = newClock;
-    const relativeFsRoot = this._pathUtils.absoluteToNormal(absoluteWatchRoot);
+    const relativeFsRoot = this.#pathUtils.absoluteToNormal(absoluteWatchRoot);
     clocks.set(normalizePathSeparatorsToPosix(relativeFsRoot), clockSpec);
   }
 

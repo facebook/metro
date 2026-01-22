@@ -40,19 +40,19 @@ const SUB_PREFIX = 'metro-file-map';
  * Watches `dir`.
  */
 export default class WatchmanWatcher extends AbstractWatcher {
-  client: Client;
+  #client: Client;
   +subscriptionName: string;
-  watchProjectInfo: ?Readonly<{
+  #watchProjectInfo: ?Readonly<{
     relativePath: string,
     root: string,
   }>;
-  +watchmanDeferStates: ReadonlyArray<string>;
+  +#watchmanDeferStates: ReadonlyArray<string>;
   #deferringStates: ?Set<string> = null;
 
   constructor(dir: string, {watchmanDeferStates, ...opts}: WatcherOptions) {
     super(dir, opts);
 
-    this.watchmanDeferStates = watchmanDeferStates;
+    this.#watchmanDeferStates = watchmanDeferStates;
 
     // Use a unique subscription name per process per watched directory
     const watchKey = createHash('md5').update(this.root).digest('hex');
@@ -63,39 +63,39 @@ export default class WatchmanWatcher extends AbstractWatcher {
   }
 
   async startWatching() {
-    await new Promise((resolve, reject) => this._init(resolve, reject));
+    await new Promise((resolve, reject) => this.#init(resolve, reject));
   }
 
   /**
    * Run the watchman `watch` command on the root and subscribe to changes.
    */
-  _init(onReady: () => void, onError: (error: Error) => void) {
-    if (this.client) {
-      this.client.removeAllListeners();
+  #init(onReady: () => void, onError: (error: Error) => void) {
+    if (this.#client) {
+      this.#client.removeAllListeners();
     }
 
     const self = this;
-    this.client = new watchman.Client();
-    this.client.on('error', error => {
+    this.#client = new watchman.Client();
+    this.#client.on('error', error => {
       this.emitError(error);
     });
-    this.client.on('subscription', changeEvent =>
-      this._handleChangeEvent(changeEvent),
+    this.#client.on('subscription', changeEvent =>
+      this.#handleChangeEvent(changeEvent),
     );
-    this.client.on('end', () => {
+    this.#client.on('end', () => {
       console.warn(
         '[metro-file-map] Warning: Lost connection to Watchman, reconnecting..',
       );
-      self._init(
+      self.#init(
         () => {},
         error => self.emitError(error),
       );
     });
 
-    this.watchProjectInfo = null;
+    this.#watchProjectInfo = null;
 
     function getWatchRoot() {
-      return self.watchProjectInfo ? self.watchProjectInfo.root : self.root;
+      return self.#watchProjectInfo ? self.#watchProjectInfo.root : self.root;
     }
 
     function onWatchProject(error: ?Error, resp: WatchmanWatchResponse) {
@@ -109,14 +109,14 @@ export default class WatchmanWatcher extends AbstractWatcher {
 
       // NB: Watchman outputs posix-separated paths even on Windows, convert
       // them to system-native separators.
-      self.watchProjectInfo = {
+      self.#watchProjectInfo = {
         relativePath: resp.relative_path
           ? normalizePathSeparatorsToSystem(resp.relative_path)
           : '',
         root: normalizePathSeparatorsToSystem(resp.watch),
       };
 
-      self.client.command(['clock', getWatchRoot()], onClock);
+      self.#client.command(['clock', getWatchRoot()], onClock);
     }
 
     function onClock(error: ?Error, resp: WatchmanClockResponse) {
@@ -126,7 +126,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
       }
 
       debug('Received clock response: %s', resp.clock);
-      const watchProjectInfo = self.watchProjectInfo;
+      const watchProjectInfo = self.#watchProjectInfo;
 
       invariant(
         watchProjectInfo != null,
@@ -138,7 +138,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
       const options: WatchmanQuery = {
         fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
         since: resp.clock,
-        defer: self.watchmanDeferStates,
+        defer: self.#watchmanDeferStates,
         relative_root: watchProjectInfo.relativePath,
       };
 
@@ -154,7 +154,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
         ];
       }
 
-      self.client.command(
+      self.#client.command(
         ['subscribe', getWatchRoot(), self.subscriptionName, options],
         onSubscribe,
       );
@@ -176,13 +176,13 @@ export default class WatchmanWatcher extends AbstractWatcher {
       onReady();
     };
 
-    self.client.command(['watch-project', getWatchRoot()], onWatchProject);
+    self.#client.command(['watch-project', getWatchRoot()], onWatchProject);
   }
 
   /**
    * Handles a change event coming from the subscription.
    */
-  _handleChangeEvent(resp: WatchmanSubscriptionEvent) {
+  #handleChangeEvent(resp: WatchmanSubscriptionEvent) {
     debug(
       'Received subscription response: %s (fresh: %s, files: %s, enter: %s, leave: %s, clock: %s)',
       resp.subscription,
@@ -200,12 +200,12 @@ export default class WatchmanWatcher extends AbstractWatcher {
     );
 
     if (Array.isArray(resp.files)) {
-      resp.files.forEach(change => this._handleFileChange(change, resp.clock));
+      resp.files.forEach(change => this.#handleFileChange(change, resp.clock));
     }
     const {'state-enter': stateEnter, 'state-leave': stateLeave} = resp;
     if (
       stateEnter != null &&
-      (this.watchmanDeferStates ?? []).includes(stateEnter)
+      (this.#watchmanDeferStates ?? []).includes(stateEnter)
     ) {
       this.#deferringStates?.add(stateEnter);
       debug(
@@ -215,7 +215,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
     }
     if (
       stateLeave != null &&
-      (this.watchmanDeferStates ?? []).includes(stateLeave)
+      (this.#watchmanDeferStates ?? []).includes(stateLeave)
     ) {
       this.#deferringStates?.delete(stateLeave);
       debug(
@@ -228,12 +228,12 @@ export default class WatchmanWatcher extends AbstractWatcher {
   /**
    * Handles a single change event record.
    */
-  _handleFileChange(
+  #handleFileChange(
     changeDescriptor: WatchmanFileChange,
     rawClock: WatchmanSubscriptionEvent['clock'],
   ) {
     const self = this;
-    const watchProjectInfo = self.watchProjectInfo;
+    const watchProjectInfo = self.#watchProjectInfo;
 
     invariant(
       watchProjectInfo != null,
@@ -274,8 +274,8 @@ export default class WatchmanWatcher extends AbstractWatcher {
     }
 
     const clock =
-      typeof rawClock === 'string' && this.watchProjectInfo != null
-        ? ([this.watchProjectInfo.root, rawClock] as [string, string])
+      typeof rawClock === 'string' && this.#watchProjectInfo != null
+        ? ([this.#watchProjectInfo.root, rawClock] as [string, string])
         : undefined;
 
     if (!exists) {
@@ -315,9 +315,9 @@ export default class WatchmanWatcher extends AbstractWatcher {
    */
   async stopWatching() {
     await super.stopWatching();
-    if (this.client) {
-      this.client.removeAllListeners();
-      this.client.end();
+    if (this.#client) {
+      this.#client.removeAllListeners();
+      this.#client.end();
     }
     this.#deferringStates = null;
   }

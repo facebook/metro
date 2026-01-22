@@ -55,20 +55,19 @@ export type HasteMapOptions = Readonly<{
 export default class HastePlugin
   implements HasteMap, FileMapPlugin<null, string | null>
 {
-  +name = 'haste';
-
-  +#rootDir: Path;
-  +#map: Map<string, HasteMapItem> = new Map();
-  +#duplicates: DuplicatesIndex = new Map();
+  +name: 'haste' = 'haste';
 
   +#console: ?Console;
+  +#duplicates: DuplicatesIndex = new Map();
   +#enableHastePackages: boolean;
-  +#hasteImplModulePath: ?string;
-  +#perfLogger: ?PerfLogger;
-  +#pathUtils: RootPathUtils;
-  +#platforms: ReadonlySet<string>;
   +#failValidationOnConflicts: boolean;
   #getModuleNameByPath: string => ?string;
+  +#hasteImplModulePath: ?string;
+  +#map: Map<string, HasteMapItem> = new Map();
+  +#pathUtils: RootPathUtils;
+  +#perfLogger: ?PerfLogger;
+  +#platforms: ReadonlySet<string>;
+  +#rootDir: Path;
 
   constructor(options: HasteMapOptions) {
     this.#console = options.console ?? global.console;
@@ -134,7 +133,7 @@ export default class HastePlugin
     supportsNativePlatform?: ?boolean,
     type?: ?HTypeValue,
   ): ?Path {
-    const module = this._getModuleMetadata(
+    const module = this.#getModuleMetadata(
       name,
       platform,
       !!supportsNativePlatform,
@@ -173,7 +172,7 @@ export default class HastePlugin
    * extra sure. If metadata exists both in the `duplicates` object and the
    * `map`, this would be a bug.
    */
-  _getModuleMetadata(
+  #getModuleMetadata(
     name: string,
     platform: ?string,
     supportsNativePlatform: boolean,
@@ -181,7 +180,7 @@ export default class HastePlugin
     const map = this.#map.get(name) || EMPTY_OBJ;
     const dupMap = this.#duplicates.get(name) || EMPTY_MAP;
     if (platform != null) {
-      this._assertNoDuplicates(
+      this.#assertNoDuplicates(
         name,
         platform,
         supportsNativePlatform,
@@ -192,7 +191,7 @@ export default class HastePlugin
       }
     }
     if (supportsNativePlatform) {
-      this._assertNoDuplicates(
+      this.#assertNoDuplicates(
         name,
         H.NATIVE_PLATFORM,
         supportsNativePlatform,
@@ -202,7 +201,7 @@ export default class HastePlugin
         return map[H.NATIVE_PLATFORM];
       }
     }
-    this._assertNoDuplicates(
+    this.#assertNoDuplicates(
       name,
       H.GENERIC_PLATFORM,
       supportsNativePlatform,
@@ -214,7 +213,7 @@ export default class HastePlugin
     return null;
   }
 
-  _assertNoDuplicates(
+  #assertNoDuplicates(
     name: string,
     platform: string,
     supportsNativePlatform: boolean,
@@ -345,7 +344,7 @@ export default class HastePlugin
       }
     }
 
-    this._recoverDuplicates(moduleName, relativeFilePath);
+    this.#recoverDuplicates(moduleName, relativeFilePath);
   }
 
   assertValid(): void {
@@ -366,7 +365,7 @@ export default class HastePlugin
    * remaining in the group, then we want to restore that single file as the
    * correct resolution for its ID, and cleanup the duplicates index.
    */
-  _recoverDuplicates(moduleName: string, relativeFilePath: string) {
+  #recoverDuplicates(moduleName: string, relativeFilePath: string) {
     let dupsByPlatform = this.#duplicates.get(moduleName);
     if (dupsByPlatform == null) {
       return;

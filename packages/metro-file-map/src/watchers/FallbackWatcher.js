@@ -42,32 +42,32 @@ const DELETE_EVENT = common.DELETE_EVENT;
 const DEBOUNCE_MS = 100;
 
 export default class FallbackWatcher extends AbstractWatcher {
-  +_changeTimers: Map<string, TimeoutID> = new Map();
-  +_dirRegistry: {
+  +#changeTimers: Map<string, TimeoutID> = new Map();
+  +#dirRegistry: {
     [directory: string]: {[file: string]: true, __proto__: null},
     __proto__: null,
   } = Object.create(null);
-  +watched: {[key: string]: FSWatcher, __proto__: null} = Object.create(null);
+  +#watched: {[key: string]: FSWatcher, __proto__: null} = Object.create(null);
 
   async startWatching() {
-    this._watchdir(this.root);
+    this.#watchdir(this.root);
 
     await new Promise(resolve => {
       recReaddir(
         this.root,
         dir => {
-          this._watchdir(dir);
+          this.#watchdir(dir);
         },
         filename => {
-          this._register(filename, 'f');
+          this.#register(filename, 'f');
         },
         symlink => {
-          this._register(symlink, 'l');
+          this.#register(symlink, 'l');
         },
         () => {
           resolve();
         },
-        this._checkedEmitError,
+        this.#checkedEmitError,
         this.ignored,
       );
     });
@@ -87,10 +87,10 @@ export default class FallbackWatcher extends AbstractWatcher {
    *
    *  Return false if ignored or already registered.
    */
-  _register(filepath: string, type: ChangeEventMetadata['type']): boolean {
+  #register(filepath: string, type: ChangeEventMetadata['type']): boolean {
     const dir = path.dirname(filepath);
     const filename = path.basename(filepath);
-    if (this._dirRegistry[dir] && this._dirRegistry[dir][filename]) {
+    if (this.#dirRegistry[dir] && this.#dirRegistry[dir][filename]) {
       return false;
     }
 
@@ -103,11 +103,11 @@ export default class FallbackWatcher extends AbstractWatcher {
       return false;
     }
 
-    if (!this._dirRegistry[dir]) {
-      this._dirRegistry[dir] = Object.create(null);
+    if (!this.#dirRegistry[dir]) {
+      this.#dirRegistry[dir] = Object.create(null);
     }
 
-    this._dirRegistry[dir][filename] = true;
+    this.#dirRegistry[dir][filename] = true;
 
     return true;
   }
@@ -115,39 +115,39 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Removes a file from the registry.
    */
-  _unregister(filepath: string) {
+  #unregister(filepath: string) {
     const dir = path.dirname(filepath);
-    if (this._dirRegistry[dir]) {
+    if (this.#dirRegistry[dir]) {
       const filename = path.basename(filepath);
-      delete this._dirRegistry[dir][filename];
+      delete this.#dirRegistry[dir][filename];
     }
   }
 
   /**
    * Removes a dir from the registry.
    */
-  _unregisterDir(dirpath: string): void {
-    if (this._dirRegistry[dirpath]) {
-      delete this._dirRegistry[dirpath];
+  #unregisterDir(dirpath: string): void {
+    if (this.#dirRegistry[dirpath]) {
+      delete this.#dirRegistry[dirpath];
     }
   }
 
   /**
    * Checks if a file or directory exists in the registry.
    */
-  _registered(fullpath: string): boolean {
+  #registered(fullpath: string): boolean {
     const dir = path.dirname(fullpath);
     return !!(
-      this._dirRegistry[fullpath] ||
-      (this._dirRegistry[dir] &&
-        this._dirRegistry[dir][path.basename(fullpath)])
+      this.#dirRegistry[fullpath] ||
+      (this.#dirRegistry[dir] &&
+        this.#dirRegistry[dir][path.basename(fullpath)])
     );
   }
 
   /**
    * Emit "error" event if it's not an ignorable event
    */
-  _checkedEmitError: (error: Error) => void = error => {
+  #checkedEmitError: (error: Error) => void = error => {
     if (!isIgnorableFileError(error)) {
       this.emitError(error);
     }
@@ -156,19 +156,19 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Watch a directory.
    */
-  _watchdir: string => boolean = (dir: string) => {
-    if (this.watched[dir]) {
+  #watchdir: string => boolean = (dir: string) => {
+    if (this.#watched[dir]) {
       return false;
     }
     const watcher = fs.watch(dir, {persistent: true}, (event, filename) =>
-      this._normalizeChange(dir, event, filename),
+      this.#normalizeChange(dir, event, filename),
     );
-    this.watched[dir] = watcher;
+    this.#watched[dir] = watcher;
 
-    watcher.on('error', this._checkedEmitError);
+    watcher.on('error', this.#checkedEmitError);
 
     if (this.root !== dir) {
-      this._register(dir, 'd');
+      this.#register(dir, 'd');
     }
     return true;
   };
@@ -176,12 +176,12 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Stop watching a directory.
    */
-  async _stopWatching(dir: string): Promise<void> {
-    if (this.watched[dir]) {
+  async #stopWatching(dir: string): Promise<void> {
+    if (this.#watched[dir]) {
       await new Promise(resolve => {
-        this.watched[dir].once('close', () => process.nextTick(resolve));
-        this.watched[dir].close();
-        delete this.watched[dir];
+        this.#watched[dir].once('close', () => process.nextTick(resolve));
+        this.#watched[dir].close();
+        delete this.#watched[dir];
       });
     }
   }
@@ -191,8 +191,8 @@ export default class FallbackWatcher extends AbstractWatcher {
    */
   async stopWatching(): Promise<void> {
     await super.stopWatching();
-    const promises = Object.keys(this.watched).map(dir =>
-      this._stopWatching(dir),
+    const promises = Object.keys(this.#watched).map(dir =>
+      this.#stopWatching(dir),
     );
     await Promise.all(promises);
   }
@@ -202,19 +202,19 @@ export default class FallbackWatcher extends AbstractWatcher {
    * the file argument might be missing from the fs event. Try to detect what
    * change by detecting if something was deleted or the most recent file change.
    */
-  _detectChangedFile(
+  #detectChangedFile(
     dir: string,
     event: string,
     callback: (file: string) => void,
   ) {
-    if (!this._dirRegistry[dir]) {
+    if (!this.#dirRegistry[dir]) {
       return;
     }
 
     let found = false;
     let closest: ?Readonly<{file: string, mtime: Stats['mtime']}> = null;
     let c = 0;
-    Object.keys(this._dirRegistry[dir]).forEach((file, i, arr) => {
+    Object.keys(this.#dirRegistry[dir]).forEach((file, i, arr) => {
       fs.lstat(path.join(dir, file), (error, stat) => {
         if (found) {
           return;
@@ -242,17 +242,17 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Normalize fs events and pass it on to be processed.
    */
-  _normalizeChange(dir: string, event: string, file: string) {
+  #normalizeChange(dir: string, event: string, file: string) {
     if (!file) {
-      this._detectChangedFile(dir, event, actualFile => {
+      this.#detectChangedFile(dir, event, actualFile => {
         if (actualFile) {
-          this._processChange(dir, event, actualFile).catch(error =>
+          this.#processChange(dir, event, actualFile).catch(error =>
             this.emitError(error),
           );
         }
       });
     } else {
-      this._processChange(dir, event, path.normalize(file)).catch(error =>
+      this.#processChange(dir, event, path.normalize(file)).catch(error =>
         this.emitError(error),
       );
     }
@@ -261,11 +261,11 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Process changes.
    */
-  async _processChange(dir: string, event: string, file: string) {
+  async #processChange(dir: string, event: string, file: string) {
     const fullPath = path.join(dir, file);
     const relativePath = path.join(path.relative(this.root, dir), file);
 
-    const registered = this._registered(fullPath);
+    const registered = this.#registered(fullPath);
 
     try {
       const stat = await fsPromises.lstat(fullPath);
@@ -284,8 +284,8 @@ export default class FallbackWatcher extends AbstractWatcher {
         recReaddir(
           path.resolve(this.root, relativePath),
           (dir, stats) => {
-            if (this._watchdir(dir)) {
-              this._emitEvent({
+            if (this.#watchdir(dir)) {
+              this.#emitEvent({
                 event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, dir),
                 metadata: {
@@ -297,8 +297,8 @@ export default class FallbackWatcher extends AbstractWatcher {
             }
           },
           (file, stats) => {
-            if (this._register(file, 'f')) {
-              this._emitEvent({
+            if (this.#register(file, 'f')) {
+              this.#emitEvent({
                 event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, file),
                 metadata: {
@@ -310,7 +310,7 @@ export default class FallbackWatcher extends AbstractWatcher {
             }
           },
           (symlink, stats) => {
-            if (this._register(symlink, 'l')) {
+            if (this.#register(symlink, 'l')) {
               this.emitFileEvent({
                 event: TOUCH_EVENT,
                 relativePath: path.relative(this.root, symlink),
@@ -323,7 +323,7 @@ export default class FallbackWatcher extends AbstractWatcher {
             }
           },
           function endCallback() {},
-          this._checkedEmitError,
+          this.#checkedEmitError,
           this.ignored,
         );
       } else {
@@ -337,10 +337,10 @@ export default class FallbackWatcher extends AbstractWatcher {
           type,
         };
         if (registered) {
-          this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
+          this.#emitEvent({event: TOUCH_EVENT, relativePath, metadata});
         } else {
-          if (this._register(fullPath, type)) {
-            this._emitEvent({event: TOUCH_EVENT, relativePath, metadata});
+          if (this.#register(fullPath, type)) {
+            this.#emitEvent({event: TOUCH_EVENT, relativePath, metadata});
           }
         }
       }
@@ -349,12 +349,12 @@ export default class FallbackWatcher extends AbstractWatcher {
         this.emitError(error);
         return;
       }
-      this._unregister(fullPath);
-      this._unregisterDir(fullPath);
+      this.#unregister(fullPath);
+      this.#unregisterDir(fullPath);
       if (registered) {
-        this._emitEvent({event: DELETE_EVENT, relativePath});
+        this.#emitEvent({event: DELETE_EVENT, relativePath});
       }
-      await this._stopWatching(fullPath);
+      await this.#stopWatching(fullPath);
     }
   }
 
@@ -365,17 +365,17 @@ export default class FallbackWatcher extends AbstractWatcher {
    *
    * See also note above for DEBOUNCE_MS.
    */
-  _emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
+  #emitEvent(change: Omit<WatcherBackendChangeEvent, 'root'>) {
     const {event, relativePath} = change;
     const key = event + '-' + relativePath;
-    const existingTimer = this._changeTimers.get(key);
+    const existingTimer = this.#changeTimers.get(key);
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
-    this._changeTimers.set(
+    this.#changeTimers.set(
       key,
       setTimeout(() => {
-        this._changeTimers.delete(key);
+        this.#changeTimers.delete(key);
         this.emitFileEvent(change);
       }, DEBOUNCE_MS),
     );

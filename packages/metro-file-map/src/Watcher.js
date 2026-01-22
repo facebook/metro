@@ -70,27 +70,27 @@ export type HealthCheckResult =
   | {type: 'timeout', timeout: number, watcher: ?string, pauseReason: ?string};
 
 export class Watcher extends EventEmitter {
-  _options: WatcherOptions;
-  _backends: ReadonlyArray<WatcherBackend> = [];
-  _instanceId: number;
-  _nextHealthCheckId: number = 0;
-  _pendingHealthChecks: Map</* basename */ string, /* resolve */ () => void> =
+  #activeWatcher: ?string;
+  #backends: ReadonlyArray<WatcherBackend> = [];
+  +#instanceId: number;
+  #nextHealthCheckId: number = 0;
+  +#options: WatcherOptions;
+  +#pendingHealthChecks: Map</* basename */ string, /* resolve */ () => void> =
     new Map();
-  _activeWatcher: ?string;
 
   constructor(options: WatcherOptions) {
     super();
-    this._options = options;
-    this._instanceId = nextInstanceId++;
+    this.#options = options;
+    this.#instanceId = nextInstanceId++;
   }
 
   async crawl(): Promise<CrawlResult> {
-    this._options.perfLogger?.point('crawl_start');
+    this.#options.perfLogger?.point('crawl_start');
 
-    const options = this._options;
+    const options = this.#options;
     const ignoreForCrawl = (filePath: string) =>
       options.ignoreForCrawl(filePath) ||
-      path.basename(filePath).startsWith(this._options.healthCheckFilePrefix);
+      path.basename(filePath).startsWith(this.#options.healthCheckFilePrefix);
     const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
 
@@ -146,7 +146,7 @@ export class Watcher extends EventEmitter {
         delta.removedFiles.size,
         delta.clocks?.size ?? 0,
       );
-      this._options.perfLogger?.point('crawl_end');
+      this.#options.perfLogger?.point('crawl_end');
       return delta;
     };
 
@@ -160,7 +160,7 @@ export class Watcher extends EventEmitter {
   }
 
   async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
-    const {extensions, ignorePatternForWatch, useWatchman} = this._options;
+    const {extensions, ignorePatternForWatch, useWatchman} = this.#options;
 
     // WatchmanWatcher > NativeWatcher > FallbackWatcher
     const WatcherImpl = useWatchman
@@ -176,8 +176,8 @@ export class Watcher extends EventEmitter {
       watcher = 'native';
     }
     debug(`Using watcher: ${watcher}`);
-    this._options.perfLogger?.annotate({string: {watcher}});
-    this._activeWatcher = watcher;
+    this.#options.perfLogger?.annotate({string: {watcher}});
+    this.#activeWatcher = watcher;
 
     const createWatcherBackend = (root: Path): Promise<WatcherBackend> => {
       const watcherOptions: WatcherBackendOptions = {
@@ -187,11 +187,11 @@ export class Watcher extends EventEmitter {
           /// module resolution.
           '**/package.json',
           // Ensure we always watch any health check files
-          '**/' + this._options.healthCheckFilePrefix + '*',
+          '**/' + this.#options.healthCheckFilePrefix + '*',
           ...extensions.map(extension => '**/*.' + extension),
         ],
         ignored: ignorePatternForWatch,
-        watchmanDeferStates: this._options.watchmanDeferStates,
+        watchmanDeferStates: this.#options.watchmanDeferStates,
       };
       const watcher: WatcherBackend = new WatcherImpl(root, watcherOptions);
 
@@ -203,14 +203,14 @@ export class Watcher extends EventEmitter {
 
         watcher.onFileEvent(change => {
           const basename = path.basename(change.relativePath);
-          if (basename.startsWith(this._options.healthCheckFilePrefix)) {
+          if (basename.startsWith(this.#options.healthCheckFilePrefix)) {
             if (change.event === TOUCH_EVENT) {
               debug(
                 'Observed possible health check cookie: %s in %s',
                 change.relativePath,
                 root,
               );
-              this._handleHealthCheckObservation(basename);
+              this.#handleHealthCheckObservation(basename);
             }
             return;
           }
@@ -222,13 +222,13 @@ export class Watcher extends EventEmitter {
       });
     };
 
-    this._backends = await Promise.all(
-      this._options.roots.map(createWatcherBackend),
+    this.#backends = await Promise.all(
+      this.#options.roots.map(createWatcherBackend),
     );
   }
 
-  _handleHealthCheckObservation(basename: string) {
-    const resolveHealthCheck = this._pendingHealthChecks.get(basename);
+  #handleHealthCheckObservation(basename: string) {
+    const resolveHealthCheck = this.#pendingHealthChecks.get(basename);
     if (!resolveHealthCheck) {
       return;
     }
@@ -236,25 +236,25 @@ export class Watcher extends EventEmitter {
   }
 
   async close() {
-    await Promise.all(this._backends.map(watcher => watcher.stopWatching()));
-    this._activeWatcher = null;
+    await Promise.all(this.#backends.map(watcher => watcher.stopWatching()));
+    this.#activeWatcher = null;
   }
 
   async checkHealth(timeout: number): Promise<HealthCheckResult> {
-    const healthCheckId = this._nextHealthCheckId++;
+    const healthCheckId = this.#nextHealthCheckId++;
     if (healthCheckId === Number.MAX_SAFE_INTEGER) {
-      this._nextHealthCheckId = 0;
+      this.#nextHealthCheckId = 0;
     }
-    const watcher = this._activeWatcher;
+    const watcher = this.#activeWatcher;
     const basename =
-      this._options.healthCheckFilePrefix +
+      this.#options.healthCheckFilePrefix +
       '-' +
       process.pid +
       '-' +
-      this._instanceId +
+      this.#instanceId +
       '-' +
       healthCheckId;
-    const healthCheckPath = path.join(this._options.rootDir, basename);
+    const healthCheckPath = path.join(this.#options.rootDir, basename);
     let result: ?HealthCheckResult;
     const timeoutPromise = new Promise(resolve =>
       setTimeout(resolve, timeout),
@@ -262,7 +262,7 @@ export class Watcher extends EventEmitter {
       if (!result) {
         result = {
           type: 'timeout',
-          pauseReason: this._backends[0]?.getPauseReason(),
+          pauseReason: this.#backends[0]?.getPauseReason(),
           timeout,
           watcher,
         };
@@ -283,7 +283,7 @@ export class Watcher extends EventEmitter {
         }
       });
     const observationPromise = new Promise(resolve => {
-      this._pendingHealthChecks.set(basename, resolve);
+      this.#pendingHealthChecks.set(basename, resolve);
     }).then(() => {
       if (!result) {
         result = {
@@ -298,7 +298,7 @@ export class Watcher extends EventEmitter {
       timeoutPromise,
       creationPromise.then(() => observationPromise),
     ]);
-    this._pendingHealthChecks.delete(basename);
+    this.#pendingHealthChecks.delete(basename);
     // Chain a deletion to the creation promise (which may not have even settled yet!),
     // don't await it, and swallow errors. This is just best-effort cleanup.
     // $FlowFixMe[unused-promise]
