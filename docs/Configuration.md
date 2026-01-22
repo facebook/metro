@@ -643,7 +643,13 @@ The `Middleware` type is an alias for [`connect.HandleFunction`](https://github.
 
 Type: `string => string`
 
-A function that will be called every time Metro processes a URL, after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
+A function that will be called every time Metro processes a "URL" (see note), after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
+
+:::note
+
+The input may be either an absolute URL (e.g. `https://example.com/foo/bar?baz=qux`) or a path (e.g. `/foo/bar?baz=qux`). The output should use the same form as the input - i.e. the returned value should be an absolute URL if and only if the input is an absolute URL.
+
+:::
 
 #### `forwardClientLogs`
 
