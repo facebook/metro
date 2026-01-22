@@ -52,14 +52,6 @@ const siteConfig = {
   baseUrl: '/',
   favicon: 'img/favicon.png',
   themeConfig: {
-    announcementBar: {
-      id: 'react_conf',
-      content:
-        'Join us for React Conf on Oct 7-8. <a target="_blank" rel="noopener noreferrer" href="https://conf.react.dev">Learn more</a>.',
-      backgroundColor: '#20232a',
-      textColor: '#fff',
-      isCloseable: false,
-    },
     navbar: {
       title: 'Metro',
       logo: {
