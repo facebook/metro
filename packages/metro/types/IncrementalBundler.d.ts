@@ -22,10 +22,10 @@ import {ResolverInputOptions} from './shared/types';
 
 export type RevisionId = string;
 
-export type OutputGraph = Graph<void>;
+export type OutputGraph = Graph;
 
 export interface OtherOptions {
-  readonly onProgress: DeltaBundlerOptions<void>['onProgress'];
+  readonly onProgress: DeltaBundlerOptions['onProgress'];
   readonly shallow: boolean;
 }
 
@@ -34,7 +34,7 @@ export interface GraphRevision {
   readonly date: Date;
   readonly graphId: GraphId;
   readonly graph: OutputGraph;
-  readonly prepend: ReadonlyArray<Module<void>>;
+  readonly prepend: ReadonlyArray<Module>;
 }
 
 export interface IncrementalBundlerOptions {
@@ -48,7 +48,7 @@ export default class IncrementalBundler {
 
   end(): void;
   getBundler(): Bundler;
-  getDeltaBundler(): DeltaBundler<void>;
+  getDeltaBundler(): DeltaBundler;
   getRevision(revisionId: RevisionId): Promise<GraphRevision> | null;
   getRevisionByGraphId(graphId: GraphId): Promise<GraphRevision> | null;
 
@@ -64,16 +64,14 @@ export default class IncrementalBundler {
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
-  ): Promise<ReadOnlyDependencies<void>>;
+  ): Promise<ReadOnlyDependencies>;
 
   buildGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
-  ): Promise<
-    Readonly<{graph: OutputGraph; prepend: ReadonlyArray<Module<void>>}>
-  >;
+  ): Promise<Readonly<{graph: OutputGraph; prepend: ReadonlyArray<Module>}>>;
 
   initializeGraph(
     entryFile: string,
@@ -81,7 +79,7 @@ export default class IncrementalBundler {
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
   ): Promise<{
-    delta: DeltaResult<void>;
+    delta: DeltaResult;
     revision: GraphRevision;
   }>;
 
@@ -89,7 +87,7 @@ export default class IncrementalBundler {
     revision: GraphRevision,
     reset: boolean,
   ): Promise<{
-    delta: DeltaResult<void>;
+    delta: DeltaResult;
     revision: GraphRevision;
   }>;
 
