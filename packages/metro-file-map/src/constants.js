@@ -5,10 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict-local
- * @noformat - Flow comment syntax
+ * @format
  */
-
-/* eslint-disable import/no-commonjs */
 
 /*
  * This file exports a set of constants that are used for Jest's haste map
@@ -19,13 +17,9 @@
  * a custom serialization library.
  */
 
-/*::
 import type {HType} from './flow-types';
-*/
 
-'use strict';
-
-const constants/*: HType */ = {
+export default {
   /* dependency serialization */
   DEPENDENCY_DELIM: '\0',
 
@@ -49,6 +43,4 @@ const constants/*: HType */ = {
   /* platforms */
   GENERIC_PLATFORM: 'g',
   NATIVE_PLATFORM: 'native',
-};
-
-module.exports = constants;
+} as HType;

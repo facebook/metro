@@ -408,7 +408,7 @@ describe('FileMap', () => {
   });
 
   test('exports constants', () => {
-    expect(FileMap.H).toBe(require('../constants'));
+    expect(FileMap.H).toBe(require('../constants').default);
   });
 
   test('ignores files given a pattern', async () => {
