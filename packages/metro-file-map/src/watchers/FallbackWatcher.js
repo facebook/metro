@@ -49,7 +49,7 @@ export default class FallbackWatcher extends AbstractWatcher {
   } = Object.create(null);
   +#watched: {[key: string]: FSWatcher, __proto__: null} = Object.create(null);
 
-  async startWatching() {
+  async startWatching(): Promise<void> {
     this.#watchdir(this.root);
 
     await new Promise(resolve => {
@@ -156,7 +156,7 @@ export default class FallbackWatcher extends AbstractWatcher {
   /**
    * Watch a directory.
    */
-  #watchdir: string => boolean = (dir: string) => {
+  #watchdir: (dir: string) => boolean = (dir: string) => {
     if (this.#watched[dir]) {
       return false;
     }

@@ -40,7 +40,7 @@ export type BuildResult = {
 export type CacheData = Readonly<{
   clocks: WatchmanClocks,
   fileSystemData: unknown,
-  plugins: ReadonlyMap<string, V8Serializable>,
+  plugins: ReadonlyMap<string, void | V8Serializable>,
 }>;
 
 export interface CacheManager {
@@ -85,7 +85,7 @@ export type CacheManagerFactoryOptions = Readonly<{
 export type CacheManagerWriteOptions = Readonly<{
   changedSinceCacheRead: boolean,
   eventSource: CacheManagerEventSource,
-  onWriteError: Error => void,
+  onWriteError: (error: Error) => void,
 }>;
 
 // A path that is
@@ -206,11 +206,11 @@ export type V8Serializable =
   | ReadonlyArray<V8Serializable>
   | ReadonlySet<V8Serializable>
   | ReadonlyMap<string, V8Serializable>
-  | {[key: string]: V8Serializable};
+  | Readonly<{[key: string]: V8Serializable}>;
 
 export interface FileMapPlugin<
-  SerializableState = V8Serializable,
-  PerFileData = void,
+  SerializableState: void | V8Serializable = void | V8Serializable,
+  PerFileData: void | V8Serializable = void | V8Serializable,
 > {
   +name: string;
   initialize(
@@ -427,7 +427,9 @@ export type HasteMapData = Map<string, HasteMapItem>;
 
 export type HasteMapItem = {
   [platform: string]: HasteMapItemMetadata,
+  /*:: // Hide from TypeScript
   __proto__: null,
+  */
 };
 export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
@@ -465,8 +467,8 @@ export type ReadOnlyRawMockMap = Readonly<{
 
 export interface WatcherBackend {
   getPauseReason(): ?string;
-  onError((error: Error) => void): () => void;
-  onFileEvent((event: WatcherBackendChangeEvent) => void): () => void;
+  onError(listener: (error: Error) => void): () => void;
+  onFileEvent(listener: (event: WatcherBackendChangeEvent) => void): () => void;
   startWatching(): Promise<void>;
   stopWatching(): Promise<void>;
 }

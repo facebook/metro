@@ -36,8 +36,10 @@ export type MockMapOptions = Readonly<{
   throwOnModuleCollision: boolean,
 }>;
 
-export default class MockPlugin implements FileMapPlugin<RawMockMap>, IMockMap {
-  +name = 'mocks';
+export default class MockPlugin
+  implements FileMapPlugin<RawMockMap, void>, IMockMap
+{
+  +name: 'mocks' = 'mocks';
 
   +#mocksPattern: RegExp;
   #raw: RawMockMap;

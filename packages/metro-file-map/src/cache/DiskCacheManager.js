@@ -150,7 +150,7 @@ export class DiskCacheManager implements CacheManager {
     }
   }
 
-  async end() {
+  async end(): Promise<void> {
     // Clear any timers
     if (this.#debounceTimeout) {
       clearTimeout(this.#debounceTimeout);

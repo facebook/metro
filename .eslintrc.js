@@ -60,5 +60,14 @@ module.exports = {
         'import/no-commonjs': 'off',
       },
     },
+    {
+      files: [
+        // Uses FileMapPlugin<any,any> as input type
+        'packages/metro-file-map/types/index.d.ts',
+      ],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
   ],
 };

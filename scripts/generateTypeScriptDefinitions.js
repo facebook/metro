@@ -34,6 +34,7 @@ export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = [
   'packages/metro-resolver/**',
   'packages/metro-source-map/**',
   'packages/metro-transform-worker/**',
+  'packages/metro-file-map/**',
   'packages/ob1/**',
 ];
 
