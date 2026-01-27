@@ -999,6 +999,7 @@ export default class Server {
       return {
         action_name: 'Requesting bundle',
         bundle_url: context.req.url,
+        bundle_original_url: context.req.originalUrl ?? 'unknown',
         entry_point: context.entryFile,
         bundler: 'delta',
         build_id: getBuildID(context.buildNumber),
