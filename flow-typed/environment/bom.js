@@ -1889,10 +1889,11 @@ declare class AbortController {
 declare class AbortSignal extends EventTarget {
   +aborted: boolean;
   +reason: any;
-  abort(reason?: any): AbortSignal;
+  static abort(reason?: any): AbortSignal;
+  static any(signals: Iterable<AbortSignal>): AbortSignal;
   onabort: (event: Event) => unknown;
   throwIfAborted(): void;
-  timeout(time: number): AbortSignal;
+  static timeout(time: number): AbortSignal;
 }
 
 declare function fetch(
