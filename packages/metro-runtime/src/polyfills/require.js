@@ -594,6 +594,28 @@ if (__DEV__) {
       throw unknownModuleError(id);
     }
 
+    // Some modules have known issues with hot reloading where their side effects
+    // (such as style registration) don't properly re-execute in the correct
+    // dependency order. The `unstable_forceFullRefreshPatterns` configuration allows
+    // specifying patterns for modules that should trigger a full refresh
+    // instead of attempting hot reload.
+    const forceFullRefreshPatterns =
+      global[__METRO_GLOBAL_PREFIX__ + '__unstable_forceFullRefreshPatterns'];
+
+    if (
+      forceFullRefreshPatterns != null &&
+      Array.isArray(forceFullRefreshPatterns) &&
+      mod.verboseName != null &&
+      forceFullRefreshPatterns.some(pattern =>
+        pattern.test(mod.verboseName ?? ''),
+      )
+    ) {
+      performFullRefresh('Module matched unstable_forceFullRefreshPatterns', {
+        source: mod,
+      });
+      return;
+    }
+
     if (!mod.hasError && !mod.isInitialized) {
       // The module hasn't actually been executed yet,
       // so we can always safely replace it.

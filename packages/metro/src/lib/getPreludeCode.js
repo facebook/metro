@@ -14,11 +14,13 @@ export default function getPreludeCode({
   isDev,
   globalPrefix,
   requireCycleIgnorePatterns,
+  unstable_forceFullRefreshPatterns,
 }: {
   +extraVars?: {[string]: unknown, ...},
   +isDev: boolean,
   +globalPrefix: string,
   +requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
+  +unstable_forceFullRefreshPatterns: ReadonlyArray<RegExp>,
 }): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime
@@ -35,6 +37,11 @@ export default function getPreludeCode({
     // require.js
     vars.push(
       `${globalPrefix}__requireCycleIgnorePatterns=[${requireCycleIgnorePatterns
+        .map(regex => regex.toString())
+        .join(',')}]`,
+    );
+    vars.push(
+      `${globalPrefix}__unstable_forceFullRefreshPatterns=[${unstable_forceFullRefreshPatterns
         .map(regex => regex.toString())
         .join(',')}]`,
     );

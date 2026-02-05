@@ -123,6 +123,7 @@ type ResolverConfigT = {
   unstable_incrementalResolution: boolean,
   useWatchman: boolean,
   requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
+  unstable_forceFullRefreshPatterns: ReadonlyArray<RegExp>,
 };
 
 type SerializerConfigT = {

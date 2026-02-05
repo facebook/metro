@@ -55,6 +55,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_incrementalResolution: false,
     useWatchman: true,
     requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
+    unstable_forceFullRefreshPatterns: [],
   },
 
   serializer: {
