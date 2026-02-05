@@ -215,7 +215,8 @@ export default class FallbackWatcher extends AbstractWatcher {
     let closest: ?Readonly<{file: string, mtime: Stats['mtime']}> = null;
     let c = 0;
     Object.keys(this.#dirRegistry[dir]).forEach((file, i, arr) => {
-      fs.lstat(path.join(dir, file), (error, stat) => {
+      const absPath = path.join(dir, file);
+      fs.lstat(absPath, (error, stat) => {
         if (found) {
           return;
         }
@@ -284,17 +285,7 @@ export default class FallbackWatcher extends AbstractWatcher {
         recReaddir(
           path.resolve(this.root, relativePath),
           (dir, stats) => {
-            if (this.#watchdir(dir)) {
-              this.#emitEvent({
-                event: TOUCH_EVENT,
-                relativePath: path.relative(this.root, dir),
-                metadata: {
-                  modifiedTime: stats.mtime.getTime(),
-                  size: stats.size,
-                  type: 'd',
-                },
-              });
-            }
+            this.#watchdir(dir);
           },
           (file, stats) => {
             if (this.#register(file, 'f')) {
