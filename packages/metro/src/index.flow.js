@@ -25,6 +25,7 @@ import type {
 } from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
+import type {Server as WebSocketServer} from 'ws';
 import typeof Yargs from 'yargs';
 
 import makeBuildCommand from './commands/build';
@@ -79,7 +80,7 @@ export type RunServerOptions = Readonly<{
   waitForBundler?: boolean,
   watch?: boolean,
   websocketEndpoints?: Readonly<{
-    [path: string]: ws$WebSocketServer,
+    [path: string]: WebSocketServer,
   }>,
 }>;
 

@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  * @oncall react_native
  */
@@ -18,7 +18,7 @@ type WebsocketServiceInterface<T> = interface {
     sendFn: (data: string) => void,
   ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => unknown,
-  +onClientError?: (client: T, e: ErrorEvent) => unknown,
+  +onClientError?: (client: T, e: Error) => unknown,
   +onClientMessage?: (
     client: T,
     message: string | Buffer | ArrayBuffer | Array<Buffer>,
@@ -44,7 +44,7 @@ const KEEP_ALIVE_INTERVAL_MS = 20000;
  *   - onClientDisconnect
  */
 
-export default function createWebsocketServer<TClient: Object>({
+export default function createWebsocketServer<TClient>({
   websocketServer,
 }: HMROptions<TClient>): ws.Server {
   const wss = new ws.Server({
@@ -55,10 +55,9 @@ export default function createWebsocketServer<TClient: Object>({
     let connected = true;
     const url = req.url;
 
-    const sendFn = (...args: Array<string>) => {
+    const sendFn = (data: string) => {
       if (connected) {
-        // $FlowFixMe[incompatible-type]
-        ws.send(...args);
+        ws.send(data);
       }
     };
 
@@ -75,20 +74,20 @@ export default function createWebsocketServer<TClient: Object>({
     ).unref();
 
     ws.on('error', e => {
-      // $FlowFixMe[incompatible-type]
-      websocketServer.onClientError && websocketServer.onClientError(client, e);
+      websocketServer.onClientError &&
+        websocketServer?.onClientError(client, e);
     });
 
     ws.on('close', () => {
       clearInterval(keepAliveInterval);
       websocketServer.onClientDisconnect &&
-        websocketServer.onClientDisconnect(client);
+        websocketServer?.onClientDisconnect(client);
       connected = false;
     });
 
     ws.on('message', message => {
       websocketServer.onClientMessage &&
-        websocketServer.onClientMessage(client, message, sendFn);
+        websocketServer?.onClientMessage(client, message, sendFn);
     });
   });
 
