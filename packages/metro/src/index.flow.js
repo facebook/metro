@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -15,7 +15,10 @@ import type {ServerOptions} from './Server';
 import type {BuildOptions, OutputOptions, RequestOptions} from './shared/types';
 import type {HandleFunction} from 'connect';
 import type {Server as HttpServer} from 'http';
-import type {Server as HttpsServer} from 'https';
+import type {
+  Server as HttpsServer,
+  ServerOptions as HttpsServerOptions,
+} from 'https';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   ConfigT,
@@ -72,7 +75,7 @@ export type RunServerOptions = Readonly<{
   onError?: (Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
   onClose?: () => void,
-  secureServerOptions?: Object,
+  secureServerOptions?: HttpsServerOptions,
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
@@ -146,8 +149,9 @@ export type RunBuildResult = {
   ...
 };
 
-type BuildCommandOptions = {} | null;
-type ServeCommandOptions = {} | null;
+type BuildCommandOptions = Readonly<{[string]: unknown}> | null;
+type ServeCommandOptions = Readonly<{[string]: unknown}> | null;
+type DependenciesCommandOptions = Readonly<{[string]: unknown}> | null;
 
 export {Terminal, JsonReporter, TerminalReporter};
 
@@ -264,7 +268,7 @@ export const runServer = async (
     secureKey, // deprecated
     unstable_extraMiddleware,
     waitForBundler = false,
-    websocketEndpoints = {},
+    websocketEndpoints: userWebsocketEndpoints = {},
     watch,
   }: RunServerOptions = {},
 ): Promise<RunServerResult> => {
@@ -303,7 +307,7 @@ export const runServer = async (
 
   let httpServer;
 
-  if (secure || secureServerOptions != null) {
+  if (secure === true || secureServerOptions != null) {
     let options = secureServerOptions;
     if (typeof secureKey === 'string' && typeof secureCert === 'string') {
       options = {
@@ -334,8 +338,8 @@ export const runServer = async (
         family,
       });
 
-      websocketEndpoints = {
-        ...websocketEndpoints,
+      const websocketEndpoints = {
+        ...userWebsocketEndpoints,
         '/hot': createWebsocketServer({
           websocketServer: new MetroHmrServer(
             metroServer.getBundler(),
@@ -442,7 +446,7 @@ export const runBuild = async (
       onComplete();
     }
 
-    if (out || bundleOut) {
+    if (out != null || bundleOut != null) {
       const bundleOutput =
         bundleOut ?? nullthrows(out).replace(/(\.js)?$/, '.js');
 
@@ -511,7 +515,7 @@ export const buildGraph = async function (
 type AttachMetroCLIOptions = {
   build?: BuildCommandOptions,
   serve?: ServeCommandOptions,
-  dependencies?: any,
+  dependencies?: DependenciesCommandOptions,
   ...
 };
 

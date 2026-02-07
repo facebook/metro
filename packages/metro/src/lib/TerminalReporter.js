@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -16,6 +16,7 @@ import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import logToConsole from './logToConsole';
 import * as reporting from './reporting';
 import chalk from 'chalk';
+// $FlowFixMe[untyped-import] lodash.throttle
 import throttle from 'lodash.throttle';
 import {AmbiguousModuleResolutionError} from 'metro-core';
 import path from 'path';
@@ -56,11 +57,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
-type SnippetError = ErrnoError &
-  interface {
-    filename?: string,
-    snippet?: string,
-  };
+interface SnippetError extends Error {
+  code?: string;
+  filename?: string;
+  snippet?: string;
+}
 
 const DARK_BLOCK_CHAR = '\u2593';
 const LIGHT_BLOCK_CHAR = '\u2591';
@@ -117,10 +118,6 @@ export default class TerminalReporter {
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    if (isPrefetch) {
-      bundleType = 'PREBUNDLE';
-    }
-
     const localPath = path.relative('.', entryFile);
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
     const bundleTypeColor =
@@ -140,7 +137,9 @@ export default class TerminalReporter {
         : '';
 
     return (
-      bundleTypeColor.inverse.bold(` ${bundleType.toUpperCase()} `) +
+      bundleTypeColor.inverse.bold(
+        ` ${isPrefetch === true ? 'PREBUNDLE' : bundleType.toUpperCase()} `,
+      ) +
       chalk.reset.dim(` ${path.dirname(localPath)}/`) +
       chalk.bold(path.basename(localPath)) +
       ' ' +
@@ -273,6 +272,7 @@ export default class TerminalReporter {
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
         // eslint-disable-next-line import/no-commonjs
+        // $FlowFixMe[untyped-import] package.json
         const version = 'v' + require('../../package.json').version;
         this.terminal.log(
           color.bold(
@@ -331,9 +331,9 @@ export default class TerminalReporter {
       }
     }
 
-    if (error.filename && !message.includes(error.filename)) {
-      // $FlowFixMe[incompatible-type]
-      message += ` [${error.filename}]`;
+    const filename = error.filename;
+    if (filename?.length && !message.includes(filename)) {
+      message += ` [${filename}]`;
     }
 
     if (error.snippet != null) {

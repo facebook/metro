@@ -4,11 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
 
+import type {ServerOptions as HttpsServerOptions} from 'https';
 import type {ModuleObject} from 'yargs';
 import typeof Yargs from 'yargs';
 
@@ -17,6 +18,8 @@ import {loadConfig, resolveConfig} from 'metro-config';
 import {promisify} from 'util';
 
 type Args = Readonly<{
+  _: unknown,
+  $0: unknown,
   projectRoots?: ReadonlyArray<string>,
   host: string,
   port: number,
@@ -24,16 +27,14 @@ type Args = Readonly<{
   secure?: boolean,
   secureKey?: string,
   secureCert?: string,
-  secureServerOptions?: string,
+  secureServerOptions?: HttpsServerOptions,
   hmrEnabled?: boolean,
   config?: string,
   resetCache?: boolean,
+  ...
 }>;
 
-export default (): {
-  ...ModuleObject,
-  handler: Function,
-} => ({
+export default (): ModuleObject => ({
   command: 'serve',
   aliases: ['start'],
   desc: 'Starts Metro on the given port, building bundles on the fly',
@@ -91,6 +92,7 @@ export default (): {
         await promisify(server.close).call(server);
       }
 
+      // $FlowFixMe[incompatible-type] argv has extra props.
       const config = await loadConfig(argv);
 
       // Inline require() to avoid circular dependency with ../index
@@ -98,6 +100,8 @@ export default (): {
       const MetroApi = require('../index');
 
       const {
+        _,
+        $0: _0,
         config: _config,
         hmrEnabled: _hmrEnabled,
         maxWorkers: _maxWorkers,
@@ -108,6 +112,7 @@ export default (): {
       } = argv;
       ({httpServer: server} = await MetroApi.runServer(
         config,
+        // $FlowFixMe[incompatible-exact] argv has extra props.
         runServerOptions,
       ));
 

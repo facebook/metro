@@ -5,10 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow
+ * @flow strict-local
  */
 
-import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
+import type {
+  RevisionId,
+  default as IncrementalBundler,
+} from './IncrementalBundler';
 import type {GraphOptions} from './shared/types';
 import type {ConfigT, RootPerfLogger} from 'metro-config';
 import type {
@@ -93,11 +96,12 @@ export default class HmrServer<TClient: Client> {
 
   async _registerEntryPoint(
     client: Client,
-    requestUrl: string,
+    originalRequestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<void> {
-    debug('Registering entry point: %s', requestUrl);
-    requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
+    debug('Registering entry point: %s', originalRequestUrl);
+    const requestUrl =
+      this._config.server.rewriteRequestUrl(originalRequestUrl);
     debug('Rewritten as: %s', requestUrl);
 
     const {bundleType: _bundleType, ...options} =
@@ -176,21 +180,22 @@ export default class HmrServer<TClient: Client> {
 
       this._clientGroups.set(id, clientGroup);
 
-      let latestEventArgs: Array<any> = [];
+      let latestChangeEvent: ?{
+        logger: ?RootPerfLogger,
+      } = null;
 
       const debounceCallHandleFileChange = debounceAsyncQueue(async () => {
         await this._handleFileChange(
           nullthrows(clientGroup),
           {isInitialUpdate: false},
-          ...latestEventArgs,
+          latestChangeEvent,
         );
       }, 50);
 
       const unlisten = this._bundler
         .getDeltaBundler()
-        // $FlowFixMe[missing-local-annot]
-        .listen(graph, async (...args) => {
-          latestEventArgs = args;
+        .listen(graph, async changeEvent => {
+          latestChangeEvent = changeEvent;
           await debounceCallHandleFileChange();
         });
     }

@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -25,6 +25,8 @@ const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
 type Args = Readonly<{
+  _: unknown,
+  $0: unknown,
   config?: string,
   dev?: boolean,
   entry: string,
@@ -40,12 +42,10 @@ type Args = Readonly<{
   sourceMapUrl?: string,
   transformOption: CustomTransformOptions,
   resolverOption: CustomResolverOptions,
+  ...
 }>;
 
-export default (): {
-  ...ModuleObject,
-  handler: Function,
-} => ({
+export default (): ModuleObject => ({
   command: 'build <entry>',
   desc: 'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
 
@@ -94,6 +94,7 @@ export default (): {
   },
 
   handler: makeAsyncCommand(async (argv: Args) => {
+    // $FlowFixMe[incompatible-type] argv has extra props.
     const config = await loadConfig(argv);
     const options: RunBuildOptions = {
       entry: argv.entry,
