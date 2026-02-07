@@ -11,8 +11,8 @@
 
 'use strict';
 
-const {codeFromAst, comparableCode} = require('../../test-helpers');
 const JsFileWrapping = require('../JsFileWrapping');
+const {codeFromAst, comparableCode} = require('./test-helpers');
 const babylon = require('@babel/parser');
 
 const {WRAP_NAME} = JsFileWrapping;
