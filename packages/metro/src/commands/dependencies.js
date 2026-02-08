@@ -10,7 +10,7 @@
  */
 
 import type {ConfigT} from 'metro-config';
-import type {ModuleObject} from 'yargs';
+import type {CommandModule} from 'yargs';
 import typeof Yargs from 'yargs';
 
 import {makeAsyncCommand} from '../cli-utils';
@@ -85,7 +85,7 @@ async function dependencies(args: Args, config: ConfigT) {
     : Promise.resolve();
 }
 
-export default (): ModuleObject => ({
+export default (): CommandModule => ({
   command: 'get-dependencies [entryFile]',
   desc: 'List all dependencies that will be bundled for a given entry point',
   builder: (yargs: Yargs) => {
