@@ -15,7 +15,9 @@ import type {
   Options,
   ReadOnlyGraph,
 } from './DeltaBundler/types';
-import type {EventEmitter} from 'events';
+import type EventEmitter from 'events';
+
+import DeltaCalculator from './DeltaBundler/DeltaCalculator';
 
 export type {
   DeltaResult,
@@ -29,8 +31,15 @@ export type {
   TransformResultDependency,
   TransformResultWithSource,
 } from './DeltaBundler/types';
-
-export default class DeltaBundler<T = MixedOutput> {
+/**
+ * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This
+ * module handles all the transformer instances so it can support multiple
+ * concurrent clients requesting their own deltas. This is done through the
+ * `clientId` param (which maps a client to a specific delta transformer).
+ */
+declare class DeltaBundler<T = MixedOutput> {
+  _changeEventSource: EventEmitter;
+  _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>>;
   constructor(changeEventSource: EventEmitter);
   end(): void;
   getDependencies(
@@ -41,18 +50,11 @@ export default class DeltaBundler<T = MixedOutput> {
     entryPoints: ReadonlyArray<string>,
     options: Options<T>,
   ): Promise<Graph<T>>;
-
   getDelta(
     graph: Graph<T>,
-    {
-      reset,
-      shallow,
-    }: {
-      reset: boolean;
-      shallow: boolean;
-    },
+    $$PARAM_1$$: {reset: boolean; shallow: boolean},
   ): Promise<DeltaResult<T>>;
-
   listen(graph: Graph<T>, callback: () => Promise<void>): () => void;
   endGraph(graph: Graph<T>): void;
 }
+export default DeltaBundler;

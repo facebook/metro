@@ -9,10 +9,15 @@
  * @oncall react_native
  */
 
-import type {BabelCoreOptions, BabelFileMetadata} from '@babel/core';
+import type {BabelFileMetadata} from '@babel/core';
+import type {File as BabelNodeFile} from '@babel/types';
 
 import {parseSync, transformFromAstSync} from '@babel/core';
 import nullthrows from 'nullthrows';
+
+type BabelTransformOptions = NonNullable<
+  Parameters<typeof transformFromAstSync>[2],
+>;
 
 export type CustomTransformOptions = {
   [string]: unknown,
@@ -43,7 +48,7 @@ type BabelTransformerOptions = Readonly<{
 export type BabelTransformerArgs = Readonly<{
   filename: string,
   options: BabelTransformerOptions,
-  plugins?: BabelCoreOptions['plugins'],
+  plugins?: BabelTransformOptions['plugins'],
   src: string,
 }>;
 
@@ -89,7 +94,7 @@ function transform({
     : process.env.BABEL_ENV || 'production';
 
   try {
-    const babelConfig: BabelCoreOptions = {
+    const babelConfig: BabelTransformOptions = {
       ast: true,
       babelrc: options.enableBabelRCLookup,
       caller: {bundler: 'metro', name: 'metro', platform: options.platform},

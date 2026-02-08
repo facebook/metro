@@ -8,7 +8,12 @@
  * @flow strict-local
  */
 
-import type {FunctionExpression, Identifier, Program} from '@babel/types';
+import type {
+  File as BabelNodeFile,
+  FunctionExpression,
+  Identifier,
+  Program,
+} from '@babel/types';
 
 import template from '@babel/template';
 import traverse from '@babel/traverse';

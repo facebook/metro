@@ -9,158 +9,155 @@
  */
 
 import type {RequireContext} from '../lib/contextModule';
-import type CountingSet from '../lib/CountingSet';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {ReadonlySourceLocation} from '../shared/types';
 import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
-export interface MixedOutput {
-  readonly data: {code: string};
-  readonly type: string;
-}
+import CountingSet from '../lib/CountingSet';
 
-export type AsyncDependencyType = 'async' | 'prefetch' | 'weak';
-
-export interface TransformResultDependency {
+export type MixedOutput = {readonly data: unknown; readonly type: string};
+export type AsyncDependencyType = 'async' | 'maybeSync' | 'prefetch' | 'weak';
+export type TransformResultDependency = Readonly<{
   /**
    * The literal name provided to a require or import call. For example 'foo' in
    * case of `require('foo')`.
    */
-  readonly name: string;
-
+  name: string;
   /**
    * Extra data returned by the dependency extractor.
    */
-  readonly data: {
+  data: Readonly<{
     /**
      * A locally unique key for this dependency within the current module.
      */
-    readonly key: string;
-
+    key: string;
     /**
      * If not null, this dependency is due to a dynamic `import()` or `__prefetchImport()` call.
      */
-    readonly asyncType: AsyncDependencyType | null;
-
+    asyncType: AsyncDependencyType | null;
+    /**
+     * True if the dependency is declared with a static "import x from 'y'" or
+     * an import() call.
+     */
+    isESMImport: boolean;
     /**
      * The dependency is enclosed in a try/catch block.
      */
-    readonly isOptional?: boolean;
-
-    readonly locs: ReadonlyArray<{
-      readonly start: {readonly line: number; readonly column: number};
-      readonly end: {readonly line: number; readonly column: number};
-    }>;
-
+    isOptional?: boolean;
+    locs: ReadonlyArray<ReadonlySourceLocation>;
     /** Context for requiring a collection of modules. */
-    readonly contextParams?: RequireContextParams;
-  };
-}
-
-export interface Dependency {
-  readonly absolutePath: string;
-  readonly data: TransformResultDependency;
-  [key: string]: unknown;
-}
-
-export interface Module<T = MixedOutput> {
-  readonly dependencies: Map<string, Dependency>;
-  readonly inverseDependencies: CountingSet<string>;
-  readonly output: ReadonlyArray<T>;
-  readonly path: string;
-  readonly getSource: () => Buffer;
-}
-
+    contextParams?: RequireContextParams;
+  }>;
+}>;
+export type ResolvedDependency = Readonly<{
+  absolutePath: string;
+  data: TransformResultDependency;
+}>;
+export type Dependency =
+  | ResolvedDependency
+  | Readonly<{data: TransformResultDependency}>;
+export type Module<T = MixedOutput> = Readonly<{
+  dependencies: Map<string, Dependency>;
+  inverseDependencies: CountingSet<string>;
+  output: ReadonlyArray<T>;
+  path: string;
+  getSource: () => Buffer;
+  unstable_transformResultKey?: null | undefined | string;
+}>;
+export type ModuleData<T = MixedOutput> = Readonly<{
+  dependencies: ReadonlyMap<string, Dependency>;
+  resolvedContexts: ReadonlyMap<string, RequireContext>;
+  output: ReadonlyArray<T>;
+  getSource: () => Buffer;
+  unstable_transformResultKey?: null | undefined | string;
+}>;
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 export type ReadOnlyDependencies<T = MixedOutput> = ReadonlyMap<
   string,
   Module<T>
 >;
-
 export type TransformInputOptions = Omit<
   JsTransformOptions,
   'inlinePlatform' | 'inlineRequires'
 >;
-
 export type GraphInputOptions = Readonly<{
   entryPoints: ReadonlySet<string>;
-  // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions;
 }>;
-
 export interface ReadOnlyGraph<T = MixedOutput> {
   readonly entryPoints: ReadonlySet<string>;
-  // Unused in core but useful for custom serializers / experimentalSerializerHook
   readonly transformOptions: Readonly<TransformInputOptions>;
   readonly dependencies: ReadOnlyDependencies<T>;
 }
-
 export type {Graph};
-
-export interface TransformResult<T = MixedOutput> {
+export type TransformResult<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyArray<TransformResultDependency>;
   output: ReadonlyArray<T>;
-}
-
-export interface TransformResultWithSource<T = MixedOutput>
-  extends TransformResult<T> {
-  getSource: () => Buffer;
-}
-
+  unstable_transformResultKey?: null | undefined | string;
+}>;
+export type TransformResultWithSource<T = MixedOutput> = Readonly<
+  Omit<TransformResult<T>, keyof {getSource: () => Buffer}> & {
+    getSource: () => Buffer;
+  }
+>;
 export type TransformFn<T = MixedOutput> = (
-  modulePath: string,
-  requireContext: RequireContext | null,
+  $$PARAM_0$$: string,
+  $$PARAM_1$$: null | undefined | RequireContext,
 ) => Promise<TransformResultWithSource<T>>;
-
-export interface AllowOptionalDependenciesWithOptions {
-  readonly exclude: string[];
-}
-
+export type ResolveFn = (
+  from: string,
+  dependency: TransformResultDependency,
+) => BundlerResolution;
+export type AllowOptionalDependenciesWithOptions = {
+  readonly exclude: Array<string>;
+};
 export type AllowOptionalDependencies =
   | boolean
   | AllowOptionalDependenciesWithOptions;
-
-export interface BundlerResolution {
-  readonly type: 'sourceFile';
-  readonly filePath: string;
-}
-
-export interface Options<T = MixedOutput> {
-  readonly resolve: (from: string, to: TransformResultDependency) => string;
-  readonly transform: TransformFn<T>;
-  readonly transformOptions: TransformInputOptions;
-  readonly onProgress:
-    | ((numProcessed: number, total: number) => unknown)
-    | null;
-  readonly lazy: boolean;
-  readonly unstable_allowRequireContext: boolean;
-  readonly shallow: boolean;
-}
-
-export interface DeltaResult<T = MixedOutput> {
+export type BundlerResolution = Readonly<{
+  type: 'sourceFile';
+  filePath: string;
+}>;
+export type Options<T = MixedOutput> = Readonly<{
+  resolve: ResolveFn;
+  transform: TransformFn<T>;
+  transformOptions: TransformInputOptions;
+  onProgress:
+    | null
+    | undefined
+    | ((numProcessed: number, total: number) => unknown);
+  lazy: boolean;
+  unstable_allowRequireContext: boolean;
+  unstable_enablePackageExports: boolean;
+  unstable_incrementalResolution: boolean;
+  shallow: boolean;
+}>;
+export type DeltaResult<T = MixedOutput> = {
   readonly added: Map<string, Module<T>>;
   readonly modified: Map<string, Module<T>>;
   readonly deleted: Set<string>;
   readonly reset: boolean;
-}
-
-export interface SerializerOptions<T = MixedOutput> {
-  readonly asyncRequireModulePath: string;
-  readonly createModuleId: (filePath: string) => number;
-  readonly dev: boolean;
-  readonly getRunModuleStatement: (
+};
+export type SerializerOptions = Readonly<{
+  asyncRequireModulePath: string;
+  createModuleId: ($$PARAM_0$$: string) => number;
+  dev: boolean;
+  getRunModuleStatement: (
     moduleId: number | string,
     globalPrefix: string,
   ) => string;
-  readonly includeAsyncPaths: boolean;
-  readonly inlineSourceMap?: boolean;
-  readonly modulesOnly: boolean;
-  readonly processModuleFilter: (module: Module<T>) => boolean;
-  readonly projectRoot: string;
-  readonly runBeforeMainModule: ReadonlyArray<string>;
-  readonly runModule: boolean;
-  readonly serverRoot: string;
-  readonly shouldAddToIgnoreList: (module: Module<T>) => boolean;
-  readonly sourceMapUrl?: string;
-  readonly sourceUrl?: string;
-}
+  globalPrefix: string;
+  includeAsyncPaths: boolean;
+  inlineSourceMap: null | undefined | boolean;
+  modulesOnly: boolean;
+  processModuleFilter: (module: Module) => boolean;
+  projectRoot: string;
+  runBeforeMainModule: ReadonlyArray<string>;
+  runModule: boolean;
+  serverRoot: string;
+  shouldAddToIgnoreList: ($$PARAM_0$$: Module) => boolean;
+  sourceMapUrl: null | undefined | string;
+  sourceUrl: null | undefined | string;
+  getSourceUrl: null | undefined | (($$PARAM_0$$: Module) => string);
+}>;

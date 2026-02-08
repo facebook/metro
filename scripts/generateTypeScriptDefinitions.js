@@ -28,10 +28,13 @@ const TYPES_DIR = 'types';
 const SRC_DIR = 'src';
 
 export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = [
+  'packages/metro/**',
+  'packages/metro-babel-transformer/**',
   'packages/metro-cache/**',
   'packages/metro-config/**',
   'packages/metro-core/**',
   'packages/metro-resolver/**',
+  'packages/metro-runtime/src/modules/types.js',
   'packages/metro-source-map/**',
   'packages/metro-transform-worker/**',
   'packages/metro-file-map/**',
@@ -186,8 +189,12 @@ export async function generateTsDefsForJsGlobs(
         } else {
           const tsDef = await translateFlowDefToTSDef(flowDef);
 
-          // Fix up gap left in license header by removal of atflow
-          const beforeLint = tsDef.replace('\n *\n *\n', '\n *\n');
+          const beforeLint = tsDef
+            // Fix up gap left in license header by removal of atflow
+            .replace('\n *\n *\n', '\n *\n')
+            // TypeScript has no analogue for __proto__: null
+            .replace(/__proto__: null[,;]?/g, '');
+
           await writeOutputFile(beforeLint, absoluteTsFile, sourceFile);
         }
       } catch (error) {

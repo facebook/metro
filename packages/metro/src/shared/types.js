@@ -35,6 +35,17 @@ export enum SourcePathsMode {
   ServerUrl = 'url-server',
 }
 
+export type ReadonlySourceLocation = Readonly<{
+  start: Readonly<{
+    line: number,
+    column: number,
+  }>,
+  end: Readonly<{
+    line: number,
+    column: number,
+  }>,
+}>;
+
 export type BundleOptions = {
   +customResolverOptions: CustomResolverOptions,
   customTransformOptions: CustomTransformOptions,
@@ -127,6 +138,10 @@ export type OutputOptions = {
   sourcemapSourcesRoot?: string,
   sourcemapUseAbsolutePath?: boolean,
   ...
+};
+
+type SafeOptionalProps<T> = {
+  [K in keyof T]: T[K] extends void ? void | T[K] : T[K],
 };
 
 export type RequestOptions = Readonly<

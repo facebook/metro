@@ -8,28 +8,20 @@
  * @oncall react_native
  */
 
-import type {AssetData} from '../../Asset';
+import type {AssetData} from '../../Assets';
+import type {BuildOptions, OutputOptions, RequestOptions} from '../types';
 
 import Server from '../../Server';
-import {BuildOptions, OutputOptions, RequestOptions} from '../../shared/types';
 
-export function build(
+export declare function build(
   packagerClient: Server,
   requestOptions: RequestOptions,
   buildOptions?: BuildOptions,
-): Promise<{
-  code: string;
-  map: string;
-  assets?: ReadonlyArray<AssetData>;
-}>;
-
-export function save(
-  bundle: {
-    code: string;
-    map: string;
-  },
+): Promise<{code: string; map: string; assets?: ReadonlyArray<AssetData>}>;
+export declare function save(
+  bundle: {code: string; map: string},
   options: OutputOptions,
-  log: (...args: string[]) => void,
+  log: ($$PARAM_0$$: string) => void,
 ): Promise<unknown>;
-
-export const formatName: string;
+export declare const formatName: 'bundle';
+export declare type formatName = typeof formatName;

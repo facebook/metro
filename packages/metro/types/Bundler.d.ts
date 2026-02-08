@@ -10,30 +10,29 @@
 
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
-import type DependencyGraph from './node-haste/DependencyGraph';
-import type {EventEmitter} from 'events';
+import type EventEmitter from 'events';
 import type {ConfigT} from 'metro-config';
 
-export interface BundlerOptions {
-  readonly hasReducedPerformance?: boolean;
-  readonly watch?: boolean;
-}
+import Transformer from './DeltaBundler/Transformer';
+import DependencyGraph from './node-haste/DependencyGraph';
 
-export default class Bundler {
+export type BundlerOptions = Readonly<{
+  hasReducedPerformance?: boolean;
+  watch?: boolean;
+}>;
+declare class Bundler {
+  _depGraph: DependencyGraph;
+  _initializedPromise: Promise<void>;
+  _transformer: Transformer;
   constructor(config: ConfigT, options?: BundlerOptions);
-
   getWatcher(): EventEmitter;
-
   end(): Promise<void>;
-
   getDependencyGraph(): Promise<DependencyGraph>;
-
   transformFile(
     filePath: string,
     transformOptions: TransformOptions,
-    /** Optionally provide the file contents, this can be used to provide virtual contents for a file. */
     fileBuffer?: Buffer,
-  ): Promise<TransformResultWithSource<void>>;
-
+  ): Promise<TransformResultWithSource>;
   ready(): Promise<void>;
 }
+export default Bundler;

@@ -34,7 +34,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
   _addedFiles: Set<string> = new Set();
-  _requiresReset = false;
+  _requiresReset: boolean = false;
 
   _graph: Graph<T>;
 

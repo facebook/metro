@@ -8,15 +8,26 @@
  * @oncall react_native
  */
 
-import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
+import type {
+  ContextMode,
+  RequireContextParams,
+} from '../ModuleGraph/worker/collectDependencies';
 
-export interface RequireContext {
-  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
-  readonly recursive: boolean;
-  /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
-  readonly filter: RegExp;
+export type RequireContext = Readonly<{
+  recursive: boolean;
+  filter: RegExp;
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
-  readonly mode: ContextMode;
+  mode: ContextMode;
   /** Absolute path of the directory to search in */
-  readonly from: string;
-}
+  from: string;
+}>;
+/** Given a fully qualified require context, return a virtual file path that ensures uniqueness between paths with different contexts. */
+export declare function deriveAbsolutePathFromContext(
+  from: string,
+  context: RequireContextParams,
+): string;
+/** Match a file against a require context. */
+export declare function fileMatchesContext(
+  testPath: string,
+  context: RequireContext,
+): boolean;

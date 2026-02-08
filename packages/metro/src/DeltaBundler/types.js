@@ -11,6 +11,7 @@
 
 import type {RequireContext} from '../lib/contextModule';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {ReadonlySourceLocation} from '../shared/types';
 import type {Graph} from './Graph';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
@@ -52,7 +53,7 @@ export type TransformResultDependency = Readonly<{
      */
     isOptional?: boolean,
 
-    locs: ReadonlyArray<BabelSourceLocation>,
+    locs: ReadonlyArray<ReadonlySourceLocation>,
 
     /** Context for requiring a collection of modules. */
     contextParams?: RequireContextParams,

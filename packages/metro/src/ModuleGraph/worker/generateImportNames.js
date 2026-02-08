@@ -8,6 +8,8 @@
  * @flow strict-local
  */
 
+import type {Node} from '@babel/types';
+
 import traverse from '@babel/traverse';
 import nullthrows from 'nullthrows';
 
@@ -15,7 +17,7 @@ import nullthrows from 'nullthrows';
  * Select unused names for "metroImportDefault" and "metroImportAll", by
  * calling "generateUid".
  */
-export default function generateImportNames(ast: BabelNode): {
+export default function generateImportNames(ast: Node): {
   importAll: string,
   importDefault: string,
 } {

@@ -8,91 +8,89 @@
  * @oncall react_native
  */
 
-import type Bundler from './Bundler';
+import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {
   Options as DeltaBundlerOptions,
   ReadOnlyDependencies,
   TransformInputOptions,
 } from './DeltaBundler/types';
 import type {GraphId} from './lib/getGraphId';
+import type {ResolverInputOptions} from './shared/types';
 import type {ConfigT} from 'metro-config';
 
-import DeltaBundler, {DeltaResult, Graph, Module} from './DeltaBundler';
-import {ResolverInputOptions} from './shared/types';
+import Bundler from './Bundler';
+import DeltaBundler from './DeltaBundler';
 
-export type RevisionId = string;
-
-export type OutputGraph = Graph<void>;
-
-export interface OtherOptions {
-  readonly onProgress: DeltaBundlerOptions<void>['onProgress'];
-  readonly shallow: boolean;
-}
-
-export interface GraphRevision {
+export declare type RevisionId = string;
+export type OutputGraph = Graph;
+type OtherOptions = Readonly<{
+  onProgress: DeltaBundlerOptions['onProgress'];
+  shallow: boolean;
+  lazy: boolean;
+}>;
+export type GraphRevision = {
   readonly id: RevisionId;
   readonly date: Date;
   readonly graphId: GraphId;
   readonly graph: OutputGraph;
-  readonly prepend: ReadonlyArray<Module<void>>;
-}
-
-export interface IncrementalBundlerOptions {
-  readonly hasReducedPerformance?: boolean;
-  readonly watch?: boolean;
-}
-
-export default class IncrementalBundler {
+  readonly prepend: ReadonlyArray<Module>;
+};
+export type IncrementalBundlerOptions = Readonly<{
+  hasReducedPerformance?: boolean;
+  watch?: boolean;
+}>;
+declare class IncrementalBundler {
+  _config: ConfigT;
+  _bundler: Bundler;
+  _deltaBundler: DeltaBundler;
+  _revisionsById: Map<RevisionId, Promise<GraphRevision>>;
+  _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>>;
   static revisionIdFromString: (str: string) => RevisionId;
   constructor(config: ConfigT, options?: IncrementalBundlerOptions);
-
-  end(): void;
+  end(): Promise<void>;
   getBundler(): Bundler;
-  getDeltaBundler(): DeltaBundler<void>;
-  getRevision(revisionId: RevisionId): Promise<GraphRevision> | null;
-  getRevisionByGraphId(graphId: GraphId): Promise<GraphRevision> | null;
-
+  getDeltaBundler(): DeltaBundler;
+  getRevision(
+    revisionId: RevisionId,
+  ): null | undefined | Promise<GraphRevision>;
+  getRevisionByGraphId(
+    graphId: GraphId,
+  ): null | undefined | Promise<GraphRevision>;
   buildGraphForEntries(
     entryFiles: ReadonlyArray<string>,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
   ): Promise<OutputGraph>;
-
   getDependencies(
     entryFiles: ReadonlyArray<string>,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
-  ): Promise<ReadOnlyDependencies<void>>;
-
+  ): Promise<ReadOnlyDependencies>;
   buildGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
-  ): Promise<
-    Readonly<{graph: OutputGraph; prepend: ReadonlyArray<Module<void>>}>
-  >;
-
+  ): Promise<{
+    readonly graph: OutputGraph;
+    readonly prepend: ReadonlyArray<Module>;
+  }>;
   initializeGraph(
     entryFile: string,
     transformOptions: TransformInputOptions,
     resolverOptions: ResolverInputOptions,
     otherOptions?: OtherOptions,
-  ): Promise<{
-    delta: DeltaResult<void>;
-    revision: GraphRevision;
-  }>;
-
+  ): Promise<{delta: DeltaResult; revision: GraphRevision}>;
   updateGraph(
     revision: GraphRevision,
     reset: boolean,
-  ): Promise<{
-    delta: DeltaResult<void>;
-    revision: GraphRevision;
-  }>;
-
+  ): Promise<{delta: DeltaResult; revision: GraphRevision}>;
   endGraph(graphId: GraphId): Promise<void>;
+  _getAbsoluteEntryFiles(
+    entryFiles: ReadonlyArray<string>,
+  ): Promise<ReadonlyArray<string>>;
   ready(): Promise<void>;
 }
+export default IncrementalBundler;
