@@ -11,13 +11,11 @@
 
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
-import type {NodePath} from '@babel/traverse';
+import type {NodePath, Traverse} from '@babel/traverse';
 import type {Node as BabelNode} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import B64Builder from './B64Builder';
-// $FlowFixMe[cannot-resolve-module] - resolves to @babel/traverse
-import traverseForGenerateFunctionMap from '@babel/traverse--for-generate-function-map';
 import * as t from '@babel/types';
 import {
   isAssignmentExpression,
@@ -45,6 +43,29 @@ import {
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 import fsPath from 'path';
+
+// $FlowFixMe[untyped-import]
+import semver from 'semver';
+
+const isBabelTraverseCacheBugFixed = semver.gte(
+  // $FlowFixMe[cannot-resolve-module] - reading version from package.json
+  // $FlowFixMe[untyped-import]
+  require('@babel/traverse/package.json').version, // eslint-disable-line import/no-commonjs
+  '7.29.0',
+);
+
+// TODO: when babel is bumpedabove 7.29.0, remove:
+//  - this workaround
+//  - the '@babel/traverse--for-generate-function-map' dependency from "package.json"
+//  - the test from this workaround from "generateFunctionMap-test.js"
+// Before Babel 7.29.0, "traverse" populates/pollutes the path cache (`traverse.cache.path`)
+// with values missing the `hub` property needed by Babel transformation, so we
+// use a separate copy of traverse to populate a separate cache to not pollute
+// the main @babel/traverse cache. See: https://github.com/facebook/metro/pull/1340
+const traverseFixed: Traverse = isBabelTraverseCacheBugFixed
+  ? require('@babel/traverse').default
+  : // $FlowFixMe[cannot-resolve-module] - resolves to @babel/traverse
+    require('@babel/traverse--for-generate-function-map').default;
 
 type Position = {
   line: number,
@@ -218,11 +239,7 @@ function forEachMapping(
 ) {
   const visitor = getFunctionMapVisitor(context, pushMapping);
 
-  // Traversing populates/pollutes the path cache (`traverse.cache.path`) with
-  // values missing the `hub` property needed by Babel transformation, so we
-  // use a separate copy of traverse to populate a separate cache to not pollute
-  // the main @babel/traverse cache. See: https://github.com/facebook/metro/pull/1340
-  traverseForGenerateFunctionMap(ast, {
+  traverseFixed(ast, {
     // Our visitor doesn't care about scope
     noScope: true,
 
