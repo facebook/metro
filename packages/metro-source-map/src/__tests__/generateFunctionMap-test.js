@@ -33,6 +33,15 @@ const {
   SourceMetadataMapConsumer,
 } = require('metro-symbolicate/private/Symbolication');
 
+// $FlowFixMe[cannot-resolve-module] - reading version from package.json
+// $FlowFixMe[untyped-import]
+const babelTraverseVersion = require('@babel/traverse/package.json').version;
+// $FlowFixMe[untyped-import]
+const babelTraverseCacheBugFixed = require('semver').gte(
+  babelTraverseVersion,
+  '7.29.0',
+);
+
 function getAst(source: string) {
   return parse(source, {
     plugins: ['classProperties', 'dynamicImport', 'jsx', 'flow'],
@@ -1902,8 +1911,19 @@ window.foo();
       // Perform a trivial traversal.
       traverse(ast, {});
 
-      // Expect that the path cache is polluted with entries lacking `hub`.
-      expect(() => expectTransformPathesToHaveHub(ast)).toThrow();
+      try {
+        if (babelTraverseCacheBugFixed) {
+          expect(() => expectTransformPathesToHaveHub(ast)).not.toThrow();
+        } else {
+          // Expect that the path cache is polluted with entries lacking `hub`.
+          expect(() => expectTransformPathesToHaveHub(ast)).toThrow();
+        }
+      } catch (e) {
+        console.error(
+          'Test failed with @babel/traverse version: ' + babelTraverseVersion,
+        );
+        throw e;
+      }
     });
 
     test('successfully works around traverse cache pollution', () => {
@@ -1914,6 +1934,10 @@ window.foo();
     });
 
     test('does not reset the path cache', () => {
+      if (babelTraverseCacheBugFixed) {
+        return;
+      }
+
       const dummyCache: Map<unknown, unknown> = new Map();
       // $FlowFixMe[prop-missing] - Writing to readonly map for test purposes.
       traverse.cache.path.set(ast, dummyCache);
