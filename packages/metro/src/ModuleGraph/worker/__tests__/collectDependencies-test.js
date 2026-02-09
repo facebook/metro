@@ -23,8 +23,8 @@ import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import collectDependencies from '../collectDependencies';
 
-const {codeFromAst, comparableCode} = require('../../test-helpers');
 const {importLocationsPlugin, locToKey} = require('../importLocationsPlugin');
+const {codeFromAst, comparableCode} = require('./test-helpers');
 const {codeFrameColumns} = require('@babel/code-frame');
 const {transformFromAstSync} = require('@babel/core');
 const babylon = require('@babel/parser');
@@ -1299,7 +1299,7 @@ test('integration: records locations of inlined dependencies (Metro ESM)', () =>
   `);
 
   // Verify that dependencies have been inlined into the console.log call.
-  expect(codeFromAst(transformedAst)).toMatch(/^console\.log/);
+  expect(codeFromAst(nullthrows(transformedAst))).toMatch(/^console\.log/);
 });
 
 test('integration: records locations of inlined dependencies (Babel ESM)', () => {
