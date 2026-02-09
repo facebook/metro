@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -15,6 +15,7 @@ import {normalizePathSeparatorsToPosix} from './lib/pathUtils';
 import * as AssetPaths from './node-haste/lib/AssetPaths';
 import crypto from 'crypto';
 import fs from 'fs';
+// $FlowFixMe[untyped-import] image-size
 import getImageSize from 'image-size';
 import path from 'path';
 
@@ -201,7 +202,7 @@ export async function getAssetData(
   assetPath: string,
   localPath: string,
   assetDataPlugins: ReadonlyArray<string>,
-  platform: ?string = null,
+  platform: ?string,
   publicPath: string,
 ): Promise<AssetData> {
   // If the path of the asset is outside of the projectRoot, we don't want to
@@ -215,7 +216,7 @@ export async function getAssetData(
   assetUrlPath = normalizePathSeparatorsToPosix(assetUrlPath);
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
-  const assetInfo = await getAbsoluteAssetInfo(assetPath, platform);
+  const assetInfo = await getAbsoluteAssetInfo(assetPath, platform ?? null);
 
   const isImageInput = assetInfo.files[0].includes('.zip/')
     ? fs.readFileSync(assetInfo.files[0])
@@ -280,7 +281,7 @@ export async function getAsset(
   relativePath: string,
   projectRoot: string,
   watchFolders: ReadonlyArray<string>,
-  platform: ?string = null,
+  platform: ?string,
   assetExts: ReadonlyArray<string>,
   fileExistsInFileMap?: (absolutePath: string) => boolean,
 ): Promise<Buffer> {
@@ -312,7 +313,7 @@ export async function getAsset(
     }
   }
 
-  const record = await getAbsoluteAssetRecord(absolutePath, platform);
+  const record = await getAbsoluteAssetRecord(absolutePath, platform ?? null);
 
   for (let i = 0; i < record.scales.length; i++) {
     if (record.scales[i] >= assetData.resolution) {

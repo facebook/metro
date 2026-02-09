@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  * @oncall react_native
  */
@@ -13,7 +13,7 @@ import fs from 'fs';
 
 export const watchFile = async function (
   filename: string,
-  callback: () => any,
+  callback: () => unknown,
 ): Promise<void> {
   fs.watchFile(filename, () => {
     callback();

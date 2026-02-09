@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -17,12 +17,12 @@ import type {Readable} from 'stream';
 import {Worker as JestWorker} from 'jest-worker';
 import {Logger} from 'metro-core';
 
-type WorkerInterface = {
+type WorkerInterface = Readonly<{
+  ...Worker,
+  end(): void | Promise<void>,
   getStdout(): Readable,
   getStderr(): Readable,
-  end(): void,
-  ...Worker,
-};
+}>;
 
 type TransformerResult = Readonly<{
   result: TransformResult<>,
@@ -106,14 +106,14 @@ export default class WorkerFarm {
     absoluteWorkerPath: string,
     exposedMethods: ReadonlyArray<string>,
     numWorkers: number,
-  ): any {
+  ): WorkerInterface {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
       FORCE_COLOR: 1,
     };
 
-    return new JestWorker(absoluteWorkerPath, {
+    return new JestWorker<Worker>(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
         ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           // $FlowFixMe[incompatible-type]
@@ -143,7 +143,10 @@ export default class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err: any, filename: string): TransformError {
+  _formatGenericError(
+    err: Readonly<{message: string, stack?: string, ...}>,
+    filename: string,
+  ): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     // $FlowFixMe[unsafe-object-assign]
@@ -153,9 +156,19 @@ export default class WorkerFarm {
     });
   }
 
-  _formatBabelError(err: any, filename: string): TransformError {
+  _formatBabelError(
+    err: Readonly<{
+      message: string,
+      stack?: string,
+      type?: string,
+      codeFrame?: unknown,
+      loc: {line?: number, column?: number, ...},
+      ...
+    }>,
+    filename: string,
+  ): TransformError {
     const error = new TransformError(
-      `${err.type || 'Error'}${
+      `${err.type ?? 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename
       }: ${err.message}`,
     );

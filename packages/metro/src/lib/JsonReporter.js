@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -19,18 +19,19 @@ export type SerializedError = {
   ...
 };
 
-export type SerializedEvent<TEvent: {[string]: any, ...}> = TEvent extends {
-  error: Error,
-  ...
-}
-  ? {
-      ...Omit<TEvent, 'error'>,
-      error: SerializedError,
-      ...
-    }
-  : TEvent;
+export type SerializedEvent<TEvent: {+[string]: unknown, ...}> =
+  TEvent extends {
+    error: Error,
+    ...
+  }
+    ? {
+        ...Omit<TEvent, 'error'>,
+        error: SerializedError,
+        ...
+      }
+    : TEvent;
 
-export default class JsonReporter<TEvent: {[string]: any, ...}> {
+export default class JsonReporter<TEvent: {+[string]: unknown, ...}> {
   _stream: Writable;
 
   constructor(stream: Writable) {
@@ -42,19 +43,20 @@ export default class JsonReporter<TEvent: {[string]: any, ...}> {
    * (Perhaps we should switch in favor of plain object?)
    */
   update(event: TEvent): void {
+    let eventToWrite = event;
     if (event.error instanceof Error) {
       const {message, stack} = event.error;
-      // $FlowFixMe[unsafe-object-assign]
-      event = Object.assign(event, {
+      eventToWrite = {
+        ...eventToWrite,
         error: serializeError(event.error),
         // TODO: Preexisting issue - this writes message, stack, etc. as
         // top-level siblings of event.error (which was serialized to {}), whereas it was presumably
         // intended to nest them _under_ error. Fix this in a breaking change.
         message,
         stack,
-      });
+      };
     }
-    this._stream.write(JSON.stringify(event) + '\n');
+    this._stream.write(JSON.stringify(eventToWrite) + '\n');
   }
 }
 

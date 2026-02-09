@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  * @oncall react_native
  */
@@ -21,6 +21,8 @@ import path from 'path';
 import {promisify} from 'util';
 
 type Args = Readonly<{
+  _: unknown,
+  $0: unknown,
   entryFile: string,
   output?: string,
   platform?: string,
@@ -28,6 +30,7 @@ type Args = Readonly<{
   maxWorkers?: number,
   dev: boolean,
   verbose: boolean,
+  ...
 }>;
 
 async function dependencies(args: Args, config: ConfigT) {
@@ -82,7 +85,7 @@ async function dependencies(args: Args, config: ConfigT) {
     : Promise.resolve();
 }
 
-export default (): {...ModuleObject, handler: Function} => ({
+export default (): ModuleObject => ({
   command: 'get-dependencies [entryFile]',
   desc: 'List all dependencies that will be bundled for a given entry point',
   builder: (yargs: Yargs) => {
@@ -123,6 +126,7 @@ export default (): {...ModuleObject, handler: Function} => ({
     });
   },
   handler: makeAsyncCommand(async (argv: Args) => {
+    // $FlowFixMe[incompatible-type] argv has extra props.
     const config = await loadConfig(argv);
     await dependencies(argv, config);
   }),
