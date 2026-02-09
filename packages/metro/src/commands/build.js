@@ -12,7 +12,7 @@
 import type {RunBuildOptions} from '../index';
 import type {CustomTransformOptions} from 'metro-babel-transformer';
 import type {CustomResolverOptions} from 'metro-resolver';
-import type {ModuleObject} from 'yargs';
+import type {CommandModule} from 'yargs';
 import typeof Yargs from 'yargs';
 
 import {makeAsyncCommand} from '../cli-utils';
@@ -45,7 +45,7 @@ type Args = Readonly<{
   ...
 }>;
 
-export default (): ModuleObject => ({
+export default (): CommandModule => ({
   command: 'build <entry>',
   desc: 'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
 

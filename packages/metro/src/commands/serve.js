@@ -10,7 +10,7 @@
  */
 
 import type {ServerOptions as HttpsServerOptions} from 'https';
-import type {ModuleObject} from 'yargs';
+import type {CommandModule} from 'yargs';
 import typeof Yargs from 'yargs';
 
 import {makeAsyncCommand, watchFile} from '../cli-utils';
@@ -34,7 +34,7 @@ type Args = Readonly<{
   ...
 }>;
 
-export default (): ModuleObject => ({
+export default (): CommandModule => ({
   command: 'serve',
   aliases: ['start'],
   desc: 'Starts Metro on the given port, building bundles on the fly',
