@@ -34,7 +34,7 @@ export interface TransformerConfig {
 }
 
 interface Data {
-  readonly result: TransformResult<void>;
+  readonly result: TransformResult;
   readonly sha1: string;
   readonly transformFileStartLogEntry: LogEntry;
   readonly transformFileEndLogEntry: LogEntry;
