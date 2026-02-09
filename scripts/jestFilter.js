@@ -50,8 +50,8 @@ const BROKEN_ON_WINDOWS = [
 
 const SKIPPED_PATHS = process.platform === 'win32' ? BROKEN_ON_WINDOWS : [];
 if (process.env.NIGHTLY_TESTS_NO_LOCKFILE != null) {
-  // flaky babel types test - this should be removed once babel is updated
-  SKIPPED_PATHS.push('__tests__/babel-lib-defs-test.js');
+  // Skip: only support babel types common to all supported babel versions
+  SKIPPED_PATHS.push('scripts/__tests__/babel-lib-defs-test.js');
 }
 
 module.exports = (
