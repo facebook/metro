@@ -24,8 +24,8 @@ export type DeltaBundle = {
 };
 
 export type BundleVariant =
-  | {+base: true, +revisionId: string, ...Bundle}
-  | {+base: false, +revisionId: string, ...DeltaBundle};
+  | Readonly<{...Bundle, base: true, revisionId: string}>
+  | Readonly<{...DeltaBundle, base: false, revisionId: string}>;
 
 export type BundleMetadata = {
   +pre: number,

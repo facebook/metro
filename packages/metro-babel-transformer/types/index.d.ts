@@ -8,45 +8,83 @@
  * @oncall react_native
  */
 
-export interface CustomTransformOptions {
-  [key: string]: unknown;
-}
+import type {BabelFileMetadata} from '@babel/core';
+import type {File as BabelNodeFile} from '@babel/types';
 
+import {transformFromAstSync} from '@babel/core';
+
+type BabelTransformOptions = NonNullable<
+  Parameters<typeof transformFromAstSync>[2]
+>;
+export type CustomTransformOptions = {
+  [$$Key$$: string]: unknown;
+};
 export type TransformProfile = 'default' | 'hermes-stable' | 'hermes-canary';
-
-export interface BabelTransformerOptions {
-  readonly customTransformOptions?: CustomTransformOptions;
-  readonly dev: boolean;
-  readonly enableBabelRCLookup?: boolean;
-  readonly enableBabelRuntime: boolean | string;
-  readonly extendsBabelConfigPath?: string;
-  readonly experimentalImportSupport?: boolean;
-  readonly hermesParser?: boolean;
-  readonly minify: boolean;
-  readonly platform: string | null;
-  readonly projectRoot: string;
-  readonly publicPath: string;
-  readonly unstable_transformProfile?: TransformProfile;
-  readonly globalPrefix: string;
-}
-
-export interface BabelTransformerArgs {
-  readonly filename: string;
-  readonly options: BabelTransformerOptions;
-  readonly plugins?: unknown;
-  readonly src: string;
-}
-
-export interface BabelTransformer {
-  transform: (args: BabelTransformerArgs) => {
-    ast: unknown;
-    metadata: unknown;
-  };
+type BabelTransformerOptions = Readonly<{
+  customTransformOptions?: CustomTransformOptions;
+  dev: boolean;
+  enableBabelRCLookup?: boolean;
+  enableBabelRuntime: boolean | string;
+  extendsBabelConfigPath?: string;
+  experimentalImportSupport?: boolean;
+  hermesParser?: boolean;
+  minify: boolean;
+  platform: null | undefined | string;
+  projectRoot: string;
+  publicPath: string;
+  unstable_transformProfile?: TransformProfile;
+  globalPrefix: string;
+  inlineRequires?: void;
+}>;
+export type BabelTransformerArgs = Readonly<{
+  filename: string;
+  options: BabelTransformerOptions;
+  plugins?: BabelTransformOptions['plugins'];
+  src: string;
+}>;
+export type BabelFileFunctionMapMetadata = Readonly<{
+  names: ReadonlyArray<string>;
+  mappings: string;
+}>;
+export type BabelFileImportLocsMetadata = ReadonlySet<string>;
+export type MetroBabelFileMetadata = Omit<
+  BabelFileMetadata,
+  keyof {
+    metro?:
+      | null
+      | undefined
+      | {
+          functionMap?: null | undefined | BabelFileFunctionMapMetadata;
+          unstable_importDeclarationLocs?:
+            | null
+            | undefined
+            | BabelFileImportLocsMetadata;
+        };
+  }
+> & {
+  metro?:
+    | null
+    | undefined
+    | {
+        functionMap?: null | undefined | BabelFileFunctionMapMetadata;
+        unstable_importDeclarationLocs?:
+          | null
+          | undefined
+          | BabelFileImportLocsMetadata;
+      };
+};
+export type BabelTransformer = Readonly<{
+  transform: ($$PARAM_0$$: BabelTransformerArgs) => Readonly<{
+    ast: BabelNodeFile;
+    functionMap?: BabelFileFunctionMapMetadata;
+    metadata?: MetroBabelFileMetadata;
+  }>;
   getCacheKey?: () => string;
-}
-
-export const transform: BabelTransformer['transform'];
-
+}>;
+declare function transform(
+  $$PARAM_0$$: BabelTransformerArgs,
+): ReturnType<BabelTransformer['transform']>;
+export {transform};
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.

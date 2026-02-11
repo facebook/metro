@@ -73,11 +73,11 @@ export type Result<T> = {
   deleted: Set<string>,
 };
 
-/**
+/*
  * Internal data structure that the traversal logic uses to know which of the
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
- **/
+ */
 type Delta<T> = Readonly<{
   // `added` and `deleted` are mutually exclusive.
   // Internally, a module can be in both `touched` and (either) `added` or

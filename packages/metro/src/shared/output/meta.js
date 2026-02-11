@@ -23,7 +23,7 @@ const constantFor = (encoding: 'ascii' | 'utf16le' | 'utf8') =>
         ? 3
         : 0;
 
-export default function (
+export default function meta(
   code: Buffer | string,
   encoding: 'ascii' | 'utf16le' | 'utf8' = 'utf8',
 ): Buffer {

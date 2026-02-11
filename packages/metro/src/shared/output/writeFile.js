@@ -12,9 +12,15 @@
 import fs from 'fs';
 import throat from 'throat';
 
-const writeFile: typeof fs.promises.writeFile = throat(
+const writeFileWithThroat: typeof fs.promises.writeFile = throat(
   128,
   fs.promises.writeFile,
 );
 
-export default writeFile;
+export default function writeFile(
+  filePath: string,
+  data: string | Buffer | Uint8Array,
+  encoding?: string,
+): Promise<void> {
+  return writeFileWithThroat(filePath, data, encoding);
+}

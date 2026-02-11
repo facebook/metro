@@ -5,23 +5,127 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @oncall react_native
  */
 
+import type {ReadonlySourceLocation} from '../../shared/types';
+import type {NodePath} from '@babel/traverse';
+import type {
+  CallExpression,
+  File as BabelNodeFile,
+  Identifier,
+  StringLiteral,
+} from '@babel/types';
+import type {
+  AllowOptionalDependencies,
+  AsyncDependencyType,
+} from 'metro/private/DeltaBundler/types';
+
+export type Dependency = Readonly<{data: DependencyData; name: string}>;
 export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
-
-export interface ContextFilter {
-  pattern: string;
-  flags: string;
-}
-
-export interface RequireContextParams {
-  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
-  readonly recursive: boolean;
-  /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
-  readonly filter: Readonly<ContextFilter>;
+type ContextFilter = Readonly<{pattern: string; flags: string}>;
+export type RequireContextParams = Readonly<{
+  recursive: boolean;
+  filter: Readonly<ContextFilter>;
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
-  readonly mode: ContextMode;
+  mode: ContextMode;
+}>;
+type DependencyData = Readonly<{
+  key: string;
+  asyncType: AsyncDependencyType | null;
+  isESMImport: boolean;
+  isOptional?: boolean;
+  locs: ReadonlyArray<ReadonlySourceLocation>;
+  /** Context for requiring a collection of modules. */
+  contextParams?: RequireContextParams;
+}>;
+export type MutableInternalDependency = Omit<
+  DependencyData,
+  keyof {locs: Array<ReadonlySourceLocation>; index: number; name: string}
+> & {locs: Array<ReadonlySourceLocation>; index: number; name: string};
+export type InternalDependency = Readonly<MutableInternalDependency>;
+export type State = {
+  asyncRequireModulePathStringLiteral: null | undefined | StringLiteral;
+  dependencyCalls: Set<string>;
+  dependencyRegistry: DependencyRegistry;
+  dependencyTransformer: DependencyTransformer;
+  dynamicRequires: DynamicRequiresBehavior;
+  dependencyMapIdentifier: null | undefined | Identifier;
+  keepRequireNames: boolean;
+  allowOptionalDependencies: AllowOptionalDependencies;
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext: boolean;
+  unstable_isESMImportAtSource:
+    | null
+    | undefined
+    | (($$PARAM_0$$: ReadonlySourceLocation) => boolean);
+};
+export type Options = Readonly<{
+  asyncRequireModulePath: string;
+  dependencyMapName: null | undefined | string;
+  dynamicRequires: DynamicRequiresBehavior;
+  inlineableCalls: ReadonlyArray<string>;
+  keepRequireNames: boolean;
+  allowOptionalDependencies: AllowOptionalDependencies;
+  dependencyTransformer?: DependencyTransformer;
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext: boolean;
+  unstable_isESMImportAtSource?:
+    | null
+    | undefined
+    | (($$PARAM_0$$: ReadonlySourceLocation) => boolean);
+}>;
+export type CollectedDependencies = Readonly<{
+  ast: BabelNodeFile;
+  dependencyMapName: string;
+  dependencies: ReadonlyArray<Dependency>;
+}>;
+export interface DependencyTransformer {
+  transformSyncRequire(
+    path: NodePath<CallExpression>,
+    dependency: InternalDependency,
+    state: State,
+  ): void;
+  transformImportCall(
+    path: NodePath,
+    dependency: InternalDependency,
+    state: State,
+  ): void;
+  transformImportMaybeSyncCall(
+    path: NodePath,
+    dependency: InternalDependency,
+    state: State,
+  ): void;
+  transformPrefetch(
+    path: NodePath,
+    dependency: InternalDependency,
+    state: State,
+  ): void;
+  transformIllegalDynamicRequire(path: NodePath, state: State): void;
 }
-
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
+/**
+ * Transform all the calls to `require()` and `import()` in a file into ID-
+ * independent code, and return the list of dependencies. For example, a call
+ * like `require('Foo')` could be transformed to `require(_depMap[3], 'Foo')`
+ * where `_depMap` is provided by the outer scope. As such, we don't need to
+ * know the actual module ID.
+ *
+ * The second argument is only provided for debugging purposes.
+ */
+declare function collectDependencies(
+  ast: BabelNodeFile,
+  options: Options,
+): CollectedDependencies;
+export default collectDependencies;
+export type ImportQualifier = Readonly<{
+  name: string;
+  asyncType: AsyncDependencyType | null;
+  isESMImport: boolean;
+  optional: boolean;
+  contextParams?: RequireContextParams;
+}>;
+declare class DependencyRegistry {
+  _dependencies: Map<string, InternalDependency>;
+  registerDependency(qualifier: ImportQualifier): InternalDependency;
+  getDependencies(): Array<InternalDependency>;
+}

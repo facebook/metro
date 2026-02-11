@@ -10,12 +10,9 @@
 
 import type {IncomingMessage, ServerResponse} from 'http';
 
-export type Data = string | Buffer | Uint8Array;
-export interface Headers {
-  [name: string]: string | number;
-}
-
-export default class MultipartResponse {
+type Data = string | Buffer | Uint8Array;
+type Headers = {[$$Key$$: string]: string | number};
+declare class MultipartResponse {
   static wrapIfSupported(
     req: IncomingMessage,
     res: ServerResponse,
@@ -28,4 +25,6 @@ export default class MultipartResponse {
   writeHead(status: number, headers?: Headers): void;
   setHeader(name: string, value: string | number): void;
   end(data?: Data): void;
+  once(name: string, fn: () => unknown): this;
 }
+export default MultipartResponse;

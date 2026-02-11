@@ -10,7 +10,7 @@
  */
 
 import type Bundler from '../Bundler';
-import type DeltaBundler, {Module} from '../DeltaBundler';
+import type {Module, default as DeltaBundler} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
 import type {ConfigT} from 'metro-config';

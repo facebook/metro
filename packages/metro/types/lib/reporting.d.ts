@@ -8,53 +8,39 @@
  * @oncall react_native
  */
 
+import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
+import type {CustomResolverOptions} from 'metro-resolver';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 
-export interface BundleDetails {
+export type BundleDetails = {
   bundleType: string;
+  customResolverOptions: CustomResolverOptions;
+  customTransformOptions: CustomTransformOptions;
   dev: boolean;
   entryFile: string;
   minify: boolean;
-  platform?: string;
-  runtimeBytecodeVersion?: number;
-}
-
+  platform: null | undefined | string;
+};
 /**
  * A tagged union of all the actions that may happen and we may want to
  * report to the tool user.
  */
 export type ReportableEvent =
-  | {
-      port: number;
-      hasReducedPerformance: boolean;
-      type: 'initialize_started';
-    }
-  | {
-      type: 'initialize_failed';
-      port: number;
-      error: Error;
-    }
-  | {
-      buildID: string;
-      type: 'bundle_build_done';
-    }
-  | {
-      buildID: string;
-      type: 'bundle_build_failed';
-    }
+  | {port: number; hasReducedPerformance: boolean; type: 'initialize_started'}
+  | {type: 'initialize_failed'; port: number; error: Error}
+  | {type: 'initialize_done'; port: number}
+  | {buildID: string; type: 'bundle_build_done'}
+  | {buildID: string; type: 'bundle_build_failed'}
+  | {type: 'bundle_save_log'; message: string}
   | {
       buildID: string;
       bundleDetails: BundleDetails;
+      isPrefetch?: boolean;
       type: 'bundle_build_started';
     }
-  | {
-      error: Error;
-      type: 'bundling_error';
-    }
-  | {
-      type: 'dep_graph_loading';
-      hasReducedPerformance: boolean;
-    }
+  | {error: Error; type: 'bundling_error'}
+  | {type: 'dep_graph_loading'; hasReducedPerformance: boolean}
   | {type: 'dep_graph_loaded'}
   | {
       buildID: string;
@@ -62,27 +48,12 @@ export type ReportableEvent =
       transformedFileCount: number;
       totalFileCount: number;
     }
-  | {
-      type: 'cache_read_error';
-      error: Error;
-    }
-  | {
-      type: 'cache_write_error';
-      error: Error;
-    }
+  | {type: 'cache_read_error'; error: Error}
+  | {type: 'cache_write_error'; error: Error}
   | {type: 'transform_cache_reset'}
-  | {
-      type: 'worker_stdout_chunk';
-      chunk: string;
-    }
-  | {
-      type: 'worker_stderr_chunk';
-      chunk: string;
-    }
-  | {
-      type: 'hmr_client_error';
-      error: Error;
-    }
+  | {type: 'worker_stdout_chunk'; chunk: string}
+  | {type: 'worker_stderr_chunk'; chunk: string}
+  | {type: 'hmr_client_error'; error: Error}
   | {
       type: 'client_log';
       level:
@@ -94,33 +65,15 @@ export type ReportableEvent =
         | 'groupCollapsed'
         | 'groupEnd'
         | 'debug';
-      data: unknown[];
+      data: Array<unknown>;
     }
-  | {
-      type: 'server_listening';
-      port: number;
-      address: string;
-      family: string;
-    }
-  | {
-      type: 'transformer_load_started';
-    }
-  | {
-      type: 'transformer_load_done';
-    }
-  | {
-      type: 'transformer_load_failed';
-      error: Error;
-    }
-  | {
-      type: 'watcher_health_check_result';
-      result: HealthCheckResult;
-    }
-  | {
-      type: 'watcher_status';
-      status: WatcherStatus;
-    };
-
+  | {type: 'resolver_warning'; message: string}
+  | {type: 'server_listening'; port: number; address: string; family: string}
+  | {type: 'transformer_load_started'}
+  | {type: 'transformer_load_done'}
+  | {type: 'transformer_load_failed'; error: Error}
+  | {type: 'watcher_health_check_result'; result: HealthCheckResult}
+  | {type: 'watcher_status'; status: WatcherStatus};
 /**
  * Code across the application takes a reporter as an option and calls the
  * update whenever one of the ReportableEvent happens. Code does not directly
@@ -139,6 +92,37 @@ export type ReportableEvent =
  * TerminalReporter, that should be the only place in the application should
  * access the `terminal` module (nor the `console`).
  */
-export interface Reporter {
-  update: (event: ReportableEvent) => void;
-}
+export type Reporter = {update(event: ReportableEvent): void};
+/**
+ * A standard way to log a warning to the terminal. This should not be called
+ * from some arbitrary Metro logic, only from the reporters. Instead of
+ * calling this, add a new type of ReportableEvent instead, and implement a
+ * proper handler in the reporter(s).
+ */
+export declare function logWarning(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<unknown>
+): void;
+/**
+ * Similar to `logWarning`, but for messages that require the user to act.
+ */
+export declare function logError(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<unknown>
+): void;
+/**
+ * Similar to `logWarning`, but for informational messages.
+ */
+export declare function logInfo(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<unknown>
+): void;
+/**
+ * A reporter that does nothing. Errors and warnings will be swallowed, that
+ * is generally not what you want.
+ */
+export declare const nullReporter: {update(): void};
+export declare type nullReporter = typeof nullReporter;

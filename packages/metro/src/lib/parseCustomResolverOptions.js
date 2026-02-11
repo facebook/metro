@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {CustomResolverOptions} from '../../../metro-resolver/src/types';
+import type {CustomResolverOptions} from 'metro-resolver';
 
 const PREFIX = 'resolver.';
 

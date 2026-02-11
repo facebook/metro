@@ -8,11 +8,41 @@
  * @oncall react_native
  */
 
-import {ModuleTransportLike} from '../../shared/types';
+import type {ModuleTransportLike} from '../../shared/types';
+import type {Module, ReadOnlyGraph, SerializerOptions} from '../types';
+import type {SourceMapGeneratorOptions} from './sourceMapGenerator';
+import type {GetTransformOptions} from 'metro-config';
 
-export interface RamBundleInfo {
-  getDependencies: (filePath: string) => Set<string>;
-  startupModules: Readonly<ModuleTransportLike>;
-  lazyModules: Readonly<ModuleTransportLike>;
+type Options = Readonly<
+  Omit<
+    SerializerOptions,
+    | keyof SourceMapGeneratorOptions
+    | keyof {
+        getTransformOptions: null | undefined | GetTransformOptions;
+        platform: null | undefined | string;
+      }
+  > &
+    Omit<
+      SourceMapGeneratorOptions,
+      keyof {
+        getTransformOptions: null | undefined | GetTransformOptions;
+        platform: null | undefined | string;
+      }
+    > & {
+      getTransformOptions: null | undefined | GetTransformOptions;
+      platform: null | undefined | string;
+    }
+>;
+export type RamBundleInfo = {
+  getDependencies: ($$PARAM_0$$: string) => Set<string>;
+  startupModules: ReadonlyArray<ModuleTransportLike>;
+  lazyModules: ReadonlyArray<ModuleTransportLike>;
   groups: Map<number, Set<number>>;
-}
+};
+declare function getRamBundleInfo(
+  entryPoint: string,
+  pre: ReadonlyArray<Module>,
+  graph: ReadOnlyGraph,
+  options: Options,
+): Promise<RamBundleInfo>;
+export default getRamBundleInfo;

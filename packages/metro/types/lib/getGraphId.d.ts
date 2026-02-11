@@ -8,4 +8,18 @@
  * @oncall react_native
  */
 
-export type GraphId = string;
+import type {TransformInputOptions} from '../DeltaBundler/types';
+import type {ResolverInputOptions} from '../shared/types';
+
+export declare type GraphId = string;
+declare function getGraphId(
+  entryFile: string,
+  options: TransformInputOptions,
+  $$PARAM_2$$: Readonly<{
+    shallow: boolean;
+    lazy: boolean;
+    unstable_allowRequireContext: boolean;
+    resolverOptions: ResolverInputOptions;
+  }>,
+): GraphId;
+export default getGraphId;

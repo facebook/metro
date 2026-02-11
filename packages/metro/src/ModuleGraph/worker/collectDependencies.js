@@ -4,12 +4,18 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow
+ * @format
  */
 
+import type {ReadonlySourceLocation} from '../../shared/types';
 import type {NodePath} from '@babel/traverse';
-import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
+import type {
+  CallExpression,
+  File as BabelNodeFile,
+  Identifier,
+  StringLiteral,
+} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
@@ -60,14 +66,14 @@ type DependencyData = Readonly<{
   // and subpath imports.
   isESMImport: boolean,
   isOptional?: boolean,
-  locs: ReadonlyArray<BabelSourceLocation>,
+  locs: ReadonlyArray<ReadonlySourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
 }>;
 
 export type MutableInternalDependency = {
   ...DependencyData,
-  locs: Array<BabelSourceLocation>,
+  locs: Array<ReadonlySourceLocation>,
   index: number,
   name: string,
 };
@@ -85,7 +91,7 @@ export type State = {
   allowOptionalDependencies: AllowOptionalDependencies,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
-  unstable_isESMImportAtSource: ?(BabelSourceLocation) => boolean,
+  unstable_isESMImportAtSource: ?(ReadonlySourceLocation) => boolean,
 };
 
 export type Options = Readonly<{
@@ -98,7 +104,7 @@ export type Options = Readonly<{
   dependencyTransformer?: DependencyTransformer,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
   unstable_allowRequireContext: boolean,
-  unstable_isESMImportAtSource?: ?(BabelSourceLocation) => boolean,
+  unstable_isESMImportAtSource?: ?(ReadonlySourceLocation) => boolean,
 }>;
 
 export type CollectedDependencies = Readonly<{
@@ -562,7 +568,7 @@ function processRequireCall(
   transformer.transformSyncRequire(path, dep, state);
 }
 
-function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
+function getNearestLocFromPath(path: NodePath<>): ?ReadonlySourceLocation {
   let current: ?(NodePath<> | NodePath<BabelNode>) = path;
   while (
     current &&

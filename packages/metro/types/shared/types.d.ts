@@ -23,9 +23,26 @@ import type {
   MinifierOptions,
 } from 'metro-transform-worker';
 
-type MetroSourceMapOrMappings = MixedSourceMap | MetroSourceMapSegmentTuple[];
-
-export interface BundleOptions {
+type MetroSourceMapOrMappings =
+  | MixedSourceMap
+  | Array<MetroSourceMapSegmentTuple>;
+export declare enum SourcePathsMode {
+  Absolute = 'absolute',
+  ServerUrl = 'url-server',
+}
+export declare namespace SourcePathsMode {
+  export function cast(value: string | null | undefined): SourcePathsMode;
+  export function isValid(
+    value: string | null | undefined,
+  ): value is SourcePathsMode;
+  export function members(): IterableIterator<SourcePathsMode>;
+  export function getName(value: SourcePathsMode): string;
+}
+export type ReadonlySourceLocation = Readonly<{
+  start: Readonly<{line: number; column: number}>;
+  end: Readonly<{line: number; column: number}>;
+}>;
+export type BundleOptions = {
   readonly customResolverOptions: CustomResolverOptions;
   customTransformOptions: CustomTransformOptions;
   dev: boolean;
@@ -35,77 +52,69 @@ export interface BundleOptions {
   readonly lazy: boolean;
   minify: boolean;
   readonly modulesOnly: boolean;
-  onProgress?: (doneCont: number, totalCount: number) => unknown;
-  readonly platform?: string;
+  onProgress:
+    | null
+    | undefined
+    | ((doneCont: number, totalCount: number) => unknown);
+  readonly platform: null | undefined | string;
   readonly runModule: boolean;
-  runtimeBytecodeVersion?: number;
   readonly shallow: boolean;
-  sourceMapUrl?: string;
-  sourceUrl?: string;
+  sourceMapUrl: null | undefined | string;
+  sourceUrl: null | undefined | string;
   createModuleIdFactory?: () => (path: string) => number;
   readonly unstable_transformProfile: TransformProfile;
-}
-
-export interface BuildOptions {
-  readonly withAssets?: boolean;
-}
-
-export interface ResolverInputOptions {
-  readonly customResolverOptions?: CustomResolverOptions;
-}
-
-export interface SerializerOptions {
-  readonly sourceMapUrl: string | null;
-  readonly sourceUrl: string | null;
+  readonly sourcePaths: SourcePathsMode;
+};
+export type BuildOptions = Readonly<{withAssets?: boolean}>;
+export type ResolverInputOptions = Readonly<{
+  customResolverOptions?: CustomResolverOptions;
+  dev: boolean;
+}>;
+export type SerializerOptions = {
+  readonly sourceMapUrl: null | undefined | string;
+  readonly sourceUrl: null | undefined | string;
   readonly runModule: boolean;
   readonly excludeSource: boolean;
   readonly inlineSourceMap: boolean;
   readonly modulesOnly: boolean;
-}
-
-export interface GraphOptions {
+  readonly sourcePaths: SourcePathsMode;
+};
+export type GraphOptions = {
   readonly lazy: boolean;
   readonly shallow: boolean;
-}
-
-// Stricter representation of BundleOptions.
-export interface SplitBundleOptions {
-  readonly entryFile: string;
-  readonly resolverOptions: ResolverInputOptions;
-  readonly transformOptions: TransformInputOptions;
-  readonly serializerOptions: SerializerOptions;
-  readonly graphOptions: GraphOptions;
-  readonly onProgress: DeltaBundlerOptions['onProgress'];
-}
-
-export interface ModuleGroups {
+};
+export type SplitBundleOptions = Readonly<{
+  entryFile: string;
+  resolverOptions: ResolverInputOptions;
+  transformOptions: TransformInputOptions;
+  serializerOptions: SerializerOptions;
+  graphOptions: GraphOptions;
+  onProgress: DeltaBundlerOptions['onProgress'];
+}>;
+export type ModuleGroups = {
   groups: Map<number, Set<number>>;
   modulesById: Map<number, ModuleTransportLike>;
   modulesInGroups: Set<number>;
-}
-
-export interface ModuleTransportLike {
+};
+export type ModuleTransportLike = {
   readonly code: string;
   readonly id: number;
-  readonly map: MetroSourceMapOrMappings | null;
+  readonly map: null | undefined | MetroSourceMapOrMappings;
   readonly name?: string;
   readonly sourcePath: string;
-}
-
-export interface ModuleTransportLikeStrict {
+};
+export type ModuleTransportLikeStrict = {
   readonly code: string;
   readonly id: number;
-  readonly map: MetroSourceMapOrMappings | null;
+  readonly map: null | undefined | MetroSourceMapOrMappings;
   readonly name?: string;
   readonly sourcePath: string;
-}
-
-export interface RamModuleTransport extends ModuleTransportLikeStrict {
-  readonly source: string;
-  readonly type: string;
-}
-
-export interface OutputOptions {
+};
+export type RamModuleTransport = Omit<
+  ModuleTransportLikeStrict,
+  keyof {readonly source: string; readonly type: string}
+> & {readonly source: string; readonly type: string};
+export type OutputOptions = {
   bundleOutput: string;
   bundleEncoding?: 'utf8' | 'utf16le' | 'ascii';
   dev?: boolean;
@@ -114,17 +123,23 @@ export interface OutputOptions {
   sourcemapOutput?: string;
   sourcemapSourcesRoot?: string;
   sourcemapUseAbsolutePath?: boolean;
-}
-
-export interface RequestOptions {
-  entryFile: string;
-  inlineSourceMap?: boolean;
-  sourceMapUrl?: string;
-  dev?: boolean;
-  minify: boolean;
-  platform: string;
-  createModuleIdFactory?: () => (path: string) => number;
-  onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
-}
-
+};
+type SafeOptionalProps<T> = {
+  [K in keyof T]: T[K] extends void ? void | T[K] : T[K];
+};
+export type RequestOptions = Readonly<
+  SafeOptionalProps<{
+    entryFile: string;
+    inlineSourceMap?: boolean;
+    sourceMapUrl?: string;
+    dev?: boolean;
+    minify: boolean;
+    platform: string;
+    createModuleIdFactory?: () => (path: string) => number;
+    onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
+    customResolverOptions?: CustomResolverOptions;
+    customTransformOptions?: CustomTransformOptions;
+    unstable_transformProfile?: TransformProfile;
+  }>
+>;
 export type {MinifierOptions};

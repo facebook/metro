@@ -9,7 +9,8 @@
  * @oncall react_native
  */
 
-import type {File, PluginObj} from '@babel/core';
+import type {ReadonlySourceLocation} from '../../shared/types';
+import type {PluginObj} from '@babel/core';
 import typeof * as Types from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
@@ -17,7 +18,10 @@ type ImportDeclarationLocs = Set<string>;
 
 type State = {
   importDeclarationLocs: ImportDeclarationLocs,
-  file: File,
+  file: {
+    metadata?: MetroBabelFileMetadata,
+    ...
+  },
   ...
 };
 
@@ -78,7 +82,7 @@ function importLocationsPlugin({
 // Very simple serialisation of a source location. This should remain opaque to
 // the caller.
 const MISSING_LOC = {line: -1, column: -1};
-function locToKey(loc: BabelSourceLocation): string {
+function locToKey(loc: ReadonlySourceLocation): string {
   const {start = MISSING_LOC, end = MISSING_LOC} = loc;
   return `${start.line},${start.column}:${end.line},${end.column}`;
 }

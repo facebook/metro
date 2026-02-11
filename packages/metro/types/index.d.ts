@@ -8,24 +8,17 @@
  * @oncall react_native
  */
 
-export * from './Asset';
-export * from './DeltaBundler/types';
-export * from './ModuleGraph/worker/collectDependencies';
-export * from './Server';
-export * from './lib/reporting';
-
-import type {AssetData} from './Asset';
-import type {ReadOnlyGraph} from './DeltaBundler/types';
-import type {ServerOptions, default as MetroServer} from './Server';
+import type {AssetData} from './Assets';
+import type {ReadOnlyGraph} from './DeltaBundler';
+import type {ServerOptions} from './Server';
 import type {BuildOptions, OutputOptions, RequestOptions} from './shared/types';
 import type {HandleFunction} from 'connect';
-import type {EventEmitter} from 'events';
-import type {IncomingMessage, Server as HttpServer} from 'http';
-import type {Server as HttpsServer} from 'https';
+import type {Server as HttpServer} from 'http';
 import type {
-  CustomTransformOptions,
-  TransformProfile,
-} from 'metro-babel-transformer';
+  Server as HttpsServer,
+  ServerOptions as HttpsServerOptions,
+} from 'https';
+import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
@@ -33,65 +26,53 @@ import type {
   Middleware,
 } from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
-import type {Duplex} from 'stream';
-import type Yargs from 'yargs';
+import type {CustomTransformOptions} from 'metro-transform-worker';
+import type {Server as WebSocketServer} from 'ws';
+import type $$IMPORT_TYPEOF_1$$ from 'yargs';
 
-import {TerminalReporter} from './lib/TerminalReporter';
+import JsonReporter from './lib/JsonReporter';
+import TerminalReporter from './lib/TerminalReporter';
+import MetroServer from './Server';
 import {loadConfig, mergeConfig, resolveConfig} from 'metro-config';
 import {Terminal} from 'metro-core';
 
-export {HttpServer, HttpsServer};
-export {loadConfig, mergeConfig, resolveConfig, Terminal, TerminalReporter};
-
-interface MetroMiddleWare {
+type Yargs = typeof $$IMPORT_TYPEOF_1$$;
+type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void;
-  end: () => void;
+  end: () => Promise<void>;
   metroServer: MetroServer;
   middleware: Middleware;
-}
-
-export interface RunMetroOptions extends ServerOptions {
-  waitForBundler?: boolean;
-}
-
-interface WebsocketServer extends EventEmitter {
-  handleUpgrade<T = WebsocketServer>(
-    request: IncomingMessage,
-    socket: Duplex,
-    upgradeHead: Buffer,
-    callback: (client: T, request: IncomingMessage) => void,
-  ): void;
-}
-
-export interface RunServerOptions {
+};
+export type RunMetroOptions = Omit<
+  ServerOptions,
+  keyof {waitForBundler?: boolean}
+> & {waitForBundler?: boolean};
+export type RunServerOptions = Readonly<{
   hasReducedPerformance?: boolean;
   host?: string;
-  onError?: (error: Error & {code?: string}) => void;
+  onError?: ($$PARAM_0$$: Error & {code?: string}) => void;
   onReady?: (server: HttpServer | HttpsServer) => void;
-  secureServerOptions?: Record<string, unknown>;
-
-  /** @deprecated since version 0.61 */
+  onClose?: () => void;
+  secureServerOptions?: HttpsServerOptions;
   secure?: boolean;
-
-  /** @deprecated since version 0.61 */
   secureCert?: string;
-
-  /** @deprecated since version 0.61 */
   secureKey?: string;
-
   unstable_extraMiddleware?: ReadonlyArray<HandleFunction>;
   waitForBundler?: boolean;
   watch?: boolean;
-  websocketEndpoints?: {
-    [path: string]: WebsocketServer;
-  };
-}
-
-export interface RunServerResult {
-  httpServer: HttpServer | HttpsServer;
-}
-
-export interface RunBuildOptions {
+  websocketEndpoints?: Readonly<{[path: string]: WebSocketServer}>;
+}>;
+export type RunServerResult = {httpServer: HttpServer | HttpsServer};
+type BuildGraphOptions = {
+  entries: ReadonlyArray<string>;
+  customTransformOptions?: CustomTransformOptions;
+  dev?: boolean;
+  minify?: boolean;
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
+  platform?: string;
+  type?: 'module' | 'script';
+};
+export type RunBuildOptions = {
   entry: string;
   assets?: boolean;
   dev?: boolean;
@@ -102,91 +83,79 @@ export interface RunBuildOptions {
   onComplete?: () => void;
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
   minify?: boolean;
-  output?: {
+  output?: Readonly<{
     build: (
-      server: MetroServer,
-      requestOptions: RequestOptions,
-      buildOptions?: BuildOptions,
+      $$PARAM_0$$: MetroServer,
+      $$PARAM_1$$: RequestOptions,
+      $$PARAM_2$$: void | BuildOptions,
     ) => Promise<{
       code: string;
       map: string;
       assets?: ReadonlyArray<AssetData>;
     }>;
     save: (
-      entry: {
-        code: string;
-        map: string;
-      },
-      options: OutputOptions,
-      postSave: (...args: string[]) => void,
+      $$PARAM_0$$: {code: string; map: string},
+      $$PARAM_1$$: OutputOptions,
+      $$PARAM_2$$: (logMessage: string) => void,
     ) => Promise<unknown>;
-  };
+  }>;
   platform?: string;
   sourceMap?: boolean;
   sourceMapUrl?: string;
   customResolverOptions?: CustomResolverOptions;
   customTransformOptions?: CustomTransformOptions;
   unstable_transformProfile?: TransformProfile;
-}
-
-export interface RunBuildResult {
+};
+export type RunBuildResult = {
   code: string;
   map: string;
   assets?: ReadonlyArray<AssetData>;
-  [key: string]: unknown;
-}
-
-interface BuildGraphOptions {
-  entries: ReadonlyArray<string>;
-  customTransformOptions?: CustomTransformOptions;
-  dev?: boolean;
-  minify?: boolean;
-  onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
-  platform?: string;
-  type?: 'module' | 'script';
-}
-
-export {MetroConfig};
-
-export function runMetro(
+};
+type BuildCommandOptions = Readonly<{[$$Key$$: string]: unknown}> | null;
+type ServeCommandOptions = Readonly<{[$$Key$$: string]: unknown}> | null;
+type DependenciesCommandOptions = Readonly<{
+  [$$Key$$: string]: unknown;
+}> | null;
+export {Terminal, JsonReporter, TerminalReporter};
+export type {AssetData} from './Assets';
+export type {Reporter, ReportableEvent} from './lib/reporting';
+export type {TerminalReportableEvent} from './lib/TerminalReporter';
+export type {MetroConfig};
+export declare function runMetro(
   config: InputConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroServer>;
-
-export function createConnectMiddleware(
+export {loadConfig, mergeConfig, resolveConfig};
+export declare const createConnectMiddleware: (
   config: ConfigT,
   options?: RunMetroOptions,
-): Promise<MetroMiddleWare>;
-
-export function runServer(
+) => Promise<MetroMiddleWare>;
+export declare type createConnectMiddleware = typeof createConnectMiddleware;
+export declare const runServer: (
   config: ConfigT,
-  options: RunServerOptions,
-): Promise<RunServerResult>;
-
-export function runBuild(
+  $$PARAM_1$$?: RunServerOptions,
+) => Promise<RunServerResult>;
+export declare type runServer = typeof runServer;
+export declare const runBuild: (
   config: ConfigT,
-  options: RunBuildOptions,
-): Promise<RunBuildResult>;
-
-export function buildGraph(
-  config: ConfigT,
-  options: BuildGraphOptions,
-): Promise<ReadOnlyGraph<void>>;
-
-type BuildCommandOptions = Record<string, unknown> | null;
-type ServeCommandOptions = Record<string, unknown> | null;
-
-interface AttachMetroCLIOptions {
+  $$PARAM_1$$: RunBuildOptions,
+) => Promise<RunBuildResult>;
+export declare type runBuild = typeof runBuild;
+export declare const buildGraph: (
+  config: InputConfigT,
+  $$PARAM_1$$: BuildGraphOptions,
+) => Promise<ReadOnlyGraph>;
+export declare type buildGraph = typeof buildGraph;
+type AttachMetroCLIOptions = {
   build?: BuildCommandOptions;
   serve?: ServeCommandOptions;
-  dependencies?: unknown;
-}
-
-export function attachMetroCli(
-  yargs: Yargs.Argv,
+  dependencies?: DependenciesCommandOptions;
+};
+export declare const attachMetroCli: (
+  yargs: Yargs,
   options?: AttachMetroCLIOptions,
-): Yargs.Argv;
-
+) => Yargs;
+export declare type attachMetroCli = typeof attachMetroCli;
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.
@@ -197,6 +166,7 @@ declare const $$EXPORT_DEFAULT_DECLARATION$$: {
   attachMetroCli: typeof attachMetroCli;
   runServer: typeof runServer;
   Terminal: typeof Terminal;
+  JsonReporter: typeof JsonReporter;
   TerminalReporter: typeof TerminalReporter;
   loadConfig: typeof loadConfig;
   mergeConfig: typeof mergeConfig;

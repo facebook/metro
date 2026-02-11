@@ -4,11 +4,16 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow strict-local
+ * @format
  */
 
-import type {FunctionExpression, Identifier, Program} from '@babel/types';
+import type {
+  File as BabelNodeFile,
+  FunctionExpression,
+  Identifier,
+  Program,
+} from '@babel/types';
 
 import template from '@babel/template';
 import traverse from '@babel/traverse';

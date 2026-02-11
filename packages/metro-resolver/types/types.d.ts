@@ -199,6 +199,5 @@ export type CustomResolver = (
   platform: string | null,
 ) => Resolution;
 export type CustomResolverOptions = {
-  __proto__: null;
   readonly [$$Key$$: string]: unknown;
 };
