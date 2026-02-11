@@ -10,6 +10,7 @@
  */
 
 import invariant from 'invariant';
+import {clearTimeout, setTimeout} from 'timers';
 
 type ProcessBatch<TItem, TResult> = (
   batch: Array<TItem>,
@@ -41,7 +42,7 @@ export default class BatchProcessor<TItem, TResult> {
   _options: BatchProcessorOptions;
   _processBatch: ProcessBatch<TItem, TResult>;
   _queue: Array<QueueItem<TItem, TResult>>;
-  _timeoutHandle: ?TimeoutID;
+  _timeoutHandle: ?ReturnType<typeof setTimeout>;
 
   constructor(
     options: BatchProcessorOptions,
@@ -94,7 +95,9 @@ export default class BatchProcessor<TItem, TResult> {
 
   _processQueueOnceReady(): void {
     if (this._queue.length >= this._options.maximumItems) {
-      clearTimeout(this._timeoutHandle);
+      if (this._timeoutHandle != null) {
+        clearTimeout(this._timeoutHandle);
+      }
       process.nextTick(() => this._processQueue());
       return;
     }
