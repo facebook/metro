@@ -17,9 +17,9 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "@babel/traverse": "^7.25.3",
-    "@babel/traverse--for-generate-function-map": "npm:@babel/traverse@^7.25.3",
-    "@babel/types": "^7.25.2",
+    "@babel/traverse": "^7.29.0",
+    "@babel/traverse--for-generate-function-map": "npm:@babel/traverse@^7.29.0",
+    "@babel/types": "^7.29.0",
     "flow-enums-runtime": "^0.0.6",
     "invariant": "^2.2.4",
     "metro-symbolicate": "0.83.3",
@@ -31,7 +31,7 @@
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@babel/parser": "^7.25.3",
+    "@babel/parser": "^7.29.0",
     "terser": "^5.15.0",
     "semver": "^7.1.3"
   },
