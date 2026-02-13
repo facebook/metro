@@ -1320,6 +1320,8 @@ export default class Server {
   });
 
   async _symbolicate(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const depGraph = await this._bundler.getBundler().getDependencyGraph();
+
     const getCodeFrame = (
       urls: Set<string>,
       symbolicatedStack: ReadonlyArray<StackFrameOutput>,
@@ -1342,6 +1344,13 @@ export default class Server {
         }
 
         const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
+        if (!depGraph.doesFileExist(fileAbsolute)) {
+          debug(
+            'Skipping code frame for file not in dependency graph.',
+            fileAbsolute,
+          );
+          continue;
+        }
         try {
           return {
             content: codeFrameColumns(

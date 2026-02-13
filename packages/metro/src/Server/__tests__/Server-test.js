@@ -311,6 +311,7 @@ describe('processRequest', () => {
         getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
         load: jest.fn(() => Promise.resolve()),
         getWatcher: jest.fn(() => ({})),
+        doesFileExist: jest.fn().mockReturnValue(true),
       }),
     );
 
@@ -1315,6 +1316,38 @@ describe('processRequest', () => {
             }),
           ],
         });
+      });
+
+      test('should return null codeFrame when symbolicated file is not in the dependency graph', async () => {
+        const depGraph = await getDependencyGraph();
+        depGraph.doesFileExist.mockReturnValue(false);
+
+        const response = await makeRequest('/symbolicate', {
+          headers: {'content-type': 'application/json'},
+          data: JSON.stringify({
+            stack: [
+              {
+                file: `http://localhost:8081/mybundle.bundle${queryDelimiter}runModule=true`,
+                lineNumber: 2,
+                column: 18,
+                methodName: 'clientSideMethodName',
+              },
+            ],
+          }),
+        });
+
+        const result = response._getJSON();
+        // Symbolication should still succeed
+        expect(result.stack).toEqual([
+          expect.objectContaining({
+            file: '/root/mybundle.js',
+            lineNumber: 1,
+            column: 0,
+            methodName: 'clientSideMethodName',
+          }),
+        ]);
+        // But codeFrame should be null since the file is not in the dep graph
+        expect(result.codeFrame).toBeNull();
       });
 
       // TODO: This probably should restore the *original* file before rewrite
