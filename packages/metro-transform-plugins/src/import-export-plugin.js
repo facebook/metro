@@ -12,10 +12,14 @@
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {
+  ExportAllDeclaration,
+  ExportDefaultDeclaration,
   ExportNamedDeclaration,
+  Expression,
   ImportDeclaration,
   Node,
   Program,
+  SourceLocation,
   Statement,
 } from '@babel/types';
 // Type only dependency. This is not a runtime dependency
@@ -33,17 +37,17 @@ export type Options = Readonly<{
 }>;
 
 type State = {
-  exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,
-  exportDefault: Array<{local: string, loc: ?BabelSourceLocation, ...}>,
+  exportAll: Array<{file: string, loc: ?SourceLocation, ...}>,
+  exportDefault: Array<{local: string, loc: ?SourceLocation, ...}>,
   exportNamed: Array<{
     local: string,
     remote: string,
-    loc: ?BabelSourceLocation,
+    loc: ?SourceLocation,
     ...
   }>,
   imports: Array<{node: Statement}>,
-  importDefault: BabelNode,
-  importAll: BabelNode,
+  importDefault: Node,
+  importAll: Node,
   opts: Options,
   ...
 };
@@ -114,7 +118,7 @@ const resolveTemplate = template.expression(`
 function resolvePath<TNode: Node>(
   node: TNode,
   resolve: boolean,
-): BabelNodeExpression | TNode {
+): Expression | TNode {
   if (!resolve) {
     return node;
   }
@@ -124,22 +128,22 @@ function resolvePath<TNode: Node>(
   });
 }
 
-declare function withLocation<TNode: BabelNode>(
+declare function withLocation<TNode: Node>(
   node: TNode,
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
 ): TNode;
 
 // eslint-disable-next-line no-redeclare
-declare function withLocation<TNode: BabelNode>(
+declare function withLocation<TNode: Node>(
   node: ReadonlyArray<TNode>,
-  loc: ?BabelSourceLocation,
+  loc: ?SourceLocation,
 ): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
 function withLocation(
-  node: BabelNode | ReadonlyArray<BabelNode>,
+  node: Node | ReadonlyArray<Node>,
   loc: ?BabelNodeSourceLocation,
-): Array<BabelNode> | BabelNode {
+): Array<Node> | Node {
   if (Array.isArray(node)) {
     return node.map(n => withLocation(n, loc));
   }
@@ -160,7 +164,7 @@ export default function importExportPlugin({
   return {
     visitor: {
       ExportAllDeclaration(
-        path: NodePath<BabelNodeExportAllDeclaration>,
+        path: NodePath<ExportAllDeclaration>,
         state: State,
       ): void {
         state.exportAll.push({
@@ -172,7 +176,7 @@ export default function importExportPlugin({
       },
 
       ExportDefaultDeclaration(
-        path: NodePath<BabelNodeExportDefaultDeclaration>,
+        path: NodePath<ExportDefaultDeclaration>,
         state: State,
       ): void {
         const declaration = path.node.declaration;
@@ -524,7 +528,7 @@ export default function importExportPlugin({
           });
 
           state.exportDefault.forEach(
-            (e: {local: string, loc: ?BabelSourceLocation, ...}) => {
+            (e: {local: string, loc: ?SourceLocation, ...}) => {
               body.push(
                 withLocation(
                   exportTemplate({
@@ -538,7 +542,7 @@ export default function importExportPlugin({
           );
 
           state.exportAll.forEach(
-            (e: {file: string, loc: ?BabelSourceLocation, ...}) => {
+            (e: {file: string, loc: ?SourceLocation, ...}) => {
               body.push(
                 // $FlowFixMe[incompatible-call]
                 ...withLocation(
@@ -557,12 +561,7 @@ export default function importExportPlugin({
           );
 
           state.exportNamed.forEach(
-            (e: {
-              local: string,
-              remote: string,
-              loc: ?BabelSourceLocation,
-              ...
-            }) => {
+            (e: {local: string, remote: string, loc: ?SourceLocation, ...}) => {
               body.push(
                 withLocation(
                   exportTemplate({

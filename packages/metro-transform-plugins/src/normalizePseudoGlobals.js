@@ -10,7 +10,7 @@
  */
 
 import type {NodePath, Scope} from '@babel/traverse';
-import type {Program} from '@babel/types';
+import type {Node as BabelNode, Program} from '@babel/types';
 
 import traverse from '@babel/traverse';
 import nullthrows from 'nullthrows';
