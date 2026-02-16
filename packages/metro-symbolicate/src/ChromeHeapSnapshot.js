@@ -565,7 +565,6 @@ class ChromeHeapSnapshotRecordAccessor {
   }
 }
 
-// $FlowFixMe[incompatible-type] Flow doesn't see that we implement the iteration protocol
 class ChromeHeapSnapshotRecordIterator
   extends ChromeHeapSnapshotRecordAccessor
   implements Iterable<ChromeHeapSnapshotRecordAccessor>
@@ -598,15 +597,14 @@ class ChromeHeapSnapshotRecordIterator
   }
 
   // JS Iterator protocol
-  next(): {done: boolean, +value: this} {
+  next(): IteratorResult<ChromeHeapSnapshotRecordIterator, void> {
     this.protectedTryMoveNext();
-    return {done: !this.protectedHasNext(), value: this};
+    const done = !this.protectedHasNext();
+    return done ? {done} : {done, value: this};
   }
 
   // JS Iterable protocol
-  // $FlowFixMe[unsupported-syntax]
-  // $FlowFixMe[incompatible-type]
-  [Symbol.iterator](): this {
+  [Symbol.iterator](): ChromeHeapSnapshotRecordIterator {
     return this;
   }
 }
