@@ -30,7 +30,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-relay": "^1.8.3",
     "flow-api-translator": "0.33.3",
-    "flow-bin": "^0.300.0",
+    "flow-bin": "^0.301.0",
     "hermes-eslint": "0.33.3",
     "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
