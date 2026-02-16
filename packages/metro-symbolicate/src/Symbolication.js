@@ -11,6 +11,7 @@
 
 import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
 import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
+import type {Writable} from 'stream';
 
 import {ChromeHeapSnapshotProcessor} from './ChromeHeapSnapshot';
 import GoogleIgnoreListConsumer from './GoogleIgnoreListConsumer';
@@ -271,8 +272,8 @@ class SymbolicationContext<ModuleIdsT> {
       stdout,
       stderr,
     }: {
-      stdout: stream$Writable,
-      stderr: stream$Writable,
+      stdout: Writable,
+      stderr: Writable,
       ...
     },
   ): void {
@@ -905,8 +906,8 @@ function symbolicateChromeTrace<ModuleIdsT>(
     stdout,
     stderr,
   }: {
-    stdout: stream$Writable,
-    stderr: stream$Writable,
+    stdout: Writable,
+    stderr: Writable,
     ...
   },
   context: SymbolicationContext<ModuleIdsT>,

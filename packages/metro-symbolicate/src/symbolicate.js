@@ -17,6 +17,9 @@
 // In our third form, we symbolicate using a module ID, a line number, and
 // optionally a column.
 
+import type {Readable, Writable} from 'stream';
+import type {ReadStream} from 'tty';
+
 import * as Symbolication from './Symbolication';
 import fs from 'fs';
 // $FlowFixMe[untyped-import] source-map
@@ -52,9 +55,9 @@ export default async function main(
     stderr,
     stdout,
   }: Readonly<{
-    stdin: stream$Readable | tty$ReadStream,
-    stderr: stream$Writable,
-    stdout: stream$Writable,
+    stdin: Readable | ReadStream,
+    stderr: Writable,
+    stdout: Writable,
     ...
   }> = process as $FlowFixMe,
 ): Promise<number> {
@@ -230,7 +233,7 @@ export default async function main(
   return 0;
 }
 
-function readAll(stream: stream$Readable | tty$ReadStream) {
+function readAll(stream: Readable | ReadStream) {
   return new Promise<string>(resolve => {
     let data = '';
     if (stream.isTTY === true) {
