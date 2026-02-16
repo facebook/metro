@@ -27,21 +27,7 @@ const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 const TYPES_DIR = 'types';
 const SRC_DIR = 'src';
 
-export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = [
-  'packages/metro/**',
-  'packages/metro-babel-transformer/**',
-  'packages/metro-cache/**',
-  'packages/metro-config/**',
-  'packages/metro-core/**',
-  'packages/metro-resolver/**',
-  'packages/metro-runtime/src/modules/types.js',
-  'packages/metro-source-map/**',
-  'packages/metro-symbolicate/**',
-  'packages/metro-transform-plugins/**',
-  'packages/metro-transform-worker/**',
-  'packages/metro-file-map/**',
-  'packages/ob1/**',
-];
+export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = ['packages/**'];
 
 // Globs of paths for which we do not generate TypeScript definitions,
 // matched against candidate .js files
@@ -54,7 +40,9 @@ const IGNORED_PATTERNS = [
   'packages/metro-babel-register/**',
   'packages/*/build/**',
   'packages/metro/src/cli.js',
+  'packages/**/third-party/**',
   'packages/metro/src/integration_tests/**',
+  'packages/metro-runtime/**/!(types*).js',
 ];
 
 function isSourceTSDeclaration(filePath: string): boolean {

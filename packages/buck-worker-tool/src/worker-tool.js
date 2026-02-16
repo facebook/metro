@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Writable} from 'stream';
+import type {Duplex, Writable} from 'stream';
 
 import {startProfiling, stopProfilingAndWrite} from './profiling';
 import JSONStream from './third-party/JSONStream';
@@ -92,7 +92,7 @@ type JSONWriter = {
   ...
 };
 
-function buckWorker(commands: Commands): any {
+function buckWorker(commands: Commands): Duplex {
   const reader: JSONReader = JSONStream.parse('*');
   const writer: JSONWriter = JSONStream.stringify();
 
