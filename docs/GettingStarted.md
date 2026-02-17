@@ -1,4 +1,4 @@
----
+npm install --save-dev metro metro-core---
 id: getting-started
 title: Getting Started
 ---
