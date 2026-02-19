@@ -19,9 +19,7 @@ const getMockPlugin = (cacheKey: string): FileMapPlugin<> => ({
 });
 
 const buildParameters: BuildParameters = {
-  computeDependencies: false,
   computeSha1: false,
-  dependencyExtractor: null,
   enableSymlinks: false,
   extensions: ['a'],
   forceNodeFilesystemAPI: false,
@@ -63,12 +61,7 @@ jest.mock(
 );
 
 test('returns a distinct cache key for any change', () => {
-  const {
-    dependencyExtractor: _,
-    rootDir: __,
-    plugins: ___,
-    ...simpleParameters
-  } = buildParameters;
+  const {rootDir: __, plugins: ___, ...simpleParameters} = buildParameters;
 
   const varyDefault = <T: keyof typeof simpleParameters>(
     key: T,
@@ -82,7 +75,6 @@ test('returns a distinct cache key for any change', () => {
   const configs = Object.keys(simpleParameters).map(key => {
     switch (key) {
       // Boolean
-      case 'computeDependencies':
       case 'computeSha1':
       case 'enableSymlinks':
       case 'forceNodeFilesystemAPI':
@@ -104,8 +96,6 @@ test('returns a distinct cache key for any change', () => {
     }
   });
   configs.push(buildParameters);
-  configs.push({...buildParameters, dependencyExtractor: '/extractor/1'});
-  configs.push({...buildParameters, dependencyExtractor: '/extractor/2'});
   configs.push({...buildParameters, plugins: []});
   configs.push({...buildParameters, plugins: [getMockPlugin('2')]});
 

@@ -11,7 +11,7 @@
 import type {ConfigT} from 'metro-config';
 import type {HasteMap} from 'metro-file-map';
 
-import MetroFileMap from 'metro-file-map';
+import MetroFileMap, {DependencyPlugin} from 'metro-file-map';
 
 declare function createFileMap(
   config: ConfigT,
@@ -21,5 +21,9 @@ declare function createFileMap(
     throwOnModuleCollision?: boolean;
     cacheFilePrefix?: string;
   }>,
-): {fileMap: MetroFileMap; hasteMap: HasteMap};
+): {
+  fileMap: MetroFileMap;
+  hasteMap: HasteMap;
+  dependencyPlugin: null | undefined | DependencyPlugin;
+};
 export default createFileMap;

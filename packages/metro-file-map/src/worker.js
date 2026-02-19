@@ -12,19 +12,17 @@
 
 /*::
 import type {
-  DependencyExtractor,
   FileMapPluginWorker,
   MetadataWorker,
   WorkerMessage,
   WorkerMetadata,
   WorkerSetupArgs,
+  V8Serializable,
 } from './flow-types';
 */
 
 'use strict';
 
-const defaultDependencyExtractor = require('./lib/dependencyExtractor');
-const excludedExtensions = require('./workerExclusionList');
 const {createHash} = require('crypto');
 const fs = require('graceful-fs');
 
@@ -45,10 +43,9 @@ class Worker {
 
   processFile(data /*: WorkerMessage */) /*: WorkerMetadata */ {
     let content /*: ?Buffer */;
-    let dependencies /*: WorkerMetadata['dependencies'] */;
     let sha1 /*: WorkerMetadata['sha1'] */;
 
-    const {computeDependencies, computeSha1, filePath, pluginsToRun} = data;
+    const {computeSha1, filePath, pluginsToRun} = data;
 
     const getContent = () /*: Buffer */ => {
       if (content == null) {
@@ -63,35 +60,14 @@ class Worker {
       this.#plugins[pluginIdx].processFile(data, workerUtils),
     );
 
-    if (
-      computeDependencies &&
-      !excludedExtensions.has(filePath.substr(filePath.lastIndexOf('.')))
-    ) {
-      const dependencyExtractor /*: ?DependencyExtractor */ =
-        data.dependencyExtractor != null
-          ? // $FlowFixMe[unsupported-syntax] - dynamic require
-            require(data.dependencyExtractor)
-          : null;
-
-      dependencies = Array.from(
-        dependencyExtractor != null
-          ? dependencyExtractor.extract(
-              getContent().toString(),
-              filePath,
-              defaultDependencyExtractor.extract,
-            )
-          : defaultDependencyExtractor.extract(getContent().toString()),
-      );
-    }
-
     // If a SHA-1 is requested on update, compute it.
     if (computeSha1) {
       sha1 = sha1hex(getContent());
     }
 
     return content && data.maybeReturnContent
-      ? {content, dependencies, pluginData, sha1}
-      : {dependencies, pluginData, sha1};
+      ? {content, pluginData, sha1}
+      : {pluginData, sha1};
   }
 }
 

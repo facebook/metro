@@ -38,7 +38,6 @@ export type {
   HasteMapItem,
 };
 export type InputOptions = Readonly<{
-  computeDependencies?: null | undefined | boolean;
   computeSha1?: null | undefined | boolean;
   enableSymlinks?: null | undefined | boolean;
   extensions: ReadonlyArray<string>;
@@ -48,7 +47,6 @@ export type InputOptions = Readonly<{
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
-  dependencyExtractor?: null | undefined | string;
   cacheManagerFactory?: null | undefined | CacheManagerFactory;
   console?: Console;
   healthCheck: HealthCheckOptions;
@@ -68,6 +66,8 @@ type HealthCheckOptions = Readonly<{
 }>;
 type AnyFileMapPlugin = FileMapPlugin<any, any>;
 export {DiskCacheManager} from './cache/DiskCacheManager';
+export {default as DependencyPlugin} from './plugins/DependencyPlugin';
+export type {DependencyPluginOptions} from './plugins/DependencyPlugin';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
 export {default as HastePlugin} from './plugins/HastePlugin';

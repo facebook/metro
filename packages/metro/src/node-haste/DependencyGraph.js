@@ -18,6 +18,7 @@ import type Package from './Package';
 import type {ConfigT} from 'metro-config';
 import type {
   ChangeEvent,
+  DependencyPlugin,
   FileSystem,
   HasteMap,
   HealthCheckResult,
@@ -64,6 +65,7 @@ export default class DependencyGraph extends EventEmitter {
   _fileSystem: FileSystem;
   #packageCache: PackageCache;
   _hasteMap: HasteMap;
+  #dependencyPlugin: ?DependencyPlugin;
   _moduleResolver: ModuleResolver<Package>;
   _resolutionCache: Map<
     // Custom resolver options
@@ -104,7 +106,7 @@ export default class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const {fileMap, hasteMap} = createFileMap(config, {
+    const {fileMap, hasteMap, dependencyPlugin} = createFileMap(config, {
       throwOnModuleCollision: false,
       watch,
     });
@@ -122,6 +124,7 @@ export default class DependencyGraph extends EventEmitter {
 
       this._fileSystem = fileSystem;
       this._hasteMap = hasteMap;
+      this.#dependencyPlugin = dependencyPlugin;
 
       this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
       this._haste.on('healthCheck', result =>
@@ -379,6 +382,13 @@ export default class DependencyGraph extends EventEmitter {
   }
 
   getDependencies(filePath: string): Array<string> {
-    return nullthrows(this._fileSystem.getDependencies(filePath));
+    if (!this.#dependencyPlugin) {
+      throw new Error(
+        'getDependencies called but extractDependencies is false',
+      );
+    }
+    return Array.from(
+      nullthrows(this.#dependencyPlugin.getDependencies(filePath)),
+    );
   }
 }

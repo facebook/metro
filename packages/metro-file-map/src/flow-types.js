@@ -16,7 +16,6 @@ export type {PerfLoggerFactory, PerfLogger};
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
 export type BuildParameters = Readonly<{
-  computeDependencies: boolean,
   computeSha1: boolean,
   enableSymlinks: boolean,
   extensions: ReadonlyArray<string>,
@@ -26,9 +25,6 @@ export type BuildParameters = Readonly<{
   retainAllFiles: boolean,
   rootDir: string,
   roots: ReadonlyArray<string>,
-
-  // Module paths that should export a 'getCacheKey' method
-  dependencyExtractor: ?string,
 
   cacheBreaker: string,
 }>;
@@ -236,9 +232,8 @@ export type HType = {
   MTIME: 0,
   SIZE: 1,
   VISITED: 2,
-  DEPENDENCIES: 3,
-  SHA1: 4,
-  SYMLINK: 5,
+  SHA1: 3,
+  SYMLINK: 4,
   PLUGINDATA: number,
   PATH: 0,
   TYPE: 1,
@@ -246,7 +241,6 @@ export type HType = {
   PACKAGE: 1,
   GENERIC_PLATFORM: 'g',
   NATIVE_PLATFORM: 'native',
-  DEPENDENCY_DELIM: '\0',
 };
 
 export type HTypeValue = Values<HType>;
@@ -259,7 +253,6 @@ export type FileMetadata = [
   /* mtime */ ?number,
   /* size */ number,
   /* visited */ 0 | 1,
-  /* dependencies */ string,
   /* sha1 */ ?string,
   /* symlink */ 0 | 1 | string, // string specifies target, if known
   /* plugindata */
@@ -275,7 +268,6 @@ export type FileStats = Readonly<{
 export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
-  getDependencies(file: Path): ?Array<string>;
   getDifference(files: FileData): {
     changedFiles: FileData,
     removedFiles: Set<string>,
@@ -427,9 +419,7 @@ export type HasteMapData = Map<string, HasteMapItem>;
 
 export type HasteMapItem = {
   [platform: string]: HasteMapItemMetadata,
-  /*:: // Hide from TypeScript
   __proto__: null,
-  */
 };
 export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
@@ -507,16 +497,13 @@ export type WatchmanClockSpec =
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = Readonly<{
-  computeDependencies: boolean,
   computeSha1: boolean,
-  dependencyExtractor?: ?string,
   filePath: string,
   maybeReturnContent: boolean,
   pluginsToRun: ReadonlyArray<number>,
 }>;
 
 export type WorkerMetadata = Readonly<{
-  dependencies?: ?ReadonlyArray<string>,
   sha1?: ?string,
   content?: ?Buffer,
   pluginData?: ReadonlyArray<V8Serializable>,

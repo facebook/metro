@@ -15,22 +15,6 @@ import normalizePathSeparatorsToPosix from './normalizePathSeparatorsToPosix';
 import {RootPathUtils} from './RootPathUtils';
 import {createHash} from 'crypto';
 
-function moduleCacheKey(modulePath: ?string) {
-  if (modulePath == null) {
-    return null;
-  }
-  // $FlowFixMe[unsupported-syntax] - Dynamic require
-  const moduleExports = require(modulePath);
-  if (typeof moduleExports?.getCacheKey !== 'function') {
-    console.warn(
-      `metro-file-map: Expected \`${modulePath}\` to export ` +
-        '`getCacheKey: () => string`',
-    );
-    return null;
-  }
-  return moduleExports.getCacheKey();
-}
-
 export default function rootRelativeCacheKeys(
   buildParameters: BuildParameters,
 ): {
@@ -53,7 +37,6 @@ export default function rootRelativeCacheKeys(
           );
         case 'cacheBreaker':
         case 'extensions':
-        case 'computeDependencies':
         case 'computeSha1':
         case 'enableSymlinks':
         case 'forceNodeFilesystemAPI':
@@ -61,8 +44,6 @@ export default function rootRelativeCacheKeys(
           return buildParameters[key] ?? null;
         case 'ignorePattern':
           return buildParameters[key].toString();
-        case 'dependencyExtractor':
-          return moduleCacheKey(buildParameters[key]);
         default:
           key as empty;
           throw new Error('Unrecognised key in build parameters: ' + key);

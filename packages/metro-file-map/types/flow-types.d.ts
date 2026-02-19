@@ -12,7 +12,6 @@ import type {PerfLogger, PerfLoggerFactory, RootPerfLogger} from 'metro-config';
 
 export type {PerfLoggerFactory, PerfLogger};
 export type BuildParameters = Readonly<{
-  computeDependencies: boolean;
   computeSha1: boolean;
   enableSymlinks: boolean;
   extensions: ReadonlyArray<string>;
@@ -22,7 +21,6 @@ export type BuildParameters = Readonly<{
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
-  dependencyExtractor: null | undefined | string;
   cacheBreaker: string;
 }>;
 export type BuildResult = {fileSystem: FileSystem};
@@ -203,9 +201,8 @@ export type HType = {
   MTIME: 0;
   SIZE: 1;
   VISITED: 2;
-  DEPENDENCIES: 3;
-  SHA1: 4;
-  SYMLINK: 5;
+  SHA1: 3;
+  SYMLINK: 4;
   PLUGINDATA: number;
   PATH: 0;
   TYPE: 1;
@@ -213,7 +210,6 @@ export type HType = {
   PACKAGE: 1;
   GENERIC_PLATFORM: 'g';
   NATIVE_PLATFORM: 'native';
-  DEPENDENCY_DELIM: '\0';
 };
 export type HTypeValue = HType[keyof HType];
 export type IgnoreMatcher = (item: string) => boolean;
@@ -222,7 +218,6 @@ export type FileMetadata = [
   null | undefined | number,
   number,
   0 | 1,
-  string,
   null | undefined | string,
   0 | 1 | string,
   ...unknown[],
@@ -235,7 +230,6 @@ export type FileStats = Readonly<{
 export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
-  getDependencies(file: Path): null | undefined | Array<string>;
   getDifference(files: FileData): {
     changedFiles: FileData;
     removedFiles: Set<string>;
@@ -339,7 +333,9 @@ export interface HasteMap {
   computeConflicts(): Array<HasteConflict>;
 }
 export type HasteMapData = Map<string, HasteMapItem>;
-export type HasteMapItem = {[platform: string]: HasteMapItemMetadata};
+export type HasteMapItem = {
+  [platform: string]: HasteMapItemMetadata;
+};
 export type HasteMapItemMetadata = [string, number];
 export interface MutableFileSystem extends FileSystem {
   remove(filePath: Path): null | undefined | FileMetadata;
@@ -395,15 +391,12 @@ export type WatchmanClockSpec =
   | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 export type WorkerMessage = Readonly<{
-  computeDependencies: boolean;
   computeSha1: boolean;
-  dependencyExtractor?: null | undefined | string;
   filePath: string;
   maybeReturnContent: boolean;
   pluginsToRun: ReadonlyArray<number>;
 }>;
 export type WorkerMetadata = Readonly<{
-  dependencies?: null | undefined | ReadonlyArray<string>;
   sha1?: null | undefined | string;
   content?: null | undefined | Buffer;
   pluginData?: ReadonlyArray<V8Serializable>;

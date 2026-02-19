@@ -97,7 +97,6 @@ declare class TreeFS implements MutableFileSystem {
   getSerializableSnapshot(): CacheData['fileSystemData'];
   static fromDeserializedSnapshot(args: DeserializedSnapshotInput): TreeFS;
   getSize(mixedPath: Path): null | undefined | number;
-  getDependencies(mixedPath: Path): null | undefined | Array<string>;
   getDifference(files: FileData): {
     changedFiles: FileData;
     removedFiles: Set<string>;
