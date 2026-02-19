@@ -20,17 +20,13 @@
 import type {HType} from './flow-types';
 
 export default {
-  /* dependency serialization */
-  DEPENDENCY_DELIM: '\0',
-
   /* file map attributes */
   MTIME: 0,
   SIZE: 1,
   VISITED: 2,
-  DEPENDENCIES: 3,
-  SHA1: 4,
-  SYMLINK: 5,
-  PLUGINDATA: 6,
+  SHA1: 3,
+  SYMLINK: 4,
+  PLUGINDATA: 5,
 
   /* module map attributes */
   PATH: 0,

@@ -33,7 +33,6 @@ const p: string => string = filePath =>
     : filePath;
 
 const defaultOptions = {
-  dependencyExtractor: null,
   maxWorkers: 5,
   perfLogger: null,
   pluginWorkers: [] as ReadonlyArray<FileMapPluginWorker>,
@@ -67,7 +66,6 @@ describe('processBatch', () => {
     });
 
     await processor.processBatch(getNMockFiles(100), {
-      computeDependencies: false,
       computeSha1: true,
       maybeReturnContent: false,
     });
@@ -88,7 +86,6 @@ describe('processBatch', () => {
     });
 
     await processor.processBatch(getNMockFiles(50), {
-      computeDependencies: false,
       computeSha1: true,
       maybeReturnContent: false,
     });
@@ -111,14 +108,13 @@ describe('processBatch', () => {
         const metadata: FileMetadata =
           i < 50
             ? // First 50 files already have SHA1 hashes
-              [123, 234, 0, '', 'existing-sha1-hash', 0]
+              [123, 234, 0, 'existing-sha1-hash', 0]
             : // Last 50 files need SHA1 computation
-              [123, 234, 0, '', null, 0];
+              [123, 234, 0, null, 0];
         return [`file${i}.js`, metadata];
       });
 
     await processor.processBatch(filesWithSomeAlreadyHashed, {
-      computeDependencies: false,
       computeSha1: true,
       maybeReturnContent: false,
     });
@@ -151,12 +147,11 @@ describe('processBatch', () => {
 
     await processor.processBatch(
       [
-        [p('src/Component.js'), [123, 234, 0, '', null, 0, null]],
-        [p('node_modules/lib/index.js'), [123, 234, 0, '', null, 0, null]],
-        [p('packages/node_modules/foo.js'), [123, 234, 0, '', null, 0, null]],
+        [p('src/Component.js'), [123, 234, 0, null, 0, null]],
+        [p('node_modules/lib/index.js'), [123, 234, 0, null, 0, null]],
+        [p('packages/node_modules/foo.js'), [123, 234, 0, null, 0, null]],
       ],
       {
-        computeDependencies: false,
         computeSha1: true,
         maybeReturnContent: false,
       },
@@ -212,9 +207,8 @@ describe('processBatch', () => {
     });
 
     await processor.processBatch(
-      [[p('src/Component.js'), [123, 234, 0, '', null, 0, null]]],
+      [[p('src/Component.js'), [123, 234, 0, null, 0, null]]],
       {
-        computeDependencies: false,
         computeSha1: true,
         maybeReturnContent: false,
       },
@@ -268,10 +262,9 @@ describe('processBatch', () => {
       ],
     });
 
-    const fileMetadata: FileMetadata = [123, 234, 0, '', null, 0, null];
+    const fileMetadata: FileMetadata = [123, 234, 0, null, 0, null];
 
     await processor.processBatch([[p('src/Component.js'), fileMetadata]], {
-      computeDependencies: false,
       computeSha1: true,
       maybeReturnContent: false,
     });
@@ -305,18 +298,9 @@ describe('processBatch', () => {
       ],
     });
 
-    const fileMetadata: FileMetadata = [
-      123,
-      234,
-      0,
-      '',
-      null,
-      0,
-      'existing-sha1',
-    ];
+    const fileMetadata: FileMetadata = [123, 234, 0, 'existing-sha1', 0, null];
 
     await processor.processBatch([[p('src/Component.js'), fileMetadata]], {
-      computeDependencies: false,
       computeSha1: false,
       maybeReturnContent: false,
     });
@@ -344,18 +328,9 @@ describe('processBatch', () => {
       ],
     });
 
-    const fileMetadata: FileMetadata = [
-      123,
-      234,
-      0,
-      '',
-      null,
-      0,
-      'existing-sha1',
-    ];
+    const fileMetadata: FileMetadata = [123, 234, 0, 'existing-sha1', 0, null];
 
     await processor.processBatch([[p('src/Component.js'), fileMetadata]], {
-      computeDependencies: false,
       computeSha1: false,
       maybeReturnContent: false,
     });
@@ -393,7 +368,7 @@ describe('processRegularFile', () => {
 
     const result = processor.processRegularFile(normalFilePath, metadata, {
       computeSha1: true,
-      computeDependencies: false,
+
       maybeReturnContent: true,
     });
 
@@ -414,6 +389,6 @@ function getNMockFiles(numFiles: number): Array<[string, FileMetadata]> {
     .fill(null)
     .map((_, i) => [
       `file${i}.js`,
-      [123, 234, 0, '', null, 0, null] as FileMetadata,
+      [123, 234, 0, null, 0, null] as FileMetadata,
     ]);
 }

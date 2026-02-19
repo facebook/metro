@@ -20,11 +20,6 @@ type ProcessFileRequest = Readonly<{
    */
   computeSha1: boolean;
   /**
-   * Populate metadata[H.DEPENDENCIES] with unresolved dependency specifiers
-   * using the dependencyExtractor provided to the constructor.
-   */
-  computeDependencies: boolean;
-  /**
    * Only if processing has already required reading the file's contents, return
    * the contents as a Buffer - null otherwise. Not supported for batches.
    */
@@ -36,7 +31,6 @@ interface MaybeCodedError extends Error {
 export declare class FileProcessor {
   constructor(
     opts: Readonly<{
-      dependencyExtractor: null | undefined | string;
       maxFilesPerWorker?: null | undefined | number;
       maxWorkers: number;
       pluginWorkers: null | undefined | ReadonlyArray<FileMapPluginWorker>;

@@ -336,7 +336,6 @@ export default async function watchmanCrawl({
           mtime,
           size,
           0,
-          '',
           sha1hex ?? null,
           symlinkInfo,
           null,

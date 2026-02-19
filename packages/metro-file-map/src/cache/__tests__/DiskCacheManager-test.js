@@ -40,9 +40,7 @@ jest.mock('timers', () => ({
 
 const buildParameters: BuildParameters = {
   cacheBreaker: '',
-  computeDependencies: true,
   computeSha1: true,
-  dependencyExtractor: null,
   enableSymlinks: false,
   forceNodeFilesystemAPI: true,
   ignorePattern: /ignored/,
@@ -100,28 +98,6 @@ describe('cacheManager', () => {
     );
   });
 
-  test('creates different cache file paths for different dependency extractor cache keys', () => {
-    const dependencyExtractor = require('../../__tests__/dependencyExtractor');
-    const options = {
-      buildParameters: {
-        ...buildParameters,
-        dependencyExtractor: require.resolve(
-          '../../__tests__/dependencyExtractor',
-        ),
-      },
-    };
-    const config = {
-      ...defaultConfig,
-    };
-    dependencyExtractor.setCacheKey('foo');
-    const cacheManager1 = new DiskCacheManager(options, config);
-    dependencyExtractor.setCacheKey('bar');
-    const cacheManager2 = new DiskCacheManager(options, config);
-    expect(cacheManager1.getCacheFilePath()).not.toBe(
-      cacheManager2.getCacheFilePath(),
-    );
-  });
-
   test('creates different cache file paths for different plugins', () => {
     const config = {
       ...defaultConfig,
@@ -164,30 +140,6 @@ describe('cacheManager', () => {
       config,
     ).getCacheFilePath();
     expect(new Set([cachePath1, cachePath2, cachePath3]).size).toBe(3);
-  });
-
-  test('creates different cache file paths for different values of computeDependencies', () => {
-    const cacheManager1 = new DiskCacheManager(
-      {
-        buildParameters: {
-          ...buildParameters,
-          computeDependencies: true,
-        },
-      },
-      defaultConfig,
-    );
-    const cacheManager2 = new DiskCacheManager(
-      {
-        buildParameters: {
-          ...buildParameters,
-          computeDependencies: false,
-        },
-      },
-      defaultConfig,
-    );
-    expect(cacheManager1.getCacheFilePath()).not.toBe(
-      cacheManager2.getCacheFilePath(),
-    );
   });
 
   test('creates different cache file paths for different projects', () => {

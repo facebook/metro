@@ -72,7 +72,6 @@ export type {
 };
 
 export type InputOptions = Readonly<{
-  computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
   extensions: ReadonlyArray<string>,
@@ -82,9 +81,6 @@ export type InputOptions = Readonly<{
   retainAllFiles: boolean,
   rootDir: string,
   roots: ReadonlyArray<string>,
-
-  // Module paths that should export a 'getCacheKey' method
-  dependencyExtractor?: ?string,
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
@@ -123,6 +119,8 @@ type IndexedPlugin = Readonly<{
 }>;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
+export {default as DependencyPlugin} from './plugins/DependencyPlugin';
+export type {DependencyPluginOptions} from './plugins/DependencyPlugin';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
 export {default as HastePlugin} from './plugins/HastePlugin';
@@ -302,12 +300,7 @@ export default class FileMap extends EventEmitter {
 
     const buildParameters: BuildParameters = {
       cacheBreaker: CACHE_BREAKER,
-      computeDependencies:
-        options.computeDependencies == null
-          ? true
-          : options.computeDependencies,
       computeSha1: options.computeSha1 || false,
-      dependencyExtractor: options.dependencyExtractor ?? null,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
@@ -336,7 +329,6 @@ export default class FileMap extends EventEmitter {
       : new DiskCacheManager(cacheFactoryOptions, {});
 
     this.#fileProcessor = new FileProcessor({
-      dependencyExtractor: buildParameters.dependencyExtractor,
       maxFilesPerWorker: options.maxFilesPerWorker,
       maxWorkers: options.maxWorkers,
       perfLogger: this.#startupPerfLogger,
@@ -376,7 +368,6 @@ export default class FileMap extends EventEmitter {
             normalPath,
             metadata,
             {
-              computeDependencies: false,
               computeSha1: opts.computeSha1,
               maybeReturnContent: true,
             },
@@ -633,7 +624,6 @@ export default class FileMap extends EventEmitter {
     this.#startupPerfLogger?.point('applyFileDelta_process_start');
     const [batchResult] = await Promise.all([
       this.#fileProcessor.processBatch(filesToProcess, {
-        computeDependencies: this.#options.computeDependencies,
         computeSha1: this.#options.computeSha1,
         maybeReturnContent: false,
       }),
@@ -899,7 +889,6 @@ export default class FileMap extends EventEmitter {
               change.metadata.modifiedTime,
               change.metadata.size,
               0,
-              '',
               null,
               change.metadata.type === 'l' ? 1 : 0,
               null,
@@ -913,7 +902,6 @@ export default class FileMap extends EventEmitter {
                   relativeFilePath,
                   fileMetadata,
                   {
-                    computeDependencies: this.#options.computeDependencies,
                     computeSha1: this.#options.computeSha1,
                     maybeReturnContent: false,
                   },

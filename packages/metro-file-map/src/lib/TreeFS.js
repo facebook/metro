@@ -156,18 +156,6 @@ export default class TreeFS implements MutableFileSystem {
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
   }
 
-  getDependencies(mixedPath: Path): ?Array<string> {
-    const fileMetadata = this.#getFileData(mixedPath);
-
-    if (fileMetadata) {
-      return fileMetadata[H.DEPENDENCIES]
-        ? fileMetadata[H.DEPENDENCIES].split(H.DEPENDENCY_DELIM)
-        : [];
-    } else {
-      return null;
-    }
-  }
-
   getDifference(files: FileData): {
     changedFiles: FileData,
     removedFiles: Set<string>,

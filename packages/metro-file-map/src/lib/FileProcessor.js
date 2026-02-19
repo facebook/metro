@@ -33,11 +33,6 @@ type ProcessFileRequest = Readonly<{
    */
   computeSha1: boolean,
   /**
-   * Populate metadata[H.DEPENDENCIES] with unresolved dependency specifiers
-   * using the dependencyExtractor provided to the constructor.
-   */
-  computeDependencies: boolean,
-  /**
    * Only if processing has already required reading the file's contents, return
    * the contents as a Buffer - null otherwise. Not supported for batches.
    */
@@ -57,7 +52,6 @@ const NODE_MODULES_SEP = 'node_modules' + sep;
 const MAX_FILES_PER_WORKER = 100;
 
 export class FileProcessor {
-  #dependencyExtractor: ?string;
   #maxFilesPerWorker: number;
   #maxWorkers: number;
   #perfLogger: ?PerfLogger;
@@ -67,7 +61,6 @@ export class FileProcessor {
 
   constructor(
     opts: Readonly<{
-      dependencyExtractor: ?string,
       maxFilesPerWorker?: ?number,
       maxWorkers: number,
       pluginWorkers: ?ReadonlyArray<FileMapPluginWorker>,
@@ -75,7 +68,6 @@ export class FileProcessor {
       rootDir: string,
     }>,
   ) {
-    this.#dependencyExtractor = opts.dependencyExtractor;
     this.#maxFilesPerWorker = opts.maxFilesPerWorker ?? MAX_FILES_PER_WORKER;
     this.#maxWorkers = opts.maxWorkers;
     this.#pluginWorkers = opts.pluginWorkers ?? [];
@@ -172,7 +164,7 @@ export class FileProcessor {
     }
 
     const computeSha1 = req.computeSha1 && fileMetadata[H.SHA1] == null;
-    const {computeDependencies, maybeReturnContent} = req;
+    const {maybeReturnContent} = req;
 
     const nodeModulesIdx = normalPath.indexOf(NODE_MODULES_SEP);
     // Path may begin 'node_modules/' or contain '/node_modules/'.
@@ -189,23 +181,20 @@ export class FileProcessor {
         return prev;
       }, [] as Array<number>) ?? [];
 
-    if (!computeDependencies && !computeSha1 && pluginsToRun.length === 0) {
+    if (!computeSha1 && pluginsToRun.length === 0) {
       // Nothing to process
       return null;
     }
 
-    // Use a cheaper worker configuration for node_modules files, because we
-    // never care about extracting dependencies, and they may never be Haste
-    // modules or packages.
+    // Use a cheaper worker configuration for node_modules files, because
+    // they may never be Haste modules or packages.
     //
     // Note that we'd only expect node_modules files to reach this point if
     // retainAllFiles is true, or they're touched during watch mode.
     if (isNodeModules) {
       if (computeSha1) {
         return {
-          computeDependencies: false,
           computeSha1: true,
-          dependencyExtractor: null,
           filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
           maybeReturnContent,
           pluginsToRun,
@@ -215,9 +204,7 @@ export class FileProcessor {
     }
 
     return {
-      computeDependencies,
       computeSha1,
-      dependencyExtractor: this.#dependencyExtractor,
       filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
       maybeReturnContent,
       pluginsToRun,
@@ -279,10 +266,6 @@ function processWorkerReply(
       fileMetadata[H.PLUGINDATA + pluginIdx] = pluginData[i];
     }
   }
-
-  fileMetadata[H.DEPENDENCIES] = metadata.dependencies
-    ? metadata.dependencies.join(H.DEPENDENCY_DELIM)
-    : '';
 
   if (metadata.sha1 != null) {
     fileMetadata[H.SHA1] = metadata.sha1;

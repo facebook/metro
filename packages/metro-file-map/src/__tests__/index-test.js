@@ -22,6 +22,7 @@ import type {
   WatcherBackendOptions,
   WorkerSetupArgs,
 } from '../flow-types';
+import type {DependencyPlugin} from '../index';
 import type {default as FileMapT} from '../index';
 import type {HasteMapOptions} from '../plugins/HastePlugin';
 import type {MockMapOptions} from '../plugins/MockPlugin';
@@ -97,7 +98,6 @@ jest.mock('../crawlers/watchman', () => ({
               32, // mtime
               42, // size
               0, // visited
-              '', // dependencies
               hash,
               typeof contentOrLink !== 'string' ? 1 : 0,
               null, // Haste name
@@ -261,11 +261,13 @@ let buildNewFileMap: (
   overrides?: Partial<InputOptions>,
   hasteOverrides?: Partial<HasteMapOptions>,
   mocksOverrides?: Partial<MockMapOptions>,
+  dependencyOverrides?: Partial<{dependencyExtractor: ?string}>,
 ) => Promise<{
   ...BuildResult,
   fileMap: FileMapT,
   hasteMap: HasteMap,
   mockMap: ?MockMap,
+  dependencyPlugin: ?DependencyPlugin,
 }>;
 let cacheContent = null;
 
@@ -376,7 +378,14 @@ describe('FileMap', () => {
       overrides = {},
       hasteOverrides = {},
       mockOverrides = {},
+      dependencyOverrides: {dependencyExtractor?: ?string, ...} = {},
     ) => {
+      const DependencyPlugin = require('../plugins/DependencyPlugin').default;
+      const dependencyPlugin = new DependencyPlugin({
+        dependencyExtractor: dependencyOverrides.dependencyExtractor ?? null,
+        computeDependencies: true,
+        rootDir: defaultConfig.rootDir,
+      });
       const hasteMap = new (require('../plugins/HastePlugin').default)({
         ...defaultHasteConfig,
         ...hasteOverrides,
@@ -388,7 +397,7 @@ describe('FileMap', () => {
       const fileMap = new FileMap({
         ...defaultConfig,
         ...overrides,
-        plugins: [hasteMap, mockMap],
+        plugins: [dependencyPlugin, hasteMap, mockMap],
       });
       const {fileSystem} = await fileMap.build();
       return {
@@ -396,6 +405,7 @@ describe('FileMap', () => {
         fileSystem,
         hasteMap,
         mockMap,
+        dependencyPlugin,
       };
     };
   });
@@ -545,29 +555,12 @@ describe('FileMap', () => {
     assertFileSystemEqual(
       fileSystem,
       createMap({
-        [path.join('fruits', 'Banana.js')]: [
-          32,
-          42,
-          1,
-          'Strawberry',
-          null,
-          0,
-          'Banana',
-        ],
-        [path.join('fruits', 'Pear.js')]: [
-          32,
-          42,
-          1,
-          'Banana\0Strawberry',
-          null,
-          0,
-          'Pear',
-        ],
+        [path.join('fruits', 'Banana.js')]: [32, 42, 1, null, 0, 'Banana'],
+        [path.join('fruits', 'Pear.js')]: [32, 42, 1, null, 0, 'Pear'],
         [path.join('fruits', 'Strawberry.js')]: [
           32,
           42,
           1,
-          '',
           null,
           0,
           'Strawberry',
@@ -576,20 +569,11 @@ describe('FileMap', () => {
           32,
           42,
           1,
-          'Melon',
           null,
           0,
           null,
         ],
-        [path.join('vegetables', 'Melon.js')]: [
-          32,
-          42,
-          1,
-          '',
-          null,
-          0,
-          'Melon',
-        ],
+        [path.join('vegetables', 'Melon.js')]: [32, 42, 1, null, 0, 'Melon'],
       }),
     );
 
@@ -638,29 +622,12 @@ describe('FileMap', () => {
         node.mockImplementation(options => {
           // The node crawler returns "null" for the SHA-1.
           const changedFiles = createMap<FileMetadata>({
-            [path.join('fruits', 'Banana.js')]: [
-              32,
-              42,
-              0,
-              'Strawberry',
-              null,
-              0,
-              'Banana',
-            ],
-            [path.join('fruits', 'Pear.js')]: [
-              32,
-              42,
-              0,
-              'Banana\0Strawberry',
-              null,
-              0,
-              'Pear',
-            ],
+            [path.join('fruits', 'Banana.js')]: [32, 42, 0, null, 0, 'Banana'],
+            [path.join('fruits', 'Pear.js')]: [32, 42, 0, null, 0, 'Pear'],
             [path.join('fruits', 'Strawberry.js')]: [
               32,
               42,
               0,
-              '',
               null,
               0,
               'Strawberry',
@@ -669,7 +636,6 @@ describe('FileMap', () => {
               32,
               42,
               0,
-              'Melon',
               null,
               0,
               null,
@@ -678,7 +644,6 @@ describe('FileMap', () => {
               32,
               42,
               0,
-              '',
               null,
               0,
               'Melon',
@@ -689,7 +654,6 @@ describe('FileMap', () => {
                     32,
                     42,
                     0,
-                    '',
                     null,
                     1,
                     null,
@@ -717,7 +681,6 @@ describe('FileMap', () => {
               32,
               42,
               1,
-              'Strawberry',
               '7772b628e422e8cf59c526be4bb9f44c0898e3d1',
               0,
               'Banana',
@@ -726,7 +689,6 @@ describe('FileMap', () => {
               32,
               42,
               1,
-              'Banana\0Strawberry',
               '89d0c2cc11dcc5e1df50b8af04ab1b597acfba2f',
               0,
               'Pear',
@@ -735,7 +697,6 @@ describe('FileMap', () => {
               32,
               42,
               1,
-              '',
               'e8aa38e232b3795f062f1d777731d9240c0f8c25',
               0,
               'Strawberry',
@@ -744,7 +705,6 @@ describe('FileMap', () => {
               32,
               42,
               1,
-              'Melon',
               '8d40afbb6e2dc78e1ba383b6d02cafad35cceef2',
               0,
               null,
@@ -753,7 +713,6 @@ describe('FileMap', () => {
               32,
               42,
               1,
-              '',
               'f16ccf6f2334ceff2ddb47628a2c5f2d748198ca',
               0,
               'Melon',
@@ -764,9 +723,8 @@ describe('FileMap', () => {
                     32,
                     42,
                     1,
-                    '',
                     null,
-                    null,
+                    1,
                   ],
                 }
               : null),
@@ -998,7 +956,6 @@ describe('FileMap', () => {
           32,
           42,
           1,
-          'Blackberry',
           null,
           0,
           'Strawberry',
@@ -1007,7 +964,6 @@ describe('FileMap', () => {
           32,
           42,
           1,
-          'Raspberry',
           null,
           0,
           'Strawberry',
@@ -1016,7 +972,6 @@ describe('FileMap', () => {
           32,
           42,
           1,
-          'Banana',
           null,
           0,
           'Strawberry',
@@ -1079,10 +1034,15 @@ describe('FileMap', () => {
 
   test('only does minimal file system access when files change', async () => {
     // Run with a cold cache initially
-    const {fileSystem: initialFileSystem} = await buildNewFileMap();
+    const {
+      fileSystem: _initialFileSystem,
+      dependencyPlugin: initialDependencyPlugin,
+    } = await buildNewFileMap();
 
     expect(
-      initialFileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+      initialDependencyPlugin?.getDependencies(
+        path.join('fruits', 'Banana.js'),
+      ),
     ).toEqual(['Strawberry']);
 
     // $FlowFixMe[incompatible-type]
@@ -1102,7 +1062,7 @@ describe('FileMap', () => {
       vegetables: 'c:fake-clock:2',
     });
 
-    const {fileSystem} = await buildNewFileMap();
+    const {fileSystem: _fileSystem, dependencyPlugin} = await buildNewFileMap();
     const data = cacheContent;
 
     expect(mockCacheManager.read).toHaveBeenCalledTimes(2);
@@ -1114,7 +1074,7 @@ describe('FileMap', () => {
     expect(deepNormalize(data?.clocks)).toEqual(mockClocks);
 
     expect(
-      fileSystem.getDependencies(path.join('fruits', 'Banana.js')),
+      dependencyPlugin?.getDependencies(path.join('fruits', 'Banana.js')),
     ).toEqual(['Kiwi']);
   });
 
@@ -1463,7 +1423,7 @@ describe('FileMap', () => {
     // $FlowFixMe[missing-local-annot]
     watchman.mockImplementation(async options => {
       const {changedFiles} = await mockImpl(options);
-      changedFiles.set(invalidFilePath, [34, 44, 0, '', null, 0, null]);
+      changedFiles.set(invalidFilePath, [34, 44, 0, null, 0, null]);
       return {
         changedFiles,
         removedFiles: new Set(),
@@ -1491,12 +1451,15 @@ describe('FileMap', () => {
     const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
     await buildNewFileMap(
       {
-        dependencyExtractor,
         maxWorkers: 4,
         maxFilesPerWorker: 2,
       },
       {
         hasteImplModulePath: undefined,
+      },
+      {},
+      {
+        dependencyExtractor,
       },
     );
 
@@ -1511,6 +1474,14 @@ describe('FileMap', () => {
           {
             plugins: [
               {
+                modulePath: expect.stringMatching(
+                  /dependencies[\\/]worker\.js$/,
+                ),
+                setupArgs: {
+                  dependencyExtractor,
+                },
+              },
+              {
                 modulePath: expect.stringMatching(/haste[\\/]worker\.js$/),
                 setupArgs: {
                   hasteImplModulePath: null,
@@ -1524,55 +1495,48 @@ describe('FileMap', () => {
 
     expect(mockProcessFile.mock.calls.length).toBe(5);
 
+    // With hasteImplModulePath: undefined, HastePlugin filter returns false for regular .js files
+    // So only DependencyPlugin (index 0) runs for all files
+    // MockPlugin has no worker, so it never appears in pluginsToRun
     expect(mockProcessFile.mock.calls).toEqual([
       [
         {
-          computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Banana.js'),
           maybeReturnContent: false,
-          pluginsToRun: [],
+          pluginsToRun: [0],
         },
       ],
       [
         {
-          computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
           maybeReturnContent: false,
-          pluginsToRun: [],
+          pluginsToRun: [0],
         },
       ],
       [
         {
-          computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', 'Strawberry.js'),
           maybeReturnContent: false,
-          pluginsToRun: [],
+          pluginsToRun: [0],
         },
       ],
       [
         {
-          computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'fruits', '__mocks__', 'Pear.js'),
           maybeReturnContent: false,
-          pluginsToRun: [],
+          pluginsToRun: [0],
         },
       ],
       [
         {
-          computeDependencies: true,
           computeSha1: false,
-          dependencyExtractor,
           filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
           maybeReturnContent: false,
-          pluginsToRun: [],
+          pluginsToRun: [0],
         },
       ],
     ]);
@@ -1592,7 +1556,7 @@ describe('FileMap', () => {
     node.mockImplementation((() => {
       return Promise.resolve({
         changedFiles: createMap({
-          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, null],
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, null, 0, null],
         }),
         removedFiles: new Set(),
       });
@@ -1606,15 +1570,7 @@ describe('FileMap', () => {
     assertFileSystemEqual(
       fileSystem,
       createMap({
-        [path.join('fruits', 'Banana.js')]: [
-          32,
-          42,
-          1,
-          'Strawberry',
-          null,
-          0,
-          'Banana',
-        ],
+        [path.join('fruits', 'Banana.js')]: [32, 42, 1, null, 0, 'Banana'],
       }),
     );
 
@@ -1634,7 +1590,7 @@ describe('FileMap', () => {
     node.mockImplementation(() => {
       return Promise.resolve({
         changedFiles: createMap<FileMetadata>({
-          [path.join('fruits', 'Banana.js')]: [32, 42, 0, '', null, 0, null],
+          [path.join('fruits', 'Banana.js')]: [32, 42, 0, null, 0, null],
         }),
         removedFiles: new Set(),
       });
@@ -1648,15 +1604,7 @@ describe('FileMap', () => {
     assertFileSystemEqual(
       fileSystem,
       createMap({
-        [path.join('fruits', 'Banana.js')]: [
-          32,
-          42,
-          1,
-          'Strawberry',
-          null,
-          0,
-          'Banana',
-        ],
+        [path.join('fruits', 'Banana.js')]: [32, 42, 1, null, 0, 'Banana'],
       }),
     );
   });

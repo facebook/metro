@@ -8,7 +8,7 @@
  */
 
 declare const dependencyExtractor: {
-  extract: (code: string) => Set<string>;
+  extract(code: string): Set<string>;
 };
 
 export = dependencyExtractor;

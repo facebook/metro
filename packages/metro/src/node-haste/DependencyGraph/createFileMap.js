@@ -13,7 +13,11 @@ import type {ConfigT} from 'metro-config';
 import type {HasteMap} from 'metro-file-map';
 
 import ci from 'ci-info';
-import MetroFileMap, {DiskCacheManager, HastePlugin} from 'metro-file-map';
+import MetroFileMap, {
+  DependencyPlugin,
+  DiskCacheManager,
+  HastePlugin,
+} from 'metro-file-map';
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
@@ -61,17 +65,31 @@ export default function createFileMap(
     throwOnModuleCollision?: boolean,
     cacheFilePrefix?: string,
   }>,
-): {fileMap: MetroFileMap, hasteMap: HasteMap} {
-  const dependencyExtractor =
-    options?.extractDependencies === false
-      ? null
-      : config.resolver.dependencyExtractor;
-  const computeDependencies = dependencyExtractor != null;
-
+): {
+  fileMap: MetroFileMap,
+  hasteMap: HasteMap,
+  dependencyPlugin: ?DependencyPlugin,
+} {
   const watch = options?.watch == null ? !ci.isCI : options.watch;
   const {enabled: autoSaveEnabled, ...autoSaveOpts} =
     config.watcher.unstable_autoSaveCache ?? {};
   const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
+
+  const plugins: Array<DependencyPlugin | HastePlugin> = [];
+
+  let dependencyPlugin = null;
+  // Add DependencyPlugin if dependencies should be extracted
+  if (
+    config.resolver.dependencyExtractor != null &&
+    options?.extractDependencies !== false
+  ) {
+    dependencyPlugin = new DependencyPlugin({
+      dependencyExtractor: config.resolver.dependencyExtractor,
+      computeDependencies: true,
+      rootDir: config.projectRoot,
+    });
+    plugins.push(dependencyPlugin);
+  }
 
   const hasteMap = new HastePlugin({
     platforms: new Set([
@@ -84,6 +102,8 @@ export default function createFileMap(
     failValidationOnConflicts: options?.throwOnModuleCollision ?? true,
   });
 
+  plugins.push(hasteMap);
+
   const fileMap = new MetroFileMap({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
@@ -95,9 +115,7 @@ export default function createFileMap(
           autoSave,
         })),
     perfLoggerFactory: config.unstable_perfLoggerFactory,
-    computeDependencies,
     computeSha1: !config.watcher.unstable_lazySha1,
-    dependencyExtractor: config.resolver.dependencyExtractor,
     enableSymlinks: true,
     extensions: Array.from(
       new Set([
@@ -110,7 +128,7 @@ export default function createFileMap(
     healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
-    plugins: [hasteMap],
+    plugins,
     retainAllFiles: true,
     resetCache: config.resetCache,
     rootDir: config.projectRoot,
@@ -119,5 +137,5 @@ export default function createFileMap(
     watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
-  return {fileMap, hasteMap};
+  return {fileMap, hasteMap, dependencyPlugin};
 }
