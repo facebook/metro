@@ -212,6 +212,14 @@ module.exports = require('./${flowFileBaseName}');
         ]),
       );
     });
+
+    test('has a repository field with correct format', () => {
+      expect(packageJson.repository).toEqual({
+        type: 'git',
+        url: 'git+https://github.com/facebook/metro.git',
+        directory: packagePath.split(path.sep).filter(Boolean).join('/'),
+      });
+    });
   } else {
     describe('private package constraints', () => {
       test('has "private" in package.json', () => {

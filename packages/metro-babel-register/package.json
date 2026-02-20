@@ -10,7 +10,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro.git"
+    "url": "git+https://github.com/facebook/metro.git",
+    "directory": "packages/metro-babel-register"
   },
   "dependencies": {
     "@babel/core": "^7.25.2",
