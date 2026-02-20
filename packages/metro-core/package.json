@@ -1,6 +1,6 @@
 {
   "name": "metro-core",
-  "version": "0.83.4",
+  "version": "0.84.0",
   "description": "🚇 Metro's core package.",
   "main": "src/index.js",
   "exports": {
@@ -10,7 +10,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro.git"
+    "url": "git+https://github.com/facebook/metro.git",
+    "directory": "packages/metro-core"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
@@ -19,10 +20,10 @@
   "dependencies": {
     "flow-enums-runtime": "^0.0.6",
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.83.4"
+    "metro-resolver": "0.84.0"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=20.19.4"
+    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
   }
 }

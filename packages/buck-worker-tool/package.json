@@ -1,8 +1,13 @@
 {
   "name": "buck-worker-tool",
-  "version": "0.83.4",
+  "version": "0.84.0",
   "description": "Implementation of the Buck worker protocol for Node.js.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/metro.git",
+    "directory": "packages/buck-worker-tool"
+  },
   "main": "src/worker-tool.js",
   "exports": {
     ".": "./src/worker-tool.js",
@@ -24,6 +29,6 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "engines": {
-    "node": ">=20.19.4"
+    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
   }
 }

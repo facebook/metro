@@ -1,6 +1,6 @@
 {
   "name": "metro-cache",
-  "version": "0.83.4",
+  "version": "0.84.0",
   "description": "🚇 Cache layers for Metro.",
   "main": "src/index.js",
   "exports": {
@@ -10,7 +10,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro.git"
+    "url": "git+https://github.com/facebook/metro.git",
+    "directory": "packages/metro-cache"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
@@ -20,13 +21,13 @@
     "exponential-backoff": "^3.1.1",
     "flow-enums-runtime": "^0.0.6",
     "https-proxy-agent": "^7.0.5",
-    "metro-core": "0.83.4"
+    "metro-core": "0.84.0"
   },
   "devDependencies": {
     "memfs": "^4.38.2"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=20.19.4"
+    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
   }
 }
