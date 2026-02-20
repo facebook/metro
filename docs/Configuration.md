@@ -657,6 +657,19 @@ Type: `boolean`
 
 Enable forwarding of `client_log` events (when client logs are [configured](https://github.com/facebook/metro/blob/614ad14a85b22958129ee94e04376b096f03ccb1/packages/metro/src/lib/createWebsocketServer.js#L20)) to the reporter. Defaults to `true`.
 
+#### `tls`
+
+Type: `object`
+
+TLS (HTTPS) configuration for the Metro server.
+
+```ts
+ca?: string | Buffer,      // Certificate authority
+cert?: string | Buffer,    // Server certificate
+key?: string | Buffer,     // Private key
+requestCert?: boolean, // Request client certificate
+```
+
 ---
 
 ### Watcher Options
