@@ -22,7 +22,6 @@ defaults:
 
 permissions:
   contents: read
-  id-token: write  # Required for OIDC
 
 jobs:
   run-js-checks:
@@ -69,11 +68,13 @@ jobs:
     runs-on: ubuntu-latest
     name: "Deploy"
     needs: [run-js-checks, test]
+    permissions:
+      contents: read
+      id-token: write  # Required for npm provenance / OIDC trusted publishing
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/yarn-install
-      - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
       - run: "./.github/scripts/publish.sh"
         env:
           RAW_TAG_NAME: ${{ github.ref_name }}
-      - run: rm ~/.npmrc
+          NPM_CONFIG_PROVENANCE: true
