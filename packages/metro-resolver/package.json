@@ -1,6 +1,6 @@
 {
   "name": "metro-resolver",
-  "version": "0.83.4",
+  "version": "0.84.0",
   "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src/index.js",
   "exports": {
@@ -22,7 +22,7 @@
     "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
   },
   "devDependencies": {
-    "metro": "0.83.4"
+    "metro": "0.84.0"
   },
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"

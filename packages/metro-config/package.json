@@ -1,6 +1,6 @@
 {
   "name": "metro-config",
-  "version": "0.83.4",
+  "version": "0.84.0",
   "description": "🚇 Config parser for Metro.",
   "main": "src/index.js",
   "exports": {
@@ -22,15 +22,15 @@
     "connect": "^3.6.5",
     "flow-enums-runtime": "^0.0.6",
     "jest-validate": "^29.7.0",
-    "metro": "0.83.4",
-    "metro-cache": "0.83.4",
-    "metro-core": "0.83.4",
-    "metro-runtime": "0.83.4",
+    "metro": "0.84.0",
+    "metro-cache": "0.84.0",
+    "metro-core": "0.84.0",
+    "metro-runtime": "0.84.0",
     "yaml": "^2.6.1"
   },
   "devDependencies": {
     "@types/connect": "^3.4.35",
-    "metro-babel-register": "0.83.4",
+    "metro-babel-register": "0.84.0",
     "pretty-format": "^29.7.0"
   },
   "engines": {
