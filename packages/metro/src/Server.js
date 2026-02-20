@@ -130,6 +130,13 @@ export type ServerOptions = Readonly<{
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
+type FetchTiming = {
+  graphId: GraphId,
+  startTime: number,
+  endTime: number | null,
+  isPrefetch: boolean,
+};
+
 export default class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
@@ -144,6 +151,8 @@ export default class Server {
   _sourceRequestRoutingMap: ReadonlyArray<
     [pathnamePrefix: string, normalizedRootDir: string],
   >;
+  _fetchTimings: Array<FetchTiming>;
+  _activeFetchCount: number;
 
   constructor(config: ConfigT, options?: ServerOptions) {
     this._config = config;
@@ -176,6 +185,8 @@ export default class Server {
       ]),
     ];
     this._isEnded = false;
+    this._fetchTimings = [];
+    this._activeFetchCount = 0;
 
     // TODO(T34760917): These two properties should eventually be instantiated
     // elsewhere and passed as parameters, since they are also needed by
@@ -926,8 +937,18 @@ export default class Server {
         createActionStartEntry(createStartEntry(startContext)),
       );
 
+      const fetchTiming: FetchTiming = {
+        graphId,
+        startTime: requestStartTimestamp,
+        endTime: null,
+        isPrefetch: req.method === 'HEAD',
+      };
+
       let result;
       try {
+        this._fetchTimings.push(fetchTiming);
+        this._activeFetchCount++;
+
         result = await build(startContext);
       } catch (error) {
         const formattedError = formatBundlingError(error);
@@ -960,6 +981,33 @@ export default class Server {
         buildContext.bundlePerfLogger.end('FAIL');
 
         return;
+      } finally {
+        fetchTiming.endTime = performance.timeOrigin + performance.now();
+
+        if (!fetchTiming.isPrefetch) {
+          buildContext.bundlePerfLogger.annotate({
+            bool: {
+              had_competing_prefetch: this._fetchTimings
+                // fetching the same bundle as a prefetch don't compete, since they resolve a shared promise for the same graph id
+                .filter(t => t.isPrefetch && t.graphId !== graphId)
+                .some(prefetch => {
+                  const prefetchEndTime =
+                    prefetch.endTime ?? Number.MAX_SAFE_INTEGER;
+                  const fetchEndTime =
+                    fetchTiming.endTime ?? Number.MAX_SAFE_INTEGER;
+                  return (
+                    prefetch.startTime < fetchEndTime &&
+                    prefetchEndTime > fetchTiming.startTime
+                  );
+                }),
+            },
+          });
+        }
+
+        this._activeFetchCount--;
+        if (this._activeFetchCount === 0) {
+          this._fetchTimings = [];
+        }
       }
 
       const endContext: ProcessEndContext<T> = {

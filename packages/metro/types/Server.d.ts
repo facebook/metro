@@ -90,6 +90,12 @@ export type ServerOptions = Readonly<{
   onBundleBuilt?: (bundlePath: string) => void;
   watch?: boolean;
 }>;
+type FetchTiming = {
+  graphId: GraphId;
+  startTime: number;
+  endTime: number | null;
+  isPrefetch: boolean;
+};
 declare class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
@@ -104,6 +110,8 @@ declare class Server {
   _sourceRequestRoutingMap: ReadonlyArray<
     [pathnamePrefix: string, normalizedRootDir: string]
   >;
+  _fetchTimings: Array<FetchTiming>;
+  _activeFetchCount: number;
   constructor(config: ConfigT, options?: ServerOptions);
   end(): void;
   getBundler(): IncrementalBundler;
