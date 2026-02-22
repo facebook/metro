@@ -26,9 +26,11 @@ test('NativeWatcher is supported if and only if darwin', () => {
   expect(NativeWatcher.isSupported()).toBe(os.platform() === 'darwin');
 });
 
+type WatcherKey = keyof typeof WATCHERS;
+
 describe.each(Object.keys(WATCHERS))(
   'Watcher integration tests: %s',
-  watcherName => {
+  (watcherName: WatcherKey) => {
     let appRoot;
     let cookieCount = 1;
     let watchRoot;
@@ -37,10 +39,28 @@ describe.each(Object.keys(WATCHERS))(
 
     // If all tests are skipped, Jest will not run before/after hooks either.
     const maybeTest = WATCHERS[watcherName] ? test : test.skip;
-    const maybeTestOn = (...platforms: ReadonlyArray<string>) =>
-      platforms.includes(os.platform()) && WATCHERS[watcherName]
-        ? test
-        : test.skip;
+
+    async function waitForCookie(
+      rootRelativeDirPath?: ?string,
+      opts?: {rejectUnexpected: boolean} = {rejectUnexpected: true},
+    ) {
+      const cookieName = `cookie-${++cookieCount}`;
+      const relPath =
+        rootRelativeDirPath != null
+          ? join(rootRelativeDirPath, cookieName)
+          : cookieName;
+      const absPath = join(watchRoot, relPath);
+
+      await eventHelpers.allEvents(
+        () => writeFile(absPath, ''),
+        [[relPath, 'touch']],
+        opts,
+      );
+      expect(await eventHelpers.nextEvent(() => rm(absPath))).toMatchObject({
+        path: relPath,
+        eventType: 'delete',
+      });
+    }
 
     beforeAll(async () => {
       watchRoot = await createTempWatchRoot(watcherName);
@@ -82,11 +102,10 @@ describe.each(Object.keys(WATCHERS))(
     });
 
     beforeEach(async () => {
-      expect(await eventHelpers.nextEvent(() => mkdir(appRoot))).toStrictEqual({
-        path: 'app',
-        eventType: 'touch',
-        metadata: expect.any(Object),
-      });
+      await mkdir(appRoot);
+      // We can't observe the creation of the app root directly since backends
+      // don't emit directory events. Instead, create and delete a cookie.
+      await waitForCookie('app');
     });
 
     afterEach(async () => {
@@ -98,11 +117,25 @@ describe.each(Object.keys(WATCHERS))(
           writeFile(join(watchRoot, cookieName), ''),
         ),
       ).toMatchObject({path: cookieName, eventType: 'touch'});
-      // Cleanup and wait until the app root deletion is reported - this should
-      // be the last cleanup event emitted.
+
+      // Clean up by deleting the app root.
+      await rm(appRoot, {recursive: true});
+      // Write a regular file to the place we'd normally have the app root
+      // directory. This guarantees that the directory has been deleted, and
+      // gives us something we can await the deletion of to ensure all events
+      // have been flushed.
+      const cookieName2 = `cookie-${cookieCount}`;
       await eventHelpers.untilEvent(
-        () => rm(appRoot, {recursive: true}),
-        'app',
+        async () => {
+          await writeFile(join(watchRoot, cookieName2), '');
+        },
+        cookieName2,
+        'touch',
+      );
+      // Finally, await the deletion of the regular file we just created.
+      await eventHelpers.untilEvent(
+        () => rm(join(watchRoot, cookieName2)),
+        cookieName2,
         'delete',
       );
     });
@@ -215,20 +248,13 @@ describe.each(Object.keys(WATCHERS))(
 
     maybeTest('detects changes to files in a new directory', async () => {
       expect(
-        await eventHelpers.nextEvent(() => mkdir(join(watchRoot, 'newdir'))),
-      ).toStrictEqual({
-        path: join('newdir'),
-        eventType: 'touch',
-        metadata: {
-          modifiedTime: expect.any(Number),
-          size: expect.any(Number),
-          type: 'd',
-        },
-      });
-      expect(
-        await eventHelpers.nextEvent(() =>
-          writeFile(join(watchRoot, 'newdir', 'file-in-new-dir.js'), 'code'),
-        ),
+        await eventHelpers.nextEvent(async () => {
+          await mkdir(join(watchRoot, 'newdir'));
+          await writeFile(
+            join(watchRoot, 'newdir', 'file-in-new-dir.js'),
+            'code',
+          );
+        }),
       ).toStrictEqual({
         path: join('newdir', 'file-in-new-dir.js'),
         eventType: 'touch',
@@ -240,14 +266,25 @@ describe.each(Object.keys(WATCHERS))(
       });
     });
 
-    /* FIXME: Disabled on Windows and Darwin due to flakiness (occasional
-       timeouts) - see history. */
-    maybeTestOn('darwin')(
+    maybeTest(
       'emits deletion for all files when a directory is deleted',
       async () => {
+        if (watcherName !== 'Fallback') {
+          await mkdir(join(appRoot, 'subdir', 'subdir2'), {recursive: true});
+        } else {
+          // FIXME: A known race in Fallback watcher where it may not be
+          // watching a directory at the time a new subdirectory is created
+          // means that we need to create each directory separately and ensure
+          // it is watched. This could cause real-world problems when file
+          // trees are created quickly - eg npm install.
+          await mkdir(join(appRoot, 'subdir'));
+          await waitForCookie(join('app', 'subdir'));
+          await mkdir(join(appRoot, 'subdir', 'subdir2'));
+          await waitForCookie(join('app', 'subdir', 'subdir2'));
+        }
+
         await eventHelpers.allEvents(
           async () => {
-            await mkdir(join(appRoot, 'subdir', 'subdir2'), {recursive: true});
             await Promise.all([
               writeFile(join(appRoot, 'subdir', 'ignored-file.js'), ''),
               writeFile(join(appRoot, 'subdir', 'deep.js'), ''),
@@ -255,8 +292,6 @@ describe.each(Object.keys(WATCHERS))(
             ]);
           },
           [
-            [join('app', 'subdir'), 'touch'],
-            [join('app', 'subdir', 'subdir2'), 'touch'],
             [join('app', 'subdir', 'deep.js'), 'touch'],
             [join('app', 'subdir', 'subdir2', 'deeper.js'), 'touch'],
           ],
@@ -268,12 +303,19 @@ describe.each(Object.keys(WATCHERS))(
             await rm(join(appRoot, 'subdir'), {recursive: true});
           },
           [
-            [join('app', 'subdir'), 'delete'],
-            [join('app', 'subdir', 'subdir2'), 'delete'],
             [join('app', 'subdir', 'deep.js'), 'delete'],
             [join('app', 'subdir', 'subdir2', 'deeper.js'), 'delete'],
           ],
-          {rejectUnexpected: true},
+          // Watchers *may* emit deletion events for directories as well
+          {rejectUnexpected: false},
+        );
+        const cookiePath = join('app', `cookie-${++cookieCount}`);
+
+        // Allow deleted events for directories
+        await eventHelpers.untilEvent(
+          () => writeFile(join(watchRoot, cookiePath), ''),
+          cookiePath,
+          'touch',
         );
       },
     );
