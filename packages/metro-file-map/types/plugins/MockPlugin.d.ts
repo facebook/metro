@@ -32,7 +32,7 @@ declare class MockPlugin implements FileMapPlugin<RawMockMap, void>, IMockMap {
   constructor($$PARAM_0$$: MockMapOptions);
   initialize($$PARAM_0$$: FileMapPluginInitOptions<RawMockMap>): Promise<void>;
   getMockModule(name: string): null | undefined | Path;
-  bulkUpdate(delta: FileMapDelta): Promise<void>;
+  bulkUpdate(delta: FileMapDelta): void;
   onNewOrModifiedFile(relativeFilePath: Path): void;
   onRemovedFile(relativeFilePath: Path): void;
   getSerializableSnapshot(): RawMockMap;

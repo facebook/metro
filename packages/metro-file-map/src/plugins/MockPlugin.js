@@ -79,7 +79,7 @@ export default class MockPlugin
       this.#raw = pluginState;
     } else {
       // Otherwise, traverse all files to rebuild
-      await this.bulkUpdate({
+      this.bulkUpdate({
         addedOrModified: [
           ...files.fileIterator({
             includeNodeModules: false,
@@ -102,7 +102,7 @@ export default class MockPlugin
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta<>): Promise<void> {
+  bulkUpdate(delta: FileMapDelta<>): void {
     // Process removals first so that moves aren't treated as duplicates.
     for (const [relativeFilePath] of delta.removed) {
       this.onRemovedFile(relativeFilePath);

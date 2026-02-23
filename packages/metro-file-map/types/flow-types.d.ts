@@ -176,9 +176,7 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(
-    delta: FileMapDelta<null | undefined | PerFileData>,
-  ): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<null | undefined | PerFileData>): void;
   getSerializableSnapshot(): SerializableState;
   onRemovedFile(
     relativeFilePath: string,

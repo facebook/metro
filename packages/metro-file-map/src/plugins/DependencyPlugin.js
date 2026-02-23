@@ -64,7 +64,7 @@ export default class DependencyPlugin
     return null;
   }
 
-  async bulkUpdate(delta: FileMapDelta<?ReadonlyArray<string>>): Promise<void> {
+  bulkUpdate(delta: FileMapDelta<?ReadonlyArray<string>>): void {
     // No-op: Worker already populated plugin data
     // Plugin data is write-only from worker
   }

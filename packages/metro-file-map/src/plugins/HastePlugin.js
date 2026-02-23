@@ -237,7 +237,7 @@ export default class HastePlugin
     );
   }
 
-  async bulkUpdate(delta: FileMapDelta<?string>): Promise<void> {
+  bulkUpdate(delta: FileMapDelta<?string>): void {
     // Process removals first so that moves aren't treated as duplicates.
     for (const [normalPath, maybeHasteId] of delta.removed) {
       this.onRemovedFile(normalPath, maybeHasteId);

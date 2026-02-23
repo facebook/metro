@@ -52,7 +52,7 @@ declare class HastePlugin
     platform: null | undefined | string,
     _supportsNativePlatform?: null | undefined | boolean,
   ): null | undefined | Path;
-  bulkUpdate(delta: FileMapDelta<null | undefined | string>): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<null | undefined | string>): void;
   onNewOrModifiedFile(
     relativeFilePath: string,
     id: null | undefined | string,
