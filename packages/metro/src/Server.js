@@ -52,6 +52,7 @@ import getRamBundleInfo from './DeltaBundler/Serializers/getRamBundleInfo';
 import {sourceMapStringNonBlocking} from './DeltaBundler/Serializers/sourceMapString';
 import IncrementalBundler from './IncrementalBundler';
 import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
+import {calculateBundleProgressRatio} from './lib/bundleProgressUtils';
 import bundleToString from './lib/bundleToString';
 import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
@@ -857,25 +858,23 @@ export default class Server {
       const mres = MultipartResponse.wrapIfSupported(req, res);
 
       let onProgress = null;
-      let lastProgress = -1;
+      let lastRatio = -1;
       if (this._config.reporter) {
         onProgress = (transformedFileCount: number, totalFileCount: number) => {
-          const currentProgress = parseInt(
-            (transformedFileCount / totalFileCount) * 100,
-            10,
+          const newRatio = calculateBundleProgressRatio(
+            transformedFileCount,
+            totalFileCount,
+            lastRatio,
           );
 
-          // We want to throttle the updates so that we only show meaningful
-          // UI updates slow enough for the client to actually handle them. For
-          // that, we check the percentage, and only send percentages that are
-          // actually different and that have increased from the last one we sent.
-          if (currentProgress > lastProgress || totalFileCount < 10) {
+          if (newRatio > lastRatio) {
             if (mres instanceof MultipartResponse) {
               mres.writeChunk(
                 {'Content-Type': 'application/json'},
                 JSON.stringify({
                   done: transformedFileCount,
                   total: totalFileCount,
+                  percent: Math.floor(newRatio * 100),
                 }),
               );
             }
@@ -891,7 +890,7 @@ export default class Server {
               res.socket.uncork();
             }
 
-            lastProgress = currentProgress;
+            lastRatio = newRatio;
           }
 
           this._reporter.update({
