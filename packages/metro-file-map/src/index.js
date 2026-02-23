@@ -667,21 +667,16 @@ export default class FileMap extends EventEmitter {
     this.#startupPerfLogger?.point('applyFileDelta_add_end');
 
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
-
-    await Promise.all([
-      plugins.map(({plugin, dataIdx}) => {
-        const mapFn: (
-          [CanonicalPath, FileMetadata],
-        ) => [CanonicalPath, unknown] =
-          dataIdx != null
-            ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
-            : ([relativePath, fileData]) => [relativePath, null];
-        return plugin.bulkUpdate({
-          addedOrModified: mapIterator(changedFiles.entries(), mapFn),
-          removed: mapIterator(removed.values(), mapFn),
-        });
-      }),
-    ]);
+    plugins.forEach(({plugin, dataIdx}) => {
+      const mapFn: ([CanonicalPath, FileMetadata]) => [CanonicalPath, unknown] =
+        dataIdx != null
+          ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
+          : ([relativePath, fileData]) => [relativePath, null];
+      plugin.bulkUpdate({
+        addedOrModified: mapIterator(changedFiles.entries(), mapFn),
+        removed: mapIterator(removed.values(), mapFn),
+      });
+    });
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this.#startupPerfLogger?.point('applyFileDelta_end');
   }

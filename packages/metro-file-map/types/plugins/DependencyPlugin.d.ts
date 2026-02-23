@@ -34,7 +34,7 @@ declare class DependencyPlugin
   getSerializableSnapshot(): null;
   bulkUpdate(
     delta: FileMapDelta<null | undefined | ReadonlyArray<string>>,
-  ): Promise<void>;
+  ): void;
   onNewOrModifiedFile(
     relativeFilePath: string,
     pluginData: null | undefined | ReadonlyArray<string>,

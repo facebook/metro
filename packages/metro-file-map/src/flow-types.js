@@ -213,7 +213,7 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta<?PerFileData>): Promise<void>;
+  bulkUpdate(delta: FileMapDelta<?PerFileData>): void;
   getSerializableSnapshot(): SerializableState;
   onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;

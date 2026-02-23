@@ -141,11 +141,11 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       expect(hasteMap.getModule('Bar')).not.toBeNull();
     });
 
-    test('fixes duplicates, adds and removes modules', async () => {
+    test('fixes duplicates, adds and removes modules', () => {
       expect(() => hasteMap.getModule('Duplicate')).toThrow(
         DuplicateHasteCandidatesError,
       );
-      await hasteMap.bulkUpdate({
+      hasteMap.bulkUpdate({
         removed: [
           [p('project/Duplicate.js'), 'Duplicate'],
           [p('project/Foo.js'), 'NameForFoo'],
