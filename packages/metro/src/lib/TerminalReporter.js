@@ -13,6 +13,7 @@ import type {BundleDetails, ReportableEvent} from './reporting';
 import type {Terminal} from 'metro-core';
 import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 
+import {calculateBundleProgressRatio} from './bundleProgressUtils';
 import logToConsole from './logToConsole';
 import * as reporting from './reporting';
 import chalk from 'chalk';
@@ -132,7 +133,7 @@ export default class TerminalReporter {
           chalk.bgWhite.white(
             LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
           ) +
-          chalk.bold(` ${(100 * ratio).toFixed(1)}% `) +
+          chalk.bold(` ${Math.floor(100 * ratio)}% `) +
           chalk.dim(`(${transformedFileCount}/${totalFileCount})`)
         : '';
 
@@ -352,14 +353,6 @@ export default class TerminalReporter {
     });
   }
 
-  /**
-   * Because we know the `totalFileCount` is going to progressively increase
-   * starting with 1:
-   * - We use Math.max(totalFileCount, 10) to prevent the ratio to raise too
-   *   quickly when the total file count is low. (e.g 1/2 5/6)
-   * - We prevent the ratio from going backwards.
-   * - Instead, we use Math.pow(ratio, 2) to as a conservative measure of progress.
-   */
   _updateBundleProgress({
     buildID,
     transformedFileCount,
@@ -375,12 +368,10 @@ export default class TerminalReporter {
       return;
     }
 
-    const ratio = Math.min(
-      Math.max(
-        Math.pow(transformedFileCount / Math.max(totalFileCount, 10), 2),
-        currentProgress.ratio,
-      ),
-      0.999, // make sure not to go above 99.9% to not get rounded to 100%,
+    const ratio = calculateBundleProgressRatio(
+      transformedFileCount,
+      totalFileCount,
+      currentProgress.ratio,
     );
 
     // $FlowFixMe[unsafe-object-assign]

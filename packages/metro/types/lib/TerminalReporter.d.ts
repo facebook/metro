@@ -89,14 +89,6 @@ declare class TerminalReporter {
    */
   _logBundlingError(error: SnippetError): void;
   _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string): void;
-  /**
-   * Because we know the `totalFileCount` is going to progressively increase
-   * starting with 1:
-   * - We use Math.max(totalFileCount, 10) to prevent the ratio to raise too
-   *   quickly when the total file count is low. (e.g 1/2 5/6)
-   * - We prevent the ratio from going backwards.
-   * - Instead, we use Math.pow(ratio, 2) to as a conservative measure of progress.
-   */
   _updateBundleProgress($$PARAM_0$$: {
     buildID: string;
     transformedFileCount: number;
