@@ -4,8 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
+ * @noformat
  * @oncall react_native
+ * @generated SignedSource<<feddf9cb00d4a097d348531773c9f0bd>>
+ *
+ * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
+ * Original file: packages/metro/src/DeltaBundler/types.js
+ * To regenerate, run:
+ *   js1 build metro-ts-defs (internal) OR
+ *   yarn run build-ts-defs (OSS) 
  */
 
 import type {RequireContext} from '../lib/contextModule';

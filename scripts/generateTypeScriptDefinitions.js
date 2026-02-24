@@ -20,6 +20,8 @@ import nullthrows from 'nullthrows';
 import path from 'path';
 import * as prettier from 'prettier';
 // $FlowFixMe[untyped-import] in OSS only
+import SignedSource from 'signedsource';
+// $FlowFixMe[untyped-import] in OSS only
 import {globSync} from 'tinyglobby';
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
@@ -116,10 +118,28 @@ export async function generateTsDefsForJsGlobs(
       console.warn(sourceFile, lintResult.messages);
     }
 
-    const finalOutput = await prettier.format(
+    const formattedOutput = await prettier.format(
       lintResult.output ?? sourceContent,
       prettierConfig,
     );
+
+    // Add signedsource (generated) token to the header
+    const withToken = formattedOutput
+      .replace(
+        '\n */\n',
+        `\n * ${SignedSource.getSigningToken()}\n *` +
+          `\n * This file was translated from Flow by ${path.relative(WORKSPACE_ROOT, __filename).replaceAll(path.sep, '/')}` +
+          `\n * Original file: ${sourceFile.replaceAll(path.sep, '/')}` +
+          '\n * To regenerate, run:' +
+          '\n *   js1 build metro-ts-defs (internal) OR' +
+          '\n *   yarn run build-ts-defs (OSS) ' +
+          '\n */\n',
+      )
+      // format -> noformat
+      .replace(`\n * ${'@'}format\n`, `\n * ${'@'}noformat\n`);
+
+    // Sign the file
+    const finalOutput = SignedSource.signFile(withToken);
 
     existingDefs.delete(absoluteTsFile);
 
