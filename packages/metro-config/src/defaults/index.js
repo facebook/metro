@@ -80,6 +80,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_serverRoot: null,
     useGlobalHotkey: true,
     verifyConnections: false,
+    tls: false,
   },
 
   symbolicator: {

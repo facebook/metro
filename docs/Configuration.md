@@ -657,6 +657,25 @@ Type: `boolean`
 
 Enable forwarding of `client_log` events (when client logs are [configured](https://github.com/facebook/metro/blob/614ad14a85b22958129ee94e04376b096f03ccb1/packages/metro/src/lib/createWebsocketServer.js#L20)) to the reporter. Defaults to `true`.
 
+#### `tls`
+
+Type: `false | object`
+
+If not provided or is `false` Metro will start an HTTP server with WS WebSocket endpoints.
+
+If an object, Metro will start an HTTPS server with WSS WebSocket endpoints using the passed TLS options:
+
+```ts
+ca?: string | Buffer,      // Certificate authority (contents, not path)
+cert?: string | Buffer,    // Server certificate (contents, not path)
+key?: string | Buffer,     // Private key (contents, not path)
+requestCert?: boolean,     // Whether to authenticate the remote peer by requesting a certificate
+```
+
+Notice that when overriding the base config, object tls configs extend the base tls config, false overrides the base tls configs, and `null` and `undefined` are ignored.
+
+When running Metro with `Metro.runServer` with the `secureServerOptions` property Metro will likewise start an HTTPS server merging with the `config.server.tls` object if provided, overriding it.
+
 ---
 
 ### Watcher Options

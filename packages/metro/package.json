@@ -76,6 +76,7 @@
     "metro-memory-fs": "*",
     "mock-req": "^0.2.0",
     "mock-res": "^0.6.0",
+    "selfsigned": "^5.5.0",
     "stack-trace": "^0.0.10"
   },
   "license": "MIT",
