@@ -280,7 +280,7 @@ export const runServer = async (
       chalk.inverse.yellow.bold(' DEPRECATED '),
       'The `secure`, `secureCert`, and `secureKey` options are now deprecated. ' +
         'Please use the `secureServerOptions` object instead to pass options to ' +
-        "Metro's https development server.",
+        "Metro's https development server, or `config.server.tls` in Metro's configuration",
     );
   }
   // Lazy require
@@ -307,15 +307,30 @@ export const runServer = async (
 
   let httpServer;
 
-  if (secure === true || secureServerOptions != null) {
-    let options = secureServerOptions;
-    if (typeof secureKey === 'string' && typeof secureCert === 'string') {
-      options = {
-        key: fs.readFileSync(secureKey),
-        cert: fs.readFileSync(secureCert),
-        ...secureServerOptions,
-      };
-    }
+  const {tls} = config.server;
+  if (
+    secure === true ||
+    secureServerOptions != null ||
+    typeof tls === 'object'
+  ) {
+    const options = {
+      key:
+        typeof tls === 'object'
+          ? tls.key
+          : typeof secureKey === 'string'
+            ? fs.readFileSync(secureKey)
+            : undefined,
+      cert:
+        typeof tls === 'object'
+          ? tls.cert
+          : typeof secureCert === 'string'
+            ? fs.readFileSync(secureCert)
+            : undefined,
+      ca: typeof tls === 'object' ? tls.ca : undefined,
+      requestCert: typeof tls === 'object' ? tls.requestCert : undefined,
+      ...(secureServerOptions ?? {}),
+    };
+
     // $FlowFixMe[incompatible-type] 'http' and 'https' Flow types do not match
     httpServer = https.createServer(options, serverApp);
   } else {

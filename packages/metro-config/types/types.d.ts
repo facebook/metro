@@ -179,6 +179,14 @@ type ServerConfigT = {
   unstable_serverRoot: null | undefined | string;
   useGlobalHotkey: boolean;
   verifyConnections: boolean;
+  tls:
+    | false
+    | {
+        ca?: string | Buffer;
+        cert?: string | Buffer;
+        key?: string | Buffer;
+        requestCert?: boolean;
+      };
 };
 type SymbolicatorConfigT = {
   customizeFrame: ($$PARAM_0$$: {

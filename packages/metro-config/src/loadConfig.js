@@ -152,8 +152,21 @@ function mergeConfigObjects<T: InputConfigT>(
     },
     server: {
       ...base.server,
-      // $FlowFixMe[exponential-spread]
       ...overrides.server,
+      // $FlowFixMe[exponential-spread]
+      ...(base.server?.tls != null ? {tls: base.server?.tls} : null),
+      // only override base tls config with false or an object
+      ...(overrides.server?.tls === false
+        ? {tls: false}
+        : overrides.server?.tls != null &&
+            typeof overrides.server?.tls === 'object'
+          ? {
+              tls: {
+                ...(base.server?.tls || {}),
+                ...overrides.server?.tls,
+              },
+            }
+          : null),
     },
     symbolicator: {
       ...base.symbolicator,
