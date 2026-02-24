@@ -4,7 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
+ * @noformat
+ * @generated SignedSource<<1f73acbbf5a206de52478c57c058ccb8>>
+ *
+ * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
+ * Original file: packages/metro-transform-plugins/src/inline-requires-plugin.js
+ * To regenerate, run:
+ *   js1 build metro-ts-defs (internal) OR
+ *   yarn run build-ts-defs (OSS) 
  */
 
 import type * as $$IMPORT_TYPEOF_1$$ from '@babel/core';

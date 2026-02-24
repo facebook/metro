@@ -4,8 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
+ * @noformat
  * @oncall react_native
+ * @generated SignedSource<<0b066ed2be97f8d1db5abb8f1a933cb0>>
+ *
+ * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
+ * Original file: packages/metro-core/src/Terminal.js
+ * To regenerate, run:
+ *   js1 build metro-ts-defs (internal) OR
+ *   yarn run build-ts-defs (OSS) 
  */
 
 import type {Socket} from 'net';

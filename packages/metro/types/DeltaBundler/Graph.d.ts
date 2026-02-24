@@ -4,8 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
+ * @noformat
  * @oncall react_native
+ * @generated SignedSource<<2af7aa3b61c2afa4d8794e127666c226>>
+ *
+ * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
+ * Original file: packages/metro/src/DeltaBundler/Graph.js
+ * To regenerate, run:
+ *   js1 build metro-ts-defs (internal) OR
+ *   yarn run build-ts-defs (OSS) 
  */
 
 /**

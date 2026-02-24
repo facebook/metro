@@ -4,8 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
+ * @noformat
  * @oncall react_native
+ * @generated SignedSource<<2bb72546f80164eb8c0068f9de3a1487>>
+ *
+ * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
+ * Original file: packages/metro-cache/src/index.js
+ * To regenerate, run:
+ *   js1 build metro-ts-defs (internal) OR
+ *   yarn run build-ts-defs (OSS) 
  */
 
 import Cache from './Cache';
