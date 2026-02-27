@@ -72,8 +72,10 @@ function buildPackage(p /*: string */) {
   const typesDir = path.resolve(p, TYPES_DIR);
   const buildDir = path.resolve(p, BUILD_DIR);
   const pattern = path.resolve(srcDir, '**/*');
-  const files = globSync(pattern, {onlyFiles: true});
-  const typescriptDefs = globSync(path.join(typesDir, '**/*.d.ts'));
+  const files = globSync(pattern, {absolute: true, onlyFiles: true});
+  const typescriptDefs = globSync(path.join(typesDir, '**/*.d.ts'), {
+    absolute: true,
+  });
 
   process.stdout.write(fixedWidth(`${path.basename(p)}\n`));
 
