@@ -12,8 +12,11 @@
 import type {TransformResult} from './types';
 import type {LogEntry} from 'metro-core/private/Logger';
 import type {
+  FinalizedOutput,
+  FinalizeOptions,
   JsTransformerConfig,
   JsTransformOptions,
+  ModuleSyntaxMeta,
 } from 'metro-transform-worker';
 
 import traverse from '@babel/traverse';
@@ -90,9 +93,30 @@ export const transform = (
   );
 };
 
+export const finalizeModule = (
+  code: string,
+  moduleSyntax: ModuleSyntaxMeta,
+  options: FinalizeOptions,
+  transformerConfig: TransformerConfig,
+): Promise<FinalizedOutput> => {
+  return finalizeModuleImpl(code, moduleSyntax, options, transformerConfig);
+};
+
 export type Worker = {
   +transform: typeof transform,
+  +finalizeModule: typeof finalizeModule,
 };
+
+async function finalizeModuleImpl(
+  code: string,
+  moduleSyntax: ModuleSyntaxMeta,
+  options: FinalizeOptions,
+  transformerConfig: TransformerConfig,
+): Promise<FinalizedOutput> {
+  // eslint-disable-next-line no-useless-call
+  const Transformer = require.call(null, transformerConfig.transformerPath);
+  return Transformer.finalizeModule(code, moduleSyntax, options);
+}
 
 async function transformFile(
   filename: string,

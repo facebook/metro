@@ -69,10 +69,23 @@ function resolveDependencies(
       };
     } else {
       try {
-        maybeResolvedDep = {
-          absolutePath: resolve(parentPath, dep).filePath,
+        const resolution = resolve(parentPath, dep);
+        const resolvedDep: {
+          absolutePath: string,
+          data: TransformResultDependency,
+          sideEffects?: boolean | ReadonlyArray<string>,
+          sideEffectsRoot?: string,
+        } = {
+          absolutePath: resolution.filePath,
           data: dep,
         };
+        if (resolution.sideEffects != null) {
+          resolvedDep.sideEffects = resolution.sideEffects;
+        }
+        if (resolution.sideEffectsRoot != null) {
+          resolvedDep.sideEffectsRoot = resolution.sideEffectsRoot;
+        }
+        maybeResolvedDep = resolvedDep;
       } catch (error) {
         // Ignore unavailable optional dependencies. They are guarded
         // with a try-catch block and will be handled during runtime.
@@ -114,6 +127,8 @@ export async function buildSubgraph<T>(
   async function visit(
     absolutePath: string,
     requireContext: ?RequireContext,
+    sideEffects?: boolean | ReadonlyArray<string>,
+    sideEffectsRoot?: string,
   ): Promise<void> {
     if (visitedPaths.has(absolutePath)) {
       return;
@@ -129,10 +144,24 @@ export async function buildSubgraph<T>(
       resolve,
     );
 
-    moduleData.set(absolutePath, {
+    let moduleRecord: ModuleData<T> = {
       ...transformResult,
       ...resolutionResult,
-    });
+    };
+    if (sideEffects != null) {
+      moduleRecord = {
+        ...moduleRecord,
+        sideEffects,
+      };
+    }
+    if (sideEffectsRoot != null) {
+      moduleRecord = {
+        ...moduleRecord,
+        sideEffectsRoot,
+      };
+    }
+
+    moduleData.set(absolutePath, moduleRecord);
 
     await Promise.all(
       [...resolutionResult.dependencies.values()]
@@ -144,6 +173,8 @@ export async function buildSubgraph<T>(
           visit(
             dependency.absolutePath,
             resolutionResult.resolvedContexts.get(dependency.data.data.key),
+            dependency.sideEffects,
+            dependency.sideEffectsRoot,
           ).catch(error => errors.set(dependency.absolutePath, error)),
         ),
     );

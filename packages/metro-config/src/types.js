@@ -156,6 +156,8 @@ type TransformerConfigT = {
   transformVariants: {+[name: string]: Partial<ExtraTransformOptions>},
   publicPath: string,
   unstable_workerThreads: boolean,
+  /** Enable tree shaking (production only). Default: false. */
+  unstable_treeShake: boolean,
 };
 
 type MetalConfigT = {

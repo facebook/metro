@@ -12,6 +12,11 @@
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config';
+import type {
+  FinalizedOutput,
+  FinalizeOptions,
+  ModuleSyntaxMeta,
+} from 'metro-transform-worker';
 import type {Readable} from 'stream';
 
 import {Worker as JestWorker} from 'jest-worker';
@@ -42,7 +47,7 @@ export default class WorkerFarm {
     if (this._config.maxWorkers > 1) {
       const worker = this._makeFarm(
         absoluteWorkerPath,
-        ['transform'],
+        ['transform', 'finalizeModule'],
         this._config.maxWorkers,
       );
 
@@ -100,6 +105,19 @@ export default class WorkerFarm {
         throw this._formatGenericError(err, filename);
       }
     }
+  }
+
+  async finalizeModule(
+    code: string,
+    moduleSyntax: ModuleSyntaxMeta,
+    options: FinalizeOptions,
+  ): Promise<FinalizedOutput> {
+    return this._worker.finalizeModule(
+      code,
+      moduleSyntax,
+      options,
+      this._transformerConfig,
+    );
   }
 
   _makeFarm(
