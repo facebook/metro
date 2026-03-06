@@ -221,7 +221,7 @@ const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
 
 // Jest toEqual does not match Map instances from different contexts
 // This normalizes them for the uses cases in this test
-const deepNormalize = <T: unknown>(value: T): T => {
+const deepNormalize = <T extends unknown>(value: T): T => {
   // $FlowFixMe[method-unbinding]
   const stringTag = Object.prototype.toString.call(value);
   switch (stringTag) {
