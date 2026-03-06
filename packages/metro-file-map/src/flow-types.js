@@ -205,8 +205,8 @@ export type V8Serializable =
   | Readonly<{[key: string]: V8Serializable}>;
 
 export interface FileMapPlugin<
-  SerializableState: void | V8Serializable = void | V8Serializable,
-  PerFileData: void | V8Serializable = void | V8Serializable,
+  SerializableState extends void | V8Serializable = void | V8Serializable,
+  PerFileData extends void | V8Serializable = void | V8Serializable,
 > {
   +name: string;
   initialize(
