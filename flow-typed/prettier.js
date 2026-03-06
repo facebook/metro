@@ -405,7 +405,7 @@ declare module 'prettier' {
 
   declare export type SupportOptionType = 'int' | 'boolean' | 'choice' | 'path';
 
-  declare export type BaseSupportOption<Type: SupportOptionType> = {
+  declare export type BaseSupportOption<Type extends SupportOptionType> = {
     +name?: string | void,
     since: string,
     /**

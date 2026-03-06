@@ -25,7 +25,7 @@ export type Command = (
 ) => Promise<void> | void;
 export type Commands = {[key: string]: Command, ...};
 
-type Message<Type: string, Data> = Data & {
+type Message<Type extends string, Data> = Data & {
   id: number,
   type: Type,
   ...

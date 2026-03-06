@@ -17,7 +17,7 @@ import * as babylon from '@babel/parser';
 import template from '@babel/template';
 import * as babelTypes from '@babel/types';
 
-type SubTree<T: ModuleTransportLike> = (
+type SubTree<T extends ModuleTransportLike> = (
   moduleTransport: T,
   moduleTransportsByPath: Map<string, T>,
 ) => Iterable<number>;
@@ -66,7 +66,7 @@ function filterObject(
   return copied;
 }
 
-export function createRamBundleGroups<T: ModuleTransportLike>(
+export function createRamBundleGroups<T extends ModuleTransportLike>(
   ramGroups: ReadonlyArray<string>,
   groupableModules: ReadonlyArray<T>,
   subtree: SubTree<T>,
@@ -123,7 +123,7 @@ export function createRamBundleGroups<T: ModuleTransportLike>(
   return result;
 }
 
-function* filter<A: number, B: number>(
+function* filter<A extends number, B extends number>(
   iterator: ArrayMap<A, B>,
   predicate: ([A, Array<B>]) => boolean,
 ): Generator<[A, Array<B>], void, void> {

@@ -237,7 +237,7 @@ declare module 'jest-worker' {
     dequeue(workerId: number): QueueChildMessage | null;
   }
 
-  declare export type FarmOptions<TSetupArgs: ReadonlyArray<unknown>> =
+  declare export type FarmOptions<TSetupArgs extends ReadonlyArray<unknown>> =
     Readonly<{
       computeWorkerKey?: (
         method: string,
@@ -259,7 +259,7 @@ declare module 'jest-worker' {
       workerSchedulingPolicy?: 'round-robin' | 'in-order',
     }>;
 
-  declare export type IJestWorker<TExposed: {...} = {}> = Readonly<{
+  declare export type IJestWorker<TExposed extends {...} = {}> = Readonly<{
     // dynamically exposed methods from the worker
     // $FlowFixMe[incompatible-exact]
     ...TExposed,
@@ -270,10 +270,10 @@ declare module 'jest-worker' {
   }>;
 
   declare export class Worker<
-    TExposed: Readonly<{
+    TExposed extends Readonly<{
       [string]: (...Array<$FlowFixMe>) => Promise<$FlowFixMe>,
     }> = {},
-    TSetupArgs: ReadonlyArray<unknown> = ReadonlyArray<unknown>,
+    TSetupArgs extends ReadonlyArray<unknown> = ReadonlyArray<unknown>,
   > {
     constructor(
       workerPath: string,

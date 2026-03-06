@@ -115,7 +115,7 @@ const resolveTemplate = template.expression(`
 /**
  * Enforces the resolution of a path to a fully-qualified one, if set.
  */
-function resolvePath<TNode: Node>(
+function resolvePath<TNode extends Node>(
   node: TNode,
   resolve: boolean,
 ): Expression | TNode {
@@ -128,13 +128,13 @@ function resolvePath<TNode: Node>(
   });
 }
 
-declare function withLocation<TNode: Node>(
+declare function withLocation<TNode extends Node>(
   node: TNode,
   loc: ?SourceLocation,
 ): TNode;
 
 // eslint-disable-next-line no-redeclare
-declare function withLocation<TNode: Node>(
+declare function withLocation<TNode extends Node>(
   node: ReadonlyArray<TNode>,
   loc: ?SourceLocation,
 ): Array<TNode>;
