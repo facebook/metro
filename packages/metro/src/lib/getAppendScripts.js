@@ -18,7 +18,7 @@ import CountingSet from './CountingSet';
 import countLines from './countLines';
 import nullthrows from 'nullthrows';
 
-type Options<T: number | string> = Readonly<{
+type Options<T extends number | string> = Readonly<{
   asyncRequireModulePath: string,
   createModuleId: string => T,
   getRunModuleStatement: (moduleId: T, globalPrefix: string) => string,
@@ -33,7 +33,7 @@ type Options<T: number | string> = Readonly<{
   ...
 }>;
 
-export default function getAppendScripts<T: number | string>(
+export default function getAppendScripts<T extends number | string>(
   entryPoint: string,
   modules: ReadonlyArray<Module<>>,
   options: Options<T>,

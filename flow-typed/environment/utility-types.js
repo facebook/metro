@@ -21,6 +21,6 @@
  * can be safely spread, forcing handling of potentially present but undefined
  * props.
  */
-declare type SafeOptionalProps<T: {...}> = {
+declare type SafeOptionalProps<T extends {...}> = {
   [K in keyof T]: T[K] extends void ? void | T[K] : T[K],
 };
