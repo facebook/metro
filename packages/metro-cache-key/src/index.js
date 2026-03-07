@@ -12,7 +12,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 
-export function getCacheKey(files: Array<string>): string {
+export function getCacheKey(files: ReadonlyArray<string>): string {
   return files
     .reduce(
       (hash, file) => hash.update('\0', 'utf8').update(fs.readFileSync(file)),

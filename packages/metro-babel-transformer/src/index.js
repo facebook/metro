@@ -12,7 +12,12 @@
 import type {BabelFileMetadata} from '@babel/core';
 import type {File as BabelNodeFile} from '@babel/types';
 
-import {parseSync, transformFromAstSync} from '@babel/core';
+import {
+  loadPartialConfigSync,
+  parseSync,
+  transformFromAstSync,
+} from '@babel/core';
+import {getCacheKey as getFileCacheKey} from 'metro-cache-key';
 import nullthrows from 'nullthrows';
 
 type BabelTransformOptions = NonNullable<
@@ -69,6 +74,11 @@ export type MetroBabelFileMetadata = {
   ...
 };
 
+export type BabelTransformerCacheKeyOptions = Readonly<{
+  projectRoot?: string,
+  enableBabelRCLookup?: boolean,
+}>;
+
 export type BabelTransformer = Readonly<{
   transform: BabelTransformerArgs => Readonly<{
     ast: BabelNodeFile,
@@ -79,7 +89,7 @@ export type BabelTransformer = Readonly<{
     metadata?: MetroBabelFileMetadata,
     ...
   }>,
-  getCacheKey?: () => string,
+  getCacheKey?: (options?: BabelTransformerCacheKeyOptions) => string,
 }>;
 
 function transform({
@@ -143,12 +153,41 @@ function transform({
   }
 }
 
+/**
+ * Generates a cache key component based on the user's Babel configuration files.
+ * This uses Babel's loadPartialConfigSync to resolve which config files apply
+ * to a given file, and includes their contents in the cache key so that changes
+ * to babel.config.js or .babelrc will invalidate the transform cache.
+ *
+ * This is called once by the main thread (not on worker instances).
+ */
+function getCacheKey(options?: BabelTransformerCacheKeyOptions): string {
+  if (options == null) {
+    return '';
+  }
+  // Load the partial babel config to get the resolved config file paths
+  const partialConfig = loadPartialConfigSync({
+    cwd: options.projectRoot,
+    root: options.projectRoot,
+    babelrc: options.enableBabelRCLookup ?? true,
+  });
+
+  const files = partialConfig?.files;
+
+  if (files == null || files.size === 0) {
+    return '';
+  }
+
+  // Hash the contents of all config files
+  return getFileCacheKey([...files].sort());
+}
+
 // Type check exports
 /*::
-({transform}) as BabelTransformer;
+({transform, getCacheKey}) as BabelTransformer;
 */
 
-export {transform};
+export {transform, getCacheKey};
 
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
@@ -156,4 +195,4 @@ export {transform};
  *
  * @deprecated Default import from 'metro-babel-transformer' is deprecated, use named exports.
  */
-export default {transform};
+export default {transform, getCacheKey};

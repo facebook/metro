@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<882f8217d0521dc2dcd518032851f63f>>
+ * @generated SignedSource<<c71ff6c13c916919d1340d231518de8f>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-babel-transformer/src/index.js
@@ -80,25 +80,41 @@ export type MetroBabelFileMetadata = Omit<
           | BabelFileImportLocsMetadata;
       };
 };
+export type BabelTransformerCacheKeyOptions = Readonly<{
+  projectRoot?: string;
+  enableBabelRCLookup?: boolean;
+}>;
 export type BabelTransformer = Readonly<{
   transform: ($$PARAM_0$$: BabelTransformerArgs) => Readonly<{
     ast: BabelNodeFile;
     functionMap?: BabelFileFunctionMapMetadata;
     metadata?: MetroBabelFileMetadata;
   }>;
-  getCacheKey?: () => string;
+  getCacheKey?: (options?: BabelTransformerCacheKeyOptions) => string;
 }>;
 declare function transform(
   $$PARAM_0$$: BabelTransformerArgs,
 ): ReturnType<BabelTransformer['transform']>;
-export {transform};
+/**
+ * Generates a cache key component based on the user's Babel configuration files.
+ * This uses Babel's loadPartialConfigSync to resolve which config files apply
+ * to a given file, and includes their contents in the cache key so that changes
+ * to babel.config.js or .babelrc will invalidate the transform cache.
+ *
+ * This is called once by the main thread (not on worker instances).
+ */
+declare function getCacheKey(options?: BabelTransformerCacheKeyOptions): string;
+export {transform, getCacheKey};
 /**
  * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
  * Do not add to this list.
  *
  * @deprecated Default import from 'metro-babel-transformer' is deprecated, use named exports.
  */
-declare const $$EXPORT_DEFAULT_DECLARATION$$: {transform: typeof transform};
+declare const $$EXPORT_DEFAULT_DECLARATION$$: {
+  transform: typeof transform;
+  getCacheKey: typeof getCacheKey;
+};
 declare type $$EXPORT_DEFAULT_DECLARATION$$ =
   typeof $$EXPORT_DEFAULT_DECLARATION$$;
 export default $$EXPORT_DEFAULT_DECLARATION$$;
