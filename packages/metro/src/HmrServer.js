@@ -66,7 +66,7 @@ function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
  * getting connected, disconnected or having errors (through the
  * `onClientConnect`, `onClientDisconnect` and `onClientError` methods).
  */
-export default class HmrServer<TClient: Client> {
+export default class HmrServer<TClient extends Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;

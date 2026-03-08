@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<f165de82a6ae6a167ecb27bfacd9b0cb>>
+ * @generated SignedSource<<48a23e4247062bad5de7d29f42741be4>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-cache-key/src/index.js
@@ -15,4 +15,4 @@
  *   yarn run build-ts-defs (OSS) 
  */
 
-export declare function getCacheKey(files: Array<string>): string;
+export declare function getCacheKey(files: ReadonlyArray<string>): string;

@@ -83,7 +83,7 @@ type Options<TPackage> = Readonly<{
   unstable_incrementalResolution: boolean,
 }>;
 
-export class ModuleResolver<TPackage: Packageish> {
+export class ModuleResolver<TPackage extends Packageish> {
   _options: Options<TPackage>;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModulePath: string;

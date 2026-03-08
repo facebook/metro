@@ -105,7 +105,7 @@ async function resolveConfig(
   return await loadConfigFile(configPath);
 }
 
-function mergeConfigObjects<T: InputConfigT>(
+function mergeConfigObjects<T extends InputConfigT>(
   base: T,
   overrides: InputConfigT,
 ): T {
@@ -196,7 +196,7 @@ function mergeConfigObjects<T: InputConfigT>(
   };
 }
 
-async function mergeConfigAsync<T: InputConfigT>(
+async function mergeConfigAsync<T extends InputConfigT>(
   baseConfig: Promise<T>,
   ...reversedConfigs: ReadonlyArray<
     InputConfigT | (T => InputConfigT) | (T => Promise<InputConfigT>),
@@ -223,8 +223,8 @@ async function mergeConfigAsync<T: InputConfigT>(
  * Otherwise it will return synchronously.
  */
 function mergeConfig<
-  T: InputConfigT,
-  R: ReadonlyArray<
+  T extends InputConfigT,
+  R extends ReadonlyArray<
     | InputConfigT
     | ((baseConfig: T) => InputConfigT)
     | ((baseConfig: T) => Promise<InputConfigT>),

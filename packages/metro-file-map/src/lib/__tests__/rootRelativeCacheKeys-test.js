@@ -63,7 +63,7 @@ jest.mock(
 test('returns a distinct cache key for any change', () => {
   const {rootDir: __, plugins: ___, ...simpleParameters} = buildParameters;
 
-  const varyDefault = <T: keyof typeof simpleParameters>(
+  const varyDefault = <T extends keyof typeof simpleParameters>(
     key: T,
     newVal: BuildParameters[T],
   ): BuildParameters => {

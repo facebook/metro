@@ -353,7 +353,7 @@ declare module '@babel/core' {
       raw: BabelNodeArrayExpression,
     ): BabelNodeIdentifier;
 
-    buildCodeFrameError<TError: Error>(
+    buildCodeFrameError<TError extends Error>(
       node: BabelNode,
       msg: string,
       Class<TError>,
@@ -1083,6 +1083,8 @@ declare module '@babel/core' {
     +babelrc: string | void;
     +babelignore: string | void;
     +config: string | void;
+    +files: ReadonlySet<string>;
+    +fileHandling: 'ignored' | 'transpile' | 'unsupported';
 
     constructor(options: ValidatedOptions): PartialConfig;
 

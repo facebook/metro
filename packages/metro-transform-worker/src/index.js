@@ -1385,7 +1385,10 @@ export async function finalizeModule(
   return {code: finalCode, map, lineCount};
 }
 
-export const getCacheKey = (config: JsTransformerConfig): string => {
+export const getCacheKey = (
+  config: JsTransformerConfig,
+  opts?: Readonly<{projectRoot: string, ...}>,
+): string => {
   const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
   const filesKey = metroGetCacheKey([
@@ -1400,11 +1403,20 @@ export const getCacheKey = (config: JsTransformerConfig): string => {
   ]);
 
   // $FlowFixMe[unsupported-syntax]
-  const babelTransformer = require(babelTransformerPath);
+  const babelTransformer = require(babelTransformerPath) as BabelTransformer;
+
+  // Get cache key from babel transformer, which may include user's babel config files
+  const babelTransformerCacheKey = babelTransformer.getCacheKey
+    ? babelTransformer.getCacheKey({
+        projectRoot: opts?.projectRoot,
+        enableBabelRCLookup: config.enableBabelRCLookup,
+      })
+    : '';
+
   return [
     filesKey,
     stableHash(remainingConfig).toString('hex'),
-    babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
+    babelTransformerCacheKey,
   ].join('$');
 };
 
