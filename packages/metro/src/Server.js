@@ -146,6 +146,42 @@ type FetchTiming = {
   isPrefetch: boolean,
 };
 
+function buildFilteredGraph(
+  graph: ReadOnlyGraph<>,
+  treeShakeOptions: TreeShakeOptions,
+): ReadOnlyGraph<> {
+  const {eliminable, finalizedModules} = treeShakeOptions;
+  const dependencies = new Map();
+  for (const [modulePath, module] of graph.dependencies) {
+    if (eliminable.has(modulePath)) {
+      continue;
+    }
+    const finalized = finalizedModules.get(modulePath);
+    if (finalized == null) {
+      dependencies.set(modulePath, module);
+      continue;
+    }
+    dependencies.set(modulePath, {
+      ...module,
+      output: module.output.map(out => {
+        if (!out.type.startsWith('js/')) {
+          return out;
+        }
+        return {
+          ...out,
+          data: {
+            ...out.data,
+            code: finalized.code,
+            map: finalized.map,
+            lineCount: finalized.lineCount,
+          },
+        };
+      }),
+    });
+  }
+  return {...graph, dependencies};
+}
+
 export default class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
@@ -224,6 +260,94 @@ export default class Server {
     return this._createModuleId;
   }
 
+  _canApplyTreeShaking(transformOptions: TransformInputOptions): boolean {
+    return (
+      this._config.transformer.unstable_treeShake && !transformOptions.dev
+    );
+  }
+
+  async _applyTreeShaking(
+    graph: ReadOnlyGraph<>,
+    transformOptions: TransformInputOptions,
+  ): Promise<TreeShakeOptions> {
+    const fallbackHasSideEffectsFn = buildHasSideEffectsFn();
+    const hasSideEffectsFn = (modulePath: string): boolean => {
+      const module = graph.dependencies.get(modulePath);
+      if (module?.sideEffects != null && module.sideEffectsRoot != null) {
+        return hasSideEffects(
+          modulePath,
+          module.sideEffects,
+          module.sideEffectsRoot,
+        );
+      }
+      return fallbackHasSideEffectsFn(modulePath);
+    };
+    const {usedExports, eliminable} = analyzeAndEliminate(
+      graph,
+      hasSideEffectsFn,
+    );
+    const reexportDemand = computeReexportDemand(graph, usedExports);
+
+    const bundler = this._bundler.getBundler();
+    const finalizedModules: Map<
+      string,
+      {code: string, map: $FlowFixMe, lineCount: number},
+    > = new Map();
+
+    const modulesToFinalize = [...graph.dependencies.values()].filter(
+      module =>
+        module.moduleSyntax?.isESModule === true &&
+        !eliminable.has(module.path),
+    );
+
+    await Promise.all(
+      modulesToFinalize.map(async module => {
+        const esmOutput = module.output.find(o => o.type.startsWith('js/'));
+        if (esmOutput == null || module.moduleSyntax == null) {
+          return;
+        }
+        const outputData = esmOutput.data;
+        if (typeof outputData !== 'object' || outputData == null) {
+          return;
+        }
+        const moduleSyntax = module.moduleSyntax;
+        const used: UsedExports = usedExports.get(module.path) ?? {
+          type: 'none',
+        };
+        const eliminatedReexportSources = getEliminatedReexportSources(
+          module,
+          eliminable,
+        );
+        if (typeof outputData.code !== 'string') {
+          return;
+        }
+        const finalized = await bundler.finalizeModule(
+          module.unstable_transformResultKey ?? '',
+          outputData.code,
+          moduleSyntax,
+          {
+            usedExports: used,
+            filename: module.path,
+            eliminatedReexportSources,
+            reexportDemandBySource: reexportDemand.get(module.path) ?? {},
+            dependencyMapName:
+              this._config.transformer.unstable_dependencyMapReservedName ??
+              '_dependencyMap',
+            globalPrefix: this._config.transformer.globalPrefix,
+            minify: transformOptions.minify,
+            minifierPath: this._config.transformer.minifierPath,
+            minifierConfig: this._config.transformer.minifierConfig,
+            dev: transformOptions.dev,
+            parserPlugins: moduleSyntax.parserPlugins,
+          },
+        );
+        finalizedModules.set(module.path, finalized);
+      }),
+    );
+
+    return {eliminable, finalizedModules};
+  }
+
   async _serializeGraph({
     splitOptions,
     prepend,
@@ -275,125 +399,14 @@ export default class Server {
       getSourceUrl: (module: Module<>) =>
         this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
     };
-    let treeShakeOptions: ?TreeShakeOptions = null;
-    if (this._config.transformer.unstable_treeShake && !transformOptions.dev) {
-      const fallbackHasSideEffectsFn = buildHasSideEffectsFn();
-      const hasSideEffectsFn = (modulePath: string): boolean => {
-        const module = graph.dependencies.get(modulePath);
-        if (module?.sideEffects != null && module.sideEffectsRoot != null) {
-          return hasSideEffects(
-            modulePath,
-            module.sideEffects,
-            module.sideEffectsRoot,
-          );
-        }
-        return fallbackHasSideEffectsFn(modulePath);
-      };
-      const {usedExports, eliminable} = analyzeAndEliminate(
-        graph,
-        hasSideEffectsFn,
-      );
-      const reexportDemand = computeReexportDemand(graph, usedExports);
+    const treeShakeOptions = this._canApplyTreeShaking(transformOptions)
+      ? await this._applyTreeShaking(graph, transformOptions)
+      : null;
 
-      const bundler = this._bundler.getBundler();
-      const finalizedModules: Map<
-        string,
-        {code: string, map: $FlowFixMe, lineCount: number},
-      > = new Map();
-
-      const modulesToFinalize = [...graph.dependencies.values()].filter(
-        module =>
-          module.moduleSyntax?.isESModule === true &&
-          !eliminable.has(module.path),
-      );
-
-      await Promise.all(
-        modulesToFinalize.map(async module => {
-            const esmOutput = module.output.find(o => o.type.startsWith('js/'));
-            if (esmOutput == null || module.moduleSyntax == null) {
-              return;
-            }
-            const outputData = esmOutput.data;
-            if (typeof outputData !== 'object' || outputData == null) {
-              return;
-            }
-            const moduleSyntax = module.moduleSyntax;
-            const used: UsedExports = usedExports.get(module.path) ?? {
-              type: 'none',
-            };
-            const eliminatedReexportSources = getEliminatedReexportSources(
-              module,
-              eliminable,
-            );
-            if (typeof outputData.code !== 'string') {
-              return;
-            }
-            const outputCode = outputData.code;
-            const finalized = await bundler.finalizeModule(
-              module.unstable_transformResultKey ?? '',
-              outputCode,
-              moduleSyntax,
-              {
-                usedExports: used,
-                filename: module.path,
-                eliminatedReexportSources,
-                reexportDemandBySource: reexportDemand.get(module.path) ?? {},
-                dependencyMapName:
-                  this._config.transformer.unstable_dependencyMapReservedName ??
-                  '_dependencyMap',
-                globalPrefix: this._config.transformer.globalPrefix,
-                minify: transformOptions.minify,
-                minifierPath: this._config.transformer.minifierPath,
-                minifierConfig: this._config.transformer.minifierConfig,
-                dev: transformOptions.dev,
-                parserPlugins: moduleSyntax.parserPlugins,
-              },
-            );
-            finalizedModules.set(module.path, finalized);
-          }),
-      );
-
-      treeShakeOptions = {eliminable, finalizedModules};
-    }
-
-    const graphForSerialization: ReadOnlyGraph<> = (() => {
-      if (treeShakeOptions == null) {
-        return graph;
-      }
-      const {eliminable, finalizedModules} = treeShakeOptions;
-      const dependencies = new Map();
-      for (const [modulePath, module] of graph.dependencies) {
-        if (eliminable.has(modulePath)) {
-          continue;
-        }
-        const finalized = finalizedModules.get(modulePath);
-        if (finalized == null) {
-          dependencies.set(modulePath, module);
-          continue;
-        }
-        dependencies.set(modulePath, {
-          ...module,
-          output: module.output.map(out => {
-            if (!out.type.startsWith('js/')) {
-              return out;
-            }
-            return {
-              ...out,
-              data: {
-                ...out.data,
-                code: finalized.code,
-                map: finalized.map,
-                lineCount: finalized.lineCount,
-              },
-            };
-          }),
-        });
-      }
-      return {
-        ...graph,
-        dependencies,
-      };
-    })();
+    const graphForSerialization: ReadOnlyGraph<> =
+      treeShakeOptions != null
+        ? buildFilteredGraph(graph, treeShakeOptions)
+        : graph;
 
     let bundleCode = null;
     let bundleMap = null;
