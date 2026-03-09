@@ -44,6 +44,7 @@ import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import checkWatchmanCapabilities from './lib/checkWatchmanCapabilities';
 import {FileProcessor} from './lib/FileProcessor';
+import {FileSystemChangeAggregator} from './lib/FileSystemChangeAggregator';
 import normalizePathSeparatorsToPosix from './lib/normalizePathSeparatorsToPosix';
 import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './lib/RootPathUtils';
@@ -421,7 +422,7 @@ export default class FileMap extends EventEmitter {
                     };
                   },
                   fileIterator: opts =>
-                    mapIterator(
+                    mapIterable(
                       fileSystem.metadataIterator(opts),
                       ({baseName, canonicalPath, metadata}) => ({
                         baseName,
@@ -572,17 +573,12 @@ export default class FileMap extends EventEmitter {
     this.#startupPerfLogger?.point('applyFileDelta_start');
     const {changedFiles, removedFiles} = delta;
     this.#startupPerfLogger?.point('applyFileDelta_preprocess_start');
-    const missingFiles: Set<string> = new Set();
-
     // Remove files first so that we don't mistake moved modules
     // modules as duplicates.
     this.#startupPerfLogger?.point('applyFileDelta_remove_start');
-    const removed: Array<[string, FileMetadata]> = [];
+    const changeAggregator = new FileSystemChangeAggregator();
     for (const relativeFilePath of removedFiles) {
-      const metadata = fileSystem.remove(relativeFilePath);
-      if (metadata) {
-        removed.push([relativeFilePath, metadata]);
-      }
+      fileSystem.remove(relativeFilePath, changeAggregator);
     }
     this.#startupPerfLogger?.point('applyFileDelta_remove_end');
 
@@ -647,34 +643,36 @@ export default class FileMap extends EventEmitter {
       /* $FlowFixMe[incompatible-type] Error exposed after improved typing of
        * Array.{includes,indexOf,lastIndexOf} */
       if (['ENOENT', 'EACCESS'].includes(error.code)) {
-        missingFiles.add(normalFilePath);
+        changedFiles.delete(normalFilePath);
+        fileSystem.remove(normalFilePath, changeAggregator);
       } else {
         // Anything else is fatal.
         throw error;
       }
     }
-    for (const relativeFilePath of missingFiles) {
-      changedFiles.delete(relativeFilePath);
-      const metadata = fileSystem.remove(relativeFilePath);
-      if (metadata) {
-        removed.push([relativeFilePath, metadata]);
-      }
-    }
+
     this.#startupPerfLogger?.point('applyFileDelta_missing_end');
 
     this.#startupPerfLogger?.point('applyFileDelta_add_start');
-    fileSystem.bulkAddOrModify(changedFiles);
+    fileSystem.bulkAddOrModify(changedFiles, changeAggregator);
     this.#startupPerfLogger?.point('applyFileDelta_add_end');
 
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
+    const netChange = changeAggregator.getView();
+
     plugins.forEach(({plugin, dataIdx}) => {
-      const mapFn: ([CanonicalPath, FileMetadata]) => [CanonicalPath, unknown] =
+      const mapFn: (
+        Readonly<[CanonicalPath, FileMetadata]>,
+      ) => [CanonicalPath, unknown] =
         dataIdx != null
           ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
           : ([relativePath, fileData]) => [relativePath, null];
       plugin.bulkUpdate({
-        addedOrModified: mapIterator(changedFiles.entries(), mapFn),
-        removed: mapIterator(removed.values(), mapFn),
+        addedOrModified: mapIterable(
+          chainIterables(netChange.addedFiles, netChange.modifiedFiles),
+          mapFn,
+        ),
+        removed: mapIterable(netChange.removedFiles, mapFn),
       });
     });
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
@@ -1055,11 +1053,18 @@ export default class FileMap extends EventEmitter {
 }
 
 // TODO: Replace with it.map() from Node 22+
-const mapIterator: <T, S>(Iterator<T>, (T) => S) => Iterable<S> = (it, fn) =>
-  'map' in it
-    ? it.map(fn)
-    : (function* mapped() {
-        for (const item of it) {
-          yield fn(item);
-        }
-      })();
+const mapIterable: <T, S>(Iterable<T>, (T) => S) => Iterator<S> = (it, fn) =>
+  (function* mapped() {
+    for (const item of it) {
+      yield fn(item);
+    }
+  })();
+
+// TODO: Replace with Iterator.concat from Node 28?
+function* chainIterables<T>(
+  ...iterables: ReadonlyArray<Iterable<T>>
+): Iterator<T> {
+  for (const iterable of iterables) {
+    yield* iterable;
+  }
+}
