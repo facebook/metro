@@ -215,7 +215,7 @@ const minifyCode = async (
       code,
       // functionMap is overridden by the serializer
       functionMap: null,
-      // isIgnored is overriden by the serializer
+      // isIgnored is overridden by the serializer
       isIgnored: false,
       map,
       path: filename,
@@ -376,7 +376,7 @@ async function transformJS(
   let wrappedAst;
 
   // If the module to transform is a script (meaning that is not part of the
-  // dependency graph and it code will just be prepended to the bundle modules),
+  // dependency graph and its code will just be prepended to the bundle modules),
   // we need to wrap it differently than a commonJS module (also, scripts do
   // not have dependencies).
   if (file.type === 'js/script') {
