@@ -90,6 +90,19 @@ export type CacheManagerWriteOptions = Readonly<{
 //  - Real (no symlinks in path, though the path itself may be a symlink)
 export type CanonicalPath = string;
 
+/**
+ * An object passed to TreeFS methods that captures file system observations
+ * relevant to incremental invalidation. TreeFS will populate the `existence`
+ * and `modification` sets with canonical (root-relative) paths. The `haste`
+ * set is not written by TreeFS but is included so that a single object can
+ * capture all invalidation data for a resolution.
+ */
+export type InvalidationData = Readonly<{
+  existence: Set<CanonicalPath>,
+  modification: Set<CanonicalPath>,
+  haste: Set<string>,
+}>;
+
 export type ChangedFileMetadata = Readonly<{
   isSymlink: boolean,
   modifiedTime?: ?number,
@@ -285,8 +298,10 @@ export interface FileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -297,7 +312,7 @@ export interface FileSystem {
     subpath: string,
     opts: {
       breakOnSegment: ?string,
-      invalidatedBy: ?Set<string>,
+      invalidatedBy: ?InvalidationData,
       subpathType: 'f' | 'd',
     },
   ): ?{

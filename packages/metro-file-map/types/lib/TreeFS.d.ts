@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<a67ce7313d123a7baac5cc23354e8c8b>>
+ * @generated SignedSource<<3dfb807bf32043b2d9e812418a5e112d>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/lib/TreeFS.js
@@ -152,8 +152,10 @@ declare class TreeFS implements MutableFileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -164,7 +166,7 @@ declare class TreeFS implements MutableFileSystem {
     subpath: string,
     opts: {
       breakOnSegment: null | undefined | string;
-      invalidatedBy: null | undefined | Set<string>;
+      invalidatedBy: null | undefined | any;
       subpathType: 'f' | 'd';
     },
   ): null | undefined | {absolutePath: string; containerRelativePath: string};

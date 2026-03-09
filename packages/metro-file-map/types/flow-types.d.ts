@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<20f9e0b81ccdc0bd3698417297709836>>
+ * @generated SignedSource<<462548bb01970bd5a18c5edf1ee17187>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -75,6 +75,18 @@ export type CacheManagerWriteOptions = Readonly<{
   onWriteError: (error: Error) => void;
 }>;
 export type CanonicalPath = string;
+/**
+ * An object passed to TreeFS methods that captures file system observations
+ * relevant to incremental invalidation. TreeFS will populate the `existence`
+ * and `modification` sets with canonical (root-relative) paths. The `haste`
+ * set is not written by TreeFS but is included so that a single object can
+ * capture all invalidation data for a resolution.
+ */
+export type InvalidationData = Readonly<{
+  existence: Set<CanonicalPath>;
+  modification: Set<CanonicalPath>;
+  haste: Set<string>;
+}>;
 export type ChangedFileMetadata = Readonly<{
   isSymlink: boolean;
   modifiedTime?: null | undefined | number;
@@ -250,8 +262,10 @@ export interface FileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -262,7 +276,7 @@ export interface FileSystem {
     subpath: string,
     opts: {
       breakOnSegment: null | undefined | string;
-      invalidatedBy: null | undefined | Set<string>;
+      invalidatedBy: null | undefined | InvalidationData;
       subpathType: 'f' | 'd';
     },
   ): null | undefined | {absolutePath: string; containerRelativePath: string};
