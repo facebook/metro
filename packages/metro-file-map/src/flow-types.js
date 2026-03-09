@@ -330,7 +330,7 @@ export interface FileSystem {
    * Return information about the given path, whether a directory or file.
    * Always follow symlinks, and return a real path if it exists.
    */
-  lookup(mixedPath: Path): LookupResult;
+  lookup(mixedPath: Path, invalidatedBy?: InvalidationData): LookupResult;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
@@ -364,16 +364,9 @@ export type LookupResult =
       // could indicate an unwatched path, or a directory containing no watched
       // files).
       exists: false,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
-      // The real, normal, absolute path of the first path segment
-      // encountered that does not exist, or cannot be navigated through.
-      missing: string,
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
       // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -382,8 +375,6 @@ export type LookupResult =
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
       // The real, normal, absolute path of the file.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return

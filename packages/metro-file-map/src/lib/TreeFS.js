@@ -14,6 +14,7 @@ import type {
   FileMetadata,
   FileStats,
   FileSystemListener,
+  InvalidationData,
   LookupResult,
   MutableFileSystem,
   Path,
@@ -251,25 +252,21 @@ export default class TreeFS implements MutableFileSystem {
     return result != null;
   }
 
-  lookup(mixedPath: Path): LookupResult {
+  lookup(mixedPath: Path, invalidatedBy?: ?InvalidationData): LookupResult {
     const normalPath = this.#normalizePath(mixedPath);
-    const links = new Set<string>();
     const result = this.#lookupByNormalPath(normalPath, {
-      collectLinkPaths: links,
+      invalidatedBy,
       followLeaf: true,
     });
     if (!result.exists) {
-      const {canonicalMissingPath} = result;
       return {
         exists: false,
-        links,
-        missing: this.#pathUtils.normalToAbsolute(canonicalMissingPath),
       };
     }
     const {canonicalPath, node} = result;
     const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (isDirectory(node)) {
-      return {exists: true, links, realPath, type: 'd'};
+      return {exists: true, realPath, type: 'd'};
     }
     invariant(
       isRegularFile(node),
@@ -277,7 +274,7 @@ export default class TreeFS implements MutableFileSystem {
       mixedPath,
       canonicalPath,
     );
-    return {exists: true, links, realPath, type: 'f', metadata: node};
+    return {exists: true, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {
@@ -520,12 +517,9 @@ export default class TreeFS implements MutableFileSystem {
         normalPath: string,
         segmentName: string,
       }>,
-      // Mutable Set into which absolute real paths of traversed symlinks will
-      // be added. Omit for performance if not needed.
-      collectLinkPaths?: ?Set<string>,
-
-      // Like collectLinkPaths, but stores canonical (root-relative) paths.
-      collectLinkNormalPaths?: ?Set<string>,
+      // Mutable structure into which canonical paths of traversed symlinks
+      // will be added. Omit for performance if not needed.
+      invalidatedBy?: ?InvalidationData,
 
       // Low-level callbacks called on mutations of TreeFS data.
       // Omit for performance if not needed.
@@ -676,6 +670,9 @@ export default class TreeFS implements MutableFileSystem {
           : targetNormalPath.slice(0, fromIdx - 1);
 
         if (isRegularFile(segmentNode)) {
+          if (opts.invalidatedBy) {
+            opts.invalidatedBy.existence.add(currentPath);
+          }
           // Regular file in a directory path
           return {
             canonicalMissingPath: currentPath,
@@ -689,13 +686,8 @@ export default class TreeFS implements MutableFileSystem {
           segmentNode,
           currentPath,
         );
-        if (opts.collectLinkPaths) {
-          opts.collectLinkPaths.add(
-            this.#pathUtils.normalToAbsolute(currentPath),
-          );
-        }
-        if (opts.collectLinkNormalPaths) {
-          opts.collectLinkNormalPaths.add(currentPath);
+        if (opts.invalidatedBy) {
+          opts.invalidatedBy.modification.add(currentPath);
         }
 
         const remainingTargetPath = isLastSegment
@@ -824,7 +816,7 @@ export default class TreeFS implements MutableFileSystem {
     subpath: string,
     opts: {
       breakOnSegment: ?string,
-      invalidatedBy: ?$FlowFixMe,
+      invalidatedBy: ?InvalidationData,
       subpathType: 'f' | 'd',
     },
   ): ?{
@@ -838,14 +830,10 @@ export default class TreeFS implements MutableFileSystem {
       segmentName: string,
     }> = [];
     const normalPath = this.#normalizePath(mixedStartPath);
-    const invalidatedBy: ?{
-      existence: Set<string>,
-      modification: Set<string>,
-      ...
-    } = opts.invalidatedBy;
+    const invalidatedBy = opts.invalidatedBy;
     const closestLookup = this.#lookupByNormalPath(normalPath, {
       collectAncestors: ancestorsOfInput,
-      collectLinkNormalPaths: invalidatedBy?.modification,
+      invalidatedBy,
     });
 
     if (closestLookup.exists && isDirectory(closestLookup.node)) {
@@ -853,8 +841,7 @@ export default class TreeFS implements MutableFileSystem {
         closestLookup.canonicalPath,
         subpath,
         opts.subpathType,
-        invalidatedBy?.existence,
-        invalidatedBy?.modification,
+        invalidatedBy,
         null,
       );
       if (maybeAbsolutePathMatch != null) {
@@ -927,8 +914,7 @@ export default class TreeFS implements MutableFileSystem {
         candidate.normalPath,
         subpath,
         opts.subpathType,
-        invalidatedBy?.existence,
-        invalidatedBy?.modification,
+        invalidatedBy,
         {
           ancestorOfRootIdx: candidate.ancestorOfRootIdx,
           node: candidate.node,
@@ -975,8 +961,7 @@ export default class TreeFS implements MutableFileSystem {
         candidateNormalPath,
         subpath,
         opts.subpathType,
-        invalidatedBy?.existence,
-        invalidatedBy?.modification,
+        invalidatedBy,
         null,
       );
       if (maybeAbsolutePathMatch != null) {
@@ -1010,8 +995,7 @@ export default class TreeFS implements MutableFileSystem {
     normalCandidatePath: string,
     subpath: string,
     subpathType: 'f' | 'd',
-    invalidatedByExistence: ?Set<string>,
-    invalidatedByModification: ?Set<string>,
+    invalidatedBy: ?InvalidationData,
     start: ?{
       ancestorOfRootIdx: ?number,
       node: DirectoryNode,
@@ -1022,7 +1006,7 @@ export default class TreeFS implements MutableFileSystem {
       this.#pathUtils.joinNormalToRelative(normalCandidatePath, subpath)
         .normalPath,
       {
-        collectLinkNormalPaths: invalidatedByModification,
+        invalidatedBy,
       },
     );
     if (
@@ -1031,8 +1015,8 @@ export default class TreeFS implements MutableFileSystem {
       isDirectory(lookupResult.node) === (subpathType === 'd')
     ) {
       return this.#pathUtils.normalToAbsolute(lookupResult.canonicalPath);
-    } else if (invalidatedByExistence) {
-      invalidatedByExistence.add(
+    } else if (invalidatedBy) {
+      invalidatedBy.existence.add(
         lookupResult.exists
           ? lookupResult.canonicalPath
           : lookupResult.canonicalMissingPath,
