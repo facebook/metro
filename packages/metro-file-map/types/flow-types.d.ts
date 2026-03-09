@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<919ac912df195d04796dd62cb68839d2>>
+ * @generated SignedSource<<85431098179213e676ffbcc88e4cd830>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -342,10 +342,38 @@ export type HasteMapItem = {
   [platform: string]: HasteMapItemMetadata;
 };
 export type HasteMapItemMetadata = [string, number];
+export interface FileSystemListener {
+  directoryAdded(canonicalPath: CanonicalPath): void;
+  directoryRemoved(canonicalPath: CanonicalPath): void;
+  fileAdded(canonicalPath: CanonicalPath, data: FileMetadata): void;
+  fileModified(
+    canonicalPath: CanonicalPath,
+    oldData: FileMetadata,
+    newData: FileMetadata,
+  ): void;
+  fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
+}
+export interface ReadonlyFileSystemChanges<T = FileMetadata> {
+  readonly addedDirectories: Iterable<CanonicalPath>;
+  readonly removedDirectories: Iterable<CanonicalPath>;
+  readonly addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+}
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): null | undefined | FileMetadata;
-  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
+  remove(
+    filePath: Path,
+    listener?: FileSystemListener,
+  ): null | undefined | FileMetadata;
+  addOrModify(
+    filePath: Path,
+    fileMetadata: FileMetadata,
+    listener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    listener?: FileSystemListener,
+  ): void;
 }
 export type Path = string;
 export type ProcessFileFunction = (
