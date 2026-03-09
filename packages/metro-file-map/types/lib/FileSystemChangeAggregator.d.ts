@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<7d318b5006733f2f45454bc0fa354646>>
+ * @generated SignedSource<<5feda1b197530a9a5fdbc57200633ac5>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/lib/FileSystemChangeAggregator.js
@@ -32,5 +32,9 @@ export declare class FileSystemChangeAggregator implements FileSystemListener {
     newData: FileMetadata,
   ): void;
   fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
+  getSize(): number;
   getView(): ReadonlyFileSystemChanges<FileMetadata>;
+  getMappedView<T>(
+    metadataMapFn: (metadata: FileMetadata) => T,
+  ): ReadonlyFileSystemChanges<T>;
 }

@@ -96,6 +96,16 @@ export class FileSystemChangeAggregator implements FileSystemListener {
     // else: File was added then removed in the same batch - no net change
   }
 
+  getSize(): number {
+    return (
+      this.#addedDirectories.size +
+      this.#removedDirectories.size +
+      this.#addedFiles.size +
+      this.#modifiedFiles.size +
+      this.#removedFiles.size
+    );
+  }
+
   getView(): ReadonlyFileSystemChanges<FileMetadata> {
     return {
       addedDirectories: this.#addedDirectories,
@@ -105,4 +115,29 @@ export class FileSystemChangeAggregator implements FileSystemListener {
       removedFiles: this.#removedFiles,
     };
   }
+
+  getMappedView<T>(
+    metadataMapFn: (metadata: FileMetadata) => T,
+  ): ReadonlyFileSystemChanges<T> {
+    return {
+      addedDirectories: this.#addedDirectories,
+      removedDirectories: this.#removedDirectories,
+      addedFiles: mapIterable(this.#addedFiles, metadataMapFn),
+      modifiedFiles: mapIterable(this.#modifiedFiles, metadataMapFn),
+      removedFiles: mapIterable(this.#removedFiles, metadataMapFn),
+    };
+  }
+}
+
+function mapIterable<T>(
+  map: Map<CanonicalPath, FileMetadata>,
+  metadataMapFn: (metadata: FileMetadata) => T,
+): Iterable<Readonly<[CanonicalPath, T]>> {
+  return {
+    *[Symbol.iterator](): Iterator<Readonly<[CanonicalPath, T]>> {
+      for (const [path, metadata] of map) {
+        yield [path, metadataMapFn(metadata)];
+      }
+    },
+  };
 }
