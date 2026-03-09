@@ -10,7 +10,6 @@
  */
 
 import type {DeltaResult, Options} from './types';
-import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
@@ -173,75 +172,66 @@ export default class DeltaCalculator<T> extends EventEmitter {
   }
 
   _handleMultipleFileChanges = (changeEvent: ChangeEvent) => {
-    changeEvent.eventsQueue.forEach(eventInfo => {
-      this._handleFileChange(eventInfo, changeEvent.logger);
-    });
-  };
+    const {changes, logger, rootDir} = changeEvent;
+    const enablePackageExports = this._options.unstable_enablePackageExports;
 
-  /**
-   * Handles a single file change. To avoid doing any work before it's needed,
-   * the listener only stores the modified file, which will then be used later
-   * when the delta needs to be calculated.
-   */
-  _handleFileChange = (
-    {type, filePath, metadata}: ChangeEvent['eventsQueue'][number],
-    logger: ?RootPerfLogger,
-  ): unknown => {
-    debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
-    if (
-      metadata.type === 'l' ||
-      (this._options.unstable_enablePackageExports &&
-        filePath.endsWith(path.sep + 'package.json'))
-    ) {
-      this._requiresReset = true;
-      this.emit('change', {logger});
-    }
-    let state: void | 'deleted' | 'modified' | 'added';
-    if (this._deletedFiles.has(filePath)) {
-      state = 'deleted';
-    } else if (this._modifiedFiles.has(filePath)) {
-      state = 'modified';
-    } else if (this._addedFiles.has(filePath)) {
-      state = 'added';
+    // Process added files: deleted+added = modified, otherwise added
+    for (const [canonicalPath, metadata] of changes.addedFiles) {
+      debug('Handling add: %s', canonicalPath);
+      if (
+        metadata.isSymlink ||
+        (enablePackageExports &&
+          canonicalPath.endsWith(path.sep + 'package.json'))
+      ) {
+        this._requiresReset = true;
+      }
+      const absolutePath = path.join(rootDir, canonicalPath);
+      if (this._deletedFiles.has(absolutePath)) {
+        this._deletedFiles.delete(absolutePath);
+        this._modifiedFiles.add(absolutePath);
+      } else {
+        this._addedFiles.add(absolutePath);
+        this._modifiedFiles.delete(absolutePath);
+      }
     }
 
-    let nextState: 'deleted' | 'modified' | 'added';
-    if (type === 'delete') {
-      nextState = 'deleted';
-    } else if (type === 'add') {
-      // A deleted+added file is modified
-      nextState = state === 'deleted' ? 'modified' : 'added';
-    } else {
-      // type === 'change'
-      // An added+modified file is added
-      nextState = state === 'added' ? 'added' : 'modified';
+    // Process modified files: added+modified stays added, otherwise modified
+    for (const [canonicalPath, metadata] of changes.modifiedFiles) {
+      debug('Handling change: %s', canonicalPath);
+      if (
+        metadata.isSymlink ||
+        (enablePackageExports &&
+          canonicalPath.endsWith(path.sep + 'package.json'))
+      ) {
+        this._requiresReset = true;
+      }
+      const absolutePath = path.join(rootDir, canonicalPath);
+      if (!this._addedFiles.has(absolutePath)) {
+        this._modifiedFiles.add(absolutePath);
+      }
+      this._deletedFiles.delete(absolutePath);
     }
 
-    switch (nextState) {
-      case 'deleted':
-        this._deletedFiles.add(filePath);
-        this._modifiedFiles.delete(filePath);
-        this._addedFiles.delete(filePath);
-        break;
-      case 'added':
-        this._addedFiles.add(filePath);
-        this._deletedFiles.delete(filePath);
-        this._modifiedFiles.delete(filePath);
-        break;
-      case 'modified':
-        this._modifiedFiles.add(filePath);
-        this._deletedFiles.delete(filePath);
-        this._addedFiles.delete(filePath);
-        break;
-      default:
-        nextState as empty;
+    // Process removed files: added+deleted = no change, otherwise deleted
+    for (const [canonicalPath, metadata] of changes.removedFiles) {
+      debug('Handling delete: %s', canonicalPath);
+      if (
+        metadata.isSymlink ||
+        (enablePackageExports &&
+          canonicalPath.endsWith(path.sep + 'package.json'))
+      ) {
+        this._requiresReset = true;
+      }
+      const absolutePath = path.resolve(rootDir, canonicalPath);
+      if (this._addedFiles.has(absolutePath)) {
+        this._addedFiles.delete(absolutePath);
+      } else {
+        this._deletedFiles.add(absolutePath);
+        this._modifiedFiles.delete(absolutePath);
+      }
     }
 
-    // Notify users that there is a change in some of the bundle files. This
-    // way the client can choose to refetch the bundle.
-    this.emit('change', {
-      logger,
-    });
+    this.emit('change', {logger});
   };
 
   async _getChangedDependencies(

@@ -17,6 +17,7 @@ import type {Options, TransformResultDependency} from '../types';
 import CountingSet from '../../lib/CountingSet';
 import DeltaCalculator from '../DeltaCalculator';
 import {Graph} from '../Graph';
+import {createEmitChange} from './test-utils';
 
 const {EventEmitter} = require('events');
 
@@ -36,6 +37,7 @@ const markModifiedContextModules = jest.spyOn(
 describe('DeltaCalculator + require.context', () => {
   let deltaCalculator;
   let fileWatcher;
+  let emitChange;
 
   const options: Options<> = {
     unstable_allowRequireContext: true,
@@ -62,6 +64,7 @@ describe('DeltaCalculator + require.context', () => {
 
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
+    emitChange = createEmitChange(fileWatcher, '/');
 
     markModifiedContextModules.mockImplementation(function <T>(
       this: Graph<T>,
@@ -172,11 +175,7 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['ctx/foo']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -199,11 +198,7 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({addedFiles: ['ctx/foo2']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -223,11 +218,7 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: '/ctx/foo', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['ctx/foo']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -247,11 +238,7 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['ctx/foo2']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -266,17 +253,9 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({addedFiles: ['ctx/foo2']});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['ctx/foo2']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -296,17 +275,9 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'add', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({addedFiles: ['ctx/foo2']});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: '/ctx/foo2', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['ctx/foo2']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -321,15 +292,9 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['ctx/foo']});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: '/ctx/foo', metadata: {type: 'f'}}],
-    });
+    emitChange({addedFiles: ['ctx/foo']});
 
     // Incremental build
     await deltaCalculator.getDelta({
@@ -347,17 +312,9 @@ describe('DeltaCalculator + require.context', () => {
     // Initial build
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: '/ctx/foo', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['ctx/foo']});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: '/ctx/foo', metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['ctx/foo']});
 
     // Incremental build
     await deltaCalculator.getDelta({
