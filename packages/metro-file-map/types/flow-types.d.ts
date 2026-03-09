@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<85431098179213e676ffbcc88e4cd830>>
+ * @generated SignedSource<<55661053febcda2f3c05e7e2b96130a3>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -133,10 +133,6 @@ export type EventsQueue = Array<{
   metadata: ChangeEventMetadata;
   type: string;
 }>;
-export type FileMapDelta<T = null | void> = Readonly<{
-  removed: Iterable<[CanonicalPath, T]>;
-  addedOrModified: Iterable<[CanonicalPath, T]>;
-}>;
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
@@ -183,16 +179,10 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta<null | undefined | PerFileData>): void;
+  onChanged(
+    changes: ReadonlyFileSystemChanges<null | undefined | PerFileData>,
+  ): void;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | PerFileData,
-  ): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | PerFileData,
-  ): void;
   getCacheKey(): string;
   getWorker(): null | undefined | FileMapPluginWorker;
 }

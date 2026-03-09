@@ -1045,9 +1045,7 @@ export default class FileMap extends EventEmitter {
     clocks.set(normalizePathSeparatorsToPosix(relativeFsRoot), clockSpec);
   }
 
-  #updatePlugins(
-    fileSystemChanges: ReadonlyFileSystemChanges<FileMetadata>,
-  ): void {
+  #updatePlugins(changes: ReadonlyFileSystemChanges<FileMetadata>): void {
     this.#plugins.forEach(({plugin, dataIdx}) => {
       const mapFn: (
         Readonly<[CanonicalPath, FileMetadata]>,
@@ -1055,15 +1053,13 @@ export default class FileMap extends EventEmitter {
         dataIdx != null
           ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
           : ([relativePath, fileData]) => [relativePath, null];
-      plugin.bulkUpdate({
-        addedOrModified: mapIterable(
-          chainIterables(
-            fileSystemChanges.addedFiles,
-            fileSystemChanges.modifiedFiles,
-          ),
-          mapFn,
-        ),
-        removed: mapIterable(fileSystemChanges.removedFiles, mapFn),
+      plugin.onChanged({
+        addedDirectories: changes.addedDirectories,
+        removedDirectories: changes.removedDirectories,
+
+        addedFiles: mapIterable(changes.addedFiles, mapFn),
+        modifiedFiles: mapIterable(changes.modifiedFiles, mapFn),
+        removedFiles: mapIterable(changes.removedFiles, mapFn),
       });
     });
   }

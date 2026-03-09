@@ -21,6 +21,8 @@ describe.each([['win32'], ['posix']])('MockPlugin on %s', platform => {
       : filePath;
 
   let MockMap: Class<MockMapType>;
+  let mockMap: MockMapType;
+  let onFileAdded: (filePath: string) => void;
 
   const opts = {
     console,
@@ -33,20 +35,27 @@ describe.each([['win32'], ['posix']])('MockPlugin on %s', platform => {
     jest.resetModules();
     mockPathModule = jest.requireActual<{}>('path')[platform];
     MockMap = require('../../MockPlugin').default;
+    mockMap = new MockMap(opts);
+    onFileAdded = canonicalPath =>
+      mockMap.onChanged({
+        addedFiles: new Map([[canonicalPath, null]]),
+        modifiedFiles: new Map(),
+        removedFiles: new Map(),
+        addedDirectories: new Set(),
+        removedDirectories: new Set(),
+      });
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.clearAllMocks();
   });
 
   test('set and get a mock module', () => {
-    const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
+    onFileAdded(p('__mocks__/foo.js'));
     expect(mockMap.getMockModule('foo')).toBe(p('/root/__mocks__/foo.js'));
   });
 
   test('assertValid throws on duplicates', () => {
-    const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
-    mockMap.onNewOrModifiedFile(p('other/__mocks__/foo.js'));
+    onFileAdded(p('__mocks__/foo.js'));
+    onFileAdded(p('other/__mocks__/foo.js'));
 
     expect(console.warn).toHaveBeenCalledTimes(1);
     expect(() => mockMap.assertValid()).toThrowError(
@@ -59,9 +68,8 @@ Duplicate manual mock found for \`foo\`:
   });
 
   test('recovers from duplicates', () => {
-    const mockMap = new MockMap(opts);
-    mockMap.onNewOrModifiedFile(p('__mocks__/foo.js'));
-    mockMap.onNewOrModifiedFile(p('other/__mocks__/foo.js'));
+    onFileAdded(p('__mocks__/foo.js'));
+    onFileAdded(p('other/__mocks__/foo.js'));
 
     expect(() => mockMap.assertValid()).toThrow();
 
@@ -79,7 +87,13 @@ Duplicate manual mock found for \`foo\`:
       version: 2,
     });
 
-    mockMap.onRemovedFile(p('other/__mocks__/foo.js'));
+    mockMap.onChanged({
+      addedFiles: new Map(),
+      modifiedFiles: new Map(),
+      removedFiles: new Map([[p('other/__mocks__/foo.js'), null]]),
+      addedDirectories: new Set(),
+      removedDirectories: new Set(),
+    });
 
     expect(() => mockMap.assertValid()).not.toThrow();
 
@@ -94,7 +108,6 @@ Duplicate manual mock found for \`foo\`:
   });
 
   test('loads from a snapshot', async () => {
-    const mockMap = new MockMap(opts);
     await mockMap.initialize({
       files: {
         fileIterator: () => {
@@ -130,17 +143,18 @@ Duplicate manual mock found for \`foo\`:
         ['foo', 'other/__mocks__/foo.js'],
       ]),
       duplicates: new Map([
-        ['foo', new Set(['other/__mocks__/foo.js', '__mocks__/foo.js'])],
+        [
+          'foo',
+          new Set<string>(['other/__mocks__/foo.js', '__mocks__/foo.js']),
+        ],
       ]),
       version: 2,
     };
-    /* $FlowFixMe[incompatible-type] Natural Inference rollout. See
-     * https://fburl.com/workplace/6291gfvu */
-    const mockMap = new MockMap({...opts, rawMockMap});
-    expect(mockMap.getMockModule('bar')).toEqual(
+    const loadedMockMap = new MockMap({...opts, rawMockMap});
+    expect(loadedMockMap.getMockModule('bar')).toEqual(
       p('/root/some/__mocks__/bar.js'),
     );
-    expect(mockMap.getMockModule('foo')).toEqual(
+    expect(loadedMockMap.getMockModule('foo')).toEqual(
       p('/root/other/__mocks__/foo.js'),
     );
   });
