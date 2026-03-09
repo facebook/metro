@@ -22,6 +22,7 @@ import type {
   FileSystem,
   HasteMap,
   HealthCheckResult,
+  InvalidationData,
   WatcherStatus,
   default as MetroFileMap,
 } from 'metro-file-map';
@@ -29,6 +30,7 @@ import type {FileSystemLookup} from 'metro-resolver';
 
 import createFileMap from './DependencyGraph/createFileMap';
 import {ModuleResolver} from './DependencyGraph/ModuleResolution';
+import TrackedFileAccess from './DependencyGraph/TrackedFileAccess';
 import {PackageCache} from './PackageCache';
 import EventEmitter from 'events';
 import fs from 'fs';
@@ -67,6 +69,7 @@ export default class DependencyGraph extends EventEmitter {
   _hasteMap: HasteMap;
   #dependencyPlugin: ?DependencyPlugin;
   _moduleResolver: ModuleResolver<Package>;
+  #trackedFileAccess: ?TrackedFileAccess;
   _resolutionCache: Map<
     // Custom resolver options
     string | symbol,
@@ -176,6 +179,19 @@ export default class DependencyGraph extends EventEmitter {
       return {exists: false};
     };
 
+    const useTracking = this._config.resolver.unstable_incrementalResolution;
+    const trackedFileAccess = useTracking
+      ? new TrackedFileAccess(
+          this._fileSystem,
+          this._config.projectRoot,
+          this.#packageCache,
+          (name, platform) => this._hasteMap.getModule(name, platform, true),
+          (name, platform) => this._hasteMap.getPackage(name, platform, true),
+          this._config.resolver.assetResolutions,
+        )
+      : null;
+    this.#trackedFileAccess = trackedFileAccess;
+
     this._moduleResolver = new ModuleResolver({
       assetExts: new Set(this._config.resolver.assetExts),
       dirExists: (filePath: string) => {
@@ -186,33 +202,43 @@ export default class DependencyGraph extends EventEmitter {
       },
       disableHierarchicalLookup:
         this._config.resolver.disableHierarchicalLookup,
-      doesFileExist: this.doesFileExist,
+      doesFileExist: trackedFileAccess?.doesFileExist ?? this.doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
-      fileSystemLookup,
-      getHasteModulePath: (name, platform) =>
-        this._hasteMap.getModule(name, platform, true),
-      getHastePackagePath: (name, platform) =>
-        this._hasteMap.getPackage(name, platform, true),
+      fileSystemLookup: trackedFileAccess?.fileSystemLookup ?? fileSystemLookup,
+      getHasteModulePath:
+        trackedFileAccess != null
+          ? (name: string, _platform: ?string) =>
+              trackedFileAccess.resolveHasteModule(name)
+          : (name: string, platform: ?string) =>
+              this._hasteMap.getModule(name, platform, true),
+      getHastePackagePath:
+        trackedFileAccess != null
+          ? (name: string, _platform: ?string) =>
+              trackedFileAccess.resolveHastePackage(name)
+          : (name: string, platform: ?string) =>
+              this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       packageCache: this.#packageCache,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
-      resolveAsset: (dirPath: string, assetName: string, extension: string) => {
-        const basePath = dirPath + path.sep + assetName;
-        const assets = [
-          basePath + extension,
-          ...this._config.resolver.assetResolutions.map(
-            resolution => basePath + '@' + resolution + 'x' + extension,
-          ),
-        ]
-          .map(assetPath => fileSystemLookup(assetPath).realPath)
-          .filter(Boolean);
+      resolveAsset:
+        trackedFileAccess?.resolveAsset ??
+        ((dirPath: string, assetName: string, extension: string) => {
+          const basePath = dirPath + path.sep + assetName;
+          const assets = [
+            basePath + extension,
+            ...this._config.resolver.assetResolutions.map(
+              resolution => basePath + '@' + resolution + 'x' + extension,
+            ),
+          ]
+            .map(assetPath => fileSystemLookup(assetPath).realPath)
+            .filter(Boolean);
 
-        return assets.length ? assets : null;
-      },
+          return assets.length ? assets : null;
+        }),
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
       unstable_conditionNames: this._config.resolver.unstable_conditionNames,
@@ -227,13 +253,14 @@ export default class DependencyGraph extends EventEmitter {
 
   _getClosestPackage(
     absoluteModulePath: string,
+    invalidatedBy: ?InvalidationData,
   ): ?{packageJsonPath: string, packageRelativePath: string} {
     const result = this._fileSystem.hierarchicalLookup(
       absoluteModulePath,
       'package.json',
       {
         breakOnSegment: 'node_modules',
-        invalidatedBy: null,
+        invalidatedBy,
         subpathType: 'f',
       },
     );
@@ -247,7 +274,8 @@ export default class DependencyGraph extends EventEmitter {
 
   _createPackageCache(): PackageCache {
     return new PackageCache({
-      getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
+      getClosestPackage: (absolutePath, invalidatedBy) =>
+        this._getClosestPackage(absolutePath, invalidatedBy),
     });
   }
 
@@ -358,6 +386,7 @@ export default class DependencyGraph extends EventEmitter {
 
     if (!resolution) {
       try {
+        const invalidations = this.#trackedFileAccess?.startTracking(platform);
         resolution = this._moduleResolver.resolveDependency(
           originModulePath,
           dependency,
@@ -365,6 +394,12 @@ export default class DependencyGraph extends EventEmitter {
           platform,
           resolverOptions,
         );
+        if (invalidations != null) {
+          resolution = {
+            ...resolution,
+            unstable_invalidations: invalidations,
+          };
+        }
         updateResolverCache?.(resolution);
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {

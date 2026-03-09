@@ -13,6 +13,7 @@ import type {RequireContext} from '../lib/contextModule';
 import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {ReadonlySourceLocation} from '../shared/types';
 import type {Graph} from './Graph';
+import type {InvalidationData} from 'metro-file-map';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
@@ -21,9 +22,7 @@ export type MixedOutput = {
   +data: unknown,
   +type: string,
 };
-
 export type AsyncDependencyType = 'async' | 'maybeSync' | 'prefetch' | 'weak';
-
 export type TransformResultDependency = Readonly<{
   /**
    * The literal name provided to a require or import call. For example 'foo' in
@@ -59,18 +58,15 @@ export type TransformResultDependency = Readonly<{
     contextParams?: RequireContextParams,
   }>,
 }>;
-
 export type ResolvedDependency = Readonly<{
   absolutePath: string,
   data: TransformResultDependency,
 }>;
-
 export type Dependency =
   | ResolvedDependency
   | Readonly<{
       data: TransformResultDependency,
     }>;
-
 export type Module<T = MixedOutput> = Readonly<{
   dependencies: Map<string, Dependency>,
   inverseDependencies: CountingSet<string>,
@@ -79,7 +75,6 @@ export type Module<T = MixedOutput> = Readonly<{
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
 }>;
-
 export type ModuleData<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyMap<string, Dependency>,
   resolvedContexts: ReadonlyMap<string, RequireContext>,
@@ -87,49 +82,40 @@ export type ModuleData<T = MixedOutput> = Readonly<{
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
 }>;
-
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 export type ReadOnlyDependencies<T = MixedOutput> = ReadonlyMap<
   string,
   Module<T>,
 >;
-
 export type TransformInputOptions = Omit<
   JsTransformOptions,
   'inlinePlatform' | 'inlineRequires',
 >;
-
 export type GraphInputOptions = Readonly<{
   entryPoints: ReadonlySet<string>,
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions,
 }>;
-
 export interface ReadOnlyGraph<T = MixedOutput> {
   +entryPoints: ReadonlySet<string>;
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   +transformOptions: Readonly<TransformInputOptions>;
   +dependencies: ReadOnlyDependencies<T>;
 }
-
 export type {Graph};
-
 export type TransformResult<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyArray<TransformResultDependency>,
   output: ReadonlyArray<T>,
   unstable_transformResultKey?: ?string,
 }>;
-
 export type TransformResultWithSource<T = MixedOutput> = Readonly<{
   ...TransformResult<T>,
   getSource: () => Buffer,
 }>;
-
 export type TransformFn<T = MixedOutput> = (
   string,
   ?RequireContext,
 ) => Promise<TransformResultWithSource<T>>;
-
 export type ResolveFn = (
   from: string,
   dependency: TransformResultDependency,
@@ -145,6 +131,12 @@ export type AllowOptionalDependencies =
 export type BundlerResolution = Readonly<{
   type: 'sourceFile',
   filePath: string,
+  /**
+   * Present when `unstable_incrementalResolution` is enabled. Describes the
+   * file system observations that, if changed, would require re-resolving.
+   * All paths are canonical (root-relative).
+   */
+  unstable_invalidations?: InvalidationData,
 }>;
 
 export type Options<T = MixedOutput> = Readonly<{

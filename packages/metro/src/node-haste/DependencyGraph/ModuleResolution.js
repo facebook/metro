@@ -25,7 +25,7 @@ import type {
 } from 'metro-resolver';
 import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
 
-import {codeFrameColumns} from '@babel/code-frame';
+import {codeFrameColumns} from '@babel/code-frame/lib';
 import fs from 'fs';
 import invariant from 'invariant';
 import * as Resolver from 'metro-resolver';

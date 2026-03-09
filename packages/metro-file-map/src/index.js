@@ -31,6 +31,7 @@ import type {
   HasteMapData,
   HasteMapItem,
   HType,
+  InvalidationData,
   MutableFileSystem,
   Path,
   PerfLogger,
@@ -69,6 +70,7 @@ export type {
   FileSystem,
   HasteMapData,
   HasteMapItem,
+  InvalidationData,
 };
 
 export type InputOptions = Readonly<{
