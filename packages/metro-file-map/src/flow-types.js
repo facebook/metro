@@ -97,7 +97,6 @@ export type ChangedFileMetadata = Readonly<{
 
 export type ChangeEvent = Readonly<{
   logger: ?RootPerfLogger,
-  eventsQueue: EventsQueue, // Deprecated
   changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>,
   rootDir: string,
 }>;
@@ -156,12 +155,6 @@ export type WatcherStatus =
 
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
-
-export type EventsQueue = Array<{
-  filePath: Path,
-  metadata: ChangeEventMetadata,
-  type: string,
-}>;
 
 export type FileMapPluginInitOptions<
   SerializableState,

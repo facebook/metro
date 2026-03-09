@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<6d8466c1e6a26096346ab171341b91e8>>
+ * @generated SignedSource<<20f9e0b81ccdc0bd3698417297709836>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -81,7 +81,6 @@ export type ChangedFileMetadata = Readonly<{
 }>;
 export type ChangeEvent = Readonly<{
   logger: null | undefined | RootPerfLogger;
-  eventsQueue: EventsQueue;
   changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>;
   rootDir: string;
 }>;
@@ -134,11 +133,6 @@ export type WatcherStatus =
     };
 export type DuplicatesSet = Map<string, number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
-export type EventsQueue = Array<{
-  filePath: Path;
-  metadata: ChangeEventMetadata;
-  type: string;
-}>;
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
