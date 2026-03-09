@@ -313,35 +313,48 @@ export default class DependencyGraph extends EventEmitter {
     },
   ): BundlerResolution {
     const to = dependency.name;
-    const isSensitiveToOriginFolder =
-      // Resolution is always relative to the origin folder unless we assume a flat node_modules
-      !assumeFlatNodeModules ||
-      // Path requests are resolved relative to the origin folder
-      to.includes('/') ||
-      to === '.' ||
-      to === '..' ||
-      // Preserve standard assumptions under node_modules
-      originModulePath.includes(path.sep + 'node_modules' + path.sep);
+    let resolution: ?BundlerResolution;
+    let updateResolverCache: ?(BundlerResolution) => void;
 
-    // Compound key for the resolver cache
-    const resolverOptionsKey =
-      JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
-    const originKey = isSensitiveToOriginFolder
-      ? path.dirname(originModulePath)
-      : '';
-    const targetKey =
-      to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
-    const platformKey = platform ?? NULL_PLATFORM;
+    // Don't use the resolver cache under unstable_incrementalResolution, since
+    // this would bypass collection of invalidations.
+    if (!this._config.resolver.unstable_incrementalResolution) {
+      const isSensitiveToOriginFolder =
+        // Resolution is always relative to the origin folder unless we assume a flat node_modules
+        !assumeFlatNodeModules ||
+        // Path requests are resolved relative to the origin folder
+        to.includes('/') ||
+        to === '.' ||
+        to === '..' ||
+        // Preserve standard assumptions under node_modules
+        originModulePath.includes(path.sep + 'node_modules' + path.sep);
 
-    // Traverse the resolver cache, which is a tree of maps
-    const mapByResolverOptions = this._resolutionCache;
-    const mapByOrigin = getOrCreateMap(
-      mapByResolverOptions,
-      resolverOptionsKey,
-    );
-    const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
-    const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
-    let resolution: ?BundlerResolution = mapByPlatform.get(platformKey);
+      // Compound key for the resolver cache
+      const resolverOptionsKey =
+        JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
+      const originKey = isSensitiveToOriginFolder
+        ? path.dirname(originModulePath)
+        : '';
+      const targetKey =
+        to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
+      const platformKey = platform ?? NULL_PLATFORM;
+
+      // Traverse the resolver cache, which is a tree of maps
+      const mapByResolverOptions = this._resolutionCache;
+      const mapByOrigin = getOrCreateMap(
+        mapByResolverOptions,
+        resolverOptionsKey,
+      );
+      const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
+      const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
+
+      updateResolverCache = (result: BundlerResolution) => {
+        mapByPlatform.set(platformKey, result);
+      };
+
+      // Check the cache
+      resolution = mapByPlatform.get(platformKey);
+    }
 
     if (!resolution) {
       try {
@@ -352,6 +365,7 @@ export default class DependencyGraph extends EventEmitter {
           platform,
           resolverOptions,
         );
+        updateResolverCache?.(resolution);
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(originModulePath, error);
@@ -367,7 +381,6 @@ export default class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platformKey, resolution);
     return resolution;
   }
 
