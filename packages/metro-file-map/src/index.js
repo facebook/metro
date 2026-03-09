@@ -36,6 +36,7 @@ import type {
   PerfLogger,
   PerfLoggerFactory,
   ProcessFileFunction,
+  ReadonlyFileSystemChanges,
   WatcherBackendChangeEvent,
   WatchmanClocks,
 } from './flow-types';
@@ -53,7 +54,6 @@ import {Watcher} from './Watcher';
 import EventEmitter from 'events';
 import {promises as fsPromises} from 'fs';
 import invariant from 'invariant';
-import nullthrows from 'nullthrows';
 import * as path from 'path';
 import {performance} from 'perf_hooks';
 
@@ -118,6 +118,19 @@ type IndexedPlugin = Readonly<{
   plugin: AnyFileMapPlugin,
   dataIdx: ?number,
 }>;
+type InternalEnqueuedEvent = Readonly<
+  | {
+      clock: ?ChangeEventClock,
+      relativeFilePath: string,
+      metadata: FileMetadata,
+      type: 'touch',
+    }
+  | {
+      clock: ?ChangeEventClock,
+      relativeFilePath: string,
+      type: 'delete',
+    },
+>;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {default as DependencyPlugin} from './plugins/DependencyPlugin';
@@ -658,23 +671,7 @@ export default class FileMap extends EventEmitter {
     this.#startupPerfLogger?.point('applyFileDelta_add_end');
 
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
-    const netChange = changeAggregator.getView();
-
-    plugins.forEach(({plugin, dataIdx}) => {
-      const mapFn: (
-        Readonly<[CanonicalPath, FileMetadata]>,
-      ) => [CanonicalPath, unknown] =
-        dataIdx != null
-          ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
-          : ([relativePath, fileData]) => [relativePath, null];
-      plugin.bulkUpdate({
-        addedOrModified: mapIterable(
-          chainIterables(netChange.addedFiles, netChange.modifiedFiles),
-          mapFn,
-        ),
-        removed: mapIterable(netChange.removedFiles, mapFn),
-      });
-    });
+    this.#updatePlugins(changeAggregator.getView());
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this.#startupPerfLogger?.point('applyFileDelta_end');
   }
@@ -741,20 +738,72 @@ export default class FileMap extends EventEmitter {
     const hasWatchedExtension = (filePath: string) =>
       this.#options.extensions.some(ext => filePath.endsWith(ext));
 
-    let changeQueue: Promise<null | void> = Promise.resolve();
     let nextEmit: ?{
-      eventsQueue: EventsQueue,
+      events: Array<InternalEnqueuedEvent>,
       firstEventTimestamp: number,
       firstEnqueuedTimestamp: number,
     } = null;
 
     const emitChange = () => {
-      if (nextEmit == null || nextEmit.eventsQueue.length === 0) {
+      if (nextEmit == null) {
         // Nothing to emit
         return;
       }
-      const {eventsQueue, firstEventTimestamp, firstEnqueuedTimestamp} =
-        nextEmit;
+      const {events, firstEventTimestamp, firstEnqueuedTimestamp} = nextEmit;
+
+      const changeAggregator = new FileSystemChangeAggregator();
+
+      // Process a sequence of events. Note that preserving ordering is
+      // important here - a file may be both removed and added in the same
+      // batch.
+      // `changeAggregator` flattens this over time into the net change from
+      // this sequence.
+      for (const event of events) {
+        const {relativeFilePath, clock} = event;
+        if (event.type === 'delete') {
+          fileSystem.remove(relativeFilePath, changeAggregator);
+        } else {
+          fileSystem.addOrModify(
+            relativeFilePath,
+            event.metadata,
+            changeAggregator,
+          );
+        }
+        this.#updateClock(clocks, clock);
+      }
+
+      const netChange = changeAggregator.getView();
+      this.#updatePlugins(netChange);
+
+      const getMapFn =
+        (type: 'add' | 'change' | 'delete') =>
+        ([canonicalPath, metadata]: Readonly<[CanonicalPath, FileMetadata]>) =>
+          ({
+            type,
+            filePath: this.#pathUtils.normalToAbsolute(canonicalPath),
+            metadata: {
+              size: type === 'delete' ? null : metadata[H.SIZE],
+              modifiedTime: type === 'delete' ? null : metadata[H.MTIME],
+              type: metadata[H.SYMLINK] === 0 ? 'f' : 'l',
+            },
+          }) as EventsQueue[number];
+
+      // Synthesise an array of events from the change set to emit to consumers.
+      const eventsQueue = Array.from(
+        chainIterables(
+          mapIterable(netChange.removedFiles, getMapFn('delete')),
+          mapIterable(netChange.addedFiles, getMapFn('add')),
+          mapIterable(netChange.modifiedFiles, getMapFn('change')),
+        ),
+      );
+
+      if (eventsQueue.length === 0) {
+        // We had events, but they've exactly cancelled each other out, reset
+        // so that timers are correct for the next change.
+        nextEmit = null;
+        return;
+      }
+
       const hmrPerfLogger = this.#options.perfLoggerFactory?.('HMR', {
         key: this.#getNextChangeID(),
       });
@@ -776,6 +825,8 @@ export default class FileMap extends EventEmitter {
       this.emit('change', changeEvent);
       nextEmit = null;
     };
+
+    let changeQueue: Promise<null | void> = Promise.resolve();
 
     const onChange = (change: WatcherBackendChangeEvent) => {
       if (
@@ -804,72 +855,37 @@ export default class FileMap extends EventEmitter {
 
       const relativeFilePath =
         this.#pathUtils.absoluteToNormal(absoluteFilePath);
-      const linkStats = fileSystem.linkStats(relativeFilePath);
-
-      // The file has been accessed, not modified. If the modified time is
-      // null, then it is assumed that the watcher does not have capabilities
-      // to detect modified time, and change processing proceeds.
-      if (
-        change.event === 'touch' &&
-        linkStats != null &&
-        change.metadata.modifiedTime != null &&
-        linkStats.modifiedTime === change.metadata.modifiedTime
-      ) {
-        return;
-      }
-
-      // Emitted events, unlike memoryless backend events, specify 'add' or
-      // 'change' instead of 'touch'.
-      const eventTypeToEmit =
-        change.event === 'touch'
-          ? linkStats == null
-            ? 'add'
-            : 'change'
-          : 'delete';
 
       const onChangeStartTime = performance.timeOrigin + performance.now();
+
+      const enqueueEvent = (event: InternalEnqueuedEvent) => {
+        nextEmit ??= {
+          events: [],
+          firstEnqueuedTimestamp: performance.timeOrigin + performance.now(),
+          firstEventTimestamp: onChangeStartTime,
+        };
+        nextEmit.events.push(event);
+      };
 
       changeQueue = changeQueue
         .then(async () => {
           // If we get duplicate events for the same file, ignore them.
           if (
             nextEmit != null &&
-            nextEmit.eventsQueue.find(
+            nextEmit.events.find(
               event =>
-                event.type === eventTypeToEmit &&
-                event.filePath === absoluteFilePath &&
+                event.type === change.event &&
+                event.relativeFilePath === relativeFilePath &&
                 ((!event.metadata && !change.metadata) ||
                   (event.metadata &&
                     change.metadata &&
-                    event.metadata.modifiedTime != null &&
+                    event.metadata[H.MTIME] != null &&
                     change.metadata.modifiedTime != null &&
-                    event.metadata.modifiedTime ===
-                      change.metadata.modifiedTime)),
+                    event.metadata[H.MTIME] === change.metadata.modifiedTime)),
             )
           ) {
             return null;
           }
-
-          const linkStats = fileSystem.linkStats(relativeFilePath);
-
-          const enqueueEvent = (metadata: ChangeEventMetadata) => {
-            const event = {
-              filePath: absoluteFilePath,
-              metadata,
-              type: eventTypeToEmit,
-            };
-            if (nextEmit == null) {
-              nextEmit = {
-                eventsQueue: [event],
-                firstEnqueuedTimestamp:
-                  performance.timeOrigin + performance.now(),
-                firstEventTimestamp: onChangeStartTime,
-              };
-            } else {
-              nextEmit.eventsQueue.push(event);
-            }
-            return null;
-          };
 
           // If the file was added or modified,
           // parse it and update the file map.
@@ -900,17 +916,12 @@ export default class FileMap extends EventEmitter {
                   },
                 );
               }
-              fileSystem.addOrModify(relativeFilePath, fileMetadata);
-              this.#updateClock(clocks, change.clock);
-              plugins.forEach(({plugin, dataIdx}) =>
-                dataIdx != null
-                  ? plugin.onNewOrModifiedFile(
-                      relativeFilePath,
-                      fileMetadata[dataIdx],
-                    )
-                  : plugin.onNewOrModifiedFile(relativeFilePath),
-              );
-              enqueueEvent(change.metadata);
+              enqueueEvent({
+                clock: change.clock,
+                relativeFilePath,
+                metadata: fileMetadata,
+                type: change.event,
+              });
             } catch (e) {
               if (!['ENOENT', 'EACCESS'].includes(e.code)) {
                 throw e;
@@ -923,25 +934,10 @@ export default class FileMap extends EventEmitter {
               //   point.
             }
           } else if (change.event === 'delete') {
-            if (linkStats == null) {
-              // Don't emit deletion events for files we weren't retaining.
-              // This is expected for deletion of an ignored file.
-              return null;
-            }
-            // We've already checked linkStats != null above, so the file
-            // exists in the file map and remove should always return metadata.
-            const metadata = nullthrows(fileSystem.remove(relativeFilePath));
-            this.#updateClock(clocks, change.clock);
-            plugins.forEach(({plugin, dataIdx}) =>
-              dataIdx != null
-                ? plugin.onRemovedFile(relativeFilePath, metadata[dataIdx])
-                : plugin.onRemovedFile(relativeFilePath),
-            );
-
             enqueueEvent({
-              modifiedTime: null,
-              size: null,
-              type: linkStats.fileType,
+              clock: change.clock,
+              relativeFilePath,
+              type: 'delete',
             });
           } else {
             throw new Error(
@@ -1049,6 +1045,29 @@ export default class FileMap extends EventEmitter {
     clocks.set(normalizePathSeparatorsToPosix(relativeFsRoot), clockSpec);
   }
 
+  #updatePlugins(
+    fileSystemChanges: ReadonlyFileSystemChanges<FileMetadata>,
+  ): void {
+    this.#plugins.forEach(({plugin, dataIdx}) => {
+      const mapFn: (
+        Readonly<[CanonicalPath, FileMetadata]>,
+      ) => [CanonicalPath, unknown] =
+        dataIdx != null
+          ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
+          : ([relativePath, fileData]) => [relativePath, null];
+      plugin.bulkUpdate({
+        addedOrModified: mapIterable(
+          chainIterables(
+            fileSystemChanges.addedFiles,
+            fileSystemChanges.modifiedFiles,
+          ),
+          mapFn,
+        ),
+        removed: mapIterable(fileSystemChanges.removedFiles, mapFn),
+      });
+    });
+  }
+
   static H: HType = H;
 }
 
@@ -1065,6 +1084,9 @@ function* chainIterables<T>(
   ...iterables: ReadonlyArray<Iterable<T>>
 ): Iterator<T> {
   for (const iterable of iterables) {
+    yield* iterable;
+  }
+}
     yield* iterable;
   }
 }
