@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<919ac912df195d04796dd62cb68839d2>>
+ * @generated SignedSource<<462548bb01970bd5a18c5edf1ee17187>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -75,10 +75,27 @@ export type CacheManagerWriteOptions = Readonly<{
   onWriteError: (error: Error) => void;
 }>;
 export type CanonicalPath = string;
-export type ChangeEvent = {
+/**
+ * An object passed to TreeFS methods that captures file system observations
+ * relevant to incremental invalidation. TreeFS will populate the `existence`
+ * and `modification` sets with canonical (root-relative) paths. The `haste`
+ * set is not written by TreeFS but is included so that a single object can
+ * capture all invalidation data for a resolution.
+ */
+export type InvalidationData = Readonly<{
+  existence: Set<CanonicalPath>;
+  modification: Set<CanonicalPath>;
+  haste: Set<string>;
+}>;
+export type ChangedFileMetadata = Readonly<{
+  isSymlink: boolean;
+  modifiedTime?: null | undefined | number;
+}>;
+export type ChangeEvent = Readonly<{
   logger: null | undefined | RootPerfLogger;
-  eventsQueue: EventsQueue;
-};
+  changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>;
+  rootDir: string;
+}>;
 export type ChangeEventMetadata = {
   modifiedTime: null | undefined | number;
   size: null | undefined | number;
@@ -128,15 +145,6 @@ export type WatcherStatus =
     };
 export type DuplicatesSet = Map<string, number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
-export type EventsQueue = Array<{
-  filePath: Path;
-  metadata: ChangeEventMetadata;
-  type: string;
-}>;
-export type FileMapDelta<T = null | void> = Readonly<{
-  removed: Iterable<[CanonicalPath, T]>;
-  addedOrModified: Iterable<[CanonicalPath, T]>;
-}>;
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
@@ -183,16 +191,10 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta<null | undefined | PerFileData>): void;
+  onChanged(
+    changes: ReadonlyFileSystemChanges<null | undefined | PerFileData>,
+  ): void;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | PerFileData,
-  ): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | PerFileData,
-  ): void;
   getCacheKey(): string;
   getWorker(): null | undefined | FileMapPluginWorker;
 }
@@ -260,8 +262,10 @@ export interface FileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -272,7 +276,7 @@ export interface FileSystem {
     subpath: string,
     opts: {
       breakOnSegment: null | undefined | string;
-      invalidatedBy: null | undefined | Set<string>;
+      invalidatedBy: null | undefined | InvalidationData;
       subpathType: 'f' | 'd';
     },
   ): null | undefined | {absolutePath: string; containerRelativePath: string};
@@ -342,10 +346,38 @@ export type HasteMapItem = {
   [platform: string]: HasteMapItemMetadata;
 };
 export type HasteMapItemMetadata = [string, number];
+export interface FileSystemListener {
+  directoryAdded(canonicalPath: CanonicalPath): void;
+  directoryRemoved(canonicalPath: CanonicalPath): void;
+  fileAdded(canonicalPath: CanonicalPath, data: FileMetadata): void;
+  fileModified(
+    canonicalPath: CanonicalPath,
+    oldData: FileMetadata,
+    newData: FileMetadata,
+  ): void;
+  fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
+}
+export interface ReadonlyFileSystemChanges<T = FileMetadata> {
+  readonly addedDirectories: Iterable<CanonicalPath>;
+  readonly removedDirectories: Iterable<CanonicalPath>;
+  readonly addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+}
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): null | undefined | FileMetadata;
-  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
+  remove(
+    filePath: Path,
+    listener?: FileSystemListener,
+  ): null | undefined | FileMetadata;
+  addOrModify(
+    filePath: Path,
+    fileMetadata: FileMetadata,
+    listener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    listener?: FileSystemListener,
+  ): void;
 }
 export type Path = string;
 export type ProcessFileFunction = (

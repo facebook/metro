@@ -90,10 +90,29 @@ export type CacheManagerWriteOptions = Readonly<{
 //  - Real (no symlinks in path, though the path itself may be a symlink)
 export type CanonicalPath = string;
 
-export type ChangeEvent = {
+/**
+ * An object passed to TreeFS methods that captures file system observations
+ * relevant to incremental invalidation. TreeFS will populate the `existence`
+ * and `modification` sets with canonical (root-relative) paths. The `haste`
+ * set is not written by TreeFS but is included so that a single object can
+ * capture all invalidation data for a resolution.
+ */
+export type InvalidationData = Readonly<{
+  existence: Set<CanonicalPath>,
+  modification: Set<CanonicalPath>,
+  haste: Set<string>,
+}>;
+
+export type ChangedFileMetadata = Readonly<{
+  isSymlink: boolean,
+  modifiedTime?: ?number,
+}>;
+
+export type ChangeEvent = Readonly<{
   logger: ?RootPerfLogger,
-  eventsQueue: EventsQueue,
-};
+  changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>,
+  rootDir: string,
+}>;
 
 export type ChangeEventMetadata = {
   modifiedTime: ?number, // Epoch ms
@@ -150,17 +169,6 @@ export type WatcherStatus =
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
-export type EventsQueue = Array<{
-  filePath: Path,
-  metadata: ChangeEventMetadata,
-  type: string,
-}>;
-
-export type FileMapDelta<T = null | void> = Readonly<{
-  removed: Iterable<[CanonicalPath, T]>,
-  addedOrModified: Iterable<[CanonicalPath, T]>,
-}>;
-
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
@@ -213,10 +221,8 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta<?PerFileData>): void;
+  onChanged(changes: ReadonlyFileSystemChanges<?PerFileData>): void;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
-  onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
   getWorker(): ?FileMapPluginWorker;
 }
@@ -292,8 +298,10 @@ export interface FileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -304,7 +312,7 @@ export interface FileSystem {
     subpath: string,
     opts: {
       breakOnSegment: ?string,
-      invalidatedBy: ?Set<string>,
+      invalidatedBy: ?InvalidationData,
       subpathType: 'f' | 'd',
     },
   ): ?{
@@ -322,7 +330,7 @@ export interface FileSystem {
    * Return information about the given path, whether a directory or file.
    * Always follow symlinks, and return a real path if it exists.
    */
-  lookup(mixedPath: Path): LookupResult;
+  lookup(mixedPath: Path, invalidatedBy?: InvalidationData): LookupResult;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
@@ -356,16 +364,9 @@ export type LookupResult =
       // could indicate an unwatched path, or a directory containing no watched
       // files).
       exists: false,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
-      // The real, normal, absolute path of the first path segment
-      // encountered that does not exist, or cannot be navigated through.
-      missing: string,
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
       // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -374,8 +375,6 @@ export type LookupResult =
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
       // The real, normal, absolute path of the file.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -423,10 +422,39 @@ export type HasteMapItem = {
 };
 export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
+export interface FileSystemListener {
+  directoryAdded(canonicalPath: CanonicalPath): void;
+  directoryRemoved(canonicalPath: CanonicalPath): void;
+
+  fileAdded(canonicalPath: CanonicalPath, data: FileMetadata): void;
+  fileModified(
+    canonicalPath: CanonicalPath,
+    oldData: FileMetadata,
+    newData: FileMetadata,
+  ): void;
+  fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
+}
+
+export interface ReadonlyFileSystemChanges<+T = FileMetadata> {
+  +addedDirectories: Iterable<CanonicalPath>;
+  +removedDirectories: Iterable<CanonicalPath>;
+
+  +addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  +modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  +removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+}
+
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): ?FileMetadata;
-  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
+  remove(filePath: Path, listener?: FileSystemListener): ?FileMetadata;
+  addOrModify(
+    filePath: Path,
+    fileMetadata: FileMetadata,
+    listener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    listener?: FileSystemListener,
+  ): void;
 }
 
 export type Path = string;

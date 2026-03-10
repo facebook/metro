@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {CanonicalPath, FileData, FileMetadata} from '../../flow-types';
+import type {
+  CanonicalPath,
+  FileData,
+  FileMetadata,
+  FileSystemListener,
+} from '../../flow-types';
 import type TreeFSType from '../TreeFS';
 
 import H from '../../constants';
@@ -361,132 +366,130 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
 
     test.each([
-      ['/A/B/C/a', '/A/B/C/a/package.json', '', []],
-      ['/A/B/C/a/b', '/A/B/C/a/package.json', 'b', ['/A/B/C/a/b/package.json']],
+      ['/A/B/C/a', '/A/B/C/a/package.json', '', [], []],
+      ['/A/B/C/a/b', '/A/B/C/a/package.json', 'b', ['a/b/package.json'], []],
       [
         '/A/B/C/a/package.json',
         '/A/B/C/a/package.json',
         'package.json',
-        ['/A/B/C/a/package.json'],
+        ['a/package.json'],
+        [],
       ],
       [
         '/A/B/C/a/b/notexists',
         '/A/B/C/a/package.json',
         'b/notexists',
-        ['/A/B/C/a/b/notexists', '/A/B/C/a/b/package.json'],
+        ['a/b/notexists', 'a/b/package.json'],
+        [],
       ],
-      ['/A/B/C/a/b/c', '/A/B/C/a/b/c/package.json', '', []],
+      ['/A/B/C/a/b/c', '/A/B/C/a/b/c/package.json', '', [], []],
       [
         '/A/B/C/other',
         '/A/package.json',
         'B/C/other',
-        ['/A/B/C/other', '/A/B/C/package.json', '/A/B/package.json'],
+        ['other', 'package.json', '../package.json'],
+        [],
       ],
       [
         '/A/B/C',
         '/A/package.json',
         'B/C',
-        ['/A/B/C/package.json', '/A/B/package.json'],
+        ['package.json', '../package.json'],
+        [],
       ],
-      ['/A/B', '/A/package.json', 'B', ['/A/B/package.json']],
+      ['/A/B', '/A/package.json', 'B', ['../package.json'], []],
       [
         '/A/B/foo',
         '/A/package.json',
         'B/foo',
-
-        ['/A/B/foo', '/A/B/package.json'],
+        ['../foo', '../package.json'],
+        [],
       ],
-      ['/A/foo', '/A/package.json', 'foo', ['/A/foo']],
-      ['/foo', null, null, ['/foo', '/package.json']],
+      ['/A/foo', '/A/package.json', 'foo', ['../../foo'], []],
+      ['/foo', null, null, ['../../../foo', '../../../package.json'], []],
       [
         '/A/B/C/a/b/c/d/link-to-C/foo.js',
         '/A/B/C/a/b/c/package.json',
         'd/link-to-C/foo.js',
-        [
-          '/A/B/C/a/b/c/d/link-to-C',
-          '/A/B/C/a/b/c/d/package.json',
-          '/A/B/C/foo.js',
-          '/A/B/C/package.json',
-        ],
+        ['a/b/c/d/package.json', 'foo.js', 'package.json'],
+        ['a/b/c/d/link-to-C'],
       ],
       [
         '/A/B/C/a/b/c/d/link-to-B/C/foo.js',
         '/A/B/C/a/b/c/package.json',
         'd/link-to-B/C/foo.js',
-        [
-          '/A/B/C/a/b/c/d/link-to-B',
-          '/A/B/C/a/b/c/d/package.json',
-          '/A/B/C/foo.js',
-          '/A/B/C/package.json',
-          '/A/B/package.json',
-        ],
+        ['a/b/c/d/package.json', 'foo.js', 'package.json', '../package.json'],
+        ['a/b/c/d/link-to-B'],
       ],
       [
         '/A/B/C/a/b/c/d/link-to-A/B/C/foo.js',
         '/A/package.json',
         'B/C/foo.js',
-        [
-          '/A/B/C/a/b/c/d/link-to-A',
-          '/A/B/C/foo.js',
-          '/A/B/C/package.json',
-          '/A/B/package.json',
-        ],
+        ['foo.js', 'package.json', '../package.json'],
+        ['a/b/c/d/link-to-A'],
       ],
       [
         '/A/B/C/a/1/foo.js',
         '/A/B/C/a/1/real-package.json',
         'foo.js',
-        ['/A/B/C/a/1/foo.js', '/A/B/C/a/1/package.json'],
+        ['a/1/foo.js'],
+        ['a/1/package.json'],
       ],
       [
         '/A/B/C/a/2/foo.js',
         '/A/B/C/a/package.json',
         '2/foo.js',
-        [
-          '/A/B/C/a/2/foo.js',
-          '/A/B/C/a/2/notexist-package.json',
-          '/A/B/C/a/2/package.json',
-        ],
+        ['a/2/foo.js', 'a/2/notexist-package.json'],
+        ['a/2/package.json'],
       ],
       [
         '/A/B/C/a/n_m/pkg/notexist.js',
         '/A/B/C/a/n_m/pkg/package.json',
         'notexist.js',
-        ['/A/B/C/a/n_m/pkg/notexist.js'],
+        ['a/n_m/pkg/notexist.js'],
+        [],
       ],
       [
         '/A/B/C/a/n_m/pkg/subpath/notexist.js',
         '/A/B/C/a/n_m/pkg/subpath/package.json',
         'notexist.js',
-        ['/A/B/C/a/n_m/pkg/subpath/notexist.js'],
+        ['a/n_m/pkg/subpath/notexist.js'],
+        [],
       ],
       [
         '/A/B/C/a/n_m/pkg/otherpath/notexist.js',
         '/A/B/C/a/n_m/pkg/package.json',
         'otherpath/notexist.js',
-        ['/A/B/C/a/n_m/pkg/otherpath'],
+        ['a/n_m/pkg/otherpath'],
+        [],
       ],
       // pkg3 does not exist, doesn't look beyond the containing n_m
-      ['/A/B/C/a/n_m/pkg3/foo.js', null, null, ['/A/B/C/a/n_m/pkg3']],
+      ['/A/B/C/a/n_m/pkg3/foo.js', null, null, ['a/n_m/pkg3'], []],
       // Does not look beyond n_m, if n_m does not exist
-      ['/A/B/C/a/b/n_m/pkg/foo', null, null, ['/A/B/C/a/b/n_m']],
+      ['/A/B/C/a/b/n_m/pkg/foo', null, null, ['a/b/n_m'], []],
       [
         '/A/B/C/n_m/workspace/link-to-pkg/subpath',
         '/A/B/workspace-pkg/package.json',
         'subpath',
-        ['/A/B/C/n_m/workspace/link-to-pkg', '/A/B/workspace-pkg/subpath'],
+        ['../workspace-pkg/subpath'],
+        ['n_m/workspace/link-to-pkg'],
       ],
     ])(
-      '%s => %s (relative %s, invalidatedBy %s)',
+      '%s => %s (relative %s, existence %s, modification %s)',
       (
         startPath,
         expectedPath,
         expectedRelativeSubpath,
-        expectedInvalidatedBy,
+        expectedExistence,
+        expectedModification,
       ) => {
         const pathMap = (normalPosixPath: string) =>
           mockPathModule.resolve(p('/A/B/C'), p(normalPosixPath));
-        const invalidatedBy = new Set<string>();
+        const invalidatedBy = {
+          existence: new Set<string>(),
+          modification: new Set<string>(),
+          haste: new Set<string>(),
+        };
         expect(
           tfs.hierarchicalLookup(p(startPath), 'package.json', {
             breakOnSegment: 'n_m',
@@ -501,7 +504,12 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
                 containerRelativePath: p(expectedRelativeSubpath),
               },
         );
-        expect(invalidatedBy).toEqual(new Set(expectedInvalidatedBy.map(p)));
+        expect(invalidatedBy.existence).toEqual(
+          new Set(expectedExistence.map(p)),
+        );
+        expect(invalidatedBy.modification).toEqual(
+          new Set(expectedModification.map(p)),
+        );
       },
     );
   });
@@ -968,6 +976,165 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       // A second call re-computes
       expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
       expect(mockProcessFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('change listener', () => {
+    let simpleTfs: TreeFSType;
+    const logChange = jest.fn();
+    const listener: FileSystemListener = {
+      fileAdded: (...args) => logChange('fileAdded', ...args),
+      fileModified: (...args) => logChange('fileModified', ...args),
+      fileRemoved: (...args) => logChange('fileRemoved', ...args),
+      directoryAdded: (...args) => logChange('directoryAdded', ...args),
+      directoryRemoved: (...args) => logChange('directoryRemoved', ...args),
+    };
+
+    beforeEach(() => {
+      logChange.mockClear();
+      simpleTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('existing.js'), [123, 0, 0, '', 0]],
+          [p('dir/nested.js'), [456, 0, 0, '', 0]],
+          [p('mylink'), [0, 0, 0, '', p('./dir')]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+    });
+
+    describe('addOrModify with listener', () => {
+      test('tracks added files when adding a new file', () => {
+        simpleTfs.addOrModify(p('new.js'), [789, 0, 0, '', 0], listener);
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('new.js'), [789, 0, 0, '', 0]],
+        ]);
+      });
+
+      test('tracks modified files when modifying an existing file', () => {
+        simpleTfs.addOrModify(p('existing.js'), [999, 0, 0, '', 0], listener);
+
+        expect(logChange.mock.calls).toEqual([
+          [
+            'fileModified',
+            p('existing.js'),
+            [123, 0, 0, '', 0],
+            [999, 0, 0, '', 0],
+          ],
+        ]);
+      });
+
+      test('tracks new directories when adding a file in a new directory', () => {
+        simpleTfs.addOrModify(
+          p('newdir/file.js'),
+          [123, 0, 0, '', '', 0, null],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['directoryAdded', p('newdir')],
+          ['fileAdded', p('newdir/file.js'), [123, 0, 0, '', '', 0, null]],
+        ]);
+      });
+
+      test('tracks multiple new directories for deeply nested paths', () => {
+        simpleTfs.addOrModify(
+          p('a/b/c/file.js'),
+          [123, 0, 0, '', '', 0, null],
+          listener,
+        );
+        expect(logChange.mock.calls).toEqual([
+          ['directoryAdded', p('a')],
+          ['directoryAdded', p('a/b')],
+          ['directoryAdded', p('a/b/c')],
+          ['fileAdded', p('a/b/c/file.js'), [123, 0, 0, '', '', 0, null]],
+        ]);
+      });
+
+      test('does not track existing directories as new', () => {
+        simpleTfs.addOrModify(
+          p('dir/another.js'),
+          [789, 0, 0, '', '', 0, null],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('dir/another.js'), [789, 0, 0, '', '', 0, null]],
+        ]);
+      });
+    });
+
+    describe('bulkAddOrModify with listener', () => {
+      test('tracks multiple added files', () => {
+        simpleTfs.bulkAddOrModify(
+          new Map<CanonicalPath, FileMetadata>([
+            [p('file1.js'), [1, 0, 0, '', '', 0, null]],
+            [p('file2.js'), [2, 0, 0, '', '', 0, null]],
+            [p('file3.js'), [3, 0, 0, '', '', 0, null]],
+          ]),
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('file1.js'), [1, 0, 0, '', '', 0, null]],
+          ['fileAdded', p('file2.js'), [2, 0, 0, '', '', 0, null]],
+          ['fileAdded', p('file3.js'), [3, 0, 0, '', '', 0, null]],
+        ]);
+      });
+    });
+
+    test('accumulates changes across multiple operations', () => {
+      simpleTfs.addOrModify(p('new1.js'), [1, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(p('new2/file.js'), [2, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(p('new2/file.js'), [3, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(
+        p('new3/nested/file.js'),
+        [3, 0, 0, '', 0],
+        listener,
+      );
+      simpleTfs.remove(p('existing.js'), listener);
+      simpleTfs.remove(p('new2/file.js'), listener);
+
+      expect(logChange.mock.calls).toEqual([
+        ['fileAdded', p('new1.js'), [1, 0, 0, '', 0]],
+        ['directoryAdded', p('new2')],
+        ['fileAdded', p('new2/file.js'), [2, 0, 0, '', 0]],
+        ['fileModified', p('new2/file.js'), [2, 0, 0, '', 0], [3, 0, 0, '', 0]],
+        ['directoryAdded', p('new3')],
+        ['directoryAdded', p('new3/nested')],
+        ['fileAdded', p('new3/nested/file.js'), [3, 0, 0, '', 0]],
+        ['fileRemoved', p('existing.js'), [123, 0, 0, '', 0]],
+        ['fileRemoved', p('new2/file.js'), [3, 0, 0, '', 0]],
+        ['directoryRemoved', p('new2')],
+      ]);
+    });
+
+    describe('symlinks with listener', () => {
+      test('tracks added files when adding a symlink', () => {
+        simpleTfs.addOrModify(
+          p('link-to-existing'),
+          [0, 0, 0, '', p('./existing.js')],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          [
+            'fileAdded',
+            p('link-to-existing'),
+            [0, 0, 0, '', p('./existing.js')],
+          ],
+        ]);
+      });
+
+      test('tracks removed symlinks with their metadata', () => {
+        simpleTfs.remove(p('mylink'), listener);
+        expect(logChange.mock.calls).toEqual([
+          ['fileRemoved', p('mylink'), [0, 0, 0, '', p('./dir')]],
+        ]);
+      });
     });
   });
 });

@@ -12,6 +12,8 @@
 import type {InputOptions} from '..';
 import type {
   BuildResult,
+  CanonicalPath,
+  ChangedFileMetadata,
   ChangeEvent,
   ChangeEventMetadata,
   FileData,
@@ -19,6 +21,7 @@ import type {
   FileSystem,
   HasteMap,
   MockMap,
+  ReadonlyFileSystemChanges,
   WatcherBackendOptions,
   WorkerSetupArgs,
 } from '../flow-types';
@@ -1448,7 +1451,10 @@ describe('FileMap', () => {
   test('distributes work across workers', async () => {
     const jestWorker = require('jest-worker').Worker;
     const path = require('path');
-    const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
+    const dependencyExtractor = path.resolve(
+      __dirname,
+      '../plugins/dependencies/__tests__/mockDependencyExtractor.js',
+    );
     await buildNewFileMap(
       {
         maxWorkers: 4,
@@ -1634,12 +1640,57 @@ describe('FileMap', () => {
   });
 
   describe('file system changes processing', () => {
-    function waitForItToChange(
-      fileMap: FileMap,
-    ): Promise<{eventsQueue: ChangeEvent}> {
+    function waitForItToChange(fileMap: FileMap): Promise<ChangeEvent> {
       return new Promise(resolve => {
         fileMap.once('change', resolve);
       });
+    }
+
+    type ChangeEntry = [CanonicalPath, ChangedFileMetadata];
+
+    function expectChanges(
+      changes: ReadonlyFileSystemChanges<ChangedFileMetadata>,
+      expected: Readonly<{
+        addedFiles?: ReadonlyArray<ChangeEntry>,
+        modifiedFiles?: ReadonlyArray<ChangeEntry>,
+        removedFiles?: ReadonlyArray<ChangeEntry>,
+        addedDirectories?: ReadonlyArray<CanonicalPath>,
+        removedDirectories?: ReadonlyArray<CanonicalPath>,
+      }>,
+    ): void {
+      const sortByPath = (a: ChangeEntry, b: ChangeEntry): number =>
+        a[0].localeCompare(b[0]);
+
+      const toSortedArray = (
+        iterable: Iterable<Readonly<[string, ChangedFileMetadata]>>,
+      ): Array<ChangeEntry> =>
+        [...iterable].map(([p, m]): ChangeEntry => [p, m]).sort(sortByPath);
+
+      expect(toSortedArray(changes.addedFiles)).toEqual(
+        (expected.addedFiles ?? []).slice().sort(sortByPath),
+      );
+      expect(toSortedArray(changes.modifiedFiles)).toEqual(
+        (expected.modifiedFiles ?? []).slice().sort(sortByPath),
+      );
+      expect(toSortedArray(changes.removedFiles)).toEqual(
+        (expected.removedFiles ?? []).slice().sort(sortByPath),
+      );
+      expect([...changes.addedDirectories].sort()).toEqual(
+        (expected.addedDirectories ?? []).slice().sort(),
+      );
+      expect([...changes.removedDirectories].sort()).toEqual(
+        (expected.removedDirectories ?? []).slice().sort(),
+      );
+    }
+
+    function countFileChanges(
+      changes: ReadonlyFileSystemChanges<ChangedFileMetadata>,
+    ): number {
+      return (
+        [...changes.addedFiles].length +
+        [...changes.modifiedFiles].length +
+        [...changes.removedFiles].length
+      );
     }
 
     function mockDeleteFile(root: string, relativePath: string) {
@@ -1693,18 +1744,16 @@ describe('FileMap', () => {
         expect(hasteMap.getModule('Banana')).toBe(filePath);
         mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
         mockDeleteFile(path.join('/', 'project', 'fruits'), 'Banana.js');
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toHaveLength(1);
-        const deletedBanana = {
-          filePath,
-          metadata: {
-            modifiedTime: null,
-            size: null,
-            type: 'f',
-          },
-          type: 'delete',
-        };
-        expect(eventsQueue).toEqual([deletedBanana]);
+        const {changes} = await waitForItToChange(fileMap);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          removedFiles: [
+            [
+              path.join('fruits', 'Banana.js'),
+              {isSymlink: false, modifiedTime: 32},
+            ],
+          ],
+        });
         // Verify that the initial result has been updated
         expect(fileSystem.exists(filePath)).toBe(false);
         expect(hasteMap.getModuleNameByPath(filePath)).toBeNull();
@@ -1718,22 +1767,10 @@ describe('FileMap', () => {
       size: 55,
     };
 
-    const MOCK_DELETE_FILE: ChangeEventMetadata = {
-      type: 'f',
-      modifiedTime: null,
-      size: null,
-    };
-
     const MOCK_CHANGE_LINK: ChangeEventMetadata = {
       type: 'l',
       modifiedTime: 46,
       size: 5,
-    };
-
-    const MOCK_DELETE_LINK: ChangeEventMetadata = {
-      type: 'l',
-      modifiedTime: null,
-      size: null,
     };
 
     const MOCK_CHANGE_FOLDER: ChangeEventMetadata = {
@@ -1760,22 +1797,33 @@ describe('FileMap', () => {
         });
         e.emitFileEvent({
           event: 'touch',
+          relativePath: 'Banana.js',
+          metadata: MOCK_CHANGE_FILE,
+        });
+        e.emitFileEvent({
+          event: 'touch',
           relativePath: 'Pear.js',
           metadata: MOCK_CHANGE_FILE,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toEqual([
-          {
-            filePath: path.join('/', 'project', 'fruits', 'Tomato.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'add',
-          },
-          {
-            filePath: path.join('/', 'project', 'fruits', 'Pear.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'change',
-          },
-        ]);
+        const {changes} = await waitForItToChange(fileMap);
+        expectChanges(changes, {
+          addedFiles: [
+            [
+              path.join('fruits', 'Tomato.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+          modifiedFiles: [
+            [
+              path.join('fruits', 'Banana.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+            [
+              path.join('fruits', 'Pear.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+        });
         expect(
           fileSystem.exists(path.join('/', 'project', 'fruits', 'Tomato.js')),
         ).toBe(true);
@@ -1801,8 +1849,8 @@ describe('FileMap', () => {
         relativePath: 'Tomato.js',
         metadata: MOCK_CHANGE_FILE,
       });
-      const {eventsQueue} = await waitForItToChange(fileMap);
-      expect(eventsQueue).toHaveLength(1);
+      const {changes} = await waitForItToChange(fileMap);
+      expect(countFileChanges(changes)).toBe(1);
     });
 
     fm_it(
@@ -1847,8 +1895,8 @@ describe('FileMap', () => {
         expect(fileSystem.getSha1(bananaPath)).toBe(originalHash);
         expect(hasteMap.getModule('Banana')).toBe(bananaPath);
 
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toHaveLength(1);
+        const {changes} = await waitForItToChange(fileMap);
+        expect(countFileChanges(changes)).toBe(1);
 
         // After the 'change' event is emitted, we should have new data
         expect(fileSystem.linkStats(bananaPath)).toEqual({
@@ -1879,14 +1927,15 @@ describe('FileMap', () => {
           relativePath: 'LinkToStrawberry.js',
           metadata: MOCK_CHANGE_LINK,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toEqual([
-          {
-            filePath: path.join(fruitsRoot, 'Strawberry.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'change',
-          },
-        ]);
+        const {changes} = await waitForItToChange(fileMap);
+        expectChanges(changes, {
+          modifiedFiles: [
+            [
+              path.join('fruits', 'Strawberry.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+        });
         expect(
           fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
         ).toBeNull();
@@ -1909,19 +1958,19 @@ describe('FileMap', () => {
           relativePath: 'LinkToStrawberry.js',
           metadata: MOCK_CHANGE_LINK,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toEqual([
-          {
-            filePath: path.join(fruitsRoot, 'Strawberry.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'change',
-          },
-          {
-            filePath: path.join(fruitsRoot, 'LinkToStrawberry.js'),
-            metadata: MOCK_CHANGE_LINK,
-            type: 'change',
-          },
-        ]);
+        const {changes} = await waitForItToChange(fileMap);
+        expectChanges(changes, {
+          modifiedFiles: [
+            [
+              path.join('fruits', 'LinkToStrawberry.js'),
+              {isSymlink: true, modifiedTime: 46},
+            ],
+            [
+              path.join('fruits', 'Strawberry.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+        });
         expect(
           fileSystem.linkStats(path.join(fruitsRoot, 'LinkToStrawberry.js')),
         ).toEqual({fileType: 'l', modifiedTime: 46, size: 5});
@@ -1934,12 +1983,15 @@ describe('FileMap', () => {
       async ({fileMap}) => {
         const {fileSystem} = await fileMap.build();
         const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        mockFs[
+          path.join('/', 'project', 'fruits', 'node_modules', 'apple.js')
+        ] = '';
         e.emitFileEvent({
           event: 'touch',
           relativePath: path.join('node_modules', 'apple.js'),
           metadata: MOCK_CHANGE_FILE,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
         const filePath = path.join(
           '/',
           'project',
@@ -1947,11 +1999,44 @@ describe('FileMap', () => {
           'node_modules',
           'apple.js',
         );
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_CHANGE_FILE, type: 'add'},
-        ]);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          addedFiles: [
+            [
+              path.join('fruits', 'node_modules', 'apple.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+          addedDirectories: [path.join('fruits', 'node_modules')],
+        });
         expect(fileSystem.exists(filePath)).toBe(true);
+      },
+    );
+
+    fm_it(
+      'emits directory removed when removing the last file from a directory',
+      async ({fileMap}) => {
+        await fileMap.build();
+        const e = mockEmitters[path.join('/', 'project', 'fruits')];
+        e.emitFileEvent({
+          event: 'delete',
+          relativePath: 'lonely.js',
+        });
+        const {changes} = await waitForItToChange(fileMap);
+        expectChanges(changes, {
+          removedFiles: [
+            [
+              path.join('fruits', 'lonely.js'),
+              {isSymlink: false, modifiedTime: 32},
+            ],
+          ],
+          removedDirectories: [path.join('fruits')],
+        });
+      },
+      {
+        mockFs: {
+          [path.join('/', 'project', 'fruits', 'lonely.js')]: '// lonely',
+        },
       },
     );
 
@@ -1972,12 +2057,17 @@ describe('FileMap', () => {
           relativePath: 'Banana.unwatched',
           metadata: MOCK_CHANGE_FILE,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
         const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_CHANGE_FILE, type: 'change'},
-        ]);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          modifiedFiles: [
+            [
+              path.join('fruits', 'Banana.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+        });
         expect(fileSystem.exists(filePath)).toBe(true);
       },
     );
@@ -1997,12 +2087,17 @@ describe('FileMap', () => {
           event: 'delete',
           relativePath: 'Unknown.ext',
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
         const filePath = path.join('/', 'project', 'fruits', 'Banana.js');
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_DELETE_FILE, type: 'delete'},
-        ]);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          removedFiles: [
+            [
+              path.join('fruits', 'Banana.js'),
+              {isSymlink: false, modifiedTime: 32},
+            ],
+          ],
+        });
         expect(fileSystem.exists(filePath)).toBe(false);
         expect(console.warn).not.toHaveBeenCalled();
         expect(console.error).not.toHaveBeenCalled();
@@ -2022,17 +2117,22 @@ describe('FileMap', () => {
           relativePath: 'LinkToStrawberry.ext',
           metadata: MOCK_CHANGE_LINK,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
         const filePath = path.join(
           '/',
           'project',
           'fruits',
           'LinkToStrawberry.ext',
         );
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath, metadata: MOCK_CHANGE_LINK, type: 'add'},
-        ]);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          addedFiles: [
+            [
+              path.join('fruits', 'LinkToStrawberry.ext'),
+              {isSymlink: true, modifiedTime: 46},
+            ],
+          ],
+        });
         const linkStats = fileSystem.linkStats(filePath);
         expect(linkStats).toEqual({
           fileType: 'l',
@@ -2074,12 +2174,17 @@ describe('FileMap', () => {
           event: 'delete',
           relativePath: 'LinkToStrawberry.js',
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
 
-        expect(eventsQueue).toHaveLength(1);
-        expect(eventsQueue).toEqual([
-          {filePath: symlinkPath, metadata: MOCK_DELETE_LINK, type: 'delete'},
-        ]);
+        expect(countFileChanges(changes)).toBe(1);
+        expectChanges(changes, {
+          removedFiles: [
+            [
+              path.join('fruits', 'LinkToStrawberry.js'),
+              {isSymlink: true, modifiedTime: 32},
+            ],
+          ],
+        });
 
         // Symlink is deleted without affecting the Haste module or real file.
         expect(fileSystem.exists(symlinkPath)).toBe(false);
@@ -2107,20 +2212,20 @@ describe('FileMap', () => {
           relativePath: 'Orange.android.js',
           metadata: MOCK_CHANGE_FILE,
         });
-        const {eventsQueue} = await waitForItToChange(fileMap);
-        expect(eventsQueue).toHaveLength(2);
-        expect(eventsQueue).toEqual([
-          {
-            filePath: path.join('/', 'project', 'fruits', 'Orange.ios.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'change',
-          },
-          {
-            filePath: path.join('/', 'project', 'fruits', 'Orange.android.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'change',
-          },
-        ]);
+        const {changes} = await waitForItToChange(fileMap);
+        expect(countFileChanges(changes)).toBe(2);
+        expectChanges(changes, {
+          modifiedFiles: [
+            [
+              path.join('fruits', 'Orange.android.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+            [
+              path.join('fruits', 'Orange.ios.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+        });
         expect(
           hasteMap.getModuleNameByPath(
             path.join('/', 'project', 'fruits', 'Orange.ios.js'),
@@ -2174,25 +2279,28 @@ describe('FileMap', () => {
           metadata: MOCK_CHANGE_FILE,
         });
 
-        const {eventsQueue} = await waitForItToChange(fileMap);
+        const {changes} = await waitForItToChange(fileMap);
 
         // No duplicate warnings or errors should be printed.
         expect(console.warn).not.toHaveBeenCalled();
         expect(console.error).not.toHaveBeenCalled();
 
-        expect(eventsQueue).toHaveLength(2);
-        expect(eventsQueue).toEqual([
-          {
-            filePath: path.join('/', 'project', 'vegetables', 'Melon.js'),
-            metadata: MOCK_DELETE_FILE,
-            type: 'delete',
-          },
-          {
-            filePath: path.join('/', 'project', 'fruits', 'Melon.js'),
-            metadata: MOCK_CHANGE_FILE,
-            type: 'add',
-          },
-        ]);
+        expect(countFileChanges(changes)).toBe(2);
+        expectChanges(changes, {
+          addedFiles: [
+            [
+              path.join('fruits', 'Melon.js'),
+              {isSymlink: false, modifiedTime: 45},
+            ],
+          ],
+          removedFiles: [
+            [
+              path.join('vegetables', 'Melon.js'),
+              {isSymlink: false, modifiedTime: 32},
+            ],
+          ],
+          removedDirectories: [path.join('vegetables')],
+        });
         expect(hasteMap.getModule('Melon')).toEqual(newPath);
       },
     );
@@ -2369,8 +2477,8 @@ describe('FileMap', () => {
             relativePath: path.join('tomato.js', 'index.js'),
             metadata: MOCK_CHANGE_FILE,
           });
-          const {eventsQueue} = await waitForItToChange(fileMap);
-          expect(eventsQueue).toHaveLength(1);
+          const {changes} = await waitForItToChange(fileMap);
+          expect(countFileChanges(changes)).toBe(1);
         },
       );
     });

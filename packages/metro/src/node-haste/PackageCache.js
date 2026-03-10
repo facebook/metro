@@ -9,9 +9,14 @@
  * @oncall react_native
  */
 
+import type {InvalidationData} from 'metro-file-map';
+
 import Package from './Package';
 
-type GetClosestPackageFn = (absoluteFilePath: string) => ?{
+type GetClosestPackageFn = (
+  absoluteFilePath: string,
+  invalidatedBy: ?InvalidationData,
+) => ?{
   packageJsonPath: string,
   packageRelativePath: string,
 };
@@ -28,6 +33,9 @@ export class PackageCache {
     [filePath: string]: ?{
       packageJsonPath: string,
       packageRelativePath: string,
+      // Canonical paths observed during hierarchicalLookup. Stored so they
+      // can be replayed into the caller's InvalidationData on a cache hit.
+      storedInvalidatedBy: ?InvalidationData,
     },
     __proto__: null,
     ...
@@ -57,28 +65,79 @@ export class PackageCache {
 
   getPackageOf(
     absoluteModulePath: string,
+    invalidatedBy?: ?InvalidationData,
   ): ?{pkg: Package, packageRelativePath: string} {
-    let packagePathAndSubpath =
-      this._packagePathAndSubpathByModulePath[absoluteModulePath];
-    if (
-      packagePathAndSubpath &&
-      this._packageCache[packagePathAndSubpath.packageJsonPath]
-    ) {
+    const cached = this._packagePathAndSubpathByModulePath[absoluteModulePath];
+    if (cached && this._packageCache[cached.packageJsonPath]) {
+      // Cache hit: replay stored invalidation paths into the caller's sets.
+      if (invalidatedBy != null) {
+        const stored = cached.storedInvalidatedBy;
+        if (stored != null) {
+          for (const p of stored.existence) {
+            invalidatedBy.existence.add(p);
+          }
+          for (const p of stored.modification) {
+            invalidatedBy.modification.add(p);
+          }
+        } else {
+          // No stored paths (previous caller was not tracking). Re-run
+          // hierarchicalLookup to collect them, then store for future hits.
+          const freshInvalidatedBy = {
+            existence: new Set<string>(),
+            modification: new Set<string>(),
+            haste: new Set<string>(),
+          };
+          this._getClosestPackage(absoluteModulePath, freshInvalidatedBy);
+          cached.storedInvalidatedBy = freshInvalidatedBy;
+          for (const p of freshInvalidatedBy.existence) {
+            invalidatedBy.existence.add(p);
+          }
+          for (const p of freshInvalidatedBy.modification) {
+            invalidatedBy.modification.add(p);
+          }
+        }
+      }
       return {
-        pkg: this._packageCache[packagePathAndSubpath.packageJsonPath],
-        packageRelativePath: packagePathAndSubpath.packageRelativePath,
+        pkg: this._packageCache[cached.packageJsonPath],
+        packageRelativePath: cached.packageRelativePath,
       };
     }
 
-    packagePathAndSubpath = this._getClosestPackage(absoluteModulePath);
-    if (!packagePathAndSubpath) {
+    // Cache miss: allocate fresh InvalidationData so we don't store the
+    // caller's pre-existing paths in the cache.
+    const isTracking = invalidatedBy != null;
+    let freshInvalidatedBy: ?InvalidationData = null;
+    if (isTracking) {
+      freshInvalidatedBy = {
+        existence: new Set<string>(),
+        modification: new Set<string>(),
+        haste: new Set<string>(),
+      };
+    }
+    const closestPackage = this._getClosestPackage(
+      absoluteModulePath,
+      freshInvalidatedBy,
+    );
+    if (!closestPackage) {
       return null;
     }
 
-    const packagePath = packagePathAndSubpath.packageJsonPath;
+    // Copy fresh paths into the caller's sets.
+    if (invalidatedBy != null && freshInvalidatedBy != null) {
+      for (const p of freshInvalidatedBy.existence) {
+        invalidatedBy.existence.add(p);
+      }
+      for (const p of freshInvalidatedBy.modification) {
+        invalidatedBy.modification.add(p);
+      }
+    }
 
-    this._packagePathAndSubpathByModulePath[absoluteModulePath] =
-      packagePathAndSubpath;
+    const packagePath = closestPackage.packageJsonPath;
+
+    this._packagePathAndSubpathByModulePath[absoluteModulePath] = {
+      ...closestPackage,
+      storedInvalidatedBy: freshInvalidatedBy,
+    };
     const modulePaths =
       this._modulePathsByPackagePath[packagePath] ?? new Set();
     modulePaths.add(absoluteModulePath);
@@ -86,7 +145,7 @@ export class PackageCache {
 
     return {
       pkg: this.getPackage(packagePath),
-      packageRelativePath: packagePathAndSubpath.packageRelativePath,
+      packageRelativePath: closestPackage.packageRelativePath,
     };
   }
 

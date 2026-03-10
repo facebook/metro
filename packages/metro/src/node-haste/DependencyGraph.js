@@ -22,6 +22,7 @@ import type {
   FileSystem,
   HasteMap,
   HealthCheckResult,
+  InvalidationData,
   WatcherStatus,
   default as MetroFileMap,
 } from 'metro-file-map';
@@ -29,6 +30,7 @@ import type {FileSystemLookup} from 'metro-resolver';
 
 import createFileMap from './DependencyGraph/createFileMap';
 import {ModuleResolver} from './DependencyGraph/ModuleResolution';
+import TrackedFileAccess from './DependencyGraph/TrackedFileAccess';
 import {PackageCache} from './PackageCache';
 import EventEmitter from 'events';
 import fs from 'fs';
@@ -67,6 +69,7 @@ export default class DependencyGraph extends EventEmitter {
   _hasteMap: HasteMap;
   #dependencyPlugin: ?DependencyPlugin;
   _moduleResolver: ModuleResolver<Package>;
+  #trackedFileAccess: ?TrackedFileAccess;
   _resolutionCache: Map<
     // Custom resolver options
     string | symbol,
@@ -150,10 +153,14 @@ export default class DependencyGraph extends EventEmitter {
     await this._initializedPromise;
   }
 
-  _onHasteChange({eventsQueue}: ChangeEvent) {
+  _onHasteChange({changes, rootDir}: ChangeEvent) {
     this._resolutionCache = new Map();
-    eventsQueue.forEach(({filePath}) =>
-      this.#packageCache.invalidate(filePath),
+    [
+      ...changes.addedFiles,
+      ...changes.modifiedFiles,
+      ...changes.removedFiles,
+    ].forEach(([canonicalPath]) =>
+      this.#packageCache.invalidate(path.join(rootDir, canonicalPath)),
     );
     this._createModuleResolver();
     this.emit('change');
@@ -172,6 +179,19 @@ export default class DependencyGraph extends EventEmitter {
       return {exists: false};
     };
 
+    const useTracking = this._config.resolver.unstable_incrementalResolution;
+    const trackedFileAccess = useTracking
+      ? new TrackedFileAccess(
+          this._fileSystem,
+          this._config.projectRoot,
+          this.#packageCache,
+          (name, platform) => this._hasteMap.getModule(name, platform, true),
+          (name, platform) => this._hasteMap.getPackage(name, platform, true),
+          this._config.resolver.assetResolutions,
+        )
+      : null;
+    this.#trackedFileAccess = trackedFileAccess;
+
     this._moduleResolver = new ModuleResolver({
       assetExts: new Set(this._config.resolver.assetExts),
       dirExists: (filePath: string) => {
@@ -182,33 +202,43 @@ export default class DependencyGraph extends EventEmitter {
       },
       disableHierarchicalLookup:
         this._config.resolver.disableHierarchicalLookup,
-      doesFileExist: this.doesFileExist,
+      doesFileExist: trackedFileAccess?.doesFileExist ?? this.doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
-      fileSystemLookup,
-      getHasteModulePath: (name, platform) =>
-        this._hasteMap.getModule(name, platform, true),
-      getHastePackagePath: (name, platform) =>
-        this._hasteMap.getPackage(name, platform, true),
+      fileSystemLookup: trackedFileAccess?.fileSystemLookup ?? fileSystemLookup,
+      getHasteModulePath:
+        trackedFileAccess != null
+          ? (name: string, _platform: ?string) =>
+              trackedFileAccess.resolveHasteModule(name)
+          : (name: string, platform: ?string) =>
+              this._hasteMap.getModule(name, platform, true),
+      getHastePackagePath:
+        trackedFileAccess != null
+          ? (name: string, _platform: ?string) =>
+              trackedFileAccess.resolveHastePackage(name)
+          : (name: string, platform: ?string) =>
+              this._hasteMap.getPackage(name, platform, true),
       mainFields: this._config.resolver.resolverMainFields,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       packageCache: this.#packageCache,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
-      resolveAsset: (dirPath: string, assetName: string, extension: string) => {
-        const basePath = dirPath + path.sep + assetName;
-        const assets = [
-          basePath + extension,
-          ...this._config.resolver.assetResolutions.map(
-            resolution => basePath + '@' + resolution + 'x' + extension,
-          ),
-        ]
-          .map(assetPath => fileSystemLookup(assetPath).realPath)
-          .filter(Boolean);
+      resolveAsset:
+        trackedFileAccess?.resolveAsset ??
+        ((dirPath: string, assetName: string, extension: string) => {
+          const basePath = dirPath + path.sep + assetName;
+          const assets = [
+            basePath + extension,
+            ...this._config.resolver.assetResolutions.map(
+              resolution => basePath + '@' + resolution + 'x' + extension,
+            ),
+          ]
+            .map(assetPath => fileSystemLookup(assetPath).realPath)
+            .filter(Boolean);
 
-        return assets.length ? assets : null;
-      },
+          return assets.length ? assets : null;
+        }),
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
       unstable_conditionNames: this._config.resolver.unstable_conditionNames,
@@ -223,13 +253,14 @@ export default class DependencyGraph extends EventEmitter {
 
   _getClosestPackage(
     absoluteModulePath: string,
+    invalidatedBy: ?InvalidationData,
   ): ?{packageJsonPath: string, packageRelativePath: string} {
     const result = this._fileSystem.hierarchicalLookup(
       absoluteModulePath,
       'package.json',
       {
         breakOnSegment: 'node_modules',
-        invalidatedBy: null,
+        invalidatedBy,
         subpathType: 'f',
       },
     );
@@ -243,7 +274,8 @@ export default class DependencyGraph extends EventEmitter {
 
   _createPackageCache(): PackageCache {
     return new PackageCache({
-      getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
+      getClosestPackage: (absolutePath, invalidatedBy) =>
+        this._getClosestPackage(absolutePath, invalidatedBy),
     });
   }
 
@@ -309,38 +341,52 @@ export default class DependencyGraph extends EventEmitter {
     },
   ): BundlerResolution {
     const to = dependency.name;
-    const isSensitiveToOriginFolder =
-      // Resolution is always relative to the origin folder unless we assume a flat node_modules
-      !assumeFlatNodeModules ||
-      // Path requests are resolved relative to the origin folder
-      to.includes('/') ||
-      to === '.' ||
-      to === '..' ||
-      // Preserve standard assumptions under node_modules
-      originModulePath.includes(path.sep + 'node_modules' + path.sep);
+    let resolution: ?BundlerResolution;
+    let updateResolverCache: ?(BundlerResolution) => void;
 
-    // Compound key for the resolver cache
-    const resolverOptionsKey =
-      JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
-    const originKey = isSensitiveToOriginFolder
-      ? path.dirname(originModulePath)
-      : '';
-    const targetKey =
-      to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
-    const platformKey = platform ?? NULL_PLATFORM;
+    // Don't use the resolver cache under unstable_incrementalResolution, since
+    // this would bypass collection of invalidations.
+    if (!this._config.resolver.unstable_incrementalResolution) {
+      const isSensitiveToOriginFolder =
+        // Resolution is always relative to the origin folder unless we assume a flat node_modules
+        !assumeFlatNodeModules ||
+        // Path requests are resolved relative to the origin folder
+        to.includes('/') ||
+        to === '.' ||
+        to === '..' ||
+        // Preserve standard assumptions under node_modules
+        originModulePath.includes(path.sep + 'node_modules' + path.sep);
 
-    // Traverse the resolver cache, which is a tree of maps
-    const mapByResolverOptions = this._resolutionCache;
-    const mapByOrigin = getOrCreateMap(
-      mapByResolverOptions,
-      resolverOptionsKey,
-    );
-    const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
-    const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
-    let resolution: ?BundlerResolution = mapByPlatform.get(platformKey);
+      // Compound key for the resolver cache
+      const resolverOptionsKey =
+        JSON.stringify(resolverOptions ?? {}, canonicalize) ?? '';
+      const originKey = isSensitiveToOriginFolder
+        ? path.dirname(originModulePath)
+        : '';
+      const targetKey =
+        to + (dependency.data.isESMImport === true ? '\0esm' : '\0cjs');
+      const platformKey = platform ?? NULL_PLATFORM;
+
+      // Traverse the resolver cache, which is a tree of maps
+      const mapByResolverOptions = this._resolutionCache;
+      const mapByOrigin = getOrCreateMap(
+        mapByResolverOptions,
+        resolverOptionsKey,
+      );
+      const mapByTarget = getOrCreateMap(mapByOrigin, originKey);
+      const mapByPlatform = getOrCreateMap(mapByTarget, targetKey);
+
+      updateResolverCache = (result: BundlerResolution) => {
+        mapByPlatform.set(platformKey, result);
+      };
+
+      // Check the cache
+      resolution = mapByPlatform.get(platformKey);
+    }
 
     if (!resolution) {
       try {
+        const invalidations = this.#trackedFileAccess?.startTracking(platform);
         resolution = this._moduleResolver.resolveDependency(
           originModulePath,
           dependency,
@@ -348,6 +394,13 @@ export default class DependencyGraph extends EventEmitter {
           platform,
           resolverOptions,
         );
+        if (invalidations != null) {
+          resolution = {
+            ...resolution,
+            unstable_invalidations: invalidations,
+          };
+        }
+        updateResolverCache?.(resolution);
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(originModulePath, error);
@@ -363,7 +416,6 @@ export default class DependencyGraph extends EventEmitter {
       }
     }
 
-    mapByPlatform.set(platformKey, resolution);
     return resolution;
   }
 

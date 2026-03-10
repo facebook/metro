@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<1f36861cea798d8cc2a5dc61293ecb1b>>
+ * @generated SignedSource<<3dfb807bf32043b2d9e812418a5e112d>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/lib/TreeFS.js
@@ -19,6 +19,7 @@ import type {
   FileData,
   FileMetadata,
   FileStats,
+  FileSystemListener,
   LookupResult,
   MutableFileSystem,
   Path,
@@ -122,9 +123,19 @@ declare class TreeFS implements MutableFileSystem {
    * for example: `a/b.js` -> `./a/b.js`
    */
   matchFiles(opts: MatchFilesOptions): Iterable<Path>;
-  addOrModify(mixedPath: Path, metadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
-  remove(mixedPath: Path): null | undefined | FileMetadata;
+  addOrModify(
+    mixedPath: Path,
+    metadata: FileMetadata,
+    changeListener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    changeListener?: FileSystemListener,
+  ): void;
+  remove(
+    mixedPath: Path,
+    changeListener?: FileSystemListener,
+  ): null | undefined | FileMetadata;
   /**
    * Given a start path (which need not exist), a subpath and type, and
    * optionally a 'breakOnSegment', performs the following:
@@ -141,8 +152,10 @@ declare class TreeFS implements MutableFileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If opts.invalidatedBy is given, collects canonical (root-relative) paths
+   * into its sets:
+   *   - existence: paths whose addition or removal may invalidate this result
+   *   - modification: symlinks traversed, whose target change may invalidate
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -153,7 +166,7 @@ declare class TreeFS implements MutableFileSystem {
     subpath: string,
     opts: {
       breakOnSegment: null | undefined | string;
-      invalidatedBy: null | undefined | Set<string>;
+      invalidatedBy: null | undefined | any;
       subpathType: 'f' | 'd';
     },
   ): null | undefined | {absolutePath: string; containerRelativePath: string};

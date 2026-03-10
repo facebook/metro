@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<81805d051693b746e75928fe6ed3dbca>>
+ * @generated SignedSource<<d9402d4670982b1e675e1edd9201cf75>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/MockPlugin.js
@@ -16,13 +16,13 @@
  */
 
 import type {
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
   MockMap as IMockMap,
   Path,
   RawMockMap,
+  ReadonlyFileSystemChanges,
 } from '../flow-types';
 
 export declare const CACHE_VERSION: 2;
@@ -39,9 +39,7 @@ declare class MockPlugin implements FileMapPlugin<RawMockMap, void>, IMockMap {
   constructor($$PARAM_0$$: MockMapOptions);
   initialize($$PARAM_0$$: FileMapPluginInitOptions<RawMockMap>): Promise<void>;
   getMockModule(name: string): null | undefined | Path;
-  bulkUpdate(delta: FileMapDelta): void;
-  onNewOrModifiedFile(relativeFilePath: Path): void;
-  onRemovedFile(relativeFilePath: Path): void;
+  onChanged(delta: ReadonlyFileSystemChanges<null | undefined | void>): void;
   getSerializableSnapshot(): RawMockMap;
   assertValid(): void;
   getCacheKey(): string;
