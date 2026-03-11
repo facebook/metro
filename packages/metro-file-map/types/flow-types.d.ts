@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<55661053febcda2f3c05e7e2b96130a3>>
+ * @generated SignedSource<<6d8466c1e6a26096346ab171341b91e8>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -75,10 +75,16 @@ export type CacheManagerWriteOptions = Readonly<{
   onWriteError: (error: Error) => void;
 }>;
 export type CanonicalPath = string;
-export type ChangeEvent = {
+export type ChangedFileMetadata = Readonly<{
+  isSymlink: boolean;
+  modifiedTime?: null | undefined | number;
+}>;
+export type ChangeEvent = Readonly<{
   logger: null | undefined | RootPerfLogger;
   eventsQueue: EventsQueue;
-};
+  changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>;
+  rootDir: string;
+}>;
 export type ChangeEventMetadata = {
   modifiedTime: null | undefined | number;
   size: null | undefined | number;

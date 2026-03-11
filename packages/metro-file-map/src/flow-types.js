@@ -90,10 +90,17 @@ export type CacheManagerWriteOptions = Readonly<{
 //  - Real (no symlinks in path, though the path itself may be a symlink)
 export type CanonicalPath = string;
 
-export type ChangeEvent = {
+export type ChangedFileMetadata = Readonly<{
+  isSymlink: boolean,
+  modifiedTime?: ?number,
+}>;
+
+export type ChangeEvent = Readonly<{
   logger: ?RootPerfLogger,
-  eventsQueue: EventsQueue,
-};
+  eventsQueue: EventsQueue, // Deprecated
+  changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>,
+  rootDir: string,
+}>;
 
 export type ChangeEventMetadata = {
   modifiedTime: ?number, // Epoch ms
