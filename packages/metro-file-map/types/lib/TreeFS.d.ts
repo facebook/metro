@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<1f36861cea798d8cc2a5dc61293ecb1b>>
+ * @generated SignedSource<<a67ce7313d123a7baac5cc23354e8c8b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/lib/TreeFS.js
@@ -19,6 +19,7 @@ import type {
   FileData,
   FileMetadata,
   FileStats,
+  FileSystemListener,
   LookupResult,
   MutableFileSystem,
   Path,
@@ -122,9 +123,19 @@ declare class TreeFS implements MutableFileSystem {
    * for example: `a/b.js` -> `./a/b.js`
    */
   matchFiles(opts: MatchFilesOptions): Iterable<Path>;
-  addOrModify(mixedPath: Path, metadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
-  remove(mixedPath: Path): null | undefined | FileMetadata;
+  addOrModify(
+    mixedPath: Path,
+    metadata: FileMetadata,
+    changeListener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    changeListener?: FileSystemListener,
+  ): void;
+  remove(
+    mixedPath: Path,
+    changeListener?: FileSystemListener,
+  ): null | undefined | FileMetadata;
   /**
    * Given a start path (which need not exist), a subpath and type, and
    * optionally a 'breakOnSegment', performs the following:

@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {CanonicalPath, FileData, FileMetadata} from '../../flow-types';
+import type {
+  CanonicalPath,
+  FileData,
+  FileMetadata,
+  FileSystemListener,
+} from '../../flow-types';
 import type TreeFSType from '../TreeFS';
 
 import H from '../../constants';
@@ -968,6 +973,165 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       // A second call re-computes
       expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
       expect(mockProcessFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('change listener', () => {
+    let simpleTfs: TreeFSType;
+    const logChange = jest.fn();
+    const listener: FileSystemListener = {
+      fileAdded: (...args) => logChange('fileAdded', ...args),
+      fileModified: (...args) => logChange('fileModified', ...args),
+      fileRemoved: (...args) => logChange('fileRemoved', ...args),
+      directoryAdded: (...args) => logChange('directoryAdded', ...args),
+      directoryRemoved: (...args) => logChange('directoryRemoved', ...args),
+    };
+
+    beforeEach(() => {
+      logChange.mockClear();
+      simpleTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('existing.js'), [123, 0, 0, '', 0]],
+          [p('dir/nested.js'), [456, 0, 0, '', 0]],
+          [p('mylink'), [0, 0, 0, '', p('./dir')]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+    });
+
+    describe('addOrModify with listener', () => {
+      test('tracks added files when adding a new file', () => {
+        simpleTfs.addOrModify(p('new.js'), [789, 0, 0, '', 0], listener);
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('new.js'), [789, 0, 0, '', 0]],
+        ]);
+      });
+
+      test('tracks modified files when modifying an existing file', () => {
+        simpleTfs.addOrModify(p('existing.js'), [999, 0, 0, '', 0], listener);
+
+        expect(logChange.mock.calls).toEqual([
+          [
+            'fileModified',
+            p('existing.js'),
+            [123, 0, 0, '', 0],
+            [999, 0, 0, '', 0],
+          ],
+        ]);
+      });
+
+      test('tracks new directories when adding a file in a new directory', () => {
+        simpleTfs.addOrModify(
+          p('newdir/file.js'),
+          [123, 0, 0, '', '', 0, null],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['directoryAdded', p('newdir')],
+          ['fileAdded', p('newdir/file.js'), [123, 0, 0, '', '', 0, null]],
+        ]);
+      });
+
+      test('tracks multiple new directories for deeply nested paths', () => {
+        simpleTfs.addOrModify(
+          p('a/b/c/file.js'),
+          [123, 0, 0, '', '', 0, null],
+          listener,
+        );
+        expect(logChange.mock.calls).toEqual([
+          ['directoryAdded', p('a')],
+          ['directoryAdded', p('a/b')],
+          ['directoryAdded', p('a/b/c')],
+          ['fileAdded', p('a/b/c/file.js'), [123, 0, 0, '', '', 0, null]],
+        ]);
+      });
+
+      test('does not track existing directories as new', () => {
+        simpleTfs.addOrModify(
+          p('dir/another.js'),
+          [789, 0, 0, '', '', 0, null],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('dir/another.js'), [789, 0, 0, '', '', 0, null]],
+        ]);
+      });
+    });
+
+    describe('bulkAddOrModify with listener', () => {
+      test('tracks multiple added files', () => {
+        simpleTfs.bulkAddOrModify(
+          new Map<CanonicalPath, FileMetadata>([
+            [p('file1.js'), [1, 0, 0, '', '', 0, null]],
+            [p('file2.js'), [2, 0, 0, '', '', 0, null]],
+            [p('file3.js'), [3, 0, 0, '', '', 0, null]],
+          ]),
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileAdded', p('file1.js'), [1, 0, 0, '', '', 0, null]],
+          ['fileAdded', p('file2.js'), [2, 0, 0, '', '', 0, null]],
+          ['fileAdded', p('file3.js'), [3, 0, 0, '', '', 0, null]],
+        ]);
+      });
+    });
+
+    test('accumulates changes across multiple operations', () => {
+      simpleTfs.addOrModify(p('new1.js'), [1, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(p('new2/file.js'), [2, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(p('new2/file.js'), [3, 0, 0, '', 0], listener);
+      simpleTfs.addOrModify(
+        p('new3/nested/file.js'),
+        [3, 0, 0, '', 0],
+        listener,
+      );
+      simpleTfs.remove(p('existing.js'), listener);
+      simpleTfs.remove(p('new2/file.js'), listener);
+
+      expect(logChange.mock.calls).toEqual([
+        ['fileAdded', p('new1.js'), [1, 0, 0, '', 0]],
+        ['directoryAdded', p('new2')],
+        ['fileAdded', p('new2/file.js'), [2, 0, 0, '', 0]],
+        ['fileModified', p('new2/file.js'), [2, 0, 0, '', 0], [3, 0, 0, '', 0]],
+        ['directoryAdded', p('new3')],
+        ['directoryAdded', p('new3/nested')],
+        ['fileAdded', p('new3/nested/file.js'), [3, 0, 0, '', 0]],
+        ['fileRemoved', p('existing.js'), [123, 0, 0, '', 0]],
+        ['fileRemoved', p('new2/file.js'), [3, 0, 0, '', 0]],
+        ['directoryRemoved', p('new2')],
+      ]);
+    });
+
+    describe('symlinks with listener', () => {
+      test('tracks added files when adding a symlink', () => {
+        simpleTfs.addOrModify(
+          p('link-to-existing'),
+          [0, 0, 0, '', p('./existing.js')],
+          listener,
+        );
+
+        expect(logChange.mock.calls).toEqual([
+          [
+            'fileAdded',
+            p('link-to-existing'),
+            [0, 0, 0, '', p('./existing.js')],
+          ],
+        ]);
+      });
+
+      test('tracks removed symlinks with their metadata', () => {
+        simpleTfs.remove(p('mylink'), listener);
+        expect(logChange.mock.calls).toEqual([
+          ['fileRemoved', p('mylink'), [0, 0, 0, '', p('./dir')]],
+        ]);
+      });
     });
   });
 });
