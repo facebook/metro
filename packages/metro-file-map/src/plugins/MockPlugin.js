@@ -10,13 +10,13 @@
  */
 
 import type {
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
   MockMap as IMockMap,
   Path,
   RawMockMap,
+  ReadonlyFileSystemChanges,
 } from '../flow-types';
 
 import normalizePathSeparatorsToPosix from '../lib/normalizePathSeparatorsToPosix';
@@ -79,15 +79,12 @@ export default class MockPlugin
       this.#raw = pluginState;
     } else {
       // Otherwise, traverse all files to rebuild
-      this.bulkUpdate({
-        addedOrModified: [
-          ...files.fileIterator({
-            includeNodeModules: false,
-            includeSymlinks: false,
-          }),
-        ].map(({canonicalPath}) => [canonicalPath, null]),
-        removed: [],
-      });
+      for (const {canonicalPath} of files.fileIterator({
+        includeNodeModules: false,
+        includeSymlinks: false,
+      })) {
+        this.#onFileAdded(canonicalPath);
+      }
     }
   }
 
@@ -102,24 +99,24 @@ export default class MockPlugin
     );
   }
 
-  bulkUpdate(delta: FileMapDelta<>): void {
+  onChanged(delta: ReadonlyFileSystemChanges<?void>): void {
     // Process removals first so that moves aren't treated as duplicates.
-    for (const [relativeFilePath] of delta.removed) {
-      this.onRemovedFile(relativeFilePath);
+    for (const [canonicalPath] of delta.removedFiles) {
+      this.#onFileRemoved(canonicalPath);
     }
-    for (const [relativeFilePath] of delta.addedOrModified) {
-      this.onNewOrModifiedFile(relativeFilePath);
+    for (const [canonicalPath] of delta.addedFiles) {
+      this.#onFileAdded(canonicalPath);
     }
   }
 
-  onNewOrModifiedFile(relativeFilePath: Path): void {
-    const absoluteFilePath = this.#pathUtils.normalToAbsolute(relativeFilePath);
+  #onFileAdded(canonicalPath: Path): void {
+    const absoluteFilePath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (!this.#mocksPattern.test(absoluteFilePath)) {
       return;
     }
 
     const mockName = getMockName(absoluteFilePath);
-    const posixRelativePath = normalizePathSeparatorsToPosix(relativeFilePath);
+    const posixRelativePath = normalizePathSeparatorsToPosix(canonicalPath);
 
     const existingMockPosixPath = this.#raw.mocks.get(mockName);
     if (existingMockPosixPath != null) {
@@ -141,16 +138,15 @@ export default class MockPlugin
     this.#raw.mocks.set(mockName, posixRelativePath);
   }
 
-  onRemovedFile(relativeFilePath: Path): void {
-    const absoluteFilePath = this.#pathUtils.normalToAbsolute(relativeFilePath);
+  #onFileRemoved(canonicalPath: Path): void {
+    const absoluteFilePath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (!this.#mocksPattern.test(absoluteFilePath)) {
       return;
     }
     const mockName = getMockName(absoluteFilePath);
     const duplicates = this.#raw.duplicates.get(mockName);
     if (duplicates != null) {
-      const posixRelativePath =
-        normalizePathSeparatorsToPosix(relativeFilePath);
+      const posixRelativePath = normalizePathSeparatorsToPosix(canonicalPath);
       duplicates.delete(posixRelativePath);
       if (duplicates.size === 1) {
         this.#raw.duplicates.delete(mockName);

@@ -10,7 +10,6 @@
  */
 
 import type {
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
@@ -64,23 +63,9 @@ export default class DependencyPlugin
     return null;
   }
 
-  bulkUpdate(delta: FileMapDelta<?ReadonlyArray<string>>): void {
+  onChanged(): void {
     // No-op: Worker already populated plugin data
     // Plugin data is write-only from worker
-  }
-
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    pluginData: ?ReadonlyArray<string>,
-  ): void {
-    // No-op: Dependencies already in plugin data
-  }
-
-  onRemovedFile(
-    relativeFilePath: string,
-    pluginData: ?ReadonlyArray<string>,
-  ): void {
-    // No-op
   }
 
   assertValid(): void {

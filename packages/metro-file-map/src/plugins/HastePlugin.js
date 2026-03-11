@@ -13,7 +13,6 @@ import type {
   Console,
   DuplicatesIndex,
   DuplicatesSet,
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
@@ -24,6 +23,7 @@ import type {
   HTypeValue,
   Path,
   PerfLogger,
+  ReadonlyFileSystemChanges,
 } from '../flow-types';
 
 import H from '../constants';
@@ -237,26 +237,26 @@ export default class HastePlugin
     );
   }
 
-  bulkUpdate(delta: FileMapDelta<?string>): void {
+  onChanged(delta: ReadonlyFileSystemChanges<?string>): void {
     // Process removals first so that moves aren't treated as duplicates.
-    for (const [normalPath, maybeHasteId] of delta.removed) {
-      this.onRemovedFile(normalPath, maybeHasteId);
+    for (const [canonicalPath, maybeHasteId] of delta.removedFiles) {
+      this.#onRemovedFile(canonicalPath, maybeHasteId);
     }
-    for (const [normalPath, maybeHasteId] of delta.addedOrModified) {
-      this.onNewOrModifiedFile(normalPath, maybeHasteId);
+    for (const [canonicalPath, maybeHasteId] of delta.addedFiles) {
+      this.#onNewFile(canonicalPath, maybeHasteId);
     }
   }
 
-  onNewOrModifiedFile(relativeFilePath: string, id: ?string) {
+  #onNewFile(canonicalPath: string, id: ?string) {
     if (id == null) {
       // Not a Haste module or package
       return;
     }
 
     const module: HasteMapItemMetadata = [
-      relativeFilePath,
+      canonicalPath,
       this.#enableHastePackages &&
-      path.basename(relativeFilePath) === 'package.json'
+      path.basename(canonicalPath) === 'package.json'
         ? H.PACKAGE
         : H.MODULE,
     ];
@@ -324,14 +324,14 @@ export default class HastePlugin
     hasteMapItem[platform] = module;
   }
 
-  onRemovedFile(relativeFilePath: string, moduleName: ?string) {
+  #onRemovedFile(canonicalPath: string, moduleName: ?string) {
     if (moduleName == null) {
       // Not a Haste module or package
       return;
     }
 
     const platform =
-      getPlatformExtension(relativeFilePath, this.#platforms) ||
+      getPlatformExtension(canonicalPath, this.#platforms) ||
       H.GENERIC_PLATFORM;
 
     const hasteMapItem = this.#map.get(moduleName);
@@ -344,7 +344,7 @@ export default class HastePlugin
       }
     }
 
-    this.#recoverDuplicates(moduleName, relativeFilePath);
+    this.#recoverDuplicates(moduleName, canonicalPath);
   }
 
   assertValid(): void {

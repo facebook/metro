@@ -9,6 +9,10 @@
  * @oncall react_native
  */
 
+import type {
+  CanonicalPath,
+  ReadonlyFileSystemChanges,
+} from '../../../flow-types';
 import type HasteMapType from '../../HastePlugin';
 
 let mockPathModule;
@@ -88,11 +92,16 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     expect(hasteMap.getModule('NameForFoo')).toEqual(p('/root/project/Foo.js'));
   });
 
-  describe('onRemovedFile', () => {
+  describe('remove file', () => {
     let hasteMap: HasteMapType;
+    let removeFile: (path: CanonicalPath, name: ?string) => void;
 
     beforeEach(async () => {
       hasteMap = new HasteMap(opts);
+      removeFile = (canonicalPath, name) =>
+        hasteMap.onChanged(
+          makeChanges({added: [], removed: [[canonicalPath, name]]}),
+        );
       await hasteMap.initialize({
         files: {
           fileIterator: jest.fn().mockReturnValue(INITIAL_FILES),
@@ -104,7 +113,7 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
 
     test('removes a module, without affecting others', () => {
       expect(hasteMap.getModule('NameForFoo')).not.toBeNull();
-      hasteMap.onRemovedFile(p('project/Foo.js'), 'NameForFoo');
+      removeFile(p('project/Foo.js'), 'NameForFoo');
       expect(hasteMap.getModule('NameForFoo')).toBeNull();
       expect(hasteMap.getModule('Bar')).not.toBeNull();
     });
@@ -113,14 +122,14 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       expect(() => hasteMap.getModule('Duplicate')).toThrow(
         DuplicateHasteCandidatesError,
       );
-      hasteMap.onRemovedFile(p('project/Duplicate.js'), 'Duplicate');
+      removeFile(p('project/Duplicate.js'), 'Duplicate');
       expect(hasteMap.getModule('Duplicate')).toBe(
         p('/root/project/other/Duplicate.js'),
       );
     });
   });
 
-  describe('bulkUpdate', () => {
+  describe('onChanged', () => {
     let hasteMap: HasteMapType;
 
     beforeEach(async () => {
@@ -134,27 +143,22 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
       });
     });
 
-    test('removes a module, without affecting others', () => {
-      expect(hasteMap.getModule('NameForFoo')).not.toBeNull();
-      hasteMap.onRemovedFile(p('project/Foo.js'), 'NameForFoo');
-      expect(hasteMap.getModule('NameForFoo')).toBeNull();
-      expect(hasteMap.getModule('Bar')).not.toBeNull();
-    });
-
     test('fixes duplicates, adds and removes modules', () => {
       expect(() => hasteMap.getModule('Duplicate')).toThrow(
         DuplicateHasteCandidatesError,
       );
-      hasteMap.bulkUpdate({
-        removed: [
-          [p('project/Duplicate.js'), 'Duplicate'],
-          [p('project/Foo.js'), 'NameForFoo'],
-        ],
-        addedOrModified: [
-          [p('project/Baz.js'), 'Baz'], // New
-          [p('project/other/Bar.js'), 'Bar'], // New duplicate
-        ],
-      });
+      hasteMap.onChanged(
+        makeChanges({
+          added: [
+            [p('project/Baz.js'), 'Baz'], // New
+            [p('project/other/Bar.js'), 'Bar'], // New duplicate
+          ],
+          removed: [
+            [p('project/Duplicate.js'), 'Duplicate'],
+            [p('project/Foo.js'), 'NameForFoo'],
+          ],
+        }),
+      );
       expect(hasteMap.getModule('Duplicate')).toBe(
         p('/root/project/other/Duplicate.js'),
       );
@@ -205,3 +209,19 @@ describe.each([['win32'], ['posix']])('HastePlugin on %s', platform => {
     });
   });
 });
+
+function makeChanges({
+  added,
+  removed,
+}: Readonly<{
+  added: ReadonlyArray<[CanonicalPath, ?string]>,
+  removed: ReadonlyArray<[CanonicalPath, ?string]>,
+}>): ReadonlyFileSystemChanges<?string> {
+  return {
+    addedFiles: new Map(added),
+    removedFiles: new Map(removed),
+    modifiedFiles: new Map(),
+    addedDirectories: new Set(),
+    removedDirectories: new Set(),
+  };
+}

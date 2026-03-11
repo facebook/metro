@@ -105,7 +105,7 @@ describe('cacheManager', () => {
     let pluginCacheKey = 'foo';
     const plugin: FileMapPlugin<> = {
       name: 'foo',
-      bulkUpdate() {},
+      onChanged() {},
       async initialize() {},
       assertValid() {},
       getSerializableSnapshot() {
@@ -114,8 +114,6 @@ describe('cacheManager', () => {
       getWorker() {
         return null;
       },
-      onNewOrModifiedFile() {},
-      onRemovedFile() {},
       getCacheKey() {
         return pluginCacheKey;
       },
