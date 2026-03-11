@@ -36,7 +36,6 @@ import type {
   PerfLogger,
   PerfLoggerFactory,
   ProcessFileFunction,
-  ReadonlyFileSystemChanges,
   WatcherBackendChangeEvent,
   WatchmanClocks,
 } from './flow-types';
@@ -672,7 +671,13 @@ export default class FileMap extends EventEmitter {
     this.#startupPerfLogger?.point('applyFileDelta_add_end');
 
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_start');
-    this.#updatePlugins(changeAggregator.getView());
+    this.#plugins.forEach(({plugin, dataIdx}) => {
+      plugin.onChanged(
+        changeAggregator.getMappedView(
+          dataIdx != null ? metadata => metadata[dataIdx] : () => null,
+        ),
+      );
+    });
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this.#startupPerfLogger?.point('applyFileDelta_end');
     return changeAggregator;
@@ -773,8 +778,23 @@ export default class FileMap extends EventEmitter {
         this.#updateClock(clocks, clock);
       }
 
+      const changeSize = changeAggregator.getSize();
+
+      if (changeSize === 0) {
+        // We had events, but they've exactly cancelled each other out, reset
+        // so that timers are correct for the next change.
+        nextEmit = null;
+        return;
+      }
+
       const netChange = changeAggregator.getView();
-      this.#updatePlugins(netChange);
+      this.#plugins.forEach(({plugin, dataIdx}) => {
+        plugin.onChanged(
+          changeAggregator.getMappedView(
+            dataIdx != null ? metadata => metadata[dataIdx] : () => null,
+          ),
+        );
+      });
 
       const getMapFn =
         (type: 'add' | 'change' | 'delete') =>
@@ -798,13 +818,6 @@ export default class FileMap extends EventEmitter {
         ),
       );
 
-      if (eventsQueue.length === 0) {
-        // We had events, but they've exactly cancelled each other out, reset
-        // so that timers are correct for the next change.
-        nextEmit = null;
-        return;
-      }
-
       const hmrPerfLogger = this.#options.perfLoggerFactory?.('HMR', {
         key: this.#getNextChangeID(),
       });
@@ -814,9 +827,7 @@ export default class FileMap extends EventEmitter {
           timestamp: firstEnqueuedTimestamp,
         });
         hmrPerfLogger.point('waitingForChangeInterval_end');
-        hmrPerfLogger.annotate({
-          int: {eventsQueueLength: eventsQueue.length},
-        });
+        hmrPerfLogger.annotate({int: {changeSize}});
         hmrPerfLogger.point('fileChange_start');
       }
       const changeEvent: ChangeEvent = {
@@ -1044,25 +1055,6 @@ export default class FileMap extends EventEmitter {
     const [absoluteWatchRoot, clockSpec] = newClock;
     const relativeFsRoot = this.#pathUtils.absoluteToNormal(absoluteWatchRoot);
     clocks.set(normalizePathSeparatorsToPosix(relativeFsRoot), clockSpec);
-  }
-
-  #updatePlugins(changes: ReadonlyFileSystemChanges<FileMetadata>): void {
-    this.#plugins.forEach(({plugin, dataIdx}) => {
-      const mapFn: (
-        Readonly<[CanonicalPath, FileMetadata]>,
-      ) => [CanonicalPath, unknown] =
-        dataIdx != null
-          ? ([relativePath, fileData]) => [relativePath, fileData[dataIdx]]
-          : ([relativePath, fileData]) => [relativePath, null];
-      plugin.onChanged({
-        addedDirectories: changes.addedDirectories,
-        removedDirectories: changes.removedDirectories,
-
-        addedFiles: mapIterable(changes.addedFiles, mapFn),
-        modifiedFiles: mapIterable(changes.modifiedFiles, mapFn),
-        removedFiles: mapIterable(changes.removedFiles, mapFn),
-      });
-    });
   }
 
   static H: HType = H;
