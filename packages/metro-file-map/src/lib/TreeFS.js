@@ -13,6 +13,7 @@ import type {
   FileData,
   FileMetadata,
   FileStats,
+  FileSystemListener,
   LookupResult,
   MutableFileSystem,
   Path,
@@ -378,11 +379,16 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  addOrModify(mixedPath: Path, metadata: FileMetadata): void {
+  addOrModify(
+    mixedPath: Path,
+    metadata: FileMetadata,
+    changeListener?: FileSystemListener,
+  ): void {
     const normalPath = this.#normalizePath(mixedPath);
     // Walk the tree to find the *real* path of the parent node, creating
     // directories as we need.
     const parentDirNode = this.#lookupByNormalPath(path.dirname(normalPath), {
+      changeListener,
       makeDirectories: true,
     });
     if (!parentDirNode.exists) {
@@ -394,10 +400,13 @@ export default class TreeFS implements MutableFileSystem {
     const canonicalPath = this.#normalizePath(
       parentDirNode.canonicalPath + path.sep + path.basename(normalPath),
     );
-    this.bulkAddOrModify(new Map([[canonicalPath, metadata]]));
+    this.bulkAddOrModify(new Map([[canonicalPath, metadata]]), changeListener);
   }
 
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void {
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    changeListener?: FileSystemListener,
+  ): void {
     // Optimisation: Bulk FileData are typically clustered by directory, so we
     // optimise for that case by remembering the last directory we looked up.
     // Experiments with large result sets show this to be significantly (~30%)
@@ -413,6 +422,7 @@ export default class TreeFS implements MutableFileSystem {
 
       if (directoryNode == null || dirname !== lastDir) {
         const lookup = this.#lookupByNormalPath(dirname, {
+          changeListener,
           followLeaf: false,
           makeDirectories: true,
         });
@@ -433,11 +443,26 @@ export default class TreeFS implements MutableFileSystem {
         lastDir = dirname;
         directoryNode = lookup.node;
       }
+      if (changeListener != null) {
+        const existingNode = directoryNode.get(basename);
+        if (existingNode != null) {
+          invariant(
+            !isDirectory(existingNode),
+            'Detected addition or modification of file %s, but it is tracked as a non-empty directory',
+            normalPath,
+          );
+          // File already exists - this is a modification
+          changeListener.fileModified(normalPath, existingNode, metadata);
+        } else {
+          // New file
+          changeListener.fileAdded(normalPath, metadata);
+        }
+      }
       directoryNode.set(basename, metadata);
     }
   }
 
-  remove(mixedPath: Path): ?FileMetadata {
+  remove(mixedPath: Path, changeListener?: FileSystemListener): ?FileMetadata {
     const normalPath = this.#normalizePath(mixedPath);
     const result = this.#lookupByNormalPath(normalPath, {followLeaf: false});
     if (!result.exists) {
@@ -451,6 +476,13 @@ export default class TreeFS implements MutableFileSystem {
       );
     }
     if (parentNode != null) {
+      if (changeListener != null) {
+        if (isDirectory(node)) {
+          changeListener.directoryRemoved(canonicalPath);
+        } else {
+          changeListener.fileRemoved(canonicalPath, node);
+        }
+      }
       parentNode.delete(path.basename(canonicalPath));
       if (parentNode.size === 0 && parentNode !== this.#rootNode) {
         // NB: This isn't the most efficient algorithm - in the case of
@@ -458,7 +490,7 @@ export default class TreeFS implements MutableFileSystem {
         // that's not expected to be a case common enough to justify
         // implementation complexity, or slowing down more common uses of
         // _lookupByNormalPath.
-        this.remove(path.dirname(canonicalPath));
+        this.remove(path.dirname(canonicalPath), changeListener);
       }
     }
     return isDirectory(node) ? null : node;
@@ -491,6 +523,10 @@ export default class TreeFS implements MutableFileSystem {
       // Mutable Set into which absolute real paths of traversed symlinks will
       // be added. Omit for performance if not needed.
       collectLinkPaths?: ?Set<string>,
+
+      // Low-level callbacks called on mutations of TreeFS data.
+      // Omit for performance if not needed.
+      changeListener?: FileSystemListener,
 
       // Like lstat vs stat, whether to follow a symlink at the basename of
       // the given path, or return the details of the symlink itself.
@@ -541,7 +577,8 @@ export default class TreeFS implements MutableFileSystem {
     // null.
     let ancestorOfRootIdx: ?number = opts.start?.ancestorOfRootIdx ?? 0;
 
-    const collectAncestors = opts.collectAncestors;
+    const {collectAncestors, changeListener} = opts;
+
     // Used only when collecting ancestors, to avoid double-counting nodes and
     // paths when traversing a symlink takes us back to rootNode and out again.
     // This tracks the first character of the first segment not already
@@ -583,6 +620,12 @@ export default class TreeFS implements MutableFileSystem {
         }
         segmentNode = new Map();
         if (opts.makeDirectories === true) {
+          if (changeListener != null) {
+            const canonicalPath = isLastSegment
+              ? targetNormalPath
+              : targetNormalPath.slice(0, fromIdx - 1);
+            changeListener.directoryAdded(canonicalPath);
+          }
           parentNode.set(segmentName, segmentNode);
         }
       }

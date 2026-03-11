@@ -423,10 +423,39 @@ export type HasteMapItem = {
 };
 export type HasteMapItemMetadata = [/* path */ string, /* type */ number];
 
+export interface FileSystemListener {
+  directoryAdded(canonicalPath: CanonicalPath): void;
+  directoryRemoved(canonicalPath: CanonicalPath): void;
+
+  fileAdded(canonicalPath: CanonicalPath, data: FileMetadata): void;
+  fileModified(
+    canonicalPath: CanonicalPath,
+    oldData: FileMetadata,
+    newData: FileMetadata,
+  ): void;
+  fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
+}
+
+export interface ReadonlyFileSystemChanges<+T = FileMetadata> {
+  +addedDirectories: Iterable<CanonicalPath>;
+  +removedDirectories: Iterable<CanonicalPath>;
+
+  +addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  +modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  +removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+}
+
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path): ?FileMetadata;
-  addOrModify(filePath: Path, fileMetadata: FileMetadata): void;
-  bulkAddOrModify(addedOrModifiedFiles: FileData): void;
+  remove(filePath: Path, listener?: FileSystemListener): ?FileMetadata;
+  addOrModify(
+    filePath: Path,
+    fileMetadata: FileMetadata,
+    listener?: FileSystemListener,
+  ): void;
+  bulkAddOrModify(
+    addedOrModifiedFiles: FileData,
+    listener?: FileSystemListener,
+  ): void;
 }
 
 export type Path = string;
