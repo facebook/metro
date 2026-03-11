@@ -17,6 +17,7 @@ import type {
   CacheManagerFactory,
   CacheManagerFactoryOptions,
   CanonicalPath,
+  ChangedFileMetadata,
   ChangeEvent,
   ChangeEventClock,
   ChangeEventMetadata,
@@ -796,6 +797,16 @@ export default class FileMap extends EventEmitter {
         );
       });
 
+      const toPublicMetadata = (
+        metadata: Readonly<FileMetadata>,
+      ): ChangedFileMetadata => ({
+        isSymlink: metadata[H.SYMLINK] !== 0,
+        modifiedTime: metadata[H.MTIME] ?? null,
+      });
+
+      const changesWithMetadata =
+        changeAggregator.getMappedView(toPublicMetadata);
+
       const getMapFn =
         (type: 'add' | 'change' | 'delete') =>
         ([canonicalPath, metadata]: Readonly<[CanonicalPath, FileMetadata]>) =>
@@ -831,8 +842,10 @@ export default class FileMap extends EventEmitter {
         hmrPerfLogger.point('fileChange_start');
       }
       const changeEvent: ChangeEvent = {
+        changes: changesWithMetadata,
         eventsQueue,
         logger: hmrPerfLogger,
+        rootDir: this.#options.rootDir,
       };
       this.emit('change', changeEvent);
       nextEmit = null;
