@@ -96,6 +96,16 @@ export class FileSystemChangeAggregator implements FileSystemListener {
     // else: File was added then removed in the same batch - no net change
   }
 
+  getSize(): number {
+    return (
+      this.#addedDirectories.size +
+      this.#removedDirectories.size +
+      this.#addedFiles.size +
+      this.#modifiedFiles.size +
+      this.#removedFiles.size
+    );
+  }
+
   getView(): ReadonlyFileSystemChanges<FileMetadata> {
     return {
       addedDirectories: this.#addedDirectories,
