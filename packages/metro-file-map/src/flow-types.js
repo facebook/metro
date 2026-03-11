@@ -156,11 +156,6 @@ export type EventsQueue = Array<{
   type: string,
 }>;
 
-export type FileMapDelta<T = null | void> = Readonly<{
-  removed: Iterable<[CanonicalPath, T]>,
-  addedOrModified: Iterable<[CanonicalPath, T]>,
-}>;
-
 export type FileMapPluginInitOptions<
   SerializableState,
   PerFileData = void,
@@ -213,10 +208,8 @@ export interface FileMapPlugin<
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
   assertValid(): void;
-  bulkUpdate(delta: FileMapDelta<?PerFileData>): void;
+  onChanged(changes: ReadonlyFileSystemChanges<?PerFileData>): void;
   getSerializableSnapshot(): SerializableState;
-  onRemovedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
-  onNewOrModifiedFile(relativeFilePath: string, pluginData: ?PerFileData): void;
   getCacheKey(): string;
   getWorker(): ?FileMapPluginWorker;
 }

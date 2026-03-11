@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<71361b3fd04f54f55665031c66465dd7>>
+ * @generated SignedSource<<e07a9c061b0224fc44191d956461bd6f>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/DependencyPlugin.js
@@ -16,7 +16,6 @@
  */
 
 import type {
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
@@ -39,17 +38,7 @@ declare class DependencyPlugin
     initOptions: FileMapPluginInitOptions<null, ReadonlyArray<string> | null>,
   ): Promise<void>;
   getSerializableSnapshot(): null;
-  bulkUpdate(
-    delta: FileMapDelta<null | undefined | ReadonlyArray<string>>,
-  ): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | ReadonlyArray<string>,
-  ): void;
-  onRemovedFile(
-    relativeFilePath: string,
-    pluginData: null | undefined | ReadonlyArray<string>,
-  ): void;
+  onChanged(): void;
   assertValid(): void;
   getCacheKey(): string;
   getWorker(): FileMapPluginWorker;
