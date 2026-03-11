@@ -150,10 +150,14 @@ export default class DependencyGraph extends EventEmitter {
     await this._initializedPromise;
   }
 
-  _onHasteChange({eventsQueue}: ChangeEvent) {
+  _onHasteChange({changes, rootDir}: ChangeEvent) {
     this._resolutionCache = new Map();
-    eventsQueue.forEach(({filePath}) =>
-      this.#packageCache.invalidate(filePath),
+    [
+      ...changes.addedFiles,
+      ...changes.modifiedFiles,
+      ...changes.removedFiles,
+    ].forEach(([canonicalPath]) =>
+      this.#packageCache.invalidate(path.join(rootDir, canonicalPath)),
     );
     this._createModuleResolver();
     this.emit('change');
