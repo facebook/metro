@@ -18,6 +18,7 @@ import type {
 } from '../types';
 
 import CountingSet from '../../lib/CountingSet';
+import {createEmitChange} from './test-utils';
 import path from 'path';
 
 jest.mock('../../Bundler');
@@ -33,6 +34,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let fileWatcher;
   let traverseDependencies;
   let initialTraverseDependencies;
+  let emitChange;
 
   const options: Options<> = {
     unstable_allowRequireContext: false,
@@ -59,7 +61,11 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
 
   function p(posixPath: string): string {
     if (osPlatform === 'win32') {
-      return path.win32.join('C:\\', ...posixPath.split('/'));
+      if (path.posix.isAbsolute(posixPath)) {
+        return path.win32.join('C:\\', ...posixPath.split('/'));
+      } else {
+        return posixPath.replaceAll('/', '\\');
+      }
     }
 
     return posixPath;
@@ -211,6 +217,12 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       fileWatcher,
       options,
     );
+
+    emitChange = createEmitChange(
+      fileWatcher,
+      p('/'),
+      osPlatform === 'win32' ? '\\' : '/',
+    );
   });
 
   afterEach(() => {
@@ -293,9 +305,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   test('should calculate a delta after a file addition', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: p('/foo'), metadata: {type: 'f'}}],
-    });
+    emitChange({addedFiles: ['foo']});
 
     traverseDependencies.mockResolvedValueOnce({
       added: new Map([[p('/foo'), fooModule]]),
@@ -322,11 +332,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   test('should calculate a delta after a simple modification', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -355,11 +361,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -388,11 +390,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     // Get initial delta
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
     const quxModule: Module<$FlowFixMe> = {
       dependencies: new Map<string, Dependency>(),
@@ -439,11 +437,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       .getDelta({reset: false, shallow: false})
       .then(() => {
         deltaCalculator.on('change', () => done());
-        fileWatcher.emit('change', {
-          eventsQueue: [
-            {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-          ],
-        });
+        emitChange({modifiedFiles: ['foo']});
       })
       .catch(done);
   });
@@ -454,9 +448,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
 
     deltaCalculator.on('change', onChangeFile);
 
-    fileWatcher.emit('change', {
-      eventsQueue: [{type: 'add', filePath: p('/foo'), metadata: {type: 'f'}}],
-    });
+    emitChange({addedFiles: ['foo']});
 
     jest.runAllTimers();
 
@@ -469,11 +461,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
 
     deltaCalculator.on('delete', onChangeFile);
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['foo']});
 
     jest.runAllTimers();
 
@@ -483,13 +471,9 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   test('should retry to build the last delta after getting an error', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
-    traverseDependencies.mockReturnValue(Promise.reject(new Error()));
+    traverseDependencies.mockRejectedValue(new Error());
 
     await expect(
       deltaCalculator.getDelta({reset: false, shallow: false}),
@@ -505,18 +489,10 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // First modify the file
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
     // Then delete that same file
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['foo']});
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -543,18 +519,10 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // Delete a file
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['foo']});
 
     // Delete a dependency of the deleted file
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: p('/qux'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['qux']});
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -576,18 +544,10 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     // First delete a file
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'delete', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({removedFiles: ['foo']});
 
     // Then add it again
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
-      ],
-    });
+    emitChange({modifiedFiles: ['foo']});
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
@@ -612,11 +572,11 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         deltaCalculator.once('change', resolve),
       );
 
-      fileWatcher.emit('change', {
-        eventsQueue: [
-          {type: eventType, filePath: p('/link'), metadata: {type: 'l'}},
-        ],
-      });
+      if (eventType === 'add') {
+        emitChange({addedFiles: [['link', {isSymlink: true}]]});
+      } else {
+        emitChange({removedFiles: [['link', {isSymlink: true}]]});
+      }
 
       // Any symlink change should trigger a 'change' event
       await changeEmitted;
@@ -658,15 +618,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       deltaCalculator.once('change', resolve),
     );
 
-    fileWatcher.emit('change', {
-      eventsQueue: [
-        {
-          type: 'change',
-          filePath: p('/node_modules/foo/package.json'),
-          metadata: {type: 'f'},
-        },
-      ],
-    });
+    emitChange({modifiedFiles: ['node_modules/foo/package.json']});
 
     // Any package.json change should trigger a 'change' event
     await changeEmitted;
