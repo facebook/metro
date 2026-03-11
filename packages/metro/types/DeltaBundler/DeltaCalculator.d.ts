@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<b825a92cd295988e6e972591f11221fd>>
+ * @generated SignedSource<<d06b53dd09157df95aeb941035d4ebf0>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/DeltaCalculator.js
@@ -16,7 +16,6 @@
  */
 
 import type {DeltaResult, Options} from './types';
-import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
@@ -60,15 +59,6 @@ declare class DeltaCalculator<T> extends EventEmitter {
    */
   getGraph(): Graph<T>;
   _handleMultipleFileChanges: (changeEvent: ChangeEvent) => void;
-  /**
-   * Handles a single file change. To avoid doing any work before it's needed,
-   * the listener only stores the modified file, which will then be used later
-   * when the delta needs to be calculated.
-   */
-  _handleFileChange: (
-    $$PARAM_0$$: ChangeEvent['eventsQueue'][number],
-    logger: null | undefined | RootPerfLogger,
-  ) => unknown;
   _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
