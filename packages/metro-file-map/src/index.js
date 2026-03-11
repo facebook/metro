@@ -23,7 +23,6 @@ import type {
   ChangeEventMetadata,
   Console,
   CrawlerOptions,
-  EventsQueue,
   FileData,
   FileMapPlugin,
   FileMapPluginWorker,
@@ -596,7 +595,7 @@ export default class FileMap extends EventEmitter {
     }
     this.#startupPerfLogger?.point('applyFileDelta_remove_end');
 
-    const readLinkPromises = [];
+    const readLinkPromises: Array<Promise<void>> = [];
     const readLinkErrors: Array<{
       normalFilePath: string,
       error: Error & {code?: string},
@@ -616,9 +615,9 @@ export default class FileMap extends EventEmitter {
         const maybeReadLink = this.#maybeReadLink(normalFilePath, fileData);
         if (maybeReadLink) {
           readLinkPromises.push(
-            maybeReadLink.catch(error =>
-              readLinkErrors.push({normalFilePath, error}),
-            ),
+            maybeReadLink.catch(error => {
+              readLinkErrors.push({normalFilePath, error});
+            }),
           );
         }
       }
@@ -681,6 +680,7 @@ export default class FileMap extends EventEmitter {
     });
     this.#startupPerfLogger?.point('applyFileDelta_updatePlugins_end');
     this.#startupPerfLogger?.point('applyFileDelta_end');
+
     return changeAggregator;
   }
 
@@ -788,7 +788,7 @@ export default class FileMap extends EventEmitter {
         return;
       }
 
-      const netChange = changeAggregator.getView();
+      const _netChange = changeAggregator.getView();
       this.#plugins.forEach(({plugin, dataIdx}) => {
         plugin.onChanged(
           changeAggregator.getMappedView(
@@ -807,28 +807,6 @@ export default class FileMap extends EventEmitter {
       const changesWithMetadata =
         changeAggregator.getMappedView(toPublicMetadata);
 
-      const getMapFn =
-        (type: 'add' | 'change' | 'delete') =>
-        ([canonicalPath, metadata]: Readonly<[CanonicalPath, FileMetadata]>) =>
-          ({
-            type,
-            filePath: this.#pathUtils.normalToAbsolute(canonicalPath),
-            metadata: {
-              size: type === 'delete' ? null : metadata[H.SIZE],
-              modifiedTime: type === 'delete' ? null : metadata[H.MTIME],
-              type: metadata[H.SYMLINK] === 0 ? 'f' : 'l',
-            },
-          }) as EventsQueue[number];
-
-      // Synthesise an array of events from the change set to emit to consumers.
-      const eventsQueue = Array.from(
-        chainIterables(
-          mapIterable(netChange.removedFiles, getMapFn('delete')),
-          mapIterable(netChange.addedFiles, getMapFn('add')),
-          mapIterable(netChange.modifiedFiles, getMapFn('change')),
-        ),
-      );
-
       const hmrPerfLogger = this.#options.perfLoggerFactory?.('HMR', {
         key: this.#getNextChangeID(),
       });
@@ -843,7 +821,6 @@ export default class FileMap extends EventEmitter {
       }
       const changeEvent: ChangeEvent = {
         changes: changesWithMetadata,
-        eventsQueue,
         logger: hmrPerfLogger,
         rootDir: this.#options.rootDir,
       };
@@ -1080,12 +1057,3 @@ const mapIterable: <T, S>(Iterable<T>, (T) => S) => Iterator<S> = (it, fn) =>
       yield fn(item);
     }
   })();
-
-// TODO: Replace with Iterator.concat from Node 28?
-function* chainIterables<T>(
-  ...iterables: ReadonlyArray<Iterable<T>>
-): Iterator<T> {
-  for (const iterable of iterables) {
-    yield* iterable;
-  }
-}
