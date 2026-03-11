@@ -1448,7 +1448,10 @@ describe('FileMap', () => {
   test('distributes work across workers', async () => {
     const jestWorker = require('jest-worker').Worker;
     const path = require('path');
-    const dependencyExtractor = path.join(__dirname, 'dependencyExtractor.js');
+    const dependencyExtractor = path.resolve(
+      __dirname,
+      '../plugins/dependencies/__tests__/mockDependencyExtractor.js',
+    );
     await buildNewFileMap(
       {
         maxWorkers: 4,

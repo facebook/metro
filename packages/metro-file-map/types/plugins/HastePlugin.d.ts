@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<c8bc637264c4155765c375a0f0971803>>
+ * @generated SignedSource<<3d1462ab2325a09553e02b69b5de84eb>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/HastePlugin.js
@@ -17,7 +17,6 @@
 
 import type {
   Console,
-  FileMapDelta,
   FileMapPlugin,
   FileMapPluginInitOptions,
   FileMapPluginWorker,
@@ -27,6 +26,7 @@ import type {
   HTypeValue,
   Path,
   PerfLogger,
+  ReadonlyFileSystemChanges,
 } from '../flow-types';
 
 export type HasteMapOptions = Readonly<{
@@ -59,16 +59,8 @@ declare class HastePlugin
     platform: null | undefined | string,
     _supportsNativePlatform?: null | undefined | boolean,
   ): null | undefined | Path;
-  bulkUpdate(delta: FileMapDelta<null | undefined | string>): void;
-  onNewOrModifiedFile(
-    relativeFilePath: string,
-    id: null | undefined | string,
-  ): void;
+  onChanged(delta: ReadonlyFileSystemChanges<null | undefined | string>): void;
   setModule(id: string, module: HasteMapItemMetadata): void;
-  onRemovedFile(
-    relativeFilePath: string,
-    moduleName: null | undefined | string,
-  ): void;
   assertValid(): void;
   computeConflicts(): Array<HasteConflict>;
   getCacheKey(): string;

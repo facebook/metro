@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import DependencyPlugin from '../DependencyPlugin';
+import DependencyPlugin from '../../DependencyPlugin';
 import path from 'path';
 
 describe('DependencyPlugin', () => {
@@ -71,12 +71,9 @@ describe('DependencyPlugin', () => {
     });
 
     test('returns different cache keys for different dependency extractors', () => {
-      const extractorPath = path.join(
-        __dirname,
-        '../../__tests__/dependencyExtractor.js',
-      );
+      const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
       // $FlowFixMe[untyped-import]
-      const dependencyExtractor = require('../../__tests__/dependencyExtractor');
+      const dependencyExtractor = require('./mockDependencyExtractor');
 
       // Create plugin with cache key 'foo'
       dependencyExtractor.setCacheKey('foo');
@@ -103,10 +100,7 @@ describe('DependencyPlugin', () => {
     });
 
     test('cache key includes extractor path', () => {
-      const extractorPath = path.join(
-        __dirname,
-        '../../__tests__/dependencyExtractor.js',
-      );
+      const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
@@ -118,12 +112,9 @@ describe('DependencyPlugin', () => {
     });
 
     test('handles extractor without getCacheKey method', () => {
-      const extractorPath = path.join(
-        __dirname,
-        '../../__tests__/dependencyExtractor.js',
-      );
+      const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
       // $FlowFixMe[untyped-import]
-      const dependencyExtractor = require('../../__tests__/dependencyExtractor');
+      const dependencyExtractor = require('./mockDependencyExtractor');
 
       // Temporarily remove getCacheKey
       const originalGetCacheKey = dependencyExtractor.getCacheKey;
