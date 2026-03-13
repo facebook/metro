@@ -263,7 +263,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
     );
 
     // Ignore files of an unrecognized type
-    if (type != null && !(type === 'f' || type === 'd' || type === 'l')) {
+    if (type != null && !(type === 'f' || type === 'l')) {
       return;
     }
 
@@ -292,22 +292,17 @@ export default class WatchmanWatcher extends AbstractWatcher {
         size,
       );
 
-      if (
-        // Change event on dirs are mostly useless.
-        !(type === 'd' && !isNew)
-      ) {
-        const mtime = Number(mtime_ms);
-        self.emitFileEvent({
-          event: TOUCH_EVENT,
-          clock,
-          relativePath,
-          metadata: {
-            modifiedTime: mtime !== 0 ? mtime : null,
-            size,
-            type,
-          },
-        });
-      }
+      const mtime = Number(mtime_ms);
+      self.emitFileEvent({
+        event: TOUCH_EVENT,
+        clock,
+        relativePath,
+        metadata: {
+          modifiedTime: mtime !== 0 ? mtime : null,
+          size,
+          type,
+        },
+      });
     }
   }
 

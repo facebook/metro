@@ -108,7 +108,7 @@ export default class NativeWatcher extends AbstractWatcher {
       const type = typeFromStat(stat);
 
       // Ignore files of an unrecognized type
-      if (!type) {
+      if (!type || type === 'd') {
         return;
       }
 
