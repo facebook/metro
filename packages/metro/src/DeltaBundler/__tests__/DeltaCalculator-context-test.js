@@ -17,7 +17,8 @@ import type {Options, TransformResultDependency} from '../types';
 import CountingSet from '../../lib/CountingSet';
 import DeltaCalculator from '../DeltaCalculator';
 import {Graph} from '../Graph';
-import {createEmitChange} from './test-utils';
+import {createEmitChange, createPathNormalizer} from './test-utils';
+import path from 'path';
 
 const {EventEmitter} = require('events');
 
@@ -38,6 +39,7 @@ describe('DeltaCalculator + require.context', () => {
   let deltaCalculator;
   let fileWatcher;
   let emitChange;
+  const p = createPathNormalizer();
 
   const options: Options<> = {
     unstable_allowRequireContext: true,
@@ -64,15 +66,15 @@ describe('DeltaCalculator + require.context', () => {
 
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
-    emitChange = createEmitChange(fileWatcher, '/');
+    emitChange = createEmitChange(fileWatcher, p('/'), path.sep);
 
     markModifiedContextModules.mockImplementation(function <T>(
       this: Graph<T>,
       filePath,
       modifiedContexts,
     ) {
-      if (filePath.startsWith('/ctx/')) {
-        modifiedContexts.add('/ctx?ctx=xxx');
+      if (filePath.startsWith(p('/ctx/'))) {
+        modifiedContexts.add(p('/ctx?ctx=xxx'));
       }
     });
 
@@ -86,12 +88,12 @@ describe('DeltaCalculator + require.context', () => {
       this: Graph<T>,
       options: Options<T>,
     ): Promise<Result<T>> {
-      this.dependencies.set('/bundle', {
+      this.dependencies.set(p('/bundle'), {
         dependencies: new Map([
           [
             'ctx',
             {
-              absolutePath: '/ctx?ctx=xxx',
+              absolutePath: p('/ctx?ctx=xxx'),
               data: {
                 name: 'ctx',
                 data: {
@@ -106,15 +108,15 @@ describe('DeltaCalculator + require.context', () => {
         ]),
         inverseDependencies: new CountingSet([]),
         output: [],
-        path: '/bundle',
+        path: p('/bundle'),
         getSource: () => Buffer.of(),
       });
-      this.dependencies.set('/ctx?ctx=xxx', {
+      this.dependencies.set(p('/ctx?ctx=xxx'), {
         dependencies: new Map([
           [
             'foo',
             {
-              absolutePath: '/ctx/foo',
+              absolutePath: p('/ctx/foo'),
               data: {
                 name: 'foo',
                 data: {
@@ -127,16 +129,16 @@ describe('DeltaCalculator + require.context', () => {
             },
           ],
         ]),
-        inverseDependencies: new CountingSet(['/bundle']),
+        inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
-        path: '/ctx?ctx=xxx',
+        path: p('/ctx?ctx=xxx'),
         getSource: () => Buffer.of(),
       });
-      this.dependencies.set('/ctx/foo', {
+      this.dependencies.set(p('/ctx/foo'), {
         dependencies: new Map(),
-        inverseDependencies: new CountingSet(['/ctx?ctx=xxx']),
+        inverseDependencies: new CountingSet([p('/ctx?ctx=xxx')]),
         output: [],
-        path: '/ctx/foo',
+        path: p('/ctx/foo'),
         getSource: () => Buffer.of(),
       });
 
@@ -158,7 +160,7 @@ describe('DeltaCalculator + require.context', () => {
 
     // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(
-      new Set(['/bundle']),
+      new Set([p('/bundle')]),
       fileWatcher,
       options,
     );
@@ -184,7 +186,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx?ctx=xxx'],
+      [p('/ctx?ctx=xxx')],
       expect.anything(),
     );
 
@@ -207,7 +209,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx?ctx=xxx'],
+      [p('/ctx?ctx=xxx')],
       expect.anything(),
     );
 
@@ -227,7 +229,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx/foo'],
+      [p('/ctx/foo')],
       expect.anything(),
     );
 
@@ -264,7 +266,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx?ctx=xxx'],
+      [p('/ctx?ctx=xxx')],
       expect.anything(),
     );
 
@@ -303,7 +305,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx/foo'],
+      [p('/ctx/foo')],
       expect.anything(),
     );
   });
@@ -323,7 +325,7 @@ describe('DeltaCalculator + require.context', () => {
     });
 
     expect(traverseDependencies).toBeCalledWith(
-      ['/ctx?ctx=xxx'],
+      [p('/ctx?ctx=xxx')],
       expect.anything(),
     );
 

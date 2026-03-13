@@ -28,7 +28,7 @@ export type ChangeEventInput = {
 export function createEmitChange(
   fileWatcher: EventEmitter,
   rootDir: string,
-  pathSeparator: string = '/',
+  pathSeparator: string,
 ): (changes: ChangeEventInput) => void {
   return function emitChange(changes: ChangeEventInput): void {
     const toEntry = (
@@ -59,3 +59,12 @@ export function createEmitChange(
     });
   };
 }
+
+export const createPathNormalizer = (
+  platform: 'win32' | 'posix' = process.platform === 'win32'
+    ? 'win32'
+    : 'posix',
+): (string => string) =>
+  platform === 'win32'
+    ? posixPath => posixPath.replace(/^\//, 'C:\\').replaceAll('/', '\\')
+    : posixPath => posixPath;
