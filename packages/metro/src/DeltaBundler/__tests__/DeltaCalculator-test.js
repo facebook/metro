@@ -18,12 +18,11 @@ import type {
 } from '../types';
 
 import CountingSet from '../../lib/CountingSet';
-import {createEmitChange} from './test-utils';
-import path from 'path';
+import {createEmitChange, createPathNormalizer} from './test-utils';
 
 jest.mock('../../Bundler');
 
-describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
+describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let entryModule: Module<$FlowFixMe>;
   let fooModule: Module<$FlowFixMe>;
   let barModule: Module<$FlowFixMe>;
@@ -35,6 +34,7 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
   let traverseDependencies;
   let initialTraverseDependencies;
   let emitChange;
+  const p = createPathNormalizer(osPlatform);
 
   const options: Options<> = {
     unstable_allowRequireContext: false,
@@ -58,18 +58,6 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       unstable_transformProfile: 'default',
     },
   };
-
-  function p(posixPath: string): string {
-    if (osPlatform === 'win32') {
-      if (path.posix.isAbsolute(posixPath)) {
-        return path.win32.join('C:\\', ...posixPath.split('/'));
-      } else {
-        return posixPath.replaceAll('/', '\\');
-      }
-    }
-
-    return posixPath;
-  }
 
   beforeEach(async () => {
     if (osPlatform === 'win32') {
