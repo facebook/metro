@@ -127,6 +127,17 @@ export type CrawlerOptions = {
   onStatus: (status: WatcherStatus) => void,
 };
 
+export type CrawlResult =
+  | {
+      changedFiles: FileData,
+      removedFiles: Set<Path>,
+      clocks: WatchmanClocks,
+    }
+  | {
+      changedFiles: FileData,
+      removedFiles: Set<Path>,
+    };
+
 export type DependencyExtractor = {
   extract: (
     content: string,

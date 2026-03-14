@@ -13,10 +13,10 @@ import type {WatchmanClockSpec} from '../../flow-types';
 import type {
   CanonicalPath,
   CrawlerOptions,
+  CrawlResult,
   FileData,
   FileMetadata,
   Path,
-  WatchmanClocks,
 } from '../../flow-types';
 import type {WatchmanQueryResponse, WatchmanWatchResponse} from 'fb-watchman';
 
@@ -57,11 +57,7 @@ export default async function watchmanCrawl({
   previousState,
   rootDir,
   roots,
-}: CrawlerOptions): Promise<{
-  changedFiles: FileData,
-  removedFiles: Set<CanonicalPath>,
-  clocks: WatchmanClocks,
-}> {
+}: CrawlerOptions): Promise<CrawlResult> {
   abortSignal?.throwIfAborted();
 
   const client = new watchman.Client();
