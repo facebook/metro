@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<296395484c53039955e7789570880079>>
+ * @generated SignedSource<<25fee66c7d26ad53cdd5bbab454fe50b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/Watcher.js
@@ -64,6 +64,10 @@ export type HealthCheckResult =
 export declare class Watcher extends EventEmitter {
   constructor(options: WatcherOptions);
   crawl(): Promise<CrawlResult>;
+  recrawl(
+    subpath: string,
+    currentFileSystem: CrawlerOptions['previousState']['fileSystem'],
+  ): Promise<CrawlResult>;
   watch(onChange: (change: WatcherBackendChangeEvent) => void): void;
   close(): void;
   checkHealth(timeout: number): Promise<HealthCheckResult>;

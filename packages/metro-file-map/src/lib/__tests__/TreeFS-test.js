@@ -305,6 +305,81 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]),
       });
     });
+
+    test('with subpath only considers files under that path', () => {
+      // Create a FileData that only includes files under 'foo'
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [124, 0, 0, null, 0, null]], // changed mtime
+        // foo/link-to-bar.js and others under foo are missing -> should be in removedFiles
+      ]);
+
+      // Without subpath, all files not in newFiles would be removed
+      // But with subpath='foo', only files under foo are considered
+      expect(tfs.getDifference(newFiles, {subpath: p('foo')})).toEqual({
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
+          [p('foo/another.js'), [124, 0, 0, null, 0, null]],
+        ]),
+        removedFiles: new Set([
+          p('foo/owndir'),
+          p('foo/link-to-bar.js'),
+          p('foo/link-to-another.js'),
+        ]),
+      });
+    });
+
+    test('with subpath detects new files under that path', () => {
+      // Verify that new files are detected and existing files (under the
+      // subdirectory) that are not in newFiles appear in removedFiles
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [123, 2, 0, null, 0, 'another']], // unchanged
+        [p('foo/new-file.js'), [456, 0, 0, null, 0, null]], // new file
+      ]);
+
+      const result = tfs.getDifference(newFiles, {
+        subpath: p('foo'),
+      });
+
+      // New file should be in changedFiles
+      expect(result.changedFiles.has(p('foo/new-file.js'))).toBe(true);
+
+      // Files not in newFiles should be in removedFiles
+      expect(result.removedFiles).toEqual(
+        new Set([
+          p('foo/owndir'),
+          p('foo/link-to-bar.js'),
+          p('foo/link-to-another.js'),
+        ]),
+      );
+
+      // Files outside the subdirectory should NOT be affected
+      expect(result.removedFiles.has(p('bar.js'))).toBe(false);
+      expect(result.removedFiles.has(p('../outside/external.js'))).toBe(false);
+    });
+
+    test('with subpath for non-existent directory returns all as new', () => {
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('nonexistent/file.js'), [123, 0, 0, null, 0, null]],
+      ]);
+
+      // Directory doesn't exist, so nothing to compare - all files are new
+      expect(tfs.getDifference(newFiles, {subpath: p('nonexistent')})).toEqual({
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
+          [p('nonexistent/file.js'), [123, 0, 0, null, 0, null]],
+        ]),
+        removedFiles: new Set(),
+      });
+    });
+
+    test('with empty subpath behaves like no subdirectory specified', () => {
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [123, 0, 0, null, 0, null]],
+      ]);
+
+      const withEmpty = tfs.getDifference(newFiles, {subpath: ''});
+      const withUndefined = tfs.getDifference(newFiles);
+
+      expect(withEmpty).toEqual(withUndefined);
+    });
   });
 
   describe('hierarchicalLookup', () => {

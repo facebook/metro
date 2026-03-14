@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<51ef2d9b353f0cec5e93976e27e3e2f8>>
+ * @generated SignedSource<<547fb85365adf6b917a29b9a53854036>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -106,6 +106,7 @@ export type CrawlerOptions = {
   rootDir: string;
   roots: ReadonlyArray<string>;
   onStatus: (status: WatcherStatus) => void;
+  subpath?: string;
 };
 export type CrawlResult =
   | {changedFiles: FileData; removedFiles: Set<Path>; clocks: WatchmanClocks}
@@ -228,10 +229,22 @@ export type FileStats = Readonly<{
 export interface FileSystem {
   exists(file: Path): boolean;
   getAllFiles(): Array<Path>;
-  getDifference(files: FileData): {
-    changedFiles: FileData;
-    removedFiles: Set<string>;
-  };
+  /**
+   * Given a map of files, determine which of them are new or modified
+   * (changedFiles), and which of them are missing from the input
+   * (removedFiles), vs the current state of this instance of FileSystem.
+   */
+  getDifference(
+    files: FileData,
+    options?: Readonly<{
+      /**
+       * Only consider files under this subpath (which should be a directory)
+       * when computing removedFiles. If not provided, all files in the file
+       * system are considered.
+       */
+      subpath?: string;
+    }>,
+  ): {changedFiles: FileData; removedFiles: Set<string>};
   getSerializableSnapshot(): CacheData['fileSystemData'];
   getSha1(file: Path): null | undefined | string;
   getOrComputeSha1(
@@ -403,6 +416,12 @@ export type WatcherBackendChangeEvent =
       relativePath: string;
       root: string;
       metadata?: void;
+    }>
+  | Readonly<{
+      event: 'recrawl';
+      clock?: ChangeEventClock;
+      relativePath: string;
+      root: string;
     }>;
 export type WatcherBackendOptions = Readonly<{
   ignored: null | undefined | RegExp;
