@@ -42,7 +42,7 @@ const isWatchmanOnPath = () => {
 
 // `null` Watchers will be marked as skipped tests.
 export const WATCHERS: Readonly<{
-  [key: string]:
+  [key: 'Watchman' | 'Native' | 'Fallback']:
     | Class<FallbackWatcher>
     | Class<NativeWatcher>
     | Class<WatchmanWatcher>
@@ -53,6 +53,8 @@ export const WATCHERS: Readonly<{
   Fallback: FallbackWatcher,
 };
 
+export type WatcherName = keyof typeof WATCHERS;
+
 export type EventHelpers = {
   nextEvent: (afterFn: () => Promise<void>) => Promise<{
     eventType: string,
@@ -62,17 +64,17 @@ export type EventHelpers = {
   untilEvent: (
     afterFn: () => Promise<void>,
     expectedPath: string,
-    expectedEvent: 'touch' | 'delete',
+    expectedEvent: 'touch' | 'delete' | 'recrawl',
   ) => Promise<void>,
   allEvents: (
     afterFn: () => Promise<void>,
-    events: ReadonlyArray<[string, 'touch' | 'delete']>,
+    events: ReadonlyArray<[string, 'touch' | 'delete' | 'recrawl']>,
     opts?: {rejectUnexpected: boolean},
   ) => Promise<void>,
 };
 
 export const createTempWatchRoot = async (
-  watcherName: string,
+  watcherName: WatcherName,
   watchmanConfig: {[key: string]: unknown} | false = {},
 ): Promise<string> => {
   const tmpDir = await mkdtemp(
@@ -94,7 +96,7 @@ export const createTempWatchRoot = async (
 };
 
 export const startWatching = async (
-  watcherName: string,
+  watcherName: WatcherName,
   watchRoot: string,
   opts: WatcherOptions,
 ): (Promise<{
