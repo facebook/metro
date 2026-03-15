@@ -10,9 +10,9 @@
  */
 
 import type {
-  CanonicalPath,
   Console,
   CrawlerOptions,
+  CrawlResult,
   FileData,
   IgnoreMatcher,
 } from '../../flow-types';
@@ -170,10 +170,9 @@ function findNative(
   });
 }
 
-export default async function nodeCrawl(options: CrawlerOptions): Promise<{
-  removedFiles: Set<CanonicalPath>,
-  changedFiles: FileData,
-}> {
+export default async function nodeCrawl(
+  options: CrawlerOptions,
+): Promise<CrawlResult> {
   const {
     console,
     previousState,
@@ -185,6 +184,7 @@ export default async function nodeCrawl(options: CrawlerOptions): Promise<{
     perfLogger,
     roots,
     abortSignal,
+    subpath,
   } = options;
 
   abortSignal?.throwIfAborted();
@@ -199,7 +199,9 @@ export default async function nodeCrawl(options: CrawlerOptions): Promise<{
 
   return new Promise((resolve, reject) => {
     const callback: Callback = fileData => {
-      const difference = previousState.fileSystem.getDifference(fileData);
+      const difference = previousState.fileSystem.getDifference(fileData, {
+        subpath,
+      });
 
       perfLogger?.point('nodeCrawl_end');
 

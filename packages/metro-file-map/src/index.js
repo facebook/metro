@@ -23,6 +23,7 @@ import type {
   ChangeEventMetadata,
   Console,
   CrawlerOptions,
+  CrawlResult,
   FileData,
   FileMapPlugin,
   FileMapPluginWorker,
@@ -506,11 +507,7 @@ export default class FileMap extends EventEmitter {
    */
   async #buildFileDelta(
     previousState: CrawlerOptions['previousState'],
-  ): Promise<{
-    removedFiles: Set<CanonicalPath>,
-    changedFiles: FileData,
-    clocks?: WatchmanClocks,
-  }> {
+  ): Promise<CrawlResult> {
     this.#startupPerfLogger?.point('buildFileDelta_start');
 
     const {
@@ -554,10 +551,9 @@ export default class FileMap extends EventEmitter {
 
     watcher.on('status', status => this.emit('status', status));
 
-    return watcher.crawl().then(result => {
-      this.#startupPerfLogger?.point('buildFileDelta_end');
-      return result;
-    });
+    const result = await watcher.crawl();
+    this.#startupPerfLogger?.point('buildFileDelta_end');
+    return result;
   }
 
   #maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
@@ -831,7 +827,9 @@ export default class FileMap extends EventEmitter {
     let changeQueue: Promise<null | void> = Promise.resolve();
 
     const onChange = (change: WatcherBackendChangeEvent) => {
+      // Recrawl events bypass normal filtering - they trigger a full subdirectory scan
       if (
+        change.event !== 'recrawl' &&
         change.metadata &&
         // Ignore all directory events
         (change.metadata.type === 'd' ||
@@ -941,6 +939,63 @@ export default class FileMap extends EventEmitter {
               relativeFilePath,
               type: 'delete',
             });
+          } else if (change.event === 'recrawl') {
+            // Recrawl event: flush pending changes and re-crawl the directory
+            emitChange();
+
+            // The relativePath is relative to the watcher root (change.root),
+            // but we need a path relative to rootDir for the recrawl.
+            const absoluteDirPath = path.join(
+              change.root,
+              normalizePathSeparatorsToSystem(change.relativePath),
+            );
+            const subpath = this.#pathUtils.absoluteToNormal(absoluteDirPath);
+
+            // Crawl the specific subdirectory
+            const watcher = this.#watcher;
+            invariant(watcher != null, 'Watcher must be initialized');
+            const crawlResult = await watcher.recrawl(subpath, fileSystem);
+
+            // Skip if no changes
+            if (
+              crawlResult.changedFiles.size === 0 &&
+              crawlResult.removedFiles.size === 0
+            ) {
+              return null;
+            }
+
+            // Reuse the same batch processing logic as build()
+            const recrawlChangeAggregator = await this.#applyFileDelta(
+              fileSystem,
+              this.#plugins,
+              crawlResult,
+            );
+
+            // Update clock if provided
+            this.#updateClock(clocks, change.clock);
+
+            // Skip emit if no changes after processing
+            if (recrawlChangeAggregator.getSize() === 0) {
+              return null;
+            }
+
+            // Emit changes directly
+            const toPublicMetadata = (
+              metadata: Readonly<FileMetadata>,
+            ): ChangedFileMetadata => ({
+              isSymlink: metadata[H.SYMLINK] !== 0,
+              modifiedTime: metadata[H.MTIME] ?? null,
+            });
+
+            const changesWithMetadata =
+              recrawlChangeAggregator.getMappedView(toPublicMetadata);
+
+            const changeEvent: ChangeEvent = {
+              changes: changesWithMetadata,
+              logger: null,
+              rootDir: this.#options.rootDir,
+            };
+            this.emit('change', changeEvent);
           } else {
             throw new Error(
               `metro-file-map: Unrecognized event type from watcher: ${change.event}`,

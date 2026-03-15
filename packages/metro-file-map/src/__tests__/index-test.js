@@ -64,7 +64,11 @@ jest.mock('jest-worker', () => ({
   }),
 }));
 
-jest.mock('../crawlers/node', () => ({__esModule: true, default: jest.fn()}));
+const mockNodeCrawler = jest.fn();
+jest.mock('../crawlers/node', () => ({
+  __esModule: true,
+  default: mockNodeCrawler,
+}));
 jest.mock('../crawlers/watchman', () => ({
   __esModule: true,
   default: jest.fn(options => {
@@ -277,6 +281,7 @@ let cacheContent = null;
 describe('FileMap', () => {
   beforeEach(() => {
     jest.resetModules();
+    mockNodeCrawler.mockClear();
 
     mockEmitters = Object.create(null);
     mockFs = object({
@@ -2480,6 +2485,244 @@ describe('FileMap', () => {
           const {changes} = await waitForItToChange(fileMap);
           expect(countFileChanges(changes)).toBe(1);
         },
+      );
+    });
+
+    describe('recrawl events', () => {
+      // Recrawl events only come from non-Watchman watchers (NativeWatcher,
+      // FallbackWatcher), because Watchman handles its own recrawls internally.
+      // These tests use useWatchman: false to simulate a non-Watchman watcher,
+      // so we need to mock nodeCrawl for the initial build.
+      beforeEach(() => {
+        mockNodeCrawler.mockImplementationOnce(async () => ({
+          changedFiles: new Map([
+            [path.join('fruits', 'Banana.js'), [32, 42, 0, null, 0, 'Banana']],
+            [path.join('fruits', 'Pear.js'), [32, 42, 0, null, 0, 'Pear']],
+            [
+              path.join('fruits', 'Strawberry.js'),
+              [32, 42, 0, null, 0, 'Strawberry'],
+            ],
+            [
+              path.join('fruits', '__mocks__', 'Pear.js'),
+              [32, 42, 0, null, 0, null],
+            ],
+            [
+              path.join('vegetables', 'Melon.js'),
+              [32, 42, 0, null, 0, 'Melon'],
+            ],
+          ]),
+          removedFiles: new Set<string>(),
+        }));
+      });
+
+      fm_it(
+        'recrawl event triggers subdirectory crawl and detects added files',
+        async ({fileMap, hasteMap}) => {
+          const {fileSystem: _fileSystem} = await fileMap.build();
+          const fruitsRoot = path.join('/', 'project', 'fruits');
+          const e = mockEmitters[fruitsRoot];
+
+          // Simulate a directory move-in: a new subdirectory appears with files
+          const newDir = path.join(fruitsRoot, 'tropical');
+          const newFile1 = path.join(newDir, 'Mango.js');
+          const newFile2 = path.join(newDir, 'Papaya.js');
+
+          mockFs[newFile1] = `// Mango!`;
+          mockFs[newFile2] = `// Papaya!`;
+
+          // Set up node crawler mock to return the new files
+          mockNodeCrawler.mockImplementationOnce(
+            async (options: $FlowFixMe) => {
+              const {rootDir} = options;
+              const changedFiles: Map<string, FileMetadata> = new Map();
+
+              // Return files found in the crawled subdirectory
+              changedFiles.set(path.relative(rootDir, newFile1), [
+                100,
+                50,
+                0,
+                null,
+                0,
+                null,
+              ]);
+              changedFiles.set(path.relative(rootDir, newFile2), [
+                101,
+                60,
+                0,
+                null,
+                0,
+                null,
+              ]);
+
+              return {
+                changedFiles,
+                removedFiles: new Set<string>(),
+              };
+            },
+          );
+
+          // Emit a recrawl event for the new directory
+          e.emitFileEvent({
+            event: 'recrawl',
+            relativePath: 'tropical',
+          });
+
+          await waitForItToChange(fileMap);
+
+          // Verify crawl was called with the correct directory
+          expect(mockNodeCrawler).toHaveBeenNthCalledWith(
+            2, // Second call is the recrawl (first call is initial build)
+            expect.objectContaining({
+              roots: [newDir],
+            }),
+          );
+        },
+        {config: {useWatchman: false}},
+      );
+
+      fm_it(
+        'recrawl event detects removed files from a moved-out directory',
+        async ({fileMap, hasteMap}) => {
+          const {fileSystem} = await fileMap.build();
+          const fruitsRoot = path.join('/', 'project', 'fruits');
+          const e = mockEmitters[fruitsRoot];
+
+          // Verify the file exists initially
+          const existingFile = path.join(fruitsRoot, 'Banana.js');
+          expect(fileSystem.exists(existingFile)).toBe(true);
+          expect(hasteMap.getModule('Banana')).toBe(existingFile);
+
+          // Set up node crawler mock to return the file as removed
+          mockNodeCrawler.mockImplementationOnce(
+            async (options: $FlowFixMe) => {
+              const {rootDir} = options;
+              const removedFiles: Set<string> = new Set();
+              removedFiles.add(path.relative(rootDir, existingFile));
+
+              return {
+                changedFiles: new Map<string, FileMetadata>(),
+                removedFiles,
+              };
+            },
+          );
+
+          // Emit a recrawl event (simulating directory being moved out)
+          e.emitFileEvent({
+            event: 'recrawl',
+            relativePath: '',
+          });
+
+          const {changes} = await waitForItToChange(fileMap);
+
+          // Verify deletion was emitted
+          expect(countFileChanges(changes)).toBe(1);
+          expect([...changes.removedFiles]).toHaveLength(1);
+
+          // Verify file is no longer in the file system
+          expect(fileSystem.exists(existingFile)).toBe(false);
+
+          // Verify haste map was updated
+          expect(hasteMap.getModule('Banana')).toBeNull();
+        },
+        {config: {useWatchman: false}},
+      );
+
+      fm_it(
+        'recrawl event detects both added and removed files',
+        async ({fileMap, hasteMap}) => {
+          const {fileSystem} = await fileMap.build();
+          const fruitsRoot = path.join('/', 'project', 'fruits');
+          const e = mockEmitters[fruitsRoot];
+
+          // Initial state
+          const existingFile = path.join(fruitsRoot, 'Pear.js');
+          expect(fileSystem.exists(existingFile)).toBe(true);
+
+          // New file to be added
+          const newFile = path.join(fruitsRoot, 'Kiwi.js');
+          mockFs[newFile] = `// Kiwi!`;
+
+          // Set up node crawler mock
+          mockNodeCrawler.mockImplementationOnce(
+            async (options: $FlowFixMe) => {
+              const {rootDir} = options;
+              const changedFiles: Map<string, FileMetadata> = new Map();
+              const removedFiles: Set<string> = new Set();
+
+              // Add new file
+              changedFiles.set(path.relative(rootDir, newFile), [
+                200,
+                70,
+                0,
+                null,
+                0,
+                null,
+              ]);
+
+              // Remove existing file
+              removedFiles.add(path.relative(rootDir, existingFile));
+
+              return {
+                changedFiles,
+                removedFiles,
+              };
+            },
+          );
+
+          e.emitFileEvent({
+            event: 'recrawl',
+            relativePath: '',
+          });
+
+          const {changes} = await waitForItToChange(fileMap);
+
+          // Verify both changes were emitted
+          expect(countFileChanges(changes)).toBe(2);
+          expect([...changes.addedFiles]).toHaveLength(1);
+          expect([...changes.removedFiles]).toHaveLength(1);
+
+          // Verify file system state
+          expect(fileSystem.exists(newFile)).toBe(true);
+          expect(fileSystem.exists(existingFile)).toBe(false);
+
+          // Verify haste map state
+          expect(hasteMap.getModule('Kiwi')).toBe(newFile);
+          expect(mockNodeCrawler).toHaveBeenCalled();
+        },
+        {config: {useWatchman: false}},
+      );
+
+      fm_it(
+        'recrawl event with no changes does not emit',
+        async ({fileMap}) => {
+          await fileMap.build();
+          const fruitsRoot = path.join('/', 'project', 'fruits');
+          const e = mockEmitters[fruitsRoot];
+
+          // Set up node crawler mock to return no changes
+          mockNodeCrawler.mockImplementationOnce(async () => ({
+            changedFiles: new Map<string, FileMetadata>(),
+            removedFiles: new Set<string>(),
+          }));
+
+          const changeListener = jest.fn();
+          fileMap.on('change', changeListener);
+
+          e.emitFileEvent({
+            event: 'recrawl',
+            relativePath: 'nonexistent',
+          });
+
+          // Wait for processing
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Verify crawl was called
+          expect(mockNodeCrawler).toHaveBeenCalled();
+
+          // Verify no change event was emitted (since no changes)
+          expect(changeListener).not.toHaveBeenCalled();
+        },
+        {config: {useWatchman: false}},
       );
     });
   });

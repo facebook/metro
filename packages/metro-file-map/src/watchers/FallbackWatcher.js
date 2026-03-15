@@ -124,12 +124,27 @@ export default class FallbackWatcher extends AbstractWatcher {
   }
 
   /**
-   * Removes a dir from the registry.
+   * Removes a dir from the registry, returning all files that were registered
+   * under it (recursively).
    */
-  #unregisterDir(dirpath: string): void {
-    if (this.#dirRegistry[dirpath]) {
-      delete this.#dirRegistry[dirpath];
+  #unregisterDir(dirpath: string): Array<string> {
+    const removedFiles: Array<string> = [];
+
+    // Find and remove all entries under this directory
+    for (const registeredDir of Object.keys(this.#dirRegistry)) {
+      if (
+        registeredDir === dirpath ||
+        registeredDir.startsWith(dirpath + path.sep)
+      ) {
+        // Collect all files in this directory
+        for (const filename of Object.keys(this.#dirRegistry[registeredDir])) {
+          removedFiles.push(path.join(registeredDir, filename));
+        }
+        delete this.#dirRegistry[registeredDir];
+      }
     }
+
+    return removedFiles;
   }
 
   /**
@@ -350,7 +365,15 @@ export default class FallbackWatcher extends AbstractWatcher {
         return;
       }
       this.#unregister(fullPath);
-      this.#unregisterDir(fullPath);
+      // When a directory is deleted, emit delete events for all files we
+      // knew about under that directory
+      const removedFiles = this.#unregisterDir(fullPath);
+      for (const removedFile of removedFiles) {
+        this.#emitEvent({
+          event: DELETE_EVENT,
+          relativePath: path.relative(this.root, removedFile),
+        });
+      }
       if (registered) {
         this.#emitEvent({event: DELETE_EVENT, relativePath});
       }

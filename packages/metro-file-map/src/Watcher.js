@@ -11,12 +11,11 @@
 import type {
   Console,
   CrawlerOptions,
-  FileData,
+  CrawlResult,
   Path,
   PerfLogger,
   WatcherBackend,
   WatcherBackendChangeEvent,
-  WatchmanClocks,
 } from './flow-types';
 import type {WatcherOptions as WatcherBackendOptions} from './watchers/common';
 
@@ -37,11 +36,12 @@ const debug = require('debug')('Metro:Watcher');
 
 const MAX_WAIT_TIME = 240000;
 
-type CrawlResult = {
-  changedFiles: FileData,
-  clocks?: WatchmanClocks,
-  removedFiles: Set<Path>,
-};
+type InternalCrawlOptions = Readonly<{
+  previousState: CrawlerOptions['previousState'],
+  roots: ReadonlyArray<string>,
+  subpath?: string,
+  useWatchman: boolean,
+}>;
 
 type WatcherOptions = {
   abortSignal: AbortSignal,
@@ -86,12 +86,41 @@ export class Watcher extends EventEmitter {
 
   async crawl(): Promise<CrawlResult> {
     this.#options.perfLogger?.point('crawl_start');
-
     const options = this.#options;
+
+    const result = await this.#crawl({
+      previousState: options.previousState,
+      roots: options.roots,
+      useWatchman: options.useWatchman,
+    });
+
+    this.#options.perfLogger?.point('crawl_end');
+    return result;
+  }
+
+  async recrawl(
+    subpath: string,
+    currentFileSystem: CrawlerOptions['previousState']['fileSystem'],
+  ): Promise<CrawlResult> {
+    return this.#crawl({
+      previousState: {
+        clocks: new Map(),
+        fileSystem: currentFileSystem,
+      },
+      roots: [path.join(this.#options.rootDir, subpath)],
+      subpath,
+      useWatchman: false,
+    });
+  }
+
+  async #crawl(crawlOptions: InternalCrawlOptions): Promise<CrawlResult> {
+    const options = this.#options;
+    const {useWatchman, subpath} = crawlOptions;
+
     const ignoreForCrawl = (filePath: string) =>
       options.ignoreForCrawl(filePath) ||
       path.basename(filePath).startsWith(this.#options.healthCheckFilePrefix);
-    const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
+    const crawl = useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
 
     options.abortSignal.throwIfAborted();
@@ -108,55 +137,50 @@ export class Watcher extends EventEmitter {
         this.emit('status', status);
       },
       perfLogger: options.perfLogger,
-      previousState: options.previousState,
+      previousState: crawlOptions.previousState,
       rootDir: options.rootDir,
-      roots: options.roots,
+      roots: crawlOptions.roots,
+      subpath,
     };
 
-    const retry = (error: Error): Promise<CrawlResult> => {
-      if (crawl === watchmanCrawl) {
-        crawler = 'node';
-        options.console.warn(
-          'metro-file-map: Watchman crawl failed. Retrying once with node ' +
-            'crawler.\n' +
-            "  Usually this happens when watchman isn't running. Create an " +
-            "empty `.watchmanconfig` file in your project's root folder or " +
-            'initialize a git or hg repository in your project.\n' +
-            '  ' +
-            error.toString(),
-        );
-        // $FlowFixMe[incompatible-type] Found when updating Promise type definition
-        return nodeCrawl(crawlerOptions).catch<CrawlResult>(e => {
-          throw new Error(
-            'Crawler retry failed:\n' +
-              `  Original error: ${error.message}\n` +
-              `  Retry error: ${e.message}\n`,
-          );
-        });
-      }
+    debug('Crawling roots: %s with %s crawler.', crawlOptions.roots, crawler);
 
-      throw error;
-    };
-
-    const logEnd = (delta: CrawlResult): CrawlResult => {
-      debug(
-        'Crawler "%s" returned %d added/modified, %d removed, %d clock(s).',
-        crawler,
-        delta.changedFiles.size,
-        delta.removedFiles.size,
-        delta.clocks?.size ?? 0,
-      );
-      this.#options.perfLogger?.point('crawl_end');
-      return delta;
-    };
-
-    debug('Beginning crawl with "%s".', crawler);
+    let delta: CrawlResult;
     try {
-      // $FlowFixMe[incompatible-type] Found when updating Promise type definition
-      return crawl(crawlerOptions).catch<CrawlResult>(retry).then(logEnd);
-    } catch (error) {
-      return retry(error).then(logEnd);
+      delta = await crawl(crawlerOptions);
+    } catch (firstError) {
+      if (crawl !== watchmanCrawl) {
+        throw firstError;
+      }
+      crawler = 'node';
+      options.console.warn(
+        'metro-file-map: Watchman crawl failed. Retrying once with node ' +
+          'crawler.\n' +
+          "  Usually this happens when watchman isn't running. Create an " +
+          "empty `.watchmanconfig` file in your project's root folder or " +
+          'initialize a git or hg repository in your project.\n' +
+          '  ' +
+          firstError.toString(),
+      );
+      try {
+        delta = await nodeCrawl(crawlerOptions);
+      } catch (retryError) {
+        throw new Error(
+          'Crawler retry failed:\n' +
+            `  Original error: ${firstError.message}\n` +
+            `  Retry error: ${retryError.message}\n`,
+        );
+      }
     }
+
+    debug(
+      'Crawler "%s" returned %d added/modified, %d removed, %d clock(s).',
+      crawler,
+      delta.changedFiles.size,
+      delta.removedFiles.size,
+      delta.clocks?.size ?? 0,
+    );
+    return delta;
   }
 
   async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
@@ -212,6 +236,15 @@ export class Watcher extends EventEmitter {
               );
               this.#handleHealthCheckObservation(basename);
             }
+            return;
+          }
+          // Watchman handles recrawls internally - receiving a recrawl event
+          // when using Watchman would indicate a bug. Log an error and ignore.
+          if (change.event === 'recrawl' && useWatchman) {
+            this.#options.console.error(
+              'metro-file-map: Received unexpected recrawl event while using ' +
+                'Watchman. Watchman recrawls are not implemented.',
+            );
             return;
           }
           onChange(change);

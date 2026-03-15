@@ -305,6 +305,81 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ]),
       });
     });
+
+    test('with subpath only considers files under that path', () => {
+      // Create a FileData that only includes files under 'foo'
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [124, 0, 0, null, 0, null]], // changed mtime
+        // foo/link-to-bar.js and others under foo are missing -> should be in removedFiles
+      ]);
+
+      // Without subpath, all files not in newFiles would be removed
+      // But with subpath='foo', only files under foo are considered
+      expect(tfs.getDifference(newFiles, {subpath: p('foo')})).toEqual({
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
+          [p('foo/another.js'), [124, 0, 0, null, 0, null]],
+        ]),
+        removedFiles: new Set([
+          p('foo/owndir'),
+          p('foo/link-to-bar.js'),
+          p('foo/link-to-another.js'),
+        ]),
+      });
+    });
+
+    test('with subpath detects new files under that path', () => {
+      // Verify that new files are detected and existing files (under the
+      // subdirectory) that are not in newFiles appear in removedFiles
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [123, 2, 0, null, 0, 'another']], // unchanged
+        [p('foo/new-file.js'), [456, 0, 0, null, 0, null]], // new file
+      ]);
+
+      const result = tfs.getDifference(newFiles, {
+        subpath: p('foo'),
+      });
+
+      // New file should be in changedFiles
+      expect(result.changedFiles.has(p('foo/new-file.js'))).toBe(true);
+
+      // Files not in newFiles should be in removedFiles
+      expect(result.removedFiles).toEqual(
+        new Set([
+          p('foo/owndir'),
+          p('foo/link-to-bar.js'),
+          p('foo/link-to-another.js'),
+        ]),
+      );
+
+      // Files outside the subdirectory should NOT be affected
+      expect(result.removedFiles.has(p('bar.js'))).toBe(false);
+      expect(result.removedFiles.has(p('../outside/external.js'))).toBe(false);
+    });
+
+    test('with subpath for non-existent directory returns all as new', () => {
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('nonexistent/file.js'), [123, 0, 0, null, 0, null]],
+      ]);
+
+      // Directory doesn't exist, so nothing to compare - all files are new
+      expect(tfs.getDifference(newFiles, {subpath: p('nonexistent')})).toEqual({
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
+          [p('nonexistent/file.js'), [123, 0, 0, null, 0, null]],
+        ]),
+        removedFiles: new Set(),
+      });
+    });
+
+    test('with empty subpath behaves like no subdirectory specified', () => {
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('foo/another.js'), [123, 0, 0, null, 0, null]],
+      ]);
+
+      const withEmpty = tfs.getDifference(newFiles, {subpath: ''});
+      const withUndefined = tfs.getDifference(newFiles);
+
+      expect(withEmpty).toEqual(withUndefined);
+    });
   });
 
   describe('hierarchicalLookup', () => {
@@ -776,16 +851,16 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('./bar.js')],
         [p('./link-to-foo/.././bar.js')],
         [p('/outside/../project/./bar.js')],
-      ])('removes a file and returns its metadata: %s', mixedPath => {
+      ])('removes a file: %s', mixedPath => {
         expect(tfs.linkStats(mixedPath)).not.toBeNull();
-        expect(Array.isArray(tfs.remove(mixedPath))).toBe(true);
+        tfs.remove(mixedPath);
         expect(tfs.linkStats(mixedPath)).toBeNull();
       });
 
       test('deletes a symlink, not its target', () => {
         expect(tfs.linkStats(p('foo/link-to-bar.js'))).not.toBeNull();
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
-        expect(Array.isArray(tfs.remove(p('foo/link-to-bar.js')))).toBe(true);
+        tfs.remove(p('foo/link-to-bar.js'));
         expect(tfs.linkStats(p('foo/link-to-bar.js'))).toBeNull();
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
       });
@@ -806,6 +881,21 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(p('node_modules')).exists).toBe(false);
       });
 
+      test('deleting a non-empty directory also removes its empty parent', () => {
+        // node_modules/pkg is the only child of node_modules
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(true);
+        expect(tfs.lookup(p('node_modules')).exists).toBe(true);
+        tfs.remove(p('node_modules/pkg'));
+        // Expect the directory and its contents to be deleted
+        expect(tfs.lookup(p('node_modules/pkg/a.js')).exists).toBe(false);
+        expect(tfs.lookup(p('node_modules/pkg/package.json')).exists).toBe(
+          false,
+        );
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(false);
+        // And its parent, which is now empty
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+      });
+
       test('deleting all files leaves an empty map', () => {
         for (const {canonicalPath} of tfs.metadataIterator({
           includeSymlinks: true,
@@ -817,8 +907,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(p('foo')).exists).toBe(false);
       });
 
-      test('returns null for a non-existent file', () => {
-        expect(tfs.remove('notexists.js')).toBeNull();
+      test('no-op for a non-existent file', () => {
+        expect(() => tfs.remove('notexists.js')).not.toThrow();
       });
     });
   });
@@ -1107,6 +1197,17 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ['fileRemoved', p('new2/file.js'), [3, 0, 0, '', 0]],
         ['directoryRemoved', p('new2')],
       ]);
+    });
+
+    describe('remove with listener', () => {
+      test('tracks removed files and directories when deleting a non-empty directory', () => {
+        simpleTfs.remove(p('dir'), listener);
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileRemoved', p('dir/nested.js'), [456, 0, 0, '', 0]],
+          ['directoryRemoved', p('dir')],
+        ]);
+      });
     });
 
     describe('symlinks with listener', () => {
