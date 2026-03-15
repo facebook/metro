@@ -1177,9 +1177,20 @@ test('collects imports', () => {
   const {dependencies} = collectDependencies(ast, opts);
 
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
-    {name: 'do', data: objectContaining({asyncType: null})},
-    {name: 'setup/something', data: objectContaining({asyncType: null})},
+    {
+      name: 'b/lib/a',
+      data: objectContaining({
+        asyncType: null,
+        importBindings: [{type: 'default'}],
+      }),
+    },
+    {
+      name: 'do',
+      data: objectContaining({
+        asyncType: null,
+        importBindings: [{type: 'namespace'}],
+      }),
+    },
   ]);
 });
 
@@ -1192,10 +1203,143 @@ test('collects export from', () => {
 
   const {dependencies} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'Apple', data: objectContaining({asyncType: null})},
-    {name: 'Banana', data: objectContaining({asyncType: null})},
-    {name: 'Kiwi', data: objectContaining({asyncType: null})},
+    {
+      name: 'Banana',
+      data: objectContaining({
+        asyncType: null,
+        reexportBindings: [
+          {type: 'reExportNamed', name: 'Banana', as: 'Banana'},
+        ],
+      }),
+    },
+    {
+      name: 'Kiwi',
+      data: objectContaining({
+        asyncType: null,
+        reexportBindings: [{type: 'reExportAll'}],
+      }),
+    },
   ]);
+});
+
+describe('tree-shaking binding extraction', () => {
+  test('extracts import binding variants and skips type-only imports', () => {
+    const ast = astFromCode(`
+      import foo from 'def';
+      import * as ns from 'ns';
+      import {a} from 'named';
+      import {a as b} from 'aliased';
+      import {default as d} from 'def-as-named';
+      import 'side';
+      import type {T} from 'type-only';
+      import {type U, val} from 'mixed';
+    `);
+
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {
+        name: 'def',
+        data: objectContaining({importBindings: [{type: 'default'}]}),
+      },
+      {
+        name: 'ns',
+        data: objectContaining({importBindings: [{type: 'namespace'}]}),
+      },
+      {
+        name: 'named',
+        data: objectContaining({importBindings: [{type: 'named', name: 'a'}]}),
+      },
+      {
+        name: 'aliased',
+        data: objectContaining({
+          importBindings: [{type: 'named', name: 'a', as: 'b'}],
+        }),
+      },
+      {
+        name: 'def-as-named',
+        data: objectContaining({importBindings: [{type: 'default'}]}),
+      },
+      {
+        name: 'side',
+        data: objectContaining({importBindings: [{type: 'sideEffectOnly'}]}),
+      },
+      {
+        name: 'mixed',
+        data: objectContaining({
+          importBindings: [{type: 'named', name: 'val'}],
+        }),
+      },
+    ]);
+    expect(dependencies.some(dep => dep.name === 'type-only')).toBe(false);
+  });
+
+  test('extracts export-from variants and skips type-only export-from', () => {
+    const ast = astFromCode(`
+      export {foo as foo1} from 'foo';
+      export {foo as bar} from 'foo-as-bar';
+      export {default as baz} from 'default-as-baz';
+      export * from 'star';
+      export * as ns from 'star-ns';
+      export type {T} from 'type-export';
+      export {} from 'empty';
+    `);
+
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {
+        name: 'foo',
+        data: objectContaining({
+          reexportBindings: [{type: 'reExportNamed', name: 'foo', as: 'foo1'}],
+        }),
+      },
+      {
+        name: 'foo-as-bar',
+        data: objectContaining({
+          reexportBindings: [{type: 'reExportNamed', name: 'foo', as: 'bar'}],
+        }),
+      },
+      {
+        name: 'default-as-baz',
+        data: objectContaining({
+          reexportBindings: [
+            {type: 'reExportNamed', name: 'default', as: 'baz'},
+          ],
+        }),
+      },
+      {
+        name: 'star',
+        data: objectContaining({reexportBindings: [{type: 'reExportAll'}]}),
+      },
+      {
+        name: 'star-ns',
+        data: objectContaining({
+          reexportBindings: [{type: 'reExportNamespace', as: 'ns'}],
+        }),
+      },
+      {
+        name: 'empty',
+        data: objectContaining({importBindings: [{type: 'sideEffectOnly'}]}),
+      },
+    ]);
+    expect(dependencies.some(dep => dep.name === 'type-export')).toBe(false);
+  });
+
+  test('merges import and re-export metadata for same module', () => {
+    const ast = astFromCode(`
+      import {x} from 'B';
+      export {y} from 'B';
+    `);
+
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toHaveLength(1);
+    expect(dependencies[0]).toEqual({
+      name: 'B',
+      data: objectContaining({
+        importBindings: [{type: 'named', name: 'x'}],
+        reexportBindings: [{type: 'reExportNamed', name: 'y', as: 'y'}],
+      }),
+    });
+  });
 });
 
 test('records locations of dependencies', () => {
@@ -1230,20 +1374,18 @@ test('records locations of dependencies', () => {
         | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (b/lib/a)
     > 2 | import * as d from 'do';
         | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (do)
-    > 3 | import type {s} from 'setup/something';
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (setup/something)
     > 4 | import('some/async/module').then(foo => {});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (some/async/module)
     > 4 | import('some/async/module').then(foo => {});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
-        |                 ^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
+        |                 ^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
-        | ^^^^^^^^^^^^^^ dep #5 (foo)
+        | ^^^^^^^^^^^^^^ dep #4 (foo)
     > 8 | require('foo'); __prefetchImport('baz');
-        |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6 (baz)
+        |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #5 (baz)
     > 9 | interopRequireDefault(require('quux')); // Simulated Babel output
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #7 (quux)"
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #6 (quux)"
   `);
 });
 

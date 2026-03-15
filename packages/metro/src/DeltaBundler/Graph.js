@@ -758,8 +758,15 @@ export class Graph<T = MixedOutput> {
   }
 
   _moduleSnapshot(module: Module<T>): ModuleData<T> {
-    const {dependencies, getSource, output, unstable_transformResultKey} =
-      module;
+    const {
+      dependencies,
+      getSource,
+      output,
+      unstable_transformResultKey,
+      moduleSyntax,
+      sideEffects,
+      sideEffectsRoot,
+    } = module;
 
     const resolvedContexts: Map<string, RequireContext> = new Map();
     for (const [key, dependency] of dependencies) {
@@ -779,6 +786,9 @@ export class Graph<T = MixedOutput> {
       output,
       resolvedContexts,
       unstable_transformResultKey,
+      moduleSyntax,
+      sideEffects,
+      sideEffectsRoot,
     };
   }
 

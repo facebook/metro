@@ -35,7 +35,7 @@ import type {
 
 import * as assetTransformer from './utils/assetTransformer';
 import getMinifier from './utils/getMinifier';
-import {transformFromAstSync} from '@babel/core';
+import {transformFromAstSync, traverse} from '@babel/core';
 import generate from '@babel/generator';
 import * as babylon from '@babel/parser';
 import * as types from '@babel/types';
@@ -110,6 +110,8 @@ export type JsTransformerConfig = Readonly<{
   unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
   /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
   unstable_renameRequire?: boolean,
+  /** Enable tree shaking (production only). Preserves ESM syntax for deferred finalization. */
+  unstable_treeShake?: boolean,
 }>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -128,6 +130,8 @@ export type JsTransformOptions = Readonly<{
   unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
   unstable_staticHermesOptimizedRequire?: boolean,
   unstable_transformProfile: TransformProfile,
+  /** Enable tree shaking (production only, forced false in dev). */
+  unstable_treeShake?: boolean,
 }>;
 
 opaque type Path = string;
@@ -174,9 +178,168 @@ export type JsOutput = Readonly<{
   type: JSFileType,
 }>;
 
+type ExportBinding =
+  | {type: 'named', name: string, localName: string}
+  | {type: 'default', localName: ?string}
+  | {type: 'reExportNamed', name: string, as: string, source: string}
+  | {type: 'reExportAll', source: string}
+  | {type: 'reExportNamespace', as: string, source: string};
+
+export type ModuleSyntaxMeta = {
+  exports: ReadonlyArray<ExportBinding>,
+  isESModule: boolean,
+  directExportNames: ReadonlySet<string>,
+  parserPlugins: ReadonlyArray<string | [string, mixed]>,
+};
+
+function collectModuleSyntaxMeta(
+  ast: BabelNodeFile,
+  parserPlugins: ReadonlyArray<string | [string, mixed]>,
+): ModuleSyntaxMeta {
+  const exportBindings: Array<ExportBinding> = [];
+  const directExportNames: Set<string> = new Set();
+  let isESModule = false;
+
+  traverse(ast, {
+    ImportDeclaration(path: $FlowFixMe) {
+      if (
+        path.node.importKind !== 'type' &&
+        path.node.importKind !== 'typeof'
+      ) {
+        isESModule = true;
+      }
+    },
+    ExportDefaultDeclaration(path: $FlowFixMe) {
+      isESModule = true;
+      const decl = path.node.declaration;
+      const localName = decl.id?.name ?? null;
+      exportBindings.push({type: 'default', localName});
+      directExportNames.add('default');
+    },
+    ExportNamedDeclaration(path: $FlowFixMe) {
+      if (
+        path.node.exportKind === 'type' ||
+        path.node.exportKind === 'typeof'
+      ) {
+        return;
+      }
+      isESModule = true;
+      if (path.node.source) {
+        for (const spec of path.node.specifiers) {
+          exportBindings.push({
+            type: 'reExportNamed',
+            name:
+              spec.local.type === 'StringLiteral'
+                ? spec.local.value
+                : spec.local.name,
+            as:
+              spec.exported.type === 'StringLiteral'
+                ? spec.exported.value
+                : spec.exported.name,
+            source: path.node.source.value,
+          });
+        }
+      } else if (path.node.declaration) {
+        const decl = path.node.declaration;
+        if (decl.type === 'VariableDeclaration') {
+          for (const declarator of decl.declarations) {
+            if (declarator.id.type === 'Identifier') {
+              exportBindings.push({
+                type: 'named',
+                name: declarator.id.name,
+                localName: declarator.id.name,
+              });
+              directExportNames.add(declarator.id.name);
+            } else if (declarator.id.type === 'ObjectPattern') {
+              for (const prop of declarator.id.properties) {
+                if (
+                  prop.type === 'ObjectProperty' &&
+                  prop.value.type === 'Identifier'
+                ) {
+                  exportBindings.push({
+                    type: 'named',
+                    name: prop.value.name,
+                    localName: prop.value.name,
+                  });
+                  directExportNames.add(prop.value.name);
+                }
+              }
+            } else if (declarator.id.type === 'ArrayPattern') {
+              for (const element of declarator.id.elements) {
+                if (element?.type === 'Identifier') {
+                  exportBindings.push({
+                    type: 'named',
+                    name: element.name,
+                    localName: element.name,
+                  });
+                  directExportNames.add(element.name);
+                }
+              }
+            }
+          }
+        } else if (decl.id) {
+          exportBindings.push({
+            type: 'named',
+            name: decl.id.name,
+            localName: decl.id.name,
+          });
+          directExportNames.add(decl.id.name);
+        }
+      } else {
+        for (const spec of path.node.specifiers) {
+          const name =
+            spec.exported.type === 'StringLiteral'
+              ? spec.exported.value
+              : spec.exported.name;
+          exportBindings.push({
+            type: 'named',
+            name,
+            localName:
+              spec.local.type === 'StringLiteral'
+                ? spec.local.value
+                : spec.local.name,
+          });
+          directExportNames.add(name);
+        }
+      }
+    },
+    ExportAllDeclaration(path: $FlowFixMe) {
+      if (path.node.exportKind === 'type') {
+        return;
+      }
+      isESModule = true;
+      if (path.node.exported != null) {
+        const exportedName =
+          path.node.exported.type === 'StringLiteral'
+            ? path.node.exported.value
+            : path.node.exported.name;
+        exportBindings.push({
+          type: 'reExportNamespace',
+          as: exportedName,
+          source: path.node.source.value,
+        });
+        directExportNames.add(exportedName);
+      } else {
+        exportBindings.push({
+          type: 'reExportAll',
+          source: path.node.source.value,
+        });
+      }
+    },
+  });
+
+  return {
+    exports: exportBindings,
+    isESModule,
+    directExportNames,
+    parserPlugins,
+  };
+}
+
 type TransformResponse = Readonly<{
   dependencies: ReadonlyArray<TransformResultDependency>,
   output: ReadonlyArray<JsOutput>,
+  moduleSyntax?: ModuleSyntaxMeta,
 }>;
 
 function getDynamicDepsBehavior(
@@ -292,8 +455,145 @@ async function transformJS(
     directives.push(types.directive(types.directiveLiteral('use strict')));
   }
 
-  // Perform the import-export transform (in case it's still needed), then
-  // fold requires and perform constant folding (if in dev).
+  if (
+    options.unstable_treeShake === true &&
+    file.type !== 'js/script' &&
+    ast.program.sourceType === 'module'
+  ) {
+    const parserPlugins = getParserPluginsForFile(file.filename);
+    const moduleSyntax = collectModuleSyntaxMeta(ast, parserPlugins);
+
+    if (moduleSyntax.isESModule) {
+      const esmPlugins: Array<PluginEntry> = [];
+
+      if (options.inlineRequires) {
+        esmPlugins.push([
+          metroTransformPlugins.inlineRequiresPlugin,
+          {
+            ignoredRequires: options.nonInlinedRequires,
+            inlineableCalls: [importDefault, importAll],
+            memoizeCalls:
+              // $FlowFixMe[incompatible-type] is this always (?boolean)?
+              options.customTransformOptions?.unstable_memoizeInlineRequires ??
+              options.unstable_memoizeInlineRequires,
+            nonMemoizedModules: options.unstable_nonMemoizedInlineRequires,
+          } as InlineRequiresPluginOptions,
+        ]);
+      }
+
+      esmPlugins.push([
+        metroTransformPlugins.inlinePlugin,
+        {
+          dev: options.dev,
+          inlinePlatform: options.inlinePlatform,
+          isWrapped: false,
+          // $FlowFixMe[incompatible-type] expects a string if inlinePlatform
+          platform: options.platform,
+        } as InlinePluginOptions,
+      ]);
+
+      let esmAst = nullthrows(
+        transformFromAstSync(ast, '', {
+          ast: true,
+          babelrc: false,
+          cloneInputAst: true,
+          code: false,
+          comments: true,
+          configFile: false,
+          filename: file.filename,
+          plugins: esmPlugins,
+          sourceMaps: false,
+        }).ast,
+      );
+
+      if (!options.dev) {
+        esmAst = nullthrows(
+          transformFromAstSync(esmAst, '', {
+            ast: true,
+            babelrc: false,
+            cloneInputAst: false,
+            code: false,
+            comments: true,
+            configFile: false,
+            filename: file.filename,
+            plugins: [metroTransformPlugins.constantFoldingPlugin],
+            sourceMaps: false,
+          }).ast,
+        );
+      }
+
+      const importDeclarationLocs = file.unstable_importDeclarationLocs ?? null;
+      const collectOpts = {
+        allowOptionalDependencies: config.allowOptionalDependencies,
+        asyncRequireModulePath: config.asyncRequireModulePath,
+        dependencyMapName: config.unstable_dependencyMapReservedName,
+        dynamicRequires: getDynamicDepsBehavior(
+          config.dynamicDepsInPackages,
+          file.filename,
+        ),
+        inlineableCalls: [importDefault, importAll],
+        keepRequireNames: options.dev,
+        unstable_allowRequireContext: config.unstable_allowRequireContext,
+        unstable_isESMImportAtSource:
+          importDeclarationLocs != null
+            ? (loc: BabelSourceLocation) =>
+                importDeclarationLocs.has(locToKey(loc))
+            : null,
+      };
+      let esmDependencies;
+      try {
+        ({ast: esmAst, dependencies: esmDependencies} = collectDependencies(
+          esmAst,
+          collectOpts,
+        ));
+      } catch (error) {
+        if (error instanceof InternalInvalidRequireCallError) {
+          throw new InvalidRequireCallError(error, file.filename);
+        }
+        throw error;
+      }
+
+      const esmResult = generate(
+        esmAst,
+        {
+          comments: true,
+          compact: false,
+          filename: file.filename,
+          retainLines: false,
+          sourceFileName: file.filename,
+          sourceMaps: true,
+        },
+        file.code,
+      );
+
+      let esmMap = esmResult.rawMappings
+        ? esmResult.rawMappings.map(toSegmentTuple)
+        : [];
+      const esmCode = esmResult.code;
+      let esmLineCount;
+      ({lineCount: esmLineCount, map: esmMap} = countLinesAndTerminateMap(
+        esmCode,
+        esmMap,
+      ));
+
+      return {
+        dependencies: esmDependencies,
+        output: [
+          {
+            data: {
+              code: esmCode,
+              functionMap: file.functionMap,
+              lineCount: esmLineCount,
+              map: esmMap,
+            },
+            type: file.type,
+          },
+        ],
+        moduleSyntax,
+      };
+    }
+  }
+
   const plugins: Array<PluginEntry> = [];
 
   if (options.experimentalImportSupport === true) {
@@ -718,6 +1018,373 @@ export const transform = async (
   return await transformJSWithBabel(file, context);
 };
 
+export type UsedExports =
+  | {type: 'all'}
+  | {type: 'named', names: Set<string>}
+  | {type: 'none'};
+
+export type FinalizeOptions = Readonly<{
+  usedExports: UsedExports,
+  filename: string,
+  sourceMap?: ReadonlyArray<MetroSourceMapSegmentTuple>,
+  reexportDemandBySource: {[sourceLiteral: string]: ReadonlyArray<string>},
+  dependencyMapName: string,
+  globalPrefix: string,
+  minify: boolean,
+  minifierPath: string,
+  minifierConfig: MinifierConfig,
+  dev: boolean,
+  eliminatedReexportSources: {[sourceLiteral: string]: true},
+  parserPlugins: ReadonlyArray<string | [string, mixed]>,
+}>;
+
+export type FinalizedOutput = {
+  code: string,
+  map: Array<MetroSourceMapSegmentTuple>,
+  lineCount: number,
+};
+
+function getParserPluginsForFile(
+  filename: string,
+): ReadonlyArray<string | [string, mixed]> {
+  if (filename.endsWith('.ts')) {
+    return ['typescript'];
+  }
+  if (filename.endsWith('.tsx')) {
+    return ['typescript', 'jsx'];
+  }
+  if (filename.endsWith('.jsx')) {
+    return ['flow', 'jsx'];
+  }
+  return ['flow', 'jsx'];
+}
+
+/**
+ * Strip the `export` keyword from unused export declarations in an ESM AST.
+ * Conservative by design:
+ *  - Named declarations: keep the declaration, only remove `export` keyword.
+ *  - Re-exports with alive target: downgrade to `import 'x'` (Invariant #8).
+ *  - Re-exports with eliminated target: remove entirely (Invariant #11).
+ *  - `export *` is narrowed only when per-source demand is provably unambiguous.
+ */
+function stripUnusedExports(
+  ast: BabelNodeFile,
+  moduleSyntax: ModuleSyntaxMeta,
+  usedExports: UsedExports,
+  eliminatedReexportSources: {[sourceLiteral: string]: true},
+  reexportDemandBySource: {[sourceLiteral: string]: ReadonlyArray<string>},
+): BabelNodeFile {
+  const usedNames: Set<string> =
+    usedExports.type === 'named' ? usedExports.names : new Set();
+
+  traverse(ast, {
+    ExportDefaultDeclaration(path: $FlowFixMe) {
+      if (!usedNames.has('default')) {
+        const decl = path.node.declaration;
+        if (
+          decl.type === 'FunctionDeclaration' ||
+          decl.type === 'ClassDeclaration'
+        ) {
+          if (decl.id != null) {
+            path.replaceWith(decl);
+          } else {
+            path.remove();
+          }
+        } else if (decl.type === 'Identifier') {
+          path.remove();
+        } else {
+          path.replaceWith(types.expressionStatement(decl));
+        }
+      }
+    },
+
+    ExportNamedDeclaration(path: $FlowFixMe) {
+      if (path.node.source != null) {
+        const sourceName: string = path.node.source.value;
+        const keptSpecifiers = path.node.specifiers.filter(
+          (spec: $FlowFixMe) => {
+            const exported =
+              spec.exported.type === 'StringLiteral'
+                ? spec.exported.value
+                : spec.exported.name;
+            return usedNames.has(exported);
+          },
+        );
+        if (keptSpecifiers.length === 0) {
+          if (eliminatedReexportSources[sourceName] === true) {
+            path.remove();
+          } else {
+            path.replaceWith(types.importDeclaration([], path.node.source));
+          }
+        } else {
+          path.node.specifiers = keptSpecifiers;
+        }
+      } else if (path.node.declaration != null) {
+        const decl = path.node.declaration;
+        const names = getDeclaredNames(decl);
+        const anyUsed = names.some((name: string) => usedNames.has(name));
+        if (!anyUsed) {
+          path.replaceWith(decl);
+        }
+      } else {
+        const keptSpecifiers = path.node.specifiers.filter(
+          (spec: $FlowFixMe) => {
+            const exported =
+              spec.exported.type === 'StringLiteral'
+                ? spec.exported.value
+                : spec.exported.name;
+            return usedNames.has(exported);
+          },
+        );
+        if (keptSpecifiers.length === 0) {
+          path.remove();
+        } else {
+          path.node.specifiers = keptSpecifiers;
+        }
+      }
+    },
+
+    ExportAllDeclaration(path: $FlowFixMe) {
+      const sourceName: string = path.node.source.value;
+      if (path.node.exported != null) {
+        const exportedName: string =
+          path.node.exported.type === 'StringLiteral'
+            ? path.node.exported.value
+            : path.node.exported.name;
+        if (!usedNames.has(exportedName)) {
+          if (eliminatedReexportSources[sourceName] === true) {
+            path.remove();
+          } else {
+            path.replaceWith(types.importDeclaration([], path.node.source));
+          }
+        }
+      } else {
+        if (usedExports.type === 'named') {
+          const demanded = reexportDemandBySource[sourceName] ?? [];
+          if (demanded.length > 0) {
+            const safeToNarrow = demanded.filter(
+              (name: string) => !moduleSyntax.directExportNames.has(name),
+            );
+
+            if (safeToNarrow.length === 0) {
+              return;
+            }
+
+            const specifiers: Array<
+              | BabelNodeExportSpecifier
+              | BabelNodeExportDefaultSpecifier
+              | BabelNodeExportNamespaceSpecifier,
+            > = [];
+            for (const name of safeToNarrow) {
+              if (!types.isValidIdentifier(name)) {
+                continue;
+              }
+              const id = types.identifier(name);
+              specifiers.push(types.exportSpecifier(id, id));
+            }
+            if (specifiers.length === 0) {
+              return;
+            }
+            path.replaceWith(
+              types.exportNamedDeclaration(
+                undefined,
+                specifiers,
+                path.node.source,
+              ),
+            );
+            return;
+          }
+        }
+
+        if (usedExports.type === 'none') {
+          if (eliminatedReexportSources[sourceName] === true) {
+            path.remove();
+          } else {
+            path.replaceWith(types.importDeclaration([], path.node.source));
+          }
+        }
+      }
+    },
+  });
+
+  return ast;
+}
+
+function getDeclaredNames(decl: $FlowFixMe): Array<string> {
+  const names: Array<string> = [];
+  if (decl.type === 'VariableDeclaration') {
+    for (const declarator of decl.declarations) {
+      if (declarator.id.type === 'Identifier') {
+        names.push(declarator.id.name);
+      } else if (declarator.id.type === 'ObjectPattern') {
+        for (const prop of declarator.id.properties) {
+          if (
+            prop.type === 'ObjectProperty' &&
+            prop.value.type === 'Identifier'
+          ) {
+            names.push(prop.value.name);
+          }
+        }
+      } else if (declarator.id.type === 'ArrayPattern') {
+        for (const element of declarator.id.elements) {
+          if (element?.type === 'Identifier') {
+            names.push(element.name);
+          }
+        }
+      }
+    }
+  } else if (decl.id != null) {
+    names.push(decl.id.name);
+  }
+  return names;
+}
+
+/**
+ * Finalize an ESM module for inclusion in the bundle:
+ *  1. Parse the ESM code
+ *  2. Strip unused exports (conservative)
+ *  3. Convert ESM → CJS via import-export-plugin
+ *  4. Wrap in __d() factory
+ *  5. Generate code
+ *  6. Minify (if requested)
+ */
+export async function finalizeModule(
+  code: string,
+  moduleSyntax: ModuleSyntaxMeta,
+  options: FinalizeOptions,
+): Promise<FinalizedOutput> {
+  const parsePlugins =
+    options.parserPlugins.length > 0
+      ? options.parserPlugins
+      : getParserPluginsForFile(options.filename);
+  // $FlowFixMe[incompatible-call] `parserPlugins` is validated upstream and may include plugin tuples accepted by Babel parser.
+  let ast: BabelNodeFile = babylon.parse(code, {
+    sourceType: 'module',
+    // $FlowFixMe[incompatible-type] parser plugin names/options are valid at runtime but broader than current Flow libdef literals.
+    plugins: [...parsePlugins],
+  });
+
+  const {importDefault, importAll} = generateImportNames(ast);
+
+  if (options.usedExports.type !== 'all') {
+    ast = stripUnusedExports(
+      ast,
+      moduleSyntax,
+      options.usedExports,
+      options.eliminatedReexportSources,
+      options.reexportDemandBySource,
+    );
+  }
+
+  const transformPlugins: Array<PluginEntry> = [
+    [
+      metroTransformPlugins.importExportPlugin,
+      {
+        importDefault,
+        importAll,
+        resolve: false,
+      } as ImportExportPluginOptions,
+    ],
+  ];
+  if (!options.dev) {
+    transformPlugins.push(metroTransformPlugins.constantFoldingPlugin);
+  }
+
+  const inputSourceMap =
+    options.sourceMap != null
+      ? fromRawMappings([
+          {
+            code,
+            functionMap: null,
+            isIgnored: false,
+            map: options.sourceMap,
+            path: options.filename,
+            source: code,
+          },
+        ]).toMap(undefined, {})
+      : undefined;
+
+  ast = nullthrows(
+    transformFromAstSync(ast, code, {
+      ast: true,
+      babelrc: false,
+      cloneInputAst: false,
+      code: false,
+      comments: true,
+      configFile: false,
+      // $FlowFixMe[incompatible-type] Metro source-map shape is accepted by Babel at runtime.
+      inputSourceMap,
+      plugins: transformPlugins,
+      sourceMaps: true,
+    }).ast,
+  );
+
+  ({ast} = JsFileWrapping.wrapModule(
+    ast,
+    importDefault,
+    importAll,
+    options.dependencyMapName,
+    options.globalPrefix,
+    false,
+    {unstable_useStaticHermesModuleFactory: false},
+  ));
+
+  const generated = generate(
+    ast,
+    {
+      comments: false,
+      compact: true,
+      sourceMaps: true,
+    },
+    code,
+  );
+
+  let map = generated.rawMappings
+    ? generated.rawMappings.map(toSegmentTuple)
+    : [];
+  let finalCode = generated.code;
+
+  // Step 6: Minify
+  if (options.minify) {
+    ({map, code: finalCode} = await minifyCode(
+      {
+        // Build a minimal config-like object for minifyCode
+        minifierPath: options.minifierPath,
+        minifierConfig: options.minifierConfig,
+        // $FlowFixMe[incompatible-call] these fields are not used by minifyCode
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: '',
+        babelTransformerPath: '',
+        dynamicDepsInPackages: 'throwAtRuntime',
+        enableBabelRCLookup: false,
+        enableBabelRuntime: false,
+        globalPrefix: options.globalPrefix,
+        hermesParser: false,
+        optimizationSizeLimit: Infinity,
+        publicPath: '',
+        allowOptionalDependencies: false,
+        unstable_dependencyMapReservedName: null,
+        unstable_disableModuleWrapping: false,
+        unstable_disableNormalizePseudoGlobals: false,
+        unstable_compactOutput: true,
+        unstable_allowRequireContext: false,
+      },
+      '',
+      '',
+      finalCode,
+      code,
+      map,
+      options.dependencyMapName != null ? [options.dependencyMapName] : [],
+    ));
+  }
+
+  let lineCount;
+  ({lineCount, map} = countLinesAndTerminateMap(finalCode, map));
+
+  return {code: finalCode, map, lineCount};
+}
+
 export const getCacheKey = (
   config: JsTransformerConfig,
   opts?: Readonly<{projectRoot: string, ...}>,
@@ -801,4 +1468,5 @@ function countLinesAndTerminateMap(
 export default {
   getCacheKey,
   transform,
+  finalizeModule,
 };

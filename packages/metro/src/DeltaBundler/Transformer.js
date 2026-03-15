@@ -12,6 +12,11 @@
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
+import type {
+  FinalizedOutput,
+  FinalizeOptions,
+  ModuleSyntaxMeta,
+} from 'metro-transform-worker';
 
 import {normalizePathSeparatorsToPosix} from '../lib/pathUtils';
 import getTransformCacheKey from './getTransformCacheKey';
@@ -32,6 +37,7 @@ type GetOrComputeSha1Fn = string => Promise<
 export default class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
+  _finalizationCache: Cache<FinalizedOutput>;
   _baseHash: string;
   _getSha1: GetOrComputeSha1Fn;
   _workerFarm: WorkerFarm;
@@ -44,6 +50,8 @@ export default class Transformer {
 
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
+    // $FlowFixMe[incompatible-type] cache stores are shared; this cache holds finalized module payloads.
+    this._finalizationCache = new Cache(config.cacheStores);
     this._getSha1 = opts.getOrComputeSha1;
 
     // Remove the transformer config params that we don't want to pass to the
@@ -96,6 +104,7 @@ export default class Transformer {
       unstable_transformProfile,
       unstable_memoizeInlineRequires,
       unstable_nonMemoizedInlineRequires,
+      unstable_treeShake,
       ...extra
     } = transformerOptions;
 
@@ -130,6 +139,7 @@ export default class Transformer {
       unstable_memoizeInlineRequires,
       unstable_nonMemoizedInlineRequires,
       unstable_transformProfile,
+      unstable_treeShake,
     ]);
 
     let sha1: string;
@@ -198,6 +208,60 @@ export default class Transformer {
     };
   }
 
+  async finalizeModule(
+    transformResultKey: string,
+    code: string,
+    moduleSyntax: ModuleSyntaxMeta,
+    options: FinalizeOptions,
+  ): Promise<FinalizedOutput> {
+    const effectiveTransformResultKey =
+      transformResultKey !== ''
+        ? transformResultKey
+        : crypto.createHash('sha1').update(code).digest('hex');
+    const cacheKey = stableHash([
+      'finalize-module-v1',
+      effectiveTransformResultKey,
+      options.filename,
+      options.dependencyMapName,
+      options.globalPrefix,
+      options.minify,
+      options.dev,
+      options.minifierPath,
+      stableHash(options.minifierConfig).toString('hex'),
+      stableHash(options.parserPlugins).toString('hex'),
+      getUsedExportsCacheKey(options.usedExports),
+      getEliminatedReexportSourcesCacheKey(options.eliminatedReexportSources),
+      getReexportDemandCacheKey(options.reexportDemandBySource),
+    ]);
+
+    try {
+      const cached = await this._finalizationCache.get(cacheKey);
+      if (cached != null) {
+        return cached;
+      }
+    } catch (error) {
+      this._config.reporter.update({
+        type: 'cache_read_error',
+        error,
+      });
+    }
+
+    const finalized = await this._workerFarm.finalizeModule(
+      code,
+      moduleSyntax,
+      options,
+    );
+
+    this._finalizationCache.set(cacheKey, finalized).catch(error => {
+      this._config.reporter.update({
+        type: 'cache_write_error',
+        error,
+      });
+    });
+
+    return finalized;
+  }
+
   async end(): Promise<void> {
     await this._workerFarm.kill();
   }
@@ -206,4 +270,37 @@ export default class Transformer {
 function verifyRootExists(root: string): void {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
+}
+
+function getUsedExportsCacheKey(
+  usedExports: FinalizeOptions['usedExports'],
+): string {
+  switch (usedExports.type) {
+    case 'all':
+      return 'all';
+    case 'none':
+      return 'none';
+    case 'named':
+      return `named:${[...usedExports.names].sort().join(',')}`;
+    default:
+      throw new Error('Unknown usedExports variant');
+  }
+}
+
+function getEliminatedReexportSourcesCacheKey(
+  eliminatedReexportSources: FinalizeOptions['eliminatedReexportSources'],
+): string {
+  return Object.keys(eliminatedReexportSources).sort().join(',');
+}
+
+function getReexportDemandCacheKey(
+  reexportDemandBySource: FinalizeOptions['reexportDemandBySource'],
+): string {
+  const pieces = [];
+  for (const source of Object.keys(reexportDemandBySource).sort()) {
+    pieces.push(
+      `${source}:${[...reexportDemandBySource[source]].sort().join(',')}`,
+    );
+  }
+  return pieces.join('|');
 }
