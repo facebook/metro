@@ -127,6 +127,17 @@ export type CrawlerOptions = {
   onStatus: (status: WatcherStatus) => void,
 };
 
+export type CrawlResult =
+  | {
+      changedFiles: FileData,
+      removedFiles: Set<Path>,
+      clocks: WatchmanClocks,
+    }
+  | {
+      changedFiles: FileData,
+      removedFiles: Set<Path>,
+    };
+
 export type DependencyExtractor = {
   extract: (
     content: string,
@@ -439,7 +450,7 @@ export interface ReadonlyFileSystemChanges<+T = FileMetadata> {
 }
 
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path, listener?: FileSystemListener): ?FileMetadata;
+  remove(filePath: Path, listener?: FileSystemListener): void;
   addOrModify(
     filePath: Path,
     fileMetadata: FileMetadata,
