@@ -42,7 +42,7 @@ const isWatchmanOnPath = () => {
 
 // `null` Watchers will be marked as skipped tests.
 export const WATCHERS: Readonly<{
-  [key: string]:
+  [key: 'Watchman' | 'Native' | 'Fallback']:
     | Class<FallbackWatcher>
     | Class<NativeWatcher>
     | Class<WatchmanWatcher>
@@ -94,7 +94,7 @@ export const createTempWatchRoot = async (
 };
 
 export const startWatching = async (
-  watcherName: string,
+  watcherName: keyof typeof WATCHERS,
   watchRoot: string,
   opts: WatcherOptions,
 ): (Promise<{
