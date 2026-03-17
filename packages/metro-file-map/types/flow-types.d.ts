@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<20f9e0b81ccdc0bd3698417297709836>>
+ * @generated SignedSource<<8c5030c48241b474468d59538c2e34e3>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -351,10 +351,7 @@ export interface ReadonlyFileSystemChanges<T = FileMetadata> {
   readonly removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
 }
 export interface MutableFileSystem extends FileSystem {
-  remove(
-    filePath: Path,
-    listener?: FileSystemListener,
-  ): null | undefined | FileMetadata;
+  remove(filePath: Path, listener?: FileSystemListener): void;
   addOrModify(
     filePath: Path,
     fileMetadata: FileMetadata,

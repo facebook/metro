@@ -439,7 +439,7 @@ export interface ReadonlyFileSystemChanges<+T = FileMetadata> {
 }
 
 export interface MutableFileSystem extends FileSystem {
-  remove(filePath: Path, listener?: FileSystemListener): ?FileMetadata;
+  remove(filePath: Path, listener?: FileSystemListener): void;
   addOrModify(
     filePath: Path,
     fileMetadata: FileMetadata,
