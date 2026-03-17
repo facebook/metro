@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<420bedf62829a002f71fef34d51a0b11>>
+ * @generated SignedSource<<65a3c4140d459a56b8c949e52b32ea1b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/lib/TreeFS.js
@@ -105,10 +105,10 @@ declare class TreeFS implements MutableFileSystem {
   getSerializableSnapshot(): CacheData['fileSystemData'];
   static fromDeserializedSnapshot(args: DeserializedSnapshotInput): TreeFS;
   getSize(mixedPath: Path): null | undefined | number;
-  getDifference(files: FileData): {
-    changedFiles: FileData;
-    removedFiles: Set<string>;
-  };
+  getDifference(
+    files: FileData,
+    options?: Readonly<{subpath?: string}>,
+  ): {changedFiles: FileData; removedFiles: Set<string>};
   getSha1(mixedPath: Path): null | undefined | string;
   getOrComputeSha1(
     mixedPath: Path,

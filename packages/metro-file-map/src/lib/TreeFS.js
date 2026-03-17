@@ -157,16 +157,45 @@ export default class TreeFS implements MutableFileSystem {
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
   }
 
-  getDifference(files: FileData): {
+  getDifference(
+    files: FileData,
+    options?: Readonly<{
+      // Only consider files under this normal subdirectory when computing
+      // removedFiles. If not provided, all files in the file system are
+      // considered.
+      subpath?: string,
+    }>,
+  ): {
     changedFiles: FileData,
     removedFiles: Set<string>,
   } {
     const changedFiles: FileData = new Map(files);
     const removedFiles: Set<string> = new Set();
-    for (const {canonicalPath, metadata} of this.metadataIterator({
-      includeNodeModules: true,
-      includeSymlinks: true,
-    })) {
+    const subpath = options?.subpath;
+
+    // If a subpath is specified, start iteration from that node
+    let rootNode: DirectoryNode = this.#rootNode;
+    let prefix: string = '';
+    if (subpath != null && subpath !== '') {
+      const lookupResult = this.#lookupByNormalPath(subpath, {
+        followLeaf: true,
+      });
+      if (!lookupResult.exists || !isDirectory(lookupResult.node)) {
+        // Directory doesn't exist, nothing to compare - all files are new
+        return {changedFiles, removedFiles};
+      }
+      rootNode = lookupResult.node;
+      prefix = lookupResult.canonicalPath;
+    }
+
+    for (const {canonicalPath, metadata} of this.#metadataIterator(
+      rootNode,
+      {
+        includeNodeModules: true,
+        includeSymlinks: true,
+      },
+      prefix,
+    )) {
       const newMetadata = files.get(canonicalPath);
       if (newMetadata) {
         if (isRegularFile(newMetadata) !== isRegularFile(metadata)) {
