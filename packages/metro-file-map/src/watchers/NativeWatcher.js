@@ -21,6 +21,7 @@ const debug = require('debug')('Metro:NativeWatcher');
 
 const TOUCH_EVENT = 'touch';
 const DELETE_EVENT = 'delete';
+const RECRAWL_EVENT = 'recrawl';
 
 /**
  * NativeWatcher uses Node's native fs.watch API with recursive: true.
@@ -74,9 +75,8 @@ export default class NativeWatcher extends AbstractWatcher {
         // ~instant on macOS or Windows.
         recursive: true,
       },
-      (_event, relativePath) => {
-        // _event is always 'rename' on macOS, so we don't use it.
-        this._handleEvent(relativePath).catch(error => {
+      (event, relativePath) => {
+        this._handleEvent(event, relativePath).catch(error => {
           this.emitError(error);
         });
       },
@@ -95,13 +95,23 @@ export default class NativeWatcher extends AbstractWatcher {
     }
   }
 
-  async _handleEvent(relativePath: string) {
+  async _handleEvent(event: string, relativePath: string) {
     const absolutePath = path.resolve(this.root, relativePath);
     if (this.doIgnore(relativePath)) {
-      debug('Ignoring event on %s (root: %s)', relativePath, this.root);
+      debug(
+        'Ignoring event "%s" on %s (root: %s)',
+        event,
+        relativePath,
+        this.root,
+      );
       return;
     }
-    debug('Handling event on %s (root: %s)', relativePath, this.root);
+    debug(
+      'Handling event "%s" on %s (root: %s)',
+      event,
+      relativePath,
+      this.root,
+    );
 
     try {
       const stat = await fsPromises.lstat(absolutePath);
@@ -113,6 +123,23 @@ export default class NativeWatcher extends AbstractWatcher {
       }
 
       if (!includedByGlob(type, this.globs, this.dot, relativePath)) {
+        return;
+      }
+
+      // For directory "rename" events, notify that we need a recrawl since we
+      // wont' receive events for unmodified files underneath a moved (or
+      // cloned) directory. Renames are fired by the OS on moves, clones, and
+      // creations. We ignore "change" events because they indiciate a change
+      // to directory metadata, rather than its path or existence.
+      if (type === 'd' && event === 'rename') {
+        debug(
+          'Directory rename detected on %s, requesting recrawl',
+          relativePath,
+        );
+        this.emitFileEvent({
+          event: RECRAWL_EVENT,
+          relativePath,
+        });
         return;
       }
 
