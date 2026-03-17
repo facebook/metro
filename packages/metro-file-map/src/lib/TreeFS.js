@@ -462,18 +462,20 @@ export default class TreeFS implements MutableFileSystem {
     }
   }
 
-  remove(mixedPath: Path, changeListener?: FileSystemListener): ?FileMetadata {
+  remove(mixedPath: Path, changeListener?: FileSystemListener): void {
     const normalPath = this.#normalizePath(mixedPath);
     const result = this.#lookupByNormalPath(normalPath, {followLeaf: false});
     if (!result.exists) {
-      return null;
+      return;
     }
     const {parentNode, canonicalPath, node} = result;
 
     if (isDirectory(node) && node.size > 0) {
-      throw new Error(
-        `TreeFS: remove called on a non-empty directory: ${mixedPath}`,
-      );
+      for (const basename of node.keys()) {
+        this.remove(canonicalPath + path.sep + basename, changeListener);
+      }
+      // Removing the last file will delete this directory
+      return;
     }
     if (parentNode != null) {
       if (changeListener != null) {
@@ -493,7 +495,6 @@ export default class TreeFS implements MutableFileSystem {
         this.remove(path.dirname(canonicalPath), changeListener);
       }
     }
-    return isDirectory(node) ? null : node;
   }
 
   /**
