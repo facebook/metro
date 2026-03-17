@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<7537b04fdc97fb54ebddaebf60605405>>
+ * @generated SignedSource<<296395484c53039955e7789570880079>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/Watcher.js
@@ -17,20 +17,13 @@
 import type {
   Console,
   CrawlerOptions,
-  FileData,
-  Path,
+  CrawlResult,
   PerfLogger,
   WatcherBackendChangeEvent,
-  WatchmanClocks,
 } from './flow-types';
 
 import EventEmitter from 'events';
 
-type CrawlResult = {
-  changedFiles: FileData;
-  clocks?: WatchmanClocks;
-  removedFiles: Set<Path>;
-};
 type WatcherOptions = {
   abortSignal: AbortSignal;
   computeSha1: boolean;
