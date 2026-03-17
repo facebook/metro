@@ -23,6 +23,7 @@ import type {
   ChangeEventMetadata,
   Console,
   CrawlerOptions,
+  CrawlResult,
   FileData,
   FileMapPlugin,
   FileMapPluginWorker,
@@ -506,11 +507,7 @@ export default class FileMap extends EventEmitter {
    */
   async #buildFileDelta(
     previousState: CrawlerOptions['previousState'],
-  ): Promise<{
-    removedFiles: Set<CanonicalPath>,
-    changedFiles: FileData,
-    clocks?: WatchmanClocks,
-  }> {
+  ): Promise<CrawlResult> {
     this.#startupPerfLogger?.point('buildFileDelta_start');
 
     const {
@@ -554,10 +551,9 @@ export default class FileMap extends EventEmitter {
 
     watcher.on('status', status => this.emit('status', status));
 
-    return watcher.crawl().then(result => {
-      this.#startupPerfLogger?.point('buildFileDelta_end');
-      return result;
-    });
+    const result = await watcher.crawl();
+    this.#startupPerfLogger?.point('buildFileDelta_end');
+    return result;
   }
 
   #maybeReadLink(normalPath: Path, fileMetadata: FileMetadata): ?Promise<void> {
