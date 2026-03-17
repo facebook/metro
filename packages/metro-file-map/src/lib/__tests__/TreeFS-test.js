@@ -776,16 +776,16 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('./bar.js')],
         [p('./link-to-foo/.././bar.js')],
         [p('/outside/../project/./bar.js')],
-      ])('removes a file and returns its metadata: %s', mixedPath => {
+      ])('removes a file: %s', mixedPath => {
         expect(tfs.linkStats(mixedPath)).not.toBeNull();
-        expect(Array.isArray(tfs.remove(mixedPath))).toBe(true);
+        tfs.remove(mixedPath);
         expect(tfs.linkStats(mixedPath)).toBeNull();
       });
 
       test('deletes a symlink, not its target', () => {
         expect(tfs.linkStats(p('foo/link-to-bar.js'))).not.toBeNull();
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
-        expect(Array.isArray(tfs.remove(p('foo/link-to-bar.js')))).toBe(true);
+        tfs.remove(p('foo/link-to-bar.js'));
         expect(tfs.linkStats(p('foo/link-to-bar.js'))).toBeNull();
         expect(tfs.linkStats(p('bar.js'))).not.toBeNull();
       });
@@ -806,6 +806,21 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(p('node_modules')).exists).toBe(false);
       });
 
+      test('deleting a non-empty directory also removes its empty parent', () => {
+        // node_modules/pkg is the only child of node_modules
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(true);
+        expect(tfs.lookup(p('node_modules')).exists).toBe(true);
+        tfs.remove(p('node_modules/pkg'));
+        // Expect the directory and its contents to be deleted
+        expect(tfs.lookup(p('node_modules/pkg/a.js')).exists).toBe(false);
+        expect(tfs.lookup(p('node_modules/pkg/package.json')).exists).toBe(
+          false,
+        );
+        expect(tfs.lookup(p('node_modules/pkg')).exists).toBe(false);
+        // And its parent, which is now empty
+        expect(tfs.lookup(p('node_modules')).exists).toBe(false);
+      });
+
       test('deleting all files leaves an empty map', () => {
         for (const {canonicalPath} of tfs.metadataIterator({
           includeSymlinks: true,
@@ -817,8 +832,8 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(p('foo')).exists).toBe(false);
       });
 
-      test('returns null for a non-existent file', () => {
-        expect(tfs.remove('notexists.js')).toBeNull();
+      test('no-op for a non-existent file', () => {
+        expect(() => tfs.remove('notexists.js')).not.toThrow();
       });
     });
   });
@@ -1107,6 +1122,17 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         ['fileRemoved', p('new2/file.js'), [3, 0, 0, '', 0]],
         ['directoryRemoved', p('new2')],
       ]);
+    });
+
+    describe('remove with listener', () => {
+      test('tracks removed files and directories when deleting a non-empty directory', () => {
+        simpleTfs.remove(p('dir'), listener);
+
+        expect(logChange.mock.calls).toEqual([
+          ['fileRemoved', p('dir/nested.js'), [456, 0, 0, '', 0]],
+          ['directoryRemoved', p('dir')],
+        ]);
+      });
     });
 
     describe('symlinks with listener', () => {
