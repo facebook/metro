@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<4f8f87abcb055b965a90e994a55ed177>>
+ * @generated SignedSource<<ebebfbca9d43e034fde8489e1d9f2dbb>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/watchers/common.js
@@ -29,6 +29,8 @@ export declare const DELETE_EVENT: 'delete';
 export declare type DELETE_EVENT = typeof DELETE_EVENT;
 export declare const TOUCH_EVENT: 'touch';
 export declare type TOUCH_EVENT = typeof TOUCH_EVENT;
+export declare const RECRAWL_EVENT: 'recrawl';
+export declare type RECRAWL_EVENT = typeof RECRAWL_EVENT;
 export declare const ALL_EVENT: 'all';
 export declare type ALL_EVENT = typeof ALL_EVENT;
 export type WatcherOptions = Readonly<{

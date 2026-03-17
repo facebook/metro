@@ -36,6 +36,13 @@ const debug = require('debug')('Metro:Watcher');
 
 const MAX_WAIT_TIME = 240000;
 
+type InternalCrawlOptions = Readonly<{
+  previousState: CrawlerOptions['previousState'],
+  roots: ReadonlyArray<string>,
+  subpath?: string,
+  useWatchman: boolean,
+}>;
+
 type WatcherOptions = {
   abortSignal: AbortSignal,
   computeSha1: boolean,
@@ -79,12 +86,41 @@ export class Watcher extends EventEmitter {
 
   async crawl(): Promise<CrawlResult> {
     this.#options.perfLogger?.point('crawl_start');
-
     const options = this.#options;
+
+    const result = await this.#crawl({
+      previousState: options.previousState,
+      roots: options.roots,
+      useWatchman: options.useWatchman,
+    });
+
+    this.#options.perfLogger?.point('crawl_end');
+    return result;
+  }
+
+  async recrawl(
+    subpath: string,
+    currentFileSystem: CrawlerOptions['previousState']['fileSystem'],
+  ): Promise<CrawlResult> {
+    return this.#crawl({
+      previousState: {
+        clocks: new Map(),
+        fileSystem: currentFileSystem,
+      },
+      roots: [path.join(this.#options.rootDir, subpath)],
+      subpath,
+      useWatchman: false,
+    });
+  }
+
+  async #crawl(crawlOptions: InternalCrawlOptions): Promise<CrawlResult> {
+    const options = this.#options;
+    const {useWatchman, subpath} = crawlOptions;
+
     const ignoreForCrawl = (filePath: string) =>
       options.ignoreForCrawl(filePath) ||
       path.basename(filePath).startsWith(this.#options.healthCheckFilePrefix);
-    const crawl = options.useWatchman ? watchmanCrawl : nodeCrawl;
+    const crawl = useWatchman ? watchmanCrawl : nodeCrawl;
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
 
     options.abortSignal.throwIfAborted();
@@ -101,12 +137,13 @@ export class Watcher extends EventEmitter {
         this.emit('status', status);
       },
       perfLogger: options.perfLogger,
-      previousState: options.previousState,
+      previousState: crawlOptions.previousState,
       rootDir: options.rootDir,
-      roots: options.roots,
+      roots: crawlOptions.roots,
+      subpath,
     };
 
-    debug('Beginning crawl with "%s".', crawler);
+    debug('Crawling roots: %s with %s crawler.', crawlOptions.roots, crawler);
 
     let delta: CrawlResult;
     try {
@@ -143,7 +180,6 @@ export class Watcher extends EventEmitter {
       delta.removedFiles.size,
       delta.clocks?.size ?? 0,
     );
-    this.#options.perfLogger?.point('crawl_end');
     return delta;
   }
 
@@ -200,6 +236,15 @@ export class Watcher extends EventEmitter {
               );
               this.#handleHealthCheckObservation(basename);
             }
+            return;
+          }
+          // Watchman handles recrawls internally - receiving a recrawl event
+          // when using Watchman would indicate a bug. Log an error and ignore.
+          if (change.event === 'recrawl' && useWatchman) {
+            this.#options.console.error(
+              'metro-file-map: Received unexpected recrawl event while using ' +
+                'Watchman. Watchman recrawls are not implemented.',
+            );
             return;
           }
           onChange(change);
