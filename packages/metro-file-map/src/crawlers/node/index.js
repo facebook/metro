@@ -184,6 +184,7 @@ export default async function nodeCrawl(
     perfLogger,
     roots,
     abortSignal,
+    subpath,
   } = options;
 
   abortSignal?.throwIfAborted();
@@ -198,7 +199,9 @@ export default async function nodeCrawl(
 
   return new Promise((resolve, reject) => {
     const callback: Callback = fileData => {
-      const difference = previousState.fileSystem.getDifference(fileData);
+      const difference = previousState.fileSystem.getDifference(fileData, {
+        subpath,
+      });
 
       perfLogger?.point('nodeCrawl_end');
 
