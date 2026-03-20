@@ -75,7 +75,7 @@ class HMRClient extends EventEmitter {
           break;
 
         case 'update-done':
-          this.emit('update-done');
+          this.emit('update-done', data.body);
           break;
 
         case 'error':

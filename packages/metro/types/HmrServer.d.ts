@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<759aad52b112d43c0af68fdad28e4453>>
+ * @generated SignedSource<<ab4c245134631e14db114a9d49da79d1>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/HmrServer.js
@@ -75,12 +75,24 @@ declare class HmrServer<TClient extends Client> {
   _handleFileChange(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
-    changeEvent: null | undefined | {logger: null | undefined | RootPerfLogger},
+    changeEvent:
+      | null
+      | undefined
+      | {
+          readonly logger: null | undefined | RootPerfLogger;
+          readonly changeId?: string;
+        },
   ): Promise<void>;
   _prepareMessage(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
-    changeEvent: null | undefined | {logger: null | undefined | RootPerfLogger},
+    changeEvent:
+      | null
+      | undefined
+      | {
+          readonly logger: null | undefined | RootPerfLogger;
+          readonly changeId?: string;
+        },
   ): Promise<HmrUpdateMessage | HmrErrorMessage>;
 }
 export default HmrServer;
