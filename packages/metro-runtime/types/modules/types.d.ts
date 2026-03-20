@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<d45dd5d50d99611ece01eb76e950d915>>
+ * @generated SignedSource<<b7200f697fbdbb3b71cc1049801258af>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-runtime/src/modules/types.js
@@ -94,6 +94,9 @@ export type HmrMessage =
       readonly type: 'update-start';
       readonly body: {readonly isInitialUpdate: boolean};
     }
-  | {readonly type: 'update-done'}
+  | {
+      readonly type: 'update-done';
+      readonly body?: {readonly changeId?: string};
+    }
   | HmrUpdateMessage
   | HmrErrorMessage;

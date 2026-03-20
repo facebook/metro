@@ -13,11 +13,20 @@ import type {DeltaResult, Options} from './types';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
+import crypto from 'crypto';
 import EventEmitter from 'events';
 import path from 'path';
 
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:DeltaCalculator');
+
+/**
+ * Assigns a unique, stable `changeId` to each `ChangeEvent` from the file
+ * watcher. Since all `DeltaCalculator` instances share the same
+ * `ChangeEvent` object reference per file system change, the `WeakMap`
+ * ensures each gets the same `changeId`.
+ */
+const changeEventIds: WeakMap<ChangeEvent, string> = new WeakMap();
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -237,7 +246,13 @@ export default class DeltaCalculator<T> extends EventEmitter {
       }
     }
 
-    this.emit('change', {logger});
+    let changeId = changeEventIds.get(changeEvent);
+    if (changeId == null) {
+      changeId = crypto.randomUUID();
+      changeEventIds.set(changeEvent, changeId);
+    }
+
+    this.emit('change', {logger, changeId});
   };
 
   async _getChangedDependencies(
