@@ -62,8 +62,8 @@ module.exports = {
     },
     {
       files: [
-        // Uses FileMapPlugin<any,any> as input type
-        'packages/metro-file-map/types/index.d.ts',
+        // flow-api-translator doesn't support translating `empty`
+        'packages/metro-file-map/types/flow-types.d.ts',
       ],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',

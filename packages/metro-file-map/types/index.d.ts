@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<33bbe77b6d139e247ee97f706bbe485d>>
+ * @generated SignedSource<<806d228988308075b7a911c3dfb513d3>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/index.js
@@ -23,11 +23,11 @@ import type {
   ChangeEventMetadata,
   Console,
   FileData,
-  FileMapPlugin,
   FileSystem,
   HasteMapData,
   HasteMapItem,
   HType,
+  InputFileMapPlugin,
   PerfLoggerFactory,
 } from './flow-types';
 
@@ -43,6 +43,7 @@ export type {
   FileSystem,
   HasteMapData,
   HasteMapItem,
+  InputFileMapPlugin,
 };
 export type InputOptions = Readonly<{
   computeSha1?: null | undefined | boolean;
@@ -50,7 +51,7 @@ export type InputOptions = Readonly<{
   extensions: ReadonlyArray<string>;
   forceNodeFilesystemAPI?: null | undefined | boolean;
   ignorePattern?: null | undefined | RegExp;
-  plugins?: ReadonlyArray<AnyFileMapPlugin>;
+  plugins?: ReadonlyArray<InputFileMapPlugin>;
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
@@ -71,7 +72,6 @@ type HealthCheckOptions = Readonly<{
   timeout: number;
   filePrefix: string;
 }>;
-type AnyFileMapPlugin = FileMapPlugin<any, any>;
 export {DiskCacheManager} from './cache/DiskCacheManager';
 export {default as DependencyPlugin} from './plugins/DependencyPlugin';
 export type {DependencyPluginOptions} from './plugins/DependencyPlugin';

@@ -10,7 +10,7 @@
  */
 
 import type {ConfigT} from 'metro-config';
-import type {HasteMap} from 'metro-file-map';
+import type {HasteMap, InputFileMapPlugin} from 'metro-file-map';
 
 import ci from 'ci-info';
 import MetroFileMap, {
@@ -75,7 +75,9 @@ export default function createFileMap(
     config.watcher.unstable_autoSaveCache ?? {};
   const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
 
-  const plugins: Array<DependencyPlugin | HastePlugin> = [];
+  const plugins: Array<InputFileMapPlugin> = [
+    ...(config.unstable_fileMapPlugins ?? []),
+  ];
 
   let dependencyPlugin = null;
   // Add DependencyPlugin if dependencies should be extracted

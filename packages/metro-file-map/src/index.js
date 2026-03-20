@@ -32,6 +32,7 @@ import type {
   HasteMapData,
   HasteMapItem,
   HType,
+  InputFileMapPlugin,
   MutableFileSystem,
   Path,
   PerfLogger,
@@ -70,6 +71,7 @@ export type {
   FileSystem,
   HasteMapData,
   HasteMapItem,
+  InputFileMapPlugin,
 };
 
 export type InputOptions = Readonly<{
@@ -78,7 +80,7 @@ export type InputOptions = Readonly<{
   extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
-  plugins?: ReadonlyArray<AnyFileMapPlugin>,
+  plugins?: ReadonlyArray<InputFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: ReadonlyArray<string>,
@@ -112,10 +114,9 @@ type InternalOptions = Readonly<{
   watchmanDeferStates: ReadonlyArray<string>,
 }>;
 
-// $FlowFixMe[unclear-type] Plugin types cannot be known statically
-type AnyFileMapPlugin = FileMapPlugin<any, any>;
 type IndexedPlugin = Readonly<{
-  plugin: AnyFileMapPlugin,
+  // $FlowFixMe[unclear-type] Plugin types cannot be known statically
+  plugin: FileMapPlugin<any, any>,
   dataIdx: ?number,
 }>;
 type InternalEnqueuedEvent = Readonly<
