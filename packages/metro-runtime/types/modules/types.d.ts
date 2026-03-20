@@ -87,6 +87,9 @@ export type HmrMessage =
       readonly type: 'update-start';
       readonly body: {readonly isInitialUpdate: boolean};
     }
-  | {readonly type: 'update-done'}
+  | {
+      readonly type: 'update-done';
+      readonly body?: {readonly changeId?: string};
+    }
   | HmrUpdateMessage
   | HmrErrorMessage;

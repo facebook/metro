@@ -702,6 +702,56 @@ describe.each(['linux', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies).not.toHaveBeenCalled();
   });
 
+  test('should emit a stable changeId for all events in a single change', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    const changeIds: Array<string> = [];
+    deltaCalculator.on('change', ({changeId}: {changeId?: string}) => {
+      if (changeId != null) {
+        changeIds.push(changeId);
+      }
+    });
+
+    // Emit a change event with multiple file changes
+    fileWatcher.emit('change', {
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+        {type: 'change', filePath: p('/bar'), metadata: {type: 'f'}},
+      ],
+    });
+
+    expect(changeIds).toHaveLength(2);
+    expect(changeIds[0]).toEqual(changeIds[1]);
+    expect(typeof changeIds[0]).toBe('string');
+    expect(changeIds[0].length).toBeGreaterThan(0);
+  });
+
+  test('should emit different changeIds for separate change events', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    const changeIds: Array<string> = [];
+    deltaCalculator.on('change', ({changeId}: {changeId?: string}) => {
+      if (changeId != null) {
+        changeIds.push(changeId);
+      }
+    });
+
+    fileWatcher.emit('change', {
+      eventsQueue: [
+        {type: 'change', filePath: p('/foo'), metadata: {type: 'f'}},
+      ],
+    });
+
+    fileWatcher.emit('change', {
+      eventsQueue: [
+        {type: 'change', filePath: p('/bar'), metadata: {type: 'f'}},
+      ],
+    });
+
+    expect(changeIds).toHaveLength(2);
+    expect(changeIds[0]).not.toEqual(changeIds[1]);
+  });
+
   test('should not mutate an existing graph when calling end()', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
     const graph = deltaCalculator.getGraph();

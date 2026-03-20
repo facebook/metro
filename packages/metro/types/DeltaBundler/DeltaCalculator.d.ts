@@ -9,7 +9,6 @@
  */
 
 import type {DeltaResult, Options} from './types';
-import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
@@ -60,7 +59,7 @@ declare class DeltaCalculator<T> extends EventEmitter {
    */
   _handleFileChange: (
     $$PARAM_0$$: ChangeEvent['eventsQueue'][number],
-    logger: null | undefined | RootPerfLogger,
+    $$PARAM_1$$: {logger: ChangeEvent['logger']; changeId: string},
   ) => unknown;
   _getChangedDependencies(
     modifiedFiles: Set<string>,

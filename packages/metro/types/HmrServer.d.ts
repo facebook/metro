@@ -68,12 +68,24 @@ declare class HmrServer<TClient extends Client> {
   _handleFileChange(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
-    changeEvent: null | undefined | {logger: null | undefined | RootPerfLogger},
+    changeEvent:
+      | null
+      | undefined
+      | {
+          readonly logger: null | undefined | RootPerfLogger;
+          readonly changeId?: string;
+        },
   ): Promise<void>;
   _prepareMessage(
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
-    changeEvent: null | undefined | {logger: null | undefined | RootPerfLogger},
+    changeEvent:
+      | null
+      | undefined
+      | {
+          readonly logger: null | undefined | RootPerfLogger;
+          readonly changeId?: string;
+        },
   ): Promise<HmrUpdateMessage | HmrErrorMessage>;
 }
 export default HmrServer;

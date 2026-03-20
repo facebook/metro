@@ -97,6 +97,7 @@ export type HmrMessage =
     }
   | {
       +type: 'update-done',
+      +body?: {+changeId?: string},
     }
   | HmrUpdateMessage
   | HmrErrorMessage;

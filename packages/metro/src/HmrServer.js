@@ -181,7 +181,8 @@ export default class HmrServer<TClient: Client> {
       this._clientGroups.set(id, clientGroup);
 
       let latestChangeEvent: ?{
-        logger: ?RootPerfLogger,
+        +logger: ?RootPerfLogger,
+        +changeId: string,
       } = null;
 
       const debounceCallHandleFileChange = debounceAsyncQueue(async () => {
@@ -273,7 +274,8 @@ export default class HmrServer<TClient: Client> {
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
     changeEvent: ?{
-      logger: ?RootPerfLogger,
+      +logger: ?RootPerfLogger,
+      +changeId?: string,
     },
   ): Promise<void> {
     const logger = !options.isInitialUpdate ? changeEvent?.logger : null;
@@ -308,7 +310,10 @@ export default class HmrServer<TClient: Client> {
 
     const message = await this._prepareMessage(group, options, changeEvent);
     send(sendFns, message);
-    send(sendFns, {type: 'update-done'});
+    send(sendFns, {
+      type: 'update-done',
+      body: {changeId: changeEvent?.changeId},
+    });
 
     log({
       ...createActionEndEntry(processingHmrChange),
@@ -328,7 +333,8 @@ export default class HmrServer<TClient: Client> {
     group: ClientGroup,
     options: {isInitialUpdate: boolean},
     changeEvent: ?{
-      logger: ?RootPerfLogger,
+      +logger: ?RootPerfLogger,
+      +changeId?: string,
     },
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     const logger = !options.isInitialUpdate ? changeEvent?.logger : null;

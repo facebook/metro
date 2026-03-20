@@ -10,15 +10,23 @@
  */
 
 import type {DeltaResult, Options} from './types';
-import type {RootPerfLogger} from 'metro-config';
 import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
+import crypto from 'crypto';
 import EventEmitter from 'events';
 import path from 'path';
 
 // eslint-disable-next-line import/no-commonjs
 const debug = require('debug')('Metro:DeltaCalculator');
+
+/**
+ * Assigns a unique, stable `changeId` to each `ChangeEvent` from the file
+ * watcher. Since all `DeltaCalculator` instances share the same
+ * `ChangeEvent` object reference per file system change, the `WeakMap`
+ * ensures each gets the same `changeId`.
+ */
+const changeEventIds: WeakMap<ChangeEvent, string> = new WeakMap();
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -173,8 +181,13 @@ export default class DeltaCalculator<T> extends EventEmitter {
   }
 
   _handleMultipleFileChanges = (changeEvent: ChangeEvent) => {
+    const {logger} = changeEvent;
+
+    const changeId = changeEventIds.get(changeEvent) ?? crypto.randomUUID();
+    changeEventIds.set(changeEvent, changeId);
+
     changeEvent.eventsQueue.forEach(eventInfo => {
-      this._handleFileChange(eventInfo, changeEvent.logger);
+      this._handleFileChange(eventInfo, {logger, changeId});
     });
   };
 
@@ -185,7 +198,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
    */
   _handleFileChange = (
     {type, filePath, metadata}: ChangeEvent['eventsQueue'][number],
-    logger: ?RootPerfLogger,
+    {logger, changeId}: {logger: ChangeEvent['logger'], changeId: string},
   ): unknown => {
     debug('Handling %s: %s (type: %s)', type, filePath, metadata.type);
     if (
@@ -239,9 +252,7 @@ export default class DeltaCalculator<T> extends EventEmitter {
 
     // Notify users that there is a change in some of the bundle files. This
     // way the client can choose to refetch the bundle.
-    this.emit('change', {
-      logger,
-    });
+    this.emit('change', {logger, changeId});
   };
 
   async _getChangedDependencies(
