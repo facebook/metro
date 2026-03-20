@@ -11,7 +11,7 @@
 
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore, MetroCache} from 'metro-cache';
-import type {CacheManagerFactory} from 'metro-file-map';
+import type {CacheManagerFactory, InputFileMapPlugin} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
@@ -163,6 +163,7 @@ type MetalConfigT = {
   fileMapCacheDirectory?: string,
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
+  unstable_fileMapPlugins?: ReadonlyArray<InputFileMapPlugin>,
   maxWorkers: number,
   unstable_perfLoggerFactory?: ?PerfLoggerFactory,
   projectRoot: string,
