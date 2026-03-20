@@ -21,7 +21,7 @@ export type BuildParameters = Readonly<{
   extensions: ReadonlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignorePattern: RegExp,
-  plugins: ReadonlyArray<FileMapPlugin<>>,
+  plugins: ReadonlyArray<InputFileMapPlugin>,
   retainAllFiles: boolean,
   rootDir: string,
   roots: ReadonlyArray<string>,
@@ -171,8 +171,8 @@ export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
 export type FileMapPluginInitOptions<
-  SerializableState,
-  PerFileData = void,
+  +SerializableState,
+  +PerFileData = void,
 > = Readonly<{
   files: Readonly<{
     fileIterator(
@@ -183,13 +183,13 @@ export type FileMapPluginInitOptions<
     ): Iterable<{
       baseName: string,
       canonicalPath: string,
-      pluginData: ?PerFileData,
+      +pluginData: ?PerFileData,
     }>,
     lookup(
       mixedPath: string,
     ):
       | {exists: false}
-      | {exists: true, type: 'f', pluginData: PerFileData}
+      | {exists: true, type: 'f', +pluginData: PerFileData}
       | {exists: true, type: 'd'},
   }>,
   pluginState: ?SerializableState,
@@ -214,8 +214,8 @@ export type V8Serializable =
   | Readonly<{[key: string]: V8Serializable}>;
 
 export interface FileMapPlugin<
-  SerializableState extends void | V8Serializable = void | V8Serializable,
-  PerFileData extends void | V8Serializable = void | V8Serializable,
+  -SerializableState extends void | V8Serializable = void | V8Serializable,
+  -PerFileData extends void | V8Serializable = void | V8Serializable,
 > {
   +name: string;
   initialize(
@@ -223,10 +223,12 @@ export interface FileMapPlugin<
   ): Promise<void>;
   assertValid(): void;
   onChanged(changes: ReadonlyFileSystemChanges<?PerFileData>): void;
-  getSerializableSnapshot(): SerializableState;
+  getSerializableSnapshot(): void | V8Serializable;
   getCacheKey(): string;
   getWorker(): ?FileMapPluginWorker;
 }
+
+export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
 
 export interface MetadataWorker {
   processFile(

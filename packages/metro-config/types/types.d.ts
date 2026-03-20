@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<20024be3f43cb697bb4222315fd0ab31>>
+ * @generated SignedSource<<9c62bc2ca711f9693edc135a382a382a>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-config/src/types.js
@@ -17,7 +17,7 @@
 
 import type {HandleFunction, Server} from 'connect';
 import type {CacheStore, MetroCache} from 'metro-cache';
-import type {CacheManagerFactory} from 'metro-file-map';
+import type {CacheManagerFactory, InputFileMapPlugin} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
@@ -164,6 +164,7 @@ type MetalConfigT = {
   fileMapCacheDirectory?: string;
   hasteMapCacheDirectory?: string;
   unstable_fileMapCacheManagerFactory?: CacheManagerFactory;
+  unstable_fileMapPlugins?: ReadonlyArray<InputFileMapPlugin>;
   maxWorkers: number;
   unstable_perfLoggerFactory?: null | undefined | PerfLoggerFactory;
   projectRoot: string;

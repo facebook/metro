@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<547fb85365adf6b917a29b9a53854036>>
+ * @generated SignedSource<<b3646c81d37188726a1fc27777dcbede>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -24,7 +24,7 @@ export type BuildParameters = Readonly<{
   extensions: ReadonlyArray<string>;
   forceNodeFilesystemAPI: boolean;
   ignorePattern: RegExp;
-  plugins: ReadonlyArray<FileMapPlugin>;
+  plugins: ReadonlyArray<InputFileMapPlugin>;
   retainAllFiles: boolean;
   rootDir: string;
   roots: ReadonlyArray<string>;
@@ -147,13 +147,13 @@ export type FileMapPluginInitOptions<
     ): Iterable<{
       baseName: string;
       canonicalPath: string;
-      pluginData: null | undefined | PerFileData;
+      readonly pluginData: null | undefined | PerFileData;
     }>;
     lookup(
       mixedPath: string,
     ):
       | {exists: false}
-      | {exists: true; type: 'f'; pluginData: PerFileData}
+      | {exists: true; type: 'f'; readonly pluginData: PerFileData}
       | {exists: true; type: 'd'};
   }>;
   pluginState: null | undefined | SerializableState;
@@ -186,10 +186,22 @@ export interface FileMapPlugin<
   onChanged(
     changes: ReadonlyFileSystemChanges<null | undefined | PerFileData>,
   ): void;
-  getSerializableSnapshot(): SerializableState;
+  getSerializableSnapshot(): void | V8Serializable;
   getCacheKey(): string;
   getWorker(): null | undefined | FileMapPluginWorker;
 }
+export type InputFileMapPlugin = FileMapPlugin<
+  /**
+   * > 235 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+   *       |                                                ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
+   **/
+  any,
+  /**
+   * > 235 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+   *       |                                                       ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
+   **/
+  any
+>;
 export interface MetadataWorker {
   processFile(
     $$PARAM_0$$: WorkerMessage,
