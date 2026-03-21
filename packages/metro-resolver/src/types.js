@@ -87,6 +87,7 @@ export type PackageJson = Readonly<{
   main?: string,
   exports?: ExportsField,
   imports?: ExportsLikeMap,
+  sideEffects?: boolean | ReadonlyArray<string>,
   ...
 }>;
 

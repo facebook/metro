@@ -112,7 +112,10 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    experimentalImportSupport: transform?.experimentalImportSupport || false,
+    experimentalImportSupport:
+      (config.transformer.unstable_treeShake && !options.dev) ||
+      transform?.experimentalImportSupport ||
+      false,
     inlineRequires: transform?.inlineRequires || false,
     nonInlinedRequires:
       transform?.nonInlinedRequires || baseIgnoredInlineRequires,
@@ -121,6 +124,7 @@ async function calcTransformerOptions(
       transform?.unstable_memoizeInlineRequires || false,
     unstable_nonMemoizedInlineRequires:
       transform?.unstable_nonMemoizedInlineRequires || [],
+    unstable_treeShake: config.transformer.unstable_treeShake && !options.dev,
   };
 }
 

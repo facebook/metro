@@ -275,14 +275,46 @@ export class ModuleResolver<TPackage extends Packageish> {
    */
   _getFileResolvedModule(resolution: Resolution): BundlerResolution {
     switch (resolution.type) {
-      case 'sourceFile':
-        return resolution;
+      case 'sourceFile': {
+        const packageForModule = this._getPackageForModule(resolution.filePath);
+        const sideEffects = packageForModule?.packageJson.sideEffects;
+        const sideEffectsFields: {
+          sideEffects?: boolean | ReadonlyArray<string>,
+          sideEffectsRoot?: string,
+        } = {};
+        if (sideEffects != null) {
+          sideEffectsFields.sideEffects = sideEffects;
+          if (packageForModule?.rootPath != null) {
+            sideEffectsFields.sideEffectsRoot = packageForModule.rootPath;
+          }
+        }
+        return {
+          ...resolution,
+          ...sideEffectsFields,
+        };
+      }
       case 'assetFiles':
         // FIXME: we should forward ALL the paths/metadata,
         // not just an arbitrary item!
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
-        return {filePath: arbitrary, type: 'sourceFile'};
+        const packageForModule = this._getPackageForModule(arbitrary);
+        const sideEffects = packageForModule?.packageJson.sideEffects;
+        const sideEffectsFields: {
+          sideEffects?: boolean | ReadonlyArray<string>,
+          sideEffectsRoot?: string,
+        } = {};
+        if (sideEffects != null) {
+          sideEffectsFields.sideEffects = sideEffects;
+          if (packageForModule?.rootPath != null) {
+            sideEffectsFields.sideEffectsRoot = packageForModule.rootPath;
+          }
+        }
+        return {
+          filePath: arbitrary,
+          type: 'sourceFile',
+          ...sideEffectsFields,
+        };
       case 'empty':
         return this._getEmptyModule();
       default:
