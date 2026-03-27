@@ -9,7 +9,7 @@
  */
 
 import Layout from '@theme/Layout';
-import React from 'react';
+import * as React from 'react';
 
 const supportLinks = [
   {
