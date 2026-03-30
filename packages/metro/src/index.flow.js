@@ -156,9 +156,28 @@ type DependenciesCommandOptions = Readonly<{[string]: unknown}> | null;
 export {Terminal, JsonReporter, TerminalReporter};
 
 export type {AssetData} from './Assets';
-export type {Reporter, ReportableEvent} from './lib/reporting';
+export type {
+  AsyncDependencyType,
+  DeltaResult,
+  Dependency,
+  MixedOutput,
+  Module,
+  ReadOnlyDependencies,
+  ReadOnlyGraph,
+  SerializerOptions,
+  TransformInputOptions,
+  TransformResult,
+  TransformResultDependency,
+} from './DeltaBundler/types';
+export type {default as DependencyGraph} from './node-haste/DependencyGraph';
+export type {BundleDetails, Reporter, ReportableEvent} from './lib/reporting';
 export type {TerminalReportableEvent} from './lib/TerminalReporter';
-export type {MetroConfig};
+export type {
+  ContextMode,
+  RequireContextParams,
+} from './ModuleGraph/worker/collectDependencies';
+export type {ServerOptions} from './Server';
+export type {MetroConfig, MetroServer};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);
