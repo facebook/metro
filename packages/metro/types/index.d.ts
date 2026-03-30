@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<6246e792b8fc5f3e524f443a31921cfc>>
+ * @generated SignedSource<<3c6460427c6760887187d6b16151c609>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/index.flow.js
@@ -125,9 +125,28 @@ type DependenciesCommandOptions = Readonly<{
 }> | null;
 export {Terminal, JsonReporter, TerminalReporter};
 export type {AssetData} from './Assets';
-export type {Reporter, ReportableEvent} from './lib/reporting';
+export type {
+  AsyncDependencyType,
+  DeltaResult,
+  Dependency,
+  MixedOutput,
+  Module,
+  ReadOnlyDependencies,
+  ReadOnlyGraph,
+  SerializerOptions,
+  TransformInputOptions,
+  TransformResult,
+  TransformResultDependency,
+} from './DeltaBundler/types';
+export type {default as DependencyGraph} from './node-haste/DependencyGraph';
+export type {BundleDetails, Reporter, ReportableEvent} from './lib/reporting';
 export type {TerminalReportableEvent} from './lib/TerminalReporter';
-export type {MetroConfig};
+export type {
+  ContextMode,
+  RequireContextParams,
+} from './ModuleGraph/worker/collectDependencies';
+export type {ServerOptions} from './Server';
+export type {MetroConfig, MetroServer};
 export declare function runMetro(
   config: InputConfigT,
   options?: RunMetroOptions,
