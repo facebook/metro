@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<d5224d8913b7e0c52ac84b215b356422>>
+ * @generated SignedSource<<0024fd05b95efe19a24f9acc84ff474b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph/ModuleResolution.js
@@ -32,19 +32,7 @@ import type {
 import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
 
 export type DirExistsFn = (filePath: string) => boolean;
-export type Packageish = {path: string; read(): PackageJson};
-export type Moduleish = {readonly path: string};
-export type PackageishCache<TPackage> = {
-  getPackage(
-    name: string,
-    platform?: string,
-    supportsNativePlatform?: boolean,
-  ): TPackage;
-  getPackageOf(
-    absolutePath: string,
-  ): null | undefined | {pkg: TPackage; packageRelativePath: string};
-};
-type Options<TPackage> = Readonly<{
+type Options = Readonly<{
   assetExts: ReadonlySet<string>;
   dirExists: DirExistsFn;
   disableHierarchicalLookup: boolean;
@@ -61,7 +49,10 @@ type Options<TPackage> = Readonly<{
     platform: null | undefined | string,
   ) => null | undefined | string;
   mainFields: ReadonlyArray<string>;
-  packageCache: PackageishCache<TPackage>;
+  getPackage: (packageJsonPath: string) => null | undefined | PackageJson;
+  getPackageForModule: (
+    absolutePath: string,
+  ) => null | undefined | PackageForModule;
   nodeModulesPaths: ReadonlyArray<string>;
   preferNativePlatform: boolean;
   projectRoot: string;
@@ -76,11 +67,11 @@ type Options<TPackage> = Readonly<{
   unstable_enablePackageExports: boolean;
   unstable_incrementalResolution: boolean;
 }>;
-export declare class ModuleResolver<TPackage extends Packageish> {
-  _options: Options<TPackage>;
+export declare class ModuleResolver {
+  _options: Options;
   _projectRootFakeModulePath: string;
   _cachedEmptyModule: null | undefined | BundlerResolution;
-  constructor(options: Options<TPackage>);
+  constructor(options: Options);
   _getEmptyModule(): BundlerResolution;
   resolveDependency(
     originModulePath: string,
@@ -89,10 +80,6 @@ export declare class ModuleResolver<TPackage extends Packageish> {
     platform: string | null,
     resolverOptions: ResolverInputOptions,
   ): BundlerResolution;
-  _getPackage: (packageJsonPath: string) => null | undefined | PackageJson;
-  _getPackageForModule: (
-    absolutePath: string,
-  ) => null | undefined | PackageForModule;
   /**
    * TODO: Return Resolution instead of coercing to BundlerResolution here
    */

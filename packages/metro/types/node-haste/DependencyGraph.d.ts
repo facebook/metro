@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<eb945b3566e9ed370894adaada197736>>
+ * @generated SignedSource<<13f1483d2a732241f8d9eae463399b0e>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph.js
@@ -20,7 +20,6 @@ import type {
   TransformResultDependency,
 } from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
-import type Package from './Package';
 import type {ConfigT} from 'metro-config';
 import type {
   ChangeEvent,
@@ -32,7 +31,6 @@ import type {
 } from 'metro-file-map';
 
 import {ModuleResolver} from './DependencyGraph/ModuleResolution';
-import {PackageCache} from './PackageCache';
 import EventEmitter from 'events';
 
 declare class DependencyGraph extends EventEmitter {
@@ -40,7 +38,7 @@ declare class DependencyGraph extends EventEmitter {
   _haste: MetroFileMap;
   _fileSystem: FileSystem;
   _hasteMap: HasteMap;
-  _moduleResolver: ModuleResolver<Package>;
+  _moduleResolver: ModuleResolver;
   _resolutionCache: Map<
     string | symbol,
     Map<
@@ -64,7 +62,6 @@ declare class DependencyGraph extends EventEmitter {
   _getClosestPackage(
     absoluteModulePath: string,
   ): null | undefined | {packageJsonPath: string; packageRelativePath: string};
-  _createPackageCache(): PackageCache;
   getAllFiles(): Array<string>;
   /**
    * Used when watcher.unstable_lazySha1 is true
