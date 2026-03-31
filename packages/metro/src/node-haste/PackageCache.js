@@ -9,7 +9,10 @@
  * @oncall react_native
  */
 
-import Package from './Package';
+import type {PackageJson} from 'metro-resolver/private/types';
+
+import {readFileSync} from 'fs';
+import {dirname} from 'path';
 
 type GetClosestPackageFn = (absoluteFilePath: string) => ?{
   packageJsonPath: string,
@@ -19,7 +22,10 @@ type GetClosestPackageFn = (absoluteFilePath: string) => ?{
 export class PackageCache {
   _getClosestPackage: GetClosestPackageFn;
   _packageCache: {
-    [filePath: string]: Package,
+    [filePath: string]: {
+      rootPath: string,
+      packageJson: PackageJson,
+    },
     __proto__: null,
     ...
   };
@@ -46,26 +52,35 @@ export class PackageCache {
     this._modulePathsByPackagePath = Object.create(null);
   }
 
-  getPackage(filePath: string): Package {
+  getPackage(filePath: string): {
+    rootPath: string,
+    packageJson: PackageJson,
+  } {
     if (!this._packageCache[filePath]) {
-      this._packageCache[filePath] = new Package({
-        file: filePath,
-      });
+      this._packageCache[filePath] = {
+        rootPath: dirname(filePath),
+        packageJson: JSON.parse(readFileSync(filePath, 'utf8')),
+      };
     }
     return this._packageCache[filePath];
   }
 
-  getPackageOf(
-    absoluteModulePath: string,
-  ): ?{pkg: Package, packageRelativePath: string} {
+  getPackageForModule(absoluteModulePath: string): ?{
+    packageJson: PackageJson,
+    rootPath: string,
+    packageRelativePath: string,
+  } {
     let packagePathAndSubpath =
       this._packagePathAndSubpathByModulePath[absoluteModulePath];
     if (
       packagePathAndSubpath &&
       this._packageCache[packagePathAndSubpath.packageJsonPath]
     ) {
+      const {rootPath, packageJson} =
+        this._packageCache[packagePathAndSubpath.packageJsonPath];
       return {
-        pkg: this._packageCache[packagePathAndSubpath.packageJsonPath],
+        packageJson,
+        rootPath,
         packageRelativePath: packagePathAndSubpath.packageRelativePath,
       };
     }
@@ -84,15 +99,23 @@ export class PackageCache {
     modulePaths.add(absoluteModulePath);
     this._modulePathsByPackagePath[packagePath] = modulePaths;
 
+    const pkg = this.getPackage(packagePath);
+
+    if (pkg == null) {
+      return null;
+    }
+
+    const {rootPath, packageJson} = pkg;
+
     return {
-      pkg: this.getPackage(packagePath),
+      packageJson,
       packageRelativePath: packagePathAndSubpath.packageRelativePath,
+      rootPath,
     };
   }
 
   invalidate(filePath: string) {
     if (this._packageCache[filePath]) {
-      this._packageCache[filePath].invalidate();
       delete this._packageCache[filePath];
     }
     const packagePathAndSubpath =

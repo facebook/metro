@@ -198,22 +198,16 @@ export default class DependencyGraph extends EventEmitter {
         this._hasteMap.getPackage(name, platform, true),
       getPackage: (packageJsonPath: string) => {
         try {
-          return this.#packageCache.getPackage(packageJsonPath).read() ?? null;
+          return (
+            this.#packageCache.getPackage(packageJsonPath).packageJson ?? null
+          );
         } catch {
           // Non-existence or malformed JSON, we treat both as non-existent
           return null;
         }
       },
-      getPackageForModule: (absolutePath: string) => {
-        const result = this.#packageCache.getPackageOf(absolutePath);
-        return result != null
-          ? {
-              packageJson: result.pkg.read(),
-              packageRelativePath: result.packageRelativePath,
-              rootPath: path.dirname(result.pkg.path),
-            }
-          : null;
-      },
+      getPackageForModule: (absolutePath: string) =>
+        this.#packageCache.getPackageForModule(absolutePath),
       mainFields: this._config.resolver.resolverMainFields,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       preferNativePlatform: true,
