@@ -14,7 +14,6 @@ import type {
   TransformResultDependency,
 } from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
-import type Package from './Package';
 import type {ConfigT} from 'metro-config';
 import type {
   ChangeEvent,
@@ -66,7 +65,7 @@ export default class DependencyGraph extends EventEmitter {
   #packageCache: PackageCache;
   _hasteMap: HasteMap;
   #dependencyPlugin: ?DependencyPlugin;
-  _moduleResolver: ModuleResolver<Package>;
+  _moduleResolver: ModuleResolver;
   _resolutionCache: Map<
     // Custom resolver options
     string | symbol,
@@ -131,7 +130,10 @@ export default class DependencyGraph extends EventEmitter {
         this._onWatcherHealthCheck(result),
       );
       this._resolutionCache = new Map();
-      this.#packageCache = this._createPackageCache();
+      this.#packageCache = new PackageCache({
+        getClosestPackage: absoluteModulePath =>
+          this._getClosestPackage(absoluteModulePath),
+      });
       this._createModuleResolver();
     });
   }
@@ -194,9 +196,26 @@ export default class DependencyGraph extends EventEmitter {
         this._hasteMap.getModule(name, platform, true),
       getHastePackagePath: (name, platform) =>
         this._hasteMap.getPackage(name, platform, true),
+      getPackage: (packageJsonPath: string) => {
+        try {
+          return this.#packageCache.getPackage(packageJsonPath).read() ?? null;
+        } catch {
+          // Non-existence or malformed JSON, we treat both as non-existent
+          return null;
+        }
+      },
+      getPackageForModule: (absolutePath: string) => {
+        const result = this.#packageCache.getPackageOf(absolutePath);
+        return result != null
+          ? {
+              packageJson: result.pkg.read(),
+              packageRelativePath: result.packageRelativePath,
+              rootPath: path.dirname(result.pkg.path),
+            }
+          : null;
+      },
       mainFields: this._config.resolver.resolverMainFields,
       nodeModulesPaths: this._config.resolver.nodeModulesPaths,
-      packageCache: this.#packageCache,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       reporter: this._config.reporter,
@@ -243,12 +262,6 @@ export default class DependencyGraph extends EventEmitter {
           packageRelativePath: result.containerRelativePath,
         }
       : null;
-  }
-
-  _createPackageCache(): PackageCache {
-    return new PackageCache({
-      getClosestPackage: absolutePath => this._getClosestPackage(absolutePath),
-    });
   }
 
   getAllFiles(): Array<string> {

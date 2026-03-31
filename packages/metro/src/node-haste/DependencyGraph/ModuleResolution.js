@@ -35,28 +35,7 @@ import util from 'util';
 
 export type DirExistsFn = (filePath: string) => boolean;
 
-export type Packageish = interface {
-  path: string,
-  read(): PackageJson,
-};
-
-export type Moduleish = interface {
-  +path: string,
-};
-
-export type PackageishCache<TPackage> = interface {
-  getPackage(
-    name: string,
-    platform?: string,
-    supportsNativePlatform?: boolean,
-  ): TPackage,
-  getPackageOf(absolutePath: string): ?{
-    pkg: TPackage,
-    packageRelativePath: string,
-  },
-};
-
-type Options<TPackage> = Readonly<{
+type Options = Readonly<{
   assetExts: ReadonlySet<string>,
   dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
@@ -67,7 +46,8 @@ type Options<TPackage> = Readonly<{
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,
   mainFields: ReadonlyArray<string>,
-  packageCache: PackageishCache<TPackage>,
+  getPackage: (packageJsonPath: string) => ?PackageJson,
+  getPackageForModule: (absolutePath: string) => ?PackageForModule,
   nodeModulesPaths: ReadonlyArray<string>,
   preferNativePlatform: boolean,
   projectRoot: string,
@@ -83,14 +63,14 @@ type Options<TPackage> = Readonly<{
   unstable_incrementalResolution: boolean,
 }>;
 
-export class ModuleResolver<TPackage extends Packageish> {
-  _options: Options<TPackage>;
+export class ModuleResolver {
+  _options: Options;
   // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModulePath: string;
   // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?BundlerResolution;
 
-  constructor(options: Options<TPackage>) {
+  constructor(options: Options) {
     this._options = options;
     const {projectRoot} = this._options;
     this._projectRootFakeModulePath = path.join(projectRoot, '_');
@@ -132,6 +112,8 @@ export class ModuleResolver<TPackage extends Packageish> {
       doesFileExist,
       extraNodeModules,
       fileSystemLookup,
+      getPackage,
+      getPackageForModule,
       mainFields,
       nodeModulesPaths,
       preferNativePlatform,
@@ -156,9 +138,8 @@ export class ModuleResolver<TPackage extends Packageish> {
             doesFileExist,
             extraNodeModules,
             fileSystemLookup,
-            getPackage: this._getPackage,
-            getPackageForModule: (absoluteModulePath: string) =>
-              this._getPackageForModule(absoluteModulePath),
+            getPackage,
+            getPackageForModule,
             isESMImport: dependency.data.isESMImport,
             mainFields,
             nodeModulesPaths,
@@ -239,36 +220,6 @@ export class ModuleResolver<TPackage extends Packageish> {
       throw error;
     }
   }
-
-  _getPackage = (packageJsonPath: string): ?PackageJson => {
-    try {
-      return this._options.packageCache.getPackage(packageJsonPath).read();
-    } catch (e) {
-      // Do nothing. The standard module cache does not trigger any error, but
-      // the ModuleGraph one does, if the module does not exist.
-    }
-
-    return null;
-  };
-
-  _getPackageForModule = (absolutePath: string): ?PackageForModule => {
-    let result;
-
-    try {
-      result = this._options.packageCache.getPackageOf(absolutePath);
-    } catch (e) {
-      // Do nothing. The standard module cache does not trigger any error, but
-      // the ModuleGraph one does, if the module does not exist.
-    }
-
-    return result != null
-      ? {
-          packageJson: result.pkg.read(),
-          packageRelativePath: result.packageRelativePath,
-          rootPath: path.dirname(result.pkg.path),
-        }
-      : null;
-  };
 
   /**
    * TODO: Return Resolution instead of coercing to BundlerResolution here
