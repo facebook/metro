@@ -50,7 +50,7 @@ function find(
     {} as {[string]: ?true},
   );
 
-  function search(directory: string): void {
+  function search(directory: string, dirNormal: string): void {
     activeCalls++;
     fs.readdir(directory, {withFileTypes: true}, (err, entries) => {
       activeCalls--;
@@ -60,18 +60,17 @@ function find(
         );
       } else {
         entries.forEach((entry: fs.Dirent) => {
-          const file = path.join(directory, entry.name.toString());
+          const name = entry.name.toString();
+          const file = directory + path.sep + name;
 
-          if (ignore(file)) {
+          if (ignore(file) || (!includeSymlinks && entry.isSymbolicLink())) {
             return;
           }
 
-          if (entry.isSymbolicLink() && !includeSymlinks) {
-            return;
-          }
-
+          const childNormal =
+            dirNormal === '' ? name : dirNormal + path.sep + name;
           if (entry.isDirectory()) {
-            search(file);
+            search(file, childNormal);
             return;
           }
 
@@ -83,7 +82,7 @@ function find(
             if (!err && stat) {
               const ext = path.extname(file).substr(1);
               if (stat.isSymbolicLink() || exts[ext]) {
-                result.set(pathUtils.absoluteToNormal(file), [
+                result.set(childNormal, [
                   stat.mtime.getTime(),
                   stat.size,
                   0,
@@ -108,7 +107,7 @@ function find(
   }
 
   if (roots.length > 0) {
-    roots.forEach(search);
+    roots.forEach(root => search(root, pathUtils.absoluteToNormal(root)));
   } else {
     callback(result);
   }
