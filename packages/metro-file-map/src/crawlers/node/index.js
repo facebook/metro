@@ -20,7 +20,7 @@ import type {
 import {RootPathUtils} from '../../lib/RootPathUtils';
 import hasNativeFindSupport from './hasNativeFindSupport';
 import {spawn} from 'child_process';
-import * as fs from 'graceful-fs';
+import fs from 'fs';
 import {platform} from 'os';
 import * as path from 'path';
 
