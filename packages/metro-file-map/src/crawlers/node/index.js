@@ -42,6 +42,14 @@ function find(
   let activeCalls = 0;
   const pathUtils = new RootPathUtils(rootDir);
 
+  const exts = extensions.reduce(
+    (acc, ext) => {
+      acc[ext] = true;
+      return acc;
+    },
+    {} as {[string]: ?true},
+  );
+
   function search(directory: string): void {
     activeCalls++;
     fs.readdir(directory, {withFileTypes: true}, (err, entries) => {
@@ -74,7 +82,7 @@ function find(
 
             if (!err && stat) {
               const ext = path.extname(file).substr(1);
-              if (stat.isSymbolicLink() || extensions.includes(ext)) {
+              if (stat.isSymbolicLink() || exts[ext]) {
                 result.set(pathUtils.absoluteToNormal(file), [
                   stat.mtime.getTime(),
                   stat.size,
