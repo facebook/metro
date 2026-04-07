@@ -27,7 +27,9 @@ module.exports = class DependencyExtractorWorker /*:: implements MetadataWorker 
   ) {
     if (dependencyExtractor != null) {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      this.#dependencyExtractor = require(dependencyExtractor);
+      const mod = require(dependencyExtractor);
+      this.#dependencyExtractor =
+        mod.__esModule === true && 'default' in mod ? mod.default : mod;
     }
   }
 
