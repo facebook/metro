@@ -249,7 +249,10 @@ async function applyAssetDataPlugins(
 
   const [currentAssetPlugin, ...remainingAssetPlugins] = assetDataPlugins;
   // $FlowFixMe[unsupported-syntax]: impossible to type a dynamic require.
-  const assetPluginFunction: AssetDataPlugin = require(currentAssetPlugin);
+  const mod = require(currentAssetPlugin);
+  const assetPluginFunction: AssetDataPlugin =
+    mod.__esModule === true && 'default' in mod ? mod.default : mod;
+
   const resultAssetData = await assetPluginFunction(assetData);
   return await applyAssetDataPlugins(remainingAssetPlugins, resultAssetData);
 }
