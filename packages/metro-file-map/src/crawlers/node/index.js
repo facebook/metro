@@ -59,19 +59,20 @@ function find(
           `Error "${err.code ?? err.message}" reading contents of "${directory}", skipping. Add this directory to your ignore list to exclude it.`,
         );
       } else {
-        entries.forEach((entry: fs.Dirent) => {
+        for (let idx = 0; idx < entries.length; idx++) {
+          const entry = entries[idx];
           const name = entry.name.toString();
           const file = directory + path.sep + name;
 
           if (ignore(file) || (!includeSymlinks && entry.isSymbolicLink())) {
-            return;
+            continue;
           }
 
           const childNormal =
             dirNormal === '' ? name : dirNormal + path.sep + name;
           if (entry.isDirectory()) {
             search(file, childNormal);
-            return;
+            continue;
           }
 
           activeCalls++;
@@ -81,13 +82,14 @@ function find(
 
             if (!err && stat) {
               const ext = path.extname(file).substr(1);
-              if (stat.isSymbolicLink() || exts[ext]) {
+              const isSymbolicLink = stat.isSymbolicLink();
+              if (isSymbolicLink || exts[ext]) {
                 result.set(childNormal, [
                   stat.mtime.getTime(),
                   stat.size,
                   0,
                   null,
-                  stat.isSymbolicLink() ? 1 : 0,
+                  isSymbolicLink ? 1 : 0,
                   null,
                 ]);
               }
@@ -97,7 +99,7 @@ function find(
               callback(result);
             }
           });
-        });
+        }
       }
 
       if (activeCalls === 0) {
@@ -107,7 +109,9 @@ function find(
   }
 
   if (roots.length > 0) {
-    roots.forEach(root => search(root, pathUtils.absoluteToNormal(root)));
+    for (const root of roots) {
+      search(root, pathUtils.absoluteToNormal(root));
+    }
   } else {
     callback(result);
   }
@@ -156,7 +160,7 @@ function findNative(
     if (!count) {
       callback(new Map());
     } else {
-      lines.forEach(path => {
+      for (const path of lines) {
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
             result.set(pathUtils.absoluteToNormal(path), [
@@ -172,7 +176,7 @@ function findNative(
             callback(result);
           }
         });
-      });
+      }
     }
   });
 }
