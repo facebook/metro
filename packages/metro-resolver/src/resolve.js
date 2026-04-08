@@ -166,57 +166,30 @@ export default function resolve(
 
   const {disableHierarchicalLookup} = context;
 
-  const nodeModulesPaths = [];
-  let next = path.dirname(originModulePath);
+  const buildNodeModulePaths = () => {
+    const nodeModulesPaths: string[] = [];
 
-  if (!disableHierarchicalLookup) {
-    let candidate;
-    do {
-      candidate = next;
-      const nodeModulesPath = candidate.endsWith(path.sep)
-        ? candidate + 'node_modules'
-        : candidate + path.sep + 'node_modules';
-      nodeModulesPaths.push(nodeModulesPath);
-      next = path.dirname(candidate);
-    } while (candidate !== next);
-  }
+    if (!disableHierarchicalLookup) {
+      let next = path.dirname(originModulePath);
+      let candidate;
+      do {
+        candidate = next;
+        const nodeModulesPath = candidate.endsWith(path.sep)
+          ? candidate + 'node_modules'
+          : candidate + path.sep + 'node_modules';
+        nodeModulesPaths.push(nodeModulesPath);
+        next = path.dirname(candidate);
+      } while (candidate !== next);
+    }
 
-  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
-  nodeModulesPaths.push(...context.nodeModulesPaths);
+    nodeModulesPaths.push(...context.nodeModulesPaths);
+    return nodeModulesPaths;
+  };
 
-  const extraPaths = [];
-
-  const {extraNodeModules} = context;
-  if (extraNodeModules && extraNodeModules[parsedSpecifier.packageName]) {
-    const newPackageName = extraNodeModules[parsedSpecifier.packageName];
-    extraPaths.push(path.join(newPackageName, parsedSpecifier.posixSubpath));
-  }
-
-  const allDirPaths = nodeModulesPaths
-    .map(nodeModulePath => {
-      let lookupResult = null;
-      // Insight: The module can only exist if there is a `node_modules` at
-      // this path. Redirections cannot succeed, because we will never look
-      // beyond a node_modules path segment for finding the closest
-      // package.json. Moreover, if the specifier contains a '/' separator,
-      // the first part *must* be a real directory, because it is the
-      // shallowest path that can possibly contain a redirecting package.json.
-      const mustBeDirectory =
-        parsedSpecifier.posixSubpath !== '.' ||
-        parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
-          ? nodeModulePath + path.sep + parsedSpecifier.firstPart
-          : nodeModulePath;
-      lookupResult = context.fileSystemLookup(mustBeDirectory);
-      if (!lookupResult.exists || lookupResult.type !== 'd') {
-        return null;
-      }
-      return path.join(nodeModulePath, realModuleName);
-    })
-    .filter(Boolean)
-    .concat(extraPaths);
-  for (let i = 0; i < allDirPaths.length; ++i) {
-    const candidate = redirectModulePath(context, allDirPaths[i]);
-
+  const resolveModuleFromTargetPath = (
+    targetPath: string,
+  ): Resolution | null => {
+    const candidate = redirectModulePath(context, targetPath);
     if (candidate === false) {
       return {type: 'empty'};
     }
@@ -227,9 +200,97 @@ export default function resolve(
     if (result.type === 'resolved') {
       return result.resolution;
     }
+
+    return null;
+  };
+
+  const resolveModulePathFromNodeModulePath = (
+    nodeModulePath: string,
+  ): Resolution | null => {
+    // Insight: The module can only exist if there is a `node_modules` at
+    // this path. Redirections cannot succeed, because we will never look
+    // beyond a node_modules path segment for finding the closest
+    // package.json. Moreover, if the specifier contains a '/' separator,
+    // the first part *must* be a real directory, because it is the
+    // shallowest path that can possibly contain a redirecting package.json.
+    const mustBeDirectory =
+      parsedSpecifier.posixSubpath !== '.' ||
+      parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
+        ? nodeModulePath + path.sep + parsedSpecifier.firstPart
+        : nodeModulePath;
+    const lookupResult = context.fileSystemLookup(mustBeDirectory);
+    if (!lookupResult.exists || lookupResult.type !== 'd') {
+      return null;
+    } else {
+      return resolveModuleFromTargetPath(
+        path.join(nodeModulePath, realModuleName),
+      );
+    }
+  };
+
+  if (!disableHierarchicalLookup) {
+    const visited: {[string]: ?true, __proto__: null} = Object.create(null);
+    let next = path.dirname(originModulePath);
+    let candidate;
+    do {
+      candidate = next;
+      const nodeModulesPath = candidate.endsWith(path.sep)
+        ? candidate + 'node_modules'
+        : candidate + path.sep + 'node_modules';
+
+      const resolution = resolveModulePathFromNodeModulePath(nodeModulesPath);
+      if (resolution != null) {
+        return resolution;
+      }
+
+      visited[nodeModulesPath] = true;
+      next = path.dirname(candidate);
+    } while (candidate !== next);
+
+    // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
+    // This is done separately from the else branch below to save an allocation and check `visited`
+    for (let i = 0; i < context.nodeModulesPaths.length; i++) {
+      // Skip already checked paths, since this could contain duplicates that we already checked
+      if (visited[context.nodeModulesPaths[i]]) {
+        continue;
+      }
+      const resolution = resolveModulePathFromNodeModulePath(
+        context.nodeModulesPaths[i],
+      );
+      if (resolution != null) {
+        return resolution;
+      }
+    }
+  } else {
+    // Only visit `nodeModulesPaths` when hierarchical lookup is disabled
+    for (let i = 0; i < context.nodeModulesPaths.length; i++) {
+      const resolution = resolveModulePathFromNodeModulePath(
+        context.nodeModulesPaths[i],
+      );
+      if (resolution != null) {
+        return resolution;
+      }
+    }
   }
 
-  throw new FailedToResolveNameError(nodeModulesPaths, extraPaths);
+  const {extraNodeModules} = context;
+  let extraNodeModulePath: string | void;
+  if (extraNodeModules && extraNodeModules[parsedSpecifier.packageName]) {
+    const newPackageName = extraNodeModules[parsedSpecifier.packageName];
+    extraNodeModulePath = path.join(
+      newPackageName,
+      parsedSpecifier.posixSubpath,
+    );
+    const resolution = resolveModuleFromTargetPath(extraNodeModulePath);
+    if (resolution != null) {
+      return resolution;
+    }
+  }
+
+  throw new FailedToResolveNameError(
+    buildNodeModulePaths(),
+    extraNodeModulePath != null ? [extraNodeModulePath] : [],
+  );
 }
 
 function parseBareSpecifier(specifier: string): ParsedBareSpecifier {
