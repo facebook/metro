@@ -166,26 +166,6 @@ export default function resolve(
 
   const {disableHierarchicalLookup} = context;
 
-  const buildNodeModulePaths = () => {
-    const nodeModulesPaths: string[] = [];
-
-    if (!disableHierarchicalLookup) {
-      let next = path.dirname(originModulePath);
-      let candidate;
-      do {
-        candidate = next;
-        const nodeModulesPath = candidate.endsWith(path.sep)
-          ? candidate + 'node_modules'
-          : candidate + path.sep + 'node_modules';
-        nodeModulesPaths.push(nodeModulesPath);
-        next = path.dirname(candidate);
-      } while (candidate !== next);
-    }
-
-    nodeModulesPaths.push(...context.nodeModulesPaths);
-    return nodeModulesPaths;
-  };
-
   const resolveModuleFromTargetPath = (
     targetPath: string,
   ): Resolution | null => {
@@ -287,10 +267,33 @@ export default function resolve(
     }
   }
 
-  throw new FailedToResolveNameError(
-    buildNodeModulePaths(),
+  throw buildFailedToResolveNameError(
+    context,
     extraNodeModulePath != null ? [extraNodeModulePath] : [],
   );
+}
+
+function buildFailedToResolveNameError(
+  context: ResolutionContext,
+  extraPaths: ReadonlyArray<string>,
+): FailedToResolveNameError {
+  const nodeModulesPaths: string[] = [];
+
+  if (!context.disableHierarchicalLookup) {
+    let next = path.dirname(context.originModulePath);
+    let candidate;
+    do {
+      candidate = next;
+      const nodeModulesPath = candidate.endsWith(path.sep)
+        ? candidate + 'node_modules'
+        : candidate + path.sep + 'node_modules';
+      nodeModulesPaths.push(nodeModulesPath);
+      next = path.dirname(candidate);
+    } while (candidate !== next);
+  }
+
+  nodeModulesPaths.push(...context.nodeModulesPaths);
+  return new FailedToResolveNameError(nodeModulesPaths, extraPaths);
 }
 
 function parseBareSpecifier(specifier: string): ParsedBareSpecifier {
