@@ -187,7 +187,7 @@ export default function resolve(
     return resolveModuleFromTargetPath(
       context,
       platform,
-      path.join(nodeModulePath, realModuleName),
+      nodeModulePath + path.sep + realModuleName,
     );
   };
 
