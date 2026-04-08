@@ -208,43 +208,25 @@ export default async function nodeCrawl(
 
   debug('Using system find: %s', useNativeFind);
 
-  return new Promise((resolve, reject) => {
-    const callback: Callback = fileData => {
-      const difference = previousState.fileSystem.getDifference(fileData, {
-        subpath,
-      });
-
-      perfLogger?.point('nodeCrawl_end');
-
-      try {
-        // TODO: Use AbortSignal.reason directly when Flow supports it
-        abortSignal?.throwIfAborted();
-      } catch (e) {
-        reject(e);
-      }
-      resolve(difference);
-    };
-
-    if (useNativeFind) {
-      findNative(
-        roots,
-        extensions,
-        ignore,
-        includeSymlinks,
-        rootDir,
-        console,
-        callback,
-      );
-    } else {
-      find(
-        roots,
-        extensions,
-        ignore,
-        includeSymlinks,
-        rootDir,
-        console,
-        callback,
-      );
-    }
+  const crawlFn = useNativeFind ? findNative : find;
+  const fileData = await new Promise<FileData>(resolve => {
+    crawlFn(
+      roots,
+      extensions,
+      ignore,
+      includeSymlinks,
+      rootDir,
+      console,
+      resolve,
+    );
   });
+
+  abortSignal?.throwIfAborted();
+
+  const difference = previousState.fileSystem.getDifference(fileData, {
+    subpath,
+  });
+
+  perfLogger?.point('nodeCrawl_end');
+  return difference;
 }
