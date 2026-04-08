@@ -166,25 +166,7 @@ export default function resolve(
 
   const {disableHierarchicalLookup} = context;
 
-  const resolveModuleFromTargetPath = (
-    targetPath: string,
-  ): Resolution | null => {
-    const candidate = redirectModulePath(context, targetPath);
-    if (candidate === false) {
-      return {type: 'empty'};
-    }
-
-    // candidate should be absolute here - we assume that redirectModulePath
-    // always returns an absolute path when given an absolute path.
-    const result = resolvePackage(context, candidate, platform);
-    if (result.type === 'resolved') {
-      return result.resolution;
-    }
-
-    return null;
-  };
-
-  const resolveModulePathFromNodeModulePath = (
+  const resolveFromNodeModulesPath = (
     nodeModulePath: string,
   ): Resolution | null => {
     // Insight: The module can only exist if there is a `node_modules` at
@@ -201,11 +183,12 @@ export default function resolve(
     const lookupResult = context.fileSystemLookup(mustBeDirectory);
     if (!lookupResult.exists || lookupResult.type !== 'd') {
       return null;
-    } else {
-      return resolveModuleFromTargetPath(
-        path.join(nodeModulePath, realModuleName),
-      );
     }
+    return resolveModuleFromTargetPath(
+      context,
+      platform,
+      path.join(nodeModulePath, realModuleName),
+    );
   };
 
   if (!disableHierarchicalLookup) {
@@ -218,7 +201,7 @@ export default function resolve(
         ? candidate + 'node_modules'
         : candidate + path.sep + 'node_modules';
 
-      const resolution = resolveModulePathFromNodeModulePath(nodeModulesPath);
+      const resolution = resolveFromNodeModulesPath(nodeModulesPath);
       if (resolution != null) {
         return resolution;
       }
@@ -234,7 +217,7 @@ export default function resolve(
       if (visited[context.nodeModulesPaths[i]]) {
         continue;
       }
-      const resolution = resolveModulePathFromNodeModulePath(
+      const resolution = resolveFromNodeModulesPath(
         context.nodeModulesPaths[i],
       );
       if (resolution != null) {
@@ -244,7 +227,7 @@ export default function resolve(
   } else {
     // Only visit `nodeModulesPaths` when hierarchical lookup is disabled
     for (let i = 0; i < context.nodeModulesPaths.length; i++) {
-      const resolution = resolveModulePathFromNodeModulePath(
+      const resolution = resolveFromNodeModulesPath(
         context.nodeModulesPaths[i],
       );
       if (resolution != null) {
@@ -261,7 +244,11 @@ export default function resolve(
       newPackageName,
       parsedSpecifier.posixSubpath,
     );
-    const resolution = resolveModuleFromTargetPath(extraNodeModulePath);
+    const resolution = resolveModuleFromTargetPath(
+      context,
+      platform,
+      extraNodeModulePath,
+    );
     if (resolution != null) {
       return resolution;
     }
@@ -271,6 +258,26 @@ export default function resolve(
     context,
     extraNodeModulePath != null ? [extraNodeModulePath] : [],
   );
+}
+
+function resolveModuleFromTargetPath(
+  context: ResolutionContext,
+  platform: string | null,
+  targetPath: string,
+): Resolution | null {
+  const candidate = redirectModulePath(context, targetPath);
+  if (candidate === false) {
+    return {type: 'empty'};
+  }
+
+  // candidate should be absolute here - we assume that redirectModulePath
+  // always returns an absolute path when given an absolute path.
+  const result = resolvePackage(context, candidate, platform);
+  if (result.type === 'resolved') {
+    return result.resolution;
+  }
+
+  return null;
 }
 
 function buildFailedToResolveNameError(
