@@ -43,6 +43,9 @@ const BROKEN_ON_WINDOWS = [
   'packages/metro-resolver/src/__tests__/package-exports-test.js',
   'packages/metro-resolver/src/__tests__/index-test.js',
 
+  // flow-api-translator line ending issues
+  'scripts/__tests__/ts-defs-sync-test.js',
+
   // unclear issue
   'packages/metro/src/DeltaBundler/__tests__/DeltaCalculator-test.js',
   'packages/metro-file-map/src/crawlers/__tests__/integration-test.js',
