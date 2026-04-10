@@ -642,6 +642,41 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     expect(traverseDependencies).not.toHaveBeenCalled();
   });
 
+  test('should emit a stable changeId for a change event', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    const changeIds: Array<string> = [];
+    deltaCalculator.on('change', ({changeId}: {changeId?: string}) => {
+      if (changeId != null) {
+        changeIds.push(changeId);
+      }
+    });
+
+    // Emit a change event with multiple file changes
+    emitChange({modifiedFiles: ['foo', 'bar']});
+
+    expect(changeIds).toHaveLength(1);
+    expect(typeof changeIds[0]).toBe('string');
+    expect(changeIds[0].length).toBeGreaterThan(0);
+  });
+
+  test('should emit different changeIds for separate change events', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    const changeIds: Array<string> = [];
+    deltaCalculator.on('change', ({changeId}: {changeId?: string}) => {
+      if (changeId != null) {
+        changeIds.push(changeId);
+      }
+    });
+
+    emitChange({modifiedFiles: ['foo']});
+    emitChange({modifiedFiles: ['bar']});
+
+    expect(changeIds).toHaveLength(2);
+    expect(changeIds[0]).not.toEqual(changeIds[1]);
+  });
+
   test('should not mutate an existing graph when calling end()', async () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
     const graph = deltaCalculator.getGraph();
