@@ -83,6 +83,9 @@ export type HmrClientMessage =
     }
   | {
       +type: 'log-opt-in',
+    }
+  | {
+      +type: 'heartbeat',
     };
 
 export type HmrMessage =
@@ -100,4 +103,7 @@ export type HmrMessage =
       +body?: {+changeId?: string},
     }
   | HmrUpdateMessage
-  | HmrErrorMessage;
+  | HmrErrorMessage
+  | {
+      +type: 'heartbeat',
+    };

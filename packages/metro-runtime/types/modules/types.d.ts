@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<b7200f697fbdbb3b71cc1049801258af>>
+ * @generated SignedSource<<117ae8d35a498c8c16f22a36d6ee14ef>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-runtime/src/modules/types.js
@@ -87,7 +87,8 @@ export type HmrClientMessage =
         | 'debug';
       readonly data: Array<unknown>;
     }
-  | {readonly type: 'log-opt-in'};
+  | {readonly type: 'log-opt-in'}
+  | {readonly type: 'heartbeat'};
 export type HmrMessage =
   | {readonly type: 'bundle-registered'}
   | {
@@ -99,4 +100,5 @@ export type HmrMessage =
       readonly body?: {readonly changeId?: string};
     }
   | HmrUpdateMessage
-  | HmrErrorMessage;
+  | HmrErrorMessage
+  | {readonly type: 'heartbeat'};
