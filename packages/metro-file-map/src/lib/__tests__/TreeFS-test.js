@@ -23,8 +23,10 @@ let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
 const mockLstat = jest.fn();
+const mockReadlinkSync = jest.fn();
 jest.mock('fs', () => ({
   ...jest.requireActual<{}>('fs'),
+  readlinkSync: mockReadlinkSync,
   promises: {
     lstat: mockLstat,
   },
@@ -278,6 +280,95 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           '/project/foo/link-up-2/project/foo/link-up-2/project/foo/another.js',
         ),
       );
+    });
+  });
+
+  describe('lazy symlink resolution', () => {
+    let lazyTfs: TreeFSType;
+
+    beforeEach(() => {
+      mockReadlinkSync.mockReset();
+      lazyTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('target.js'), [123, 10, 0, null, 0, null]],
+          [p('unresolved-link'), [0, 0, 0, null, 1, null]],
+          [p('dir/nested.js'), [123, 10, 0, null, 0, null]],
+          [p('unresolved-dir-link'), [0, 0, 0, null, 1, null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+    });
+
+    test('resolves unresolved symlink via readlinkSync on lookup', () => {
+      mockReadlinkSync.mockReturnValue(p('./target.js'));
+
+      expect(lazyTfs.lookup(p('/project/unresolved-link'))).toMatchObject({
+        exists: true,
+        realPath: p('/project/target.js'),
+        type: 'f',
+      });
+      expect(mockReadlinkSync).toHaveBeenCalledTimes(1);
+      expect(mockReadlinkSync).toHaveBeenCalledWith(
+        p('/project/unresolved-link'),
+      );
+    });
+
+    test('resolves unresolved symlink to a directory', () => {
+      mockReadlinkSync.mockReturnValue(p('./dir'));
+
+      expect(
+        lazyTfs.lookup(p('/project/unresolved-dir-link/nested.js')),
+      ).toMatchObject({
+        exists: true,
+        realPath: p('/project/dir/nested.js'),
+        type: 'f',
+      });
+    });
+
+    test('updates metadata after lazy resolution', () => {
+      mockReadlinkSync.mockReturnValue(p('./target.js'));
+
+      lazyTfs.lookup(p('/project/unresolved-link'));
+
+      const metadata = [
+        ...lazyTfs.metadataIterator({
+          includeSymlinks: true,
+          includeNodeModules: true,
+        }),
+      ].find(entry => entry.canonicalPath === p('unresolved-link'));
+
+      expect(metadata?.metadata[H.SYMLINK]).toBe(p('./target.js'));
+      expect(metadata?.metadata[H.VISITED]).toBe(1);
+    });
+
+    test('caches resolved symlink and does not re-read', () => {
+      mockReadlinkSync.mockReturnValue(p('./target.js'));
+
+      lazyTfs.lookup(p('/project/unresolved-link'));
+      lazyTfs.lookup(p('/project/unresolved-link'));
+
+      expect(mockReadlinkSync).toHaveBeenCalledTimes(1);
+    });
+
+    test('returns exists:false for broken unresolved symlink', () => {
+      mockReadlinkSync.mockImplementation(() => {
+        throw new Error('ENOENT');
+      });
+
+      expect(lazyTfs.lookup(p('/project/unresolved-link'))).toMatchObject({
+        exists: false,
+      });
+    });
+
+    test('does not call readlinkSync for already-resolved symlinks', () => {
+      expect(tfs.lookup(p('/project/foo/link-to-bar.js'))).toMatchObject({
+        exists: true,
+        realPath: p('/project/bar.js'),
+      });
+      expect(mockReadlinkSync).not.toHaveBeenCalled();
     });
   });
 
@@ -1168,6 +1259,29 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       });
       expect(mockProcessFile).toHaveBeenCalledWith(
         p('bar.js'),
+        expect.any(Array),
+        {computeSha1: true},
+      );
+    });
+
+    test('lazily resolves unresolved symlink and computes SHA1', async () => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('target.js'), [123, 10, 0, null, 0, null]],
+          [p('lazy-link'), [0, 0, 0, null, 1, null]],
+        ]),
+        processFile: mockProcessFile,
+      });
+
+      mockReadlinkSync.mockReturnValue(p('./target.js'));
+
+      expect(await tfs.getOrComputeSha1(p('lazy-link'))).toEqual({
+        sha1: 'abc123',
+      });
+      expect(mockReadlinkSync).toHaveBeenCalledTimes(1);
+      expect(mockProcessFile).toHaveBeenCalledWith(
+        p('target.js'),
         expect.any(Array),
         {computeSha1: true},
       );
