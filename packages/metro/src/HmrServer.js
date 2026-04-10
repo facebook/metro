@@ -241,6 +241,10 @@ export default class HmrServer<TClient extends Client> {
         case 'log-opt-in':
           client.optedIntoHMR = true;
           break;
+        case 'heartbeat':
+          debug('Heartbeat received');
+          sendFn(String(message));
+          break;
         default:
           break;
       }
