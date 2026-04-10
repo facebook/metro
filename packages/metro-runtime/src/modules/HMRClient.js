@@ -15,6 +15,8 @@ import type {HmrMessage, HmrUpdate} from './types';
 
 const EventEmitter = require('./vendor/eventemitter3');
 
+const HEARTBEAT_INTERVAL_MS = 20_000;
+
 type SocketState = 'opening' | 'open' | 'closed';
 
 const inject = ({module: [id, code], sourceURL}: HmrModule) => {
@@ -39,6 +41,7 @@ class HMRClient extends EventEmitter {
   _queue: Array<string> = [];
   _state: SocketState = 'opening';
   _ws: WebSocket;
+  _heartbeatTimer: ?IntervalID = null;
 
   constructor(url: string) {
     super();
@@ -48,6 +51,7 @@ class HMRClient extends EventEmitter {
     this._ws = new global.WebSocket(url);
     this._ws.onopen = () => {
       this._state = 'open';
+      this._startHeartbeat();
       this.emit('open');
       this._flushQueue();
     };
@@ -56,12 +60,17 @@ class HMRClient extends EventEmitter {
     };
     this._ws.onclose = closeEvent => {
       this._state = 'closed';
+      this._stopHeartbeat();
       this.emit('close', closeEvent);
     };
     this._ws.onmessage = message => {
       const data: HmrMessage = JSON.parse(String(message.data));
 
       switch (data.type) {
+        case 'heartbeat':
+          // Not exposed to consumers
+          break;
+
         case 'bundle-registered':
           this.emit('bundle-registered');
           break;
@@ -121,6 +130,22 @@ class HMRClient extends EventEmitter {
   _flushQueue(): void {
     this._queue.forEach(message => this.send(message));
     this._queue.length = 0;
+  }
+
+  _startHeartbeat(): void {
+    this._stopHeartbeat();
+    this._heartbeatTimer = setInterval(() => {
+      if (this._state === 'open') {
+        this._ws.send('{"type":"heartbeat"}');
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  _stopHeartbeat(): void {
+    if (this._heartbeatTimer != null) {
+      clearInterval(this._heartbeatTimer);
+      this._heartbeatTimer = null;
+    }
   }
 
   enable() {
