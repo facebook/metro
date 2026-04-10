@@ -22,6 +22,14 @@ import H from '../../constants';
 let mockPathModule;
 jest.mock('path', () => mockPathModule);
 
+const mockLstat = jest.fn();
+jest.mock('fs', () => ({
+  ...jest.requireActual<{}>('fs'),
+  promises: {
+    lstat: mockLstat,
+  },
+}));
+
 describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
   // Convenience function to write paths with posix separators but convert them
   // to system separators
@@ -379,6 +387,126 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       const withUndefined = tfs.getDifference(newFiles);
 
       expect(withEmpty).toEqual(withUndefined);
+    });
+
+    test('treats files as unchanged when both old and new mtime are null', () => {
+      const nullMtimeTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [null, 0, 0, null, 0, null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('a.js'), [null, 0, 0, null, 0, null]],
+      ]);
+
+      expect(nullMtimeTfs.getDifference(newFiles)).toEqual({
+        changedFiles: new Map(),
+        removedFiles: new Set(),
+      });
+    });
+
+    test('treats files as unchanged when both old and new mtime are 0', () => {
+      const zeroMtimeTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [0, 0, 0, null, 0, null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('a.js'), [0, 0, 0, null, 0, null]],
+      ]);
+
+      expect(zeroMtimeTfs.getDifference(newFiles)).toEqual({
+        changedFiles: new Map(),
+        removedFiles: new Set(),
+      });
+    });
+
+    test('treats file as changed when old has mtime but new does not', () => {
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('bar.js'), [null, 0, 0, null, 0, null]],
+      ]);
+
+      const result = tfs.getDifference(newFiles);
+      expect(result.changedFiles.has(p('bar.js'))).toBe(true);
+    });
+
+    test('treats file as changed when new has mtime but old does not', () => {
+      const nullMtimeTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [null, 0, 0, null, 0, null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('a.js'), [500, 10, 0, null, 0, null]],
+      ]);
+
+      expect(nullMtimeTfs.getDifference(newFiles)).toEqual({
+        changedFiles: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [500, 10, 0, null, 0, null]],
+        ]),
+        removedFiles: new Set(),
+      });
+    });
+
+    test('detects type change even when both mtimes are null', () => {
+      const symlinkTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [null, 0, 0, null, p('./b.js'), null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+
+      const newFiles: FileData = new Map<CanonicalPath, FileMetadata>([
+        [p('a.js'), [null, 0, 0, null, 0, null]],
+      ]);
+
+      const result = symlinkTfs.getDifference(newFiles);
+      expect(result.changedFiles.has(p('a.js'))).toBe(true);
+    });
+  });
+
+  describe('getMtimeByNormalPath', () => {
+    test('returns mtime for an existing file', () => {
+      expect(tfs.getMtimeByNormalPath(p('bar.js'))).toBe(234);
+    });
+
+    test('returns null for a non-existent file', () => {
+      expect(tfs.getMtimeByNormalPath(p('nonexistent.js'))).toBeNull();
+    });
+
+    test('returns null for a directory', () => {
+      expect(tfs.getMtimeByNormalPath(p('foo'))).toBeNull();
+    });
+
+    test('returns null for a file with null mtime', () => {
+      const nullMtimeTfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('a.js'), [null, 0, 0, null, 0, null]],
+        ]),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+      expect(nullMtimeTfs.getMtimeByNormalPath(p('a.js'))).toBeNull();
     });
   });
 
@@ -992,6 +1120,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         return;
       });
       mockProcessFile.mockClear();
+      mockLstat.mockClear();
     });
 
     test('returns the precomputed SHA-1 of a file if set', async () => {
@@ -1063,6 +1192,71 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       // A second call re-computes
       expect(await tfs.getOrComputeSha1(p('bar.js'))).toEqual({sha1: 'abc123'});
       expect(mockProcessFile).toHaveBeenCalledTimes(2);
+    });
+
+    test('lazily stats file and clears SHA1 when mtime is null', async () => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('unstated.js'), [null, 0, 0, 'stale', 0, null]],
+        ]),
+        processFile: mockProcessFile,
+      });
+
+      mockLstat.mockResolvedValueOnce({
+        mtime: {getTime: () => 999},
+        size: 50,
+      });
+
+      await tfs.getOrComputeSha1(p('unstated.js'));
+
+      expect(mockLstat).toHaveBeenCalledTimes(1);
+      expect(mockProcessFile).toHaveBeenCalledTimes(1);
+      expect(tfs.getMtimeByNormalPath(p('unstated.js'))).toBe(999);
+    });
+
+    test('lazily stats file when mtime is 0', async () => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('zero.js'), [0, 0, 0, null, 0, null]],
+        ]),
+        processFile: mockProcessFile,
+      });
+
+      mockLstat.mockResolvedValueOnce({
+        mtime: {getTime: () => 888},
+        size: 30,
+      });
+
+      await tfs.getOrComputeSha1(p('zero.js'));
+
+      expect(mockLstat).toHaveBeenCalledTimes(1);
+      expect(mockProcessFile).toHaveBeenCalledTimes(1);
+      expect(tfs.getMtimeByNormalPath(p('zero.js'))).toBe(888);
+    });
+
+    test('does not stat file when mtime is already populated', async () => {
+      mockLstat.mockClear();
+      await tfs.getOrComputeSha1(p('bar.js'));
+
+      expect(mockLstat).not.toHaveBeenCalled();
+    });
+
+    test('handles lstat failure gracefully when mtime is null', async () => {
+      tfs = new TreeFS({
+        rootDir: p('/project'),
+        files: new Map<CanonicalPath, FileMetadata>([
+          [p('missing.js'), [null, 0, 0, null, 0, null]],
+        ]),
+        processFile: mockProcessFile,
+      });
+
+      mockLstat.mockRejectedValueOnce(new Error('ENOENT'));
+
+      const result = await tfs.getOrComputeSha1(p('missing.js'));
+      expect(result).toEqual({sha1: 'abc123'});
+      expect(mockProcessFile).toHaveBeenCalledTimes(1);
     });
   });
 
