@@ -68,7 +68,8 @@ function find(
           const name = entry.name.toString();
           const file = directory + path.sep + name;
 
-          if (ignore(file) || (!includeSymlinks && entry.isSymbolicLink())) {
+          const isSymbolicLink = entry.isSymbolicLink();
+          if (ignore(file) || (!includeSymlinks && isSymbolicLink)) {
             continue;
           }
 
@@ -86,24 +87,24 @@ function find(
             continue;
           }
 
-          activeCalls++;
+          const ext = path.extname(file).substr(1);
+          if (!isSymbolicLink && !exts[ext]) {
+            continue;
+          }
 
+          activeCalls++;
           fs.lstat(file, (err, stat) => {
             activeCalls--;
 
             if (!err && stat) {
-              const ext = path.extname(file).substr(1);
-              const isSymbolicLink = stat.isSymbolicLink();
-              if (isSymbolicLink || exts[ext]) {
-                result.set(childNormal, [
-                  stat.mtime.getTime(),
-                  stat.size,
-                  0,
-                  null,
-                  isSymbolicLink ? 1 : 0,
-                  null,
-                ]);
-              }
+              result.set(childNormal, [
+                stat.mtime.getTime(),
+                stat.size,
+                0,
+                null,
+                isSymbolicLink ? 1 : 0,
+                null,
+              ]);
             }
 
             if (activeCalls === 0) {
