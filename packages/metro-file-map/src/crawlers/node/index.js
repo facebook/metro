@@ -50,7 +50,11 @@ function find(
     {} as {[string]: ?true},
   );
 
-  function search(directory: string, dirNormal: string): void {
+  function search(
+    directory: string,
+    dirNormal: string,
+    isWithinRoot: boolean,
+  ): void {
     activeCalls++;
     fs.readdir(directory, {withFileTypes: true}, (err, entries) => {
       activeCalls--;
@@ -68,10 +72,17 @@ function find(
             continue;
           }
 
-          const childNormal =
-            dirNormal === '' ? name : dirNormal + path.sep + name;
+          // Deriving a normal path above the root dir requires slicing off an up-fragment
+          // then checking if the target matches the next segment of the root dir. It's therefore
+          // easier to fall back to `pathUtils.absoluteToNormal`
+          const childNormal = !isWithinRoot
+            ? pathUtils.absoluteToNormal(file)
+            : dirNormal === ''
+              ? name
+              : dirNormal + path.sep + name;
+
           if (entry.isDirectory()) {
-            search(file, childNormal);
+            search(file, childNormal, isWithinRoot || childNormal === '');
             continue;
           }
 
@@ -110,7 +121,9 @@ function find(
 
   if (roots.length > 0) {
     for (const root of roots) {
-      search(root, pathUtils.absoluteToNormal(root));
+      const rootNormal = pathUtils.absoluteToNormal(root);
+      const isWithinRoot = !rootNormal.startsWith('..' + path.sep);
+      search(root, rootNormal, isWithinRoot);
     }
   } else {
     callback(result);
