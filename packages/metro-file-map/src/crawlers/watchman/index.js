@@ -328,9 +328,8 @@ export default async function watchmanCrawl({
           symlinkInfo = fileData['symlink_target'] ?? 1;
         }
         if (typeof symlinkInfo === 'string') {
-          symlinkInfo = pathUtils.resolveSymlinkToNormal(
-            relativeFilePath,
-            symlinkInfo,
+          symlinkInfo = normalizePathSeparatorsToPosix(
+            pathUtils.resolveSymlinkToNormal(relativeFilePath, symlinkInfo),
           );
         }
 

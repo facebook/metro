@@ -21,6 +21,7 @@ import type {
 } from '../flow-types';
 
 import H from '../constants';
+import normalizePathSeparatorsToSystem from './normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './RootPathUtils';
 import invariant from 'invariant';
 import path from 'path';
@@ -1212,11 +1213,12 @@ export default class TreeFS implements MutableFileSystem {
     symlinkNode: FileMetadata,
     canonicalPathOfSymlink: Path,
   ): NormalizedSymlinkTarget {
-    const symlinkTarget = symlinkNode[H.SYMLINK];
+    let symlinkTarget = symlinkNode[H.SYMLINK];
     invariant(
       typeof symlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
+    symlinkTarget = normalizePathSeparatorsToSystem(symlinkTarget);
     const result = {
       ancestorOfRootIdx: this.#pathUtils.getAncestorOfRootIdx(symlinkTarget),
       normalPath: symlinkTarget,

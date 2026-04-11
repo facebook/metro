@@ -565,9 +565,8 @@ export default class FileMap extends EventEmitter {
         .readlink(this.#pathUtils.normalToAbsolute(normalPath))
         .then(symlinkTarget => {
           fileMetadata[H.VISITED] = 1;
-          fileMetadata[H.SYMLINK] = this.#pathUtils.resolveSymlinkToNormal(
-            normalPath,
-            symlinkTarget,
+          fileMetadata[H.SYMLINK] = normalizePathSeparatorsToPosix(
+            this.#pathUtils.resolveSymlinkToNormal(normalPath, symlinkTarget),
           );
         });
     }
