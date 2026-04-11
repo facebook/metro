@@ -10,8 +10,10 @@
  */
 
 import type {AssetData} from './Assets';
+import type {TreeShakeOptions} from './DeltaBundler/Serializers/baseJSBundle';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
+import type {UsedExports} from './DeltaBundler/TreeShakeAnalysis';
 import type {
   MixedOutput,
   Module,
@@ -50,12 +52,18 @@ import getAssets from './DeltaBundler/Serializers/getAssets';
 import {getExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import getRamBundleInfo from './DeltaBundler/Serializers/getRamBundleInfo';
 import {sourceMapStringNonBlocking} from './DeltaBundler/Serializers/sourceMapString';
+import {
+  analyzeAndEliminate,
+  computeReexportDemand,
+  getEliminatedReexportSources,
+} from './DeltaBundler/TreeShakeAnalysis';
 import IncrementalBundler from './IncrementalBundler';
 import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
 import {calculateBundleProgressRatio} from './lib/bundleProgressUtils';
 import bundleToString from './lib/bundleToString';
 import formatBundlingError from './lib/formatBundlingError';
 import getGraphId from './lib/getGraphId';
+import hasSideEffects, {buildHasSideEffectsFn} from './lib/hasSideEffects';
 import parseBundleOptionsFromBundleRequestUrl from './lib/parseBundleOptionsFromBundleRequestUrl';
 import parseJsonBody from './lib/parseJsonBody';
 import splitBundleOptions from './lib/splitBundleOptions';
@@ -138,6 +146,42 @@ type FetchTiming = {
   isPrefetch: boolean,
 };
 
+function buildFilteredGraph(
+  graph: ReadOnlyGraph<>,
+  treeShakeOptions: TreeShakeOptions,
+): ReadOnlyGraph<> {
+  const {eliminable, finalizedModules} = treeShakeOptions;
+  const dependencies = new Map();
+  for (const [modulePath, module] of graph.dependencies) {
+    if (eliminable.has(modulePath)) {
+      continue;
+    }
+    const finalized = finalizedModules.get(modulePath);
+    if (finalized == null) {
+      dependencies.set(modulePath, module);
+      continue;
+    }
+    dependencies.set(modulePath, {
+      ...module,
+      output: module.output.map(out => {
+        if (!out.type.startsWith('js/')) {
+          return out;
+        }
+        return {
+          ...out,
+          data: {
+            ...out.data,
+            code: finalized.code,
+            map: finalized.map,
+            lineCount: finalized.lineCount,
+          },
+        };
+      }),
+    });
+  }
+  return {...graph, dependencies};
+}
+
 export default class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
@@ -216,6 +260,94 @@ export default class Server {
     return this._createModuleId;
   }
 
+  _canApplyTreeShaking(transformOptions: TransformInputOptions): boolean {
+    return (
+      this._config.transformer.unstable_treeShake && !transformOptions.dev
+    );
+  }
+
+  async _applyTreeShaking(
+    graph: ReadOnlyGraph<>,
+    transformOptions: TransformInputOptions,
+  ): Promise<TreeShakeOptions> {
+    const fallbackHasSideEffectsFn = buildHasSideEffectsFn();
+    const hasSideEffectsFn = (modulePath: string): boolean => {
+      const module = graph.dependencies.get(modulePath);
+      if (module?.sideEffects != null && module.sideEffectsRoot != null) {
+        return hasSideEffects(
+          modulePath,
+          module.sideEffects,
+          module.sideEffectsRoot,
+        );
+      }
+      return fallbackHasSideEffectsFn(modulePath);
+    };
+    const {usedExports, eliminable} = analyzeAndEliminate(
+      graph,
+      hasSideEffectsFn,
+    );
+    const reexportDemand = computeReexportDemand(graph, usedExports);
+
+    const bundler = this._bundler.getBundler();
+    const finalizedModules: Map<
+      string,
+      {code: string, map: $FlowFixMe, lineCount: number},
+    > = new Map();
+
+    const modulesToFinalize = [...graph.dependencies.values()].filter(
+      module =>
+        module.moduleSyntax?.isESModule === true &&
+        !eliminable.has(module.path),
+    );
+
+    await Promise.all(
+      modulesToFinalize.map(async module => {
+        const esmOutput = module.output.find(o => o.type.startsWith('js/'));
+        if (esmOutput == null || module.moduleSyntax == null) {
+          return;
+        }
+        const outputData = esmOutput.data;
+        if (typeof outputData !== 'object' || outputData == null) {
+          return;
+        }
+        const moduleSyntax = module.moduleSyntax;
+        const used: UsedExports = usedExports.get(module.path) ?? {
+          type: 'none',
+        };
+        const eliminatedReexportSources = getEliminatedReexportSources(
+          module,
+          eliminable,
+        );
+        if (typeof outputData.code !== 'string') {
+          return;
+        }
+        const finalized = await bundler.finalizeModule(
+          module.unstable_transformResultKey ?? '',
+          outputData.code,
+          moduleSyntax,
+          {
+            usedExports: used,
+            filename: module.path,
+            eliminatedReexportSources,
+            reexportDemandBySource: reexportDemand.get(module.path) ?? {},
+            dependencyMapName:
+              this._config.transformer.unstable_dependencyMapReservedName ??
+              '_dependencyMap',
+            globalPrefix: this._config.transformer.globalPrefix,
+            minify: transformOptions.minify,
+            minifierPath: this._config.transformer.minifierPath,
+            minifierConfig: this._config.transformer.minifierConfig,
+            dev: transformOptions.dev,
+            parserPlugins: moduleSyntax.parserPlugins,
+          },
+        );
+        finalizedModules.set(module.path, finalized);
+      }),
+    );
+
+    return {eliminable, finalizedModules};
+  }
+
   async _serializeGraph({
     splitOptions,
     prepend,
@@ -267,13 +399,22 @@ export default class Server {
       getSourceUrl: (module: Module<>) =>
         this._getModuleSourceUrl(module, serializerOptions.sourcePaths),
     };
+    const treeShakeOptions = this._canApplyTreeShaking(transformOptions)
+      ? await this._applyTreeShaking(graph, transformOptions)
+      : null;
+
+    const graphForSerialization: ReadOnlyGraph<> =
+      treeShakeOptions != null
+        ? buildFilteredGraph(graph, treeShakeOptions)
+        : graph;
+
     let bundleCode = null;
     let bundleMap = null;
     if (this._config.serializer.customSerializer) {
       const bundle = await this._config.serializer.customSerializer(
         entryPoint,
         prepend,
-        graph,
+        graphForSerialization,
         bundleOptions,
       );
       if (typeof bundle === 'string') {
@@ -284,15 +425,61 @@ export default class Server {
       }
     } else {
       bundleCode = bundleToString(
-        baseJSBundle(entryPoint, prepend, graph, bundleOptions),
+        baseJSBundle(
+          entryPoint,
+          prepend,
+          graph,
+          bundleOptions,
+          treeShakeOptions ?? undefined,
+        ),
       ).code;
     }
     if (!bundleMap) {
+      const sourceMapModules = (() => {
+        if (treeShakeOptions == null) {
+          return this._getSortedModules(graph);
+        }
+        const {eliminable, finalizedModules} = treeShakeOptions;
+        return this._getSortedModules(graph)
+          .filter(module => !eliminable.has(module.path))
+          .map((module: Module<>) => {
+            const finalized = finalizedModules.get(module.path);
+            if (finalized == null) {
+              return module;
+            }
+            return {
+              ...module,
+              output: module.output.map(out => {
+                if (!out.type.startsWith('js/')) {
+                  return out;
+                }
+                return {
+                  ...out,
+                  data: {
+                    ...out.data,
+                    code: finalized.code,
+                    map: finalized.map,
+                    lineCount: finalized.lineCount,
+                  },
+                };
+              }),
+            };
+          });
+      })();
+
+      let processModuleFilter = this._config.serializer.processModuleFilter;
+      if (treeShakeOptions != null) {
+        const eliminable = treeShakeOptions.eliminable;
+        processModuleFilter = module =>
+          !eliminable.has(module.path) &&
+          this._config.serializer.processModuleFilter(module);
+      }
+
       bundleMap = await sourceMapStringNonBlocking(
-        [...prepend, ...this._getSortedModules(graph)],
+        [...prepend, ...sourceMapModules],
         {
           excludeSource: serializerOptions.excludeSource,
-          processModuleFilter: this._config.serializer.processModuleFilter,
+          processModuleFilter,
           shouldAddToIgnoreList: bundleOptions.shouldAddToIgnoreList,
           getSourceUrl: (module: Module<>) =>
             this._getModuleSourceUrl(module, serializerOptions.sourcePaths),

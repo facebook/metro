@@ -218,6 +218,7 @@ function deferred(
   value: Readonly<{
     dependencies: ReadonlyArray<TransformResultDependency>,
     getSource: () => Buffer,
+    moduleSyntax?: mixed,
     output: ReadonlyArray<MixedOutput>,
     unstable_transformResultKey?: ?string,
   }>,

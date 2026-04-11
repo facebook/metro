@@ -13,6 +13,11 @@ import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type EventEmitter from 'events';
 import type {ConfigT} from 'metro-config';
+import type {
+  FinalizedOutput,
+  FinalizeOptions,
+  ModuleSyntaxMeta,
+} from 'metro-transform-worker';
 
 import Transformer from './DeltaBundler/Transformer';
 import DependencyGraph from './node-haste/DependencyGraph';
@@ -80,6 +85,21 @@ export default class Bundler {
       filePath,
       transformOptions,
       fileBuffer,
+    );
+  }
+
+  async finalizeModule(
+    transformResultKey: string,
+    code: string,
+    moduleSyntax: ModuleSyntaxMeta,
+    options: FinalizeOptions,
+  ): Promise<FinalizedOutput> {
+    await this.ready();
+    return this._transformer.finalizeModule(
+      transformResultKey,
+      code,
+      moduleSyntax,
+      options,
     );
   }
 

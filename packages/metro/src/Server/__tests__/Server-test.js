@@ -15,8 +15,13 @@ import type {
   Module,
   Options,
   ReadOnlyGraph,
+  ResolvedDependency,
   TransformResultDependency,
 } from '../../DeltaBundler/types';
+import type {
+  ImportBinding,
+  ReexportBinding,
+} from '../../ModuleGraph/worker/collectDependencies';
 import type {InputConfigT} from 'metro-config';
 
 import ResourceNotFoundError from '../../IncrementalBundler/ResourceNotFoundError';
@@ -349,6 +354,204 @@ describe('processRequest', () => {
       );
     },
   );
+
+  test('tree-shaking eliminates unused re-export chain modules in bundle output', async () => {
+    const treeShakeConfig = mergeConfig(config, {
+      transformer: {unstable_treeShake: true},
+    });
+
+    type TestExportBinding =
+      | {type: 'named', name: string, localName: string}
+      | {type: 'default', localName: ?string}
+      | {type: 'reExportNamed', name: string, as: string, source: string}
+      | {type: 'reExportAll', source: string}
+      | {type: 'reExportNamespace', as: string, source: string};
+
+    const makeResolvedDependency = ({
+      absolutePath,
+      importBindings,
+      name,
+      reexportBindings,
+    }: {
+      absolutePath: string,
+      importBindings?: ReadonlyArray<ImportBinding>,
+      name: string,
+      reexportBindings?: ReadonlyArray<ReexportBinding>,
+    }): ResolvedDependency => ({
+      absolutePath,
+      data: {
+        data: {
+          asyncType: null,
+          importBindings,
+          isESMImport: true,
+          key: name,
+          locs: [],
+          reexportBindings,
+        },
+        name,
+      },
+    });
+
+    const makeEsmModule = ({
+      code,
+      deps,
+      directExportNames,
+      exports,
+      inverseDependencies,
+      path,
+    }: {
+      code: string,
+      deps: ReadonlyArray<[string, Dependency]>,
+      directExportNames: ReadonlyArray<string>,
+      exports: ReadonlyArray<TestExportBinding>,
+      inverseDependencies: ReadonlyArray<string>,
+      path: string,
+    }): Module<> => ({
+      dependencies: new Map(deps),
+      getSource: () => Buffer.from(code),
+      inverseDependencies: new CountingSet(inverseDependencies),
+      moduleSyntax: {
+        directExportNames: new Set(directExportNames) as ReadonlySet<string>,
+        exports,
+        isESModule: true,
+        parserPlugins: ['flow'] as ReadonlyArray<string | [string, mixed]>,
+      },
+      output: [
+        {
+          type: 'js/module',
+          data: {
+            code,
+            lineCount: 1,
+            map: [],
+          },
+        },
+      ],
+      path,
+      sideEffects: false,
+      sideEffectsRoot: '/root',
+    });
+
+    buildGraph.mockImplementation(
+      async (
+        entryPoints: ReadonlyArray<string>,
+        options: Options<>,
+        resolverOptions: unknown,
+        otherOptions: unknown,
+      ) => {
+        dependencies = new Map<string, Module<>>([
+          [
+            '/root/mybundle.js',
+            makeEsmModule({
+              code: 'import {x} from "./barrel"; console.log(x);',
+              deps: [
+                [
+                  './barrel',
+                  makeResolvedDependency({
+                    absolutePath: '/root/barrel.js',
+                    importBindings: [{name: 'x', type: 'named'}],
+                    name: './barrel',
+                  }),
+                ],
+              ],
+              directExportNames: [],
+              exports: [],
+              inverseDependencies: [],
+              path: '/root/mybundle.js',
+            }),
+          ],
+          [
+            '/root/barrel.js',
+            makeEsmModule({
+              code: 'export {x} from "./leaf"; export {y} from "./dead";',
+              deps: [
+                [
+                  './leaf',
+                  makeResolvedDependency({
+                    absolutePath: '/root/leaf.js',
+                    name: './leaf',
+                    reexportBindings: [
+                      {as: 'x', name: 'x', type: 'reExportNamed'},
+                    ],
+                  }),
+                ],
+                [
+                  './dead',
+                  makeResolvedDependency({
+                    absolutePath: '/root/dead.js',
+                    name: './dead',
+                    reexportBindings: [
+                      {as: 'y', name: 'y', type: 'reExportNamed'},
+                    ],
+                  }),
+                ],
+              ],
+              directExportNames: [],
+              exports: [
+                {as: 'x', name: 'x', source: './leaf', type: 'reExportNamed'},
+                {as: 'y', name: 'y', source: './dead', type: 'reExportNamed'},
+              ],
+              inverseDependencies: ['/root/mybundle.js'],
+              path: '/root/barrel.js',
+            }),
+          ],
+          [
+            '/root/leaf.js',
+            makeEsmModule({
+              code: 'export const x = 1;',
+              deps: [],
+              directExportNames: ['x'],
+              exports: [{localName: 'x', name: 'x', type: 'named'}],
+              inverseDependencies: ['/root/barrel.js'],
+              path: '/root/leaf.js',
+            }),
+          ],
+          [
+            '/root/dead.js',
+            makeEsmModule({
+              code: 'export const y = 2;',
+              deps: [],
+              directExportNames: ['y'],
+              exports: [{localName: 'y', name: 'y', type: 'named'}],
+              inverseDependencies: ['/root/barrel.js'],
+              path: '/root/dead.js',
+            }),
+          ],
+        ]);
+
+        return {
+          entryPoints: new Set(['/root/mybundle.js']),
+          dependencies,
+          transformOptions: options.transformOptions,
+        };
+      },
+    );
+
+    const finalizeModuleSpy = jest
+      .spyOn(Bundler.prototype, 'finalizeModule')
+      .mockImplementation(
+        async (transformResultKey, moduleCode, moduleSyntax, options) => ({
+          code: `__d(function(){/* finalized:${options.filename} */});`,
+          lineCount: 1,
+          map: [],
+        }),
+      );
+
+    server = new Server(treeShakeConfig);
+
+    const {code: bundle} = await server.build({
+      ...Server.DEFAULT_BUNDLE_OPTIONS,
+      dev: false,
+      entryFile: 'mybundle.js',
+      minify: false,
+      platform: null,
+    });
+
+    expect(bundle).toContain('finalized:/root/mybundle.js');
+    expect(bundle).toContain('finalized:/root/barrel.js');
+    expect(bundle).toContain('finalized:/root/leaf.js');
+    expect(bundle).not.toContain('finalized:/root/dead.js');
+    expect(finalizeModuleSpy).toHaveBeenCalled();
+  });
 
   test('returns JS bundle without the initial require() call', async () => {
     const response = await makeRequest('mybundle.bundle?runModule=false', null);

@@ -52,6 +52,7 @@
     "metro-symbolicate": "0.84.2",
     "metro-transform-plugins": "0.84.2",
     "metro-transform-worker": "0.84.2",
+    "micromatch": "^4.0.4",
     "mime-types": "^3.0.1",
     "nullthrows": "^1.1.1",
     "serialize-error": "^2.1.0",

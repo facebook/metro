@@ -16,22 +16,34 @@ import type {
   SerializerOptions,
 } from '../types';
 import type {Bundle} from 'metro-runtime/src/modules/types';
+import type {FinalizedOutput} from 'metro-transform-worker';
 
 import getAppendScripts from '../../lib/getAppendScripts';
 import processModules from './helpers/processModules';
+
+export type TreeShakeOptions = Readonly<{
+  eliminable: Set<string>,
+  finalizedModules: Map<string, FinalizedOutput>,
+}>;
 
 export default function baseJSBundle(
   entryPoint: string,
   preModules: ReadonlyArray<Module<>>,
   graph: ReadOnlyGraph<>,
   options: SerializerOptions,
+  treeShakeOptions?: TreeShakeOptions,
 ): Bundle {
   for (const module of graph.dependencies.values()) {
     options.createModuleId(module.path);
   }
 
   const processModulesOptions = {
-    filter: options.processModuleFilter,
+    filter: (module: Module<>) => {
+      if (treeShakeOptions?.eliminable.has(module.path)) {
+        return false;
+      }
+      return options.processModuleFilter(module);
+    },
     createModuleId: options.createModuleId,
     dev: options.dev,
     includeAsyncPaths: options.includeAsyncPaths,
@@ -40,7 +52,6 @@ export default function baseJSBundle(
     sourceUrl: options.sourceUrl,
   };
 
-  // Do not prepend polyfills or the require runtime when only modules are requested
   if (options.modulesOnly) {
     preModules = [];
   }
@@ -49,13 +60,42 @@ export default function baseJSBundle(
     .map(([_, code]) => code)
     .join('\n');
 
-  const modules = [...graph.dependencies.values()].sort(
+  const allModules = [...graph.dependencies.values()].sort(
     (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
       options.createModuleId(a.path) - options.createModuleId(b.path),
   );
 
+  const modules: ReadonlyArray<Module<>> =
+    treeShakeOptions != null && treeShakeOptions.finalizedModules.size > 0
+      ? allModules.map((module: Module<MixedOutput>) => {
+          const finalized = treeShakeOptions.finalizedModules.get(module.path);
+          if (finalized == null) {
+            return module;
+          }
+          const newOutput = module.output.map((out: MixedOutput) => {
+            if (!out.type.startsWith('js/')) {
+              return out;
+            }
+            return {
+              ...out,
+              data: {
+                ...out.data,
+                code: finalized.code,
+                map: finalized.map,
+                lineCount: finalized.lineCount,
+              },
+            };
+          });
+          return {...module, output: newOutput};
+        })
+      : allModules;
+
+  const runtimeModules = modules.filter((module: Module<>) =>
+    processModulesOptions.filter(module),
+  );
+
   const postCode = processModules(
-    getAppendScripts(entryPoint, [...preModules, ...modules], {
+    getAppendScripts(entryPoint, [...preModules, ...runtimeModules], {
       asyncRequireModulePath: options.asyncRequireModulePath,
       createModuleId: options.createModuleId,
       getRunModuleStatement: options.getRunModuleStatement,
@@ -76,9 +116,8 @@ export default function baseJSBundle(
   return {
     pre: preCode,
     post: postCode,
-    modules: processModules(
-      [...graph.dependencies.values()],
-      processModulesOptions,
-    ).map(([module, code]) => [options.createModuleId(module.path), code]),
+    modules: processModules(modules, processModulesOptions).map(
+      ([module, code]) => [options.createModuleId(module.path), code],
+    ),
   };
 }

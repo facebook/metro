@@ -54,6 +54,17 @@ export type RequireContextParams = Readonly<{
   mode: ContextMode,
 }>;
 
+export type ImportBinding =
+  | {type: 'default'}
+  | {type: 'named', name: string, as?: string}
+  | {type: 'namespace'}
+  | {type: 'sideEffectOnly'};
+
+export type ReexportBinding =
+  | {type: 'reExportNamed', name: string, as: string}
+  | {type: 'reExportAll'}
+  | {type: 'reExportNamespace', as: string};
+
 type DependencyData = Readonly<{
   // A locally unique key for this dependency within the current module.
   key: string,
@@ -69,11 +80,17 @@ type DependencyData = Readonly<{
   locs: ReadonlyArray<ReadonlySourceLocation>,
   /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
+  /** Import bindings from ImportDeclaration (tree shaking). */
+  importBindings?: ReadonlyArray<ImportBinding>,
+  /** Re-export bindings from export-from declarations (tree shaking). */
+  reexportBindings?: ReadonlyArray<ReexportBinding>,
 }>;
 
 export type MutableInternalDependency = {
   ...DependencyData,
   locs: Array<ReadonlySourceLocation>,
+  importBindings: Array<ImportBinding>,
+  reexportBindings: Array<ReexportBinding>,
   index: number,
   name: string,
 };
@@ -296,10 +313,33 @@ export default function collectDependencies(
   // Compute the list of dependencies.
   const dependencies = new Array<Dependency>(collectedDependencies.length);
 
-  for (const {index, name, ...dependencyData} of collectedDependencies) {
+  for (const {
+    index,
+    name,
+    importBindings,
+    reexportBindings,
+    ...dependencyData
+  } of collectedDependencies) {
+    const data: {
+      key: string,
+      asyncType: AsyncDependencyType | null,
+      isESMImport: boolean,
+      isOptional?: boolean,
+      locs: ReadonlyArray<ReadonlySourceLocation>,
+      contextParams?: RequireContextParams,
+      importBindings?: ReadonlyArray<ImportBinding>,
+      reexportBindings?: ReadonlyArray<ReexportBinding>,
+    } = {...dependencyData};
+    // Only attach binding arrays when non-empty (tree-shaking metadata)
+    if (importBindings.length > 0) {
+      data.importBindings = importBindings;
+    }
+    if (reexportBindings.length > 0) {
+      data.reexportBindings = reexportBindings;
+    }
     dependencies[index] = {
       name,
-      data: dependencyData,
+      data,
     };
   }
 
@@ -473,13 +513,112 @@ function collectImports(path: NodePath<>, state: State): void {
 See: https://github.com/facebook/metro/pull/1343`,
     );
 
+    const name = path.node.source.value;
+    const importBindings: Array<ImportBinding> = [];
+    const reexportBindings: Array<ReexportBinding> = [];
+
+    if (path.isImportDeclaration()) {
+      const specifierNodes = path.node.specifiers ?? [];
+      // Skip type-only imports (Flow/TypeScript) — no runtime dependency
+      if (
+        path.node.importKind === 'type' ||
+        path.node.importKind === 'typeof'
+      ) {
+        return;
+      }
+      // Filter out inline type specifiers: import { type T, value } from 'x'
+      const specifiers = specifierNodes.filter(
+        spec =>
+          spec.type !== 'ImportSpecifier' ||
+          (spec.importKind !== 'type' && spec.importKind !== 'typeof'),
+      );
+      // If ALL specifiers were type-only, skip the entire dependency
+      if (specifierNodes.length > 0 && specifiers.length === 0) {
+        return;
+      }
+      if (specifiers.length === 0) {
+        importBindings.push({type: 'sideEffectOnly'});
+      }
+      for (const spec of specifiers) {
+        if (spec.type === 'ImportDefaultSpecifier') {
+          importBindings.push({type: 'default'});
+        } else if (spec.type === 'ImportNamespaceSpecifier') {
+          importBindings.push({type: 'namespace'});
+        } else if (spec.type === 'ImportSpecifier') {
+          const imported =
+            spec.imported.type === 'StringLiteral'
+              ? spec.imported.value
+              : spec.imported.name;
+          if (imported === 'default') {
+            importBindings.push({type: 'default'});
+          } else if (imported !== spec.local.name) {
+            importBindings.push({
+              type: 'named',
+              name: imported,
+              as: spec.local.name,
+            });
+          } else {
+            importBindings.push({type: 'named', name: imported});
+          }
+        }
+      }
+    } else if (path.isExportAllDeclaration()) {
+      // Skip type-only: `export type * from 'x'` (TypeScript 5.0+)
+      if (path.node.exportKind === 'type') {
+        return;
+      }
+      if (path.node.exported != null) {
+        // export * as ns from 'x' (ES2020)
+        const exportedName =
+          path.node.exported.type === 'StringLiteral'
+            ? path.node.exported.value
+            : path.node.exported.name;
+        reexportBindings.push({type: 'reExportNamespace', as: exportedName});
+      } else {
+        reexportBindings.push({type: 'reExportAll'});
+      }
+    } else if (path.isExportNamedDeclaration()) {
+      const specifiers = path.node.specifiers ?? [];
+      // Skip type-only re-exports
+      if (path.node.exportKind === 'type') {
+        return;
+      }
+      // `export {} from 'x'` — side-effect import (forces module evaluation)
+      if (specifiers.length === 0) {
+        importBindings.push({type: 'sideEffectOnly'});
+      }
+      for (const spec of specifiers) {
+        if (spec.type === 'ExportNamespaceSpecifier') {
+          const as = spec.exported.name;
+          reexportBindings.push({type: 'reExportNamespace', as});
+          continue;
+        }
+        if (spec.type !== 'ExportSpecifier') {
+          continue;
+        }
+        const exported =
+          spec.exported.type === 'StringLiteral'
+            ? spec.exported.value
+            : spec.exported.name;
+        const local = spec.local.name;
+        reexportBindings.push({
+          type: 'reExportNamed',
+          name: local,
+          as: exported,
+        });
+      }
+    }
+
     registerDependency(
       state,
       {
-        name: path.node.source.value,
+        name,
         asyncType: null,
         isESMImport: true,
         optional: false,
+        importBindings: importBindings.length > 0 ? importBindings : undefined,
+        reexportBindings:
+          reexportBindings.length > 0 ? reexportBindings : undefined,
       },
       path,
     );
@@ -594,6 +733,8 @@ export type ImportQualifier = Readonly<{
   isESMImport: boolean,
   optional: boolean,
   contextParams?: RequireContextParams,
+  importBindings?: ReadonlyArray<ImportBinding>,
+  reexportBindings?: ReadonlyArray<ReexportBinding>,
 }>;
 
 function registerDependency(
@@ -901,6 +1042,12 @@ class DependencyRegistry {
         asyncType: qualifier.asyncType,
         isESMImport: qualifier.isESMImport,
         locs: [],
+        importBindings: qualifier.importBindings
+          ? [...qualifier.importBindings]
+          : [],
+        reexportBindings: qualifier.reexportBindings
+          ? [...qualifier.reexportBindings]
+          : [],
         index: this._dependencies.size,
         key: crypto.createHash('sha1').update(key).digest('base64'),
       };
@@ -914,14 +1061,26 @@ class DependencyRegistry {
 
       dependency = newDependency;
     } else {
+      // Merge bindings when the same module is imported multiple times
+      // (e.g., `import { x } from 'B'` and `export { y } from 'B'`)
+      const mergedImportBindings = qualifier.importBindings?.length
+        ? [...dependency.importBindings, ...qualifier.importBindings]
+        : dependency.importBindings;
+      const mergedReexportBindings = qualifier.reexportBindings?.length
+        ? [...dependency.reexportBindings, ...qualifier.reexportBindings]
+        : dependency.reexportBindings;
+
+      let updated: MutableInternalDependency = {
+        ...dependency,
+        importBindings: mergedImportBindings,
+        reexportBindings: mergedReexportBindings,
+      };
       if (dependency.isOptional && !qualifier.optional) {
         // A previously optionally required dependency was required non-optionally.
         // Mark it non optional for the whole module
-        dependency = {
-          ...dependency,
-          isOptional: false,
-        };
+        updated = {...updated, isOptional: false};
       }
+      dependency = updated;
     }
 
     this._dependencies.set(key, dependency);

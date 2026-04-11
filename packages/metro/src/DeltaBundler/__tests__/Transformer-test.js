@@ -60,6 +60,7 @@ describe('Transformer', function () {
     fs.writeFileSync('/path/to/transformer.js', '');
 
     require('../getTransformCacheKey').mockClear();
+    require('../WorkerFarm').default.prototype.finalizeModule?.mockClear();
   });
 
   test('uses new cache layers when transforming if requested to do so', async () => {
@@ -213,5 +214,130 @@ describe('Transformer', function () {
     await transformerInstance.transformFile('./foo.js', {});
 
     expect(require('../getTransformCacheKey')).not.toBeCalled();
+  });
+
+  test('reuses finalization cache for identical finalize inputs', async () => {
+    const store = new Map();
+    const cacheStore = {
+      get: key => store.get(key.toString('hex')),
+      set: (key, value) => {
+        store.set(key.toString('hex'), value);
+      },
+    };
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [cacheStore],
+        watchFolders,
+      },
+      {getOrComputeSha1},
+    );
+
+    const finalized = {code: 'c', lineCount: 1, map: []};
+    require('../WorkerFarm').default.prototype.finalizeModule.mockResolvedValue(
+      finalized,
+    );
+
+    const moduleSyntax = {
+      directExportNames: new Set(),
+      exports: [],
+      isESModule: true,
+      parserPlugins: [],
+    };
+    const options = {
+      usedExports: {type: 'named', names: new Set(['foo'])},
+      filename: '/root/file.js',
+      reexportDemandBySource: {'./dep': ['foo']},
+      dependencyMapName: '_dependencyMap',
+      globalPrefix: '',
+      minify: false,
+      minifierPath: 'minifyModulePath',
+      minifierConfig: {output: {comments: false}},
+      dev: false,
+      eliminatedReexportSources: {},
+      parserPlugins: ['flow', 'jsx'],
+    };
+
+    const first = await transformerInstance.finalizeModule(
+      'transform-key-1',
+      'export * from "./dep";',
+      moduleSyntax,
+      options,
+    );
+    const second = await transformerInstance.finalizeModule(
+      'transform-key-1',
+      'export * from "./dep";',
+      moduleSyntax,
+      options,
+    );
+
+    expect(first).toBe(finalized);
+    expect(second).toBe(finalized);
+    expect(
+      require('../WorkerFarm').default.prototype.finalizeModule,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  test('finalization cache key includes reexport demand', async () => {
+    const store = new Map();
+    const cacheStore = {
+      get: key => store.get(key.toString('hex')),
+      set: (key, value) => {
+        store.set(key.toString('hex'), value);
+      },
+    };
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [cacheStore],
+        watchFolders,
+      },
+      {getOrComputeSha1},
+    );
+
+    require('../WorkerFarm')
+      .default.prototype.finalizeModule.mockResolvedValueOnce({
+        code: 'a',
+        lineCount: 1,
+        map: [],
+      })
+      .mockResolvedValueOnce({code: 'b', lineCount: 1, map: []});
+
+    const moduleSyntax = {
+      directExportNames: new Set(),
+      exports: [],
+      isESModule: true,
+      parserPlugins: [],
+    };
+
+    const baseOptions = {
+      usedExports: {type: 'named', names: new Set(['foo'])},
+      filename: '/root/file.js',
+      dependencyMapName: '_dependencyMap',
+      globalPrefix: '',
+      minify: false,
+      minifierPath: 'minifyModulePath',
+      minifierConfig: {output: {comments: false}},
+      dev: false,
+      eliminatedReexportSources: {},
+      parserPlugins: ['flow', 'jsx'],
+    };
+
+    await transformerInstance.finalizeModule(
+      'transform-key-2',
+      'export * from "./dep";',
+      moduleSyntax,
+      {...baseOptions, reexportDemandBySource: {'./dep': ['foo']}},
+    );
+    await transformerInstance.finalizeModule(
+      'transform-key-2',
+      'export * from "./dep";',
+      moduleSyntax,
+      {...baseOptions, reexportDemandBySource: {'./dep': ['bar']}},
+    );
+
+    expect(
+      require('../WorkerFarm').default.prototype.finalizeModule,
+    ).toHaveBeenCalledTimes(2);
   });
 });

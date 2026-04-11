@@ -10,12 +10,21 @@
  */
 
 import type {RequireContext} from '../lib/contextModule';
-import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
+import type {
+  ImportBinding,
+  ReexportBinding,
+  RequireContextParams,
+} from '../ModuleGraph/worker/collectDependencies';
 import type {ReadonlySourceLocation} from '../shared/types';
 import type {Graph} from './Graph';
-import type {JsTransformOptions} from 'metro-transform-worker';
+import type {
+  JsTransformOptions,
+  ModuleSyntaxMeta,
+} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
+
+export type {ImportBinding, ReexportBinding, ModuleSyntaxMeta};
 
 export type MixedOutput = {
   +data: unknown,
@@ -57,12 +66,18 @@ export type TransformResultDependency = Readonly<{
 
     /** Context for requiring a collection of modules. */
     contextParams?: RequireContextParams,
+    /** Import bindings from ImportDeclaration (tree shaking metadata). */
+    importBindings?: ReadonlyArray<ImportBinding>,
+    /** Re-export bindings from export-from declarations (tree shaking metadata). */
+    reexportBindings?: ReadonlyArray<ReexportBinding>,
   }>,
 }>;
 
 export type ResolvedDependency = Readonly<{
   absolutePath: string,
   data: TransformResultDependency,
+  sideEffects?: boolean | ReadonlyArray<string>,
+  sideEffectsRoot?: string,
 }>;
 
 export type Dependency =
@@ -78,6 +93,9 @@ export type Module<T = MixedOutput> = Readonly<{
   path: string,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  moduleSyntax?: ModuleSyntaxMeta,
+  sideEffects?: boolean | ReadonlyArray<string>,
+  sideEffectsRoot?: string,
 }>;
 
 export type ModuleData<T = MixedOutput> = Readonly<{
@@ -86,6 +104,9 @@ export type ModuleData<T = MixedOutput> = Readonly<{
   output: ReadonlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
+  moduleSyntax?: ModuleSyntaxMeta,
+  sideEffects?: boolean | ReadonlyArray<string>,
+  sideEffectsRoot?: string,
 }>;
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
@@ -118,6 +139,7 @@ export type TransformResult<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyArray<TransformResultDependency>,
   output: ReadonlyArray<T>,
   unstable_transformResultKey?: ?string,
+  moduleSyntax?: ModuleSyntaxMeta,
 }>;
 
 export type TransformResultWithSource<T = MixedOutput> = Readonly<{
@@ -145,6 +167,8 @@ export type AllowOptionalDependencies =
 export type BundlerResolution = Readonly<{
   type: 'sourceFile',
   filePath: string,
+  sideEffects?: boolean | ReadonlyArray<string>,
+  sideEffectsRoot?: string,
 }>;
 
 export type Options<T = MixedOutput> = Readonly<{

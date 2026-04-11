@@ -561,3 +561,149 @@ test('allows outputting comments when `minify: true`', async () => {
     });"
   `);
 });
+
+test('preserves ESM for tree-shake analysis and finalizes selected exports', async () => {
+  const passthroughTransformerPath = require.resolve(
+    './fixtures/passthroughTransformer',
+  );
+  const result = await Transformer.transform(
+    {...baseConfig, babelTransformerPath: passthroughTransformerPath},
+    '/root',
+    'local/file.js',
+    Buffer.from(
+      [
+        'import {dep} from "./dep";',
+        'export const foo = dep + 1;',
+        'export const bar = dep + 2;',
+      ].join('\n'),
+      'utf8',
+    ),
+    {
+      ...baseTransformOptions,
+      dev: false,
+      minify: false,
+      unstable_treeShake: true,
+    },
+  );
+
+  expect(result.output[0].type).toBe('js/module');
+  expect(result.output[0].data.code).toContain('export const foo');
+  expect(result.output[0].data.code).toContain('export const bar');
+  expect(result.output[0].data.code).not.toContain('__d(function');
+  expect(result.moduleSyntax?.isESModule).toBe(true);
+  expect(result.dependencies).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: './dep',
+        data: expect.objectContaining({
+          importBindings: [{type: 'named', name: 'dep'}],
+        }),
+      }),
+    ]),
+  );
+
+  const moduleSyntax = result.moduleSyntax;
+  expect(moduleSyntax).toBeDefined();
+  if (moduleSyntax == null) {
+    throw new Error('Expected moduleSyntax metadata to be present');
+  }
+
+  const finalized = await Transformer.finalizeModule(
+    result.output[0].data.code,
+    moduleSyntax,
+    {
+      usedExports: {type: 'named', names: new Set(['foo'])},
+      filename: 'local/file.js',
+      reexportDemandBySource: {},
+      dependencyMapName: '_dependencyMap',
+      globalPrefix: '',
+      minify: false,
+      minifierPath: 'minifyModulePath',
+      minifierConfig: {output: {comments: false}},
+      dev: false,
+      eliminatedReexportSources: {},
+      parserPlugins: moduleSyntax.parserPlugins,
+    },
+  );
+
+  expect(finalized.code).toContain('__d(function');
+  expect(finalized.code).toContain('exports.foo=');
+  expect(finalized.code).not.toContain('exports.bar=');
+});
+
+test('does not defer CJS modules when tree-shake mode is enabled', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    Buffer.from('const x = require("./dep"); module.exports = x;', 'utf8'),
+    {
+      ...baseTransformOptions,
+      dev: false,
+      minify: false,
+      unstable_treeShake: true,
+    },
+  );
+
+  expect(result.output[0].type).toBe('js/module');
+  expect(result.output[0].data.code).toContain('__d(function');
+  expect(result.output[0].data.code).toContain('_$$_REQUIRE');
+  expect(result.moduleSyntax).toBeUndefined();
+});
+
+test('narrows export-star during finalization when demand is proven', async () => {
+  const finalized = await Transformer.finalizeModule(
+    'export * from "./dep";',
+    {
+      directExportNames: new Set(),
+      exports: [{source: './dep', type: 'reExportAll'}],
+      isESModule: true,
+      parserPlugins: ['flow'],
+    },
+    {
+      usedExports: {type: 'named', names: new Set(['foo'])},
+      filename: 'local/file.js',
+      reexportDemandBySource: {'./dep': ['foo']},
+      dependencyMapName: '_dependencyMap',
+      globalPrefix: '',
+      minify: false,
+      minifierPath: 'minifyModulePath',
+      minifierConfig: {output: {comments: false}},
+      dev: false,
+      eliminatedReexportSources: {},
+      parserPlugins: ['flow'],
+    },
+  );
+
+  expect(finalized.code).toContain('./dep');
+  expect(finalized.code).toContain('exports.foo=');
+  expect(finalized.code).not.toContain('for(var _key in');
+});
+
+test('keeps export-star during finalization when demand is not proven', async () => {
+  const finalized = await Transformer.finalizeModule(
+    'export * from "./dep";',
+    {
+      directExportNames: new Set(),
+      exports: [{source: './dep', type: 'reExportAll'}],
+      isESModule: true,
+      parserPlugins: ['flow'],
+    },
+    {
+      usedExports: {type: 'named', names: new Set(['foo'])},
+      filename: 'local/file.js',
+      reexportDemandBySource: {},
+      dependencyMapName: '_dependencyMap',
+      globalPrefix: '',
+      minify: false,
+      minifierPath: 'minifyModulePath',
+      minifierConfig: {output: {comments: false}},
+      dev: false,
+      eliminatedReexportSources: {},
+      parserPlugins: ['flow'],
+    },
+  );
+
+  expect(finalized.code).toContain('./dep');
+  expect(finalized.code).toContain('for(var _key in');
+});
