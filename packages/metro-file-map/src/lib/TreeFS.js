@@ -124,10 +124,6 @@ type MetadataIteratorOptions = Readonly<{
  *   a trailing slash
  */
 export default class TreeFS implements MutableFileSystem {
-  readonly #cachedNormalSymlinkTargets: WeakMap<
-    FileNode,
-    NormalizedSymlinkTarget,
-  > = new WeakMap();
   readonly #pathUtils: RootPathUtils;
   readonly #processFile: ProcessFileFunction;
   readonly #rootDir: Path;
@@ -1226,36 +1222,16 @@ export default class TreeFS implements MutableFileSystem {
     symlinkNode: FileMetadata,
     canonicalPathOfSymlink: Path,
   ): NormalizedSymlinkTarget {
-    const cachedResult = this.#cachedNormalSymlinkTargets.get(symlinkNode);
-    if (cachedResult != null) {
-      return cachedResult;
-    }
-
-    const literalSymlinkTarget = symlinkNode[H.SYMLINK];
+    const symlinkTarget = symlinkNode[H.SYMLINK];
     invariant(
-      typeof literalSymlinkTarget === 'string',
+      typeof symlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
-    let absoluteSymlinkTarget = path.resolve(
-      this.#rootDir,
-      canonicalPathOfSymlink,
-      '..', // Symlink target is relative to its containing directory.
-      literalSymlinkTarget, // May be absolute, in which case the above are ignored
-    );
-    if (absoluteSymlinkTarget.endsWith(path.sep)) {
-      absoluteSymlinkTarget = absoluteSymlinkTarget.slice(0, -1);
-    }
-    const normalSymlinkTarget = this.#pathUtils.absoluteToNormal(
-      absoluteSymlinkTarget,
-    );
-
     const result = {
-      ancestorOfRootIdx:
-        this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget),
-      normalPath: normalSymlinkTarget,
-      startOfBasenameIdx: normalSymlinkTarget.lastIndexOf(path.sep) + 1,
+      ancestorOfRootIdx: this.#pathUtils.getAncestorOfRootIdx(symlinkTarget),
+      normalPath: symlinkTarget,
+      startOfBasenameIdx: symlinkTarget.lastIndexOf(path.sep) + 1,
     };
-    this.#cachedNormalSymlinkTargets.set(symlinkNode, result);
     return result;
   }
 
