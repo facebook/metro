@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-transformer",
-  "version": "0.83.5",
+  "version": "0.83.6",
   "description": "🚇 Base Babel transformer for Metro.",
   "main": "src/index.js",
   "exports": {
@@ -26,7 +26,7 @@
     "@babel/core": "^7.25.2",
     "flow-enums-runtime": "^0.0.6",
     "hermes-parser": "0.35.0",
-    "metro-cache-key": "*",
+    "metro-cache-key": "0.83.6",
     "nullthrows": "^1.1.1"
   },
   "engines": {
