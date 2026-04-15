@@ -542,7 +542,9 @@ async function transformJSWithBabel(
 ): Promise<TransformResponse> {
   const {babelTransformerPath} = context.config;
   // $FlowFixMe[unsupported-syntax] dynamic require
-  const transformer: BabelTransformer = require(babelTransformerPath);
+  const mod = require(babelTransformerPath);
+  const transformer: BabelTransformer =
+    mod.__esModule === true && 'default' in mod ? mod.default : mod;
 
   const transformResult = await transformer.transform(
     getBabelTransformArgs(file, context, [

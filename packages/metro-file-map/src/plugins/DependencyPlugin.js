@@ -76,7 +76,9 @@ export default class DependencyPlugin
     if (this.#dependencyExtractor != null) {
       // Dynamic require to get extractor's cache key
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      const extractor = require(this.#dependencyExtractor);
+      const mod = require(this.#dependencyExtractor);
+      const extractor =
+        mod.__esModule === true && 'default' in mod ? mod.default : mod;
       return JSON.stringify({
         extractorKey: extractor.getCacheKey?.() ?? null,
         extractorPath: this.#dependencyExtractor,
