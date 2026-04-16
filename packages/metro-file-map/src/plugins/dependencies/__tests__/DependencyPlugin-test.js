@@ -28,7 +28,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
@@ -42,7 +41,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
@@ -52,7 +50,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: false,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
@@ -64,7 +61,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.getCacheKey()).toBe('default-dependency-extractor');
@@ -80,7 +76,6 @@ describe('DependencyPlugin', () => {
       const plugin1 = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
       const cacheKey1 = plugin1.getCacheKey();
 
@@ -89,7 +84,6 @@ describe('DependencyPlugin', () => {
       const plugin2 = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
       const cacheKey2 = plugin2.getCacheKey();
 
@@ -104,7 +98,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const cacheKey = plugin.getCacheKey();
@@ -123,7 +116,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const cacheKey = plugin.getCacheKey();
@@ -143,7 +135,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -158,7 +149,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -172,7 +162,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: false,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -186,7 +175,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -203,7 +191,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -221,7 +208,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -240,7 +226,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
     });
 
@@ -321,7 +306,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
     });
 

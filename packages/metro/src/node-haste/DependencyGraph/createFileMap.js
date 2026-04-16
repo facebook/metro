@@ -88,7 +88,6 @@ export default function createFileMap(
     dependencyPlugin = new DependencyPlugin({
       dependencyExtractor: config.resolver.dependencyExtractor,
       computeDependencies: true,
-      rootDir: config.projectRoot,
     });
     plugins.push(dependencyPlugin);
   }

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<e07a9c061b0224fc44191d956461bd6f>>
+ * @generated SignedSource<<b878bb0986861ef8f485ccbb1b36614e>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/DependencyPlugin.js
@@ -27,7 +27,6 @@ export type DependencyPluginOptions = Readonly<{
   dependencyExtractor: null | undefined | string;
   /** Whether to compute dependencies (performance optimization) */
   computeDependencies: boolean;
-  rootDir: Path;
 }>;
 declare class DependencyPlugin
   implements FileMapPlugin<null, ReadonlyArray<string> | null>
