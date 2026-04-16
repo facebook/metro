@@ -21,7 +21,6 @@ export type DependencyPluginOptions = Readonly<{
   dependencyExtractor: ?string,
   /** Whether to compute dependencies (performance optimization) */
   computeDependencies: boolean,
-  rootDir: Path,
 }>;
 
 export default class DependencyPlugin
@@ -32,12 +31,10 @@ export default class DependencyPlugin
   #dependencyExtractor: ?string;
   #computeDependencies: boolean;
   #getDependencies: Path => ?ReadonlyArray<string>;
-  #rootDir: Path;
 
   constructor(options: DependencyPluginOptions) {
     this.#dependencyExtractor = options.dependencyExtractor;
     this.#computeDependencies = options.computeDependencies;
-    this.#rootDir = options.rootDir;
   }
 
   async initialize(

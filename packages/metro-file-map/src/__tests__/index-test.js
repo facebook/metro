@@ -397,7 +397,6 @@ describe('FileMap', () => {
       const dependencyPlugin = new DependencyPlugin({
         dependencyExtractor: dependencyOverrides.dependencyExtractor ?? null,
         computeDependencies: true,
-        rootDir: defaultConfig.rootDir,
       });
       const hasteMap = new (require('../plugins/HastePlugin').default)({
         ...defaultHasteConfig,
