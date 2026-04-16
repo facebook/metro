@@ -27,7 +27,6 @@
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.29.0",
     "accepts": "^2.0.0",
-    "chalk": "^4.0.0",
     "ci-info": "^2.0.0",
     "connect": "^3.6.5",
     "debug": "^4.4.0",

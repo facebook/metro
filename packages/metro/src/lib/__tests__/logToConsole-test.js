@@ -12,17 +12,6 @@
 
 'use strict';
 
-jest.mock('chalk', () => {
-  const bold = _ => _;
-  return {
-    inverse: {
-      red: {bold},
-      white: {bold},
-      yellow: {bold},
-    },
-  };
-});
-
 let log;
 
 beforeEach(() => {

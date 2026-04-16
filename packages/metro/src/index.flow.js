@@ -41,7 +41,6 @@ import JsonReporter from './lib/JsonReporter';
 import TerminalReporter from './lib/TerminalReporter';
 import MetroServer from './Server';
 import * as outputBundle from './shared/output/bundle';
-import chalk from 'chalk';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
@@ -54,6 +53,7 @@ import {
 import {Terminal} from 'metro-core';
 import net from 'net';
 import nullthrows from 'nullthrows';
+import util from 'util';
 
 const DEFAULTS = MetroServer.DEFAULT_BUNDLE_OPTIONS;
 
@@ -296,7 +296,7 @@ export const runServer = async (
   if (secure != null || secureCert != null || secureKey != null) {
     // eslint-disable-next-line no-console
     console.warn(
-      chalk.inverse.yellow.bold(' DEPRECATED '),
+      util.styleText(['inverse', 'yellow', 'bold'], ' DEPRECATED '),
       'The `secure`, `secureCert`, and `secureKey` options are now deprecated. ' +
         'Please use the `secureServerOptions` object instead to pass options to ' +
         "Metro's https development server, or `config.server.tls` in Metro's configuration",
