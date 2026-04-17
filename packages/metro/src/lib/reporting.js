@@ -14,8 +14,11 @@ import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-import chalk from 'chalk';
+import tty from 'tty';
 import util from 'util';
+
+const supportsColor = (): boolean =>
+  process.stdout instanceof tty.WriteStream && process.stdout.hasColors();
 
 export type BundleDetails = {
   bundleType: string,
@@ -190,7 +193,11 @@ export function logWarning(
   ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s %s', chalk.yellow.inverse.bold(' WARN '), str);
+  terminal.log(
+    '%s %s',
+    util.styleText(['yellow', 'inverse', 'bold'], ' WARN '),
+    str,
+  );
 }
 
 /**
@@ -203,13 +210,13 @@ export function logError(
 ): void {
   terminal.log(
     '%s %s',
-    chalk.red.inverse.bold(' ERROR '),
+    util.styleText(['red', 'inverse', 'bold'], ' ERROR '),
     // Syntax errors may have colors applied for displaying code frames
     // in various places outside of where Metro is currently running.
     // If the current terminal does not support color, we'll strip the colors
     // here.
     util.format(
-      chalk.supportsColor ? format : util.stripVTControlCharacters(format),
+      supportsColor() ? format : util.stripVTControlCharacters(format),
       ...args,
     ),
   );
@@ -224,7 +231,11 @@ export function logInfo(
   ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s %s', chalk.cyan.inverse.bold(' INFO '), str);
+  terminal.log(
+    '%s %s',
+    util.styleText(['cyan', 'inverse', 'bold'], ' INFO '),
+    str,
+  );
 }
 
 /**
