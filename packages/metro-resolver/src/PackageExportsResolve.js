@@ -24,7 +24,7 @@ import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import {isSubpathDefinedInExportsLike} from './utils/isSubpathDefinedInExportsLike';
 import {matchSubpathFromExportsLike} from './utils/matchSubpathFromExportsLike';
-import toPosixPath from './utils/toPosixPath';
+import {systemToPosixPath} from './utils/paths';
 import path from 'path';
 
 /**
@@ -134,7 +134,7 @@ export function resolvePackageTargetFromExports(
  * "exports" field lookup.
  */
 function getExportsSubpath(packageSubpath: string): string {
-  return packageSubpath === '' ? '.' : './' + toPosixPath(packageSubpath);
+  return packageSubpath === '' ? '.' : './' + systemToPosixPath(packageSubpath);
 }
 
 /**

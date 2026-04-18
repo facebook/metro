@@ -11,7 +11,7 @@
 
 import type {PackageInfo, PackageJson, ResolutionContext} from './types';
 
-import toPosixPath from './utils/toPosixPath';
+import {systemToPosixPath} from './utils/paths';
 import path from 'path';
 
 /**
@@ -123,7 +123,7 @@ export function redirectModulePath(
 
     redirectedPath = matchSubpathFromMainFields(
       // Use prefixed POSIX path for lookup in package.json
-      './' + toPosixPath(packageRelativeModulePath),
+      './' + systemToPosixPath(packageRelativeModulePath),
       containingPackage.packageJson,
       mainFields,
     );

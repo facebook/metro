@@ -6,18 +6,16 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<091df9100cc8f841af449036a548f6aa>>
+ * @generated SignedSource<<5fff5c32149db3606cb58437bfe37a8b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
- * Original file: packages/metro-resolver/src/utils/toPosixPath.js
+ * Original file: packages/metro-resolver/src/utils/paths.js
  * To regenerate, run:
  *   js1 build metro-ts-defs (internal) OR
  *   yarn run build-ts-defs (OSS) 
  */
 
-/**
- * Replace path separators in the passed string to coerce to a POSIX path. This
- * is a no-op on POSIX systems.
- */
-declare function toPosixPath(relativePathOrSpecifier: string): string;
-export default toPosixPath;
+export declare const systemToPosixPath: (relativeSystemPath: string) => string;
+export declare type systemToPosixPath = typeof systemToPosixPath;
+export declare const posixToSystemPath: (relativePosixPath: string) => string;
+export declare type posixToSystemPath = typeof posixToSystemPath;
