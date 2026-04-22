@@ -38,12 +38,6 @@ function isRegularFile(node: FileNode): boolean {
   return node[H.SYMLINK] === 0;
 }
 
-type NormalizedSymlinkTarget = {
-  ancestorOfRootIdx: ?number,
-  normalPath: string,
-  startOfBasenameIdx: number,
-};
-
 type DeserializedSnapshotInput = {
   rootDir: string,
   fileSystemData: DirectoryNode,
@@ -728,7 +722,7 @@ export default class TreeFS implements MutableFileSystem {
         // Append any subsequent path segments to the symlink target, and reset
         // with our new target.
         const joinedResult = this.#pathUtils.joinNormalToRelative(
-          normalSymlinkTarget.normalPath,
+          normalSymlinkTarget,
           remainingTargetPath,
         );
 
@@ -744,12 +738,13 @@ export default class TreeFS implements MutableFileSystem {
         // with the remaining path results in collapsing segments, e.g:
         // '../..' + 'parentofroot/root/foo.js' = 'foo.js', then we must add
         // parentofroot and root as ancestors.
+        ancestorOfRootIdx =
+          this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget);
         if (
           collectAncestors &&
           !isLastSegment &&
           // No-op optimisation to bail out the common case of nothing to do.
-          (normalSymlinkTarget.ancestorOfRootIdx === 0 ||
-            joinedResult.collapsedSegments > 0)
+          (ancestorOfRootIdx === 0 || joinedResult.collapsedSegments > 0)
         ) {
           let node: MixedNode = this.#rootNode;
           let collapsedPath = '';
@@ -764,7 +759,7 @@ export default class TreeFS implements MutableFileSystem {
               // Add the root only if the target is the root or we have
               // collapsed segments.
               i > 0 ||
-              normalSymlinkTarget.ancestorOfRootIdx === 0 ||
+              ancestorOfRootIdx === 0 ||
               joinedResult.collapsedSegments > 0
             ) {
               reverseAncestors.push({
@@ -787,7 +782,7 @@ export default class TreeFS implements MutableFileSystem {
         // the symlink target, and start collecting ancestors only
         // from the target itself (ie, the basename of the normal target path)
         // onwards.
-        unseenPathFromIdx = normalSymlinkTarget.startOfBasenameIdx;
+        unseenPathFromIdx = normalSymlinkTarget.lastIndexOf(path.sep) + 1;
 
         if (seen == null) {
           // Optimisation: set this lazily only when we've encountered a symlink
@@ -1212,19 +1207,13 @@ export default class TreeFS implements MutableFileSystem {
   #resolveSymlinkTargetToNormalPath(
     symlinkNode: FileMetadata,
     canonicalPathOfSymlink: Path,
-  ): NormalizedSymlinkTarget {
-    let symlinkTarget = symlinkNode[H.SYMLINK];
+  ): Path {
+    const symlinkTarget = symlinkNode[H.SYMLINK];
     invariant(
       typeof symlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
-    symlinkTarget = normalizePathSeparatorsToSystem(symlinkTarget);
-    const result = {
-      ancestorOfRootIdx: this.#pathUtils.getAncestorOfRootIdx(symlinkTarget),
-      normalPath: symlinkTarget,
-      startOfBasenameIdx: symlinkTarget.lastIndexOf(path.sep) + 1,
-    };
-    return result;
+    return normalizePathSeparatorsToSystem(symlinkTarget);
   }
 
   #getFileData(
