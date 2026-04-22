@@ -22,7 +22,6 @@ const buildParameters: BuildParameters = {
   computeSha1: false,
   enableSymlinks: false,
   extensions: ['a'],
-  forceNodeFilesystemAPI: false,
   ignorePattern: /a/,
   plugins: [getMockPlugin('1')],
   retainAllFiles: false,
@@ -77,7 +76,6 @@ test('returns a distinct cache key for any change', () => {
       // Boolean
       case 'computeSha1':
       case 'enableSymlinks':
-      case 'forceNodeFilesystemAPI':
       case 'retainAllFiles':
         return varyDefault(key, !buildParameters[key]);
       // Strings

@@ -39,7 +39,6 @@ export default function rootRelativeCacheKeys(
         case 'extensions':
         case 'computeSha1':
         case 'enableSymlinks':
-        case 'forceNodeFilesystemAPI':
         case 'retainAllFiles':
           return buildParameters[key] ?? null;
         case 'ignorePattern':

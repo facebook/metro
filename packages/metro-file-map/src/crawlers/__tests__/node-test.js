@@ -12,32 +12,6 @@ import TreeFS from '../../lib/TreeFS';
 
 jest.useRealTimers();
 
-jest.mock('child_process', () => ({
-  spawn: jest.fn((cmd, args) => {
-    let closeCallback;
-    return {
-      on: jest.fn().mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          callback(mockSpawnExit, null);
-        }
-      }),
-      stdout: {
-        on: jest.fn().mockImplementation((event, callback) => {
-          if (event === 'data') {
-            setTimeout(() => {
-              callback(mockResponse);
-              setTimeout(closeCallback, 0);
-            }, 0);
-          } else if (event === 'close') {
-            closeCallback = callback;
-          }
-        }),
-        setEncoding: jest.fn(),
-      },
-    };
-  }),
-}));
-
 jest.mock('graceful-fs', () => {
   const slash = require('slash');
   let mtime = 32;
@@ -126,85 +100,26 @@ const createMap = obj =>
 const rootDir = '/project';
 const emptyFS = new TreeFS({rootDir, files: new Map()});
 const getFS = (files: FileData) => new TreeFS({rootDir, files});
-let mockResponse;
-let mockSpawnExit;
 let nodeCrawl;
-let childProcess;
 
 describe('node crawler', () => {
   beforeEach(() => {
     jest.resetModules();
-
-    mockResponse = [
-      '/project/fruits/pear.js',
-      '/project/fruits/strawberry.js',
-      '/project/fruits/tomato.js',
-    ].join('\n');
-
-    mockSpawnExit = 0;
-  });
-
-  test('crawls for files based on patterns', async () => {
-    childProcess = require('child_process');
-    nodeCrawl = require('../node').default;
-
-    mockResponse = [
-      '/project/fruits/pear.js',
-      '/project/fruits/strawberry.js',
-      '/project/fruits/tomato.js',
-      '/project/vegetables/melon.json',
-    ].join('\n');
-
-    const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {fileSystem: emptyFS},
-      extensions: ['js', 'json'],
-      ignore: pearMatcher,
-      rootDir,
-      roots: ['/project/fruits', '/project/vegtables'],
-    });
-
-    expect(childProcess.spawn).lastCalledWith('find', [
-      '/project/fruits',
-      '/project/vegtables',
-      '(',
-      '(',
-      '-type',
-      'f',
-      '(',
-      '-iname',
-      '*.js',
-      '-o',
-      '-iname',
-      '*.json',
-      ')',
-      ')',
-      ')',
-    ]);
-
-    expect(changedFiles).not.toBe(null);
-
-    expect(changedFiles).toEqual(
-      createMap({
-        'fruits/strawberry.js': [32, 42, 0, null, 0, null],
-        'fruits/tomato.js': [33, 42, 0, null, 0, null],
-        'vegetables/melon.json': [34, 42, 0, null, 0, null],
-      }),
-    );
-
-    expect(removedFiles).toEqual(new Set());
   });
 
   test('updates only changed files', async () => {
     nodeCrawl = require('../node').default;
 
-    // In this test sample, strawberry is changed and tomato is unchanged
-    const tomato = [33, 42, 1, null, 0, null];
+    // The readdir mock returns tomato.js (mtime=32) and
+    // directory/strawberry.js (mtime=33). In this test, tomato is unchanged
+    // and strawberry is changed.
     const files = createMap({
-      'fruits/strawberry.js': [30, 40, 1, null, 0, null],
-      'fruits/tomato.js': tomato,
+      'fruits/directory/strawberry.js': [30, 40, 1, null, 0, null],
+      'fruits/tomato.js': [32, 42, 1, null, 0, null],
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
@@ -212,10 +127,10 @@ describe('node crawler', () => {
       roots: ['/project/fruits'],
     });
 
-    // Tomato is not included because it is unchanged
+    // Tomato is not included because its mtime is unchanged
     expect(changedFiles).toEqual(
       createMap({
-        'fruits/strawberry.js': [32, 42, 0, null, 0, null],
+        'fruits/directory/strawberry.js': [33, 42, 0, null, 0, null],
       }),
     );
 
@@ -225,15 +140,16 @@ describe('node crawler', () => {
   test('returns removed files', async () => {
     nodeCrawl = require('../node').default;
 
-    // In this test sample, previouslyExisted was present before and will not be
-    // when crawling this directory.
+    // In this test sample, previouslyExisted was present before and will not
+    // be found when crawling this directory.
     const files = createMap({
       'fruits/previouslyExisted.js': [30, 40, 1, null, 0, null],
-      'fruits/strawberry.js': [33, 42, 0, null, 0, null],
+      'fruits/directory/strawberry.js': [33, 42, 0, null, 0, null],
       'fruits/tomato.js': [32, 42, 0, null, 0, null],
     });
 
     const {changedFiles, removedFiles} = await nodeCrawl({
+      console: global.console,
       previousState: {fileSystem: getFS(files)},
       extensions: ['js'],
       ignore: pearMatcher,
@@ -241,91 +157,8 @@ describe('node crawler', () => {
       roots: ['/project/fruits'],
     });
 
-    expect(changedFiles).toEqual(
-      createMap({
-        'fruits/strawberry.js': [32, 42, 0, null, 0, null],
-        'fruits/tomato.js': [33, 42, 0, null, 0, null],
-      }),
-    );
+    expect(changedFiles).toEqual(new Map());
     expect(removedFiles).toEqual(new Set(['fruits/previouslyExisted.js']));
-  });
-
-  test('uses node fs APIs with incompatible find binary', async () => {
-    mockResponse = '';
-    mockSpawnExit = 1;
-    childProcess = require('child_process');
-
-    nodeCrawl = require('../node').default;
-
-    const {changedFiles, removedFiles} = await nodeCrawl({
-      previousState: {fileSystem: emptyFS},
-      extensions: ['js'],
-      ignore: pearMatcher,
-      rootDir,
-      roots: ['/project/fruits'],
-    });
-
-    expect(childProcess.spawn).lastCalledWith(
-      'find',
-      ['.', '-type', 'f', '(', '-iname', '*.ts', '-o', '-iname', '*.js', ')'],
-      {cwd: expect.any(String)},
-    );
-    expect(changedFiles).toEqual(
-      createMap({
-        'fruits/directory/strawberry.js': [33, 42, 0, null, 0, null],
-        'fruits/tomato.js': [32, 42, 0, null, 0, null],
-      }),
-    );
-    expect(removedFiles).toEqual(new Set());
-  });
-
-  test('uses node fs APIs without find binary', async () => {
-    childProcess = require('child_process');
-    childProcess.spawn.mockImplementationOnce(() => {
-      throw new Error();
-    });
-    nodeCrawl = require('../node').default;
-
-    const {changedFiles, removedFiles} = await nodeCrawl({
-      console: global.console,
-      previousState: {fileSystem: emptyFS},
-      extensions: ['js'],
-      ignore: pearMatcher,
-      rootDir,
-      roots: ['/project/fruits'],
-    });
-
-    expect(changedFiles).toEqual(
-      createMap({
-        'fruits/directory/strawberry.js': [33, 42, 0, null, 0, null],
-        'fruits/tomato.js': [32, 42, 0, null, 0, null],
-      }),
-    );
-    expect(removedFiles).toEqual(new Set());
-  });
-
-  test('uses node fs APIs if "forceNodeFilesystemAPI" is set to true, regardless of platform', async () => {
-    childProcess = require('child_process');
-    nodeCrawl = require('../node').default;
-
-    const {changedFiles, removedFiles} = await nodeCrawl({
-      console: global.console,
-      previousState: {fileSystem: emptyFS},
-      extensions: ['js'],
-      forceNodeFilesystemAPI: true,
-      ignore: pearMatcher,
-      rootDir,
-      roots: ['/project/fruits'],
-    });
-
-    expect(childProcess.spawn).toHaveBeenCalledTimes(0);
-    expect(changedFiles).toEqual(
-      createMap({
-        'fruits/directory/strawberry.js': [33, 42, 0, null, 0, null],
-        'fruits/tomato.js': [32, 42, 0, null, 0, null],
-      }),
-    );
-    expect(removedFiles).toEqual(new Set());
   });
 
   test('completes with empty roots', async () => {
@@ -335,7 +168,6 @@ describe('node crawler', () => {
       console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
-      forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
       rootDir,
       roots: [],
@@ -357,7 +189,6 @@ describe('node crawler', () => {
       console: mockConsole,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
-      forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
       rootDir,
       roots: ['/error'],
@@ -378,7 +209,6 @@ describe('node crawler', () => {
       console: global.console,
       previousState: {fileSystem: emptyFS},
       extensions: ['js'],
-      forceNodeFilesystemAPI: true,
       ignore: pearMatcher,
       rootDir,
       roots: ['/project/fruits'],
@@ -440,7 +270,7 @@ describe('node crawler', () => {
         extensions: ['js', 'json'],
         ignore: pearMatcher,
         rootDir,
-        roots: ['/project/fruits', '/project/vegtables'],
+        roots: ['/project/fruits'],
       }),
     ).rejects.toThrow(err);
   });
