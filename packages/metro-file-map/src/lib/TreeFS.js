@@ -738,13 +738,13 @@ export default class TreeFS implements MutableFileSystem {
         // with the remaining path results in collapsing segments, e.g:
         // '../..' + 'parentofroot/root/foo.js' = 'foo.js', then we must add
         // parentofroot and root as ancestors.
-        ancestorOfRootIdx =
-          this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget);
         if (
           collectAncestors &&
           !isLastSegment &&
           // No-op optimisation to bail out the common case of nothing to do.
-          (ancestorOfRootIdx === 0 || joinedResult.collapsedSegments > 0)
+          ((ancestorOfRootIdx =
+            this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget)) === 0 ||
+            joinedResult.collapsedSegments > 0)
         ) {
           let node: MixedNode = this.#rootNode;
           let collapsedPath = '';
