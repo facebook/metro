@@ -316,9 +316,7 @@ export async function getAsset(
         fileExistsInFileMap != null &&
         !fileExistsInFileMap(record.files[i])
       ) {
-        throw new Error(
-          `'${relativePath}' could not be found, because it is not within the projectRoot or watchFolders, or it is blocked via the resolver.blockList config`,
-        );
+        continue;
       }
       return fs.promises.readFile(record.files[i]);
     }
