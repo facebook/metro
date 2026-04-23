@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<161e77301d04ce6cc254f1dbf15ef06b>>
+ * @generated SignedSource<<03b526801403adb05b3b0f6c25b25ed5>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Server.js
@@ -225,6 +225,9 @@ declare class Server {
   _explodedSourceMapForBundleOptions(
     bundleOptions: BundleOptions,
   ): Promise<ExplodedSourceMap>;
+  _resolveWatchFolderPrefix(
+    filePath: string,
+  ): {rootDir: string; filePath: string} | null;
   _resolveRelativePath(
     filePath: string,
     $$PARAM_1$$: Readonly<{
