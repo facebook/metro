@@ -66,7 +66,7 @@ import MultipartResponse from './Server/MultipartResponse';
 import symbolicate from './Server/symbolicate';
 import {SourcePathsMode} from './shared/types';
 import {codeFrameColumns} from '@babel/code-frame';
-import * as fs from 'graceful-fs';
+import fs from 'fs';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {Logger} from 'metro-core';
 import mime from 'mime-types';

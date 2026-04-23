@@ -32,7 +32,6 @@
     "debug": "^4.4.0",
     "error-stack-parser": "^2.0.6",
     "flow-enums-runtime": "^0.0.6",
-    "graceful-fs": "^4.2.4",
     "hermes-parser": "0.35.0",
     "image-size": "^1.0.2",
     "invariant": "^2.2.4",

@@ -37,7 +37,6 @@ jest
     endianness: () => 'LE',
     release: () => '',
   }))
-  .mock('graceful-fs', () => require('fs'))
   .spyOn(console, 'warn')
   .mockImplementation(() => {});
 
