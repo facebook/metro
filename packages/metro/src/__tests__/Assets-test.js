@@ -166,6 +166,81 @@ describe('getAsset', () => {
       getAssetStr('imgs/b.png', '/root', [], null, ['png'], () => false),
     ).rejects.toBeInstanceOf(Error);
   });
+
+  test('should serve scale variant when only scale variants exist and fileExistsInFileMap is provided', async () => {
+    writeImages({
+      'b@2x.png': 'b2 image',
+      'b@3x.png': 'b3 image',
+    });
+
+    expect(
+      await getAssetStr(
+        'imgs/b@2x.png',
+        '/root',
+        [],
+        null,
+        ['png'],
+        () => true,
+      ),
+    ).toBe('b2 image');
+  });
+
+  test('should throw when fileExistsInFileMap rejects the resolved scale variant', async () => {
+    writeImages({
+      'b@2x.png': 'b2 image',
+      'b@3x.png': 'b3 image',
+    });
+
+    await expect(
+      getAssetStr('imgs/b@2x.png', '/root', [], null, ['png'], () => false),
+    ).rejects.toBeInstanceOf(Error);
+  });
+
+  test('should check fileExistsInFileMap against the resolved file, not the base path', async () => {
+    writeImages({
+      'b@2x.png': 'b2 image',
+      'b@3x.png': 'b3 image',
+    });
+
+    const checkedPaths = [];
+    const result = await getAssetStr(
+      'imgs/b@2x.png',
+      '/root',
+      [],
+      null,
+      ['png'],
+      filePath => {
+        checkedPaths.push(filePath);
+        return true;
+      },
+    );
+
+    expect(result).toBe('b2 image');
+    expect(checkedPaths).toEqual(['/root/imgs/b@2x.png']);
+  });
+
+  test('should check fileExistsInFileMap for the fallback (highest scale) file', async () => {
+    writeImages({
+      'b@1x.png': 'b1 image',
+      'b@2x.png': 'b2 image',
+    });
+
+    const checkedPaths = [];
+    const result = await getAssetStr(
+      'imgs/b@3x.png',
+      '/root',
+      [],
+      null,
+      ['png'],
+      filePath => {
+        checkedPaths.push(filePath);
+        return true;
+      },
+    );
+
+    expect(result).toBe('b2 image');
+    expect(checkedPaths).toEqual(['/root/imgs/b@2x.png']);
+  });
 });
 
 describe('getAssetData', () => {
