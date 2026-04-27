@@ -67,10 +67,10 @@ const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']); // Deprecated
 const PACKAGE_JSON = path.sep + 'package.json';
 const PACKAGE_JSON_PROP_NAME = 'metro';
 
-const isFile = (filePath: string) =>
+const isFile = (filePath: string): boolean =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
-const resolve = (filePath: string) => {
+const resolve = (filePath: string): string => {
   // Attempt to resolve the path with the node resolution algorithm but fall back to resolving
   // the file relative to the current working directory if the input is not an absolute path.
   try {
@@ -98,7 +98,7 @@ async function resolveConfig(
     // No config file found, return a default
     return {
       isEmpty: true,
-      filepath: path.join(cwd || process.cwd(), 'metro.config.stub.js'),
+      filepath: path.join(cwd ?? process.cwd(), 'metro.config.stub.js'),
       config: {},
     };
   }
@@ -162,7 +162,7 @@ function mergeConfigObjects<T extends InputConfigT>(
             typeof overrides.server?.tls === 'object'
           ? {
               tls: {
-                ...(base.server?.tls || {}),
+                ...(base.server?.tls ?? {}),
                 ...overrides.server?.tls,
               },
             }
@@ -255,7 +255,7 @@ function mergeConfig<
 async function loadMetroConfigFromDisk(
   pathToLoad?: string,
   cwd?: string,
-  defaultConfigOverrides: InputConfigT,
+  defaultConfigOverrides: InputConfigT = {},
 ): Promise<ConfigT> {
   const resolvedConfigResults: ResolveConfigResult = await resolveConfig(
     pathToLoad,
@@ -330,7 +330,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv['max-workers'] != null || argv.maxWorkers != null) {
-    output.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
+    output.maxWorkers = Number(argv['max-workers'] ?? argv.maxWorkers);
   }
 
   if (argv.transformer != null) {
@@ -395,7 +395,7 @@ export async function loadConfigFile(
   absolutePath: string,
 ): Promise<ResolveConfigResult> {
   // Config should be JSON, CommonJS, ESM or YAML (deprecated)
-  let config;
+  let config: unknown;
   const extension = path.extname(absolutePath);
 
   if (JS_EXTENSIONS.has(extension) || TS_EXTENSIONS.has(extension)) {
