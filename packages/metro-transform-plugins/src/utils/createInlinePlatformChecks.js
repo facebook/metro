@@ -148,6 +148,32 @@ export default function createInlinePlatformChecks(
     ) {
       return true;
     }
+    // Special case for handling transformed relative ES imports:
+    // ```tsx
+    // 1. Source code
+    // import Platform from '../../Utilities/Platform';
+    // const test = Platform.OS === 'ios' ? 1 : 2;
+    //
+    // 2. After `@react-native/babel-preset`
+    // var _Platform = _interopRequireDefault(require("../../Utilities/Platform"));
+    // var test = _Platform.default.OS === 'ios' ? 1 : 2;
+    // ```
+    if (!identifier && isMemberExpression(node)) {
+      const objIdentifier = patterns.find((pattern: {name: string}) =>
+        isIdentifier(node.object, {name: `_${pattern.name}`}),
+      );
+
+      if (
+        objIdentifier &&
+        isToplevelBinding(
+          scope.getBinding(`_${objIdentifier.name}`),
+          isWrappedModule,
+        ) &&
+        isIdentifier(node.property, {name: 'default'})
+      ) {
+        return true;
+      }
+    }
     if (isImport(node, scope, patterns)) {
       return true;
     }
