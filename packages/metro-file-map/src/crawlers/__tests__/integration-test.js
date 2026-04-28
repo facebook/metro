@@ -34,18 +34,10 @@ const isWatchmanOnPath = () => {
   }
 };
 
-const mockUseNativeFind = jest.fn();
-jest.mock('../node/hasNativeFindSupport', () => () => mockUseNativeFind());
-
 type Crawler = typeof nodeCrawl | typeof watchmanCrawl;
 
 const CRAWLERS: {[key: string]: ?Crawler} = {
-  'node-find': opts => {
-    mockUseNativeFind.mockResolvedValue(true);
-    return nodeCrawl(opts);
-  },
   'node-recursive': opts => {
-    mockUseNativeFind.mockResolvedValue(false);
     return nodeCrawl(opts);
   },
   watchman: isWatchmanOnPath() ? watchmanCrawl : null,
@@ -140,7 +132,6 @@ describe.each(Object.keys(CRAWLERS))(
           rootDir: FIXTURES_DIR,
           abortSignal: null,
           computeSha1: false,
-          forceNodeFilesystemAPI: false,
           onStatus: () => {},
         });
 

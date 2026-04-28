@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<806d228988308075b7a911c3dfb513d3>>
+ * @generated SignedSource<<220686ad19cc94bec3b8d89f49fa6304>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/index.js
@@ -49,7 +49,6 @@ export type InputOptions = Readonly<{
   computeSha1?: null | undefined | boolean;
   enableSymlinks?: null | undefined | boolean;
   extensions: ReadonlyArray<string>;
-  forceNodeFilesystemAPI?: null | undefined | boolean;
   ignorePattern?: null | undefined | RegExp;
   plugins?: ReadonlyArray<InputFileMapPlugin>;
   retainAllFiles: boolean;

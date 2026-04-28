@@ -58,7 +58,6 @@ const DEFAULT_OPTIONS: CrawlerOptions = {
     systemPath('/roots/root1/project1'),
     systemPath('/roots/root2/project2'),
   ],
-  forceNodeFilesystemAPI: false,
 };
 
 const WATCH_PROJECTS = new Map([

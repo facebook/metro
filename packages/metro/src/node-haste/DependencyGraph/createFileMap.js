@@ -125,7 +125,6 @@ export default function createFileMap(
         ...config.watcher.additionalExts,
       ]),
     ),
-    forceNodeFilesystemAPI: !config.resolver.useWatchman,
     healthCheck: config.watcher.healthCheck,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
