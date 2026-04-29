@@ -1622,6 +1622,33 @@ export default class Server {
     );
   }
 
+  _resolveWatchFolderPrefix(
+    filePath: string,
+  ): {rootDir: string, filePath: string} | null {
+    const watchFolderMatch = filePath.match(
+      /^\.\/\[metro-watchFolders\]\/(\d+)\/(.*)/,
+    );
+    if (watchFolderMatch != null) {
+      const index = parseInt(watchFolderMatch[1], 10);
+      const watchFolder = this._config.watchFolders[index];
+      if (watchFolder != null) {
+        return {
+          rootDir: path.resolve(watchFolder),
+          filePath:
+            '.' + path.sep + watchFolderMatch[2].split('/').join(path.sep),
+        };
+      }
+    }
+    const projectMatch = filePath.match(/^\.\/\[metro-project\]\/(.*)/);
+    if (projectMatch != null) {
+      return {
+        rootDir: path.resolve(this._config.projectRoot),
+        filePath: '.' + path.sep + projectMatch[1].split('/').join(path.sep),
+      };
+    }
+    return null;
+  }
+
   async _resolveRelativePath(
     filePath: string,
     {
@@ -1639,13 +1666,22 @@ export default class Server {
       transformOptions.platform,
       resolverOptions,
     );
+    const resolved = this._resolveWatchFolderPrefix(filePath);
     const rootDir =
-      relativeTo === 'server'
-        ? this._getServerRootDir()
-        : this._config.projectRoot;
+      resolved != null
+        ? resolved.rootDir
+        : relativeTo === 'server'
+          ? this._getServerRootDir()
+          : this._config.projectRoot;
+    const resolvedFilePath = resolved != null ? resolved.filePath : filePath;
     return resolutionFn(`${rootDir}/.`, {
-      name: filePath,
-      data: {key: filePath, locs: [], asyncType: null, isESMImport: false},
+      name: resolvedFilePath,
+      data: {
+        key: resolvedFilePath,
+        locs: [],
+        asyncType: null,
+        isESMImport: false,
+      },
     }).filePath;
   }
 
@@ -1706,6 +1742,10 @@ export default class Server {
   }
 
   _getEntryPointAbsolutePath(entryFile: string): string {
+    const resolved = this._resolveWatchFolderPrefix(entryFile);
+    if (resolved != null) {
+      return path.resolve(resolved.rootDir, resolved.filePath);
+    }
     return path.resolve(this._getServerRootDir(), entryFile);
   }
 

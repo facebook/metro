@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<56f6e00225ee5ece6142bb2b9e4c608d>>
+ * @generated SignedSource<<c1a6123a3994fc6aa9ebc04c528af213>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-resolver/src/resolve.js
@@ -19,7 +19,7 @@ import type {Resolution, ResolutionContext} from './types';
 
 declare function resolve(
   context: ResolutionContext,
-  moduleName: string,
+  specifier: string,
   platform: string | null,
 ): Resolution;
 export default resolve;

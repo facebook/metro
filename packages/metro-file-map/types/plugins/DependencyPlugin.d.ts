@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<e07a9c061b0224fc44191d956461bd6f>>
+ * @generated SignedSource<<344b340710d6da24bcb609058e7ce8d6>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/DependencyPlugin.js
@@ -15,38 +15,18 @@
  *   yarn run build-ts-defs (OSS) 
  */
 
-import type {
-  FileMapPlugin,
-  FileMapPluginInitOptions,
-  FileMapPluginWorker,
-  Path,
-} from '../flow-types';
+import type {Path} from '../flow-types';
+
+import FileDataPlugin from './FileDataPlugin';
 
 export type DependencyPluginOptions = Readonly<{
   /** Path to custom dependency extractor module */
   dependencyExtractor: null | undefined | string;
   /** Whether to compute dependencies (performance optimization) */
   computeDependencies: boolean;
-  rootDir: Path;
 }>;
-declare class DependencyPlugin
-  implements FileMapPlugin<null, ReadonlyArray<string> | null>
-{
-  readonly name: 'dependencies';
+declare class DependencyPlugin extends FileDataPlugin<ReadonlyArray<string> | null> {
   constructor(options: DependencyPluginOptions);
-  initialize(
-    initOptions: FileMapPluginInitOptions<null, ReadonlyArray<string> | null>,
-  ): Promise<void>;
-  getSerializableSnapshot(): null;
-  onChanged(): void;
-  assertValid(): void;
-  getCacheKey(): string;
-  getWorker(): FileMapPluginWorker;
-  /**
-   * Get the list of dependencies for a given file.
-   * @param mixedPath Absolute or project-relative path to the file
-   * @returns Array of dependency module names, or null if the file doesn't exist
-   */
   getDependencies(mixedPath: Path): null | undefined | ReadonlyArray<string>;
 }
 export default DependencyPlugin;

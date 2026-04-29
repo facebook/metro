@@ -3066,10 +3066,10 @@ flow-api-translator@0.35.0:
     hermes-transform "0.35.0"
     typescript "5.3.2"
 
-flow-bin@^0.309.0:
-  version "0.309.0"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.309.0.tgz#c983003377c80a558e1c4afbf47b6c38cfbca075"
-  integrity sha512-/RH68gcCY8OHzcdSVTUCw+fhDSEYmNHoovfK0EcbB4rs1Xbc5HhxhHTvr7U+h55De4bDRlE52ghH23MRP625cQ==
+flow-bin@^0.311.0:
+  version "0.311.0"
+  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.311.0.tgz#a1cbef22d1cb9e05b58ffdbad1c73ed03f4122e2"
+  integrity sha512-4lXxjhPdmkeizju3F0HDCMYGkoL7hiq0W9bAW4pQpQTi56op+QZrVyMENjbCGZc+KlFBLwWkur+EkyfPTsa6xw==
 
 flow-enums-runtime@^0.0.6:
   version "0.0.6"
@@ -4812,10 +4812,10 @@ prelude-ls@^1.2.1:
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"
   integrity sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==
 
-prettier-plugin-hermes-parser@0.34.1:
-  version "0.34.1"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-hermes-parser/-/prettier-plugin-hermes-parser-0.34.1.tgz#75fc7abe0435ab45ee4431b1b1ce1a7baba6903c"
-  integrity sha512-cdA3tlvvFZkr8CuzaRJ28EVl7ep2zbfxKBBiS1t1w2Kud+Gsv/aQeU2a6rmMBnMJn510xPrIy0aZ9AG0uQHcRQ==
+prettier-plugin-hermes-parser@0.35.0:
+  version "0.35.0"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-hermes-parser/-/prettier-plugin-hermes-parser-0.35.0.tgz#f037f76b50669aa9fd9dcbe78ceec7b891239646"
+  integrity sha512-+qAxEwdNI6sWw/g/+OxbUp5Tt5WaiuufQpDyE95M13S+P+IO8UDmErSBUwN+QvxakcT0bGTd8sfSLJNZrfV4eg==
 
 prettier@3.6.2:
   version "3.6.2"
