@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<b3646c81d37188726a1fc27777dcbede>>
+ * @generated SignedSource<<d4b91c479ffb5b69180cdbcbefc8ddf9>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -258,6 +258,7 @@ export interface FileSystem {
     }>,
   ): {changedFiles: FileData; removedFiles: Set<string>};
   getSerializableSnapshot(): CacheData['fileSystemData'];
+  getMtimeByNormalPath(file: Path): null | undefined | number;
   getSha1(file: Path): null | undefined | string;
   getOrComputeSha1(
     file: Path,

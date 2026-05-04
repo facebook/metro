@@ -14,6 +14,7 @@ import type {
   CrawlerOptions,
   CrawlResult,
   FileData,
+  FileSystem,
   IgnoreMatcher,
 } from '../../flow-types';
 
@@ -36,6 +37,7 @@ function find(
   includeSymlinks: boolean,
   rootDir: string,
   console: Console,
+  previousFileSystem: FileSystem | null,
   callback: Callback,
 ): void {
   const result: FileData = new Map();
@@ -58,7 +60,8 @@ function find(
             return;
           }
 
-          if (entry.isSymbolicLink() && !includeSymlinks) {
+          const isSymlink = entry.isSymbolicLink();
+          if (isSymlink && !includeSymlinks) {
             return;
           }
 
@@ -67,29 +70,38 @@ function find(
             return;
           }
 
-          activeCalls++;
+          const ext = path.extname(file).substr(1);
+          if (!isSymlink && !extensions.includes(ext)) {
+            return;
+          }
 
-          fs.lstat(file, (err, stat) => {
-            activeCalls--;
+          const fileNormal = pathUtils.absoluteToNormal(file);
+          const mtime = previousFileSystem?.getMtimeByNormalPath(fileNormal);
+          if (mtime == null || mtime === 0) {
+            // When we're in a cold start or a previous file doesn't exist, we can skip
+            // the mtime/size lstat now and treat the file as new
+            result.set(fileNormal, [null, 0, 0, null, isSymlink ? 1 : 0, null]);
+          } else {
+            activeCalls++;
+            fs.lstat(file, (err, stat) => {
+              activeCalls--;
 
-            if (!err && stat) {
-              const ext = path.extname(file).substr(1);
-              if (stat.isSymbolicLink() || extensions.includes(ext)) {
-                result.set(pathUtils.absoluteToNormal(file), [
+              if (!err && stat) {
+                result.set(fileNormal, [
                   stat.mtime.getTime(),
                   stat.size,
                   0,
                   null,
-                  stat.isSymbolicLink() ? 1 : 0,
+                  isSymlink ? 1 : 0,
                   null,
                 ]);
               }
-            }
 
-            if (activeCalls === 0) {
-              callback(result);
-            }
-          });
+              if (activeCalls === 0) {
+                callback(result);
+              }
+            });
+          }
         });
       }
 
@@ -232,6 +244,7 @@ export default async function nodeCrawl(
         includeSymlinks,
         rootDir,
         console,
+        previousState.fileSystem,
         callback,
       );
     }
