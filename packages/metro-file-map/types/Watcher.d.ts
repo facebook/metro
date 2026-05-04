@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<25fee66c7d26ad53cdd5bbab454fe50b>>
+ * @generated SignedSource<<7e33ffd7eec05b9c9c072189d2ed3ec2>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/Watcher.js
@@ -30,7 +30,6 @@ type WatcherOptions = {
   console: Console;
   enableSymlinks: boolean;
   extensions: ReadonlyArray<string>;
-  forceNodeFilesystemAPI: boolean;
   healthCheckFilePrefix: string;
   ignoreForCrawl: (filePath: string) => boolean;
   ignorePatternForWatch: RegExp;

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<b3646c81d37188726a1fc27777dcbede>>
+ * @generated SignedSource<<6ff16bb65883df0a1cb70e6ca94461eb>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -22,7 +22,6 @@ export type BuildParameters = Readonly<{
   computeSha1: boolean;
   enableSymlinks: boolean;
   extensions: ReadonlyArray<string>;
-  forceNodeFilesystemAPI: boolean;
   ignorePattern: RegExp;
   plugins: ReadonlyArray<InputFileMapPlugin>;
   retainAllFiles: boolean;
@@ -95,7 +94,6 @@ export type CrawlerOptions = {
   computeSha1: boolean;
   console: Console;
   extensions: ReadonlyArray<string>;
-  forceNodeFilesystemAPI: boolean;
   ignore: IgnoreMatcher;
   includeSymlinks: boolean;
   perfLogger?: null | undefined | PerfLogger;
@@ -192,12 +190,12 @@ export interface FileMapPlugin<
 }
 export type InputFileMapPlugin = FileMapPlugin<
   /**
-   * > 235 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+   * > 233 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
    *       |                                                ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
    **/
   any,
   /**
-   * > 235 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+   * > 233 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
    *       |                                                       ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
    **/
   any
