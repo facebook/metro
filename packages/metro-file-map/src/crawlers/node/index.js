@@ -42,7 +42,19 @@ function find(
   let activeCalls = 0;
   const pathUtils = new RootPathUtils(rootDir);
 
-  function search(directory: string): void {
+  const exts = extensions.reduce(
+    (acc, ext) => {
+      acc[ext] = true;
+      return acc;
+    },
+    {} as {[string]: ?true},
+  );
+
+  function search(
+    directory: string,
+    dirNormal: string,
+    isWithinRoot: boolean,
+  ): void {
     activeCalls++;
     fs.readdir(directory, {withFileTypes: true}, (err, entries) => {
       activeCalls--;
@@ -51,46 +63,55 @@ function find(
           `Error "${err.code ?? err.message}" reading contents of "${directory}", skipping. Add this directory to your ignore list to exclude it.`,
         );
       } else {
-        entries.forEach((entry: fs.Dirent) => {
-          const file = path.join(directory, entry.name.toString());
+        for (let idx = 0; idx < entries.length; idx++) {
+          const entry = entries[idx];
+          const name = entry.name.toString();
+          const file = directory + path.sep + name;
 
-          if (ignore(file)) {
-            return;
+          const isSymbolicLink = entry.isSymbolicLink();
+          if (ignore(file) || (!includeSymlinks && isSymbolicLink)) {
+            continue;
           }
 
-          if (entry.isSymbolicLink() && !includeSymlinks) {
-            return;
-          }
+          // Deriving a normal path above the root dir requires slicing off an up-fragment
+          // then checking if the target matches the next segment of the root dir. It's therefore
+          // easier to fall back to `pathUtils.absoluteToNormal`
+          const childNormal = !isWithinRoot
+            ? pathUtils.absoluteToNormal(file)
+            : dirNormal === ''
+              ? name
+              : dirNormal + path.sep + name;
 
           if (entry.isDirectory()) {
-            search(file);
-            return;
+            search(file, childNormal, isWithinRoot || childNormal === '');
+            continue;
+          }
+
+          const ext = path.extname(file).substr(1);
+          if (!isSymbolicLink && !exts[ext]) {
+            continue;
           }
 
           activeCalls++;
-
           fs.lstat(file, (err, stat) => {
             activeCalls--;
 
             if (!err && stat) {
-              const ext = path.extname(file).substr(1);
-              if (stat.isSymbolicLink() || extensions.includes(ext)) {
-                result.set(pathUtils.absoluteToNormal(file), [
-                  stat.mtime.getTime(),
-                  stat.size,
-                  0,
-                  null,
-                  stat.isSymbolicLink() ? 1 : 0,
-                  null,
-                ]);
-              }
+              result.set(childNormal, [
+                stat.mtime.getTime(),
+                stat.size,
+                0,
+                null,
+                isSymbolicLink ? 1 : 0,
+                null,
+              ]);
             }
 
             if (activeCalls === 0) {
               callback(result);
             }
           });
-        });
+        }
       }
 
       if (activeCalls === 0) {
@@ -100,7 +121,11 @@ function find(
   }
 
   if (roots.length > 0) {
-    roots.forEach(search);
+    for (const root of roots) {
+      const rootNormal = pathUtils.absoluteToNormal(root);
+      const isWithinRoot = !rootNormal.startsWith('..' + path.sep);
+      search(root, rootNormal, isWithinRoot);
+    }
   } else {
     callback(result);
   }
@@ -149,7 +174,7 @@ function findNative(
     if (!count) {
       callback(new Map());
     } else {
-      lines.forEach(path => {
+      for (const path of lines) {
         fs.lstat(path, (err, stat) => {
           if (!err && stat) {
             result.set(pathUtils.absoluteToNormal(path), [
@@ -165,7 +190,7 @@ function findNative(
             callback(result);
           }
         });
-      });
+      }
     }
   });
 }
@@ -197,43 +222,25 @@ export default async function nodeCrawl(
 
   debug('Using system find: %s', useNativeFind);
 
-  return new Promise((resolve, reject) => {
-    const callback: Callback = fileData => {
-      const difference = previousState.fileSystem.getDifference(fileData, {
-        subpath,
-      });
-
-      perfLogger?.point('nodeCrawl_end');
-
-      try {
-        // TODO: Use AbortSignal.reason directly when Flow supports it
-        abortSignal?.throwIfAborted();
-      } catch (e) {
-        reject(e);
-      }
-      resolve(difference);
-    };
-
-    if (useNativeFind) {
-      findNative(
-        roots,
-        extensions,
-        ignore,
-        includeSymlinks,
-        rootDir,
-        console,
-        callback,
-      );
-    } else {
-      find(
-        roots,
-        extensions,
-        ignore,
-        includeSymlinks,
-        rootDir,
-        console,
-        callback,
-      );
-    }
+  const crawlFn = useNativeFind ? findNative : find;
+  const fileData = await new Promise<FileData>(resolve => {
+    crawlFn(
+      roots,
+      extensions,
+      ignore,
+      includeSymlinks,
+      rootDir,
+      console,
+      resolve,
+    );
   });
+
+  abortSignal?.throwIfAborted();
+
+  const difference = previousState.fileSystem.getDifference(fileData, {
+    subpath,
+  });
+
+  perfLogger?.point('nodeCrawl_end');
+  return difference;
 }
