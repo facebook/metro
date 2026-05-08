@@ -28,8 +28,13 @@ export default class DependencyPlugin extends FileDataPlugin<ReadonlyArray<strin
     let cacheKey: string;
     if (dependencyExtractor != null) {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      const extractor = require(dependencyExtractor);
-      cacheKey = extractor.getCacheKey?.() ?? dependencyExtractor;
+      const mod = require(dependencyExtractor);
+      let getCacheKey = mod?.getCacheKey; // CJS export or ESM named export
+      // Allow for getCacheKey as a prop of an ESM default export
+      if (getCacheKey == null && mod?.__esModule === true) {
+        getCacheKey = mod.default?.getCacheKey;
+      }
+      cacheKey = getCacheKey?.() ?? dependencyExtractor;
     } else {
       cacheKey = 'default-dependency-extractor';
     }
