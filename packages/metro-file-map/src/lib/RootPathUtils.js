@@ -46,6 +46,9 @@ const SEP_UP_FRAGMENT = path.sep + '..';
 const UP_FRAGMENT_SEP_LENGTH = UP_FRAGMENT_SEP.length;
 const CURRENT_FRAGMENT = '.' + path.sep;
 
+const IS_WIN32 = path.sep === '\\';
+const ROOT_BASE_IDX = IS_WIN32 ? 0 : 1;
+
 export class RootPathUtils {
   #rootDir: string;
   #rootDirnames: ReadonlyArray<string>;
@@ -306,9 +309,10 @@ export class RootPathUtils {
         };
       }
 
-      // Cap the number of indirections at the total number of root segments.
-      // File systems treat '..' at the root as '.'.
-      if (totalUpIndirections < this.#rootParts.length - 1) {
+      // Cap the number of indirections at the total number of root parts.
+      // File systems treat '..' at the root as '.'. For Windows, cross-device
+      // paths need to survive this.
+      if (totalUpIndirections < this.#rootParts.length - ROOT_BASE_IDX) {
         totalUpIndirections++;
       }
 
