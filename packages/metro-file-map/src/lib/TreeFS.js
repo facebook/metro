@@ -1240,10 +1240,18 @@ export default class TreeFS implements MutableFileSystem {
       '..', // Symlink target is relative to its containing directory.
       literalSymlinkTarget, // May be absolute, in which case the above are ignored
     );
-    const normalSymlinkTarget = path.relative(
+    let normalSymlinkTarget = path.relative(
       this.#rootDir,
       absoluteSymlinkTarget,
     );
+    // path.relative leaves cross-device targets absolute on Windows (e.g.
+    // 'D:\\file' from a 'C:\\' root). Canonicalise those via RootPathUtils so
+    // they round-trip as a '..'-chain from rootDir.
+    if (path.isAbsolute(normalSymlinkTarget)) {
+      normalSymlinkTarget = this.#pathUtils.absoluteToNormal(
+        absoluteSymlinkTarget,
+      );
+    }
     const result = {
       ancestorOfRootIdx:
         this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget),
