@@ -1690,10 +1690,7 @@ export default class Server {
   };
 
   _getEntryPointAbsolutePath(entryFile: string): string {
-    return (
-      this._routeMap.filePathOfUrlDecodedPathname(entryFile) ??
-      path.resolve(this._routeMap.serverRootDir, entryFile)
-    );
+    return path.resolve(this._routeMap.serverRootDir, entryFile);
   }
 
   // Wait for the server to finish initializing.
