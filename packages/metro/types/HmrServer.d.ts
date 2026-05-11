@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<ab4c245134631e14db114a9d49da79d1>>
+ * @generated SignedSource<<81f86f56137b8992ca4e56f39628d548>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/HmrServer.js
@@ -24,6 +24,8 @@ import type {
   HmrErrorMessage,
   HmrUpdateMessage,
 } from 'metro-runtime/src/modules/types';
+
+import ProjectRouteMap from './lib/ProjectRouteMap';
 
 export type Client = {
   optedIntoHMR: boolean;
@@ -51,6 +53,7 @@ declare class HmrServer<TClient extends Client> {
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;
   _clientGroups: Map<RevisionId, ClientGroup>;
+  _routeMap: ProjectRouteMap;
   constructor(
     bundler: IncrementalBundler,
     createModuleId: (path: string) => number,
