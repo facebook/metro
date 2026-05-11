@@ -103,7 +103,13 @@ describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
             p('../normal/path/'),
             p('../../normal/path'),
           ]
-        : [p('..'), p('../..'), p('../../'), p('normal/path'), p('normal/path/')];
+        : [
+            p('..'),
+            p('../..'),
+            p('../../'),
+            p('normal/path'),
+            p('normal/path/'),
+          ];
 
     test.each(normalToAbsoluteInputs)(
       `normalToAbsolute('%s') matches path.resolve`,
@@ -176,7 +182,11 @@ describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
       );
 
       test.each([
-        ['C:\\project\\root', 'D:\\some\\file.js', '..\\..\\..\\D:\\some\\file.js'],
+        [
+          'C:\\project\\root',
+          'D:\\some\\file.js',
+          '..\\..\\..\\D:\\some\\file.js',
+        ],
         ['C:\\project\\root', 'D:\\some\\', '..\\..\\..\\D:\\some\\'],
         ['C:\\project\\root', 'D:\\', '..\\..\\..\\D:\\'],
         ['C:\\', 'D:\\some\\file.js', '..\\D:\\some\\file.js'],

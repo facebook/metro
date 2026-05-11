@@ -1296,6 +1296,24 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         });
         expect(tfsCD.exists('E:\\anywhere.js')).toBe(false);
       });
+
+      test('lookup() follows a symlink whose target is a cross-drive path', () => {
+        const tfsLink = new TreeFS({
+          rootDir: 'C:\\project',
+          files: new Map<CanonicalPath, FileMetadata>([
+            ['..\\..\\D:\\external\\file.js', externalMeta],
+            ['link', [0, 0, 0, null, 'D:\\external\\file.js', null]],
+          ]),
+          processFile: () => {
+            throw new Error('Not implemented');
+          },
+        });
+        expect(tfsLink.lookup('C:\\project\\link')).toMatchObject({
+          exists: true,
+          type: 'f',
+          realPath: 'D:\\external\\file.js',
+        });
+      });
     });
   }
 });
