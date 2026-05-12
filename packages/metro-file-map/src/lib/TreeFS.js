@@ -1234,17 +1234,19 @@ export default class TreeFS implements MutableFileSystem {
       typeof literalSymlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
-    const absoluteSymlinkTarget = path.resolve(
+    let absoluteSymlinkTarget = path.resolve(
       this.#rootDir,
       canonicalPathOfSymlink,
       '..', // Symlink target is relative to its containing directory.
       literalSymlinkTarget, // May be absolute, in which case the above are ignored
     );
-    let normalSymlinkTarget =
-      this.#pathUtils.absoluteToNormal(absoluteSymlinkTarget);
-    if (normalSymlinkTarget.endsWith(path.sep)) {
-      normalSymlinkTarget = normalSymlinkTarget.slice(0, -1);
+    if (absoluteSymlinkTarget.endsWith(path.sep)) {
+      absoluteSymlinkTarget = absoluteSymlinkTarget.slice(0, -1);
     }
+    const normalSymlinkTarget = this.#pathUtils.absoluteToNormal(
+      absoluteSymlinkTarget,
+    );
+
     const result = {
       ancestorOfRootIdx:
         this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget),
