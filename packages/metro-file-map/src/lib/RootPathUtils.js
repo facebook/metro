@@ -153,8 +153,10 @@ export class RootPathUtils {
     if (right.length === 0) {
       return left;
     } else if (IS_WIN32 && pos > this.#rootDepth * UP_FRAGMENT_SEP_LENGTH) {
-      // On Windows, up-fragments at the root encode target on anoher drive
-      // (e.g. '..\..\D:\file'), but on POSIX '..' re-enters the root
+      // On a real file system, navigating to `..` at the top level (posix `/`
+      // or Windows drive) is a no-op, but we can't respect that on Windows
+      // because Metro uses e.g. `..\..\D:\foo` to represent cross-drive
+      // relative paths.
       return right;
     }
     // left may already end in a path separator only if it is a filesystem root,
