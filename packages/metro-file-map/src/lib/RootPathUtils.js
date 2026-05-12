@@ -150,6 +150,9 @@ export class RootPathUtils {
     if (right.length === 0) {
       return left;
     }
+    if (path.isAbsolute(right)) {
+      return right;
+    }
     // left may already end in a path separator only if it is a filesystem root,
     // '/' or 'X:\'.
     if (i === this.#rootDepth) {

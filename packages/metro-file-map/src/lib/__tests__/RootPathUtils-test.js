@@ -110,6 +110,20 @@ describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
       expect(pathUtils.normalToAbsolute(normalPath)).toEqual(expected);
     });
 
+    if (platform === 'win32') {
+      test.each(['D:\\some\\file.js', 'D:\\some\\', 'D:\\'])(
+        `normalToAbsolute('%s') returns cross-drive absolute normal path as-is`,
+        normalPath => {
+          // On Windows, path.relative() returns an absolute path when source
+          // and target are on different drives. Such paths are stored as the
+          // "normal path" in the file map and must be returned as-is by
+          // normalToAbsolute rather than being prepended with rootDir (which
+          // would produce invalid paths like C:\project\root\D:\file.js).
+          expect(pathUtils.normalToAbsolute(normalPath)).toEqual(normalPath);
+        },
+      );
+    }
+
     test.each([
       p('..'),
       p('../root'),
