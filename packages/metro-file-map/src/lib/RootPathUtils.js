@@ -152,10 +152,9 @@ export class RootPathUtils {
     const right = pos === 0 ? normalPath : normalPath.slice(pos);
     if (right.length === 0) {
       return left;
-    } else if (pos > this.#rootDepth * UP_FRAGMENT_SEP_LENGTH) {
-      // When we walk above the filesystem root, emit the remaining path as
-      // is. This is important on Windows, since we canonicalize cross-device
-      // paths as relative paths from rootDir.
+    } else if (IS_WIN32 && pos > this.#rootDepth * UP_FRAGMENT_SEP_LENGTH) {
+      // On Windows, up-fragments at the root encode target on anoher drive
+      // (e.g. '..\..\D:\file'), but on POSIX '..' re-enters the root
       return right;
     }
     // left may already end in a path separator only if it is a filesystem root,
