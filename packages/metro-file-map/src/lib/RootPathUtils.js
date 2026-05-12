@@ -46,6 +46,9 @@ const SEP_UP_FRAGMENT = path.sep + '..';
 const UP_FRAGMENT_SEP_LENGTH = UP_FRAGMENT_SEP.length;
 const CURRENT_FRAGMENT = '.' + path.sep;
 
+const IS_WIN32 = path.sep === '\\';
+const ROOT_BASE_IDX = IS_WIN32 ? 0 : 1;
+
 export class RootPathUtils {
   #rootDir: string;
   #rootDirnames: ReadonlyArray<string>;
@@ -149,6 +152,12 @@ export class RootPathUtils {
     const right = pos === 0 ? normalPath : normalPath.slice(pos);
     if (right.length === 0) {
       return left;
+    } else if (IS_WIN32 && pos > this.#rootDepth * UP_FRAGMENT_SEP_LENGTH) {
+      // On a real file system, navigating to `..` at the top level (posix `/`
+      // or Windows drive) is a no-op, but we can't respect that on Windows
+      // because Metro uses e.g. `..\..\D:\foo` to represent cross-drive
+      // relative paths.
+      return right;
     }
     // left may already end in a path separator only if it is a filesystem root,
     // '/' or 'X:\'.
@@ -198,7 +207,9 @@ export class RootPathUtils {
     if (relativePath === '') {
       return {collapsedSegments: 0, normalPath};
     }
-    const left = normalPath + path.sep;
+    const left = normalPath.endsWith(path.sep)
+      ? normalPath
+      : normalPath + path.sep;
     const rawPath = left + relativePath;
     if (normalPath === '..' || normalPath.endsWith(SEP_UP_FRAGMENT)) {
       const collapsed = this.#tryCollapseIndirectionsInSuffix(rawPath, 0, 0);
@@ -299,9 +310,10 @@ export class RootPathUtils {
         };
       }
 
-      // Cap the number of indirections at the total number of root segments.
-      // File systems treat '..' at the root as '.'.
-      if (totalUpIndirections < this.#rootParts.length - 1) {
+      // Cap the number of indirections at the total number of root parts.
+      // File systems treat '..' at the root as '.'. For Windows, cross-device
+      // paths need to survive this.
+      if (totalUpIndirections < this.#rootParts.length - ROOT_BASE_IDX) {
         totalUpIndirections++;
       }
 

@@ -1235,4 +1235,85 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       });
     });
   });
+
+  if (platform === 'win32') {
+    describe('cross-drive paths (Windows)', () => {
+      let tfsCD: TreeFSType;
+      const externalMeta: FileMetadata = [123, 4, 0, null, 0, 'external'];
+
+      beforeEach(() => {
+        tfsCD = new TreeFS({
+          rootDir: 'C:\\project',
+          files: new Map<CanonicalPath, FileMetadata>([
+            ['bar.js', [234, 3, 0, null, 0, 'bar']],
+            ['..\\..\\D:\\external\\file.js', externalMeta],
+          ]),
+          processFile: () => {
+            throw new Error('Not implemented');
+          },
+        });
+      });
+
+      test('exists() finds a seeded cross-drive file', () => {
+        expect(tfsCD.exists('D:\\external\\file.js')).toBe(true);
+      });
+
+      test('lookup() returns the absolute drive-prefixed path as realPath', () => {
+        expect(tfsCD.lookup('D:\\external\\file.js')).toMatchObject({
+          exists: true,
+          type: 'f',
+          realPath: 'D:\\external\\file.js',
+        });
+      });
+
+      test('getAllFiles() enumerates cross-drive and in-tree files side by side', () => {
+        expect(tfsCD.getAllFiles().sort()).toEqual([
+          'C:\\project\\bar.js',
+          'D:\\external\\file.js',
+        ]);
+      });
+
+      test('addOrModify() accepts a new cross-drive absolute path', () => {
+        tfsCD.addOrModify('D:\\added\\later.js', [1, 1, 0, null, 0, 'later']);
+        expect(tfsCD.exists('D:\\added\\later.js')).toBe(true);
+        expect(tfsCD.lookup('D:\\added\\later.js')).toMatchObject({
+          exists: true,
+          type: 'f',
+          realPath: 'D:\\added\\later.js',
+        });
+      });
+
+      test('remove() deletes a cross-drive entry and prunes empty ancestor dirs', () => {
+        tfsCD.remove('D:\\external\\file.js');
+        expect(tfsCD.exists('D:\\external\\file.js')).toBe(false);
+        expect(tfsCD.lookup('D:\\external').exists).toBe(false);
+        expect(tfsCD.exists('C:\\project\\bar.js')).toBe(true);
+      });
+
+      test('lookup() reports missing for non-existent cross-drive path', () => {
+        expect(tfsCD.lookup('D:\\external\\missing.js')).toMatchObject({
+          exists: false,
+        });
+        expect(tfsCD.exists('E:\\anywhere.js')).toBe(false);
+      });
+
+      test('lookup() follows a symlink whose target is a cross-drive path', () => {
+        const tfsLink = new TreeFS({
+          rootDir: 'C:\\project',
+          files: new Map<CanonicalPath, FileMetadata>([
+            ['..\\..\\D:\\external\\file.js', externalMeta],
+            ['link', [0, 0, 0, null, 'D:\\external\\file.js', null]],
+          ]),
+          processFile: () => {
+            throw new Error('Not implemented');
+          },
+        });
+        expect(tfsLink.lookup('C:\\project\\link')).toMatchObject({
+          exists: true,
+          type: 'f',
+          realPath: 'D:\\external\\file.js',
+        });
+      });
+    });
+  }
 });

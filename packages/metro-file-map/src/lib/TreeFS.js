@@ -493,6 +493,13 @@ export default class TreeFS implements MutableFileSystem {
 
   remove(mixedPath: Path, changeListener?: FileSystemListener): void {
     const normalPath = this.#normalizePath(mixedPath);
+    this.#removeNormalPath(normalPath, changeListener);
+  }
+
+  #removeNormalPath(
+    normalPath: string,
+    changeListener?: FileSystemListener,
+  ): void {
     const result = this.#lookupByNormalPath(normalPath, {followLeaf: false});
     if (!result.exists) {
       return;
@@ -501,7 +508,10 @@ export default class TreeFS implements MutableFileSystem {
 
     if (isDirectory(node) && node.size > 0) {
       for (const basename of node.keys()) {
-        this.remove(canonicalPath + path.sep + basename, changeListener);
+        this.#removeNormalPath(
+          canonicalPath + path.sep + basename,
+          changeListener,
+        );
       }
       // Removing the last file will delete this directory
       return;
@@ -521,7 +531,7 @@ export default class TreeFS implements MutableFileSystem {
         // that's not expected to be a case common enough to justify
         // implementation complexity, or slowing down more common uses of
         // _lookupByNormalPath.
-        this.remove(path.dirname(canonicalPath), changeListener);
+        this.#removeNormalPath(path.dirname(canonicalPath), changeListener);
       }
     }
   }
@@ -1224,16 +1234,19 @@ export default class TreeFS implements MutableFileSystem {
       typeof literalSymlinkTarget === 'string',
       'Expected symlink target to be populated.',
     );
-    const absoluteSymlinkTarget = path.resolve(
+    let absoluteSymlinkTarget = path.resolve(
       this.#rootDir,
       canonicalPathOfSymlink,
       '..', // Symlink target is relative to its containing directory.
       literalSymlinkTarget, // May be absolute, in which case the above are ignored
     );
-    const normalSymlinkTarget = path.relative(
-      this.#rootDir,
+    if (absoluteSymlinkTarget.endsWith(path.sep)) {
+      absoluteSymlinkTarget = absoluteSymlinkTarget.slice(0, -1);
+    }
+    const normalSymlinkTarget = this.#pathUtils.absoluteToNormal(
       absoluteSymlinkTarget,
     );
+
     const result = {
       ancestorOfRootIdx:
         this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget),
