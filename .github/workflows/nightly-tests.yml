@@ -12,6 +12,9 @@ on:
     # Daily at at 5:00 UTC
     - cron:  '0 5 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     strategy:
