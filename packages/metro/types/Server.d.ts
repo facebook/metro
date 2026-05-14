@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<03b526801403adb05b3b0f6c25b25ed5>>
+ * @generated SignedSource<<3dd979e3fd1a02a74349437bdbb264f4>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Server.js
@@ -45,6 +45,7 @@ import type {CustomResolverOptions} from 'metro-resolver/private/types';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
 import IncrementalBundler from './IncrementalBundler';
+import ProjectRouteMap from './lib/ProjectRouteMap';
 import MultipartResponse from './Server/MultipartResponse';
 import {SourcePathsMode} from './shared/types';
 import {Logger} from 'metro-core';
@@ -114,9 +115,7 @@ declare class Server {
   _reporter: Reporter;
   _serverOptions: ServerOptions | void;
   _allowedSuffixesForSourceRequests: ReadonlyArray<string>;
-  _sourceRequestRoutingMap: ReadonlyArray<
-    [pathnamePrefix: string, normalizedRootDir: string]
-  >;
+  _routeMap: ProjectRouteMap;
   _fetchTimings: Array<FetchTiming>;
   _activeFetchCount: number;
   constructor(config: ConfigT, options?: ServerOptions);
@@ -168,11 +167,7 @@ declare class Server {
     res: ServerResponse,
     next: ($$PARAM_0$$: null | undefined | Error) => void,
   ): Promise<void>;
-  _processSourceRequest(
-    relativeFilePathname: string,
-    rootDir: string,
-    res: ServerResponse,
-  ): Promise<void>;
+  _processSourceRequest(filePath: string, res: ServerResponse): Promise<void>;
   _createRequestProcessor<T>($$PARAM_0$$: {
     readonly bundleType: 'assets' | 'bundle' | 'map';
     readonly createStartEntry: (
@@ -225,9 +220,6 @@ declare class Server {
   _explodedSourceMapForBundleOptions(
     bundleOptions: BundleOptions,
   ): Promise<ExplodedSourceMap>;
-  _resolveWatchFolderPrefix(
-    filePath: string,
-  ): {rootDir: string; filePath: string} | null;
   _resolveRelativePath(
     filePath: string,
     $$PARAM_1$$: Readonly<{
@@ -272,7 +264,6 @@ declare class Server {
     sourceUrl: null;
     sourcePaths: SourcePathsMode;
   };
-  _getServerRootDir(): string;
   _getEntryPointAbsolutePath(entryFile: string): string;
   ready(): Promise<void>;
   _shouldAddModuleToIgnoreList(module: Module): boolean;
