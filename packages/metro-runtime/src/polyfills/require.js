@@ -547,15 +547,16 @@ function unknownModuleError(id: ModuleID): Error {
   return Error(message);
 }
 
+// $FlowFixMe[prop-missing]
+metroRequire.getModules = (): ModuleList => {
+  return modules;
+};
+
 if (__DEV__) {
   // $FlowFixMe[prop-missing]
   metroRequire.Systrace = {
     beginEvent: (): void => {},
     endEvent: (): void => {},
-  };
-  // $FlowFixMe[prop-missing]
-  metroRequire.getModules = (): ModuleList => {
-    return modules;
   };
 
   // HOT MODULE RELOADING
