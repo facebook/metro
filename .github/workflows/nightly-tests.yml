@@ -21,8 +21,7 @@ jobs:
         runs-on: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         # Sync with build-test-and-deploy.yml
         node-version: [  # https://github.com/nodejs/release#release-schedule
-          '20.19.4', # minimum supported
-          'lts/-1',  # previous lts
+          '22.13.0', # minimum supported
           'lts/*',   # latest lts
           'latest'   # latest node version
         ]
