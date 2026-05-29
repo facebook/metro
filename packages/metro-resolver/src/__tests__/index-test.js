@@ -15,7 +15,7 @@ import type {ResolutionContext} from '../index';
 
 import {createResolutionContext} from './utils';
 
-let Resolver = require('../index');
+const Resolver = require('../index');
 
 const fileMap = {
   '/root/project/foo.js': '',
@@ -396,67 +396,84 @@ test('throws a descriptive error when a file inside a Haste package cannot be re
   `);
 });
 
-describe('redirectModulePath', () => {
-  const mockRedirectModulePath = jest.fn();
-  const context = CONTEXT;
-
-  beforeEach(() => {
-    mockRedirectModulePath.mockReset();
-    mockRedirectModulePath.mockImplementation(filePath => false);
-
-    jest.resetModules();
-    jest.mock('../PackageResolve', () => {
-      return {
-        ...jest.requireActual('../PackageResolve'),
-        redirectModulePath: (_ctx, specifier) =>
-          mockRedirectModulePath(specifier),
-      };
-    });
-
-    Resolver = require('../index');
-  });
-
-  afterEach(() => {
-    jest.unmock('../PackageResolve');
-    jest.resetModules();
-    Resolver = require('../index');
-  });
-
+describe('browser spec redirection', () => {
   test('is used for relative path requests', () => {
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        name: 'project',
+        browser: {
+          './bar': false,
+        },
+      }),
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/foo.js',
+    };
     expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
       }
     `);
-    expect(mockRedirectModulePath).toBeCalledTimes(1);
-    expect(mockRedirectModulePath).toBeCalledWith('/root/project/bar');
   });
 
   test('is used for absolute path requests', () => {
-    expect(Resolver.resolve(context, '/bar', null)).toMatchInlineSnapshot(`
+    // browser field redirects the specifier to false
+    const testFileMap = {
+      '/root/bar.js': '',
+      '/root/package.json': JSON.stringify({
+        browser: {
+          './bar': false,
+        },
+      }),
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/other/project/foo.js',
+    };
+    expect(Resolver.resolve(context, '/root/bar', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
       }
     `);
-    expect(mockRedirectModulePath).toBeCalledTimes(1);
-    expect(mockRedirectModulePath).toBeCalledWith('/bar');
   });
 
   test('is used for non-Haste package requests', () => {
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        name: 'project',
+        browser: {
+          'does-not-exist': false,
+        },
+      }),
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/foo.js',
+    };
     expect(Resolver.resolve(context, 'does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
         "type": "empty",
       }
     `);
-    expect(mockRedirectModulePath).toBeCalledTimes(1);
-    expect(mockRedirectModulePath).toBeCalledWith('does-not-exist');
   });
 
   test('can redirect to an arbitrary relative module', () => {
-    mockRedirectModulePath
-      .mockImplementationOnce(filePath => '../smth/beep')
-      .mockImplementation(filePath => filePath);
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        browser: {
+          'does-not-exist': '../smth/beep',
+        },
+      }),
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/foo.js',
+    };
     expect(Resolver.resolve(context, 'does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -464,96 +481,51 @@ describe('redirectModulePath', () => {
         "type": "sourceFile",
       }
     `);
-    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          "does-not-exist",
-        ],
-        Array [
-          "/root/smth/beep",
-        ],
-        Array [
-          "/root/smth/beep.js",
-        ],
-      ]
-    `);
   });
 
-  test("is called for source extension candidates that don't exist on disk", () => {
-    mockRedirectModulePath.mockImplementation(filePath =>
-      filePath.replace('.another-fake-ext', '.js'),
-    );
-    expect(
-      Resolver.resolve(
-        {...context, sourceExts: ['fake-ext', 'another-fake-ext']},
-        '../smth/beep',
-        null,
-      ),
-    ).toMatchInlineSnapshot(`
+  test('resolves source extension candidates to relative paths', () => {
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        name: 'project',
+        browser: {
+          './beep.another-fake-ext': '../smth/beep.js',
+        },
+      }),
+      '/root/project/beep.js': '',
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/foo.js',
+      sourceExts: ['fake-ext', 'another-fake-ext'],
+    };
+    expect(Resolver.resolve(context, './beep', null)).toMatchInlineSnapshot(`
       Object {
         "filePath": "/root/smth/beep.js",
         "type": "sourceFile",
       }
-    `);
-    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          "/root/smth/beep",
-        ],
-        Array [
-          "/root/smth/beep.fake-ext",
-        ],
-        Array [
-          "/root/smth/beep.another-fake-ext",
-        ],
-      ]
     `);
   });
 
   test('can resolve to empty from a candidate with an added source extension', () => {
-    mockRedirectModulePath.mockImplementation(filePath =>
-      filePath.endsWith('.fake-ext') ? false : filePath,
-    );
-    expect(
-      Resolver.resolve(
-        {...context, sourceExts: ['fake-ext', 'js']},
-        '../smth/beep',
-        null,
-      ),
-    ).toMatchInlineSnapshot(`
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        name: 'project',
+        browser: {
+          './beep.fake-ext': false,
+        },
+      }),
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/foo.js',
+      sourceExts: ['fake-ext', 'js'],
+    };
+    expect(Resolver.resolve(context, './beep', null)).toMatchInlineSnapshot(`
       Object {
         "type": "empty",
       }
-    `);
-    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          "/root/smth/beep",
-        ],
-        Array [
-          "/root/smth/beep.fake-ext",
-        ],
-      ]
-    `);
-  });
-
-  test('is not called redundantly for a candidate that does exist on disk', () => {
-    mockRedirectModulePath.mockImplementation(filePath => filePath);
-    expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
-      Object {
-        "filePath": "/root/project/bar.js",
-        "type": "sourceFile",
-      }
-    `);
-    expect(mockRedirectModulePath.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          "/root/project/bar",
-        ],
-        Array [
-          "/root/project/bar.js",
-        ],
-      ]
     `);
   });
 });
@@ -643,9 +615,17 @@ describe('resolveRequest', () => {
   });
 
   test('is called with the platform and non-redirected module path', () => {
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        browser: {
+          'does-not-exist': './redirected',
+        },
+      }),
+    };
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: (filePath: string) => filePath + '.redirected',
+      ...createResolutionContext(testFileMap),
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
@@ -666,9 +646,17 @@ describe('resolveRequest', () => {
       type: 'sourceFile',
       filePath: '/some/fake/path',
     }));
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        browser: {
+          'does-not-exist': false,
+        },
+      }),
+    };
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: (filePath: string) => false as const,
+      ...createResolutionContext(testFileMap),
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
