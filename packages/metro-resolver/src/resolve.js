@@ -26,7 +26,11 @@ import PackageImportNotResolvedError from './errors/PackageImportNotResolvedErro
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import {resolvePackageTargetFromImports} from './PackageImportsResolve';
-import {getPackageEntryPoint, redirectModulePath} from './PackageResolve';
+import {
+  getPackageEntryPoint,
+  matchSubpathFromMainFields,
+  redirectModulePath,
+} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import {posixToSystemPath} from './utils/paths';
@@ -110,28 +114,47 @@ export default function resolve(
     }
   }
 
-  const redirectedSpecifier = redirectModulePath(context, specifier);
+  const {originModulePath} = context;
+
+  const closestPackageToOrigin = context.getPackageForModule(originModulePath);
+
+  const maybeRedirectedSpecifier =
+    closestPackageToOrigin != null
+      ? matchSubpathFromMainFields(
+          specifier,
+          closestPackageToOrigin.packageJson,
+          context.mainFields,
+        )
+      : null;
 
   // exclude
-  if (redirectedSpecifier === false) {
+  if (maybeRedirectedSpecifier === false) {
     return {type: 'empty'};
   }
 
-  const {originModulePath} = context;
+  // If the specifier was redirected to a relative or absolute path
+  if (
+    maybeRedirectedSpecifier != null &&
+    (isRelativeImport(maybeRedirectedSpecifier) ||
+      path.isAbsolute(maybeRedirectedSpecifier))
+  ) {
+    // TODO: (robhogan) This isn't right - per browser spec: "All paths for
+    // browser fields are relative to the package.json file location". The
+    // *closest* package.json is the relevant one for browser spec, regardless
+    // of the closest node_modules.
 
-  const isDirectImport =
-    isRelativeImport(redirectedSpecifier) ||
-    path.isAbsolute(redirectedSpecifier);
-
-  if (isDirectImport) {
-    // derive absolute path /.../node_modules/originModuleDir/redirectedSpecifier
+    // derive absolute path /.../node_modules/originModuleDir/specifier
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
     const originModuleDir = originModulePath.slice(
       0,
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
-    const absPath = path.join(originModuleDir, redirectedSpecifier);
+
+    // TODO: (robhogan) If maybeRedirectedSpecifier is absolute, this join is
+    // wrong. We should disallow attempts to redirect to an absolute path, as
+    // that's not part of the "browser" field spec anyway, and is broken here.
+    const absPath = path.join(originModuleDir, maybeRedirectedSpecifier);
     const result = resolveModulePath(context, absPath, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
@@ -139,13 +162,13 @@ export default function resolve(
     return result.resolution;
   }
 
-  /**
-   * At this point, redirectedSpecifier is not a "direct" (absolute or relative)
-   * import, so it's a bare specifier - for our purposes either Haste name
-   * or a package specifier.
-   */
-
-  const parsedSpecifier = parseBareSpecifier(redirectedSpecifier);
+  // At this point, maybeRedirectedSpecifier is either null (not redirected),
+  // and `specifier` is still bare, or `maybeRedirectedSpecifier` is a
+  // redirected bare specifier. Supported bare specifiers are either Haste
+  // names, package names, or (rarely) non-package modules under node_modules.
+  const parsedSpecifier = parseBareSpecifier(
+    maybeRedirectedSpecifier ?? specifier,
+  );
 
   if (context.allowHaste) {
     if (parsedSpecifier.isSinglePart) {
@@ -162,9 +185,7 @@ export default function resolve(
     }
   }
 
-  /**
-   * redirectedSpecifier is now a package specifier.
-   */
+  // parsedSpecifier is now a non-Haste bare specifier.
 
   const {disableHierarchicalLookup} = context;
 

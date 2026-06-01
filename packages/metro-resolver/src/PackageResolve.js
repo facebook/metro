@@ -164,7 +164,7 @@ export function redirectModulePath(
  * - `false`, indicating the module should be ignored.
  * - `null` when there is no entry for the subpath.
  */
-function matchSubpathFromMainFields(
+export function matchSubpathFromMainFields(
   /**
    * The subpath, or set of subpath variants, to match. Can be either a
    * package-relative subpath (beginning with '.') or a bare import specifier
