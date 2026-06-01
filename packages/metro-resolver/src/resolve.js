@@ -132,11 +132,10 @@ export default function resolve(
     return {type: 'empty'};
   }
 
-  // If the specifier was redirected to a relative or absolute path
+  // If the specifier was redirected to a relative path
   if (
     maybeRedirectedSpecifier != null &&
-    (isRelativeImport(maybeRedirectedSpecifier) ||
-      path.isAbsolute(maybeRedirectedSpecifier))
+    isRelativeImport(maybeRedirectedSpecifier)
   ) {
     // TODO: (robhogan) This isn't right - per browser spec: "All paths for
     // browser fields are relative to the package.json file location". The
@@ -151,15 +150,28 @@ export default function resolve(
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
 
-    // TODO: (robhogan) If maybeRedirectedSpecifier is absolute, this join is
-    // wrong. We should disallow attempts to redirect to an absolute path, as
-    // that's not part of the "browser" field spec anyway, and is broken here.
     const absPath = path.join(originModuleDir, maybeRedirectedSpecifier);
     const result = resolveModulePath(context, absPath, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
+  } else if (
+    maybeRedirectedSpecifier != null &&
+    closestPackageToOrigin != null && // Implied by maybeRedirectedSpecifier != null
+    // An absolute path inside the file may not match the system's path separator
+    (path.posix.isAbsolute(maybeRedirectedSpecifier) ||
+      path.win32.isAbsolute(maybeRedirectedSpecifier))
+  ) {
+    throw new InvalidPackageConfigurationError({
+      packagePath: closestPackageToOrigin.rootPath,
+      reason:
+        'Attempted to redirect import to an absolute path. ' +
+        'This is not allowed by the "browser" spec.' +
+        `\n  From: ${originModulePath}` +
+        `\n  Import: ${specifier}` +
+        `\n  Attempted redirect: ${maybeRedirectedSpecifier}`,
+    });
   }
 
   // At this point, maybeRedirectedSpecifier is either null (not redirected),

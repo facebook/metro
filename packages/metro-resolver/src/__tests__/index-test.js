@@ -483,6 +483,31 @@ describe('browser spec redirection', () => {
     `);
   });
 
+  test('rejects redirection of a bare specifier to an absolute path', () => {
+    const testFileMap = {
+      ...fileMap,
+      '/root/project/package.json': JSON.stringify({
+        name: 'project',
+        browser: {
+          'foo-pkg': '/otherroot/foo',
+        },
+      }),
+      '/otherroot/foo.js': '',
+    };
+    const context = {
+      ...createResolutionContext(testFileMap),
+      originModulePath: '/root/project/bar.js',
+    };
+    expect(() => Resolver.resolve(context, 'foo-pkg', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+"The package /root/project contains an invalid package.json configuration. Consider raising this issue with the package maintainer(s).
+Reason: Attempted to redirect import to an absolute path. This is not allowed by the \\"browser\\" spec.
+  From: /root/project/bar.js
+  Import: foo-pkg
+  Attempted redirect: /otherroot/foo"
+`);
+  });
+
   test('resolves source extension candidates to relative paths', () => {
     const testFileMap = {
       ...fileMap,
