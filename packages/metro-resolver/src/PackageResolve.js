@@ -174,24 +174,36 @@ export function matchSubpathFromMainFields(
   pkg: PackageJson,
   mainFields: ReadonlyArray<string>,
 ): string | false | null {
-  const fieldValues = mainFields
+  // Merge object-valued main fields ("browser"-style maps) into a single
+  // replacement map. We iterate `mainFields` in reverse so that, on a key
+  // conflict, earlier `mainFields` win, equivalent to
+  // `Object.assign({}, ...fieldValues.reverse())`, but avoiding any allocation
+  // in the the most common case (no object-valued field, e.g. only a string
+  // "main"/"browser").
+  let replacements: {[string]: string | false} | null = null;
+  for (let i = mainFields.length - 1; i >= 0; i--) {
     // $FlowFixMe[invalid-computed-prop]
-    .map(name => pkg[name])
-    .filter(value => value != null && typeof value !== 'string');
+    const value = pkg[mainFields[i]];
+    if (value != null && typeof value !== 'string') {
+      if (replacements == null) {
+        replacements = {};
+      }
+      replacements = {...replacements, ...value};
+    }
+  }
 
-  if (!fieldValues.length) {
+  if (replacements == null) {
     return null;
   }
 
-  // $FlowFixMe[unsafe-object-assign]
-  const replacements = Object.assign({}, ...fieldValues.reverse());
+  // The list of subpath variants is only built in this rare matched case (a
+  // single subpath is expanded to its "browser"-spec variants; a pre-expanded
+  // array is matched as-is).
   const variants = Array.isArray(subpath)
     ? subpath
     : expandSubpathVariants(subpath);
-
   for (const variant of variants) {
     const replacement = replacements[variant];
-
     if (replacement != null) {
       return replacement;
     }
