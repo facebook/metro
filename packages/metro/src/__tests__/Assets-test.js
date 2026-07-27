@@ -11,11 +11,17 @@
 'use strict';
 
 jest.mock('node:fs', () => new (require('metro-memory-fs'))());
-jest.mock('image-size');
+jest.mock('../lib/getAssetSize', () => ({
+  getAssetSize: jest.fn(() => ({
+    width: mockImageWidth,
+    height: mockImageHeight,
+  })),
+}));
 
 jest.useRealTimers();
 
 const {getAsset, getAssetData} = require('../Assets');
+const getImageSize = require('../lib/getAssetSize').getAssetSize;
 const crypto = require('node:crypto');
 const path = require('node:path');
 
@@ -23,11 +29,6 @@ const fs = jest.requireMock('node:fs');
 
 const mockImageWidth = 300;
 const mockImageHeight = 200;
-
-require('image-size').mockReturnValue({
-  width: mockImageWidth,
-  height: mockImageHeight,
-});
 
 describe('getAsset', () => {
   beforeEach(() => {
@@ -282,6 +283,18 @@ describe('getAssetData', () => {
         }),
       );
     });
+  });
+
+  test('parses dimensions from the first asset file buffer', async () => {
+    writeImages({'b@1x.png': 'b1 image', 'b@2x.png': 'b2 image'});
+
+    await getAssetData('/root/imgs/b.png', 'imgs/b.png', [], null, '/assets');
+
+    expect(getImageSize).toHaveBeenCalledWith(
+      'png',
+      Buffer.from('b1 image'),
+      '/root/imgs/b@1x.png',
+    );
   });
 
   test('should get assetData for non-png images', async () => {
