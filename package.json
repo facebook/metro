@@ -9,9 +9,11 @@
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
     "@babel/plugin-transform-react-jsx": "^7.25.2",
     "@babel/types": "^7.29.0",
+    "@microsoft/api-extractor": "^7.52.2",
     "@tsconfig/node20": "^20.1.4",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
+    "@types/node": "^22.0.0",
     "acorn": "^8.7.1",
     "babel-jest": "^29.7.0",
     "babel-plugin-syntax-hermes-parser": "0.37.0",
@@ -48,6 +50,8 @@
     "build-clean": "rm -rf ./packages/*/build",
     "build": "node ./scripts/build.js",
     "build-ts-defs": "node -r @babel/register ./scripts/generateTypeScriptDefinitions.js",
+    "build-api-snapshots": "node -r @babel/register ./scripts/generateApiSnapshots.js",
+    "verify-api-snapshots": "node -r @babel/register ./scripts/generateApiSnapshots.js --verify",
     "clean-all": "rm -rf ./node_modules && rm -rf ./packages/*/node_modules && yarn run build-clean",
     "lint-fix": "eslint . --fix --cache && prettier --write .",
     "lint": "eslint . --cache && prettier --check .",
@@ -70,8 +74,5 @@
   "dependencies": {},
   "engines": {
     "node": "^22.13.0 || ^24.3.0 || >= 26.0.0"
-  },
-  "resolutions": {
-    "**/json5": "2.2.3"
   }
 }
