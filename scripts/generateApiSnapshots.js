@@ -11,6 +11,10 @@
 
 'use strict';
 
+import {
+  AUTO_GENERATED_PATTERNS,
+  generateTsDefsForJsGlobs,
+} from './generateTypeScriptDefinitions';
 import {Extractor, ExtractorConfig} from '@microsoft/api-extractor';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -294,6 +298,14 @@ export async function generateApiSnapshots(
   opts: Readonly<{verifyOnly: boolean}> = {verifyOnly: false},
 ): Promise<void> {
   const {verifyOnly} = opts;
+
+  // The `.d.ts` files that feed API Extractor are build artifacts and are not
+  // checked in. Regenerate them from the current Flow sources (always in write
+  // mode, even when only verifying snapshots) so the extracted API reflects the
+  // working tree. This is what lets a private-API change require no committed
+  // output while a public-API change surfaces as a snapshot diff.
+  await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {verifyOnly: false});
+
   const errors: Array<{context: string, error: Error}> = [];
   const allSkipped: Array<string> = [];
   let generatedCount = 0;

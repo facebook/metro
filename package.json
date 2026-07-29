@@ -48,7 +48,7 @@
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
-    "build": "node ./scripts/build.js",
+    "build": "yarn run build-ts-defs && node ./scripts/build.js",
     "build-ts-defs": "node -r @babel/register ./scripts/generateTypeScriptDefinitions.js",
     "build-api-snapshots": "node -r @babel/register ./scripts/generateApiSnapshots.js",
     "verify-api-snapshots": "node -r @babel/register ./scripts/generateApiSnapshots.js --verify",
@@ -62,7 +62,7 @@
     "test-coverage": "yarn run build && yarn run jest --coverage -i && node scripts/mapCoverage.js",
     "test-smoke": "yarn start build --config packages/metro/src/integration_tests/metro.config.js TestBundle.js --out /tmp/TestBundle",
     "typecheck": "flow check",
-    "typecheck-ts": "tsc --project tsconfig.json",
+    "typecheck-ts": "yarn run build-ts-defs && tsc --project tsconfig.json",
     "update-babel-flow-lib-defs": "node -r @babel/register ./scripts/updateBabelFlowLibraryDefinitions",
     "update-version": "node ./scripts/updateVersion"
   },
