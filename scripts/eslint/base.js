@@ -24,7 +24,7 @@ module.exports = {
   root: true,
   extends: ['eslint-config-fb-strict', 'prettier'],
   plugins: ['babel', 'ft-flow', 'import', 'lint'],
-  parser: 'hermes-eslint',
+  parser: 'flow-eslint',
   rules: {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
     'consistent-return': 'error',
@@ -71,7 +71,7 @@ module.exports = {
     'flowtype/object-type-delimiter': 'off',
     'ft-flow/object-type-delimiter': 'off',
 
-    // These rules are not required with hermes-eslint
+    // These rules are not required with flow-eslint
     'ft-flow/define-flow-type': 0,
     'ft-flow/use-flow-type': 0,
     'flowtype/define-flow-type': 0,

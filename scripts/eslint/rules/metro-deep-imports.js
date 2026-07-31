@@ -13,7 +13,7 @@
 /*::
 // $FlowExpectedError[untyped-type-import] - eslint not typed in OSS
 import type {RuleModule, SuggestionReportDescriptor} from 'eslint';
-import type {StringLiteral} from 'hermes-estree';
+import type {StringLiteral} from 'flow-estree';
 */
 
 /**

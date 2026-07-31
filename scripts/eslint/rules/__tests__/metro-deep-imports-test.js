@@ -15,7 +15,7 @@ const rule = require('../metro-deep-imports.js');
 const ESLintTester = require('eslint').RuleTester;
 
 ESLintTester.setDefaultConfig({
-  parser: require.resolve('hermes-eslint'),
+  parser: require.resolve('flow-eslint'),
   parserOptions: {
     ecmaVersion: 6,
     sourceType: 'module',
