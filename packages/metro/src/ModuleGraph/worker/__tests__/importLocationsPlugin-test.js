@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import type {File as BabelNodeFile} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import collectDependencies from '../collectDependencies';

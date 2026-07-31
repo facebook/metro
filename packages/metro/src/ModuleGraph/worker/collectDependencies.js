@@ -11,9 +11,14 @@
 import type {ReadonlySourceLocation} from '../../shared/types';
 import type {NodePath} from '@babel/traverse';
 import type {
+  ArgumentPlaceholder,
   CallExpression,
-  File as BabelNodeFile,
+  Expression,
+  File,
   Identifier,
+  Node,
+  Program,
+  SpreadElement,
   StringLiteral,
 } from '@babel/types';
 import type {
@@ -108,7 +113,7 @@ export type Options = Readonly<{
 }>;
 
 export type CollectedDependencies = Readonly<{
-  ast: BabelNodeFile,
+  ast: File,
   dependencyMapName: string,
   dependencies: ReadonlyArray<Dependency>,
 }>;
@@ -149,10 +154,10 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  * The second argument is only provided for debugging purposes.
  */
 export default function collectDependencies(
-  ast: BabelNodeFile,
+  ast: File,
   options: Options,
 ): CollectedDependencies {
-  const visited = new WeakSet<BabelNodeCallExpression>();
+  const visited = new WeakSet<CallExpression>();
 
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
@@ -169,10 +174,7 @@ export default function collectDependencies(
   };
 
   const visitor = {
-    CallExpression(
-      path: NodePath<BabelNodeCallExpression>,
-      state: State,
-    ): void {
+    CallExpression(path: NodePath<CallExpression>, state: State): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -272,7 +274,7 @@ export default function collectDependencies(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: NodePath<BabelNodeProgram>, state: State) {
+    Program(path: NodePath<Program>, state: State) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -569,7 +571,7 @@ function processRequireCall(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?ReadonlySourceLocation {
-  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
+  let current: ?(NodePath<> | NodePath<Node>) = path;
   while (
     current &&
     !current.node.loc &&
@@ -641,7 +643,7 @@ function isOptionalDependency(
 
   // Valid statement stack for single-level try-block: expressionStatement -> blockStatement -> tryStatement
   let sCount = 0;
-  let p: ?(NodePath<> | NodePath<BabelNode>) = path;
+  let p: ?(NodePath<> | NodePath<Node>) = path;
   while (p && sCount < 3) {
     if (p.isStatement()) {
       if (p.node.type === 'BlockStatement') {
@@ -709,7 +711,7 @@ function isInPromiseChainWithRejectionHandler(path: NodePath<>): boolean {
   return false;
 }
 
-function isNonNullishCallbackArg(arg: BabelNode): boolean {
+function isNonNullishCallbackArg(arg: Node): boolean {
   if (arg.type === 'NullLiteral') {
     return false;
   }
@@ -806,9 +808,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
     path.node.arguments = [moduleIDExpression] as Array<
-      | BabelNodeExpression
-      | BabelNodeSpreadElement
-      | BabelNodeArgumentPlaceholder,
+      Expression | SpreadElement | ArgumentPlaceholder,
     >;
     // Always add the debug name argument last
     if (state.keepRequireNames) {
@@ -897,7 +897,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
 function createModuleIDExpression(
   dependency: InternalDependency,
   state: State,
-): BabelNodeExpression {
+): Expression {
   return types.memberExpression(
     nullthrows(state.dependencyMapIdentifier),
     types.numericLiteral(dependency.index),

@@ -10,6 +10,7 @@
  */
 
 import type {PluginEntry, Plugins} from '@babel/core';
+import type {File as BabelNodeFile} from '@babel/types';
 import type {
   BabelTransformer,
   BabelTransformerArgs,

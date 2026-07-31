@@ -11,7 +11,14 @@
 import type {PluginObj} from '@babel/core';
 import typeof * as Babel from '@babel/core';
 import type {NodePath, Scope} from '@babel/traverse';
-import type {Program} from '@babel/types';
+import type {
+  CallExpression,
+  Expression,
+  MemberExpression,
+  Node,
+  Program,
+  Statement,
+} from '@babel/types';
 
 type Types = Babel['types'];
 
@@ -109,7 +116,7 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
               ) {
                 return;
               }
-              const init: BabelNodeExpression = maybeInit;
+              const init: Expression = maybeInit;
               const initPath = declarationPath.get('init');
 
               if (Array.isArray(initPath)) {
@@ -220,7 +227,7 @@ function excludeMemberAssignment(
   referencePath: NodePath<>,
   state: State,
 ) {
-  const assignment: ?BabelNode = referencePath.parentPath?.parent;
+  const assignment: ?Node = referencePath.parentPath?.parent;
 
   if (assignment?.type !== 'AssignmentExpression') {
     return;
@@ -253,7 +260,7 @@ function isExcludedMemberAssignment(
   return excludedAliases != null && excludedAliases.has(memberPropertyName);
 }
 
-function getMemberPropertyName(node: BabelNodeMemberExpression): ?string {
+function getMemberPropertyName(node: MemberExpression): ?string {
   if (node.property.type === 'Identifier') {
     return node.property.name;
   }
@@ -263,17 +270,17 @@ function getMemberPropertyName(node: BabelNodeMemberExpression): ?string {
   return null;
 }
 
-function deleteLocation(node: BabelNode) {
+function deleteLocation(node: Node) {
   delete node.start;
   delete node.end;
   delete node.loc;
 }
 
 function parseInlineableAlias(
-  path: NodePath<BabelNodeCallExpression>,
+  path: NodePath<CallExpression>,
   state: State,
 ): ?{
-  declarationPath: NodePath<BabelNode>,
+  declarationPath: NodePath<Node>,
   moduleName: string,
   requireFnName: string,
   identifierName: string,
@@ -320,10 +327,10 @@ function parseInlineableAlias(
 }
 
 function parseInlineableMemberAlias(
-  path: NodePath<BabelNodeCallExpression>,
+  path: NodePath<CallExpression>,
   state: State,
 ): ?{
-  declarationPath: NodePath<BabelNode>,
+  declarationPath: NodePath<Node>,
   moduleName: string,
   requireFnName: string,
   identifierName: string,
@@ -348,7 +355,7 @@ function parseInlineableMemberAlias(
     return null;
   }
 
-  const memberExpression: BabelNodeMemberExpression = parent;
+  const memberExpression: MemberExpression = parent;
 
   if (parentPath.parent.type !== 'VariableDeclarator') {
     return null;
@@ -383,7 +390,7 @@ function parseInlineableMemberAlias(
 }
 
 function getInlineableModule(
-  path: NodePath<BabelNodeCallExpression>,
+  path: NodePath<CallExpression>,
   state: State,
 ): ?{moduleName: string, requireFnName: string} {
   const node = path.node;
@@ -440,7 +447,7 @@ function getInlineableModule(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
-  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
+  let current: ?(NodePath<> | NodePath<Node>) = path;
   while (current && !current.node.loc) {
     current = current.parentPath;
   }
@@ -448,7 +455,7 @@ function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
 }
 
 // check if a node is a branch
-function isBranch(t: Types, node: BabelNode) {
+function isBranch(t: Types, node: Node) {
   return (
     t.isIfStatement(node) ||
     t.isLogicalExpression(node) ||
@@ -462,8 +469,8 @@ function isBranch(t: Types, node: BabelNode) {
   );
 }
 
-function isDirectlyEnclosedByBlock(t: Types, path: NodePath<BabelNode>) {
-  let curPath: ?NodePath<BabelNode> = path;
+function isDirectlyEnclosedByBlock(t: Types, path: NodePath<Node>) {
+  let curPath: ?NodePath<Node> = path;
   while (curPath) {
     if (isBranch(t, curPath.node)) {
       return false;
@@ -477,11 +484,7 @@ function isDirectlyEnclosedByBlock(t: Types, path: NodePath<BabelNode>) {
 }
 
 // insert statement to the beginning of the scope block
-function addStmtToBlock(
-  block: BabelNodeProgram,
-  stmt: BabelNodeStatement,
-  idx: number,
-): boolean {
+function addStmtToBlock(block: Program, stmt: Statement, idx: number): boolean {
   const scopeBody = block.body;
   if (Array.isArray(scopeBody)) {
     // if the code is inside global scope

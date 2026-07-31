@@ -10,7 +10,13 @@
  */
 
 import type {Scope} from '@babel/traverse';
-import type {CallExpression, MemberExpression} from '@babel/types';
+import type {
+  ArgumentPlaceholder,
+  CallExpression,
+  Expression,
+  MemberExpression,
+  SpreadElement,
+} from '@babel/types';
 // Type only import. No runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
@@ -115,7 +121,7 @@ export default function createInlinePlatformChecks(
     );
 
   const isRequireCall = (
-    node: BabelNodeExpression,
+    node: Expression,
     dependencyId: string,
     scope: Scope,
   ): boolean =>
@@ -124,7 +130,7 @@ export default function createInlinePlatformChecks(
     checkRequireArgs(node.arguments, dependencyId);
 
   const isImport = (
-    node: BabelNodeExpression,
+    node: Expression,
     scope: Scope,
     patterns: Array<{name: string}>,
   ): boolean =>
@@ -134,7 +140,7 @@ export default function createInlinePlatformChecks(
     });
 
   const isImportOrGlobal = (
-    node: BabelNodeExpression,
+    node: Expression,
     scope: Scope,
     patterns: Array<{name: string}>,
     isWrappedModule: boolean,
@@ -169,11 +175,7 @@ export default function createInlinePlatformChecks(
   };
 
   const checkRequireArgs = (
-    args: Array<
-      | BabelNodeExpression
-      | BabelNodeSpreadElement
-      | BabelNodeArgumentPlaceholder,
-    >,
+    args: Array<Expression | SpreadElement | ArgumentPlaceholder>,
     dependencyId: string,
   ): boolean => {
     const pattern = t.stringLiteral(dependencyId);

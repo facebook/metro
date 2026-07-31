@@ -22,6 +22,7 @@ import type {
   Node,
   Program,
   SourceLocation,
+  SourceLocation as BabelNodeSourceLocation,
   Statement,
 } from '@babel/types';
 // Type only dependency. This is not a runtime dependency

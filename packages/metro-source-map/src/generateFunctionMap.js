@@ -12,7 +12,21 @@
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
-import type {Node as BabelNode} from '@babel/types';
+import type {
+  CallExpression as BabelNodeCallExpression,
+  Class as BabelNodeClass,
+  Function as BabelNodeFunction,
+  Identifier as BabelNodeIdentifier,
+  JSXIdentifier as BabelNodeJSXIdentifier,
+  JSXMemberExpression as BabelNodeJSXMemberExpression,
+  MemberExpression as BabelNodeMemberExpression,
+  NewExpression as BabelNodeNewExpression,
+  Node as BabelNode,
+  OptionalCallExpression as BabelNodeOptionalCallExpression,
+  OptionalMemberExpression as BabelNodeOptionalMemberExpression,
+  Program as BabelNodeProgram,
+  SourceLocation as BabelNodeSourceLocation,
+} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import B64Builder from './B64Builder';

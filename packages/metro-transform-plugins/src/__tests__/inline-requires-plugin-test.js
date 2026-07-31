@@ -12,6 +12,7 @@
 
 import type {PluginOptions, State} from '../inline-requires-plugin';
 import type {Plugins} from '@babel/core';
+import type {Node as BabelNode} from '@babel/types';
 import type {PluginTesterOptions} from 'babel-plugin-tester';
 
 import inlineRequiresPlugin from '../inline-requires-plugin';

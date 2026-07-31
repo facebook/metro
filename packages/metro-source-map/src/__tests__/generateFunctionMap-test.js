@@ -14,6 +14,11 @@
 import type {Context} from '../generateFunctionMap';
 import type {MixedSourceMap} from '../source-map';
 import type {NodePath} from '@babel/traverse';
+import type {
+  File as BabelNodeFile,
+  Node as BabelNode,
+  Standardized as BabelNodeStandardized,
+} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {

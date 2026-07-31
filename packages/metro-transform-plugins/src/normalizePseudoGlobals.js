@@ -10,7 +10,14 @@
  */
 
 import type {NodePath, Scope} from '@babel/traverse';
-import type {Node as BabelNode, Program} from '@babel/types';
+import type {
+  Identifier,
+  JSXIdentifier,
+  JSXMemberExpression,
+  JSXNamespacedName,
+  Node,
+  Program,
+} from '@babel/types';
 
 import traverse from '@babel/traverse';
 import nullthrows from 'nullthrows';
@@ -20,16 +27,16 @@ export type Options = {
 };
 
 export default function normalizePseudoglobals(
-  ast: BabelNode,
+  ast: Node,
   options?: Options,
 ): ReadonlyArray<string> {
   const reservedNames = new Set<
     | void
     | string
-    | BabelNodeIdentifier
-    | BabelNodeJSXIdentifier
-    | BabelNodeJSXMemberExpression
-    | BabelNodeJSXNamespacedName,
+    | Identifier
+    | JSXIdentifier
+    | JSXMemberExpression
+    | JSXNamespacedName,
   >(options?.reservedNames ?? []);
   const renamedParamNames = [];
   traverse(ast, {
