@@ -122,7 +122,7 @@ function transform({
     };
     const sourceAst = options.hermesParser
       ? // eslint-disable-next-line import/no-commonjs
-        require('hermes-parser').parse(src, {
+        require('flow-parser').parse(src, {
           babel: true,
           sourceType: babelConfig.sourceType,
         })

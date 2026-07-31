@@ -575,7 +575,7 @@ This option only works under the default settings for React Native. It may have 
 
 Type: `boolean`
 
-Whether to use the [`hermes-parser`](https://www.npmjs.com/package/hermes-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
+Whether to use the [`flow-parser`](https://www.npmjs.com/package/flow-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
 
 :::note
 This option only has an effect under the default [`transformerPath`](#transformerpath) and the [Babel transformers](#babeltransformerpath) built into Metro. Custom transformers and custom [Babel transformers](#babeltransformerpath) may ignore it.
