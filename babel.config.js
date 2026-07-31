@@ -18,7 +18,7 @@ const fs = require('node:fs');
 import type {BabelCoreOptions} from '@babel/core';
 */
 const plugins = [
-  'babel-plugin-syntax-hermes-parser',
+  'flow-parser/babel-plugin',
   'babel-plugin-transform-flow-enums',
   '@babel/plugin-transform-flow-strip-types',
   '@babel/plugin-transform-modules-commonjs',
