@@ -34,7 +34,6 @@
     "flow-api-translator": "0.37.0",
     "flow-bin": "^0.325.0",
     "flow-eslint": "0.325.0",
-    "hermes-eslint": "0.37.0",
     "invariant": "^2.2.4",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
