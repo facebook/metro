@@ -13,15 +13,9 @@ A Metro config can be created in the following file formats (ordered by priority
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
 
-:::warning Deprecated
-
-YAML config files (`.yaml`, `.yml`) are **deprecated** and will be removed in a future version of Metro. Please migrate to a JavaScript, TypeScript, or JSON config file. When Metro loads a YAML config file, it will display a deprecation warning.
-
-:::
-
 :::info TypeScript Config Support
 
-TypeScript config files are supported in Node.js 24.0.0+ or Node.js 22.6.0+ with the `--experimental-strip-types` flag. If your Node.js version doesn't support loading TypeScript natively, you'll see an error with instructions when attempting to load a TypeScript config file.
+Metro uses Node.js native TypeScript support to load `.*ts` config files. For Node.js 22.18.0 and later or 24.0.0 later, _erasable_ TypeScript is supported out of the box. For Node.js < 22.18.0, use the `--experimental-strip-types` flag. See https://nodejs.org/learn/typescript/run-natively.
 
 :::
 
