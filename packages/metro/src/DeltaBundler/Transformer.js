@@ -108,7 +108,10 @@ export default class Transformer {
       }
     }
 
-    const localPath = path.relative(this._config.projectRoot, filePath);
+    const projectRelativePath = path.relative(
+      this._config.projectRoot,
+      filePath,
+    );
 
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.
@@ -117,7 +120,7 @@ export default class Transformer {
       // Project-relative, posix-separated path for portability. Necessary in
       // addition to content hash because transformers receive path as an
       // input, and may apply e.g. extension-based logic.
-      normalizePathSeparatorsToPosix(localPath),
+      normalizePathSeparatorsToPosix(projectRelativePath),
       customTransformOptions,
       dev,
       experimentalImportSupport,
@@ -166,7 +169,7 @@ export default class Transformer {
     }> = result
       ? {result, sha1}
       : await this._workerFarm.transform(
-          localPath,
+          projectRelativePath,
           transformerOptions,
           content,
         );
