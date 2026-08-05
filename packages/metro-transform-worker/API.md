@@ -74,7 +74,7 @@ export type MinifierOptions = {
 
 export type MinifierResult = {code: string; map?: BasicSourceMap};
 
-export const transform: (config: JsTransformerConfig, projectRoot: string, filename: string, data: Buffer, options: JsTransformOptions) => Promise<TransformResponse>;
+export const transform: (config: JsTransformerConfig, projectRoot: string, projectRelativePath: string, data: Buffer, options: JsTransformOptions) => Promise<TransformResponse>;
 
 export type transform = typeof transform;
 

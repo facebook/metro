@@ -132,11 +132,12 @@ export type JsTransformOptions = Readonly<{
   unstable_transformProfile: TransformProfile,
 }>;
 
-opaque type Path = string;
+opaque type AbsolutePath = string;
+opaque type ProjectRelativePath = string;
 
 type BaseFile = Readonly<{
   code: string,
-  filename: Path,
+  filename: ProjectRelativePath,
   inputFileSize: number,
 }>;
 
@@ -162,7 +163,7 @@ type JSONFile = {
 
 type TransformationContext = Readonly<{
   config: JsTransformerConfig,
-  projectRoot: Path,
+  projectRoot: AbsolutePath,
   options: JsTransformOptions,
 }>;
 
@@ -649,13 +650,13 @@ async function transformJSON(
 }
 
 function getBabelTransformArgs(
-  file: Readonly<{filename: Path, code: string, ...}>,
+  file: Readonly<{filename: ProjectRelativePath, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {
   const {inlineRequires: _, ...babelTransformerOptions} = options;
   return {
-    filename: file.filename,
+    filename: file.filename, // System-separated, project-root-relative
     options: {
       ...babelTransformerOptions,
       enableBabelRCLookup: config.enableBabelRCLookup,
@@ -673,7 +674,7 @@ function getBabelTransformArgs(
 export const transform = async (
   config: JsTransformerConfig,
   projectRoot: string,
-  filename: string,
+  projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
 ): Promise<TransformResponse> => {
@@ -706,10 +707,10 @@ export const transform = async (
     }
   }
 
-  if (filename.endsWith('.json')) {
+  if (projectRelativePath.endsWith('.json')) {
     const jsonFile: JSONFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -720,7 +721,7 @@ export const transform = async (
   if (options.type === 'asset') {
     const file: AssetFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -730,7 +731,7 @@ export const transform = async (
 
   const file: JSFile = {
     code: sourceCode,
-    filename,
+    filename: projectRelativePath,
     functionMap: null,
     inputFileSize: data.length,
     type: options.type === 'script' ? 'js/script' : 'js/module',

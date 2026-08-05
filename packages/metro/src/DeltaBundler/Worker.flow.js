@@ -95,7 +95,7 @@ export type Worker = {
 };
 
 async function transformFile(
-  filename: string,
+  projectRelativePath: string,
   data: Buffer,
   transformOptions: JsTransformOptions,
   projectRoot: string,
@@ -110,7 +110,7 @@ async function transformFile(
   const transformFileStartLogEntry: LogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
-    file_name: filename,
+    file_name: projectRelativePath,
     log_entry_label: 'Transforming file',
     start_timestamp: process.hrtime(),
   };
@@ -120,7 +120,7 @@ async function transformFile(
   const result = await Transformer.transform(
     transformerConfig.transformerConfig,
     projectRoot,
-    filename,
+    projectRelativePath,
     data,
     transformOptions,
   );
@@ -135,7 +135,7 @@ async function transformFile(
 
   const transformFileEndLogEntry = getEndLogEntry(
     transformFileStartLogEntry,
-    filename,
+    projectRelativePath,
   );
 
   return {
