@@ -31,12 +31,28 @@ declare module '@microsoft/api-extractor' {
     static loadFileAndPrepare(configJsonFilePath: string): ExtractorConfig;
   }
 
+  // A message reported during extraction. `logLevel` is mutable: assigning
+  // 'none' in a `messageCallback` discards the message entirely.
+  declare export type ExtractorMessage = {
+    // 'console' for progress chatter, or 'Compiler'/'TSDoc'/'Extractor' for
+    // diagnostics routed via the `messages` config.
+    +category: string,
+    +messageId: string,
+    +text: string,
+    logLevel: string,
+    handled: boolean,
+    ...
+  };
+
   declare export type IExtractorInvokeOptions = {
     // When true, update the API report on disk; when false (CI), leave it
     // untouched and flag any difference via `apiReportChanged`.
     localBuild?: boolean,
     showVerboseMessages?: boolean,
     showDiagnostics?: boolean,
+    // Invoked for each message before it is displayed, allowing the caller to
+    // reclassify or discard it.
+    messageCallback?: (message: ExtractorMessage) => void,
     ...
   };
 
