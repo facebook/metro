@@ -3517,12 +3517,11 @@ ignore@^7.0.5:
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-7.0.5.tgz#4cb5f6cd7d4c7ab0365738c7aea888baa6d7efd9"
   integrity sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==
 
-image-size@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/image-size/-/image-size-1.0.2.tgz#d778b6d0ab75b2737c1556dd631652eb963bc486"
-  integrity sha512-xfOoWjceHntRb3qFCrh5ZFORYH8XCdYpASltMhZ/Q0KZiOwjdE/Yl2QCiWdwD+lygV5bMCvauzgu5PxBX/Yerg==
-  dependencies:
-    queue "6.0.2"
+image-size-next@2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/image-size-next/-/image-size-next-2.1.0.tgz#f0c2d5ea995f6beb974b17c02265d924647a360f"
+  integrity sha512-OUXyc22p+zA9CmiJbuYygTcoHbmZ9tFnJ0NX8LcgfewtrKJnfM+zYwsfrNdoKqz9WsSPTR++2yz+Fqz7Rzvvjg==
+
 
 import-fresh@^3.2.1:
   version "3.3.0"

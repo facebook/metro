@@ -11,7 +11,7 @@
 'use strict';
 
 jest.mock('node:fs', () => new (require('metro-memory-fs'))());
-jest.mock('image-size');
+jest.mock('image-size-next');
 
 jest.useRealTimers();
 
@@ -24,7 +24,7 @@ const fs = jest.requireMock('node:fs');
 const mockImageWidth = 300;
 const mockImageHeight = 200;
 
-require('image-size').mockReturnValue({
+require('image-size-next').mockReturnValue({
   width: mockImageWidth,
   height: mockImageHeight,
 });

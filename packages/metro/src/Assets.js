@@ -13,8 +13,8 @@ import type {AssetPath} from './node-haste/lib/AssetPaths';
 
 import {normalizePathSeparatorsToPosix} from './lib/pathUtils';
 import * as AssetPaths from './node-haste/lib/AssetPaths';
-// $FlowFixMe[untyped-import] image-size
-import getImageSize from 'image-size';
+// $FlowFixMe[untyped-import] image-size-next (maintained drop-in for image-size)
+import getImageSize from 'image-size-next';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,7 +51,7 @@ export type AssetDataFiltered = {
   ...
 };
 
-// Test extension against all types supported by image-size module.
+// Test extension against all types supported by image-size / image-size-next module.
 // If it's not one of these, we won't treat it as an image.
 export function isAssetTypeAnImage(type: string): boolean {
   return (
