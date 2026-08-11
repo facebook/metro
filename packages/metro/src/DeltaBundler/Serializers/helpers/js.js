@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {MixedOutput, Module} from '../../types';
+import type {
+  MixedOutput,
+  Module,
+  ReadonlyJsonData,
+  ResolvedDependency,
+} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
 import {isResolvedDependency} from '../../../lib/isResolvedDependency';
@@ -31,6 +36,19 @@ export type Options = Readonly<{
   // references, instead of being appended as a dependency-map array argument.
   dependencyMapReservedName?: ?string,
   unstable_inlineDependencyMap?: boolean,
+  // Overrides how the value stored in the `__d(...)` `paths` object for an
+  // async dependency is computed. Called once per async dependency, only after
+  // `isResolvedDependency` has narrowed the dep. Default builds a `.bundle?`
+  // URL from `sourceUrl` + `serverRoot` (see `getDefaultAsyncDependencyPath`).
+  // The returned value is treated as opaque by the serializer and forwarded to
+  // `__loadBundleAsync` at runtime; the shape is a contract between the
+  // customSerializer and the on-device runtime. It must be JSON-serializable
+  // since it is embedded into the bundle via `JSON.stringify`.
+  // Returning nullish omits the value from `paths`.
+  unstable_getAsyncDependencyPath?: (
+    dependency: ResolvedDependency,
+    options: Options,
+  ) => ?ReadonlyJsonData,
   ...
 }>;
 
@@ -65,19 +83,57 @@ function getModuleVerboseName(module: Module<>, options: Options): string {
   );
 }
 
+// Default value stored in the `__d(...)` `paths` object for an async
+// dependency: a server-relative `.bundle?` URL propagating most search params
+// from the main bundle's URL. Overridable via
+// `options.unstable_getAsyncDependencyPath`.
+function getDefaultAsyncDependencyPath(
+  dependency: ResolvedDependency,
+  options: Options,
+): string {
+  invariant(
+    options.sourceUrl != null,
+    'sourceUrl is required when includeAsyncPaths is true',
+  );
+
+  // TODO: Only include path if the target is not in the bundle
+
+  // Construct a server-relative URL for the split bundle, propagating
+  // most parameters from the main bundle's URL.
+
+  const {searchParams} = new URL(jscSafeUrl.toNormalUrl(options.sourceUrl));
+  searchParams.set('modulesOnly', 'true');
+  searchParams.set('runModule', 'false');
+
+  const bundlePath = path.relative(options.serverRoot, dependency.absolutePath);
+  return (
+    '/' +
+    path.join(
+      // TODO: This is not the proper Metro URL encoding of a file path
+      path.dirname(bundlePath),
+      // Strip the file extension
+      path.basename(bundlePath, path.extname(bundlePath)),
+    ) +
+    '.bundle?' +
+    searchParams.toString()
+  );
+}
+
 function getModuleDependencies(
   module: Module<>,
   options: Options,
 ): {
   moduleId: number | string,
   dependencyMapArray: Array<number | string | null>,
-  paths: {[moduleID: number | string]: unknown},
+  paths: {[moduleID: number | string]: ReadonlyJsonData},
   hasPaths: boolean,
 } {
   const moduleId = options.createModuleId(module.path);
 
-  const paths: {[moduleID: number | string]: unknown} = {};
+  const paths: {[moduleID: number | string]: ReadonlyJsonData} = {};
   let hasPaths = false;
+  const getAsyncDependencyPath =
+    options.unstable_getAsyncDependencyPath ?? getDefaultAsyncDependencyPath;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {
       if (!isResolvedDependency(dependency)) {
@@ -88,36 +144,10 @@ function getModuleDependencies(
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;
-        invariant(
-          options.sourceUrl != null,
-          'sourceUrl is required when includeAsyncPaths is true',
-        );
-
-        // TODO: Only include path if the target is not in the bundle
-
-        // Construct a server-relative URL for the split bundle, propagating
-        // most parameters from the main bundle's URL.
-
-        const {searchParams} = new URL(
-          jscSafeUrl.toNormalUrl(options.sourceUrl),
-        );
-        searchParams.set('modulesOnly', 'true');
-        searchParams.set('runModule', 'false');
-
-        const bundlePath = path.relative(
-          options.serverRoot,
-          dependency.absolutePath,
-        );
-        paths[id] =
-          '/' +
-          path.join(
-            // TODO: This is not the proper Metro URL encoding of a file path
-            path.dirname(bundlePath),
-            // Strip the file extension
-            path.basename(bundlePath, path.extname(bundlePath)),
-          ) +
-          '.bundle?' +
-          searchParams.toString();
+        const asyncDependencyPath = getAsyncDependencyPath(dependency, options);
+        if (asyncDependencyPath != null) {
+          paths[id] = asyncDependencyPath;
+        }
       }
       return id;
     },

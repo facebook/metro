@@ -293,6 +293,7 @@ export type SerializerOptions = Readonly<{
     sourceUrl: null | undefined | string;
     getSourceUrl: null | undefined | (($$PARAM_0$$: Module) => string);
     unstable_inlineDependencyMap?: boolean;
+    unstable_getAsyncDependencyPath?: (dependency: ResolvedDependency, options: unknown) => null | undefined | ReadonlyJsonData;
 }>;
 
 export type ServerOptions = Readonly<{

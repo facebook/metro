@@ -17,7 +17,20 @@ type MetroRequire = {
 
 declare var require: MetroRequire;
 
-type DependencyMapPaths = ?Readonly<{[moduleID: number | string]: unknown}>;
+// When using `unstable_getAsyncDependencyPath`, path values may be any
+// JSON-serialisable value. By default, they are string URLs - otherwise a
+// custom `__loadBundleAsync` implementation must be provided.
+type ReadonlyJsonData =
+  | null
+  | boolean
+  | number
+  | string
+  | ReadonlyArray<ReadonlyJsonData>
+  | Readonly<{[string]: ReadonlyJsonData}>;
+
+type DependencyMapPaths = ?Readonly<{
+  [moduleID: number | string]: ReadonlyJsonData,
+}>;
 
 declare var __METRO_GLOBAL_PREFIX__: string;
 

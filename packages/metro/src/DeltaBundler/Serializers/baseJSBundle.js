@@ -40,6 +40,7 @@ export default function baseJSBundle(
     sourceUrl: options.sourceUrl,
     dependencyMapReservedName: options.dependencyMapReservedName,
     unstable_inlineDependencyMap: options.unstable_inlineDependencyMap,
+    unstable_getAsyncDependencyPath: options.unstable_getAsyncDependencyPath,
   };
 
   // Do not prepend polyfills or the require runtime when only modules are requested

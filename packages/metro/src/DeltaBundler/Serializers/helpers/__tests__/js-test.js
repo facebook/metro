@@ -198,6 +198,61 @@ describe('wrapModule()', () => {
       `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/../bar.bundle?modulesOnly=true&runModule=false"}});`,
     );
   });
+
+  test('unstable_getAsyncDependencyPath overrides the default `.bundle?` URL', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    const seenPaths: Array<string> = [];
+    const output = wrapModule(myModule, {
+      createModuleId: createModuleIdFactory(),
+      dev: false,
+      includeAsyncPaths: true,
+      projectRoot: '/root',
+      serverRoot: '/root',
+      // Deliberately null: proves the hook does NOT require sourceUrl (the
+      // default's invariant is skipped when the hook is provided).
+      sourceUrl: null,
+      unstable_getAsyncDependencyPath: dependency => {
+        seenPaths.push(dependency.absolutePath);
+        return {
+          displayName: 'bar',
+          mobileConfig: null,
+          segmentIDs: [42],
+        };
+      },
+    });
+    // Hook invoked once, with the async dep only (sync dep 'baz' is skipped).
+    expect(seenPaths).toEqual(['/bar.js']);
+    expect(raw(output)).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":{"displayName":"bar","mobileConfig":null,"segmentIDs":[42]}}});`,
+    );
+  });
+
+  test('unstable_getAsyncDependencyPath omits nullish paths', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: '/root',
+          serverRoot: '/root',
+          sourceUrl: null,
+          unstable_getAsyncDependencyPath: () => null,
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{}});`,
+    );
+  });
 });
 
 describe('wrapModule() with inlined module ids', () => {

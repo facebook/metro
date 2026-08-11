@@ -17,6 +17,16 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
 
+// Any value produced by `JSON.stringify`. Duplicated (rather than shared) with
+// metro-runtime's `asyncRequire` to avoid a new cross-package type coupling.
+export type ReadonlyJsonData =
+  | null
+  | boolean
+  | number
+  | string
+  | ReadonlyArray<ReadonlyJsonData>
+  | Readonly<{[string]: ReadonlyJsonData}>;
+
 export type MixedOutput = {
   readonly data: unknown,
   readonly type: string,
@@ -188,4 +198,8 @@ export type SerializerOptions = Readonly<{
   sourceUrl: ?string,
   getSourceUrl: ?(Module<>) => string,
   unstable_inlineDependencyMap?: boolean,
+  unstable_getAsyncDependencyPath?: (
+    dependency: ResolvedDependency,
+    options: unknown,
+  ) => ?ReadonlyJsonData,
 }>;
