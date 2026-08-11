@@ -202,6 +202,72 @@ test('wraps a JSON file with the static Hermes module factory', () => {
   );
 });
 
+test('wrapModuleString wraps arbitrary JS code as a __d factory', () => {
+  const wrapped = JsFileWrapping.wrapModuleString(
+    'module.exports = 42;',
+    defaultGlobalPrefix,
+  );
+
+  expect(comparableCode(wrapped)).toEqual(
+    comparableCode(
+      `__d(function(global, require, _importDefaultUnused, _importAllUnused, module, exports, _dependencyMapUnused) {
+        module.exports = 42;
+      });`,
+    ),
+  );
+});
+
+test('wrapModuleString honours a global prefix', () => {
+  const wrapped = JsFileWrapping.wrapModuleString(
+    'module.exports = 42;',
+    '__metro',
+  );
+
+  expect(comparableCode(wrapped)).toEqual(
+    comparableCode(
+      `__metro__d(function(global, require, _importDefaultUnused, _importAllUnused, module, exports, _dependencyMapUnused) {
+        module.exports = 42;
+      });`,
+    ),
+  );
+});
+
+test('wrapModuleString threads custom factory-parameter names through', () => {
+  const wrapped = JsFileWrapping.wrapModuleString(
+    'module.exports = _dep[0];',
+    defaultGlobalPrefix,
+    {
+      importDefaultName: '_1',
+      importAllName: '_2',
+      dependencyMapName: '_dep',
+    },
+  );
+
+  expect(comparableCode(wrapped)).toEqual(
+    comparableCode(
+      `__d(function(global, require, _1, _2, module, exports, _dep) {
+        module.exports = _dep[0];
+      });`,
+    ),
+  );
+});
+
+test('wrapModuleString wraps the factory in $SHBuiltin.moduleFactory when opted in', () => {
+  const wrapped = JsFileWrapping.wrapModuleString(
+    'module.exports = 42;',
+    defaultGlobalPrefix,
+    {unstable_useStaticHermesModuleFactory: true},
+  );
+
+  expect(comparableCode(wrapped)).toEqual(
+    comparableCode(
+      `__d($SHBuiltin.moduleFactory(_$$_METRO_MODULE_ID, function(global, require, _importDefaultUnused, _importAllUnused, module, exports, _dependencyMapUnused) {
+        module.exports = 42;
+      }));`,
+    ),
+  );
+});
+
 function astFromCode(code: string) {
   return babylon.parse(code, {
     plugins: ['dynamicImport'],

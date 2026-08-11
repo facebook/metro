@@ -81,16 +81,51 @@ function wrapJson(
   globalPrefix: string,
   unstable_useStaticHermesModuleFactory?: boolean = false,
 ): string {
-  // Unused parameters; remember that's wrapping JSON.
+  // The factory-parameter defaults (`_importDefaultUnused` etc.) are safe
+  // for JSON, whose body only references `module` / `module.exports`.
+  return wrapModuleString(jsonToCommonJS(source), globalPrefix, {
+    unstable_useStaticHermesModuleFactory,
+  });
+}
+
+/**
+ * Wraps an arbitrary JS `body` source string as a `__d(function(...) { <body> })`
+ * module definition, with pure string manipulation.
+ *
+ * This is the lower-level primitive that `wrapJson` builds on - it is also
+ * exposed for callers that need to synthesize `__d`-wrapped modules from
+ * strings cheaply (e.g. codegen of synthetic segment/metadata modules).
+ *
+ * Factory parameter names default to the `_*Unused` names `wrapJson` emits.
+ * Callers whose body references one of these slots by name (typically the
+ * dependency-map parameter) must pass the corresponding option so the emitted
+ * factory signature exposes that name. Callers are responsible for ensuring
+ * that the body does not unintentionally shadow or redeclare parameters.
+ */
+function wrapModuleString(
+  body: string,
+  globalPrefix: string,
+  {
+    importDefaultName = '_importDefaultUnused',
+    importAllName = '_importAllUnused',
+    dependencyMapName = '_dependencyMapUnused',
+    unstable_useStaticHermesModuleFactory = false,
+  }: Readonly<{
+    importDefaultName?: string,
+    importAllName?: string,
+    dependencyMapName?: string,
+    unstable_useStaticHermesModuleFactory?: boolean,
+  }> = {},
+): string {
   const moduleFactoryParameters = buildParameters(
-    '_importDefaultUnused',
-    '_importAllUnused',
-    '_dependencyMapUnused',
+    importDefaultName,
+    importAllName,
+    dependencyMapName,
   );
 
   const factory = [
     `function(${moduleFactoryParameters.join(', ')}) {`,
-    `  ${jsonToCommonJS(source)}`,
+    `  ${body}`,
     '}',
   ].join('\n');
 
@@ -134,4 +169,4 @@ function buildParameters(
   ];
 }
 
-export {wrapJson, jsonToCommonJS, wrapModule, wrapPolyfill};
+export {wrapJson, jsonToCommonJS, wrapModule, wrapModuleString, wrapPolyfill};
