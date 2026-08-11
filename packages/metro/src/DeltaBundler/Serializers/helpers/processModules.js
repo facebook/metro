@@ -10,6 +10,7 @@
  */
 
 import type {Module} from '../../types';
+import type {Options as WrapModuleOptions} from './js';
 
 import {isJsModule, wrapModule} from './js';
 
@@ -25,6 +26,7 @@ export default function processModules(
     sourceUrl,
     dependencyMapReservedName,
     unstable_inlineDependencyMap,
+    unstable_getAsyncDependencyPath,
   }: Readonly<{
     filter?: (module: Module<>) => boolean,
     createModuleId: string => number,
@@ -35,6 +37,7 @@ export default function processModules(
     sourceUrl: ?string,
     dependencyMapReservedName?: ?string,
     unstable_inlineDependencyMap?: boolean,
+    unstable_getAsyncDependencyPath?: WrapModuleOptions['unstable_getAsyncDependencyPath'],
   }>,
 ): ReadonlyArray<[Module<>, string]> {
   return [...modules]
@@ -51,6 +54,7 @@ export default function processModules(
         sourceUrl,
         dependencyMapReservedName,
         unstable_inlineDependencyMap,
+        unstable_getAsyncDependencyPath,
       }),
     ]);
 }
