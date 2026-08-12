@@ -388,7 +388,7 @@ describe('HmrServer', () => {
                 id('/root/hi'),
                 '__d(function() { alert("hi"); },' +
                   id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
@@ -472,7 +472,7 @@ describe('HmrServer', () => {
                 id('/root/hi'),
                 '__d(function() { alert("hi"); },' +
                   id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
@@ -531,7 +531,7 @@ describe('HmrServer', () => {
                 id('/root/hi'),
                 '__d(function() { alert("hi"); },' +
                   id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],

@@ -74,7 +74,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {foo2()},\\"/root/foo2.js\\",[],\\"foo2.js\\");",
+      "code": "__d(function() {foo2()},\\"/root/foo2.js\\",null,\\"foo2.js\\");",
       "id": "/root/foo2.js",
       "map": Object {
         "sections": Array [
@@ -142,7 +142,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {baz()},\\"/root/baz.js\\",[],\\"baz.js\\");",
+      "code": "__d(function() {baz()},\\"/root/baz.js\\",null,\\"baz.js\\");",
       "id": "/root/baz.js",
       "map": Object {
         "sections": Array [
@@ -176,7 +176,7 @@ Object {
       "type": "js/module/asset",
     },
     Object {
-      "code": "__d(function() {bar()},\\"/root/bar.js\\",[],\\"bar.js\\");",
+      "code": "__d(function() {bar()},\\"/root/bar.js\\",null,\\"bar.js\\");",
       "id": "/root/bar.js",
       "map": Object {
         "sections": Array [
@@ -210,7 +210,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {qux()},\\"/root/qux.js\\",[],\\"qux.js\\");",
+      "code": "__d(function() {qux()},\\"/root/qux.js\\",null,\\"qux.js\\");",
       "id": "/root/qux.js",
       "map": Object {
         "sections": Array [
@@ -419,7 +419,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {foo2()},\\"/root/foo2.js\\",[],\\"foo2.js\\");",
+      "code": "__d(function() {foo2()},\\"/root/foo2.js\\",null,\\"foo2.js\\");",
       "id": "/root/foo2.js",
       "map": Object {
         "sections": Array [
@@ -481,7 +481,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {baz()},\\"/root/baz.js\\",[],\\"baz.js\\");",
+      "code": "__d(function() {baz()},\\"/root/baz.js\\",null,\\"baz.js\\");",
       "id": "/root/baz.js",
       "map": Object {
         "sections": Array [
@@ -512,7 +512,7 @@ Object {
       "type": "js/module/asset",
     },
     Object {
-      "code": "__d(function() {bar()},\\"/root/bar.js\\",[],\\"bar.js\\");",
+      "code": "__d(function() {bar()},\\"/root/bar.js\\",null,\\"bar.js\\");",
       "id": "/root/bar.js",
       "map": Object {
         "sections": Array [
@@ -543,7 +543,7 @@ Object {
       "type": "js/module",
     },
     Object {
-      "code": "__d(function() {qux()},\\"/root/qux.js\\",[],\\"qux.js\\");",
+      "code": "__d(function() {qux()},\\"/root/qux.js\\",null,\\"qux.js\\");",
       "id": "/root/qux.js",
       "map": Object {
         "sections": Array [

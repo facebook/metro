@@ -155,7 +155,7 @@ test('should generate a very simple bundle', () => {
         ],
         Array [
           "bar",
-          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+          "__d(function() {/* code for bar */},\\"bar\\",null,\\"bar\\");",
         ],
       ],
       "post": "require(\\"foo\\");
@@ -215,7 +215,7 @@ Object {
   "modules": Array [
     Array [
       "#.js",
-      "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"#.js\\",[],\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\");",
+      "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"#.js\\",null,\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\");",
     ],
   ],
   "post": "//# sourceMappingURL=http://localhost/root/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.map
@@ -307,7 +307,7 @@ test('should handle numeric module ids', () => {
       ],
       Array [
         1,
-        "__d(function() {/* code for bar */},1,[],\\"bar\\");",
+        "__d(function() {/* code for bar */},1,null,\\"bar\\");",
       ],
     ]
   `);
@@ -540,7 +540,7 @@ test('does not add polyfills when `modulesOnly` is used', () => {
         ],
         Array [
           "bar",
-          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+          "__d(function() {/* code for bar */},\\"bar\\",null,\\"bar\\");",
         ],
       ],
       "post": "require(\\"foo\\");

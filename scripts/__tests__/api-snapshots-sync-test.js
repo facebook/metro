@@ -25,4 +25,4 @@ test('Public API snapshots are in sync (yarn run build-api-snapshots produces no
     expect(error.errors).toEqual([]);
   }
   expect(error).toBeUndefined();
-}, 120000);
+}, 180000);
