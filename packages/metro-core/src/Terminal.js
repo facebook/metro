@@ -35,8 +35,8 @@ const streamWrite = promisify(
 );
 
 /**
- * Cut a string into an array of string of the specific maximum size. A newline
- * ends a chunk immediately (it's not included in the "." RexExp operator), and
+ * Cut a string into an array of strings of the specified maximum size. A newline
+ * ends a chunk immediately (it's not included in the "." RegExp operator), and
  * is not included in the result.
  * When counting we should ignore non-printable characters. In particular the
  * ANSI escape sequences (regex: /\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?m/)
@@ -207,7 +207,7 @@ export default class Terminal {
   }
 
   /**
-   * Shows some text that is meant to be overriden later. Return the previous
+   * Shows some text that is meant to be overridden later. Return the previous
    * status that was shown and is no more. Calling `status()` with no argument
    * removes the status altogether. The status is never shown in a
    * non-interactive terminal: for example, if the output is redirected to a
