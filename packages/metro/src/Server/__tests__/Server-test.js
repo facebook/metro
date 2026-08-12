@@ -346,7 +346,7 @@ describe('processRequest', () => {
         [
           'function () {require();}',
           '__d(function() {entry();},0,[1],"mybundle.js");',
-          '__d(function() {foo();},1,[],"foo.js");',
+          '__d(function() {foo();},1,null,"foo.js");',
           'require(0);',
           '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true',
           '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=true',
@@ -362,7 +362,7 @@ describe('processRequest', () => {
       [
         'function () {require();}',
         '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
+        '__d(function() {foo();},1,null,"foo.js");',
         '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=false',
         '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=false',
       ].join('\n'),
@@ -472,7 +472,7 @@ describe('processRequest', () => {
     expect(response._getString()).toEqual(
       [
         '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
+        '__d(function() {foo();},1,null,"foo.js");',
         '//# sourceMappingURL=http://localhost:8081/mybundle.map?modulesOnly=true&runModule=false',
         '//# sourceURL=http://localhost:8081/mybundle.bundle//&modulesOnly=true&runModule=false',
       ].join('\n'),
@@ -493,7 +493,7 @@ describe('processRequest', () => {
     expect(response._getString()).toEqual(
       [
         '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
+        '__d(function() {foo();},1,null,"foo.js");',
         '//# sourceMappingURL=https://forwardedhost.com/mybundle.map?modulesOnly=true&runModule=false&platform=vr',
         '//# sourceURL=https://forwardedhost.com/mybundle.bundle//&modulesOnly=true&runModule=false&platform=vr',
       ].join('\n'),
@@ -842,7 +842,7 @@ describe('processRequest', () => {
         [
           'function () {require();}',
           '__d(function() {entry();},0,[1],"mybundle.js");',
-          '__d(function() {foo();},1,[],"foo.js");',
+          '__d(function() {foo();},1,null,"foo.js");',
           'require(0);',
           '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true&TEST_URL_WAS_REWRITTEN=true',
           '//# sourceURL=http://localhost:8081/mybundle.bundle//&runModule=true&TEST_URL_WAS_REWRITTEN=true',

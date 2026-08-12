@@ -165,16 +165,25 @@ export function getModuleParams(
     options,
   );
 
-  const params = [
-    moduleId,
-    hasPaths
-      ? {
-          // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
-          ...dependencyMapArray,
-          paths,
-        }
-      : dependencyMapArray,
-  ];
+  const params: Array<unknown> = [moduleId];
+
+  // As an optimisation: we only emit an argument for the dependency map if
+  // it is non-empty. This is safe because either `dependencyMapReservedName`
+  // is set and we have enforced there are no string occurences of that name,
+  // or we have used `generateUid` to generate an unbound name for it.
+  if (hasPaths) {
+    params.push({
+      // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
+      ...dependencyMapArray,
+      paths,
+    });
+  } else if (dependencyMapArray.length > 0) {
+    params.push(dependencyMapArray);
+  } else if (options.dev) {
+    // In dev we have one more argument (below), so emit a null to preserve its
+    // position.
+    params.push(null);
+  }
 
   if (options.dev) {
     params.push(getModuleVerboseName(module, options));
