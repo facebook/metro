@@ -42,23 +42,23 @@ export type JsTransformerConfig = Readonly<{
     unstable_disableNormalizePseudoGlobals: boolean;
     unstable_compactOutput: boolean;
     unstable_allowRequireContext: boolean;
-    unstable_memoizeInlineRequires?: boolean;
-    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
+    unstable_memoizeInlineRequires?: boolean | undefined;
+    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string> | undefined;
 }>;
 
 export type JsTransformOptions = Readonly<{
-    customTransformOptions?: CustomTransformOptions;
+    customTransformOptions?: CustomTransformOptions | undefined;
     dev: boolean;
-    experimentalImportSupport?: boolean;
+    experimentalImportSupport?: boolean | undefined;
     inlinePlatform: boolean;
     inlineRequires: boolean;
     minify: boolean;
-    nonInlinedRequires?: ReadonlyArray<string>;
+    nonInlinedRequires?: ReadonlyArray<string> | undefined;
     platform: null | undefined | string;
     type: Type;
-    unstable_memoizeInlineRequires?: boolean;
-    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
-    unstable_staticHermesOptimizedRequire?: boolean;
+    unstable_memoizeInlineRequires?: boolean | undefined;
+    unstable_nonMemoizedInlineRequires?: ReadonlyArray<string> | undefined;
+    unstable_staticHermesOptimizedRequire?: boolean | undefined;
     unstable_transformProfile: TransformProfile;
 }>;
 
@@ -72,7 +72,7 @@ export type MinifierOptions = {
     config: MinifierConfig;
 };
 
-export type MinifierResult = {code: string; map?: BasicSourceMap};
+export type MinifierResult = {code: string; map?: BasicSourceMap | undefined};
 
 export const transform: (config: JsTransformerConfig, projectRoot: string, projectRelativePath: string, data: Buffer, options: JsTransformOptions) => Promise<TransformResponse>;
 

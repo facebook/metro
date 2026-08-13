@@ -107,10 +107,10 @@ interface FileSystem_2 {
     getDifference(
     files: FileData,
     options?: Readonly<{
-        subpath?: string;
+        subpath?: string | undefined;
     }>,
     ): {changedFiles: FileData; removedFiles: Set<string>};
-    getOrComputeSha1(file: Path): Promise<null | undefined | {sha1: string; content?: Buffer}>;
+    getOrComputeSha1(file: Path): Promise<null | undefined | {sha1: string; content?: Buffer | undefined}>;
     getSerializableSnapshot(): CacheData['fileSystemData'];
     getSha1(file: Path): null | undefined | string;
     hierarchicalLookup(
@@ -124,7 +124,14 @@ interface FileSystem_2 {
     ): null | undefined | {absolutePath: string; containerRelativePath: string};
     linkStats(file: Path): null | undefined | FileStats;
     lookup(mixedPath: Path): LookupResult;
-    matchFiles(opts: {filter?: RegExp | null; filterCompareAbsolute?: boolean; filterComparePosix?: boolean; follow?: boolean; recursive?: boolean; rootDir?: Path | null}): Iterable<Path>;
+    matchFiles(opts: {
+        filter?: RegExp | null | undefined;
+        filterCompareAbsolute?: boolean | undefined;
+        filterComparePosix?: boolean | undefined;
+        follow?: boolean | undefined;
+        recursive?: boolean | undefined;
+        rootDir?: Path | null | undefined;
+    }): Iterable<Path>;
 }
 export { FileSystem_2 as FileSystem }
 
@@ -200,12 +207,12 @@ export type InputOptions = Readonly<{
     enableSymlinks?: null | undefined | boolean;
     extensions: ReadonlyArray<string>;
     ignorePattern?: null | undefined | RegExp;
-    plugins?: ReadonlyArray<InputFileMapPlugin>;
+    plugins?: ReadonlyArray<InputFileMapPlugin> | undefined;
     retainAllFiles: boolean;
     rootDir: string;
     roots: ReadonlyArray<string>;
     cacheManagerFactory?: null | undefined | CacheManagerFactory;
-    console?: Console_2;
+    console?: Console_2 | undefined;
     healthCheck: HealthCheckOptions;
     maxFilesPerWorker?: null | undefined | number;
     maxWorkers: number;
@@ -213,7 +220,7 @@ export type InputOptions = Readonly<{
     resetCache?: null | undefined | boolean;
     useWatchman?: null | undefined | boolean;
     watch?: null | undefined | boolean;
-    watchmanDeferStates?: ReadonlyArray<string>;
+    watchmanDeferStates?: ReadonlyArray<string> | undefined;
 }>;
 
 export type WatcherStatus =

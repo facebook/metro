@@ -18,22 +18,22 @@ export type BabelFileImportLocsMetadata = ReadonlySet<string>;
 export type BabelTransformer = Readonly<{
     transform: ($$PARAM_0$$: BabelTransformerArgs) => Readonly<{
         ast: File_2;
-        functionMap?: BabelFileFunctionMapMetadata;
-        metadata?: MetroBabelFileMetadata;
+        functionMap?: BabelFileFunctionMapMetadata | undefined;
+        metadata?: MetroBabelFileMetadata | undefined;
     }>;
-    getCacheKey?: (options?: BabelTransformerCacheKeyOptions) => string;
+    getCacheKey?: ((options?: BabelTransformerCacheKeyOptions) => string) | undefined;
 }>;
 
 export type BabelTransformerArgs = Readonly<{
     filename: string;
     options: BabelTransformerOptions;
-    plugins?: BabelTransformOptions['plugins'];
+    plugins?: BabelTransformOptions['plugins'] | undefined;
     src: string;
 }>;
 
 export type BabelTransformerCacheKeyOptions = Readonly<{
-    projectRoot?: string;
-    enableBabelRCLookup?: boolean;
+    projectRoot?: string | undefined;
+    enableBabelRCLookup?: boolean | undefined;
 }>;
 
 export type CustomTransformOptions = {

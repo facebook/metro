@@ -60,8 +60,8 @@ export class DependencyGraph extends EventEmitter {
     constructor(
     config: ConfigT,
     options?: {
-        readonly hasReducedPerformance?: boolean;
-        readonly watch?: boolean;
+        readonly hasReducedPerformance?: boolean | undefined;
+        readonly watch?: boolean | undefined;
     },
     );
     doesFileExist: (filePath: string) => boolean;
@@ -69,7 +69,7 @@ export class DependencyGraph extends EventEmitter {
     getAllFiles(): Array<string>;
     getDependencies(filePath: string): Array<string>;
     getHasteName(filePath: string): string;
-    getOrComputeSha1(mixedPath: string): Promise<{content?: Buffer; sha1: string}>;
+    getOrComputeSha1(mixedPath: string): Promise<{content?: Buffer | undefined; sha1: string}>;
     getWatcher(): EventEmitter;
     matchFilesWithContext(from: string, context: Readonly<{recursive: boolean; filter: RegExp}>): Iterable<string>;
     ready(): Promise<void>;
@@ -98,7 +98,14 @@ export type MetroConfig = InputConfigT;
 
 export class MetroServer {
     constructor(config: ConfigT, options?: ServerOptions);
-    build(bundleOptions: BundleOptions, $$PARAM_1$$?: BuildOptions): Promise<{code: string; map: string; assets?: ReadonlyArray<AssetData>}>;
+    build(
+    bundleOptions: BundleOptions,
+    $$PARAM_1$$?: BuildOptions,
+    ): Promise<{
+        code: string;
+        map: string;
+        assets?: ReadonlyArray<AssetData> | undefined;
+    }>;
     static DEFAULT_BUNDLE_OPTIONS: Omit<
     typeof MetroServer.DEFAULT_GRAPH_OPTIONS,
     'excludeSource' | 'inlineSourceMap' | 'lazy' | 'modulesOnly' | 'onProgress' | 'runModule' | 'shallow' | 'sourceMapUrl' | 'sourceUrl' | 'sourcePaths'
@@ -163,7 +170,7 @@ export type ReportableEvent =
 | {
     buildID: string;
     bundleDetails: BundleDetails;
-    isPrefetch?: boolean;
+    isPrefetch?: boolean | undefined;
     type: 'bundle_build_started';
 }
 | {error: Error; type: 'bundling_error'}
@@ -210,16 +217,17 @@ export type runBuild = typeof runBuild;
 
 export type RunBuildOptions = {
     entry: string;
-    assets?: boolean;
-    dev?: boolean;
-    out?: string;
-    bundleOut?: string;
-    sourceMapOut?: string;
-    onBegin?: () => void;
-    onComplete?: () => void;
-    onProgress?: (transformedFileCount: number, totalFileCount: number) => void;
-    minify?: boolean;
-    output?: Readonly<{
+    assets?: boolean | undefined;
+    dev?: boolean | undefined;
+    out?: string | undefined;
+    bundleOut?: string | undefined;
+    sourceMapOut?: string | undefined;
+    onBegin?: (() => void) | undefined;
+    onComplete?: (() => void) | undefined;
+    onProgress?: ((transformedFileCount: number, totalFileCount: number) => void) | undefined;
+    minify?: boolean | undefined;
+    output?:
+    | Readonly<{
         build: (
         $$PARAM_0$$: MetroServer,
         $$PARAM_1$$: RequestOptions,
@@ -227,28 +235,29 @@ export type RunBuildOptions = {
         ) => Promise<{
             code: string;
             map: string;
-            assets?: ReadonlyArray<AssetData>;
+            assets?: ReadonlyArray<AssetData> | undefined;
         }>;
         save: ($$PARAM_0$$: {code: string; map: string}, $$PARAM_1$$: OutputOptions, $$PARAM_2$$: (logMessage: string) => void) => Promise<unknown>;
-    }>;
-    platform?: string;
-    sourceMap?: boolean;
-    sourceMapUrl?: string;
-    customResolverOptions?: CustomResolverOptions;
-    customTransformOptions?: CustomTransformOptions;
-    unstable_transformProfile?: TransformProfile;
+    }>
+    | undefined;
+    platform?: string | undefined;
+    sourceMap?: boolean | undefined;
+    sourceMapUrl?: string | undefined;
+    customResolverOptions?: CustomResolverOptions | undefined;
+    customTransformOptions?: CustomTransformOptions | undefined;
+    unstable_transformProfile?: TransformProfile | undefined;
 };
 
 export type RunBuildResult = {
     code: string;
     map: string;
-    assets?: ReadonlyArray<AssetData>;
+    assets?: ReadonlyArray<AssetData> | undefined;
 };
 
 export function runMetro(config: InputConfigT, options?: RunMetroOptions): Promise<MetroServer>;
 
 export type RunMetroOptions = Omit<ServerOptions, 'waitForBundler'> & {
-    waitForBundler?: boolean;
+    waitForBundler?: boolean | undefined;
 };
 
 export const runServer: (config: ConfigT, $$PARAM_1$$?: RunServerOptions) => Promise<RunServerResult>;
@@ -256,19 +265,19 @@ export const runServer: (config: ConfigT, $$PARAM_1$$?: RunServerOptions) => Pro
 export type runServer = typeof runServer;
 
 export type RunServerOptions = Readonly<{
-    hasReducedPerformance?: boolean;
-    host?: string;
-    onError?: ($$PARAM_0$$: Error & {code?: string}) => void;
-    onReady?: (server: Server_2 | Server_3) => void;
-    onClose?: () => void;
-    secureServerOptions?: ServerOptions_2;
-    secure?: boolean;
-    secureCert?: string;
-    secureKey?: string;
-    unstable_extraMiddleware?: ReadonlyArray<HandleFunction>;
-    waitForBundler?: boolean;
-    watch?: boolean;
-    websocketEndpoints?: Readonly<{[path: string]: Server_4}>;
+    hasReducedPerformance?: boolean | undefined;
+    host?: string | undefined;
+    onError?: (($$PARAM_0$$: Error & {code?: string | undefined}) => void) | undefined;
+    onReady?: ((server: Server_2 | Server_3) => void) | undefined;
+    onClose?: (() => void) | undefined;
+    secureServerOptions?: ServerOptions_2 | undefined;
+    secure?: boolean | undefined;
+    secureCert?: string | undefined;
+    secureKey?: string | undefined;
+    unstable_extraMiddleware?: ReadonlyArray<HandleFunction> | undefined;
+    waitForBundler?: boolean | undefined;
+    watch?: boolean | undefined;
+    websocketEndpoints?: Readonly<{[path: string]: Server_4}> | undefined;
 }>;
 
 export type RunServerResult = {httpServer: Server_2 | Server_3};
@@ -292,18 +301,18 @@ export type SerializerOptions = Readonly<{
     sourceMapUrl: null | undefined | string;
     sourceUrl: null | undefined | string;
     getSourceUrl: null | undefined | (($$PARAM_0$$: Module) => string);
-    unstable_inlineDependencyMap?: boolean;
-    unstable_getAsyncDependencyPath?: (dependency: ResolvedDependency, options: unknown) => null | undefined | ReadonlyJsonData;
+    unstable_inlineDependencyMap?: boolean | undefined;
+    unstable_getAsyncDependencyPath?: ((dependency: ResolvedDependency, options: unknown) => null | undefined | ReadonlyJsonData) | undefined;
 }>;
 
 export type ServerOptions = Readonly<{
-    hasReducedPerformance?: boolean;
-    onBundleBuilt?: (bundlePath: string) => void;
-    watch?: boolean;
+    hasReducedPerformance?: boolean | undefined;
+    onBundleBuilt?: ((bundlePath: string) => void) | undefined;
+    watch?: boolean | undefined;
 }>;
 
 export class Terminal {
-    constructor(stream: UnderlyingStream, opts?: {ttyPrint?: boolean});
+    constructor(stream: UnderlyingStream, opts?: {ttyPrint?: boolean | undefined});
     flush(): Promise<void>;
     log(format: string, ...args: Array<unknown>): void;
     persistStatus(): void;
@@ -347,9 +356,9 @@ export type TransformResultDependency = Readonly<{
         key: string;
         asyncType: AsyncDependencyType | null;
         isESMImport: boolean;
-        isOptional?: boolean;
+        isOptional?: boolean | undefined;
         locs: ReadonlyArray<ReadonlySourceLocation>;
-        contextParams?: RequireContextParams;
+        contextParams?: RequireContextParams | undefined;
     }>;
 }>;
 

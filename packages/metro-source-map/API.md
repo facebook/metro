@@ -14,25 +14,25 @@ export type BabelDecodedMap = {
 
 export type BabelSourceMapSegment = Readonly<{
     generated: Readonly<{column: number; line: number}>;
-    original?: Readonly<{column: number; line: number}>;
+    original?: Readonly<{column: number; line: number}> | undefined;
     source?: null | undefined | string;
     name?: null | undefined | string;
 }>;
 
 export type BasicSourceMap = {
-    readonly file?: string;
+    readonly file?: string | undefined;
     readonly mappings: string;
     readonly names: Array<string>;
-    readonly sourceRoot?: string;
+    readonly sourceRoot?: string | undefined;
     readonly sources: Array<string>;
-    readonly sourcesContent?: Array<null | undefined | string>;
+    readonly sourcesContent?: Array<null | undefined | string> | undefined;
     readonly version: number;
-    readonly x_facebook_offsets?: Array<number>;
-    readonly x_metro_module_paths?: Array<string>;
-    readonly x_facebook_sources?: FBSourcesArray;
-    readonly x_facebook_segments?: FBSegmentMap;
-    readonly x_hermes_function_offsets?: HermesFunctionOffsets;
-    readonly x_google_ignoreList?: Array<number>;
+    readonly x_facebook_offsets?: Array<number> | undefined;
+    readonly x_metro_module_paths?: Array<string> | undefined;
+    readonly x_facebook_sources?: FBSourcesArray | undefined;
+    readonly x_facebook_segments?: FBSegmentMap | undefined;
+    readonly x_hermes_function_offsets?: HermesFunctionOffsets | undefined;
+    readonly x_google_ignoreList?: Array<number> | undefined;
 };
 
 export class BundleBuilder {
@@ -84,17 +84,17 @@ export interface IConsumer {
 }
 
 export type IndexMap = {
-    readonly file?: string;
-    readonly mappings?: void;
-    readonly sourcesContent?: void;
+    readonly file?: string | undefined;
+    readonly mappings?: void | undefined;
+    readonly sourcesContent?: void | undefined;
     readonly sections: Array<IndexMapSection>;
     readonly version: number;
-    readonly x_facebook_offsets?: Array<number>;
-    readonly x_metro_module_paths?: Array<string>;
-    readonly x_facebook_sources?: void;
-    readonly x_facebook_segments?: FBSegmentMap;
-    readonly x_hermes_function_offsets?: HermesFunctionOffsets;
-    readonly x_google_ignoreList?: void;
+    readonly x_facebook_offsets?: Array<number> | undefined;
+    readonly x_metro_module_paths?: Array<string> | undefined;
+    readonly x_facebook_sources?: void | undefined;
+    readonly x_facebook_segments?: FBSegmentMap | undefined;
+    readonly x_hermes_function_offsets?: HermesFunctionOffsets | undefined;
+    readonly x_google_ignoreList?: void | undefined;
 };
 
 export type IndexMapSection = {
@@ -117,12 +117,12 @@ export type RawMappingsModule = {
     readonly source: string;
     readonly code: string;
     readonly isIgnored: boolean;
-    readonly lineCount?: number;
+    readonly lineCount?: number | undefined;
 };
 
 export interface SourceMapGenerator {
-    toMap(file?: string, options?: {excludeSource?: boolean}): MixedSourceMap;
-    toString(file?: string, options?: {excludeSource?: boolean}): string;
+    toMap(file?: string, options?: {excludeSource?: boolean | undefined}): MixedSourceMap;
+    toString(file?: string, options?: {excludeSource?: boolean | undefined}): string;
 }
 
 export function toBabelSegments(sourceMap: BasicSourceMap): Array<BabelSourceMapSegment>;

@@ -25,19 +25,22 @@ MetalConfigT & {
 >;
 
 export type ExtraTransformOptions = Readonly<{
-    preloadedModules?: Readonly<{[path: string]: true}> | false;
-    ramGroups?: ReadonlyArray<string>;
-    transform?: Readonly<{
-        experimentalImportSupport?: boolean;
+    preloadedModules?: Readonly<{[path: string]: true}> | false | undefined;
+    ramGroups?: ReadonlyArray<string> | undefined;
+    transform?:
+    | Readonly<{
+        experimentalImportSupport?: boolean | undefined;
         inlineRequires?:
         | Readonly<{
             blockList: Readonly<{[absoluteModulePath: string]: true}>;
         }>
-        | boolean;
-        nonInlinedRequires?: ReadonlyArray<string>;
-        unstable_memoizeInlineRequires?: boolean;
-        unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>;
-    }>;
+        | boolean
+        | undefined;
+        nonInlinedRequires?: ReadonlyArray<string> | undefined;
+        unstable_memoizeInlineRequires?: boolean | undefined;
+        unstable_nonMemoizedInlineRequires?: ReadonlyArray<string> | undefined;
+    }>
+    | undefined;
 }>;
 
 export const getDefaultConfig: {
@@ -90,10 +93,10 @@ base: T | (() => T),
 
 export type MetalConfigT = {
     cacheVersion: string;
-    fileMapCacheDirectory?: string;
-    hasteMapCacheDirectory?: string;
-    unstable_fileMapCacheManagerFactory?: CacheManagerFactory;
-    unstable_fileMapPlugins?: ReadonlyArray<InputFileMapPlugin>;
+    fileMapCacheDirectory?: string | undefined;
+    hasteMapCacheDirectory?: string | undefined;
+    unstable_fileMapCacheManagerFactory?: CacheManagerFactory | undefined;
+    unstable_fileMapPlugins?: ReadonlyArray<InputFileMapPlugin> | undefined;
     maxWorkers: number;
     unstable_perfLoggerFactory?: null | undefined | PerfLoggerFactory;
     projectRoot: string;
@@ -127,9 +130,9 @@ export interface PerfLogger {
 
 export type PerfLoggerFactory = (type: 'START_UP' | 'BUNDLING_REQUEST' | 'HMR', opts?: PerfLoggerFactoryOptions) => RootPerfLogger;
 
-export type PerfLoggerFactoryOptions = Readonly<{key?: number}>;
+export type PerfLoggerFactoryOptions = Readonly<{key?: number | undefined}>;
 
-export type PerfLoggerPointOptions = Readonly<{timestamp?: number}>;
+export type PerfLoggerPointOptions = Readonly<{timestamp?: number | undefined}>;
 
 export function resolveConfig(filePath?: string, cwd?: string): Promise<ResolveConfigResult>;
 
@@ -188,10 +191,10 @@ export type ServerConfigT = {
     tls:
     | false
     | {
-        ca?: string | Buffer;
-        cert?: string | Buffer;
-        key?: string | Buffer;
-        requestCert?: boolean;
+        ca?: string | Buffer | undefined;
+        cert?: string | Buffer | undefined;
+        key?: string | Buffer | undefined;
+        requestCert?: boolean | undefined;
     };
 };
 
@@ -201,7 +204,7 @@ export type SymbolicatorConfigT = {
         readonly lineNumber: null | undefined | number;
         readonly column: null | undefined | number;
         readonly methodName: null | undefined | string;
-    }) => (null | undefined | {readonly collapse?: boolean}) | Promise<null | undefined | {readonly collapse?: boolean}>;
+    }) => (null | undefined | {readonly collapse?: boolean | undefined}) | Promise<null | undefined | {readonly collapse?: boolean | undefined}>;
     customizeStack: ($$PARAM_0$$: Array<IntermediateStackFrame>, $$PARAM_1$$: unknown) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>;
 };
 
@@ -222,27 +225,30 @@ export type WatcherConfigT = {
         timeout: number;
         filePrefix: string;
     }>;
-    unstable_autoSaveCache: Readonly<{enabled: boolean; debounceMs?: number}>;
+    unstable_autoSaveCache: Readonly<{
+        enabled: boolean;
+        debounceMs?: number | undefined;
+    }>;
     unstable_lazySha1: boolean;
     watchman: Readonly<{deferStates: ReadonlyArray<string>}>;
 };
 
 export type YargArguments = Readonly<{
-    config?: string;
-    cwd?: string;
-    port?: string | number;
-    host?: string;
-    projectRoot?: string;
-    watchFolders?: Array<string>;
-    assetExts?: Array<string>;
-    sourceExts?: Array<string>;
-    platforms?: Array<string>;
-    'max-workers'?: string | number;
-    maxWorkers?: string | number;
-    transformer?: string;
-    'reset-cache'?: boolean;
-    resetCache?: boolean;
-    verbose?: boolean;
+    config?: string | undefined;
+    cwd?: string | undefined;
+    port?: string | number | undefined;
+    host?: string | undefined;
+    projectRoot?: string | undefined;
+    watchFolders?: Array<string> | undefined;
+    assetExts?: Array<string> | undefined;
+    sourceExts?: Array<string> | undefined;
+    platforms?: Array<string> | undefined;
+    'max-workers'?: string | number | undefined;
+    maxWorkers?: string | number | undefined;
+    transformer?: string | undefined;
+    'reset-cache'?: boolean | undefined;
+    resetCache?: boolean | undefined;
+    verbose?: boolean | undefined;
 }>;
 
 ```

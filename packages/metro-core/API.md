@@ -9,15 +9,15 @@ import type { Writable } from 'node:stream';
 
 type ActionLogEntryData = {
     action_name: string;
-    log_entry_label?: string;
+    log_entry_label?: string | undefined;
 };
 
 type ActionStartLogEntry = {
-    action_name?: string;
-    action_phase?: string;
+    action_name?: string | undefined;
+    action_phase?: string | undefined;
     log_entry_label: string;
-    log_session?: string;
-    start_timestamp?: [number, number];
+    log_session?: string | undefined;
+    start_timestamp?: [number, number] | undefined;
 };
 
 export class AmbiguousModuleResolutionError extends Error {
@@ -35,22 +35,22 @@ function createEntry(data: LogEntry | string): LogEntry;
 function log(logEntry: LogEntry): LogEntry;
 
 type LogEntry = {
-    action_name?: string;
-    action_phase?: string;
-    action_result?: string;
-    duration_ms?: number;
-    entry_point?: string;
-    file_name?: string;
+    action_name?: string | undefined;
+    action_phase?: string | undefined;
+    action_result?: string | undefined;
+    duration_ms?: number | undefined;
+    entry_point?: string | undefined;
+    file_name?: string | undefined;
     log_entry_label: string;
-    log_session?: string;
-    start_timestamp?: [number, number];
-    outdated_modules?: number;
-    bundle_size?: number;
-    bundle_options?: BundleOptions;
-    bundle_hash?: string;
-    build_id?: string;
-    error_message?: string;
-    error_stack?: string;
+    log_session?: string | undefined;
+    start_timestamp?: [number, number] | undefined;
+    outdated_modules?: number | undefined;
+    bundle_size?: number | undefined;
+    bundle_options?: BundleOptions | undefined;
+    bundle_hash?: string | undefined;
+    build_id?: string | undefined;
+    error_message?: string | undefined;
+    error_stack?: string | undefined;
 };
 
 declare namespace Logger {
@@ -77,7 +77,7 @@ export class PackageResolutionError extends Error {
 }
 
 export class Terminal {
-    constructor(stream: UnderlyingStream, opts?: {ttyPrint?: boolean});
+    constructor(stream: UnderlyingStream, opts?: {ttyPrint?: boolean | undefined});
     flush(): Promise<void>;
     log(format: string, ...args: Array<unknown>): void;
     persistStatus(): void;

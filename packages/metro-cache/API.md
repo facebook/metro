@@ -20,7 +20,7 @@ export { Cache_2 as Cache }
 export interface CacheStore<T> {
     clear(): void | Promise<void>;
     get(key: Buffer): (null | undefined | T) | Promise<null | undefined | T>;
-    name?: string;
+    name?: string | undefined;
     set(key: Buffer, value: T): void | Promise<void>;
 }
 
