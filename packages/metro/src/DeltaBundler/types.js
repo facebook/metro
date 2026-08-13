@@ -17,15 +17,15 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
 
-// Any value produced by `JSON.stringify`. Duplicated (rather than shared) with
-// metro-runtime's `asyncRequire` to avoid a new cross-package type coupling.
+// Valid inputs to JSON.stringify, as used to encode literals into transform
+// output.
 export type ReadonlyJsonData =
   | null
   | boolean
   | number
   | string
-  | ReadonlyArray<ReadonlyJsonData>
-  | Readonly<{[string]: ReadonlyJsonData}>;
+  | ReadonlyArray<?ReadonlyJsonData>
+  | Readonly<{[string]: ?ReadonlyJsonData}>;
 
 export type MixedOutput = {
   readonly data: unknown,
