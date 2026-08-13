@@ -22,7 +22,7 @@ const t = require('@babel/types');
 const NODE_PREFIX = 'BabelNode';
 const AT = '@';
 
-const TEMPLATE = `/**
+const HEADER = `/**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -31,8 +31,11 @@ const TEMPLATE = `/**
  * See <metro>/scripts/updateBabelTypesFlowTypes.js.
  * ${AT}flow strict
  */
+`;
 
-declare type ${NODE_PREFIX}BaseComment = {
+// Node type declarations, emitted inside the `declare module "@babel/types"`
+// block (see main) so they are module-local.
+const BASE_TYPES = `declare type ${NODE_PREFIX}BaseComment = {
   value: string;
   start: number;
   end: number;
@@ -65,7 +68,7 @@ declare type ${NODE_PREFIX}SourceLocation = {
 \n\n`;
 
 function main() {
-  let code = TEMPLATE;
+  let typeDecls = BASE_TYPES;
 
   const lines = [];
 
@@ -112,7 +115,7 @@ function main() {
 
     // Flow seems to deoptimize the union type if another type is spread into the node declaration.
     // Defining the base props over and over again significantely speeds up the type checking.
-    code += `declare type ${NODE_PREFIX}${type} = {
+    typeDecls += `declare type ${NODE_PREFIX}${type} = {
   leadingComments?: Array<${NODE_PREFIX}Comment>;
   innerComments?: Array<${NODE_PREFIX}Comment>;
   trailingComments?: Array<${NODE_PREFIX}Comment>;
@@ -268,13 +271,13 @@ function main() {
     `declare export function validate(n: BabelNode, key: string, value: mixed): void;`,
   );
 
-  code += `declare type ${NODE_PREFIX} = ${Object.keys(t.NODE_FIELDS)
+  typeDecls += `declare type ${NODE_PREFIX} = ${Object.keys(t.NODE_FIELDS)
     .map(type => `${NODE_PREFIX}${type}`)
     .join(' | ')};\n`;
 
   for (const type in t.FLIPPED_ALIAS_KEYS) {
     const types = t.FLIPPED_ALIAS_KEYS[type];
-    code += `declare type ${NODE_PREFIX}${type} = ${types
+    typeDecls += `declare type ${NODE_PREFIX}${type} = ${types
       .map(type => `${NODE_PREFIX}${type}`)
       .join(' | ')};\n`;
   }
@@ -295,8 +298,13 @@ function main() {
     ),
   );
 
-  code += `\ndeclare module "@babel/types" {
-  ${lines.join('\n').replace(/\n/g, '\n  ').trim()}
+  // Node type declarations, kept module-local. The exported aliases and
+  // function signatures below reference them by their `BabelNode`-prefixed name.
+  const moduleInner = typeDecls + '\n' + lines.join('\n');
+  const code =
+    HEADER +
+    `\ndeclare module "@babel/types" {
+  ${moduleInner.replace(/^(?=.)/gm, '  ').trim()}
 }\n`;
 
   return code;
