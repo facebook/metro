@@ -41,6 +41,17 @@ export class Runtime {
    */
   metroRequire: RequireFn;
 
+  /**
+   * Registers a lazy segment module definer (see require.js
+   * `__registerSegment`). Used to model bundles that define modules lazily,
+   * such as the Buck "plain bundle with switch" output.
+   */
+  registerSegment: (
+    segmentId: number,
+    moduleDefiner: (moduleId: number) => void,
+    moduleIds?: ?ReadonlyArray<number>,
+  ) => void;
+
   // Special modules
 
   /**
@@ -83,6 +94,7 @@ export class Runtime {
     createModuleSystem(this.#global, /* __DEV__ */ true, this.#globalPrefix);
     this.define = this.#global[this.#globalPrefix + '__d'];
     this.metroRequire = this.#global[this.#globalPrefix + '__r'];
+    this.registerSegment = this.#global.__registerSegment;
 
     // Set up Fast Refresh. Adapted from `setUpReactRefresh.js` in React Native.
     jest.isolateModules(() => {
