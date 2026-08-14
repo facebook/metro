@@ -578,6 +578,23 @@ if (__DEV__) {
 
   let reactRefreshTimeout: null | TimeoutID = null;
 
+  // When a module is defined lazily via a segment definer, modules that
+  // have not been required yet are absent from `modules`, and can't be walked
+  // by Fast Refresh. This materialises an absent module definition on demand
+  // by invoking its segment definer, which only *defines* the module
+  // (registers its factory) without executing it. No-op if already defined.
+  const ensureModuleRegistered = function (moduleId: ModuleID): void {
+    if (modules.has(moduleId) || moduleDefinersBySegmentID.length === 0) {
+      return;
+    }
+    const segmentId = definingSegmentByModuleID.get(moduleId) ?? 0;
+    const definer = moduleDefinersBySegmentID[segmentId];
+    if (definer != null) {
+      definer(moduleId);
+      definingSegmentByModuleID.delete(moduleId);
+    }
+  };
+
   const metroHotUpdateModule = function (
     id: ModuleID,
     factory: FactoryFn,
@@ -651,6 +668,9 @@ if (__DEV__) {
       updatedModuleIDs = topologicalSort(
         [id], // Start with the changed module and go upwards
         pendingID => {
+          // Modules delivered by a lazy segment definer are not present in
+          // `modules` until first required - ensure they are defined.
+          ensureModuleRegistered(pendingID);
           const pendingModule = modules.get(pendingID);
           if (pendingModule == null) {
             // Nothing to do.
@@ -779,6 +799,7 @@ if (__DEV__) {
           // Schedule all parent refresh boundaries to re-run in this loop.
           for (let j = 0; j < parentIDs.length; j++) {
             const parentID = parentIDs[j];
+            ensureModuleRegistered(parentID);
             const parentMod = modules.get(parentID);
             if (parentMod == null) {
               throw new Error('[Refresh] Expected to find parent module.');
