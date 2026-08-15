@@ -10,13 +10,15 @@
  */
 
 import type {InputConfigT} from '../types';
+import type {CustomResolver} from 'metro-resolver';
 
 import {mergeConfig} from '../loadConfig';
+import path from 'node:path';
 
 describe('mergeConfig', () => {
   test('can merge empty configs', () => {
     expect(mergeConfig({}, {})).toStrictEqual({
-      resolver: {},
+      resolver: {schemeResolvers: {}},
       serializer: {},
       server: {},
       symbolicator: {},
@@ -204,6 +206,109 @@ describe('mergeConfig', () => {
         const result = mergeConfig(base, override);
         expect(result.server?.tls).toBeUndefined();
       });
+    });
+  });
+
+  describe('resolver path resolution', () => {
+    // `resolve()` maps a module specifier to an absolute path, relative to
+    // metro-config. Without it, these paths are later `require`d from
+    // unrelated modules (e.g. metro-file-map's Haste worker) and fail.
+    test('resolves hasteImplModulePath and dependencyExtractor to absolute paths', () => {
+      const base: InputConfigT = {};
+      const override: InputConfigT = {
+        resolver: {
+          hasteImplModulePath: 'metro-core',
+          dependencyExtractor: 'metro-cache',
+        },
+      };
+      const result = mergeConfig(base, override);
+
+      expect(path.isAbsolute(result.resolver?.hasteImplModulePath ?? '')).toBe(
+        true,
+      );
+      expect(path.isAbsolute(result.resolver?.dependencyExtractor ?? '')).toBe(
+        true,
+      );
+    });
+
+    test('leaves resolver paths unset when the override does not specify them', () => {
+      const base: InputConfigT = {};
+      const override: InputConfigT = {resolver: {}};
+      const result = mergeConfig(base, override);
+
+      expect(result.resolver?.hasteImplModulePath).toBeUndefined();
+      expect(result.resolver?.dependencyExtractor).toBeUndefined();
+    });
+  });
+
+  describe('resolver.schemeResolvers merging', () => {
+    const resolverA: CustomResolver = () => ({type: 'empty'});
+    const resolverB: CustomResolver = () => ({type: 'empty'});
+    const resolverC: CustomResolver = () => ({type: 'empty'});
+
+    test('deep merges override schemes into base schemes', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({
+        a: resolverA,
+        b: resolverB,
+      });
+    });
+
+    test('override scheme replaces base scheme with the same key', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverC}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers?.a).toBe(resolverC);
+    });
+
+    test('keeps base schemeResolvers when override.resolver sets other fields', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {resolver: {sourceExts: ['ts']}};
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({a: resolverA});
+    });
+
+    test('applies override schemeResolvers when base has none', () => {
+      const base: InputConfigT = {resolver: {}};
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({b: resolverB});
+    });
+
+    test('other resolver properties are preserved when schemeResolvers is merged', () => {
+      const base: InputConfigT = {
+        resolver: {sourceExts: ['js'], schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.sourceExts).toEqual(['js']);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({
+        a: resolverA,
+        b: resolverB,
+      });
+    });
+
+    test('results in empty schemeResolvers when neither side sets it', () => {
+      const base: InputConfigT = {resolver: {}};
+      const override: InputConfigT = {resolver: {}};
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({});
     });
   });
 });
