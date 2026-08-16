@@ -195,6 +195,10 @@ function collectEntryPoints(
 // here: `(undocumented)` markers, the release-tag comment lines (`// @public`
 // etc.), and the missing-`@packageDocumentation` notice, then collapse the
 // blank lines left behind.
+//
+// We also blank out the line numbers in any flow-api-translator code frame, so
+// that moving an offending declaration within its source file doesn't churn the
+// snapshot.
 function cleanReport(report /*: string */) {
   const result = [];
   for (const raw of report.split('\n')) {
@@ -226,6 +230,18 @@ function cleanReport(report /*: string */) {
       }
       line = `${tagMatch[1]}// ${rest}`;
     }
+
+    // flow-api-translator embeds a Babel code frame in the comment it emits for
+    // constructs it cannot translate (e.g. Flow's `empty`). Its gutter carries
+    // the line number in the *Flow source*, so any edit above that line — an
+    // internal-only change with no effect on the public API — would otherwise
+    // show up here. Blank the digits rather than removing them: the caret line
+    // beneath is padded to the same gutter width, so keeping the width keeps it
+    // aligned.
+    line = line.replace(
+      /^(\s*\*\s*>\s*)(\d+)(\s*\|)/,
+      (_, before, digits, after) => before + ' '.repeat(digits.length) + after,
+    );
 
     // Collapse runs of blank lines left by the removals above.
     if (line.trim() === '' && result[result.length - 1]?.trim() === '') {

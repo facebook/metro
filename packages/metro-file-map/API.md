@@ -191,12 +191,12 @@ export type HealthCheckResult =
 
 export type InputFileMapPlugin = FileMapPlugin<
 /**
-* > 233 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+* >     | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
 *       |                                                ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
 **/
 any,
 /**
-* > 233 | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
+* >     | export type InputFileMapPlugin = FileMapPlugin<empty, empty>;
 *       |                                                       ^^^^^ Unsupported feature: Translating "empty type" is currently not supported.
 **/
 any
