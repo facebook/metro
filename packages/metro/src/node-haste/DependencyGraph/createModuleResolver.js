@@ -15,6 +15,7 @@ import type {ConfigT} from 'metro-config';
 import type {FileSystem, HasteMap} from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
+import getSchemeResolvers from '../../lib/getSchemeResolvers';
 import {ModuleResolver} from './ModuleResolution';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -105,6 +106,10 @@ export default function createModuleResolver({
       return assets.length ? assets : null;
     },
     resolveRequest: config.resolver.resolveRequest,
+    schemeResolvers: {
+      ...getSchemeResolvers(),
+      ...config.resolver.schemeResolvers,
+    },
     sourceExts: config.resolver.sourceExts,
     unstable_conditionNames: config.resolver.unstable_conditionNames,
     unstable_conditionsByPlatform:

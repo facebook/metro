@@ -37,6 +37,7 @@ import makeServeCommand from './commands/serve';
 import MetroHmrServer from './HmrServer';
 import IncrementalBundler from './IncrementalBundler';
 import createWebsocketServer from './lib/createWebsocketServer';
+import getSchemeResolvers from './lib/getSchemeResolvers';
 import JsonReporter from './lib/JsonReporter';
 import TerminalReporter from './lib/TerminalReporter';
 import MetroServer from './Server';
@@ -153,7 +154,7 @@ type BuildCommandOptions = Readonly<{[string]: unknown}> | null;
 type ServeCommandOptions = Readonly<{[string]: unknown}> | null;
 type DependenciesCommandOptions = Readonly<{[string]: unknown}> | null;
 
-export {Terminal, JsonReporter, TerminalReporter};
+export {Terminal, JsonReporter, TerminalReporter, getSchemeResolvers};
 
 export type {AssetData} from './Assets';
 export type {

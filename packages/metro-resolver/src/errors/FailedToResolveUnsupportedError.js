@@ -10,7 +10,7 @@
  */
 
 export default class FailedToResolveUnsupportedError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: {cause?: unknown}) {
+    super(message, options);
   }
 }

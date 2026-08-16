@@ -28,7 +28,7 @@ export class FailedToResolvePathError extends Error {
 }
 
 export class FailedToResolveUnsupportedError extends Error {
-    constructor(message: string);
+    constructor(message: string, options?: {cause?: unknown | undefined});
 }
 
 export type FileAndDirCandidates = {
@@ -82,6 +82,7 @@ export type ResolutionContext = Readonly<{
     resolveHasteModule: (name: string) => null | undefined | string;
     resolveHastePackage: (name: string) => null | undefined | string;
     resolveRequest?: null | undefined | CustomResolver;
+    schemeResolvers?: Readonly<{[scheme: string]: CustomResolver}> | undefined;
     sourceExts: ReadonlyArray<string>;
     unstable_conditionNames: ReadonlyArray<string>;
     unstable_conditionsByPlatform: Readonly<{

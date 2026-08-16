@@ -82,6 +82,10 @@ export class DependencyGraph extends EventEmitter {
     ): BundlerResolution;
 }
 
+export function getSchemeResolvers(): Readonly<{
+    [scheme: string]: CustomResolver;
+}>;
+
 export class JsonReporter<TEvent extends {readonly [$$Key$$: string]: unknown}> {
     constructor(stream: Writable);
     update(event: TEvent): void;

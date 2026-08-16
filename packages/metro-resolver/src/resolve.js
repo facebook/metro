@@ -19,6 +19,7 @@ import type {
 
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import FailedToResolveUnsupportedError from './errors/FailedToResolveUnsupportedError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
@@ -62,6 +63,8 @@ export default function resolve(
       platform,
     );
   }
+
+  let schemeError: ?FailedToResolveUnsupportedError;
 
   if (isRelativeImport(specifier) || path.isAbsolute(specifier)) {
     const result = resolveModulePath(context, specifier, platform);
@@ -112,6 +115,41 @@ export default function resolve(
         }
       }
     }
+  } else if (specifier.indexOf(':') > 0 && URL.canParse(specifier)) {
+    const schemeEnd = specifier.indexOf(':');
+    const scheme = specifier.slice(0, schemeEnd).toLowerCase();
+    const schemeResolvers = context.schemeResolvers;
+    if (schemeResolvers != null && Object.hasOwn(schemeResolvers, scheme)) {
+      try {
+        return schemeResolvers[scheme](
+          Object.freeze({...context, resolveRequest: resolve}),
+          specifier,
+          platform,
+        );
+      } catch (error: unknown) {
+        // A scheme resolver that delegates back into default resolution (via
+        // `context.resolveRequest`) may surface any resolution error. Preserve
+        // those, so callers keep the structured failure (candidate paths, etc).
+        if (isResolutionError(error)) {
+          throw error;
+        }
+        // Otherwise a scheme resolver may throw a plain error to signal an
+        // unsupported specifier (they need not depend on metro-resolver);
+        // surface it as the resolver's typed error.
+        throw new FailedToResolveUnsupportedError(
+          error instanceof Error ? error.message : String(error),
+          {cause: error},
+        );
+      }
+    }
+
+    // TODO: In a breaking change, we should throw this immediately.
+    // For now, fall through in case the user is using scheme-like specifiers
+    // for Haste, or in extraNodeModules, etc. Throw a scheme-specific error
+    // if nothing else works.
+    schemeError = new FailedToResolveUnsupportedError(
+      `No resolver is registered for the '${scheme}:' URI scheme.`,
+    );
   }
 
   const {originModulePath} = context;
@@ -317,6 +355,12 @@ export default function resolve(
     if (resolution != null) {
       return resolution;
     }
+  }
+
+  if (schemeError != null) {
+    // The specifier is a scheme we don't recognise and every other resolution
+    // strategy has been exhausted, so fail with a scheme-specific error.
+    throw schemeError;
   }
 
   throw buildFailedToResolveNameError(
@@ -805,6 +849,22 @@ function isRelativeImport(filePath: string) {
 
 function isSubpathImport(filePath: string) {
   return filePath.startsWith('#');
+}
+
+/**
+ * Whether an error is one of metro-resolver's own resolution failures, which
+ * carry structured detail that callers rely on for diagnostics.
+ */
+function isResolutionError(error: unknown): boolean {
+  return (
+    error instanceof FailedToResolveNameError ||
+    error instanceof FailedToResolvePathError ||
+    error instanceof FailedToResolveUnsupportedError ||
+    error instanceof InvalidPackageConfigurationError ||
+    error instanceof InvalidPackageError ||
+    error instanceof PackageImportNotResolvedError ||
+    error instanceof PackagePathNotExportedError
+  );
 }
 
 function resolvedAs<TResolution, TCandidates>(

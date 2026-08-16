@@ -2850,5 +2850,24 @@ function dep(name: string): TransformResultDependency {
         expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });
+
+    describe('schemeResolvers', () => {
+      test('config schemeResolvers are applied to scheme-prefixed specifiers', async () => {
+        setMockFileSystem({'index.js': '', 'a.js': ''});
+
+        resolver = await createResolver({
+          resolver: {
+            schemeResolvers: {
+              'my-scheme': (context, specifier, platform) =>
+                context.resolveRequest(context, './a', platform),
+            },
+          },
+        });
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('my-scheme:anything')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/a.js')});
+      });
+    });
   });
 });
