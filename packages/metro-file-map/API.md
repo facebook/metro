@@ -223,6 +223,12 @@ export type InputOptions = Readonly<{
     watchmanDeferStates?: ReadonlyArray<string> | undefined;
 }>;
 
+export class NoopCacheManager implements CacheManager {
+    end(): Promise<void>;
+    read(): Promise<null | undefined | CacheData>;
+    write(): Promise<void>;
+}
+
 export type WatcherStatus =
 | {
     type: 'watchman_slow_command';

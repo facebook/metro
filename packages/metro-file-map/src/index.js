@@ -133,6 +133,7 @@ type InternalEnqueuedEvent = Readonly<
 >;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
+export {NoopCacheManager} from './cache/NoopCacheManager';
 export {default as DependencyPlugin} from './plugins/DependencyPlugin';
 export type {DependencyPluginOptions} from './plugins/DependencyPlugin';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
