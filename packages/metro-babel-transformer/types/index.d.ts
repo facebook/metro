@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<2503f88efd80b39e4d860870017af66d>>
+ * @generated SignedSource<<d2abc246f3316d666e3344863aa9f844>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-babel-transformer/src/index.js
@@ -35,6 +35,7 @@ type BabelTransformerOptions = Readonly<{
   extendsBabelConfigPath?: string;
   experimentalImportSupport?: boolean;
   hermesParser?: boolean;
+  inlinePlatform?: boolean;
   minify: boolean;
   platform: null | undefined | string;
   projectRoot: string;
