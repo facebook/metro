@@ -12,7 +12,6 @@
 import type {ConfigT} from 'metro-config';
 import type {HasteMap, InputFileMapPlugin} from 'metro-file-map';
 
-import ci from 'ci-info';
 import MetroFileMap, {
   DependencyPlugin,
   DiskCacheManager,
@@ -43,6 +42,11 @@ const flattenBlockList = (regexes: ConfigT['resolver']['blockList']) => {
   );
 };
 
+function isCIEnv() {
+  const CI = process.env.CI;
+  return typeof CI === 'string' && CI !== '' && CI !== '0' && CI !== 'false';
+}
+
 export default function createFileMap(
   config: ConfigT,
   options?: Readonly<{
@@ -56,7 +60,7 @@ export default function createFileMap(
   hasteMap: HasteMap,
   dependencyPlugin: ?DependencyPlugin,
 } {
-  const watch = options?.watch == null ? !ci.isCI : options.watch;
+  const watch = options?.watch ?? !isCIEnv();
   const {enabled: autoSaveEnabled, ...autoSaveOpts} =
     config.watcher.unstable_autoSaveCache ?? {};
   const autoSave = watch && autoSaveEnabled ? autoSaveOpts : false;
