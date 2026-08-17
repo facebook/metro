@@ -11,6 +11,8 @@
 
 import type {CustomResolver} from 'metro-resolver';
 
+import metroSchemeResolver from './metroSchemeResolver';
+
 /**
  * The scheme resolvers Metro registers on every resolution context. Consumers
  * building their own `ResolutionContext` should spread these in to match
@@ -22,5 +24,7 @@ import type {CustomResolver} from 'metro-resolver';
 export default function getSchemeResolvers(): Readonly<{
   [scheme: string]: CustomResolver,
 }> {
-  return {};
+  return {
+    metro: metroSchemeResolver,
+  };
 }

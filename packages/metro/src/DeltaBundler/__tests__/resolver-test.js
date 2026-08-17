@@ -2867,6 +2867,43 @@ function dep(name: string): TransformResultDependency {
         expect(
           resolver.resolve(p('/root/index.js'), dep('my-scheme:anything')),
         ).toEqual({type: 'sourceFile', filePath: p('/root/a.js')});
+        // The built-in is still registered.
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toThrow(/Unsupported 'metro:' pathname/);
+      });
+
+      test('registers built-in scheme resolvers without any configuration', async () => {
+        setMockFileSystem({'index.js': ''});
+
+        resolver = await createResolver();
+
+        // `metro:` is registered by Metro when it builds the resolution
+        // context, not via metro-config's defaults. An unsupported `metro:`
+        // pathname therefore surfaces the built-in resolver's own error
+        // rather than a generic resolution failure.
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toThrow(/Unsupported 'metro:' pathname/);
+      });
+
+      test('config schemeResolvers override a built-in for the same scheme', async () => {
+        setMockFileSystem({'index.js': '', 'a.js': ''});
+
+        resolver = await createResolver({
+          resolver: {
+            schemeResolvers: {
+              metro: (context, specifier, platform) =>
+                context.resolveRequest(context, './a', platform),
+            },
+          },
+        });
+
+        // Would throw "Unsupported 'metro:' pathname" if the built-in were
+        // still registered for this scheme.
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/a.js')});
       });
     });
   });

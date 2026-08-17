@@ -344,7 +344,7 @@ The scheme parsed from a specifier is lowercased before lookup, so keys must be 
 
 :::
 
-Metro may register its own built-in scheme resolvers when it builds a resolution context. Those are applied *beneath* this option, so an entry here overrides a built-in that uses the same scheme key.
+Metro registers its own built-in scheme resolvers (currently `metro:`) when it builds a resolution context. Those are applied *beneath* this option, so an entry here overrides a built-in that uses the same scheme key.
 
 Defaults to `{}`.
 
