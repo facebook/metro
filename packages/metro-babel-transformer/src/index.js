@@ -40,6 +40,7 @@ type BabelTransformerOptions = Readonly<{
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
+  inlinePlatform?: boolean,
   minify: boolean,
   platform: ?string,
   projectRoot: string,
@@ -107,7 +108,12 @@ function transform({
     const babelConfig: BabelTransformOptions = {
       ast: true,
       babelrc: options.enableBabelRCLookup,
-      caller: {bundler: 'metro', name: 'metro', platform: options.platform},
+      caller: {
+        bundler: 'metro',
+        name: 'metro',
+        platform: options.platform,
+        inlinePlatform: options.inlinePlatform,
+      },
       // NOTE(EvanBacon): We split the parse/transform steps up to accommodate
       // Hermes parsing, but this defaults to cloning the AST which increases
       // the transformation time by a fair amount.
