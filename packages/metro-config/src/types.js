@@ -148,6 +148,12 @@ type SerializerConfigT = {
   processModuleFilter: (modules: Module<>) => boolean,
   isThirdPartyModule: (module: Readonly<{path: string, ...}>) => boolean,
   unstable_inlineDependencyMap: boolean,
+  // When true, the default bundle serializer emits modules inside a single
+  // segment definer (`__registerSegment(0, function (moduleId) { switch ... })`)
+  // so each `__d(...)` runs lazily on first require instead of eagerly at
+  // startup. Reduces startup registration cost and peak heap for large graphs.
+  // Experimental; source maps are supported. Does not affect delta/HMR.
+  unstable_lazilyDefineModules: boolean,
 };
 
 type TransformerConfigT = {

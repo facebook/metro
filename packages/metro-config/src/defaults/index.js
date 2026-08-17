@@ -71,6 +71,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     isThirdPartyModule: module =>
       /(?:^|[/\\])node_modules[/\\]/.test(module.path),
     unstable_inlineDependencyMap: false,
+    unstable_lazilyDefineModules: false,
   },
 
   server: {
