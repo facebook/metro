@@ -179,6 +179,7 @@ export type SerializerConfigT = {
     processModuleFilter: (modules: Module) => boolean;
     isThirdPartyModule: (module: Readonly<{path: string}>) => boolean;
     unstable_inlineDependencyMap: boolean;
+    unstable_lazilyDefineModules: boolean;
 };
 
 export type ServerConfigT = {
