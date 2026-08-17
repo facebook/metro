@@ -10,40 +10,19 @@
  */
 
 import type {PackageCache} from '../PackageCache';
-import type {DirExistsFn} from './ModuleResolution';
 import type {ConfigT} from 'metro-config';
 import type {FileSystem, HasteMap} from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
 import getSchemeResolvers from '../../lib/getSchemeResolvers';
 import {ModuleResolver} from './ModuleResolution';
-import fs from 'node:fs';
 import path from 'node:path';
-
-/**
- * The default `dirExists` implementation, which consults the real filesystem
- * rather than the `FileSystem` the rest of resolution is based on.
- *
- * TODO: Use `fileSystem` here too - this is inconsistent with every other
- * resolver hook and incorrect for virtual filesystems.
- */
-export const dirExistsSync: DirExistsFn = (filePath: string) => {
-  try {
-    return fs.lstatSync(filePath).isDirectory();
-  } catch (e) {}
-  return false;
-};
 
 export type CreateModuleResolverOptions = Readonly<{
   config: ConfigT,
   fileSystem: FileSystem,
   hasteMap: HasteMap,
   packageCache: PackageCache,
-  /**
-   * Defaults to `dirExistsSync`, which stats the real filesystem. Consumers
-   * backed by a virtual filesystem should supply their own.
-   */
-  dirExists?: DirExistsFn,
 }>;
 
 export default function createModuleResolver({
@@ -51,7 +30,6 @@ export default function createModuleResolver({
   fileSystem,
   hasteMap,
   packageCache,
-  dirExists = dirExistsSync,
 }: CreateModuleResolverOptions): ModuleResolver {
   const fileSystemLookup = (filePath: string): ReturnType<FileSystemLookup> => {
     const result = fileSystem.lookup(filePath);
@@ -67,7 +45,6 @@ export default function createModuleResolver({
 
   return new ModuleResolver({
     assetExts: new Set(config.resolver.assetExts),
-    dirExists,
     disableHierarchicalLookup: config.resolver.disableHierarchicalLookup,
     doesFileExist: (filePath: string) => fileSystem.exists(filePath),
     emptyModulePath: config.resolver.emptyModulePath,

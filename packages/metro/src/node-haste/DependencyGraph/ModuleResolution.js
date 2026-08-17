@@ -33,11 +33,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 
-export type DirExistsFn = (filePath: string) => boolean;
-
 type Options = Readonly<{
   assetExts: ReadonlySet<string>,
-  dirExists: DirExistsFn,
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
   emptyModulePath: string,
@@ -199,7 +196,12 @@ export class ModuleResolver {
         const dirPaths = error.dirPaths;
         const extraPaths = error.extraPaths;
         const displayDirPaths = dirPaths
-          .filter((dirPath: string) => this._options.dirExists(dirPath))
+          .filter((dirPath: string) => {
+            // Report only the directories resolution actually considered -
+            // `resolveFromNodeModulesPath` gates candidates on this same test.
+            const lookupResult = this._options.fileSystemLookup(dirPath);
+            return lookupResult.exists && lookupResult.type === 'd';
+          })
           .map(dirPath => path.relative(this._options.projectRoot, dirPath))
           .concat(extraPaths);
 
