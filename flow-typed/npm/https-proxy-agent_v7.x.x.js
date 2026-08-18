@@ -13,13 +13,13 @@ declare module 'https-proxy-agent' {
 
   declare export type HttpsProxyAgentOptions = tls$connectOptions &
     http$agentOptions & {
-      +headers?: HttpHeaders | (() => HttpHeaders),
+      readonly headers?: HttpHeaders | (() => HttpHeaders),
       ...
     };
 
   declare export class HttpsProxyAgent extends http$Agent<net$Socket> {
     static protocols: ['http', 'https'];
-    +proxy: URL;
+    readonly proxy: URL;
     proxyHeaders: HttpHeaders | (() => HttpHeaders);
     connectOpts: tls$connectOptions;
     constructor(proxy: string | URL, opts?: HttpsProxyAgentOptions): this;

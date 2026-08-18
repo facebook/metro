@@ -36,9 +36,9 @@ declare module '@microsoft/api-extractor' {
   declare export type ExtractorMessage = {
     // 'console' for progress chatter, or 'Compiler'/'TSDoc'/'Extractor' for
     // diagnostics routed via the `messages` config.
-    +category: string,
-    +messageId: string,
-    +text: string,
+    readonly category: string,
+    readonly messageId: string,
+    readonly text: string,
     logLevel: string,
     handled: boolean,
     ...
