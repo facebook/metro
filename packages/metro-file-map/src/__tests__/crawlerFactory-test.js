@@ -48,6 +48,16 @@ jest.mock('../crawlers/node', () => () => {
   throw new Error('nodeCrawl must not be called');
 });
 
+const mockCheckWatchmanCapabilities = jest.fn<
+  [ReadonlyArray<string>],
+  Promise<{version: string}>,
+>(async () => ({version: 'test'}));
+jest.mock(
+  '../lib/checkWatchmanCapabilities',
+  () => (capabilities: ReadonlyArray<string>) =>
+    mockCheckWatchmanCapabilities(capabilities),
+);
+
 const rootDir = path.join(path.sep, 'project');
 const p = (...parts: Array<string>) => path.join(rootDir, ...parts);
 
@@ -177,5 +187,26 @@ describe('crawlerFactory', () => {
     expect(() =>
       createFileMap({plugins: [makeHastePlugin(), makeHastePlugin()]}),
     ).toThrow('Duplicate plugin name: haste');
+  });
+});
+
+describe('Watchman capability probe', () => {
+  beforeEach(() => {
+    mockCheckWatchmanCapabilities.mockClear();
+  });
+
+  test('is skipped when a crawler is supplied', async () => {
+    await createFileMap({useWatchman: true}).build();
+
+    expect(mockCheckWatchmanCapabilities).not.toHaveBeenCalled();
+  });
+
+  test('still runs when no crawler is supplied', async () => {
+    const fileMap = createFileMap({crawlerFactory: null, useWatchman: true});
+
+    // Both built-in crawlers are mocked to throw, so the build fails - but only
+    // after the probe has decided which of them to use.
+    await expect(fileMap.build()).rejects.toThrow();
+    expect(mockCheckWatchmanCapabilities).toHaveBeenCalled();
   });
 });

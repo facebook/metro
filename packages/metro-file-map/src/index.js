@@ -569,7 +569,9 @@ export default class FileMap extends EventEmitter {
       previousState,
       rootDir,
       roots,
-      useWatchman: await this.#shouldUseWatchman(),
+      // A supplied crawler makes the Watchman capability probe - which spawns
+      // watchman - pointless.
+      useWatchman: this.#crawler == null && (await this.#shouldUseWatchman()),
       watch,
       watchmanDeferStates,
     });
