@@ -151,7 +151,11 @@ export default class DependencyGraph extends EventEmitter {
     await this._initializedPromise;
   }
 
-  _onHasteChange({changes, rootDir}: ChangeEvent) {
+  _onHasteChange(changeEvent: ?ChangeEvent) {
+    if (changeEvent == null || changeEvent.changes == null) {
+      return;
+    }
+    const {changes, rootDir} = changeEvent;
     this._resolutionCache = new Map();
     [
       ...changes.addedFiles,

@@ -199,7 +199,11 @@ export default class DeltaCalculator<T> extends EventEmitter {
     return false;
   }
 
-  _handleMultipleFileChanges = (changeEvent: ChangeEvent) => {
+  _handleMultipleFileChanges = (changeEvent: ?ChangeEvent) => {
+    // Some third party watchers emit a bare 'change' with no payload.
+    if (changeEvent == null || changeEvent.changes == null) {
+      return;
+    }
     const {changes, logger, rootDir} = changeEvent;
 
     // Process added files: deleted+added = modified, otherwise added

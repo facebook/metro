@@ -420,6 +420,27 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     });
   });
 
+  test('should ignore change events that omit the changes payload', async () => {
+    await deltaCalculator.getDelta({reset: false, shallow: false});
+
+    expect(() => {
+      fileWatcher.emit('change');
+      fileWatcher.emit('change', {});
+    }).not.toThrow();
+
+    const result = await deltaCalculator.getDelta({
+      reset: false,
+      shallow: false,
+    });
+
+    expect(result).toEqual({
+      added: new Map(),
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
+    });
+  });
+
   test('should emit an event when there is a relevant file change', done => {
     deltaCalculator
       .getDelta({reset: false, shallow: false})
