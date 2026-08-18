@@ -10,6 +10,7 @@
  */
 
 import type {
+  Crawler,
   CrawlerOptions,
   CrawlResult,
   FileData,
@@ -54,11 +55,12 @@ const rejectWith =
     throw new Error(message);
   };
 
-function createWatcher(useWatchman: boolean): Watcher {
+function createWatcher(useWatchman: boolean, crawl?: ?Crawler): Watcher {
   return new Watcher({
     abortSignal: new AbortController().signal,
     computeSha1: false,
     console: global.console,
+    crawl,
     enableSymlinks: false,
     extensions: ['js'],
     healthCheckFilePrefix: '.metro-file-map-health-check',
@@ -164,5 +166,79 @@ describe('Watcher crawl fallback', () => {
     expect(mockNodeCrawl.mock.calls[0][0]).toBe(
       mockWatchmanCrawl.mock.calls[0][0],
     );
+  });
+});
+
+describe('Watcher crawl option', () => {
+  const stubCrawler =
+    (canonicalPaths: ReadonlyArray<string>): Crawler =>
+    async () =>
+      crawlResult(canonicalPaths);
+
+  test('crawls with the supplied crawler instead of the built-ins', async () => {
+    const canonicalPath = path.join('src', 'index.js');
+
+    const result = await createWatcher(
+      true,
+      stubCrawler([canonicalPath]),
+    ).crawl();
+
+    expect([...result.changedFiles.keys()]).toEqual([canonicalPath]);
+    expect(mockWatchmanCrawl).not.toHaveBeenCalled();
+    expect(mockNodeCrawl).not.toHaveBeenCalled();
+  });
+
+  test('passes the standard crawler options through', async () => {
+    const crawl = jest.fn<[CrawlerOptions], Promise<CrawlResult>>(
+      stubCrawler([]),
+    );
+
+    await createWatcher(true, crawl).crawl();
+
+    const options = crawl.mock.calls[0][0];
+    expect(options).toMatchObject({
+      computeSha1: false,
+      extensions: ['js'],
+      rootDir,
+      roots: [rootDir],
+    });
+    expect(typeof options.ignore).toBe('function');
+    expect(typeof options.onStatus).toBe('function');
+    expect(options.abortSignal).toBeInstanceOf(AbortSignal);
+    expect(options.previousState.fileSystem).toBeDefined();
+  });
+
+  test('is also used for a scoped recrawl, and receives its subpath', async () => {
+    const crawl = jest.fn<[CrawlerOptions], Promise<CrawlResult>>(
+      stubCrawler([]),
+    );
+    const fileSystem = new TreeFS({
+      processFile: () => {
+        throw new Error('not implemented');
+      },
+      rootDir,
+    });
+
+    await createWatcher(true, crawl).recrawl(
+      path.join('src', 'nested'),
+      fileSystem,
+    );
+
+    expect(crawl).toHaveBeenCalledTimes(1);
+    expect(crawl.mock.calls[0][0]).toMatchObject({
+      roots: [path.join(rootDir, 'src', 'nested')],
+      subpath: path.join('src', 'nested'),
+    });
+  });
+
+  test('failures are fatal, with no fallback to the node crawler', async () => {
+    // Falling back would silently crawl the real filesystem, which is exactly
+    // what a supplied crawler exists to avoid.
+    const crawl: Crawler = rejectWith('crawler exploded');
+
+    await expect(createWatcher(true, crawl).crawl()).rejects.toThrow(
+      'crawler exploded',
+    );
+    expect(mockNodeCrawl).not.toHaveBeenCalled();
   });
 });

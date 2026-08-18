@@ -10,6 +10,7 @@
 
 import type {
   Console,
+  Crawler,
   CrawlerOptions,
   CrawlResult,
   Path,
@@ -47,6 +48,16 @@ type WatcherOptions = {
   abortSignal: AbortSignal,
   computeSha1: boolean,
   console: Console,
+  /**
+   * Replaces the built-in Watchman/node crawlers for all crawling, including
+   * the scoped re-crawl issued on a directory-rename event in watch mode -
+   * which passes `subpath` and narrowed `roots` that the crawler is expected to
+   * honour, exactly as the built-ins do.
+   *
+   * Watching itself is unaffected: change events still come from the built-in
+   * watcher backends.
+   */
+  crawl?: ?Crawler,
   enableSymlinks: boolean,
   extensions: ReadonlyArray<string>,
   healthCheckFilePrefix: string,
@@ -121,8 +132,13 @@ export class Watcher extends EventEmitter {
     const ignoreForCrawl = (filePath: string) =>
       options.ignoreForCrawl(filePath) ||
       path.basename(filePath).startsWith(this.#options.healthCheckFilePrefix);
-    const crawl = useWatchman ? watchmanCrawl : nodeCrawl;
+    // A supplied crawler is, by construction, not `watchmanCrawl`, so it takes
+    // the unwrapped branch below: no node-crawler fallback, failures propagate.
+    const crawl = options.crawl ?? (useWatchman ? watchmanCrawl : nodeCrawl);
     let crawler = crawl === watchmanCrawl ? 'watchman' : 'node';
+    if (options.crawl != null) {
+      crawler = 'custom';
+    }
 
     options.abortSignal.throwIfAborted();
 

@@ -139,6 +139,13 @@ export type CrawlResult =
       removedFiles: Set<Path>,
     };
 
+/**
+ * Discovers files under `roots`, as a delta against `previousState`. This is
+ * the contract implemented by the built-in Watchman and node crawlers, and by
+ * any crawler supplied to `Watcher`.
+ */
+export type Crawler = (options: CrawlerOptions) => Promise<CrawlResult>;
+
 export type DependencyExtractor = {
   extract: (
     content: string,
