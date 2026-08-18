@@ -146,6 +146,30 @@ export type CrawlResult =
  */
 export type Crawler = (options: CrawlerOptions) => Promise<CrawlResult>;
 
+export type CrawlerFactoryOptions = Readonly<{
+  buildParameters: BuildParameters,
+
+  /**
+   * Maps a plugin's `name` to the index within `FileMetadata` reserved for its
+   * per-file data. Plugins that declare no worker have no reserved slot and are
+   * absent from this map.
+   *
+   * A crawler that can supply plugin data itself - rather than leaving it to
+   * the plugin's worker - writes it at these indices.
+   */
+  pluginDataIndices: ReadonlyMap<string, number>,
+}>;
+
+/**
+ * Replaces the built-in Watchman/node crawlers. Called once per `FileMap`,
+ * before the first crawl, with context that is fixed for that `FileMap`'s
+ * lifetime; the returned `Crawler` is called for the initial crawl and for any
+ * subsequent re-crawl.
+ *
+ * Only crawling is replaced. Watch mode, if enabled, still uses the built-in
+ * watcher backends.
+ */
+export type CrawlerFactory = (options: CrawlerFactoryOptions) => Crawler;
 export type DependencyExtractor = {
   extract: (
     content: string,

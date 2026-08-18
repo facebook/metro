@@ -56,6 +56,35 @@ export type ChangeEventMetadata = {
     type: 'f' | 'd' | 'l';
 };
 
+export type Crawler = (options: CrawlerOptions) => Promise<CrawlResult>;
+
+export type CrawlerFactory = (options: CrawlerFactoryOptions) => Crawler;
+
+export type CrawlerFactoryOptions = Readonly<{
+    buildParameters: BuildParameters;
+    pluginDataIndices: ReadonlyMap<string, number>;
+}>;
+
+export type CrawlerOptions = {
+    abortSignal: null | undefined | AbortSignal;
+    computeSha1: boolean;
+    console: Console_2;
+    extensions: ReadonlyArray<string>;
+    ignore: IgnoreMatcher;
+    includeSymlinks: boolean;
+    perfLogger?: null | undefined | PerfLogger;
+    previousState: Readonly<{
+        clocks: ReadonlyMap<CanonicalPath, WatchmanClockSpec>;
+        fileSystem: FileSystem_2;
+    }>;
+    rootDir: string;
+    roots: ReadonlyArray<string>;
+    onStatus: (status: WatcherStatus) => void;
+    subpath?: string | undefined;
+};
+
+export type CrawlResult = {changedFiles: FileData; removedFiles: Set<Path>; clocks: WatchmanClocks} | {changedFiles: FileData; removedFiles: Set<Path>};
+
 export type DependencyExtractor = {
     extract: (content: string, absoluteFilePath: string, defaultExtractor?: DependencyExtractor['extract']) => Set<string>;
     getCacheKey: () => string;
@@ -213,6 +242,7 @@ export type InputOptions = Readonly<{
     roots: ReadonlyArray<string>;
     cacheManagerFactory?: null | undefined | CacheManagerFactory;
     console?: Console_2 | undefined;
+    crawlerFactory?: null | undefined | CrawlerFactory;
     healthCheck: HealthCheckOptions;
     maxFilesPerWorker?: null | undefined | number;
     maxWorkers: number;

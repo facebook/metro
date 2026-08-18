@@ -22,6 +22,8 @@ import type {
   ChangeEventClock,
   ChangeEventMetadata,
   Console,
+  Crawler,
+  CrawlerFactory,
   CrawlerOptions,
   CrawlResult,
   FileData,
@@ -86,6 +88,11 @@ export type InputOptions = Readonly<{
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
+  /**
+   * Replaces the built-in Watchman/node crawlers. Watch mode, if enabled, still
+   * uses the built-in watcher backends.
+   */
+  crawlerFactory?: ?CrawlerFactory,
   healthCheck: HealthCheckOptions,
   maxFilesPerWorker?: ?number,
   maxWorkers: number,
@@ -148,6 +155,11 @@ export type {
   CacheManagerFactoryOptions,
   CacheManagerWriteOptions,
   ChangeEvent,
+  Crawler,
+  CrawlerFactory,
+  CrawlerFactoryOptions,
+  CrawlerOptions,
+  CrawlResult,
   DependencyExtractor,
   WatcherStatus,
 } from './flow-types';
@@ -259,6 +271,7 @@ export default class FileMap extends EventEmitter {
   #healthCheckInterval: ?IntervalID;
   readonly #options: InternalOptions;
   readonly #pathUtils: RootPathUtils;
+  readonly #crawler: ?Crawler;
   readonly #plugins: ReadonlyArray<IndexedPlugin>;
   readonly #startupPerfLogger: ?PerfLogger;
   #watcher: ?Watcher;
@@ -300,13 +313,23 @@ export default class FileMap extends EventEmitter {
 
     const indexedPlugins: Array<IndexedPlugin> = [];
     const pluginWorkers: Array<FileMapPluginWorker> = [];
+    const pluginDataIndices = new Map<string, number>();
     const plugins = options.plugins ?? [];
     for (const plugin of plugins) {
       const maybeWorker = plugin.getWorker();
-      indexedPlugins.push({
-        plugin,
-        dataIdx: maybeWorker != null ? dataSlot++ : null,
-      });
+      const dataIdx = maybeWorker != null ? dataSlot++ : null;
+      indexedPlugins.push({plugin, dataIdx});
+      if (dataIdx != null) {
+        // Crawlers address plugin data by name, so names must be unique among
+        // plugins holding a slot - otherwise a crawler would silently write to
+        // the shadowed plugin's slot.
+        invariant(
+          !pluginDataIndices.has(plugin.name),
+          'metro-file-map: Duplicate plugin name: %s',
+          plugin.name,
+        );
+        pluginDataIndices.set(plugin.name, dataIdx);
+      }
       if (maybeWorker != null) {
         pluginWorkers.push(maybeWorker);
       }
@@ -334,6 +357,10 @@ export default class FileMap extends EventEmitter {
       watch: !!options.watch,
       watchmanDeferStates: options.watchmanDeferStates ?? [],
     };
+
+    this.#crawler = options.crawlerFactory
+      ? options.crawlerFactory.call(null, {buildParameters, pluginDataIndices})
+      : null;
 
     const cacheFactoryOptions: CacheManagerFactoryOptions = {
       buildParameters,
@@ -526,6 +553,7 @@ export default class FileMap extends EventEmitter {
       abortSignal: this.#crawlerAbortController.signal,
       computeSha1,
       console: this.#console,
+      crawl: this.#crawler,
       enableSymlinks,
       extensions,
       healthCheckFilePrefix: this.#options.healthCheck.filePrefix,
