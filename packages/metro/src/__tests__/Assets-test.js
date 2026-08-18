@@ -11,21 +11,37 @@
 'use strict';
 
 jest.mock('fs', () => new (require('metro-memory-fs'))());
-jest.mock('image-size');
+jest.mock('../lib/imageSize', () => ({
+  getImageDimensions: jest.fn(() => ({
+    width: mockImageWidth,
+    height: mockImageHeight,
+  })),
+}));
 
 jest.useRealTimers();
 
-const {getAsset, getAssetData} = require('../Assets');
+const {getAsset, getAssetData, getAssetSize} = require('../Assets');
+const getImageDimensions = require('../lib/imageSize').getImageDimensions;
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
+
+const fs = jest.requireMock('fs');
 
 const mockImageWidth = 300;
 const mockImageHeight = 200;
 
-require('image-size').mockReturnValue({
-  width: mockImageWidth,
-  height: mockImageHeight,
+describe('getAssetSize', () => {
+  test('returns null for non-image assets', () => {
+    expect(getAssetSize('mp4', Buffer.from('video'), '/root/video.mp4')).toBe(
+      null,
+    );
+  });
+
+  test('rejects empty image assets', () => {
+    expect(() =>
+      getAssetSize('png', Buffer.alloc(0), '/root/empty.png'),
+    ).toThrow('Image asset `/root/empty.png` cannot be an empty file.');
+  });
 });
 
 describe('getAsset', () => {
@@ -281,6 +297,18 @@ describe('getAssetData', () => {
         }),
       );
     });
+  });
+
+  test('parses dimensions from the first asset file buffer', async () => {
+    writeImages({'b@1x.png': 'b1 image', 'b@2x.png': 'b2 image'});
+
+    await getAssetData('/root/imgs/b.png', 'imgs/b.png', [], null, '/assets');
+
+    expect(getImageDimensions).toHaveBeenCalledWith(
+      'png',
+      Buffer.from('b1 image'),
+      '/root/imgs/b@1x.png',
+    );
   });
 
   test('should get assetData for non-png images', async () => {
