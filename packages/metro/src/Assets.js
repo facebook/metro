@@ -11,12 +11,11 @@
 
 import type {AssetPath} from './node-haste/lib/AssetPaths';
 
+import {getImageDimensions} from './lib/imageSize';
 import {normalizePathSeparatorsToPosix} from './lib/pathUtils';
 import * as AssetPaths from './node-haste/lib/AssetPaths';
 import crypto from 'crypto';
 import fs from 'fs';
-// $FlowFixMe[untyped-import] image-size
-import getImageSize from 'image-size';
 import path from 'path';
 
 export type AssetInfo = {
@@ -51,8 +50,8 @@ export type AssetDataFiltered = {
   ...
 };
 
-// Test extension against all types supported by image-size module.
-// If it's not one of these, we won't treat it as an image.
+// If an extension isn't explicitly supported here, we won't treat it as an
+// image.
 export function isAssetTypeAnImage(type: string): boolean {
   return (
     [
@@ -81,8 +80,7 @@ export function getAssetSize(
   if (content.length === 0) {
     throw new Error(`Image asset \`${filePath}\` cannot be an empty file.`);
   }
-  const {width, height} = getImageSize(content);
-  return {width, height};
+  return getImageDimensions(type, content, filePath);
 }
 
 export type AssetData = AssetDataWithoutFiles & {
@@ -180,7 +178,7 @@ async function getAbsoluteAssetRecord(
 async function getAbsoluteAssetInfo(
   assetPath: string,
   platform: ?string = null,
-): Promise<AssetInfo> {
+): Promise<{assetInfo: AssetInfo, firstFileContent: Buffer}> {
   const nameData = AssetPaths.parse(
     assetPath,
     new Set(platform != null ? [platform] : []),
@@ -198,7 +196,10 @@ async function getAbsoluteAssetInfo(
     hasher.update(data);
   }
 
-  return {files, hash: hasher.digest('hex'), name, scales, type};
+  return {
+    assetInfo: {files, hash: hasher.digest('hex'), name, scales, type},
+    firstFileContent: fileData[0],
+  };
 }
 
 export async function getAssetData(
@@ -218,13 +219,13 @@ export async function getAssetData(
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   assetUrlPath = normalizePathSeparatorsToPosix(assetUrlPath);
 
-  const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
-  const assetInfo = await getAbsoluteAssetInfo(assetPath, platform ?? null);
-
-  const isImageInput = assetInfo.files[0].includes('.zip/')
-    ? fs.readFileSync(assetInfo.files[0])
-    : assetInfo.files[0];
-  const dimensions = isImage ? getImageSize(isImageInput) : null;
+  const {assetInfo, firstFileContent} = await getAbsoluteAssetInfo(
+    assetPath,
+    platform ?? null,
+  );
+  const dimensions = isAssetTypeAnImage(assetInfo.type)
+    ? getAssetSize(assetInfo.type, firstFileContent, assetInfo.files[0])
+    : null;
   const scale = assetInfo.scales[0];
 
   const assetData = {
