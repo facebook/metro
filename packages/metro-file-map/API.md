@@ -85,6 +85,8 @@ export type CrawlerOptions = {
 
 export type CrawlResult = {changedFiles: FileData; removedFiles: Set<Path>; clocks: WatchmanClocks} | {changedFiles: FileData; removedFiles: Set<Path>};
 
+export function createStaticCrawler($$PARAM_0$$: StaticCrawlerOptions): CrawlerFactory;
+
 export type DependencyExtractor = {
     extract: (content: string, absoluteFilePath: string, defaultExtractor?: DependencyExtractor['extract']) => Set<string>;
     getCacheKey: () => string;
@@ -258,6 +260,15 @@ export class NoopCacheManager implements CacheManager {
     read(): Promise<null | undefined | CacheData>;
     write(): Promise<void>;
 }
+
+export type StaticCrawlerOptions = Readonly<{
+    files: ReadonlyArray<StaticFile>;
+}>;
+
+export type StaticFile = Readonly<{
+    path: string;
+    pluginData?: null | undefined | Readonly<{[pluginName: string]: unknown}>;
+}>;
 
 export type WatcherStatus =
 | {
