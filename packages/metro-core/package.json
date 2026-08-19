@@ -1,6 +1,6 @@
 {
   "name": "metro-core",
-  "version": "0.83.7",
+  "version": "0.83.8",
   "description": "🚇 Metro's core package.",
   "main": "src/index.js",
   "exports": {
@@ -20,7 +20,7 @@
   "dependencies": {
     "flow-enums-runtime": "^0.0.6",
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.83.7"
+    "metro-resolver": "0.83.8"
   },
   "license": "MIT",
   "engines": {
