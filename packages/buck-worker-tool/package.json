@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/metro.git",
+    "url": "git+https://github.com/react/metro.git",
     "directory": "packages/buck-worker-tool"
   },
   "main": "src/worker-tool.js",
