@@ -18,6 +18,7 @@ import type {
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
   Expression,
+  Identifier,
   ImportDeclaration,
   Node,
   Program,
@@ -57,8 +58,15 @@ type State = {
     ...
   }>,
   imports: Array<{node: Statement}>,
-  importDefault: Node,
-  importAll: Node,
+  importDefault: Expression,
+  importAll: Expression,
+  // Under `liveBindings`, imported locals get no binding of their own: each
+  // reference is rewritten to a member read off a namespace binding, so that
+  // the read observes the source module's current value. Populated by
+  // `ImportDeclaration` and applied at `Program.exit`, once the body -
+  // including generated export statements that may themselves reference an
+  // imported local - is final.
+  liveImportMembers: Map<string, Expression>,
   opts: Options,
   ...
 };
@@ -86,6 +94,33 @@ const importNamedTemplate = template.statement(`
  */
 const importSideEffectTemplate = template.statement(`
   require(FILE);
+`);
+
+/**
+ * Binds a source module's exports object, off which live *named* reads are
+ * taken ("import {x} from …" becomes a "_foo.x" read at each use site).
+ *
+ * A plain `require` is correct here for both ESM and CJS sources: named
+ * bindings live directly on the exports object either way. Only `default`
+ * needs interop, which is what the namespace helper below is for.
+ */
+const importSharedTemplate = template.statement(`
+  var LOCAL = require(FILE);
+`);
+
+/**
+ * Re-reads a source module's default export inside a live default re-export
+ * getter.
+ *
+ * Uses the mode-1 namespace shape explicitly rather than the single-argument
+ * form. Mode 0 memoises on the module descriptor, so a getter built on it
+ * would hand back the value captured on its first call and stop being live -
+ * defeating the point of installing a getter. Mode 1 re-resolves through
+ * `metroRequire` per call, so a source that reassigns its default is observed
+ * on the next read.
+ */
+const importDefaultValueTemplate = template.expression(`
+  IMPORT(FILE, 1).default
 `);
 
 /**
@@ -130,13 +165,6 @@ const exportGetterTemplate = template.statement(`
  */
 const requireMemberTemplate = template.expression(`
   require(FILE).REMOTE
-`);
-
-/**
- * Calls an import helper, used inside a live default re-export getter.
- */
-const importCallTemplate = template.expression(`
-  IMPORT(FILE)
 `);
 
 /**
@@ -230,6 +258,48 @@ export default function importExportPlugin({
   ...
 }): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
+
+  /**
+   * Replaces every free reference to an imported local with a member read off
+   * its namespace binding.
+   *
+   * This runs at `Program.exit` rather than in the `ImportDeclaration` visitor
+   * because export statements are generated during exit and may themselves
+   * reference an imported local (`import d from 'x'; export {d}`). Deferring
+   * until the body is final means those are rewritten by the same pass, instead
+   * of having to be special-cased against a binding that `path.remove()` has
+   * already destroyed.
+   */
+  function rewriteLiveImportReferences(
+    programPath: NodePath<Program>,
+    members: Map<string, Expression>,
+  ): void {
+    programPath.traverse({
+      Identifier(refPath: NodePath<Identifier>): void {
+        const name = refPath.node.name;
+        const member = members.get(name);
+        if (member == null || !refPath.isReferencedIdentifier()) {
+          return;
+        }
+        // An inner scope may declare the same name; only free references
+        // resolve to the import binding, which no longer exists.
+        if (refPath.scope.getBinding(name) != null) {
+          return;
+        }
+        const parent = refPath.parent;
+        if (
+          parent.type === 'ObjectProperty' &&
+          parent.shorthand === true &&
+          parent.value === refPath.node
+        ) {
+          // `{d}` has to become `{d: _x.default}`, not `{_x.default}`.
+          parent.shorthand = false;
+        }
+        // Deep clone: each use site needs its own nodes.
+        refPath.replaceWith(t.cloneNode(member, true));
+      },
+    });
+  }
 
   return {
     visitor: {
@@ -379,7 +449,7 @@ export default function importExportPlugin({
                 const value: Expression =
                   // $FlowFixMe[incompatible-use]
                   local.name === 'default'
-                    ? importCallTemplate({
+                    ? importDefaultValueTemplate({
                         IMPORT: t.cloneNode(state.importDefault),
                         FILE: resolvePath(
                           t.cloneNode(source),
@@ -502,6 +572,158 @@ export default function importExportPlugin({
               loc,
             ),
           });
+        } else if (state.opts.liveBindings === true) {
+          // Bind the source module once and rewrite every reference to a
+          // member read off that binding, so reads stay live. The bindings are
+          // created lazily: a declaration importing only named bindings never
+          // pays for the namespace helper, and vice versa.
+          //
+          // Named reads bind the source exports object once and read
+          // members off it at each use. Default reads bypass the binding and
+          // call the helper directly at each site, so the helper - which is
+          // non-memoizing under liveBindings - re-resolves the current
+          // default on every read.
+          let sharedId: ?Identifier = null;
+          let sharedDefaultId: ?Identifier = null;
+          let anchoredTopLevel = false;
+
+          const getShared = (): Identifier => {
+            let id = sharedId;
+            if (id == null) {
+              id = path.scope.generateUidIdentifierBasedOnNode(file);
+              sharedId = id;
+              state.imports.push({
+                node: withLocation(
+                  importSharedTemplate({
+                    LOCAL: t.cloneNode(id),
+                    FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                  }),
+                  loc,
+                ),
+              });
+              anchoredTopLevel = true;
+            }
+            return id;
+          };
+
+          // Shared alias for default reads: `var _n = importDefault(dep, 1)`.
+          // Mode 1 requests a namespace-shaped return so that `_n.default`
+          // resolves correctly for both ESM (helper returns exports
+          // unchanged; exports.default is the default) and CJS (helper wraps
+          // as {default: exports}; wrapper.default is exports = the
+          // default). All references to this default import share this
+          // single alias; each read site becomes `_n.default`, which under
+          // inline-requires inlines to `importDefault(dep, 1).default` per
+          // use and under non-inlined consumers stays as a cheap property
+          // access on the local var.
+          const getSharedDefault = (): Identifier => {
+            let id = sharedDefaultId;
+            if (id == null) {
+              id = path.scope.generateUidIdentifierBasedOnNode(file);
+              sharedDefaultId = id;
+              state.imports.push({
+                node: withLocation(
+                  t.variableDeclaration('var', [
+                    t.variableDeclarator(
+                      t.cloneNode(id),
+                      t.callExpression(t.cloneNode(state.importDefault), [
+                        resolvePath(t.cloneNode(file), state.opts.resolve),
+                        t.numericLiteral(1),
+                      ]),
+                    ),
+                  ]),
+                  loc,
+                ),
+              });
+              anchoredTopLevel = true;
+            }
+            return id;
+          };
+
+          // Produces `_n.default` for a default read site, cloned at each
+          // rewrite site. `_n` is the shared alias set up by
+          // `getSharedDefault()`.
+          const defaultRef = (): Expression =>
+            withLocation(
+              t.memberExpression(
+                t.cloneNode(getSharedDefault()),
+                t.identifier('default'),
+              ),
+              loc,
+            );
+
+          specifiers.forEach(s => {
+            const local = s.local;
+
+            switch (s.type) {
+              case 'ImportNamespaceSpecifier':
+                // `import * as ns` is already a namespace object whose identity
+                // is stable, so the existing binding is live as-is.
+                state.imports.push({
+                  node: withLocation(
+                    importTemplate({
+                      IMPORT: t.cloneNode(state.importAll),
+                      FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                      LOCAL: t.cloneNode(local),
+                    }),
+                    loc,
+                  ),
+                });
+                anchoredTopLevel = true;
+                break;
+
+              case 'ImportDefaultSpecifier':
+                state.liveImportMembers.set(local.name, defaultRef());
+                break;
+
+              case 'ImportSpecifier': {
+                const imported = s.imported;
+                if (imported.type === 'StringLiteral') {
+                  // `import {'a-b' as x}` needs a computed read.
+                  state.liveImportMembers.set(
+                    local.name,
+                    t.memberExpression(
+                      t.cloneNode(getShared()),
+                      t.cloneNode(imported),
+                      true,
+                    ),
+                  );
+                } else if (imported.name === 'default') {
+                  state.liveImportMembers.set(local.name, defaultRef());
+                } else {
+                  state.liveImportMembers.set(
+                    local.name,
+                    t.memberExpression(
+                      t.cloneNode(getShared()),
+                      t.cloneNode(imported),
+                    ),
+                  );
+                }
+                break;
+              }
+
+              default:
+                throw new TypeError('Unknown import type: ' + s.type);
+            }
+          });
+
+          // Every ES module import evaluates its source for side effects,
+          // regardless of whether any binding is used. Namespace and named
+          // specifiers naturally anchor a top-level `require(...)` (via
+          // `getShared()` / `importAll(...)`), which inline-requires elides
+          // for inlineable modules and retains for non-inlineable ones (see
+          // its `ignoredRequires` option). Default-only imports have no
+          // such anchor - default reads go through a per-read helper call -
+          // so we introduce one explicitly. The shared binding it creates
+          // is unused for default-only declarations, so inline-requires
+          // treats it as dead code and elides it for inlineable modules;
+          // for non-inlineable modules the `require(...)` is retained,
+          // preserving the load-time side effect. Under dev builds (where
+          // inline-requires does not run), the binding is retained as-is,
+          // matching pre-liveBindings behaviour.
+          if (!anchoredTopLevel) {
+            getShared();
+          }
         } else {
           let sharedModuleImport;
           let sharedModuleVariableDeclaration = null;
@@ -628,6 +850,7 @@ export default function importExportPlugin({
           state.imports = [];
           state.importAll = t.identifier(state.opts.importAll);
           state.importDefault = t.identifier(state.opts.importDefault);
+          state.liveImportMembers = new Map();
 
           // Rename declarations at module scope that might otherwise conflict
           // with arguments we inject into the module factory.
@@ -649,6 +872,19 @@ export default function importExportPlugin({
 
           state.exportNamed.forEach(
             (e: {local: string, remote: string, loc: ?SourceLocation, ...}) => {
+              const member = state.liveImportMembers.get(e.local);
+              if (member != null) {
+                // Re-exporting an imported binding is an *indirect* export:
+                // reads must observe the source module's current value, just
+                // as they do for the `export {x} from '…'` spelling of the
+                // same thing. A data property here would snapshot it.
+                state.exportGetters.push({
+                  remote: e.remote,
+                  value: t.cloneNode(member, true),
+                  loc: e.loc,
+                });
+                return;
+              }
               body.push(
                 withLocation(
                   exportTemplate({
@@ -663,6 +899,15 @@ export default function importExportPlugin({
 
           state.exportDefault.forEach(
             (e: {local: string, loc: ?SourceLocation, ...}) => {
+              const member = state.liveImportMembers.get(e.local);
+              if (member != null) {
+                state.exportGetters.push({
+                  remote: 'default',
+                  value: t.cloneNode(member, true),
+                  loc: e.loc,
+                });
+                return;
+              }
               body.push(
                 withLocation(
                   exportTemplate({
@@ -731,6 +976,14 @@ export default function importExportPlugin({
             // have been rewritten, so that `constantViolations` reflect the
             // final tree.
             path.scope.crawl();
+
+            if (state.liveImportMembers.size > 0) {
+              rewriteLiveImportReferences(path, state.liveImportMembers);
+              // Rewriting removed the last references to the imported locals
+              // and introduced the namespace bindings; the mirroring below
+              // needs bindings that reflect that.
+              path.scope.crawl();
+            }
 
             // Map each exported local binding to the remote name(s) it is
             // exposed as.
