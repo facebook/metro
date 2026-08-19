@@ -216,7 +216,7 @@ module.exports = require('./${flowFileBaseName}');
     test('has a repository field with correct format', () => {
       expect(packageJson.repository).toEqual({
         type: 'git',
-        url: 'git+https://github.com/facebook/metro.git',
+        url: 'git+https://github.com/react/metro.git',
         directory: packagePath.split(path.sep).filter(Boolean).join('/'),
       });
     });
