@@ -109,6 +109,7 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([]),
         output: [],
         path: p('/bundle'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       });
       this.dependencies.set(p('/ctx?ctx=xxx'), {
@@ -132,6 +133,7 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
         path: p('/ctx?ctx=xxx'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       });
       this.dependencies.set(p('/ctx/foo'), {
@@ -139,6 +141,7 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([p('/ctx?ctx=xxx')]),
         output: [],
         path: p('/ctx/foo'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       });
 

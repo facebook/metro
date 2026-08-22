@@ -131,6 +131,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         inverseDependencies: new CountingSet(),
         output: [],
         path: p('/bundle'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       };
       fooModule = {
@@ -154,6 +155,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
         path: p('/foo'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       };
       barModule = {
@@ -161,6 +163,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
         path: p('/bar'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       };
       bazModule = {
@@ -168,6 +171,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
         path: p('/baz'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       };
       quxModule = {
@@ -175,6 +179,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
         inverseDependencies: new CountingSet([p('/foo')]),
         output: [],
         path: p('/qux'),
+        // $FlowFixMe[prop-missing]
         getSource: () => Buffer.of(),
       };
 
@@ -385,6 +390,7 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       inverseDependencies: new CountingSet(),
       output: [],
       path: p('/qux'),
+      // $FlowFixMe[prop-missing]
       getSource: () => Buffer.of(),
     };
 
