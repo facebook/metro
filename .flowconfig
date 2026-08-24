@@ -1,11 +1,11 @@
 [ignore]
-glob:packages/*/build/**
-glob:.hg/**
-glob:.sl/**
-glob:.git/**
+packages/*/build/**
+.hg/**
+.sl/**
+.git/**
 # this transient dep bundles tests with their package, which flow attempts to parse
 # and crashes out as the test includes purposely malformed json
-glob:**/node_modules/resolve/test/**
+**/node_modules/resolve/test/**
 
 [options]
 emoji=true
