@@ -41,8 +41,8 @@ type NotificationEvent$Init = {
 
 declare class NotificationEvent extends ExtendableEvent {
   constructor(type: string, eventInitDict?: NotificationEvent$Init): void;
-  +notification: Notification;
-  +action: string;
+  readonly notification: Notification;
+  readonly action: string;
 }
 
 type ForeignFetchOptions = {
@@ -115,16 +115,16 @@ declare class PushSubscriptionJSON {
 }
 
 declare class PushSubscription {
-  +endpoint: string;
-  +expirationTime: number | null;
-  +options: PushSubscriptionOptions;
+  readonly endpoint: string;
+  readonly expirationTime: number | null;
+  readonly options: PushSubscriptionOptions;
   getKey(name: string): ArrayBuffer | null;
   toJSON(): PushSubscriptionJSON;
   unsubscribe(): Promise<boolean>;
 }
 
 declare class PushManager {
-  +supportedContentEncodings: Array<string>;
+  readonly supportedContentEncodings: Array<string>;
   subscribe(options?: PushSubscriptionOptions): Promise<PushSubscription>;
   getSubscription(): Promise<PushSubscription | null>;
   permissionState(
@@ -140,13 +140,13 @@ type GetNotificationOptions = {
 };
 
 declare class ServiceWorkerRegistration extends EventTarget {
-  +installing: ?ServiceWorker;
-  +waiting: ?ServiceWorker;
-  +active: ?ServiceWorker;
-  +navigationPreload: NavigationPreloadManager;
-  +scope: string;
-  +updateViaCache: ServiceWorkerUpdateViaCache;
-  +pushManager: PushManager;
+  readonly installing: ?ServiceWorker;
+  readonly waiting: ?ServiceWorker;
+  readonly active: ?ServiceWorker;
+  readonly navigationPreload: NavigationPreloadManager;
+  readonly scope: string;
+  readonly updateViaCache: ServiceWorkerUpdateViaCache;
+  readonly pushManager: PushManager;
 
   getNotifications?: (
     filter?: GetNotificationOptions,
@@ -171,8 +171,8 @@ type RegistrationOptions = {
 };
 
 declare class ServiceWorkerContainer extends EventTarget {
-  +controller: ?ServiceWorker;
-  +ready: Promise<ServiceWorkerRegistration>;
+  readonly controller: ?ServiceWorker;
+  readonly ready: Promise<ServiceWorkerRegistration>;
 
   getRegistration(
     clientURL?: string,

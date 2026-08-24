@@ -32,12 +32,12 @@ declare class Blob {
 }
 
 declare class FileReader extends EventTarget {
-  +EMPTY: 0;
-  +LOADING: 1;
-  +DONE: 2;
-  +error: null | DOMError;
-  +readyState: 0 | 1 | 2;
-  +result: null | string | ArrayBuffer;
+  readonly EMPTY: 0;
+  readonly LOADING: 1;
+  readonly DONE: 2;
+  readonly error: null | DOMError;
+  readonly readyState: 0 | 1 | 2;
+  readonly result: null | string | ArrayBuffer;
   abort(): void;
   onabort: null | ((ev: ProgressEvent) => any);
   onerror: null | ((ev: ProgressEvent) => any);
@@ -123,8 +123,8 @@ declare type DOMStringMap = {[key: string]: string, ...};
 
 declare class DOMStringList {
   @@iterator(): Iterator<string>;
-  +[key: number]: string;
-  +length: number;
+  readonly [key: number]: string;
+  readonly length: number;
   item(number): string | null;
   contains(string): boolean;
 }
@@ -146,16 +146,16 @@ declare interface CustomElementRegistry {
 }
 
 declare interface ShadowRoot extends DocumentFragment {
-  +delegatesFocus: boolean;
-  +host: Element;
+  readonly delegatesFocus: boolean;
+  readonly host: Element;
   // flowlint unsafe-getters-setters:off
   get innerHTML(): string;
   set innerHTML(value: string | TrustedHTML): void;
   // flowlint unsafe-getters-setters:error
-  +mode: ShadowRootMode;
+  readonly mode: ShadowRootMode;
 
   // From DocumentOrShadowRoot Mixin.
-  +styleSheets: StyleSheetList;
+  readonly styleSheets: StyleSheetList;
   adoptedStyleSheets: Array<CSSStyleSheet>;
 }
 
@@ -628,17 +628,17 @@ declare class Event {
   /**
    * Returns the type of event, e.g. "click", "hashchange", or "submit".
    */
-  +type: string;
+  readonly type: string;
   /**
    * Returns the object to which event is dispatched (its target).
    */
-  +target: EventTarget; // TODO: nullable
+  readonly target: EventTarget; // TODO: nullable
   /** @deprecated */
-  +srcElement: Element; // TODO: nullable
+  readonly srcElement: Element; // TODO: nullable
   /**
    * Returns the object whose event listener's callback is currently being invoked.
    */
-  +currentTarget: EventTarget; // TODO: nullable
+  readonly currentTarget: EventTarget; // TODO: nullable
   /**
    * Returns the invocation target objects of event's path (objects on which
    * listeners will be invoked), except for any nodes in shadow trees of which
@@ -647,15 +647,15 @@ declare class Event {
    */
   composedPath(): Array<EventTarget>;
 
-  +NONE: number;
-  +AT_TARGET: number;
-  +BUBBLING_PHASE: number;
-  +CAPTURING_PHASE: number;
+  readonly NONE: number;
+  readonly AT_TARGET: number;
+  readonly BUBBLING_PHASE: number;
+  readonly CAPTURING_PHASE: number;
   /**
    * Returns the event's phase, which is one of NONE, CAPTURING_PHASE, AT_TARGET,
    * and BUBBLING_PHASE.
    */
-  +eventPhase: number;
+  readonly eventPhase: number;
 
   /**
    * When dispatched in a tree, invoking this method prevents event from reaching
@@ -674,14 +674,14 @@ declare class Event {
    * event goes through its target's ancestors in reverse tree order, and
    * false otherwise.
    */
-  +bubbles: boolean;
+  readonly bubbles: boolean;
   /**
    * Returns true or false depending on how event was initialized. Its
    * return value does not always carry meaning, but true can indicate
    * that part of the operation during which event was dispatched, can
    * be canceled by invoking the preventDefault() method.
    */
-  +cancelable: boolean;
+  readonly cancelable: boolean;
   // returnValue: boolean; // legacy, and some subclasses still define it as a string!
   /**
    * If invoked when the cancelable attribute value is true, and while
@@ -694,28 +694,28 @@ declare class Event {
    * Returns true if preventDefault() was invoked successfully to indicate
    * cancelation, and false otherwise.
    */
-  +defaultPrevented: boolean;
+  readonly defaultPrevented: boolean;
   /**
    * Returns true or false depending on how event was initialized. True if
    * event invokes listeners past a ShadowRoot node that is the root of its
    * target, and false otherwise.
    */
-  +composed: boolean;
+  readonly composed: boolean;
 
   /**
    * Returns true if event was dispatched by the user agent, and false otherwise.
    */
-  +isTrusted: boolean;
+  readonly isTrusted: boolean;
   /**
    * Returns the event's timestamp as the number of milliseconds measured relative
    * to the time origin.
    */
-  +timeStamp: number;
+  readonly timeStamp: number;
 
   /** Non-standard. See Event.prototype.composedPath */
-  +deepPath?: () => EventTarget[];
+  readonly deepPath?: () => EventTarget[];
   /** Non-standard. See Event.prototype.composed */
-  +scoped: boolean;
+  readonly scoped: boolean;
 
   /**
    * @deprecated
@@ -809,15 +809,15 @@ type WheelEvent$Init = {
 };
 
 declare class WheelEvent extends MouseEvent {
-  static +DOM_DELTA_PIXEL: 0x00;
-  static +DOM_DELTA_LINE: 0x01;
-  static +DOM_DELTA_PAGE: 0x02;
+  static readonly DOM_DELTA_PIXEL: 0x00;
+  static readonly DOM_DELTA_LINE: 0x01;
+  static readonly DOM_DELTA_PAGE: 0x02;
 
   constructor(type: string, eventInitDict?: WheelEvent$Init): void;
-  +deltaX: number;
-  +deltaY: number;
-  +deltaZ: number;
-  +deltaMode: 0x00 | 0x01 | 0x02;
+  readonly deltaX: number;
+  readonly deltaY: number;
+  readonly deltaZ: number;
+  readonly deltaMode: 0x00 | 0x01 | 0x02;
 }
 
 declare class DragEvent extends MouseEvent {
@@ -885,7 +885,7 @@ type PageTransitionEventInit = {
 // https://html.spec.whatwg.org/multipage/browsing-the-web.html#the-pagetransitionevent-interface
 declare class PageTransitionEvent extends Event {
   constructor(type: string, init?: PageTransitionEventInit): void;
-  +persisted: boolean;
+  readonly persisted: boolean;
 }
 
 // used for websockets and postMessage, for example. See:
@@ -907,12 +907,12 @@ declare class EventSource extends EventTarget {
     url: string,
     configuration?: {withCredentials: boolean, ...},
   ): void;
-  +CLOSED: 2;
-  +CONNECTING: 0;
-  +OPEN: 1;
-  +readyState: 0 | 1 | 2;
-  +url: string;
-  +withCredentials: boolean;
+  readonly CLOSED: 2;
+  readonly CONNECTING: 0;
+  readonly OPEN: 1;
+  readonly readyState: 0 | 1 | 2;
+  readonly url: string;
+  readonly withCredentials: boolean;
   onerror: () => void;
   onmessage: MessageEventListener;
   onopen: () => void;
@@ -1006,33 +1006,33 @@ declare class KeyboardEvent extends UIEvent {
   constructor(typeArg: string, init?: KeyboardEvent$Init): void;
 
   /** `true` if the Alt (alternative) (or "Option") key modifier was active. */
-  +altKey: boolean;
+  readonly altKey: boolean;
   /**
    * Holds a string that identifies the physical key being pressed. The value
    * is not affected by the current keyboard layout or modifier state, so a
    * particular key will always return the same value.
    */
-  +code: string;
+  readonly code: string;
   /** `true` if the Control (control) key modifier was active. */
-  +ctrlKey: boolean;
+  readonly ctrlKey: boolean;
   /**
    * `true` if the key event occurs as part of a composition session, i.e.,
    * after a `compositionstart` event and before the corresponding
    * `compositionend` event.
    */
-  +isComposing: boolean;
+  readonly isComposing: boolean;
   /**
    * Holds a [key attribute value](https://www.w3.org/TR/uievents-key/#key-attribute-value)
    * corresponding to the key pressed. */
-  +key: string;
+  readonly key: string;
   /** An indication of the logical location of the key on the device. */
-  +location: number;
+  readonly location: number;
   /** `true` if the meta (Meta) key (or "Command") modifier was active. */
-  +metaKey: boolean;
+  readonly metaKey: boolean;
   /** `true` if the key has been pressed in a sustained manner. */
-  +repeat: boolean;
+  readonly repeat: boolean;
   /** `true` if the shift (Shift) key modifier was active. */
-  +shiftKey: boolean;
+  readonly shiftKey: boolean;
 
   /**
    * Queries the state of a modifier using a key value.
@@ -1050,7 +1050,7 @@ declare class KeyboardEvent extends UIEvent {
    *
    * @deprecated You should use KeyboardEvent.key instead, if available.
    */
-  +charCode: number;
+  readonly charCode: number;
   /**
    * Holds a system- and implementation-dependent numerical code signifying
    * the unmodified identifier associated with the key pressed. Unlike the
@@ -1062,7 +1062,7 @@ declare class KeyboardEvent extends UIEvent {
    *
    * @deprecated You should use KeyboardEvent.key instead, if available.
    */
-  +keyCode: number;
+  readonly keyCode: number;
   /**
    * Holds a system- and implementation-dependent numerical code signifying
    * the unmodified identifier associated with the key pressed. In most cases,
@@ -1070,7 +1070,7 @@ declare class KeyboardEvent extends UIEvent {
    *
    * @deprecated You should use KeyboardEvent.key instead, if available.
    */
-  +which: number;
+  readonly which: number;
 }
 
 type InputEvent$Init = {
@@ -1085,10 +1085,10 @@ type InputEvent$Init = {
 
 declare class InputEvent extends UIEvent {
   constructor(typeArg: string, inputEventInit: InputEvent$Init): void;
-  +data: string | null;
-  +dataTransfer: DataTransfer | null;
-  +inputType: string;
-  +isComposing: boolean;
+  readonly data: string | null;
+  readonly dataTransfer: DataTransfer | null;
+  readonly inputType: string;
+  readonly isComposing: boolean;
   getTargetRanges(): Array<any>; // TODO: StaticRange
 }
 
@@ -1122,11 +1122,11 @@ declare class ErrorEvent extends Event {
       ...
     },
   ): void;
-  +message: string;
-  +filename: string;
-  +lineno: number;
-  +colno: number;
-  +error: any;
+  readonly message: string;
+  readonly filename: string;
+  readonly lineno: number;
+  readonly colno: number;
+  readonly error: any;
 }
 
 // https://html.spec.whatwg.org/multipage/web-messaging.html#broadcasting-to-other-browsing-contexts
@@ -1194,7 +1194,7 @@ type ClipboardItemOptions = {
 };
 
 declare class ClipboardItem {
-  +types: ReadonlyArray<string>;
+  readonly types: ReadonlyArray<string>;
   getType(type: string): Promise<Blob>;
   constructor(
     items: {[type: string]: ClipboardItemData},
@@ -1211,7 +1211,7 @@ type ClipboardEvent$Init = {
 
 declare class ClipboardEvent extends Event {
   constructor(type: ClipboardEventTypes, eventInit?: ClipboardEvent$Init): void;
-  +clipboardData: ?DataTransfer; // readonly
+  readonly clipboardData: ?DataTransfer; // readonly
 }
 
 // https://www.w3.org/TR/2017/WD-css-transitions-1-20171130/#interface-transitionevent
@@ -1230,9 +1230,9 @@ declare class TransitionEvent extends Event {
     eventInit?: TransitionEvent$Init,
   ): void;
 
-  +propertyName: string; // readonly
-  +elapsedTime: number; // readonly
-  +pseudoElement: string; // readonly
+  readonly propertyName: string; // readonly
+  readonly elapsedTime: number; // readonly
+  readonly pseudoElement: string; // readonly
 }
 
 // https://www.w3.org/TR/html50/browsers.html#beforeunloadevent
@@ -1241,18 +1241,18 @@ declare class BeforeUnloadEvent extends Event {
 }
 
 declare class SecurityPolicyViolationEvent extends Event {
-  +documentURI: string;
-  +referrer: string;
-  +blockedURI: string;
-  +effectiveDirective: string;
-  +violatedDirective: string;
-  +originalPolicy: string;
-  +sourceFile: string;
-  +sample: string;
-  +disposition: 'enforce' | 'report';
-  +statusCode: number;
-  +lineNumber: number;
-  +columnNumber: number;
+  readonly documentURI: string;
+  readonly referrer: string;
+  readonly blockedURI: string;
+  readonly effectiveDirective: string;
+  readonly violatedDirective: string;
+  readonly originalPolicy: string;
+  readonly sourceFile: string;
+  readonly sample: string;
+  readonly disposition: 'enforce' | 'report';
+  readonly statusCode: number;
+  readonly lineNumber: number;
+  readonly columnNumber: number;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/USBConnectionEvent
@@ -1266,7 +1266,7 @@ declare class Node extends EventTarget {
   baseURI: ?string;
   childNodes: NodeList<Node>;
   firstChild: ?Node;
-  +isConnected: boolean;
+  readonly isConnected: boolean;
   lastChild: ?Node;
   nextSibling: ?Node;
   nodeName: string;
@@ -1357,7 +1357,7 @@ declare class Attr extends Node {
   localName: string;
 }
 
-declare class HTMLCollection<+Elem: HTMLElement> {
+declare class HTMLCollection<out Elem: HTMLElement> {
   @@iterator(): Iterator<Elem>;
   length: number;
   item(nameOrIndex?: any, optionalIndex?: any): Elem | null;
@@ -1369,13 +1369,13 @@ declare class HTMLCollection<+Elem: HTMLElement> {
 // from https://www.w3.org/TR/custom-elements/#extensions-to-document-interface-to-register
 // See also https://github.com/w3c/webcomponents/
 type ElementRegistrationOptions = {
-  +prototype?: {
+  readonly prototype?: {
     // from https://www.w3.org/TR/custom-elements/#types-of-callbacks
     // See also https://github.com/w3c/webcomponents/
-    +createdCallback?: () => unknown,
-    +attachedCallback?: () => unknown,
-    +detachedCallback?: () => unknown,
-    +attributeChangedCallback?: ((
+    readonly createdCallback?: () => unknown,
+    readonly attachedCallback?: () => unknown,
+    readonly detachedCallback?: () => unknown,
+    readonly attributeChangedCallback?: ((
       // attribute is set
       attributeLocalName: string,
       oldAttributeValue: null,
@@ -1398,28 +1398,28 @@ type ElementRegistrationOptions = {
       ) => unknown),
     ...
   },
-  +extends?: string,
+  readonly extends?: string,
   ...
 };
 
 type ElementCreationOptions = {is: string, ...};
 
 declare class Document extends Node {
-  +timeline: DocumentTimeline;
+  readonly timeline: DocumentTimeline;
   getAnimations(): Array<Animation>;
-  +URL: string;
+  readonly URL: string;
   adoptNode<T: Node>(source: T): T;
   anchors: HTMLCollection<HTMLAnchorElement>;
   applets: HTMLCollection<HTMLAppletElement>;
   body: HTMLBodyElement | null;
-  +characterSet: string;
+  readonly characterSet: string;
   /**
    * Legacy alias of `characterSet`
    * @deprecated
    */
-  +charset: string;
+  readonly charset: string;
   close(): void;
-  +contentType: string;
+  readonly contentType: string;
   cookie: string;
   createAttribute(name: string): Attr;
   createAttributeNS(namespaceURI: string | null, qualifiedName: string): Attr;
@@ -1674,10 +1674,10 @@ declare class Document extends Node {
   createTextNode(data: string): Text;
   currentScript: HTMLScriptElement | null;
   dir: 'rtl' | 'ltr';
-  +doctype: DocumentType | null;
-  +documentElement: HTMLElement | null;
+  readonly doctype: DocumentType | null;
+  readonly documentElement: HTMLElement | null;
   documentMode: number;
-  +documentURI: string;
+  readonly documentURI: string;
   domain: string | null;
   embeds: HTMLCollection<HTMLEmbedElement>;
   exitFullscreen(): Promise<void>;
@@ -2011,13 +2011,13 @@ declare class Document extends Node {
   ): HTMLCollection<HTMLElement>;
   head: HTMLHeadElement | null;
   images: HTMLCollection<HTMLImageElement>;
-  +implementation: DOMImplementation;
+  readonly implementation: DOMImplementation;
   importNode<T: Node>(importedNode: T, deep: boolean): T;
   /**
    * Legacy alias of `characterSet`
    * @deprecated
    */
-  +inputEncoding: string;
+  readonly inputEncoding: string;
   lastModified: string;
   links: HTMLCollection<HTMLLinkElement>;
   media: string;
@@ -2049,7 +2049,7 @@ declare class Document extends Node {
   elementFromPoint(x: number, y: number): HTMLElement | null;
   elementsFromPoint(x: number, y: number): Array<HTMLElement>;
   defaultView: any;
-  +compatMode: 'BackCompat' | 'CSS1Compat';
+  readonly compatMode: 'BackCompat' | 'CSS1Compat';
   hidden: boolean;
 
   // Pointer Lock specification
@@ -2690,7 +2690,7 @@ declare class Document extends Node {
   getElementById(elementId: string): HTMLElement | null;
 
   // From DocumentOrShadowRoot Mixin.
-  +styleSheets: StyleSheetList;
+  readonly styleSheets: StyleSheetList;
   adoptedStyleSheets: Array<CSSStyleSheet>;
 }
 
@@ -2835,7 +2835,7 @@ declare class Element extends Node implements Animatable {
   scrollLeft: number;
   scrollTop: number;
   scrollWidth: number;
-  +tagName: string;
+  readonly tagName: string;
 
   // TODO: a lot more ARIA properties
   ariaHidden: void | 'true' | 'false';
@@ -3444,8 +3444,8 @@ declare class HTMLTableElement extends HTMLElement {
   caption: HTMLTableCaptionElement | null;
   tHead: HTMLTableSectionElement | null;
   tFoot: HTMLTableSectionElement | null;
-  +tBodies: HTMLCollection<HTMLTableSectionElement>;
-  +rows: HTMLCollection<HTMLTableRowElement>;
+  readonly tBodies: HTMLCollection<HTMLTableSectionElement>;
+  readonly rows: HTMLCollection<HTMLTableRowElement>;
   createTHead(): HTMLTableSectionElement;
   deleteTHead(): void;
   createTFoot(): HTMLTableSectionElement;
@@ -3467,7 +3467,7 @@ declare class HTMLTableColElement extends HTMLElement {
 
 declare class HTMLTableSectionElement extends HTMLElement {
   tagName: 'THEAD' | 'TFOOT' | 'TBODY';
-  +rows: HTMLCollection<HTMLTableRowElement>;
+  readonly rows: HTMLCollection<HTMLTableRowElement>;
   insertRow(index?: number): HTMLTableRowElement;
   deleteRow(index: number): void;
 }
@@ -3476,15 +3476,15 @@ declare class HTMLTableCellElement extends HTMLElement {
   tagName: 'TD' | 'TH';
   colSpan: number;
   rowSpan: number;
-  +cellIndex: number;
+  readonly cellIndex: number;
 }
 
 declare class HTMLTableRowElement extends HTMLElement {
   tagName: 'TR';
   align: 'left' | 'right' | 'center';
-  +rowIndex: number;
-  +sectionRowIndex: number;
-  +cells: HTMLCollection<HTMLTableCellElement>;
+  readonly rowIndex: number;
+  readonly sectionRowIndex: number;
+  readonly cells: HTMLCollection<HTMLTableCellElement>;
   deleteCell(index: number): void;
   insertCell(index?: number): HTMLTableCellElement;
 }
@@ -5936,13 +5936,13 @@ declare class URL {
   host: string;
   hostname: string;
   href: string;
-  +origin: string;
+  readonly origin: string;
   password: string;
   pathname: string;
   port: string;
   protocol: string;
   search: string;
-  +searchParams: URLSearchParams;
+  readonly searchParams: URLSearchParams;
   username: string;
   toString(): string;
   toJSON(): string;
@@ -6220,30 +6220,30 @@ type NotificationOptions = {
 
 declare class Notification extends EventTarget {
   constructor(title: string, options?: NotificationOptions): void;
-  static +permission: NotificationPermission;
+  static readonly permission: NotificationPermission;
   static requestPermission(
     callback?: (perm: NotificationPermission) => unknown,
   ): Promise<NotificationPermission>;
-  static +maxActions: number;
+  static readonly maxActions: number;
   onclick: ?(evt: Event) => unknown;
   onclose: ?(evt: Event) => unknown;
   onerror: ?(evt: Event) => unknown;
   onshow: ?(evt: Event) => unknown;
-  +title: string;
-  +dir: NotificationDirection;
-  +lang: string;
-  +body: string;
-  +tag: string;
-  +image?: string;
-  +icon?: string;
-  +badge?: string;
-  +vibrate?: Array<number>;
-  +timestamp: number;
-  +renotify: boolean;
-  +silent: boolean;
-  +requireInteraction: boolean;
-  +data: any;
-  +actions: Array<NotificationAction>;
+  readonly title: string;
+  readonly dir: NotificationDirection;
+  readonly lang: string;
+  readonly body: string;
+  readonly tag: string;
+  readonly image?: string;
+  readonly icon?: string;
+  readonly badge?: string;
+  readonly vibrate?: Array<number>;
+  readonly timestamp: number;
+  readonly renotify: boolean;
+  readonly silent: boolean;
+  readonly requireInteraction: boolean;
+  readonly data: any;
+  readonly actions: Array<NotificationAction>;
 
   close(): void;
 }
