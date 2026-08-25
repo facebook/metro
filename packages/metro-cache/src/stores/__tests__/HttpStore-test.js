@@ -374,6 +374,56 @@ describe('HttpStore', () => {
     });
   });
 
+  test('rejects with a NetworkError when the set request socket errors', async () => {
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 1,
+    });
+    const promise = store.set(Buffer.from('key-set'), {foo: 42});
+    const [opts] = jest.requireMock('node:http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('PUT');
+
+    const err = new Error('read ECONNRESET');
+    err.code = 'ECONNRESET';
+    httpPassThrough.emit('error', err);
+
+    await expect(promise).rejects.toMatchObject({
+      constructor: HttpStore.NetworkError,
+      code: 'ECONNRESET',
+      message: 'read ECONNRESET',
+    });
+  });
+
+  test('set() retries a request socket error when retryNetworkErrors is set', async () => {
+    jest.useRealTimers();
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 2,
+      retryNetworkErrors: true,
+    });
+    const {request} = jest.requireMock('node:http');
+
+    request.mockImplementation((opts, callback) => {
+      const req = new PassThrough();
+
+      if (request.mock.calls.length === 1) {
+        const err = new Error('read ECONNRESET');
+        err.code = 'ECONNRESET';
+        process.nextTick(() => req.emit('error', err));
+      } else {
+        callback(responseHttpOk(''));
+        req.resume();
+      }
+
+      return req;
+    });
+
+    await store.set(Buffer.from('key-set'), {foo: 42});
+
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
   test('set() resolves when the HTTP code is in additionalSuccessStatuses', done => {
     const store = new HttpStore({
       endpoint: 'http://www.example.com/endpoint',

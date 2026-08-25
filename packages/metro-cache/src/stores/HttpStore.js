@@ -369,8 +369,20 @@ export default class HttpStore<T> {
         res.resume();
       });
 
+      // Without this listener a socket-level failure mid-upload (e.g. the peer
+      // resetting a pooled keep-alive connection) is emitted as an unhandled
+      // 'error' and takes down the whole process instead of rejecting, which
+      // also makes #withRetries unable to retry the write.
+      req.on('error', err => {
+        reject(new NetworkError(err.message, err.code));
+      });
+
       req.on('timeout', () => {
         req.destroy(new Error('Request timed out'));
+      });
+
+      gzip.on('error', err => {
+        reject(err);
       });
 
       gzip.pipe(req);
