@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<ccc6201d24a5a5a58eb55d27f6e45e86>>
+ * @generated SignedSource<<37cd1bfec704014c5260f0fd26c787dc>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-symbolicate/src/GoogleIgnoreListConsumer.js
@@ -37,6 +37,9 @@ type SourceNameNormalizer = (
   */
 declare class GoogleIgnoreListConsumer {
   constructor(map: MixedSourceMap, normalizeSourceFn?: SourceNameNormalizer);
+  _sourceMap: MixedSourceMap;
+  _normalizeSource: SourceNameNormalizer;
+  _ignoredSourceSet: null | undefined | Set<string>;
   /**
    * Returns `true` if the given source is in this map's ignore list, `false`
    * otherwise.
@@ -54,5 +57,31 @@ declare class GoogleIgnoreListConsumer {
    * `sources` field is the array that was passed into this method.
    */
   toArray(sources: ReadonlyArray<null | undefined | string>): Array<number>;
+  /**
+   * Prepares and caches a set of ignored sources for this map.
+   */
+  _getIgnoredSourceSet(): ReadonlySet<string>;
+  /**
+   * Collects ignored sources from the given map using the current source name
+   * normalization function. Handles both index maps (with sections) and plain
+   * maps.
+   *
+   * NOTE: If any sources are repeated in the map, we consider a source to be
+   * ignored as long as a source with the same normalized name is listed in AT
+   * LEAST one `x_google_ignoreList` array. Technically, this means we lose
+   * the granularity afforded by index maps and by the ability to repeat source
+   * names within a single `sources` array.
+   *
+   * Chrome's handling of duplicates is different: only the first occurrence of
+   * a given source is considered when determining if a source is ignored. It's
+   * unclear whether this is intentional. Absent a formal spec for
+   * `x_google_ignoreList`, we will diverge from Chrome for now.
+   *
+   * See: https://github.com/ChromeDevTools/devtools-frontend/blob/7afc9157b8d05de06e273284119e9c55a4eadb72/front_end/core/sdk/SourceMap.ts#L425-L429
+   */
+  _buildIgnoredSourceSet(
+    map: MixedSourceMap,
+    ignoredSourceSet: Set<string>,
+  ): void;
 }
 export default GoogleIgnoreListConsumer;

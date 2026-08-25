@@ -17,7 +17,10 @@ import {
 test('TypeScript defs are in sync (yarn run build-ts-defs produces no changes)', async () => {
   let error;
   try {
-    await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {verifyOnly: true});
+    await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {
+      verifyOnly: true,
+      mungeUnderscores: false,
+    });
   } catch (e) {
     error = e;
   }

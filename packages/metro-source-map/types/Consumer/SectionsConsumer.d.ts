@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<cf526b3b5dc1b8fda7e13f65bd6dd2ba>>
+ * @generated SignedSource<<19e73dfc942bfc06b0a44f0488b16947>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-source-map/src/Consumer/SectionsConsumer.js
@@ -17,6 +17,7 @@
 
 import type {IndexMap} from '../source-map';
 import type {
+  GeneratedOffset,
   GeneratedPositionLookup,
   IConsumer,
   Mapping,
@@ -29,11 +30,15 @@ import AbstractConsumer from './AbstractConsumer';
  * `sections` field and no top-level mappings).
  */
 declare class SectionsConsumer extends AbstractConsumer implements IConsumer {
+  _consumers: ReadonlyArray<[GeneratedOffset, IConsumer]>;
   constructor(sourceMap: IndexMap);
   originalPositionFor(
     generatedPosition: GeneratedPositionLookup,
   ): SourcePosition;
   generatedMappings(): Iterable<Mapping>;
+  _consumerForPosition(
+    generatedPosition: GeneratedPositionLookup,
+  ): null | undefined | [GeneratedOffset, IConsumer];
   sourceContentFor(
     source: string,
     nullOnMissing: true,

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<1cc985f3869f7db49aca7daeca848b82>>
+ * @generated SignedSource<<13f1483d2a732241f8d9eae463399b0e>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph.js
@@ -21,10 +21,32 @@ import type {
 } from '../DeltaBundler/types';
 import type {ResolverInputOptions} from '../shared/types';
 import type {ConfigT} from 'metro-config';
+import type {
+  ChangeEvent,
+  FileSystem,
+  HasteMap,
+  HealthCheckResult,
+  WatcherStatus,
+  default as MetroFileMap,
+} from 'metro-file-map';
 
+import {ModuleResolver} from './DependencyGraph/ModuleResolution';
 import EventEmitter from 'events';
 
 declare class DependencyGraph extends EventEmitter {
+  _config: ConfigT;
+  _haste: MetroFileMap;
+  _fileSystem: FileSystem;
+  _hasteMap: HasteMap;
+  _moduleResolver: ModuleResolver;
+  _resolutionCache: Map<
+    string | symbol,
+    Map<
+      string | symbol,
+      Map<string | symbol, Map<string | symbol, BundlerResolution>>
+    >
+  >;
+  _initializedPromise: Promise<void>;
   constructor(
     config: ConfigT,
     options?: {
@@ -32,7 +54,14 @@ declare class DependencyGraph extends EventEmitter {
       readonly watch?: boolean;
     },
   );
+  _onWatcherHealthCheck(result: HealthCheckResult): void;
+  _onWatcherStatus(status: WatcherStatus): void;
   ready(): Promise<void>;
+  _onHasteChange($$PARAM_0$$: ChangeEvent): void;
+  _createModuleResolver(): void;
+  _getClosestPackage(
+    absoluteModulePath: string,
+  ): null | undefined | {packageJsonPath: string; packageRelativePath: string};
   getAllFiles(): Array<string>;
   /**
    * Used when watcher.unstable_lazySha1 is true

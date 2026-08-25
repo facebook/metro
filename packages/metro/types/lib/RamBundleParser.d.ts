@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<7be940ed3f4c6dffc465780640e301ec>>
+ * @generated SignedSource<<ebddbde1dcdecbbee129fd96caaf3bb0>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/lib/RamBundleParser.js
@@ -24,7 +24,12 @@
  * getModule(): returns the code for the specified module.
  */
 declare class RamBundleParser {
+  _buffer: Buffer;
+  _numModules: number;
+  _startupCodeLength: number;
+  _startOffset: number;
   constructor(buffer: Buffer);
+  _readPosition(pos: number): number;
   getStartupCode(): string;
   getModule(id: number): string;
 }

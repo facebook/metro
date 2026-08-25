@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<4bb214316528dcf37b5f3a2aeef672ff>>
+ * @generated SignedSource<<d3f9345c8fb0ae1020ac1c3735b667f6>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-symbolicate/src/ChromeHeapSnapshot.js
@@ -36,6 +36,8 @@ export type ChromeHeapSnapshot = {
   trace_tree: RawBuffer;
 };
 export declare class ChromeHeapSnapshotProcessor {
+  readonly _snapshotData: ChromeHeapSnapshot;
+  readonly _globalStringTable: ChromeHeapSnapshotStringTable;
   constructor(snapshotData: ChromeHeapSnapshot);
   traceFunctionInfos(): ChromeHeapSnapshotRecordIterator;
   locations(): ChromeHeapSnapshotRecordIterator;
@@ -44,15 +46,24 @@ export declare class ChromeHeapSnapshotProcessor {
   traceTree(): ChromeHeapSnapshotRecordIterator;
 }
 declare class ChromeHeapSnapshotStringTable {
+  readonly _strings: Array<string>;
+  readonly _indexCache: Map<string, number>;
   constructor(strings: Array<string>);
   add(value: string): number;
   get(index: number): string;
+  _syncIndexCache(): void;
 }
 type ChromeHeapSnapshotFieldType = Array<string> | string;
 type DenormalizedRecordInput = Readonly<{
   [field: string]: string | number | ReadonlyArray<DenormalizedRecordInput>;
 }>;
 declare class ChromeHeapSnapshotRecordAccessor {
+  readonly _fieldToOffset: ReadonlyMap<string, number>;
+  readonly _fieldToType: ReadonlyMap<string, ChromeHeapSnapshotFieldType>;
+  readonly _recordSize: number;
+  readonly _buffer: RawBuffer;
+  readonly _globalStringTable: ChromeHeapSnapshotStringTable;
+  _position: number;
   constructor(
     buffer: RawBuffer,
     recordFields: Array<string>,
@@ -78,6 +89,22 @@ declare class ChromeHeapSnapshotRecordAccessor {
 
   protectedHasNext(): boolean;
   protectedTryMoveNext(): void;
+  /** Private methods */
+
+  _getRaw(field: string): number | RawBuffer;
+  _getScalar(field: string): string | number;
+  _setRaw(field: string, rawValue: number | RawBuffer): void;
+  _set(
+    field: string,
+    value: string | number | ReadonlyArray<DenormalizedRecordInput>,
+  ): void;
+  _setChildren(
+    field: string,
+    value: ReadonlyArray<DenormalizedRecordInput>,
+  ): void;
+  _encodeString(field: string, value: string): number;
+  _validatePosition(allowEnd?: boolean, position?: number): void;
+  _moveToPosition(nextPosition: number, allowEnd?: boolean): void;
 }
 declare class ChromeHeapSnapshotRecordIterator
   extends ChromeHeapSnapshotRecordAccessor

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<4e6d6a38a375f6430761b6ae0220e309>>
+ * @generated SignedSource<<25b3906d78ba99d86fb91390016332ff>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-source-map/src/Consumer/DelegatingConsumer.js
@@ -34,6 +34,7 @@ declare class DelegatingConsumer implements IConsumer {
   static readonly ORIGINAL_ORDER: IterationOrder;
   static readonly GREATEST_LOWER_BOUND: LookupBias;
   static readonly LEAST_UPPER_BOUND: LookupBias;
+  _rootConsumer: IConsumer;
   constructor(sourceMap: MixedSourceMap);
   originalPositionFor(
     generatedPosition: GeneratedPositionLookup,
