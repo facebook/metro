@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<74d76149d62fc6d50282472fa1e271fe>>
+ * @generated SignedSource<<15f603afc860c64c7acc5a6cfe2a6717>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/Transformer.js
@@ -15,14 +15,22 @@
  *   yarn run build-ts-defs (OSS) 
  */
 
-import type {TransformResultWithSource} from '../DeltaBundler';
+import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
+
+import WorkerFarm from './WorkerFarm';
+import {Cache} from 'metro-cache';
 
 type GetOrComputeSha1Fn = (
   $$PARAM_0$$: string,
 ) => Promise<Readonly<{content?: Buffer; sha1: string}>>;
 declare class Transformer {
+  _config: ConfigT;
+  _cache: Cache<TransformResult>;
+  _baseHash: string;
+  _getSha1: GetOrComputeSha1Fn;
+  _workerFarm: WorkerFarm;
   constructor(
     config: ConfigT,
     opts: Readonly<{getOrComputeSha1: GetOrComputeSha1Fn}>,

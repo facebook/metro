@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<1fbdc1ddc3526c8742b8c22d02311d38>>
+ * @generated SignedSource<<d06b53dd09157df95aeb941035d4ebf0>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/DeltaCalculator.js
@@ -16,6 +16,7 @@
  */
 
 import type {DeltaResult, Options} from './types';
+import type {ChangeEvent} from 'metro-file-map';
 
 import {Graph} from './Graph';
 import EventEmitter from 'events';
@@ -26,6 +27,14 @@ import EventEmitter from 'events';
  * traverse the whole dependency tree for trivial small changes.
  */
 declare class DeltaCalculator<T> extends EventEmitter {
+  _changeEventSource: EventEmitter;
+  _options: Options<T>;
+  _currentBuildPromise: null | undefined | Promise<DeltaResult<T>>;
+  _deletedFiles: Set<string>;
+  _modifiedFiles: Set<string>;
+  _addedFiles: Set<string>;
+  _requiresReset: boolean;
+  _graph: Graph<T>;
   constructor(
     entryPoints: ReadonlySet<string>,
     changeEventSource: EventEmitter,
@@ -49,5 +58,11 @@ declare class DeltaCalculator<T> extends EventEmitter {
    * plus some metadata.
    */
   getGraph(): Graph<T>;
+  _handleMultipleFileChanges: (changeEvent: ChangeEvent) => void;
+  _getChangedDependencies(
+    modifiedFiles: Set<string>,
+    deletedFiles: Set<string>,
+    addedFiles: Set<string>,
+  ): Promise<DeltaResult<T>>;
 }
 export default DeltaCalculator;

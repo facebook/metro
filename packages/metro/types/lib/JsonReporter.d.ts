@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<bfc4caf223ec55afbed87fbd905607ea>>
+ * @generated SignedSource<<e7173f8dc5e076fd37b9a1cecd581f58>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/lib/JsonReporter.js
@@ -33,6 +33,7 @@ export type SerializedEvent<
 declare class JsonReporter<
   TEvent extends {readonly [$$Key$$: string]: unknown},
 > {
+  _stream: Writable;
   constructor(stream: Writable);
   /**
    * There is a special case for errors because they have non-enumerable fields.

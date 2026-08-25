@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<920bacbb8042b15a2cd4888e0ca47b8c>>
+ * @generated SignedSource<<c1cd2317d27c079743bc7c0e0fa4b379>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-source-map/src/BundleBuilder.js
@@ -31,7 +31,15 @@ import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
  * const map = builder.getMap();
  */
 export declare class BundleBuilder {
+  _file: string;
+  _sections: Array<IndexMapSection>;
+  _line: number;
+  _column: number;
+  _code: string;
+  _afterMappedContent: boolean;
   constructor(file: string);
+  _pushMapSection(map: MixedSourceMap): void;
+  _endMappedContent(): void;
   append(code: string, map: null | undefined | MixedSourceMap): this;
   getMap(): MixedSourceMap;
   getCode(): string;
