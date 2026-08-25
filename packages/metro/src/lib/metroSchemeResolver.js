@@ -38,7 +38,7 @@ function getBabelRuntimePackageJsonPath(): string {
  * Resolver used for Metro's own `metro:` URI scheme, currently handling only
  * metro:babel-runtime and subpaths.
  */
-const metroSchemeResolver: CustomResolver = (context, specifier, platform) => {
+export default ((context, specifier, platform) => {
   const {protocol, pathname} = new URL(specifier);
 
   // Maps `metro:babel-runtime` (and subpaths, e.g.
@@ -61,6 +61,4 @@ const metroSchemeResolver: CustomResolver = (context, specifier, platform) => {
   }
 
   throw new Error(`Unsupported '${protocol}' pathname: ${pathname}`);
-};
-
-export default metroSchemeResolver;
+}) as CustomResolver;
