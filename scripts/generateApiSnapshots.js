@@ -76,7 +76,13 @@ export async function generateApiSnapshots(
   // mode, even when only verifying snapshots) so the extracted API reflects the
   // working tree. This is what lets a private-API change require no committed
   // output while a public-API change surfaces as a snapshot diff.
-  await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {verifyOnly: false});
+  await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {
+    verifyOnly: false,
+    // Underscore props are private APIs by Flow convention, so we don't want
+    // them in public API.md snapshots as they're not semver guaranteed. We
+    // do include them in .d.ts, as we document private APIs that way.
+    mungeUnderscores: true,
+  });
 
   const errors: Array<{context: string, error: Error}> = [];
   const allSkipped: Array<string> = [];
