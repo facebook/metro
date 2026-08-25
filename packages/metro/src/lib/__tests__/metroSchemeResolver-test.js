@@ -16,6 +16,11 @@ import type {CustomResolutionContext, CustomResolver} from 'metro-resolver';
 import metroSchemeResolver from '../metroSchemeResolver';
 import {createResolutionContext} from 'metro-resolver/private/__tests__/utils';
 
+const p: (posixPath: string) => string =
+  process.platform === 'win32'
+    ? posixPath => posixPath.replace(/^\//, 'C:\\').replaceAll('/', '\\')
+    : posixPath => posixPath;
+
 type Call = {
   originModulePath: string,
   specifier: string,
@@ -25,7 +30,7 @@ type Call = {
 function makeContext(resolveRequest: CustomResolver): CustomResolutionContext {
   return {
     ...createResolutionContext({}),
-    originModulePath: '/root/project/foo.js',
+    originModulePath: p('/root/project/foo.js'),
     resolveRequest,
   };
 }
@@ -43,7 +48,7 @@ function makeCapturingResolveRequest(): {
       specifier,
       platform,
     });
-    return {type: 'sourceFile', filePath: '/resolved.js'};
+    return {type: 'sourceFile', filePath: p('/resolved.js')};
   };
   return {resolveRequest, calls};
 }
@@ -54,14 +59,14 @@ test('resolves metro:babel-runtime to @babel/runtime via package self resolution
 
   expect(metroSchemeResolver(context, 'metro:babel-runtime', 'ios')).toEqual({
     type: 'sourceFile',
-    filePath: '/resolved.js',
+    filePath: p('/resolved.js'),
   });
   expect(calls).toHaveLength(1);
   expect(calls[0].specifier).toBe('@babel/runtime');
   expect(calls[0].platform).toBe('ios');
   // The origin is @babel/runtime's own package.json (statically resolved), so
   // Metro resolves the subpath as a package self-reference via its `exports`.
-  expect(calls[0].originModulePath).toContain('@babel/runtime');
+  expect(calls[0].originModulePath).toContain(p('@babel/runtime'));
   expect(calls[0].originModulePath.endsWith('package.json')).toBe(true);
 });
 
