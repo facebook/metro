@@ -6,6 +6,9 @@
   // standard lib. This does not affect `tsc`/`flow` typechecking.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2023", "dom"]
+    "lib": ["es2023", "dom"],
+    // api-extractor doesn't need a clean type check. yarn run typecheck-ts
+    // handles that.
+    "skipLibCheck": true
   }
 }

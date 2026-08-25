@@ -44,7 +44,28 @@ declare module '@microsoft/api-extractor' {
     ...
   };
 
+  declare export type ICompilerStateCreateOptions = {
+    // Additional `.d.ts` files to include in the program's root set, beyond
+    // the config's own `mainEntryPointFilePath`.
+    additionalEntryPoints?: Array<string>,
+    typescriptCompilerFolder?: string,
+    ...
+  };
+
+  // A built TypeScript program. Reused across `Extractor.invoke` calls so the
+  // program is built once for all entry points rather than once per entry
+  // point; `invoke` only reads it, and builds its own if none is passed.
+  declare export class CompilerState {
+    static create(
+      config: ExtractorConfig,
+      options?: ICompilerStateCreateOptions,
+    ): CompilerState;
+  }
+
   declare export type IExtractorInvokeOptions = {
+    // An existing program to extract from, instead of building a fresh one
+    // from the config's `tsconfigFilePath`.
+    compilerState?: CompilerState,
     // When true, update the API report on disk; when false (CI), leave it
     // untouched and flag any difference via `apiReportChanged`.
     localBuild?: boolean,
