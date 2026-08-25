@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<40fba27c16f56e64009443e70283d3b3>>
+ * @generated SignedSource<<d7e361fa3570566af1facd01589b7b38>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-symbolicate/src/Symbolication.js
@@ -16,9 +16,10 @@
  */
 
 import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
-import type {MixedSourceMap} from 'metro-source-map';
+import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 import type {Writable} from 'stream';
 
+import GoogleIgnoreListConsumer from './GoogleIgnoreListConsumer';
 import SourceMetadataMapConsumer from './SourceMetadataMapConsumer';
 import {type SourceMapConsumer as $$IMPORT_TYPEOF_1$$} from 'source-map';
 
@@ -131,11 +132,26 @@ declare class SymbolicationContext<ModuleIdsT> {
   parseFileName(str: string): ModuleIdsT;
 }
 declare class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModuleIds> {
+  readonly _segments: {
+    readonly [id: string]: {
+      readonly consumer: SourceMapConsumer;
+      readonly moduleOffsets: ReadonlyArray<number>;
+      readonly sourceFunctionsConsumer:
+        | null
+        | undefined
+        | SourceMetadataMapConsumer;
+      readonly hermesOffsets: null | undefined | HermesFunctionOffsets;
+      readonly googleIgnoreListConsumer: GoogleIgnoreListConsumer;
+    };
+  };
+  readonly _legacyFormat: boolean;
+  readonly _SourceMapConsumer: SourceMapConsumer;
   constructor(
     SourceMapConsumer: SourceMapConsumer,
     sourceMapContent: string | MixedSourceMap,
     options?: ContextOptionsInput,
   );
+  _initSegment(map: MixedSourceMap): void;
   symbolicateHermesMinidumpTrace(
     crashInfo: HermesMinidumpCrashInfo,
   ): SymbolicatedStackTrace;
@@ -150,11 +166,15 @@ declare class SingleMapSymbolicationContext extends SymbolicationContext<SingleM
   parseFileName(str: string): SingleMapModuleIds;
 }
 declare class DirectorySymbolicationContext extends SymbolicationContext<string> {
+  readonly _fileMaps: Map<string, SingleMapSymbolicationContext>;
+  readonly _rootDir: string;
+  readonly _SourceMapConsumer: SourceMapConsumer;
   constructor(
     SourceMapConsumer: SourceMapConsumer,
     rootDir: string,
     options?: ContextOptionsInput,
   );
+  _loadMap(mapFilename: string): SingleMapSymbolicationContext;
   getOriginalPositionDetailsFor(
     lineNumber: null | undefined | number,
     columnNumber: null | undefined | number,

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<098830f90b1f19dcdd5f55f1c02e3efb>>
+ * @generated SignedSource<<22565876862bd94effefabfc09cf8933>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-source-map/src/Consumer/AbstractConsumer.js
@@ -24,6 +24,7 @@ import type {
 } from './types';
 
 declare class AbstractConsumer implements IConsumer {
+  _sourceMap: {readonly file?: string};
   constructor(sourceMap: {readonly file?: string});
   originalPositionFor(
     generatedPosition: GeneratedPositionLookup,

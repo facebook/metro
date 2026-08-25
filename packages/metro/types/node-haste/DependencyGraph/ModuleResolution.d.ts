@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<2948a6737474a8f5bd55952246f500d3>>
+ * @generated SignedSource<<0024fd05b95efe19a24f9acc84ff474b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph/ModuleResolution.js
@@ -24,7 +24,9 @@ import type {ResolverInputOptions} from '../../shared/types';
 import type {
   CustomResolver,
   DoesFileExist,
+  FileCandidates,
   FileSystemLookup,
+  Resolution,
   ResolveAsset,
 } from 'metro-resolver';
 import type {PackageForModule, PackageJson} from 'metro-resolver/private/types';
@@ -66,7 +68,11 @@ type Options = Readonly<{
   unstable_incrementalResolution: boolean;
 }>;
 export declare class ModuleResolver {
+  _options: Options;
+  _projectRootFakeModulePath: string;
+  _cachedEmptyModule: null | undefined | BundlerResolution;
   constructor(options: Options);
+  _getEmptyModule(): BundlerResolution;
   resolveDependency(
     originModulePath: string,
     dependency: TransformResultDependency,
@@ -74,6 +80,12 @@ export declare class ModuleResolver {
     platform: string | null,
     resolverOptions: ResolverInputOptions,
   ): BundlerResolution;
+  /**
+   * TODO: Return Resolution instead of coercing to BundlerResolution here
+   */
+  _getFileResolvedModule(resolution: Resolution): BundlerResolution;
+  _logWarning: (message: string) => void;
+  _removeRoot(candidates: FileCandidates): FileCandidates;
 }
 export declare class UnableToResolveError extends Error {
   /**
