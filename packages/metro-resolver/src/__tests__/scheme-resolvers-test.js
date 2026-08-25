@@ -127,7 +127,7 @@ test('an unregistered scheme still resolves if another strategy succeeds', () =>
   const context = {
     ...createContext({test: resolver}),
     resolveHasteModule: (name: string) =>
-      name === 'other:module' ? '/root/project/bar.js' : null,
+      name === 'other:module' ? p('/root/project/bar.js') : null,
   };
 
   // The deprecated backwards-compatibility path: a scheme-like specifier with
