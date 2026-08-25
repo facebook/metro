@@ -79,8 +79,8 @@ function createFileMap(
 describe('createStaticCrawler', () => {
   test('builds a FileSystem from the supplied listing', async () => {
     const {fileMap} = createFileMap([
-      {path: 'src/index.js'},
-      {path: 'src/nested/other.js'},
+      {path: path.join('src', 'index.js')},
+      {path: path.join('src', 'nested', 'other.js')},
       {path: p('absolute.js')},
     ]);
 
@@ -98,10 +98,10 @@ describe('createStaticCrawler', () => {
 
   test('populates HastePlugin from per-file plugin data', async () => {
     const {fileMap, hastePlugin} = createFileMap([
-      {path: 'src/Thing.js', pluginData: {haste: 'Thing'}},
-      {path: 'src/Thing.ios.js', pluginData: {haste: 'Thing'}},
-      {path: 'src/NoHaste.js'},
-      {path: 'pkg/package.json', pluginData: {haste: 'HastePkg'}},
+      {path: path.join('src', 'Thing.js'), pluginData: {haste: 'Thing'}},
+      {path: path.join('src', 'Thing.ios.js'), pluginData: {haste: 'Thing'}},
+      {path: path.join('src', 'NoHaste.js')},
+      {path: path.join('pkg', 'package.json'), pluginData: {haste: 'HastePkg'}},
     ]);
 
     await fileMap.build();
@@ -122,7 +122,7 @@ describe('createStaticCrawler', () => {
   test('does not process any file contents', async () => {
     const processBatch = jest.spyOn(FileProcessor.prototype, 'processBatch');
     const {fileMap} = createFileMap([
-      {path: 'src/index.js', pluginData: {haste: 'Index'}},
+      {path: path.join('src', 'index.js'), pluginData: {haste: 'Index'}},
     ]);
 
     await fileMap.build();
@@ -137,7 +137,10 @@ describe('createStaticCrawler', () => {
     // data supplied here is taken at face value. Callers must filter for
     // themselves.
     const {fileMap, hastePlugin} = createFileMap([
-      {path: 'node_modules/pkg/Thing.js', pluginData: {haste: 'Thing'}},
+      {
+        path: path.join('node_modules', 'pkg', 'Thing.js'),
+        pluginData: {haste: 'Thing'},
+      },
     ]);
 
     await fileMap.build();
@@ -152,7 +155,9 @@ describe('createStaticCrawler', () => {
     // more than one pass - a single-use iterable would report nothing the
     // second time.
     const staticFactory = createStaticCrawler({
-      files: [{path: 'src/Thing.js', pluginData: {haste: 'Thing'}}],
+      files: [
+        {path: path.join('src', 'Thing.js'), pluginData: {haste: 'Thing'}},
+      ],
     });
     let inner: ?Crawler = null;
     let seenOptions: ?CrawlerOptions = null;
@@ -181,7 +186,7 @@ describe('createStaticCrawler', () => {
   });
 
   test('end() is safe when not watching', async () => {
-    const {fileMap} = createFileMap([{path: 'src/index.js'}]);
+    const {fileMap} = createFileMap([{path: path.join('src', 'index.js')}]);
     await fileMap.build();
     await expect(fileMap.end()).resolves.toBeUndefined();
   });
