@@ -18,13 +18,13 @@ import type {
   ResolutionContext,
 } from '../index';
 
-import {createResolutionContext} from './utils';
+import {createResolutionContext, posixToSystemPath as p} from './utils';
 
 const Resolver = require('../index');
 
 const fileMap = {
-  '/root/project/foo.js': '',
-  '/root/project/bar.js': '',
+  [p('/root/project/foo.js')]: '',
+  [p('/root/project/bar.js')]: '',
 };
 
 function createContext(
@@ -32,7 +32,7 @@ function createContext(
 ): ResolutionContext {
   return {
     ...createResolutionContext(fileMap),
-    originModulePath: '/root/project/foo.js',
+    originModulePath: p('/root/project/foo.js'),
     schemeResolvers,
   };
 }
@@ -58,7 +58,7 @@ function makeCapturingResolver(resolution: Resolution): {
 test('invokes a registered scheme resolver with the full specifier', () => {
   const resolution: Resolution = {
     type: 'sourceFile',
-    filePath: '/resolved/by/scheme.js',
+    filePath: p('/resolved/by/scheme.js'),
   };
   const {resolver, calls} = makeCapturingResolver(resolution);
   const context = createContext({test: resolver});
@@ -81,7 +81,7 @@ test('scheme resolver can delegate back to default resolution', () => {
 
   expect(Resolver.resolve(context, 'test:anything', null)).toEqual({
     type: 'sourceFile',
-    filePath: '/root/project/bar.js',
+    filePath: p('/root/project/bar.js'),
   });
 });
 
@@ -127,7 +127,7 @@ test('an unregistered scheme still resolves if another strategy succeeds', () =>
   const context = {
     ...createContext({test: resolver}),
     resolveHasteModule: (name: string) =>
-      name === 'other:module' ? '/root/project/bar.js' : null,
+      name === 'other:module' ? p('/root/project/bar.js') : null,
   };
 
   // The deprecated backwards-compatibility path: a scheme-like specifier with
@@ -135,7 +135,7 @@ test('an unregistered scheme still resolves if another strategy succeeds', () =>
   // rather than failing on the scheme.
   expect(Resolver.resolve(context, 'other:module', null)).toEqual({
     type: 'sourceFile',
-    filePath: '/root/project/bar.js',
+    filePath: p('/root/project/bar.js'),
   });
   expect(calls).toHaveLength(0);
 });
@@ -148,7 +148,7 @@ test('relative specifiers are resolved before scheme dispatch', () => {
   // mistaken for a scheme, even when scheme resolvers are registered.
   expect(Resolver.resolve(context, './bar', null)).toEqual({
     type: 'sourceFile',
-    filePath: '/root/project/bar.js',
+    filePath: p('/root/project/bar.js'),
   });
   expect(calls).toHaveLength(0);
 });
