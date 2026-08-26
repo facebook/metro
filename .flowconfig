@@ -3,6 +3,7 @@ packages/*/build/**
 .hg/**
 .sl/**
 .git/**
+.claude/**
 # this transient dep bundles tests with their package, which flow attempts to parse
 # and crashes out as the test includes purposely malformed json
 **/node_modules/resolve/test/**
