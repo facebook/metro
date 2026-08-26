@@ -248,7 +248,7 @@ export async function generateTsDefsForJsGlobs(
         const flowDef = await translateFlowToFlowDef(
           source,
           {},
-          {mungeUnderscores: opts.mungeUnderscores},
+          {mungeUnderscores},
         );
         if (flowDef.includes('declare module.exports')) {
           errors.push({
