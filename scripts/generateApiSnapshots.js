@@ -358,6 +358,10 @@ export async function generateApiSnapshots(
   await generateTsDefsForJsGlobs(AUTO_GENERATED_PATTERNS, {
     verifyOnly: false,
     logger,
+    // Underscore props are private APIs by Flow convention, so we don't want
+    // them in public API.md snapshots as they're not semver guaranteed. We
+    // do include them in .d.ts, as we document private APIs that way.
+    mungeUnderscores: true,
   });
 
   const errors: Array<{context: string, error: Error}> = [];

@@ -74,9 +74,10 @@ export async function generateTsDefsForJsGlobs(
   opts?: Readonly<{
     verifyOnly?: boolean,
     logger?: Logger,
+    mungeUnderscores?: boolean,
   }>,
 ) {
-  const {verifyOnly = false, logger} = opts ?? {};
+  const {verifyOnly = false, logger, mungeUnderscores = false} = opts ?? {};
   const linter = new ESLint({
     fix: true,
     cwd: WORKSPACE_ROOT,
@@ -244,7 +245,11 @@ export async function generateTsDefsForJsGlobs(
         return;
       }
       try {
-        const flowDef = await translateFlowToFlowDef(source);
+        const flowDef = await translateFlowToFlowDef(
+          source,
+          {},
+          {mungeUnderscores: opts.mungeUnderscores},
+        );
         if (flowDef.includes('declare module.exports')) {
           errors.push({
             sourceFile,
