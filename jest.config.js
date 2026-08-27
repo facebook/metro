@@ -11,7 +11,11 @@
 /** @type {import('jest').Config} **/
 module.exports = {
   filter: '<rootDir>/scripts/jestFilter.js',
-  modulePathIgnorePatterns: ['/node_modules/', 'packages/[^/]+/build/'],
+  modulePathIgnorePatterns: [
+    '/node_modules/',
+    'packages/[^/]+/build/',
+    '<rootDir>/\\.claude/',
+  ],
   snapshotFormat: {
     escapeString: true,
     printBasicPrototype: true,
