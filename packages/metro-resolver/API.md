@@ -11,7 +11,7 @@ export type CustomResolutionContext = Readonly<Omit<ResolutionContext, 'resolveR
 export type CustomResolver = (context: CustomResolutionContext, moduleName: string, platform: string | null) => Resolution;
 
 export type CustomResolverOptions = {
-    readonly [$$Key$$: string]: unknown;
+    readonly [key: string]: unknown;
 };
 
 export type DoesFileExist = (filePath: string) => boolean;
@@ -66,7 +66,7 @@ export type ResolutionContext = Readonly<{
     customResolverOptions: CustomResolverOptions;
     disableHierarchicalLookup: boolean;
     doesFileExist: DoesFileExist;
-    extraNodeModules: null | undefined | {[$$Key$$: string]: string};
+    extraNodeModules: null | undefined | {[packageName: string]: string};
     dev: boolean;
     getPackage: (packageJsonPath: string) => null | undefined | PackageJson;
     getPackageForModule: (absoluteModulePath: string) => null | undefined | PackageForModule;
