@@ -65,7 +65,7 @@ export type GetTransformOptionsOpts = {
 export type InputConfigT = Partial<
 Readonly<
 MetalConfigT & {
-    cacheStores: CacheStoresConfigT | (($$PARAM_0$$: MetroCache) => CacheStoresConfigT);
+    cacheStores: CacheStoresConfigT | ((metroCache: MetroCache) => CacheStoresConfigT);
     resolver: Readonly<Partial<ResolverConfigT>>;
     server: Readonly<Partial<ServerConfigT>>;
     serializer: Readonly<Partial<SerializerConfigT>>;
@@ -144,7 +144,7 @@ export type ResolverConfigT = {
     dependencyExtractor: null | undefined | string;
     emptyModulePath: string;
     enableGlobalPackages: boolean;
-    extraNodeModules: {[name: string]: string};
+    extraNodeModules: {[packageName: string]: string};
     hasteImplModulePath: null | undefined | string;
     nodeModulesPaths: ReadonlyArray<string>;
     platforms: ReadonlyArray<string>;
@@ -173,7 +173,7 @@ export type SerializerConfigT = {
     customSerializer: null | undefined | ((entryPoint: string, preModules: ReadonlyArray<Module>, graph: ReadOnlyGraph, options: SerializerOptions) => Promise<string | {code: string; map: string}>);
     experimentalSerializerHook: (graph: ReadOnlyGraph, delta: DeltaResult) => unknown;
     getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>;
-    getPolyfills: ($$PARAM_0$$: {platform: null | undefined | string}) => ReadonlyArray<string>;
+    getPolyfills: (ctx: {platform: null | undefined | string}) => ReadonlyArray<string>;
     getRunModuleStatement: (moduleId: number | string, globalPrefix: string) => string;
     polyfillModuleNames: ReadonlyArray<string>;
     processModuleFilter: (modules: Module) => boolean;
@@ -183,10 +183,10 @@ export type SerializerConfigT = {
 };
 
 export type ServerConfigT = {
-    enhanceMiddleware: ($$PARAM_0$$: Middleware, $$PARAM_1$$: Server) => Middleware | Server_2;
+    enhanceMiddleware: (middleware: Middleware, server: Server) => Middleware | Server_2;
     forwardClientLogs: boolean;
     port: number;
-    rewriteRequestUrl: ($$PARAM_0$$: string) => string;
+    rewriteRequestUrl: (url: string) => string;
     unstable_serverRoot: null | undefined | string;
     useGlobalHotkey: boolean;
     verifyConnections: boolean;
@@ -201,13 +201,13 @@ export type ServerConfigT = {
 };
 
 export type SymbolicatorConfigT = {
-    customizeFrame: ($$PARAM_0$$: {
+    customizeFrame: (frame: {
         readonly file: null | undefined | string;
         readonly lineNumber: null | undefined | number;
         readonly column: null | undefined | number;
         readonly methodName: null | undefined | string;
     }) => (null | undefined | {readonly collapse?: boolean | undefined}) | Promise<null | undefined | {readonly collapse?: boolean | undefined}>;
-    customizeStack: ($$PARAM_0$$: Array<IntermediateStackFrame>, $$PARAM_1$$: unknown) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>;
+    customizeStack: (symbolicatedStack: Array<IntermediateStackFrame>, extraData: unknown) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>;
 };
 
 export type TransformerConfigT = Omit<JsTransformerConfig, 'getTransformOptions' | 'transformVariants' | 'publicPath' | 'unstable_workerThreads'> & {

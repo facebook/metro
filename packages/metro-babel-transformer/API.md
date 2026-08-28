@@ -16,7 +16,7 @@ export type BabelFileFunctionMapMetadata = Readonly<{
 export type BabelFileImportLocsMetadata = ReadonlySet<string>;
 
 export type BabelTransformer = Readonly<{
-    transform: ($$PARAM_0$$: BabelTransformerArgs) => Readonly<{
+    transform: (transformerArgs: BabelTransformerArgs) => Readonly<{
         ast: File_2;
         functionMap?: BabelFileFunctionMapMetadata | undefined;
         metadata?: MetroBabelFileMetadata | undefined;
@@ -37,7 +37,7 @@ export type BabelTransformerCacheKeyOptions = Readonly<{
 }>;
 
 export type CustomTransformOptions = {
-    [$$Key$$: string]: unknown;
+    [key: string]: unknown;
 };
 
 export function getCacheKey(options?: BabelTransformerCacheKeyOptions): string;
@@ -52,7 +52,7 @@ export type MetroBabelFileMetadata = Omit<BabelFileMetadata, 'metro'> & {
     };
 };
 
-export function transform($$PARAM_0$$: BabelTransformerArgs): ReturnType<BabelTransformer['transform']>;
+export function transform(opts: BabelTransformerArgs): ReturnType<BabelTransformer['transform']>;
 
 export type TransformProfile = 'default' | 'hermes-stable' | 'hermes-canary';
 

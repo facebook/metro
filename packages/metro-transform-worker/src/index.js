@@ -65,7 +65,7 @@ import nullthrows from 'nullthrows';
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;
 
-type MinifierConfig = Readonly<{[string]: unknown, ...}>;
+type MinifierConfig = Readonly<{[key: string]: unknown, ...}>;
 
 export type MinifierOptions = {
   code: string,
@@ -82,7 +82,7 @@ export type MinifierResult = {
   ...
 };
 
-export type Minifier = MinifierOptions =>
+export type Minifier = (opts: MinifierOptions) =>
   MinifierResult | Promise<MinifierResult>;
 
 export type Type = 'script' | 'module' | 'asset';
