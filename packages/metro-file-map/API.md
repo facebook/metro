@@ -45,7 +45,7 @@ export type CacheManagerWriteOptions = Readonly<{
 }>;
 
 export type ChangeEvent = Readonly<{
-    logger: null | undefined | RootPerfLogger;
+    logger?: null | undefined | RootPerfLogger;
     changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>;
     rootDir: string;
 }>;
@@ -66,7 +66,7 @@ export type CrawlerFactoryOptions = Readonly<{
 }>;
 
 export type CrawlerOptions = {
-    abortSignal: null | undefined | AbortSignal;
+    abortSignal?: null | undefined | AbortSignal;
     computeSha1: boolean;
     console: Console_2;
     extensions: ReadonlyArray<string>;
@@ -103,12 +103,12 @@ export type DependencyPluginOptions = Readonly<{
 }>;
 
 export class DiskCacheManager implements CacheManager {
-    constructor($$PARAM_0$$: CacheManagerFactoryOptions, $$PARAM_1$$: DiskCacheConfig);
+    constructor(opts: CacheManagerFactoryOptions, config: DiskCacheConfig);
     end(): Promise<void>;
     static getCacheFilePath(buildParameters: BuildParameters, cacheFilePrefix?: null | undefined | string, cacheDirectory?: null | undefined | string): string;
     getCacheFilePath(): string;
     read(): Promise<null | undefined | CacheData>;
-    write(getSnapshot: () => CacheData, $$PARAM_1$$: CacheManagerWriteOptions): Promise<void>;
+    write(getSnapshot: () => CacheData, opts: CacheManagerWriteOptions): Promise<void>;
 }
 
 export class DuplicateHasteCandidatesError extends Error {
@@ -148,8 +148,8 @@ interface FileSystem_2 {
     mixedStartPath: string,
     subpath: string,
     opts: {
-        breakOnSegment: null | undefined | string;
-        invalidatedBy: null | undefined | Set<string>;
+        breakOnSegment?: null | undefined | string;
+        invalidatedBy?: null | undefined | Set<string>;
         subpathType: 'f' | 'd';
     },
     ): null | undefined | {absolutePath: string; containerRelativePath: string};
@@ -194,7 +194,7 @@ export class HastePlugin implements HasteMap, FileMapPlugin<null, string | null>
     getPackage(name: string, platform: null | undefined | string, _supportsNativePlatform?: null | undefined | boolean): null | undefined | Path;
     getSerializableSnapshot(): null;
     getWorker(): FileMapPluginWorker;
-    initialize($$PARAM_0$$: FileMapPluginInitOptions<null, string | null>): Promise<void>;
+    initialize(opts: FileMapPluginInitOptions<null, string | null>): Promise<void>;
     readonly name: 'haste';
     onChanged(delta: ReadonlyFileSystemChanges<null | undefined | string>): void;
     setModule(id: string, module: HasteMapItemMetadata): void;

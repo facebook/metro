@@ -5,7 +5,7 @@
 ```ts
 
 export type CustomTransformOptions = {
-    [$$Key$$: string]: unknown;
+    [key: string]: unknown;
 };
 
 export const getCacheKey: (config: JsTransformerConfig, opts?: Readonly<{projectRoot: string}>) => string;
@@ -62,7 +62,7 @@ export type JsTransformOptions = Readonly<{
     unstable_transformProfile: TransformProfile;
 }>;
 
-export type Minifier = ($$PARAM_0$$: MinifierOptions) => MinifierResult | Promise<MinifierResult>;
+export type Minifier = (opts: MinifierOptions) => MinifierResult | Promise<MinifierResult>;
 
 export type MinifierOptions = {
     code: string;
