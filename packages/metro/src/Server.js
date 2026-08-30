@@ -586,7 +586,7 @@ export default class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.setHeader('Content-Type', mime.lookup(path.basename(assetPath)));
+      res.setHeader('Content-Type', mime.contentType(path.basename(assetPath)));
       res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
@@ -753,7 +753,7 @@ export default class Server {
       res.end();
       return;
     }
-    const mimeType = mime.lookup(path.basename(relativeFilePathname));
+    const mimeType = mime.contentType(path.basename(relativeFilePathname));
     res.setHeader('Content-Type', mimeType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
