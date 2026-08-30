@@ -284,7 +284,7 @@ export default class DependencyGraph extends EventEmitter {
     return this._haste;
   }
 
-  async end() {
+  async end(): Promise<void> {
     await this.ready();
     await this._haste.end();
   }

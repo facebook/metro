@@ -183,7 +183,9 @@ export class Watcher extends EventEmitter {
     return delta;
   }
 
-  async watch(onChange: (change: WatcherBackendChangeEvent) => void) {
+  async watch(
+    onChange: (change: WatcherBackendChangeEvent) => void,
+  ): Promise<void> {
     const {extensions, ignorePatternForWatch, useWatchman} = this.#options;
 
     // WatchmanWatcher > NativeWatcher > FallbackWatcher
@@ -268,7 +270,7 @@ export class Watcher extends EventEmitter {
     resolveHealthCheck();
   }
 
-  async close() {
+  async close(): Promise<void> {
     await Promise.all(this.#backends.map(watcher => watcher.stopWatching()));
     this.#activeWatcher = null;
   }
