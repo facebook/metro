@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<13f1483d2a732241f8d9eae463399b0e>>
+ * @generated SignedSource<<0ae2c74336868865b420d900a230cea7>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph.js
@@ -70,7 +70,7 @@ declare class DependencyGraph extends EventEmitter {
     mixedPath: string,
   ): Promise<{content?: Buffer; sha1: string}>;
   getWatcher(): EventEmitter;
-  end(): void;
+  end(): Promise<void>;
   /** Given a search context, return a list of file paths matching the query. */
   matchFilesWithContext(
     from: string,

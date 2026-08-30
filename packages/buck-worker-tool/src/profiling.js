@@ -25,7 +25,7 @@ function getInspectorSession() {
   return currentInspectorSession;
 }
 
-export async function startProfiling() {
+export async function startProfiling(): Promise<void> {
   if (isProfiling) {
     return;
   }
@@ -36,7 +36,9 @@ export async function startProfiling() {
   isProfiling = true;
 }
 
-export async function stopProfilingAndWrite(workerName: ?string) {
+export async function stopProfilingAndWrite(
+  workerName: ?string,
+): Promise<void> {
   if (!isProfiling) {
     return;
   }

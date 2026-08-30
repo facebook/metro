@@ -201,7 +201,7 @@ export default class Server {
     this._nextBundleBuildNumber = 1;
   }
 
-  async end() {
+  async end(): Promise<void> {
     if (!this._isEnded) {
       await this._bundler.end();
       this._isEnded = true;
