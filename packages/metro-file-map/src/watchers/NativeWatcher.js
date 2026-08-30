@@ -95,7 +95,7 @@ export default class NativeWatcher extends AbstractWatcher {
     }
   }
 
-  async _handleEvent(event: string, relativePath: string) {
+  async _handleEvent(event: string, relativePath: string): Promise<void> {
     const absolutePath = path.resolve(this.root, relativePath);
     if (this.doIgnore(relativePath)) {
       debug(

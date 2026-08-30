@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<7e33ffd7eec05b9c9c072189d2ed3ec2>>
+ * @generated SignedSource<<4cbe9e53356384d92ed0fbdd4c873f7e>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/Watcher.js
  * To regenerate, run:
  *   js1 build metro-ts-defs (internal) OR
- *   yarn run build-ts-defs (OSS) 
+ *   yarn run build-ts-defs (OSS)
  */
 
 import type {
@@ -67,7 +67,7 @@ export declare class Watcher extends EventEmitter {
     subpath: string,
     currentFileSystem: CrawlerOptions['previousState']['fileSystem'],
   ): Promise<CrawlResult>;
-  watch(onChange: (change: WatcherBackendChangeEvent) => void): void;
-  close(): void;
+  watch(onChange: (change: WatcherBackendChangeEvent) => void): Promise<void>;
+  close(): Promise<void>;
   checkHealth(timeout: number): Promise<HealthCheckResult>;
 }
