@@ -103,6 +103,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
     thisArg: ThisT,
   ): void {
     for (const item of this) {
+      // $FlowFixMe[invalid-this-arg]
       callbackFn.call(thisArg, item, item, this);
     }
   }

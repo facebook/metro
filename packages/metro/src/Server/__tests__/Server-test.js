@@ -315,6 +315,7 @@ describe('processRequest', () => {
         load: jest.fn(() => Promise.resolve()),
         getWatcher: jest.fn(() => ({})),
         doesFileExist: jest.fn().mockReturnValue(true),
+        getOrComputeSha1: jest.fn(() => Promise.resolve({sha1: 'abcdef'})),
       }),
     );
 
@@ -950,6 +951,17 @@ describe('processRequest', () => {
       );
     });
 
+    test('should return a charset in the content-type header for a text asset', async () => {
+      const mockData = 'ｉ ａｍ ｈｔｍｌ';
+      getAsset.mockResolvedValue(mockData);
+
+      const response = await makeRequest('/assets/docs/a.html?platform=ios');
+
+      expect(response.getHeader('content-type')).toBe(
+        'text/html; charset=utf-8',
+      );
+    });
+
     test("should serve assets files's name contain non-latin letter", async () => {
       getAsset.mockResolvedValue('i am image');
 
@@ -1010,6 +1022,29 @@ describe('processRequest', () => {
         expect.any(Function),
       );
       expect(response._getString()).toBe('i am image');
+    });
+  });
+
+  describe('source requests', () => {
+    beforeEach(() => {
+      fs.mkdirSync('/root');
+      fs.writeFileSync('/root/foo.js', '// \u3053\u3093\u306b\u3061\u306f\n');
+      fs.writeFileSync('/root/logo.png', 'not really a png');
+    });
+
+    test('serves a source file with a utf-8 charset', async () => {
+      const response = await makeRequest('/[metro-project]/foo.js');
+
+      expect(response.getHeader('content-type')).toBe(
+        'text/javascript; charset=utf-8',
+      );
+      expect(response._getString()).toBe('// \u3053\u3093\u306b\u3061\u306f\n');
+    });
+
+    test('does not add a charset to a binary file', async () => {
+      const response = await makeRequest('/[metro-project]/logo.png');
+
+      expect(response.getHeader('content-type')).toBe('image/png');
     });
   });
 
