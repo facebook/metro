@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<03b526801403adb05b3b0f6c25b25ed5>>
+ * @generated SignedSource<<58a8bc4229ee86a5c93af2ea51195b97>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Server.js
@@ -120,7 +120,7 @@ declare class Server {
   _fetchTimings: Array<FetchTiming>;
   _activeFetchCount: number;
   constructor(config: ConfigT, options?: ServerOptions);
-  end(): void;
+  end(): Promise<void>;
   getBundler(): IncrementalBundler;
   getCreateModuleId(): (path: string) => number;
   _serializeGraph(
