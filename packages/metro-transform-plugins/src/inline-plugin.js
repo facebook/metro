@@ -44,7 +44,6 @@ export default function inlinePlugin(
   options: Options,
 ): PluginObj<State> {
   const {
-    isAssignmentExpression,
     isIdentifier,
     isMemberExpression,
     isObjectExpression,
@@ -69,10 +68,35 @@ export default function inlinePlugin(
     return !binding || isFlowDeclared(binding);
   }
 
-  const isLeftHandSideOfAssignmentExpression = (
-    node: Node,
-    parent: Node,
-  ): boolean => isAssignmentExpression(parent) && parent.left === node;
+  function isWriteTarget(path: NodePath<MemberExpression>): boolean {
+    let child: Node = path.node;
+    let parentPath = path.parentPath;
+
+    while (parentPath != null) {
+      const parent = parentPath.node;
+      if (
+        (parent.type === 'AssignmentExpression' ||
+          parent.type === 'ForInStatement' ||
+          parent.type === 'ForOfStatement') &&
+        parent.left === child
+      ) {
+        return true;
+      }
+      if (parent.type === 'UpdateExpression' && parent.argument === child) {
+        return true;
+      }
+      if (
+        parent.type === 'UnaryExpression' &&
+        parent.operator === 'delete' &&
+        parent.argument === child
+      ) {
+        return true;
+      }
+      child = parent;
+      parentPath = parentPath.parentPath;
+    }
+    return false;
+  }
 
   const isProcessEnvNodeEnv = (node: MemberExpression, scope: Scope): boolean =>
     isIdentifier(node.property, nodeEnv) &&
@@ -138,7 +162,7 @@ export default function inlinePlugin(
         const scope = path.scope;
         const opts = state.opts;
 
-        if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
+        if (!isWriteTarget(path)) {
           if (
             opts.inlinePlatform &&
             isPlatformNode(node, scope, !!opts.isWrapped)
