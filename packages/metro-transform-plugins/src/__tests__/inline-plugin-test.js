@@ -727,6 +727,19 @@ describe('inline constants', () => {
     });
   });
 
+  test('replaces Platform.OS when it is read inside a write target', () => {
+    const code = `
+      target[Platform.OS] = value;
+      [target[Platform.OS]] = values;
+      ({[Platform.OS]: target} = value);
+    `;
+
+    compare([inlinePlugin], code, code.replaceAll('Platform.OS', '"ios"'), {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
   test('replaces Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
     const code = `
       function a() {

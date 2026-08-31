@@ -92,6 +92,17 @@ export default function inlinePlugin(
       ) {
         return true;
       }
+
+      const nestedWriteTarget =
+        parent.type === 'ArrayPattern' ||
+        parent.type === 'ObjectPattern' ||
+        (parent.type === 'ObjectProperty' && parent.value === child) ||
+        (parent.type === 'RestElement' && parent.argument === child) ||
+        (parent.type === 'AssignmentPattern' && parent.left === child);
+      if (!nestedWriteTarget) {
+        return false;
+      }
+
       child = parent;
       parentPath = parentPath.parentPath;
     }
