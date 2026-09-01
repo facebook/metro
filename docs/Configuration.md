@@ -408,13 +408,15 @@ This setting will take effect when [`unstable_enablePackageExports`](#unstable_e
 
 The set of [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to assert globally when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
 
-Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors. The `default` condition is always matched.
+Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors.
 
-Defaults to `['require']`.
+Metro always asserts `default`, plus `import` or `require` according to the syntax of each import - an `import` statement asserts `import`, a `require()` call asserts `require`. Neither needs to be listed here, and listing one would assert it for every import regardless of syntax.
+
+Defaults to `[]`.
 
 :::note
 
-When using React Native, `unstable_conditionNames` defaults to `['require', 'react-native']`.
+When using React Native, `unstable_conditionNames` defaults to `['react-native']`.
 
 :::
 
@@ -430,7 +432,7 @@ This setting will take effect when [`unstable_enablePackageExports`](#unstable_e
 
 The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to dynamically assert by platform (see [`platforms`](#platforms)) when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
 
-Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['require'])` otherwise. Again, these are resolved in the order specified by each package.
+Matched conditions are merged with [`unstable_conditionNames`](#unstable_conditionnames-experimental) before resolution. Under React Native's defaults for both options, a `require()` call site asserts `new Set(['default', 'require', 'react-native', 'browser'])` when requesting a `web` bundle, and `new Set(['default', 'require', 'react-native'])` otherwise. Again, these are resolved in the order specified by each package.
 
 Defaults to `‌{ web: ['browser'] }`.
 
