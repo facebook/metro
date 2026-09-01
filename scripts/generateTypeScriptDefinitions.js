@@ -34,6 +34,13 @@ type LintMessage = {
   ...
 };
 
+type LogFn = (typeof console)['log'];
+export interface Logger {
+  readonly log: LogFn;
+  readonly warn: LogFn;
+  readonly error: LogFn;
+}
+
 export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = ['packages/**'];
 
 // Globs of paths for which we do not generate TypeScript definitions,
@@ -64,14 +71,32 @@ function isExistingTSDeclaration(filePath: string): boolean {
 
 export async function generateTsDefsForJsGlobs(
   globPattern: string | ReadonlyArray<string>,
-  opts: Readonly<{
-    verifyOnly: boolean,
-    mungeUnderscores: boolean,
-  }> = {verifyOnly: false, mungeUnderscores: false},
+  opts?: Readonly<{
+    verifyOnly?: boolean,
+    logger?: Logger,
+    mungeUnderscores?: boolean,
+  }>,
 ) {
+  const {verifyOnly = false, logger, mungeUnderscores = false} = opts ?? {};
   const linter = new ESLint({
     fix: true,
     cwd: WORKSPACE_ROOT,
+    overrideConfig: {
+      parserOptions: {
+        // typescript-eslint writes its "version of TypeScript which is not
+        // officially supported" warning straight to `console.log`, bypassing
+        // `logger`. Metro tracks TypeScript ahead of the range typescript-eslint
+        // declares, so this fires on every run. Route it through the caller's
+        // logger, and disable it outright for callers that pass none — notably
+        // the Jest test, where it is pure noise in the report.
+        //
+        // Note that passing a function also lifts typescript-eslint's own
+        // `process.stdout.isTTY` gate on the message, so a piped or redirected
+        // run now reports it where it used to be dropped.
+        loggerFn:
+          logger != null ? (message: string) => logger.warn(message) : false,
+      },
+    },
   });
 
   const prettierConfig = await resolvePrettierConfig();
@@ -148,8 +173,8 @@ export async function generateTsDefsForJsGlobs(
       lintedOutput = lintResult.output ?? withoutUnusedGeneratedDeclarations;
     }
 
-    if (lintResult.messages.length > 0) {
-      console.warn(sourceFile, lintResult.messages);
+    if (logger && lintResult.messages.length > 0) {
+      logger.warn(sourceFile, lintResult.messages);
     }
 
     const formattedOutput = await prettier.format(lintedOutput, prettierConfig);
@@ -174,7 +199,7 @@ export async function generateTsDefsForJsGlobs(
 
     existingDefs.delete(absoluteTsFile);
 
-    if (opts.verifyOnly) {
+    if (verifyOnly) {
       let existingFile = null;
       try {
         existingFile = await fs.promises.readFile(absoluteTsFile, 'utf-8');
@@ -223,7 +248,7 @@ export async function generateTsDefsForJsGlobs(
         const flowDef = await translateFlowToFlowDef(
           source,
           {},
-          {mungeUnderscores: opts.mungeUnderscores},
+          {mungeUnderscores},
         );
         if (flowDef.includes('declare module.exports')) {
           errors.push({
@@ -251,7 +276,7 @@ export async function generateTsDefsForJsGlobs(
 
   if (existingDefs.size > 0) {
     const orphanedDefs = Array.from(existingDefs);
-    if (opts.verifyOnly) {
+    if (verifyOnly) {
       orphanedDefs.forEach(sourceFile => {
         errors.push({
           error: new Error('.d.ts appears to be orphaned'),
@@ -420,6 +445,7 @@ if (process.mainModule === module) {
   // Omit globs to use hardcoded defaults.
   generateTsDefsForJsGlobs(
     process.argv.length >= 3 ? process.argv.slice(2) : AUTO_GENERATED_PATTERNS,
+    {logger: console},
   ).catch(error => {
     process.exitCode = 1;
     console.error(error);
