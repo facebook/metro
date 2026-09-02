@@ -19,7 +19,7 @@ export type SerializedError = {
   ...
 };
 
-export type SerializedEvent<TEvent extends {+[string]: unknown, ...}> =
+export type SerializedEvent<TEvent extends {+[prop: string]: unknown, ...}> =
   TEvent extends {
     error: Error,
     ...
@@ -31,7 +31,9 @@ export type SerializedEvent<TEvent extends {+[string]: unknown, ...}> =
       }
     : TEvent;
 
-export default class JsonReporter<TEvent extends {+[string]: unknown, ...}> {
+export default class JsonReporter<
+  TEvent extends {+[prop: string]: unknown, ...},
+> {
   _stream: Writable;
 
   constructor(stream: Writable) {

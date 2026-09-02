@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<dc003cf249ff458402c66f8295b5c361>>
+ * @generated SignedSource<<2965eed049cf875ab378bf04468d4a24>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-resolver/src/types.js
@@ -120,7 +120,7 @@ export type ResolutionContext = Readonly<{
    * @deprecated, prefer `fileSystemLookup`
    */
   doesFileExist: DoesFileExist;
-  extraNodeModules: null | undefined | {[$$Key$$: string]: string};
+  extraNodeModules: null | undefined | {[packageName: string]: string};
   /** Is resolving for a development bundle. */
   dev: boolean;
   /**
@@ -206,5 +206,5 @@ export type CustomResolver = (
   platform: string | null,
 ) => Resolution;
 export type CustomResolverOptions = {
-  readonly [$$Key$$: string]: unknown;
+  readonly [key: string]: unknown;
 };

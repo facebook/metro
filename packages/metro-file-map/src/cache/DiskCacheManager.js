@@ -50,10 +50,9 @@ export class DiskCacheManager implements CacheManager {
   #tryWrite: ?() => Promise<void>;
   #stopListening: ?() => void;
 
-  constructor(
-    {buildParameters}: CacheManagerFactoryOptions,
-    {autoSave = {}, cacheDirectory, cacheFilePrefix}: DiskCacheConfig,
-  ) {
+  constructor(opts: CacheManagerFactoryOptions, config: DiskCacheConfig) {
+    const {buildParameters} = opts;
+    const {autoSave = {}, cacheDirectory, cacheFilePrefix} = config;
     this.#cachePath = DiskCacheManager.getCacheFilePath(
       buildParameters,
       cacheFilePrefix,
@@ -103,12 +102,9 @@ export class DiskCacheManager implements CacheManager {
 
   async write(
     getSnapshot: () => CacheData,
-    {
-      changedSinceCacheRead,
-      eventSource,
-      onWriteError,
-    }: CacheManagerWriteOptions,
+    opts: CacheManagerWriteOptions,
   ): Promise<void> {
+    const {changedSinceCacheRead, eventSource, onWriteError} = opts;
     // Initialise a writer function using a promise queue to ensure writes are
     // sequenced.
     const tryWrite = (this.#tryWrite = () => {

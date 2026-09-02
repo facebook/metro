@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<3c6460427c6760887187d6b16151c609>>
+ * @generated SignedSource<<9497564df95b6b4796afe059ee0af907>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/index.flow.js
@@ -57,7 +57,7 @@ export type RunMetroOptions = Omit<
 export type RunServerOptions = Readonly<{
   hasReducedPerformance?: boolean;
   host?: string;
-  onError?: ($$PARAM_0$$: Error & {code?: string}) => void;
+  onError?: (err: Error & {code?: string}) => void;
   onReady?: (server: HttpServer | HttpsServer) => void;
   onClose?: () => void;
   secureServerOptions?: HttpsServerOptions;
@@ -92,18 +92,18 @@ export type RunBuildOptions = {
   minify?: boolean;
   output?: Readonly<{
     build: (
-      $$PARAM_0$$: MetroServer,
-      $$PARAM_1$$: RequestOptions,
-      $$PARAM_2$$: void | BuildOptions,
+      server: MetroServer,
+      requestOptions: RequestOptions,
+      buildOptions?: BuildOptions,
     ) => Promise<{
       code: string;
       map: string;
       assets?: ReadonlyArray<AssetData>;
     }>;
     save: (
-      $$PARAM_0$$: {code: string; map: string},
-      $$PARAM_1$$: OutputOptions,
-      $$PARAM_2$$: (logMessage: string) => void,
+      output: {code: string; map: string},
+      opts: OutputOptions,
+      logger: (logMessage: string) => void,
     ) => Promise<unknown>;
   }>;
   platform?: string;
@@ -159,17 +159,17 @@ export declare const createConnectMiddleware: (
 export declare type createConnectMiddleware = typeof createConnectMiddleware;
 export declare const runServer: (
   config: ConfigT,
-  $$PARAM_1$$?: RunServerOptions,
+  opts?: RunServerOptions,
 ) => Promise<RunServerResult>;
 export declare type runServer = typeof runServer;
 export declare const runBuild: (
   config: ConfigT,
-  $$PARAM_1$$: RunBuildOptions,
+  opts: RunBuildOptions,
 ) => Promise<RunBuildResult>;
 export declare type runBuild = typeof runBuild;
 export declare const buildGraph: (
   config: InputConfigT,
-  $$PARAM_1$$: BuildGraphOptions,
+  opts: BuildGraphOptions,
 ) => Promise<ReadOnlyGraph>;
 export declare type buildGraph = typeof buildGraph;
 type AttachMetroCLIOptions = {

@@ -307,7 +307,7 @@ export default class Server {
 
   async build(
     bundleOptions: BundleOptions,
-    {withAssets}: BuildOptions = {},
+    buildOptions: BuildOptions = {},
   ): Promise<{
     code: string,
     map: string,
@@ -315,6 +315,7 @@ export default class Server {
     ...
   }> {
     const splitOptions = splitBundleOptions(bundleOptions);
+    const {withAssets} = buildOptions;
     const {
       entryFile,
       graphOptions,
@@ -591,9 +592,9 @@ export default class Server {
   }
 
   processRequest: (
-    IncomingMessage,
-    ServerResponse,
-    ((e: ?Error) => void),
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: (e: ?Error) => void,
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,

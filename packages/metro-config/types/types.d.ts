@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<9c62bc2ca711f9693edc135a382a382a>>
+ * @generated SignedSource<<45e0111f05ce2350b8be53c72dd0c8c7>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-config/src/types.js
@@ -97,7 +97,7 @@ type ResolverConfigT = {
   dependencyExtractor: null | undefined | string;
   emptyModulePath: string;
   enableGlobalPackages: boolean;
-  extraNodeModules: {[name: string]: string};
+  extraNodeModules: {[packageName: string]: string};
   hasteImplModulePath: null | undefined | string;
   nodeModulesPaths: ReadonlyArray<string>;
   platforms: ReadonlyArray<string>;
@@ -130,7 +130,7 @@ type SerializerConfigT = {
     delta: DeltaResult,
   ) => unknown;
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>;
-  getPolyfills: ($$PARAM_0$$: {
+  getPolyfills: (ctx: {
     platform: null | undefined | string;
   }) => ReadonlyArray<string>;
   getRunModuleStatement: (
@@ -178,12 +178,12 @@ type CacheStoresConfigT = ReadonlyArray<CacheStore<TransformResult>>;
 type ServerConfigT = {
   /** @deprecated */
   enhanceMiddleware: (
-    $$PARAM_0$$: Middleware,
-    $$PARAM_1$$: MetroServer,
+    middleware: Middleware,
+    server: MetroServer,
   ) => Middleware | Server;
   forwardClientLogs: boolean;
   port: number;
-  rewriteRequestUrl: ($$PARAM_0$$: string) => string;
+  rewriteRequestUrl: (url: string) => string;
   unstable_serverRoot: null | undefined | string;
   useGlobalHotkey: boolean;
   verifyConnections: boolean;
@@ -197,7 +197,7 @@ type ServerConfigT = {
       };
 };
 type SymbolicatorConfigT = {
-  customizeFrame: ($$PARAM_0$$: {
+  customizeFrame: (frame: {
     readonly file: null | undefined | string;
     readonly lineNumber: null | undefined | number;
     readonly column: null | undefined | number;
@@ -206,8 +206,8 @@ type SymbolicatorConfigT = {
     | (null | undefined | {readonly collapse?: boolean})
     | Promise<null | undefined | {readonly collapse?: boolean}>;
   customizeStack: (
-    $$PARAM_0$$: Array<IntermediateStackFrame>,
-    $$PARAM_1$$: unknown,
+    symbolicatedStack: Array<IntermediateStackFrame>,
+    extraData: unknown,
   ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>;
 };
 type WatcherConfigT = {
@@ -227,7 +227,7 @@ export type InputConfigT = Partial<
     MetalConfigT & {
       cacheStores:
         | CacheStoresConfigT
-        | (($$PARAM_0$$: MetroCache) => CacheStoresConfigT);
+        | ((metroCache: MetroCache) => CacheStoresConfigT);
       resolver: Readonly<Partial<ResolverConfigT>>;
       server: Readonly<Partial<ServerConfigT>>;
       serializer: Readonly<Partial<SerializerConfigT>>;

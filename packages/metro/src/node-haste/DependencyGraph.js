@@ -315,14 +315,14 @@ export default class DependencyGraph extends EventEmitter {
     resolverOptions: ResolverInputOptions,
 
     // TODO: Fold assumeFlatNodeModules into resolverOptions and add to graphId
-    {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
+    extraOptions: {assumeFlatNodeModules: boolean} = {
       assumeFlatNodeModules: false,
     },
   ): BundlerResolution {
     const to = dependency.name;
     const isSensitiveToOriginFolder =
       // Resolution is always relative to the origin folder unless we assume a flat node_modules
-      !assumeFlatNodeModules ||
+      !extraOptions.assumeFlatNodeModules ||
       // Path requests are resolved relative to the origin folder
       to.includes('/') ||
       to === '.' ||

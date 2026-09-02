@@ -96,7 +96,7 @@ export type ChangedFileMetadata = Readonly<{
 }>;
 
 export type ChangeEvent = Readonly<{
-  logger: ?RootPerfLogger,
+  logger?: ?RootPerfLogger,
   changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>,
   rootDir: string,
 }>;
@@ -110,7 +110,7 @@ export type ChangeEventMetadata = {
 export type Console = typeof global.console;
 
 export type CrawlerOptions = {
-  abortSignal: ?AbortSignal,
+  abortSignal?: ?AbortSignal,
   computeSha1: boolean,
   console: Console,
   extensions: ReadonlyArray<string>,
@@ -328,8 +328,8 @@ export interface FileSystem {
     mixedStartPath: string,
     subpath: string,
     opts: {
-      breakOnSegment: ?string,
-      invalidatedBy: ?Set<string>,
+      breakOnSegment?: ?string,
+      invalidatedBy?: ?Set<string>,
       subpathType: 'f' | 'd',
     },
   ): ?{

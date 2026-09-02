@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<0024fd05b95efe19a24f9acc84ff474b>>
+ * @generated SignedSource<<8e4b0e22be79662d4a21e9241922409d>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph/ModuleResolution.js
@@ -38,7 +38,7 @@ type Options = Readonly<{
   disableHierarchicalLookup: boolean;
   doesFileExist: DoesFileExist;
   emptyModulePath: string;
-  extraNodeModules: null | undefined | object;
+  extraNodeModules: null | undefined | {[key: string]: string};
   fileSystemLookup: FileSystemLookup;
   getHasteModulePath: (
     name: string,

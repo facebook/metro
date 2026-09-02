@@ -108,7 +108,7 @@ type ResolverConfigT = {
   dependencyExtractor: ?string,
   emptyModulePath: string,
   enableGlobalPackages: boolean,
-  extraNodeModules: {[name: string]: string, ...},
+  extraNodeModules: {[packageName: string]: string, ...},
   hasteImplModulePath: ?string,
   nodeModulesPaths: ReadonlyArray<string>,
   platforms: ReadonlyArray<string>,
@@ -139,7 +139,7 @@ type SerializerConfigT = {
     delta: DeltaResult<>,
   ) => unknown,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  getPolyfills: ({platform: ?string, ...}) => ReadonlyArray<string>,
+  getPolyfills: (ctx: {platform: ?string, ...}) => ReadonlyArray<string>,
   getRunModuleStatement: (
     moduleId: number | string,
     globalPrefix: string,
@@ -178,10 +178,13 @@ type CacheStoresConfigT = ReadonlyArray<CacheStore<TransformResult<>>>;
 
 type ServerConfigT = {
   /** @deprecated */
-  enhanceMiddleware: (Middleware, MetroServer) => Middleware | Server,
+  enhanceMiddleware: (
+    middleware: Middleware,
+    server: MetroServer,
+  ) => Middleware | Server,
   forwardClientLogs: boolean,
   port: number,
-  rewriteRequestUrl: string => string,
+  rewriteRequestUrl: (url: string) => string,
   unstable_serverRoot: ?string,
   useGlobalHotkey: boolean,
   verifyConnections: boolean,
@@ -196,7 +199,7 @@ type ServerConfigT = {
 };
 
 type SymbolicatorConfigT = {
-  customizeFrame: ({
+  customizeFrame: (frame: {
     +file: ?string,
     +lineNumber: ?number,
     +column: ?number,
@@ -204,8 +207,8 @@ type SymbolicatorConfigT = {
     ...
   }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
   customizeStack: (
-    Array<IntermediateStackFrame>,
-    unknown,
+    symbolicatedStack: Array<IntermediateStackFrame>,
+    extraData: unknown,
   ) => Array<IntermediateStackFrame> | Promise<Array<IntermediateStackFrame>>,
 };
 
@@ -230,7 +233,9 @@ type WatcherConfigT = {
 export type InputConfigT = Partial<
   Readonly<
     MetalConfigT & {
-      cacheStores: CacheStoresConfigT | (MetroCache => CacheStoresConfigT),
+      cacheStores:
+        | CacheStoresConfigT
+        | ((metroCache: MetroCache) => CacheStoresConfigT),
       resolver: Readonly<Partial<ResolverConfigT>>,
       server: Readonly<Partial<ServerConfigT>>,
       serializer: Readonly<Partial<SerializerConfigT>>,
