@@ -80,10 +80,11 @@ export default class HastePlugin
     this.#failValidationOnConflicts = options.failValidationOnConflicts;
   }
 
-  async initialize({
-    files,
-  }: FileMapPluginInitOptions<null, string | null>): Promise<void> {
+  async initialize(
+    opts: FileMapPluginInitOptions<null, string | null>,
+  ): Promise<void> {
     this.#perfLogger?.point('constructHasteMap_start');
+    const files = opts.files;
     let hasteFiles = 0;
     for (const {
       baseName,

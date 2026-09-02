@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<feddf9cb00d4a097d348531773c9f0bd>>
+ * @generated SignedSource<<048910a40e900e85a4a037e02d572843>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/types.js
@@ -148,7 +148,7 @@ export type DeltaResult<T = MixedOutput> = {
 };
 export type SerializerOptions = Readonly<{
   asyncRequireModulePath: string;
-  createModuleId: ($$PARAM_0$$: string) => number;
+  createModuleId: (absolutePath: string) => number;
   dev: boolean;
   getRunModuleStatement: (
     moduleId: number | string,
@@ -156,15 +156,15 @@ export type SerializerOptions = Readonly<{
   ) => string;
   globalPrefix: string;
   includeAsyncPaths: boolean;
-  inlineSourceMap: null | undefined | boolean;
+  inlineSourceMap?: null | undefined | boolean;
   modulesOnly: boolean;
   processModuleFilter: (module: Module) => boolean;
   projectRoot: string;
   runBeforeMainModule: ReadonlyArray<string>;
   runModule: boolean;
   serverRoot: string;
-  shouldAddToIgnoreList: ($$PARAM_0$$: Module) => boolean;
-  sourceMapUrl: null | undefined | string;
-  sourceUrl: null | undefined | string;
-  getSourceUrl: null | undefined | (($$PARAM_0$$: Module) => string);
+  shouldAddToIgnoreList: (module: Module) => boolean;
+  sourceMapUrl?: null | undefined | string;
+  sourceUrl?: null | undefined | string;
+  getSourceUrl?: null | undefined | ((module: Module) => string);
 }>;

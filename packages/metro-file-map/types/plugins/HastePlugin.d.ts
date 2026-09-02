@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<3d1462ab2325a09553e02b69b5de84eb>>
+ * @generated SignedSource<<d1c8a8bc5a39d65b817f19d70211260b>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/plugins/HastePlugin.js
@@ -44,7 +44,7 @@ declare class HastePlugin
   readonly name: 'haste';
   constructor(options: HasteMapOptions);
   initialize(
-    $$PARAM_0$$: FileMapPluginInitOptions<null, string | null>,
+    opts: FileMapPluginInitOptions<null, string | null>,
   ): Promise<void>;
   getSerializableSnapshot(): null;
   getModule(

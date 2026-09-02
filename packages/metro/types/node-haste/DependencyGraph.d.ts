@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<0ae2c74336868865b420d900a230cea7>>
+ * @generated SignedSource<<0e019739f58fd639818330cd537c5975>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/node-haste/DependencyGraph.js
@@ -81,7 +81,7 @@ declare class DependencyGraph extends EventEmitter {
     dependency: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
-    $$PARAM_4$$?: {assumeFlatNodeModules: boolean},
+    extraOptions?: {assumeFlatNodeModules: boolean},
   ): BundlerResolution;
   doesFileExist: (filePath: string) => boolean;
   getHasteName(filePath: string): string;

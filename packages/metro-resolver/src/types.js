@@ -140,7 +140,7 @@ export type ResolutionContext = Readonly<{
    * @deprecated, prefer `fileSystemLookup`
    */
   doesFileExist: DoesFileExist,
-  extraNodeModules: ?{[string]: string, ...},
+  extraNodeModules: ?{[packageName: string]: string, ...},
 
   /** Is resolving for a development bundle. */
   dev: boolean,
@@ -239,6 +239,6 @@ export type CustomResolver = (
 
 export type CustomResolverOptions = {
   __proto__: null,
-  +[string]: unknown,
+  +[key: string]: unknown,
   ...
 };

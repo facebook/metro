@@ -72,7 +72,7 @@ export type RunMetroOptions = {
 export type RunServerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   host?: string,
-  onError?: (Error & {code?: string}) => void,
+  onError?: (err: Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
   onClose?: () => void,
   secureServerOptions?: HttpsServerOptions,
@@ -114,9 +114,9 @@ export type RunBuildOptions = {
   minify?: boolean,
   output?: Readonly<{
     build: (
-      MetroServer,
-      RequestOptions,
-      void | BuildOptions,
+      server: MetroServer,
+      requestOptions: RequestOptions,
+      buildOptions?: BuildOptions,
     ) => Promise<{
       code: string,
       map: string,
@@ -124,13 +124,13 @@ export type RunBuildOptions = {
       ...
     }>,
     save: (
-      {
+      output: {
         code: string,
         map: string,
         ...
       },
-      OutputOptions,
-      (logMessage: string) => void,
+      opts: OutputOptions,
+      logger: (logMessage: string) => void,
     ) => Promise<unknown>,
     ...
   }>,
@@ -275,7 +275,9 @@ export const createConnectMiddleware = async function (
 
 export const runServer = async (
   config: ConfigT,
-  {
+  opts: RunServerOptions = {},
+): Promise<RunServerResult> => {
+  const {
     hasReducedPerformance = false,
     host,
     onError,
@@ -289,8 +291,7 @@ export const runServer = async (
     waitForBundler = false,
     websocketEndpoints: userWebsocketEndpoints = {},
     watch,
-  }: RunServerOptions = {},
-): Promise<RunServerResult> => {
+  } = opts;
   await earlyPortCheck(host, config.server.port);
 
   if (secure != null || secureCert != null || secureKey != null) {
@@ -421,7 +422,9 @@ export const runServer = async (
 
 export const runBuild = async (
   config: ConfigT,
-  {
+  opts: RunBuildOptions,
+): Promise<RunBuildResult> => {
+  const {
     assets = false,
     customResolverOptions = DEFAULTS.customResolverOptions,
     customTransformOptions = DEFAULTS.customTransformOptions,
@@ -439,8 +442,7 @@ export const runBuild = async (
     sourceMap = false,
     sourceMapUrl,
     unstable_transformProfile = DEFAULTS.unstable_transformProfile,
-  }: RunBuildOptions,
-): Promise<RunBuildResult> => {
+  } = opts;
   const metroServer = await runMetro(config, {
     watch: false,
   });
@@ -512,16 +514,16 @@ export const runBuild = async (
 
 export const buildGraph = async function (
   config: InputConfigT,
-  {
+  opts: BuildGraphOptions,
+): Promise<ReadOnlyGraph<>> {
+  const {
     customTransformOptions = Object.create(null),
     dev = false,
     entries,
     minify = false,
-    onProgress,
     platform = 'web',
     type = 'module',
-  }: BuildGraphOptions,
-): Promise<ReadOnlyGraph<>> {
+  } = opts;
   const mergedConfig = await getConfig(config);
 
   const bundler = new IncrementalBundler(mergedConfig);
