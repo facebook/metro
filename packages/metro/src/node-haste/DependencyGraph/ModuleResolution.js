@@ -41,7 +41,7 @@ type Options = Readonly<{
   disableHierarchicalLookup: boolean,
   doesFileExist: DoesFileExist,
   emptyModulePath: string,
-  extraNodeModules: ?Object,
+  extraNodeModules: ?{[key: string]: string},
   fileSystemLookup: FileSystemLookup,
   getHasteModulePath: (name: string, platform: ?string) => ?string,
   getHastePackagePath: (name: string, platform: ?string) => ?string,

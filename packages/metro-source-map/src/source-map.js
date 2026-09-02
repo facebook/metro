@@ -35,7 +35,10 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
-export type HermesFunctionOffsets = {[number]: ReadonlyArray<number>, ...};
+export type HermesFunctionOffsets = {
+  [functionId: number]: ReadonlyArray<number>,
+  ...
+};
 
 export type FBSourcesArray = ReadonlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];

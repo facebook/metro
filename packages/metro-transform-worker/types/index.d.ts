@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<165882da0b131608da36b1cbd00ecf28>>
+ * @generated SignedSource<<b02aee4e7171e25c0d986090d70c1825>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-transform-worker/src/index.js
@@ -28,7 +28,7 @@ import type {TransformResultDependency} from 'metro/private/DeltaBundler';
 import type {AllowOptionalDependencies} from 'metro/private/DeltaBundler/types';
 import type {DynamicRequiresBehavior} from 'metro/private/ModuleGraph/worker/collectDependencies';
 
-type MinifierConfig = Readonly<{[$$Key$$: string]: unknown}>;
+type MinifierConfig = Readonly<{[key: string]: unknown}>;
 export type MinifierOptions = {
   code: string;
   map: null | undefined | BasicSourceMap;
@@ -38,7 +38,7 @@ export type MinifierOptions = {
 };
 export type MinifierResult = {code: string; map?: BasicSourceMap};
 export type Minifier = (
-  $$PARAM_0$$: MinifierOptions,
+  opts: MinifierOptions,
 ) => MinifierResult | Promise<MinifierResult>;
 export type Type = 'script' | 'module' | 'asset';
 export type JsTransformerConfig = Readonly<{

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<49bc83c20821024a7b77f5d5c3168d62>>
+ * @generated SignedSource<<83e75c5275e98f33f98748f11c0baa1f>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/Serializers/sourceMapGenerator.js
@@ -23,7 +23,7 @@ export type SourceMapGeneratorOptions = Readonly<{
   excludeSource: boolean;
   processModuleFilter: (module: Module) => boolean;
   shouldAddToIgnoreList: (module: Module) => boolean;
-  getSourceUrl: null | undefined | ((module: Module) => string);
+  getSourceUrl?: null | undefined | ((module: Module) => string);
 }>;
 declare function sourceMapGenerator(
   modules: ReadonlyArray<Module>,
