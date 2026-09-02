@@ -76,6 +76,8 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
     );
 
     fileWatcher = new EventEmitter();
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     initialTraverseDependencies.mockImplementationOnce(async function <T>(
       this: Graph<T>,
       options: Options<T>,
@@ -394,6 +396,8 @@ describe.each(['posix', 'win32'])('DeltaCalculator (%s)', osPlatform => {
       getSource: () => Buffer.of(),
     };
 
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     traverseDependencies.mockImplementation(async function <T>(
       this: GraphType<T>,
       paths: ReadonlyArray<string>,

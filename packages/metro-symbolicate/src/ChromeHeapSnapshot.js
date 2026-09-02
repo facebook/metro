@@ -389,6 +389,8 @@ class ChromeHeapSnapshotRecordAccessor {
     try {
       for (const field of this._fieldToOffset.keys()) {
         // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+        /* $FlowFixMe[invalid-this-arg] Error exposed after fixing this typing
+         * unsoundness in flow */
         if (!Object.prototype.hasOwnProperty.call(record, field)) {
           throw new Error('Missing value for field: ' + field);
         }

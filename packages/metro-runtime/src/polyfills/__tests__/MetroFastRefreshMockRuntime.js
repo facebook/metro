@@ -156,7 +156,12 @@ const moduleSystemCode = (() => {
   }).code;
 })();
 
-const createModuleSystem: (RuntimeGlobal, boolean, string) => unknown =
+const createModuleSystem: (
+  this: any,
+  RuntimeGlobal,
+  boolean,
+  string,
+) => unknown =
   // eslint-disable-next-line no-new-func
   new Function(
     'global',

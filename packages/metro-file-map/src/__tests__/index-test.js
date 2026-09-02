@@ -236,6 +236,8 @@ const assertFileSystemEqual = (fileSystem: FileSystem, fileData: FileData) => {
 // This normalizes them for the uses cases in this test
 const deepNormalize = <T extends unknown>(value: T): T => {
   // $FlowFixMe[method-unbinding]
+  /* $FlowFixMe[invalid-this-arg] Error exposed after fixing this typing
+   * unsoundness in flow */
   const stringTag = Object.prototype.toString.call(value);
   switch (stringTag) {
     case '[object Map]':

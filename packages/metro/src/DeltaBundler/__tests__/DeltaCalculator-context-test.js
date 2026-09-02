@@ -68,6 +68,8 @@ describe('DeltaCalculator + require.context', () => {
     fileWatcher = new EventEmitter();
     emitChange = createEmitChange(fileWatcher, p('/'), path.sep);
 
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     markModifiedContextModules.mockImplementation(function <T>(
       this: Graph<T>,
       filePath,
@@ -84,6 +86,8 @@ describe('DeltaCalculator + require.context', () => {
       └─────────┘                                  └──────────────┘     └──────────┘
      */
 
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     initialTraverseDependencies.mockImplementationOnce(async function <T>(
       this: Graph<T>,
       options: Options<T>,

@@ -795,6 +795,8 @@ export default class Server {
       bundlePerfLogger: RootPerfLogger,
     }>,
   ) => Promise<void> {
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     return async function requestProcessor(
       this: Server,
       req: IncomingMessage,
