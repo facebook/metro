@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<58a8bc4229ee86a5c93af2ea51195b97>>
+ * @generated SignedSource<<f75172db274c5e5d6613ffbf6b52b59e>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Server.js
@@ -132,7 +132,7 @@ declare class Server {
   ): Promise<{code: string; map: string}>;
   build(
     bundleOptions: BundleOptions,
-    $$PARAM_1$$?: BuildOptions,
+    buildOptions?: BuildOptions,
   ): Promise<{code: string; map: string; assets?: ReadonlyArray<AssetData>}>;
   getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo>;
   getAssets(options: BundleOptions): Promise<ReadonlyArray<AssetData>>;
@@ -157,9 +157,9 @@ declare class Server {
     res: ServerResponse,
   ): Promise<void>;
   processRequest: (
-    $$PARAM_0$$: IncomingMessage,
-    $$PARAM_1$$: ServerResponse,
-    $$PARAM_2$$: (e: null | undefined | Error) => void,
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: (e: null | undefined | Error) => void,
   ) => void;
   _parseOptions(url: string): BundleOptions;
   _rewriteAndNormalizeUrl(requestUrl: string): string;

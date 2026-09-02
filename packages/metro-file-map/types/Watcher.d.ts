@@ -11,7 +11,7 @@
  * Original file: packages/metro-file-map/src/Watcher.js
  * To regenerate, run:
  *   js1 build metro-ts-defs (internal) OR
- *   yarn run build-ts-defs (OSS)
+ *   yarn run build-ts-defs (OSS) 
  */
 
 import type {

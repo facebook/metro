@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<7303fe7149cb12d764c6106cdf4f49ee>>
+ * @generated SignedSource<<b0e1699311899ba629198227dd1cc9ce>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-source-map/src/source-map.js
@@ -36,7 +36,7 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 export type HermesFunctionOffsets = {
-  [$$Key$$: number]: ReadonlyArray<number>;
+  [functionId: number]: ReadonlyArray<number>;
 };
 export type FBSourcesArray = ReadonlyArray<null | undefined | FBSourceMetadata>;
 export type FBSourceMetadata = [null | undefined | FBSourceFunctionMap];

@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<6ff16bb65883df0a1cb70e6ca94461eb>>
+ * @generated SignedSource<<ce1e2ec9dca4c21aad36f27f1a45731d>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/flow-types.js
@@ -79,7 +79,7 @@ export type ChangedFileMetadata = Readonly<{
   modifiedTime?: null | undefined | number;
 }>;
 export type ChangeEvent = Readonly<{
-  logger: null | undefined | RootPerfLogger;
+  logger?: null | undefined | RootPerfLogger;
   changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>;
   rootDir: string;
 }>;
@@ -90,7 +90,7 @@ export type ChangeEventMetadata = {
 };
 export type Console = typeof global.console;
 export type CrawlerOptions = {
-  abortSignal: null | undefined | AbortSignal;
+  abortSignal?: null | undefined | AbortSignal;
   computeSha1: boolean;
   console: Console;
   extensions: ReadonlyArray<string>;
@@ -287,8 +287,8 @@ export interface FileSystem {
     mixedStartPath: string,
     subpath: string,
     opts: {
-      breakOnSegment: null | undefined | string;
-      invalidatedBy: null | undefined | Set<string>;
+      breakOnSegment?: null | undefined | string;
+      invalidatedBy?: null | undefined | Set<string>;
       subpathType: 'f' | 'd';
     },
   ): null | undefined | {absolutePath: string; containerRelativePath: string};

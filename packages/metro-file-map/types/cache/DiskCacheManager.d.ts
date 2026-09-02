@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<9cdec2a3b7a46f0a893dd5dc392a5294>>
+ * @generated SignedSource<<1276c0a64e0ad55f32baa402baf919da>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/cache/DiskCacheManager.js
@@ -30,10 +30,7 @@ type DiskCacheConfig = Readonly<{
   cacheDirectory?: null | undefined | string;
 }>;
 export declare class DiskCacheManager implements CacheManager {
-  constructor(
-    $$PARAM_0$$: CacheManagerFactoryOptions,
-    $$PARAM_1$$: DiskCacheConfig,
-  );
+  constructor(opts: CacheManagerFactoryOptions, config: DiskCacheConfig);
   static getCacheFilePath(
     buildParameters: BuildParameters,
     cacheFilePrefix?: null | undefined | string,
@@ -43,7 +40,7 @@ export declare class DiskCacheManager implements CacheManager {
   read(): Promise<null | undefined | CacheData>;
   write(
     getSnapshot: () => CacheData,
-    $$PARAM_1$$: CacheManagerWriteOptions,
+    opts: CacheManagerWriteOptions,
   ): Promise<void>;
   end(): Promise<void>;
 }

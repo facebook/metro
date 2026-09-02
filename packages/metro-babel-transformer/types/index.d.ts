@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<c71ff6c13c916919d1340d231518de8f>>
+ * @generated SignedSource<<2503f88efd80b39e4d860870017af66d>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-babel-transformer/src/index.js
@@ -24,7 +24,7 @@ type BabelTransformOptions = NonNullable<
   Parameters<typeof transformFromAstSync>[2]
 >;
 export type CustomTransformOptions = {
-  [$$Key$$: string]: unknown;
+  [key: string]: unknown;
 };
 export type TransformProfile = 'default' | 'hermes-stable' | 'hermes-canary';
 type BabelTransformerOptions = Readonly<{
@@ -85,7 +85,7 @@ export type BabelTransformerCacheKeyOptions = Readonly<{
   enableBabelRCLookup?: boolean;
 }>;
 export type BabelTransformer = Readonly<{
-  transform: ($$PARAM_0$$: BabelTransformerArgs) => Readonly<{
+  transform: (transformerArgs: BabelTransformerArgs) => Readonly<{
     ast: BabelNodeFile;
     functionMap?: BabelFileFunctionMapMetadata;
     metadata?: MetroBabelFileMetadata;
@@ -93,7 +93,7 @@ export type BabelTransformer = Readonly<{
   getCacheKey?: (options?: BabelTransformerCacheKeyOptions) => string;
 }>;
 declare function transform(
-  $$PARAM_0$$: BabelTransformerArgs,
+  opts: BabelTransformerArgs,
 ): ReturnType<BabelTransformer['transform']>;
 /**
  * Generates a cache key component based on the user's Babel configuration files.

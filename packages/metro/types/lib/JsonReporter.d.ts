@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<e7173f8dc5e076fd37b9a1cecd581f58>>
+ * @generated SignedSource<<90ed73fe10859679f83e619fd1f46f59>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/lib/JsonReporter.js
@@ -23,16 +23,13 @@ export type SerializedError = {
   errors?: ReadonlyArray<SerializedError>;
   cause?: SerializedError;
 };
-export type SerializedEvent<
-  TEvent extends {readonly [$$Key$$: string]: unknown},
-> = TEvent extends {error: Error}
-  ? Omit<Omit<TEvent, 'error'>, keyof {error: SerializedError}> & {
-      error: SerializedError;
-    }
-  : TEvent;
-declare class JsonReporter<
-  TEvent extends {readonly [$$Key$$: string]: unknown},
-> {
+export type SerializedEvent<TEvent extends {readonly [prop: string]: unknown}> =
+  TEvent extends {error: Error}
+    ? Omit<Omit<TEvent, 'error'>, keyof {error: SerializedError}> & {
+        error: SerializedError;
+      }
+    : TEvent;
+declare class JsonReporter<TEvent extends {readonly [prop: string]: unknown}> {
   _stream: Writable;
   constructor(stream: Writable);
   /**

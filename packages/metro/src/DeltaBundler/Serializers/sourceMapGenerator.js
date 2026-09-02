@@ -19,7 +19,7 @@ export type SourceMapGeneratorOptions = Readonly<{
   excludeSource: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   shouldAddToIgnoreList: (module: Module<>) => boolean,
-  getSourceUrl: ?(module: Module<>) => string,
+  getSourceUrl?: ?(module: Module<>) => string,
 }>;
 
 function getSourceMapInfosImpl(
