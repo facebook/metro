@@ -125,9 +125,9 @@ export default function inlinePlugin(
     key: string,
     fallback: () => Node,
   ): Node {
-    let value = null;
-
-    for (const p of objectExpression.properties) {
+    // Object literal evaluation keeps the last definition of a duplicate key.
+    for (let i = objectExpression.properties.length - 1; i >= 0; i--) {
+      const p = objectExpression.properties[i];
       if (!isObjectProperty(p) && !isObjectMethod(p)) {
         continue;
       }
@@ -136,16 +136,14 @@ export default function inlinePlugin(
         (isStringLiteral(p.key) && p.key.value === key)
       ) {
         if (isObjectProperty(p)) {
-          value = p.value;
-          break;
+          return p.value;
         } else if (isObjectMethod(p)) {
-          value = t.toExpression(p);
-          break;
+          return t.toExpression(p);
         }
       }
     }
 
-    return value ?? fallback();
+    return fallback();
   }
 
   function hasStaticProperties(objectExpression: ObjectExpression): boolean {
