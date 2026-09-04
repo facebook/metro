@@ -399,6 +399,17 @@ describe('inline constants', () => {
     });
   });
 
+  test('uses the last definition when Platform.select has duplicate keys', () => {
+    const code = `
+      var value = Platform.select({ios: 1, ios: 2});
+    `;
+
+    compare([inlinePlugin], code, 'var value = 2;', {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
   test('inlines Platform.select in the code when using an ObjectMethod', () => {
     const code = `
       function a() {
