@@ -72,7 +72,7 @@ export function functionMapBabelPlugin(): PluginObj;
 export function generateFunctionMap(ast: Node_2, context?: Context): FBSourceFunctionMap;
 
 export type HermesFunctionOffsets = {
-    [$$Key$$: number]: ReadonlyArray<number>;
+    [functionId: number]: ReadonlyArray<number>;
 };
 
 export interface IConsumer {

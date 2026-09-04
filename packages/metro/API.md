@@ -27,7 +27,7 @@ export const attachMetroCli: (yargs: Yargs, options?: AttachMetroCLIOptions) => 
 
 export type attachMetroCli = typeof attachMetroCli;
 
-export const buildGraph: (config: InputConfigT, $$PARAM_1$$: BuildGraphOptions) => Promise<ReadOnlyGraph>;
+export const buildGraph: (config: InputConfigT, opts: BuildGraphOptions) => Promise<ReadOnlyGraph>;
 
 export type buildGraph = typeof buildGraph;
 
@@ -78,7 +78,7 @@ export class DependencyGraph extends EventEmitter {
     dependency: TransformResultDependency,
     platform: string | null,
     resolverOptions: ResolverInputOptions,
-    $$PARAM_4$$?: {assumeFlatNodeModules: boolean},
+    extraOptions?: {assumeFlatNodeModules: boolean},
     ): BundlerResolution;
 }
 
@@ -86,7 +86,7 @@ export function getSchemeResolvers(): Readonly<{
     [scheme: string]: CustomResolver;
 }>;
 
-export class JsonReporter<TEvent extends {readonly [$$Key$$: string]: unknown}> {
+export class JsonReporter<TEvent extends {readonly [prop: string]: unknown}> {
     constructor(stream: Writable);
     update(event: TEvent): void;
 }
@@ -104,7 +104,7 @@ export class MetroServer {
     constructor(config: ConfigT, options?: ServerOptions);
     build(
     bundleOptions: BundleOptions,
-    $$PARAM_1$$?: BuildOptions,
+    buildOptions?: BuildOptions,
     ): Promise<{
         code: string;
         map: string;
@@ -141,7 +141,7 @@ export class MetroServer {
     getPlatforms(): ReadonlyArray<string>;
     getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo>;
     getWatchFolders(): ReadonlyArray<string>;
-    processRequest: ($$PARAM_0$$: IncomingMessage, $$PARAM_1$$: ServerResponse, $$PARAM_2$$: (e: null | undefined | Error) => void) => void;
+    processRequest: (req: IncomingMessage, res: ServerResponse, next: (e: null | undefined | Error) => void) => void;
     ready(): Promise<void>;
 }
 
@@ -215,7 +215,7 @@ export type RequireContextParams = Readonly<{
 
 export function resolveConfig(filePath?: string, cwd?: string): Promise<ResolveConfigResult>;
 
-export const runBuild: (config: ConfigT, $$PARAM_1$$: RunBuildOptions) => Promise<RunBuildResult>;
+export const runBuild: (config: ConfigT, opts: RunBuildOptions) => Promise<RunBuildResult>;
 
 export type runBuild = typeof runBuild;
 
@@ -233,15 +233,15 @@ export type RunBuildOptions = {
     output?:
     | Readonly<{
         build: (
-        $$PARAM_0$$: MetroServer,
-        $$PARAM_1$$: RequestOptions,
-        $$PARAM_2$$: void | BuildOptions,
+        server: MetroServer,
+        requestOptions: RequestOptions,
+        buildOptions?: BuildOptions,
         ) => Promise<{
             code: string;
             map: string;
             assets?: ReadonlyArray<AssetData> | undefined;
         }>;
-        save: ($$PARAM_0$$: {code: string; map: string}, $$PARAM_1$$: OutputOptions, $$PARAM_2$$: (logMessage: string) => void) => Promise<unknown>;
+        save: (output: {code: string; map: string}, opts: OutputOptions, logger: (logMessage: string) => void) => Promise<unknown>;
     }>
     | undefined;
     platform?: string | undefined;
@@ -264,14 +264,14 @@ export type RunMetroOptions = Omit<ServerOptions, 'waitForBundler'> & {
     waitForBundler?: boolean | undefined;
 };
 
-export const runServer: (config: ConfigT, $$PARAM_1$$?: RunServerOptions) => Promise<RunServerResult>;
+export const runServer: (config: ConfigT, opts?: RunServerOptions) => Promise<RunServerResult>;
 
 export type runServer = typeof runServer;
 
 export type RunServerOptions = Readonly<{
     hasReducedPerformance?: boolean | undefined;
     host?: string | undefined;
-    onError?: (($$PARAM_0$$: Error & {code?: string | undefined}) => void) | undefined;
+    onError?: ((err: Error & {code?: string | undefined}) => void) | undefined;
     onReady?: ((server: Server_2 | Server_3) => void) | undefined;
     onClose?: (() => void) | undefined;
     secureServerOptions?: ServerOptions_2 | undefined;
@@ -288,23 +288,23 @@ export type RunServerResult = {httpServer: Server_2 | Server_3};
 
 export type SerializerOptions = Readonly<{
     asyncRequireModulePath: string;
-    createModuleId: ($$PARAM_0$$: string) => number;
+    createModuleId: (absolutePath: string) => number;
     dependencyMapReservedName?: null | undefined | string;
     dev: boolean;
     getRunModuleStatement: (moduleId: number | string, globalPrefix: string) => string;
     globalPrefix: string;
     includeAsyncPaths: boolean;
-    inlineSourceMap: null | undefined | boolean;
+    inlineSourceMap?: null | undefined | boolean;
     modulesOnly: boolean;
     processModuleFilter: (module: Module) => boolean;
     projectRoot: string;
     runBeforeMainModule: ReadonlyArray<string>;
     runModule: boolean;
     serverRoot: string;
-    shouldAddToIgnoreList: ($$PARAM_0$$: Module) => boolean;
-    sourceMapUrl: null | undefined | string;
-    sourceUrl: null | undefined | string;
-    getSourceUrl: null | undefined | (($$PARAM_0$$: Module) => string);
+    shouldAddToIgnoreList: (module: Module) => boolean;
+    sourceMapUrl?: null | undefined | string;
+    sourceUrl?: null | undefined | string;
+    getSourceUrl?: null | undefined | ((module: Module) => string);
     unstable_inlineDependencyMap?: boolean | undefined;
     unstable_getAsyncDependencyPath?: ((dependency: ResolvedDependency, options: unknown) => null | undefined | ReadonlyJsonData) | undefined;
 }>;

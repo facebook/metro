@@ -19,20 +19,21 @@ export type SerializedError = {
   ...
 };
 
-export type SerializedEvent<TEvent extends {readonly [string]: unknown, ...}> =
-  TEvent extends {
-    error: Error,
-    ...
-  }
-    ? {
-        ...Omit<TEvent, 'error'>,
-        error: SerializedError,
-        ...
-      }
-    : TEvent;
+export type SerializedEvent<
+  TEvent extends {readonly [prop: string]: unknown, ...},
+> = TEvent extends {
+  error: Error,
+  ...
+}
+  ? {
+      ...Omit<TEvent, 'error'>,
+      error: SerializedError,
+      ...
+    }
+  : TEvent;
 
 export default class JsonReporter<
-  TEvent extends {readonly [string]: unknown, ...},
+  TEvent extends {readonly [prop: string]: unknown, ...},
 > {
   _stream: Writable;
 
