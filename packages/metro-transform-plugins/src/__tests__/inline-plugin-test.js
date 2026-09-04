@@ -709,6 +709,37 @@ describe('inline constants', () => {
     });
   });
 
+  test("doesn't replace Platform.OS in other write targets", () => {
+    const code = `
+      Platform.OS++;
+      delete Platform.OS;
+      [Platform.OS] = values;
+      ({os: Platform.OS} = value);
+      for (Platform.OS in object) {}
+      for ([Platform.OS] in nestedObject) {}
+      for (Platform.OS of values) {}
+      for ([Platform.OS] of nestedValues) {}
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
+  test('replaces Platform.OS when it is read inside a write target', () => {
+    const code = `
+      target[Platform.OS] = value;
+      [target[Platform.OS]] = values;
+      ({[Platform.OS]: target} = value);
+    `;
+
+    compare([inlinePlugin], code, code.replaceAll('Platform.OS', '"ios"'), {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
   test('replaces Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
     const code = `
       function a() {
