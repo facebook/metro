@@ -19,6 +19,10 @@ module.exports = {
   maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
+  // A file map cache persisted by an earlier run must not be reused: Jest
+  // sandboxes tests, and `v8.deserialize` produces `Map`s from another realm
+  // that fail TreeFS's `instanceof` checks.
+  resetCache: true,
   watchFolders: [path.resolve(__dirname, '../../../')],
   server: {port: 0},
   resolver: {

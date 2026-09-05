@@ -199,6 +199,27 @@ export type WatcherStatus =
 export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
+export type PluginLookupResult<out PerFileData> =
+  | {
+      exists: false,
+      // The real, normal, absolute path of the first path segment
+      // encountered that does not exist, or cannot be navigated through.
+      missing: string,
+    }
+  | {
+      exists: true,
+      type: 'f',
+      // The real, normal, absolute path of the file.
+      realPath: string,
+      readonly pluginData: PerFileData,
+    }
+  | {
+      exists: true,
+      type: 'd',
+      // The real, normal, absolute path of the directory.
+      realPath: string,
+    };
+
 export type FileMapPluginInitOptions<
   out SerializableState,
   out PerFileData = void,
@@ -214,12 +235,7 @@ export type FileMapPluginInitOptions<
       canonicalPath: string,
       readonly pluginData: ?PerFileData,
     }>,
-    lookup(
-      mixedPath: string,
-    ):
-      | {exists: false}
-      | {exists: true, type: 'f', readonly pluginData: PerFileData}
-      | {exists: true, type: 'd'},
+    lookup(mixedPath: string): PluginLookupResult<PerFileData>,
   }>,
   pluginState: ?SerializableState,
 }>;

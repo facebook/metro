@@ -22,6 +22,7 @@ import type {
   FileSystem,
   HasteMap,
   HealthCheckResult,
+  PackageJsonPlugin,
   WatcherStatus,
   default as MetroFileMap,
 } from 'metro-file-map';
@@ -64,6 +65,7 @@ export default class DependencyGraph extends EventEmitter {
   #packageCache: PackageCache;
   _hasteMap: HasteMap;
   #dependencyPlugin: ?DependencyPlugin;
+  #packageJsonPlugin: PackageJsonPlugin;
   _moduleResolver: ModuleResolver;
   _resolutionCache: Map<
     // Custom resolver options
@@ -104,10 +106,11 @@ export default class DependencyGraph extends EventEmitter {
       type: 'dep_graph_loading',
       hasReducedPerformance: !!hasReducedPerformance,
     });
-    const {fileMap, hasteMap, dependencyPlugin} = createFileMap(config, {
-      throwOnModuleCollision: false,
-      watch,
-    });
+    const {fileMap, hasteMap, dependencyPlugin, packageJsonPlugin} =
+      createFileMap(config, {
+        throwOnModuleCollision: false,
+        watch,
+      });
 
     // We can have a lot of graphs listening to Haste for changes.
     // Bump this up to silence the max listeners EventEmitter warning.
@@ -123,16 +126,14 @@ export default class DependencyGraph extends EventEmitter {
       this._fileSystem = fileSystem;
       this._hasteMap = hasteMap;
       this.#dependencyPlugin = dependencyPlugin;
+      this.#packageJsonPlugin = packageJsonPlugin;
 
       this._haste.on('change', changeEvent => this._onHasteChange(changeEvent));
       this._haste.on('healthCheck', result =>
         this._onWatcherHealthCheck(result),
       );
       this._resolutionCache = new Map();
-      this.#packageCache = new PackageCache({
-        getClosestPackage: absoluteModulePath =>
-          this._getClosestPackage(absoluteModulePath),
-      });
+      this.#packageCache = new PackageCache();
       this._createModuleResolver();
     });
   }
@@ -153,13 +154,17 @@ export default class DependencyGraph extends EventEmitter {
 
   _onHasteChange({changes, rootDir}: ChangeEvent) {
     this._resolutionCache = new Map();
-    [
-      ...changes.addedFiles,
-      ...changes.modifiedFiles,
-      ...changes.removedFiles,
-    ].forEach(([canonicalPath]) =>
-      this.#packageCache.invalidate(path.join(rootDir, canonicalPath)),
-    );
+    for (const changedFiles of [
+      changes.addedFiles,
+      changes.modifiedFiles,
+      changes.removedFiles,
+    ]) {
+      for (const [canonicalPath] of changedFiles) {
+        if (path.basename(canonicalPath) === 'package.json') {
+          this.#packageCache.invalidate(path.join(rootDir, canonicalPath));
+        }
+      }
+    }
     this._createModuleResolver();
     this.emit('change');
   }
@@ -170,27 +175,8 @@ export default class DependencyGraph extends EventEmitter {
       fileSystem: this._fileSystem,
       hasteMap: this._hasteMap,
       packageCache: this.#packageCache,
+      packageJsonPlugin: this.#packageJsonPlugin,
     });
-  }
-
-  _getClosestPackage(
-    absoluteModulePath: string,
-  ): ?{packageJsonPath: string, packageRelativePath: string} {
-    const result = this._fileSystem.hierarchicalLookup(
-      absoluteModulePath,
-      'package.json',
-      {
-        breakOnSegment: 'node_modules',
-        invalidatedBy: null,
-        subpathType: 'f',
-      },
-    );
-    return result
-      ? {
-          packageJsonPath: result.absolutePath,
-          packageRelativePath: result.containerRelativePath,
-        }
-      : null;
   }
 
   getAllFiles(): Array<string> {

@@ -259,6 +259,37 @@ export class NoopCacheManager implements CacheManager {
     write(): Promise<void>;
 }
 
+export class PackageJsonPlugin implements FileMapPlugin<null, void> {
+    constructor(options: PackageJsonPluginOptions);
+    assertValid(): void;
+    getCacheKey(): string;
+    getPackageScopeForLookup(mixedPath: string, lookup: PluginLookupResult<unknown>): null | undefined | PackageScope;
+    getPackageScopeOf(mixedPath: string): null | undefined | PackageScope;
+    getSerializableSnapshot(): null;
+    getWorker(): null | undefined | FileMapPluginWorker;
+    initialize(opts: FileMapPluginInitOptions<null, void>): Promise<void>;
+    readonly name: 'packageJson';
+    onChanged(changes: ReadonlyFileSystemChanges<null | undefined | void>): void;
+}
+
+export type PackageJsonPluginOptions = Readonly<{rootDir: string}>;
+
+export type PackageScope = Readonly<{
+    packageJsonPath: string;
+    rootPath: string;
+    packageRelativePath: string;
+}>;
+
+export type PluginLookupResult<PerFileData> =
+| {exists: false; missing: string}
+| {
+    exists: true;
+    type: 'f';
+    realPath: string;
+    readonly pluginData: PerFileData;
+}
+| {exists: true; type: 'd'; realPath: string};
+
 export type WatcherStatus =
 | {
     type: 'watchman_slow_command';

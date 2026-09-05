@@ -16,6 +16,7 @@ import MetroFileMap, {
   DependencyPlugin,
   DiskCacheManager,
   HastePlugin,
+  PackageJsonPlugin,
 } from 'metro-file-map';
 
 const flattenBlockList = (regexes: ConfigT['resolver']['blockList']) => {
@@ -59,6 +60,7 @@ export default function createFileMap(
   fileMap: MetroFileMap,
   hasteMap: HasteMap,
   dependencyPlugin: ?DependencyPlugin,
+  packageJsonPlugin: PackageJsonPlugin,
 } {
   const watch = options?.watch ?? !isCIEnv();
   const {enabled: autoSaveEnabled, ...autoSaveOpts} =
@@ -95,6 +97,11 @@ export default function createFileMap(
 
   plugins.push(hasteMap);
 
+  const packageJsonPlugin = new PackageJsonPlugin({
+    rootDir: config.projectRoot,
+  });
+  plugins.push(packageJsonPlugin);
+
   const fileMap = new MetroFileMap({
     cacheManagerFactory:
       config?.unstable_fileMapCacheManagerFactory ??
@@ -127,5 +134,5 @@ export default function createFileMap(
     watch,
     watchmanDeferStates: config.watcher.watchman.deferStates,
   });
-  return {fileMap, hasteMap, dependencyPlugin};
+  return {fileMap, hasteMap, dependencyPlugin, packageJsonPlugin};
 }

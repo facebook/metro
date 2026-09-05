@@ -146,6 +146,11 @@ export type {DependencyPluginOptions} from './plugins/DependencyPlugin';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
 export {default as HastePlugin} from './plugins/HastePlugin';
+export {default as PackageJsonPlugin} from './plugins/PackageJsonPlugin';
+export type {
+  PackageJsonPluginOptions,
+  PackageScope,
+} from './plugins/PackageJsonPlugin';
 
 export type {HasteMap} from './flow-types';
 export type {HealthCheckResult} from './Watcher';
@@ -161,6 +166,7 @@ export type {
   CrawlerOptions,
   CrawlResult,
   DependencyExtractor,
+  PluginLookupResult,
   WatcherStatus,
 } from './flow-types';
 
@@ -449,14 +455,19 @@ export default class FileMap extends EventEmitter {
                   lookup: mixedPath => {
                     const result = fileSystem.lookup(mixedPath);
                     if (!result.exists) {
-                      return {exists: false};
+                      return {exists: false, missing: result.missing};
                     }
                     if (result.type === 'd') {
-                      return {exists: true, type: 'd'};
+                      return {
+                        exists: true,
+                        type: 'd',
+                        realPath: result.realPath,
+                      };
                     }
                     return {
                       exists: true,
                       type: 'f',
+                      realPath: result.realPath,
                       pluginData:
                         dataIdx != null ? result.metadata[dataIdx] : null,
                     };

@@ -12,6 +12,7 @@
 import type {
   FileAndDirCandidates,
   FileCandidates,
+  PackageForModule,
   Resolution,
   ResolutionContext,
   Result,
@@ -30,7 +31,7 @@ import {resolvePackageTargetFromImports} from './PackageImportsResolve';
 import {
   getPackageEntryPoint,
   matchSubpathFromMainFields,
-  redirectModulePath,
+  redirectPackageSubpath,
 } from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
@@ -45,6 +46,11 @@ type ParsedBareSpecifier = Readonly<{
   packageName: string,
   posixSubpath: string,
 }>;
+
+// The result of `getPackageForModule` for a path, carried between resolution
+// steps that concern the same path so that each path's scope is looked up
+// once. Distinguishes "no package" from "not yet looked up".
+type PackageScope = Readonly<{pkg: ?PackageForModule}>;
 
 export default function resolve(
   context: ResolutionContext,
@@ -65,15 +71,18 @@ export default function resolve(
   }
 
   let schemeError: ?FailedToResolveUnsupportedError;
+  // The package scope of the origin module, looked up at most once
+  let originScope: ?PackageScope = null;
 
   if (isRelativeImport(specifier) || path.isAbsolute(specifier)) {
-    const result = resolveModulePath(context, specifier, platform);
+    const result = resolveModulePath(context, specifier, platform, null);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
   } else if (isSubpathImport(specifier)) {
     const pkg = context.getPackageForModule(context.originModulePath);
+    originScope = {pkg};
     const importsField = pkg?.packageJson.imports;
 
     if (pkg == null) {
@@ -154,7 +163,10 @@ export default function resolve(
 
   const {originModulePath} = context;
 
-  const closestPackageToOrigin = context.getPackageForModule(originModulePath);
+  if (originScope == null) {
+    originScope = {pkg: context.getPackageForModule(originModulePath)};
+  }
+  const closestPackageToOrigin = originScope.pkg;
 
   const maybeRedirectedSpecifier =
     closestPackageToOrigin != null
@@ -183,7 +195,7 @@ export default function resolve(
       closestPackageToOrigin.rootPath,
       maybeRedirectedSpecifier,
     );
-    const result = resolveModulePath(context, absPath, platform);
+    const result = resolveModulePath(context, absPath, platform, null);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
@@ -404,19 +416,47 @@ function resolveModuleFromTargetPath(
   platform: string | null,
   targetPath: string,
 ): Resolution | null {
-  const candidate = redirectModulePath(context, targetPath);
+  const scope = {pkg: context.getPackageForModule(targetPath)};
+  const candidate = redirectPath(context, targetPath, scope);
   if (candidate === false) {
     return {type: 'empty'};
   }
 
-  // candidate should be absolute here - we assume that redirectModulePath
-  // always returns an absolute path when given an absolute path.
-  const result = resolvePackage(context, candidate, platform);
+  // candidate should be absolute here - we assume that redirectPath always
+  // returns an absolute path when given an absolute path. Its scope is only
+  // known if it was not redirected.
+  const result = resolvePackage(
+    context,
+    candidate,
+    platform,
+    candidate === targetPath ? scope : null,
+  );
   if (result.type === 'resolved') {
     return result.resolution;
   }
 
   return null;
+}
+
+/**
+ * Redirect an absolute module path per the "browser" spec of its package,
+ * given its package scope.
+ */
+function redirectPath(
+  context: ResolutionContext,
+  absoluteModulePath: string,
+  scope: PackageScope,
+): string | false {
+  const pkg = scope.pkg;
+  if (pkg == null) {
+    return absoluteModulePath;
+  }
+  return redirectPackageSubpath(
+    context,
+    absoluteModulePath,
+    pkg,
+    pkg.packageRelativePath,
+  );
 }
 
 function buildFailedToResolveNameError(
@@ -503,6 +543,8 @@ function resolveModulePath(
   context: ResolutionContext,
   toModuleName: string,
   platform: string | null,
+  // The package scope of `toModuleName`, if already known
+  knownScope: ?PackageScope,
 ): Result<Resolution, FileAndDirCandidates> {
   // System-separated absolute path
   const modulePath = path.isAbsolute(toModuleName)
@@ -510,7 +552,8 @@ function resolveModulePath(
       ? toModuleName
       : toModuleName.replaceAll('/', '\\')
     : path.join(path.dirname(context.originModulePath), toModuleName);
-  const redirectedPath = redirectModulePath(context, modulePath);
+  const scope = knownScope ?? {pkg: context.getPackageForModule(modulePath)};
+  const redirectedPath = redirectPath(context, modulePath, scope);
   if (redirectedPath === false) {
     return resolvedAs({type: 'empty'});
   }
@@ -528,7 +571,13 @@ function resolveModulePath(
   if (fileResult != null && fileResult.type === 'resolved') {
     return fileResult;
   }
-  const dirResult = resolvePackageEntryPoint(context, redirectedPath, platform);
+  const dirResult = resolvePackageEntryPoint(
+    context,
+    redirectedPath,
+    platform,
+    // A redirected path has a scope of its own
+    redirectedPath === modulePath ? scope : null,
+  );
   if (dirResult.type === 'resolved') {
     return dirResult;
   }
@@ -555,7 +604,7 @@ function resolveHastePackage(
     return failedFor();
   }
   const potentialModulePath = path.join(packageJsonPath, '..', pathInModule);
-  const result = resolvePackage(context, potentialModulePath, platform);
+  const result = resolvePackage(context, potentialModulePath, platform, null);
   if (result.type === 'resolved') {
     return result;
   }
@@ -606,9 +655,14 @@ function resolvePackage(
    */
   absoluteCandidatePath: string,
   platform: string | null,
+  // The package scope of `absoluteCandidatePath`, if already known
+  knownScope: ?PackageScope,
 ): Result<Resolution, FileAndDirCandidates> {
+  const scope = knownScope ?? {
+    pkg: context.getPackageForModule(absoluteCandidatePath),
+  };
   if (context.unstable_enablePackageExports) {
-    const pkg = context.getPackageForModule(absoluteCandidatePath);
+    const pkg = scope.pkg;
     const exportsField = pkg?.packageJson.exports;
 
     if (pkg != null && exportsField != null) {
@@ -643,7 +697,7 @@ function resolvePackage(
     }
   }
 
-  return resolveModulePath(context, absoluteCandidatePath, platform);
+  return resolveModulePath(context, absoluteCandidatePath, platform, scope);
 }
 
 /**
@@ -661,25 +715,30 @@ function resolvePackageEntryPoint(
   context: ResolutionContext,
   packagePath: string,
   platform: string | null,
+  // The package scope of `packagePath`, if already known
+  knownScope: ?PackageScope,
 ): Result<Resolution, FileCandidates> {
-  const dirLookup = context.fileSystemLookup(packagePath);
-  if (dirLookup.exists == false || dirLookup.type !== 'd') {
-    return failedFor({
-      type: 'sourceFile',
-      filePathPrefix: packagePath,
-      candidateExts: [],
-    });
-  }
+  const pkg = (knownScope ?? {pkg: context.getPackageForModule(packagePath)})
+    .pkg;
 
-  const packageJsonPath = path.join(packagePath, 'package.json');
-
-  if (!context.doesFileExist(packageJsonPath)) {
+  // `packagePath` is a package root only if it is its own scope. Otherwise it
+  // may still be a directory, in which case fall back to its index file.
+  if (pkg == null || pkg.packageRelativePath !== '') {
+    const dirLookup = context.fileSystemLookup(packagePath);
+    if (dirLookup.exists == false || dirLookup.type !== 'd') {
+      return failedFor({
+        type: 'sourceFile',
+        filePathPrefix: packagePath,
+        candidateExts: [],
+      });
+    }
     return resolveFile(context, packagePath, 'index', platform);
   }
 
+  const packageJsonPath = path.join(pkg.rootPath, 'package.json');
   const packageInfo = {
-    rootPath: path.dirname(packageJsonPath),
-    packageJson: context.getPackage(packageJsonPath) ?? {},
+    rootPath: pkg.rootPath,
+    packageJson: pkg.packageJson,
   };
 
   const mainModulePath = path.join(
@@ -743,7 +802,14 @@ function resolveFile(
 
   const candidateExts: Array<string> = [];
   const filePathPrefix = path.join(dirPath, fileName);
-  const sfContext = {...context, candidateExts, filePathPrefix};
+  const sfContext = {
+    ...context,
+    candidateExts,
+    filePathPrefix,
+    dirPath,
+    fileName,
+    dirScope: {current: null} as {current: ?DirectoryScope},
+  };
   const sourceFileResolution = resolveSourceFile(sfContext, platform);
   if (sourceFileResolution != null) {
     if (typeof sourceFileResolution === 'string') {
@@ -758,7 +824,25 @@ type SourceFileContext = Readonly<{
   ...ResolutionContext,
   candidateExts: Array<string>,
   filePathPrefix: string,
+  dirPath: string,
+  fileName: string,
+  // The package scope of `dirPath`, looked up on first use and shared by
+  // every candidate extension. Null until looked up.
+  dirScope: {current: ?DirectoryScope},
 }>;
+
+type DirectoryScope = Readonly<{
+  // Null for a directory in no package, including `node_modules` itself,
+  // whose children have no scope.
+  pkg: ?PackageForModule,
+  // The directory relative to the package root
+  packageRelativeDir: string,
+}>;
+
+const NO_DIRECTORY_SCOPE: DirectoryScope = Object.freeze({
+  pkg: null,
+  packageRelativeDir: '',
+});
 
 // Either a full path, or a restricted subset of Resolution.
 type SourceFileResolution = ?string | Readonly<{type: 'empty'}>;
@@ -829,9 +913,29 @@ function resolveSourceFileForExt(
   extension: string,
 ): SourceFileResolution {
   const filePath = `${context.filePathPrefix}${extension}`;
-  const redirectedPath =
-    // Any redirections for the bare path have already happened
-    extension !== '' ? redirectModulePath(context, filePath) : filePath;
+  let redirectedPath: string | false = filePath;
+  // Any redirections for the bare path have already happened
+  if (extension !== '') {
+    let dirScope = context.dirScope.current;
+    if (dirScope == null) {
+      dirScope = context.dirScope.current = getDirectoryScope(
+        context,
+        context.dirPath,
+      );
+    }
+    const {pkg} = dirScope;
+    if (pkg != null) {
+      const fileName = context.fileName + extension;
+      redirectedPath = redirectPackageSubpath(
+        context,
+        filePath,
+        pkg,
+        dirScope.packageRelativeDir === ''
+          ? fileName
+          : dirScope.packageRelativeDir + path.sep + fileName,
+      );
+    }
+  }
   if (redirectedPath === false) {
     return {type: 'empty'};
   }
@@ -841,6 +945,27 @@ function resolveSourceFileForExt(
   }
   context.candidateExts.push(extension);
   return null;
+}
+
+/**
+ * The package scope of the files in a directory, which need not exist. This
+ * is the scope of the directory itself, except that the files directly in a
+ * `node_modules` directory have none.
+ */
+function getDirectoryScope(
+  context: Readonly<{
+    getPackageForModule: ResolutionContext['getPackageForModule'],
+    ...
+  }>,
+  dirPath: string,
+): DirectoryScope {
+  if (dirPath.endsWith(path.sep + 'node_modules')) {
+    return NO_DIRECTORY_SCOPE;
+  }
+  const pkg = context.getPackageForModule(dirPath);
+  return pkg == null
+    ? NO_DIRECTORY_SCOPE
+    : {pkg, packageRelativeDir: pkg.packageRelativePath};
 }
 
 function isRelativeImport(filePath: string) {
