@@ -55,9 +55,6 @@ const NO_PACKAGE: NearestPackage = Object.freeze({entry: null, relDir: ''});
 const PACKAGE_JSON = 'package.json';
 const NODE_MODULES = 'node_modules';
 const SEP = path.sep;
-const SEP_CODE = SEP.charCodeAt(0);
-const COLON_CODE = ':'.charCodeAt(0);
-const IS_WIN32 = SEP === '\\';
 
 /**
  * Indexes `package.json` files and answers "which package contains this
@@ -83,8 +80,7 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
   };
   // Absolute, real directory path → the package.json it contains
   readonly #packages: Map<string, PackageEntry> = new Map();
-  // Absolute, real directory path → its nearest package, or null if there is
-  // none before a node_modules boundary or the filesystem root
+  // Absolute, real directory path → its nearest package
   #nearestByDir: Map<string, NearestPackage> = new Map();
   readonly #pathUtils: RootPathUtils;
 
@@ -101,7 +97,7 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
       includeSymlinks: true,
     })) {
       if (baseName === PACKAGE_JSON) {
-        this.#addPackageJson(canonicalPath);
+        this.#syncPackageJson(canonicalPath);
       }
     }
   }
@@ -110,24 +106,15 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
 
   onChanged(changes: ReadonlyFileSystemChanges<?void>): void {
     let indexChanged = false;
-    for (const [canonicalPath] of changes.removedFiles) {
-      if (isPackageJson(canonicalPath)) {
-        indexChanged = this.#removePackageJson(canonicalPath) || indexChanged;
-      }
-    }
-    for (const [canonicalPath] of changes.addedFiles) {
-      if (isPackageJson(canonicalPath)) {
-        indexChanged = this.#addPackageJson(canonicalPath) || indexChanged;
-      }
-    }
-    // A modified package.json changes its contents, not the index. A
-    // modified symlink named package.json may now point at something else,
-    // though, and only exists in the index if it points at a regular file.
-    for (const [canonicalPath] of changes.modifiedFiles) {
-      if (isPackageJson(canonicalPath)) {
-        const wasIndexed = this.#removePackageJson(canonicalPath);
-        const isIndexed = this.#addPackageJson(canonicalPath);
-        indexChanged = indexChanged || wasIndexed !== isIndexed;
+    for (const changedFiles of [
+      changes.addedFiles,
+      changes.modifiedFiles,
+      changes.removedFiles,
+    ]) {
+      for (const [canonicalPath] of changedFiles) {
+        if (path.basename(canonicalPath) === PACKAGE_JSON) {
+          indexChanged = this.#syncPackageJson(canonicalPath) || indexChanged;
+        }
       }
     }
     // Adding or removing a package.json anywhere can change the answer for an
@@ -158,18 +145,7 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
    * missing segment is `node_modules`.
    */
   getPackageScopeOf(mixedPath: string): ?PackageScope {
-    return this.getPackageScopeForLookup(mixedPath, this.#lookup(mixedPath));
-  }
-
-  /**
-   * The package scope of a path from the result of looking it up, for callers
-   * that have already performed the lookup. `mixedPath` must be the path
-   * that was looked up.
-   */
-  getPackageScopeForLookup(
-    mixedPath: string,
-    lookup: PluginLookupResult<unknown>,
-  ): ?PackageScope {
+    const lookup = this.#lookup(mixedPath);
     let dir: string;
     let tail: string;
     if (lookup.exists && lookup.type === 'd') {
@@ -185,16 +161,16 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
       let realPath;
       if (lookup.exists) {
         realPath = lookup.realPath;
-        tail = basenameOf(realPath);
+        tail = path.basename(realPath);
       } else {
         realPath = lookup.missing;
-        if (basenameOf(realPath) === NODE_MODULES) {
+        if (path.basename(realPath) === NODE_MODULES) {
           return null;
         }
         tail = this.#missingTail(mixedPath, realPath);
       }
       const parent = parentOf(realPath);
-      if (parent == null || basenameOf(parent) === NODE_MODULES) {
+      if (parent == null || path.basename(parent) === NODE_MODULES) {
         return null;
       }
       dir = parent;
@@ -207,8 +183,9 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
     return {
       packageJsonPath: entry.packageJsonPath,
       rootPath: entry.rootPath,
+      // Either may be empty, in which case the other is the whole path
       packageRelativePath:
-        relDir === '' ? tail : tail === '' ? relDir : relDir + SEP + tail,
+        relDir !== '' && tail !== '' ? relDir + SEP + tail : relDir + tail,
     };
   }
 
@@ -221,7 +198,7 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
     // Ascend until a package, a node_modules boundary, a memoized ancestor
     // or the filesystem root. `dir` itself is a candidate whatever its name;
     // an ancestor named node_modules is a boundary, never a candidate.
-    const ancestors: Array<string> = [];
+    const visited = [dir];
     let entry: PackageEntry | null = null;
     let current = dir;
     for (;;) {
@@ -231,7 +208,7 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
         break;
       }
       const parent = parentOf(current);
-      if (parent == null || basenameOf(parent) === NODE_MODULES) {
+      if (parent == null || path.basename(parent) === NODE_MODULES) {
         break;
       }
       const memoizedParent = memo.get(parent);
@@ -239,144 +216,100 @@ export default class PackageJsonPlugin implements FileMapPlugin<null, void> {
         entry = memoizedParent.entry;
         break;
       }
-      ancestors.push(parent);
+      visited.push(parent);
       current = parent;
     }
-    if (entry == null) {
-      memo.set(dir, NO_PACKAGE);
-      for (const ancestor of ancestors) {
-        memo.set(ancestor, NO_PACKAGE);
-      }
-      return NO_PACKAGE;
+    const packageEntry = entry;
+    const nearestOf = (visitedDir: string): NearestPackage =>
+      packageEntry == null
+        ? NO_PACKAGE
+        : {
+            entry: packageEntry,
+            relDir: path.relative(packageEntry.rootPath, visitedDir),
+          };
+    for (const visitedDir of visited) {
+      memo.set(visitedDir, nearestOf(visitedDir));
     }
-    const rootOffset = childOffset(entry.rootPath);
-    const nearest = {entry, relDir: dir.slice(rootOffset)};
-    memo.set(dir, nearest);
-    for (const ancestor of ancestors) {
-      memo.set(ancestor, {entry, relDir: ancestor.slice(rootOffset)});
-    }
-    return nearest;
+    return nearestOf(dir);
   }
 
   /**
    * The subpath of `mixedPath` from its first missing segment onwards, given
-   * `missing`, the real path of that segment. When the path is normal and
-   * traverses no symlink, the missing segment's parent is a literal prefix of
-   * the path. Otherwise, the deepest existing ancestor is the shortest prefix
-   * of the path that resolves to that parent.
+   * `missing`, the real path of that segment.
    */
   #missingTail(mixedPath: string, missing: string): string {
-    let absolutePath = isAbsolute(mixedPath)
-      ? mixedPath
-      : this.#pathUtils.normalToAbsolute(
-          this.#pathUtils.relativeToNormal(mixedPath),
-        );
-    if (absolutePath.includes(SEP + '.')) {
-      absolutePath = path.normalize(absolutePath);
+    const absolutePath = this.#toAbsolute(mixedPath);
+    const existingDir = path.dirname(missing);
+    // When the path traverses no symlink, the deepest existing directory is
+    // a literal prefix of the path. Filesystem roots keep their separator.
+    const existingDirPrefix = existingDir.endsWith(SEP)
+      ? existingDir
+      : existingDir + SEP;
+    if (absolutePath.startsWith(existingDirPrefix)) {
+      return absolutePath.slice(existingDirPrefix.length);
     }
-    if (absolutePath.endsWith(SEP)) {
-      absolutePath = absolutePath.slice(0, -1);
-    }
-    const existingDir = parentOf(missing) ?? missing;
-    if (isChildOf(absolutePath, existingDir)) {
-      return absolutePath.slice(childOffset(existingDir));
-    }
-    let sepIdx = IS_WIN32 ? absolutePath.indexOf(SEP) : 0;
-    for (;;) {
-      sepIdx = absolutePath.indexOf(SEP, sepIdx + 1);
-      if (sepIdx === -1) {
-        break;
+    // Otherwise it is the prefix of the path that resolves to that directory,
+    // which is followed by a segment with the missing segment's name.
+    const missingSegment = SEP + path.basename(missing);
+    for (
+      let idx = absolutePath.lastIndexOf(missingSegment);
+      idx > 0;
+      idx = absolutePath.lastIndexOf(missingSegment, idx - 1)
+    ) {
+      const end = idx + missingSegment.length;
+      if (end !== absolutePath.length && absolutePath[end] !== SEP) {
+        continue;
       }
-      const prefix = absolutePath.slice(0, sepIdx);
-      const lookup = this.#lookup(prefix);
+      const prefix = this.#lookup(absolutePath.slice(0, idx));
       if (
-        lookup.exists &&
-        lookup.type === 'd' &&
-        lookup.realPath === existingDir
+        prefix.exists &&
+        prefix.type === 'd' &&
+        prefix.realPath === existingDir
       ) {
-        return absolutePath.slice(sepIdx + 1);
+        return absolutePath.slice(idx + 1);
       }
     }
-    return basenameOf(missing);
+    return path.basename(missing);
   }
 
-  // Returns whether the index changed.
-  #addPackageJson(canonicalPath: string): boolean {
-    const absolutePath = this.#pathUtils.normalToAbsolute(canonicalPath);
-    // The manifest may be a symlink, in which case it only counts if it
-    // points at a regular file. Its scope is the directory containing the
+  // The absolute, normal form of a path as accepted by `lookup`: absolute or
+  // root-relative, possibly with redundant indirections.
+  #toAbsolute(mixedPath: string): string {
+    const isAbsolute = path.isAbsolute(mixedPath);
+    if (isAbsolute && !mixedPath.includes(SEP + '.')) {
+      return mixedPath.endsWith(SEP) ? mixedPath.slice(0, -1) : mixedPath;
+    }
+    return this.#pathUtils.normalToAbsolute(
+      isAbsolute
+        ? this.#pathUtils.absoluteToNormal(mixedPath)
+        : this.#pathUtils.relativeToNormal(mixedPath),
+    );
+  }
+
+  /**
+   * Brings the index in line with the file map for a path named
+   * `package.json`: indexed if it is, or links to, a regular file, otherwise
+   * not. Returns whether the index changed.
+   */
+  #syncPackageJson(canonicalPath: string): boolean {
+    const packageJsonPath = this.#pathUtils.normalToAbsolute(canonicalPath);
+    // The scope of a symlinked manifest is the directory containing the
     // link, as it is for Node.
-    const lookup = this.#lookup(absolutePath);
+    const rootPath = path.dirname(packageJsonPath);
+    const lookup = this.#lookup(packageJsonPath);
     if (!lookup.exists || lookup.type !== 'f') {
+      return this.#packages.delete(rootPath);
+    }
+    if (this.#packages.has(rootPath)) {
       return false;
     }
-    const rootPath = parentOf(absolutePath);
-    if (rootPath == null) {
-      return false;
-    }
-    this.#packages.set(rootPath, {packageJsonPath: absolutePath, rootPath});
+    this.#packages.set(rootPath, {packageJsonPath, rootPath});
     return true;
   }
-
-  // Returns whether the index changed.
-  #removePackageJson(canonicalPath: string): boolean {
-    const rootPath = parentOf(this.#pathUtils.normalToAbsolute(canonicalPath));
-    return rootPath != null && this.#packages.delete(rootPath);
-  }
 }
 
-function isPackageJson(canonicalPath: string): boolean {
-  return (
-    canonicalPath.endsWith(PACKAGE_JSON) &&
-    (canonicalPath.length === PACKAGE_JSON.length ||
-      canonicalPath.charCodeAt(
-        canonicalPath.length - PACKAGE_JSON.length - 1,
-      ) === SEP_CODE)
-  );
-}
-
-function basenameOf(absolutePath: string): string {
-  return absolutePath.slice(absolutePath.lastIndexOf(SEP) + 1);
-}
-
-/**
- * The parent of an absolute path, or null at a filesystem root. Filesystem
- * roots keep their trailing separator ('/', 'C:\', '\\server\share\'), as
- * `RootPathUtils.normalToAbsolute` produces them.
- */
+// The parent of an absolute path, or null at a filesystem root
 function parentOf(absolutePath: string): ?string {
-  const sepIdx = absolutePath.lastIndexOf(SEP);
-  if (
-    sepIdx > 0 &&
-    sepIdx < absolutePath.length - 1 &&
-    absolutePath.charCodeAt(sepIdx - 1) !== COLON_CODE &&
-    !(IS_WIN32 && absolutePath.startsWith('\\\\'))
-  ) {
-    return absolutePath.slice(0, sepIdx);
-  }
   const parent = path.dirname(absolutePath);
   return parent === absolutePath ? null : parent;
-}
-
-/**
- * The offset of a child's basename within its absolute path, given the
- * absolute path of the parent directory.
- */
-function childOffset(parentPath: string): number {
-  return parentPath.endsWith(SEP) ? parentPath.length : parentPath.length + 1;
-}
-
-function isChildOf(absolutePath: string, parentPath: string): boolean {
-  return (
-    absolutePath.length > parentPath.length &&
-    absolutePath.startsWith(parentPath) &&
-    (parentPath.endsWith(SEP) ||
-      absolutePath.charCodeAt(parentPath.length) === SEP_CODE)
-  );
-}
-
-function isAbsolute(mixedPath: string): boolean {
-  return IS_WIN32
-    ? path.isAbsolute(mixedPath)
-    : mixedPath.charCodeAt(0) === SEP_CODE;
 }

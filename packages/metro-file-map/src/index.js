@@ -166,7 +166,6 @@ export type {
   CrawlerOptions,
   CrawlResult,
   DependencyExtractor,
-  PluginLookupResult,
   WatcherStatus,
 } from './flow-types';
 

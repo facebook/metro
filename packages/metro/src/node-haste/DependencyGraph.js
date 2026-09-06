@@ -133,7 +133,10 @@ export default class DependencyGraph extends EventEmitter {
         this._onWatcherHealthCheck(result),
       );
       this._resolutionCache = new Map();
-      this.#packageCache = new PackageCache();
+      this.#packageCache = new PackageCache({
+        getClosestPackage: absoluteModulePath =>
+          this.#packageJsonPlugin.getPackageScopeOf(absoluteModulePath),
+      });
       this._createModuleResolver();
     });
   }
@@ -159,8 +162,8 @@ export default class DependencyGraph extends EventEmitter {
       changes.modifiedFiles,
       changes.removedFiles,
     ]) {
-      for (const [canonicalPath] of changedFiles) {
-        if (path.basename(canonicalPath) === 'package.json') {
+      for (const [canonicalPath, {isSymlink}] of changedFiles) {
+        if (isSymlink || path.basename(canonicalPath) === 'package.json') {
           this.#packageCache.invalidate(path.join(rootDir, canonicalPath));
         }
       }
@@ -175,7 +178,6 @@ export default class DependencyGraph extends EventEmitter {
       fileSystem: this._fileSystem,
       hasteMap: this._hasteMap,
       packageCache: this.#packageCache,
-      packageJsonPlugin: this.#packageJsonPlugin,
     });
   }
 

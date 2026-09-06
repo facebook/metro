@@ -11,7 +11,7 @@
 
 import type {PackageCache} from '../PackageCache';
 import type {ConfigT} from 'metro-config';
-import type {FileSystem, HasteMap, PackageJsonPlugin} from 'metro-file-map';
+import type {FileSystem, HasteMap} from 'metro-file-map';
 import type {FileSystemLookup} from 'metro-resolver';
 
 import getSchemeResolvers from '../../lib/getSchemeResolvers';
@@ -23,7 +23,6 @@ export type CreateModuleResolverOptions = Readonly<{
   fileSystem: FileSystem,
   hasteMap: HasteMap,
   packageCache: PackageCache,
-  packageJsonPlugin: PackageJsonPlugin,
 }>;
 
 export default function createModuleResolver({
@@ -31,7 +30,6 @@ export default function createModuleResolver({
   fileSystem,
   hasteMap,
   packageCache,
-  packageJsonPlugin,
 }: CreateModuleResolverOptions): ModuleResolver {
   const fileSystemLookup = (filePath: string): ReturnType<FileSystemLookup> => {
     const result = fileSystem.lookup(filePath);
@@ -64,26 +62,8 @@ export default function createModuleResolver({
         return null;
       }
     },
-    getPackageForModule: (absolutePath: string) => {
-      const scope = packageJsonPlugin.getPackageScopeOf(absolutePath);
-      if (scope == null) {
-        return null;
-      }
-      let packageJson;
-      try {
-        packageJson = packageCache.getPackage(
-          scope.packageJsonPath,
-        ).packageJson;
-      } catch {
-        // Non-existence or malformed JSON, we treat both as non-existent
-        return null;
-      }
-      return {
-        packageJson,
-        rootPath: scope.rootPath,
-        packageRelativePath: scope.packageRelativePath,
-      };
-    },
+    getPackageForModule: (absolutePath: string) =>
+      packageCache.getPackageForModule(absolutePath),
     mainFields: config.resolver.resolverMainFields,
     nodeModulesPaths: config.resolver.nodeModulesPaths,
     preferNativePlatform: true,

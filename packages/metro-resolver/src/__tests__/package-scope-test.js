@@ -16,7 +16,10 @@ import {createPackageAccessors, createResolutionContext} from './utils';
 
 // The resolver looks up package scopes through `getPackageForModule`. These
 // tests pin down which paths it asks about for each kind of specifier, so
-// that changes to the number of lookups per resolution are deliberate.
+// that changes to the number of lookups per resolution are deliberate. Metro
+// memoizes the answer per path, so a repeated path is cheap and a new one is
+// not: in particular, the directory of a file is looked up once for all of
+// its extension candidates.
 describe('package scope lookups', () => {
   const fileMap = {
     '/root/package.json': JSON.stringify({name: 'root'}),
@@ -60,8 +63,6 @@ describe('package scope lookups', () => {
       type: 'sourceFile',
       filePath: '/root/src/foo.js',
     });
-    // Once for the target path, once for its directory, shared by every
-    // extension candidate
     expect(lookedUpPaths()).toEqual(['/root/src/foo', '/root/src']);
   });
 
@@ -70,7 +71,7 @@ describe('package scope lookups', () => {
       type: 'sourceFile',
       filePath: '/root/src/foo.js',
     });
-    expect(lookedUpPaths()).toEqual(['/root/src/foo.js']);
+    expect(lookedUpPaths()).toEqual(['/root/src/foo.js', '/root/src']);
   });
 
   test('relative directory, resolved to its index', () => {
@@ -90,12 +91,12 @@ describe('package scope lookups', () => {
       type: 'sourceFile',
       filePath: '/root/node_modules/pkg/lib/index.js',
     });
-    // The origin, the package directory (which is its own scope, so
-    // package.json is read from the scope rather than looked up), and the
-    // directory of the entry point. Files directly under node_modules have no
-    // scope, so none is looked up for the `pkg` file candidates.
+    // The origin, the package directory, and the directory of the entry
+    // point. Files directly under node_modules have no scope, so none is
+    // looked up for the `pkg` file candidates.
     expect(lookedUpPaths()).toEqual([
       '/root/src/main.js',
+      '/root/node_modules/pkg',
       '/root/node_modules/pkg',
       '/root/node_modules/pkg/lib',
     ]);
@@ -108,6 +109,7 @@ describe('package scope lookups', () => {
     });
     expect(lookedUpPaths()).toEqual([
       '/root/src/main.js',
+      '/root/node_modules/pkg/lib/sub',
       '/root/node_modules/pkg/lib/sub',
       '/root/node_modules/pkg/lib',
     ]);
@@ -123,6 +125,7 @@ describe('package scope lookups', () => {
       '/root/src/main.js',
       '/root/node_modules/pkg/lib/redirected',
       '/root/node_modules/pkg/lib/other.js',
+      '/root/node_modules/pkg/lib',
     ]);
   });
 
@@ -133,6 +136,7 @@ describe('package scope lookups', () => {
     });
     expect(lookedUpPaths()).toEqual([
       '/root/src/main.js',
+      '/root/node_modules/nopkg',
       '/root/node_modules/nopkg',
       '/root/node_modules/nopkg',
     ]);
@@ -153,6 +157,7 @@ describe('package scope lookups', () => {
     });
     expect(lookedUpPaths()).toEqual([
       '/root/src/main.js',
+      '/root/node_modules/pkg/sub',
       '/root/node_modules/pkg/sub',
     ]);
   });

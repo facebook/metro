@@ -263,7 +263,6 @@ export class PackageJsonPlugin implements FileMapPlugin<null, void> {
     constructor(options: PackageJsonPluginOptions);
     assertValid(): void;
     getCacheKey(): string;
-    getPackageScopeForLookup(mixedPath: string, lookup: PluginLookupResult<unknown>): null | undefined | PackageScope;
     getPackageScopeOf(mixedPath: string): null | undefined | PackageScope;
     getSerializableSnapshot(): null;
     getWorker(): null | undefined | FileMapPluginWorker;
@@ -279,16 +278,6 @@ export type PackageScope = Readonly<{
     rootPath: string;
     packageRelativePath: string;
 }>;
-
-export type PluginLookupResult<PerFileData> =
-| {exists: false; missing: string}
-| {
-    exists: true;
-    type: 'f';
-    realPath: string;
-    readonly pluginData: PerFileData;
-}
-| {exists: true; type: 'd'; realPath: string};
 
 export type WatcherStatus =
 | {
