@@ -19,13 +19,12 @@ import type {
 } from '../flow-types';
 import type {FSWatcher, Stats} from 'node:fs';
 
+import Walker from '../third-party/walker';
 import {AbstractWatcher} from './AbstractWatcher';
 import * as common from './common';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-// $FlowFixMe[untyped-import] - Write libdefs for `walker`
-import walker from 'walker';
 
 const platform = os.platform();
 
@@ -437,7 +436,7 @@ function recReaddir(
   errorCallback: Error => void,
   ignored: ?RegExp,
 ) {
-  const walk = walker(dir);
+  const walk = new Walker(dir);
   if (ignored) {
     walk.filterDir(
       (currentDir: string) =>
