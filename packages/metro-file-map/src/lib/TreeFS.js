@@ -21,7 +21,6 @@ import type {
 } from '../flow-types';
 
 import H from '../constants';
-import normalizePathSeparatorsToSystem from './normalizePathSeparatorsToSystem';
 import {RootPathUtils} from './RootPathUtils';
 import invariant from 'invariant';
 import path from 'node:path';
@@ -90,10 +89,10 @@ type MetadataIteratorOptions = Readonly<{
  *
  * SYMLINKS:
  *
- * Symlinks are represented as nodes whose metadata contains their literal
- * target. Literal targets are resolved to normal paths at runtime, and cached.
- * If a symlink is encountered during traversal, we restart traversal at the
- * root node targeting join(normal symlink target, remaining path suffix).
+ * Symlinks are represented as nodes whose metadata contains their target,
+ * already resolved to a normal path when the node was populated. If a symlink
+ * is encountered during traversal, we restart traversal at the root node
+ * targeting join(normal symlink target, remaining path suffix).
  *
  * NODE TYPES:
  *
@@ -102,8 +101,8 @@ type MetadataIteratorOptions = Readonly<{
  * - A file is represented by an `Array`  (tuple) of metadata, of which:
  *   - A regular file has node[H.SYMLINK] === 0
  *   - A symlink has node[H.SYMLINK] === 1 or
- *     typeof node[H.SYMLINK] === 'string', where a string is the literal
- *     content of the symlink (i.e. from readlink), if known.
+ *     typeof node[H.SYMLINK] === 'string', where a string is the target
+ *     resolved to a normal path, if known.
  *
  * TERMINOLOGY:
  *
@@ -714,10 +713,12 @@ export default class TreeFS implements MutableFileSystem {
           };
         }
 
-        // Symlink in a directory path
-        const normalSymlinkTarget = this.#resolveSymlinkTargetToNormalPath(
-          segmentNode,
-          currentPath,
+        // Symlink in a directory path. Targets are stored already resolved
+        // to a normal path, so this is a read rather than a computation.
+        const normalSymlinkTarget = segmentNode[H.SYMLINK];
+        invariant(
+          typeof normalSymlinkTarget === 'string',
+          'Expected symlink target to be populated.',
         );
         if (opts.collectLinkPaths) {
           opts.collectLinkPaths.add(
@@ -1212,18 +1213,6 @@ export default class TreeFS implements MutableFileSystem {
         );
       }
     }
-  }
-
-  #resolveSymlinkTargetToNormalPath(
-    symlinkNode: FileMetadata,
-    canonicalPathOfSymlink: Path,
-  ): Path {
-    const symlinkTarget = symlinkNode[H.SYMLINK];
-    invariant(
-      typeof symlinkTarget === 'string',
-      'Expected symlink target to be populated.',
-    );
-    return normalizePathSeparatorsToSystem(symlinkTarget);
   }
 
   #getFileData(

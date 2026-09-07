@@ -43,11 +43,14 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         [p('foo/another.js'), [123, 2, 0, null, 0, 'another']],
         [p('foo/owndir'), [0, 0, 0, null, 'foo', null]],
         [p('foo/link-to-bar.js'), [0, 0, 0, null, 'bar.js', null]],
-        [p('foo/link-to-another.js'), [0, 0, 0, null, 'foo/another.js', null]],
+        [
+          p('foo/link-to-another.js'),
+          [0, 0, 0, null, p('foo/another.js'), null],
+        ],
         [p('../outside/external.js'), [0, 0, 0, null, 0, null]],
         [p('bar.js'), [234, 3, 0, null, 0, 'bar']],
         [p('link-to-foo'), [456, 0, 0, null, 'foo', null]],
-        [p('abs-link-out'), [456, 0, 0, null, '../outside', null]],
+        [p('abs-link-out'), [456, 0, 0, null, p('../outside'), null]],
         [p('root'), [0, 0, 0, null, '..', null]],
         [p('link-to-nowhere'), [123, 0, 0, null, 'nowhere', null]],
         [p('link-to-self'), [123, 0, 0, null, 'link-to-self', null]],
@@ -411,18 +414,18 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
             [
               [
                 p('a/1/package.json'),
-                [0, 0, 0, null, 'a/1/real-package.json', null],
+                [0, 0, 0, null, p('a/1/real-package.json'), null],
               ],
               [
                 p('a/2/package.json'),
-                [0, 0, 0, null, 'a/2/notexist-package.json', null],
+                [0, 0, 0, null, p('a/2/notexist-package.json'), null],
               ],
               [p('a/b/c/d/link-to-C'), [0, 0, 0, null, '', null]],
               [p('a/b/c/d/link-to-B'), [0, 0, 0, null, '..', null]],
-              [p('a/b/c/d/link-to-A'), [0, 0, 0, null, '../..', null]],
+              [p('a/b/c/d/link-to-A'), [0, 0, 0, null, p('../..'), null]],
               [
                 p('n_m/workspace/link-to-pkg'),
-                [0, 0, 0, null, '../workspace-pkg', null],
+                [0, 0, 0, null, p('../workspace-pkg'), null],
               ],
             ] as Array<[CanonicalPath, FileMetadata]>
           ).concat(
@@ -829,7 +832,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           new Map<CanonicalPath, FileMetadata>([
             [
               p('newdir/link-to-link-to-bar.js'),
-              [0, 0, 0, null, 'foo/link-to-bar.js', null],
+              [0, 0, 0, null, p('foo/link-to-bar.js'), null],
             ],
             [p('foo/baz.js'), [0, 0, 0, null, 0, null]],
             [p('bar.js'), [999, 1, 0, null, 0, null]],
@@ -1310,7 +1313,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
           rootDir: 'C:\\project',
           files: new Map<CanonicalPath, FileMetadata>([
             ['..\\..\\D:\\external\\file.js', externalMeta],
-            ['link', [0, 0, 0, null, '../../D:/external/file.js', null]],
+            ['link', [0, 0, 0, null, '..\\..\\D:\\external\\file.js', null]],
           ]),
           processFile: () => {
             throw new Error('Not implemented');
