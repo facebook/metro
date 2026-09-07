@@ -753,6 +753,8 @@ export default class TreeFS implements MutableFileSystem {
           collectAncestors &&
           !isLastSegment &&
           // No-op optimisation to bail out the common case of nothing to do.
+          // Note that ancestorOfRootIdx is assigned here, so it is only up to
+          // date within this branch - the block below is its sole reader.
           ((ancestorOfRootIdx =
             this.#pathUtils.getAncestorOfRootIdx(normalSymlinkTarget)) === 0 ||
             joinedResult.collapsedSegments > 0)
