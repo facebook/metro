@@ -241,15 +241,10 @@ describe('Transformer', function () {
     });
 
     expect(workerTransform).toHaveBeenCalledWith(
-      '../external/imgs/a.png',
+      path.join('..', 'external', 'imgs', 'a.png'),
       {
         type: 'asset',
-        assetUrlPath: path.join(
-          '[metro-watchFolders]',
-          '1',
-          'imgs',
-          'a.png',
-        ),
+        assetUrlPath: '[metro-watchFolders]/1/imgs/a.png',
       },
       undefined,
     );
