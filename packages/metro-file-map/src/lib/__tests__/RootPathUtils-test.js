@@ -286,5 +286,33 @@ describe.each([['win32'], ['posix']])('RootPathUtils on %s', platform => {
         pathUtils.resolveSymlinkToNormal('link', p('/project/root/dir/')),
       ).toEqual('dir');
     });
+
+    // A filesystem root is the one absolute target that consists only of a
+    // separator, so it must not be trimmed before we test for absoluteness.
+    test.each([
+      ['link', p('/'), p('../..')],
+      [p('a/link'), p('/'), p('../..')],
+    ])(
+      'resolves filesystem root target (%s -> %s) to %s',
+      (symlinkPath, readlinkResult, expected) => {
+        expect(
+          pathUtils.resolveSymlinkToNormal(symlinkPath, readlinkResult),
+        ).toEqual(expected);
+      },
+    );
+
+    if (platform === 'win32') {
+      test.each([
+        ['D:\\', '..\\..\\..\\D:'],
+        ['D:\\ext\\', '..\\..\\..\\D:\\ext'],
+      ])(
+        'resolves cross-drive root target (%s) to %s',
+        (readlinkResult, expected) => {
+          expect(
+            pathUtils.resolveSymlinkToNormal('link', readlinkResult),
+          ).toEqual(expected);
+        },
+      );
+    }
   });
 });

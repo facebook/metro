@@ -179,23 +179,24 @@ export class RootPathUtils {
     symlinkNormalPath: string,
     readlinkResult: string,
   ): string {
-    let target = normalizePathSeparatorsToSystem(readlinkResult);
-    // WARN: This only applies to Windows + Node 20 case, where the value is completely
-    // unnormalized and a trailing slash may be returned
-    if (target[target.length - 1] === path.sep) {
-      target = target.slice(0, -1);
-    }
+    const target = normalizePathSeparatorsToSystem(readlinkResult);
+    let normal;
     if (path.isAbsolute(target)) {
-      return this.absoluteToNormal(target);
+      normal = this.absoluteToNormal(target);
+    } else {
+      // Resolve relative to the symlink's containing directory, expressed as
+      // a root-relative (possibly non-normal) path, then normalize
+      const sepIdx = symlinkNormalPath.lastIndexOf(path.sep);
+      const rootRelativeTarget =
+        sepIdx === -1
+          ? target
+          : symlinkNormalPath.slice(0, sepIdx) + path.sep + target;
+      normal = this.relativeToNormal(rootRelativeTarget);
     }
-    // Resolve relative to the symlink's containing directory, expressed as
-    // a root-relative (possibly non-normal) path, then normalize
-    const sepIdx = symlinkNormalPath.lastIndexOf(path.sep);
-    const rootRelativeTarget =
-      sepIdx === -1
-        ? target
-        : symlinkNormalPath.slice(0, sepIdx) + path.sep + target;
-    return this.relativeToNormal(rootRelativeTarget);
+    // Normalization keeps a trailing separator when the result is the root or
+    // an ancestor of it (e.g. a link to '/'), and readlink itself may return
+    // one. A stored symlink target never has one.
+    return normal.endsWith(path.sep) ? normal.slice(0, -1) : normal;
   }
 
   // If a path is a direct ancestor of the project root (or the root itself),

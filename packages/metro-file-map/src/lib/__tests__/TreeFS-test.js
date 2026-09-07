@@ -253,6 +253,24 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       },
     );
 
+    test('a link to the filesystem root behaves like a link to ..', () => {
+      const {RootPathUtils} = require('../RootPathUtils');
+      // The project root is one level below the filesystem root here, so a
+      // symlink to the filesystem root must resolve to '..', not to ''.
+      const stored = new RootPathUtils(p('/project')).resolveSymlinkToNormal(
+        p('foo/link-to-fs-root'),
+        p('/'),
+      );
+      expect(stored).toEqual('..');
+      tfs.addOrModify(p('foo/link-to-fs-root'), [0, 0, 0, null, stored, null]);
+      expect(tfs.lookup(p('foo/link-to-fs-root/project/bar.js'))).toMatchObject(
+        {
+          exists: true,
+          realPath: p('/project/bar.js'),
+        },
+      );
+    });
+
     test('matchFiles follows links up', () => {
       const matches = [
         ...tfs.matchFiles({
