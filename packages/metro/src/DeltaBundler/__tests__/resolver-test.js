@@ -38,9 +38,6 @@ jest
     release: () => '',
   }))
   .mock('graceful-fs', () => jest.requireMock('node:fs'))
-  // The third-party `walker` (used by metro-file-map's FallbackWatcher) requires
-  // the unprefixed 'fs', so alias it to the same in-memory fs as 'node:fs'.
-  .mock('fs', () => jest.requireMock('node:fs'))
   .spyOn(console, 'warn')
   .mockImplementation(() => {});
 
