@@ -463,12 +463,14 @@ async function recReaddir(
       if (ignored != null && common.posixPathMatchesPattern(ignored, entry)) {
         return;
       }
+      // Report the directory before listing it. A consumer that starts watching
+      // here would otherwise miss anything written between the two.
+      dirCallback(entry, stats);
       names = await fsPromises.readdir(entry);
     } catch (error) {
       errorCallback(error);
       return;
     }
-    dirCallback(entry, stats);
     for (const name of names) {
       pending.push(path.join(entry, name));
     }
