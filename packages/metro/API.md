@@ -65,7 +65,7 @@ export class DependencyGraph extends EventEmitter {
     },
     );
     doesFileExist: (filePath: string) => boolean;
-    end(): void;
+    end(): Promise<void>;
     getAllFiles(): Array<string>;
     getDependencies(filePath: string): Array<string>;
     getHasteName(filePath: string): string;
@@ -132,7 +132,7 @@ export class MetroServer {
         minify: boolean;
         unstable_transformProfile: 'default';
     }>;
-    end(): void;
+    end(): Promise<void>;
     getAssets(options: BundleOptions): Promise<ReadonlyArray<AssetData>>;
     getBundler(): IncrementalBundler;
     getCreateModuleId(): (path: string) => number;
