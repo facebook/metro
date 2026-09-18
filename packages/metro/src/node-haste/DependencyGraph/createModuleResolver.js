@@ -77,7 +77,12 @@ export default function createModuleResolver({
           resolution => basePath + '@' + resolution + 'x' + extension,
         ),
       ]
-        .map(assetPath => fileSystemLookup(assetPath).realPath)
+        .map(assetPath => {
+          const result = fileSystemLookup(assetPath);
+          // A directory such as `node_modules/lodash.zip` is not an asset, and
+          // must fall through to directory (package) resolution.
+          return result.exists && result.type === 'f' ? result.realPath : null;
+        })
         .filter(Boolean);
 
       return assets.length ? assets : null;
