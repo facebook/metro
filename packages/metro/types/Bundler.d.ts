@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<3d5664309abdece0f247fcd0c53c3aaf>>
+ * @generated SignedSource<<0bcc56baaa3cab86e03f6ac13b6ecb9a>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Bundler.js
@@ -30,7 +30,7 @@ export type BundlerOptions = Readonly<{
 declare class Bundler {
   _depGraph: DependencyGraph;
   _initializedPromise: Promise<void>;
-  _transformer: Transformer;
+  _transformer: null | undefined | Transformer;
   constructor(config: ConfigT, options?: BundlerOptions);
   getWatcher(): EventEmitter;
   end(): Promise<void>;
