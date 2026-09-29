@@ -30,6 +30,9 @@ import MockResponse from 'mock-res';
 const {
   getDefaultConfig: {getDefaultValues},
 } = require('metro-config');
+const {
+  posixToSystemPath: p,
+} = require('metro-resolver/private/__tests__/utils');
 const path = require('path');
 
 jest
@@ -852,6 +855,42 @@ describe('processRequest', () => {
       );
     });
 
+    test('should resolve an indexed watch folder asset path', async () => {
+      getAsset.mockResolvedValue(Promise.resolve('i am image'));
+
+      const response = await makeRequest(
+        '/assets/[metro-watchFolders]/0/imgs/a.png?platform=ios',
+      );
+      expect(response._getString()).toBe('i am image');
+
+      expect(getAsset).toBeCalledWith(
+        p('./imgs/a.png'),
+        p('/root'),
+        [p('/root')],
+        'ios',
+        expect.any(Array),
+        expect.any(Function),
+      );
+    });
+
+    test('should resolve a URL-encoded indexed watch folder asset path', async () => {
+      getAsset.mockResolvedValue(Promise.resolve('i am image'));
+
+      const response = await makeRequest(
+        '/assets/%5Bmetro-watchFolders%5D/0/imgs/a.png?platform=ios',
+      );
+      expect(response._getString()).toBe('i am image');
+
+      expect(getAsset).toBeCalledWith(
+        p('./imgs/a.png'),
+        p('/root'),
+        [p('/root')],
+        'ios',
+        expect.any(Array),
+        expect.any(Function),
+      );
+    });
+
     test('should serve range request', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
@@ -1492,7 +1531,10 @@ describe('processRequest', () => {
 
       expect(getAssetsSerializer).toBeCalledWith(
         expect.anything(),
-        expect.objectContaining({projectRoot: '/root'}),
+        expect.objectContaining({
+          projectRoot: '/root',
+          watchFolders: ['/root'],
+        }),
       );
     });
   });
@@ -1578,5 +1620,32 @@ describe('processRequest', () => {
         '/project/mybundle',
       );
     });
+
+    test.each([
+      [p('/project/imgs/a.png')],
+      [p('/project/nested/deep/b.png')],
+      [p('/external/packages/imgs/c.png')],
+      [p('/external/packages/d.png')],
+    ])(
+      'asset URL path for %s round-trips back to the same file',
+      absolutePath => {
+        const {getAssetUrlPath} = require('../../Assets');
+        const urlPath = getAssetUrlPath(absolutePath, p('/project'), [
+          p('/project'),
+          p('/external/packages'),
+        ]);
+
+        // Mirrors how _processSingleAssetRequest resolves an incoming URL.
+        const resolved = watchFolderServer._resolveWatchFolderPrefix(
+          './' + urlPath,
+        );
+        expect(
+          path.resolve(
+            resolved?.rootDir ?? p('/project'),
+            resolved?.filePath ?? urlPath,
+          ),
+        ).toBe(absolutePath);
+      },
+    );
   });
 });

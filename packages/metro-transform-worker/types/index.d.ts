@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<5fe0f33f61a5a4a94ab429ad35b5e04a>>
+ * @generated SignedSource<<86e39ddf853e99cb0e4817de3f817a2c>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-transform-worker/src/index.js
@@ -105,6 +105,7 @@ export declare const transform: (
   projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
+  assetUrlPath?: string,
 ) => Promise<TransformResponse>;
 export declare type transform = typeof transform;
 export declare const getCacheKey: (

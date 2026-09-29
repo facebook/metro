@@ -160,6 +160,7 @@ type JSONFile = {
 };
 
 type TransformationContext = Readonly<{
+  assetUrlPath: ?string,
   config: JsTransformerConfig,
   projectRoot: AbsolutePath,
   options: JsTransformOptions,
@@ -521,6 +522,7 @@ async function transformAsset(
     getBabelTransformArgs(file, context),
     assetRegistryPath,
     assetPlugins,
+    context.assetUrlPath ?? undefined,
   );
 
   const jsFile = {
@@ -658,8 +660,14 @@ export const transform = async (
   projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
+  // The asset's path relative to the asset server root (`publicPath`), as
+  // clients will request it. Computed by Metro for assets only, and passed
+  // separately from the options so that it is not spread into
+  // BabelTransformerArgs.
+  assetUrlPath?: string,
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
+    assetUrlPath,
     config,
     options,
     projectRoot,
