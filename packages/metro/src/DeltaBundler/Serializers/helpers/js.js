@@ -19,6 +19,10 @@ import type {JsOutput} from 'metro-transform-worker';
 
 import {isResolvedDependency} from '../../../lib/isResolvedDependency';
 import {normalizePathSeparatorsToPosix} from '../../../lib/pathUtils';
+import {
+  getModuleDisplayPath,
+  getModuleUrlPathname,
+} from '../../../lib/virtualModule';
 import invariant from 'invariant';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {addParamsToDefineCall} from 'metro-transform-plugins';
@@ -78,9 +82,7 @@ export function wrapModule(module: Module<>, options: Options): string {
 function getModuleVerboseName(module: Module<>, options: Options): string {
   // The relative path of the module, to make debugging easier. This is mapped
   // to `module.verboseName` in `require.js`.
-  return normalizePathSeparatorsToPosix(
-    path.relative(options.projectRoot, module.path),
-  );
+  return getModuleDisplayPath(module.path, options.projectRoot);
 }
 
 // Default value stored in the `__d(...)` `paths` object for an async
@@ -105,17 +107,21 @@ function getDefaultAsyncDependencyPath(
   searchParams.set('modulesOnly', 'true');
   searchParams.set('runModule', 'false');
 
-  const bundlePath = path.relative(options.serverRoot, dependency.absolutePath);
   return (
-    '/' +
-    normalizePathSeparatorsToPosix(
-      path.join(
-        // TODO: This is not the proper Metro URL encoding of a file path
-        path.dirname(bundlePath),
-        // Strip the file extension
-        path.basename(bundlePath, path.extname(bundlePath)),
-      ),
-    ) +
+    getModuleUrlPathname(dependency.absolutePath, filePath => {
+      const bundlePath = path.relative(options.serverRoot, filePath);
+      return (
+        '/' +
+        normalizePathSeparatorsToPosix(
+          path.join(
+            // TODO: This is not the proper Metro URL encoding of a file path
+            path.dirname(bundlePath),
+            // Strip the file extension
+            path.basename(bundlePath, path.extname(bundlePath)),
+          ),
+        )
+      );
+    }) +
     '.bundle?' +
     searchParams.toString()
   );

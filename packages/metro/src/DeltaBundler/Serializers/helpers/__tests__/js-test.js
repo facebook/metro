@@ -156,6 +156,49 @@ describe('wrapModule()', () => {
     );
   });
 
+  test('names a virtual module by its virtual path, in its own namespace', () => {
+    expect(
+      raw(
+        wrapModule(
+          {...myModule, path: 'metro-virtual:' + p('/root/foo.js')},
+          {
+            createModuleId: createModuleIdFactory(),
+            dev: true,
+            includeAsyncPaths: false,
+            projectRoot: p('/root'),
+            serverRoot: p('/root'),
+            sourceUrl: null,
+          },
+        ),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,[1,2],"metro-virtual:foo.js");`,
+    );
+  });
+
+  test('gives an async virtual dependency a path in the virtual namespace', () => {
+    const dep = nullthrows(myModule.dependencies.get('bar'));
+    myModule.dependencies.set('bar', {
+      ...dep,
+      absolutePath: 'metro-virtual:' + p('/root/bar.js'),
+      data: {...dep.data, data: {...dep.data.data, asyncType: 'async'}},
+    });
+    expect(
+      raw(
+        wrapModule(myModule, {
+          createModuleId: createModuleIdFactory(),
+          dev: false,
+          includeAsyncPaths: true,
+          projectRoot: p('/root'),
+          serverRoot: p('/root'),
+          sourceUrl: 'http://localhost/Main.bundle?param1=true',
+        }),
+      ),
+    ).toMatchInlineSnapshot(
+      `__d(function() { console.log("foo") },0,{"0":1,"1":2,"paths":{"1":"/[metro-virtual]/bar.bundle?param1=true&modulesOnly=true&runModule=false"}});`,
+    );
+  });
+
   test('async dependency paths respect serverRoot', () => {
     const dep = nullthrows(myModule.dependencies.get('bar'));
     myModule.dependencies.set('bar', {

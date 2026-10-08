@@ -12,6 +12,7 @@
 import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
 import type {HmrModule} from 'metro-runtime/src/modules/types';
 
+import {getModuleUrlPathname} from '../../lib/virtualModule';
 import {isJsModule, wrapModule} from './helpers/js';
 import debugModule from 'debug';
 import * as jscSafeUrl from 'jsc-safe-url';
@@ -38,14 +39,14 @@ function generateModules(
 
   for (const module of sourceModules) {
     if (isJsModule(module)) {
-      const getPathname = (extension: 'bundle' | 'map') => {
-        return (
+      const getPathname = (extension: 'bundle' | 'map') =>
+        getModuleUrlPathname(module.path, filePath =>
           path
             .relative(
               options.serverRoot ?? options.projectRoot,
               path.join(
-                path.dirname(module.path),
-                path.basename(module.path, path.extname(module.path)) +
+                path.dirname(filePath),
+                path.basename(filePath, path.extname(filePath)) +
                   '.' +
                   extension,
               ),
@@ -53,9 +54,8 @@ function generateModules(
             .split(path.sep)
             // using this Metro particular convention for encoding file paths as URL paths.
             .map(segment => encodeURIComponent(segment))
-            .join('/')
+            .join('/'),
         );
-      };
 
       const clientUrl = new URL(options.clientUrl);
       clientUrl.searchParams.delete('excludeSource');
