@@ -61,6 +61,7 @@ import parseJsonBody from './lib/parseJsonBody';
 import RootUrlMap from './lib/RootUrlMap';
 import splitBundleOptions from './lib/splitBundleOptions';
 import * as transformHelpers from './lib/transformHelpers';
+import {getModuleUrlPathname} from './lib/virtualModule';
 import {UnableToResolveError} from './node-haste/DependencyGraph/ModuleResolution';
 import parsePlatformFilePath from './node-haste/lib/parsePlatformFilePath';
 import MultipartResponse from './Server/MultipartResponse';
@@ -1751,7 +1752,9 @@ export default class Server {
   _getModuleSourceUrl(module: Module<>, mode: SourcePathsMode): string {
     switch (mode) {
       case SourcePathsMode.ServerUrl:
-        return this._rootUrlMap.urlPathnameOfFilePath(module.path);
+        return getModuleUrlPathname(module.path, filePath =>
+          this._rootUrlMap.urlPathnameOfFilePath(filePath),
+        );
       case SourcePathsMode.Absolute:
         return module.path;
     }

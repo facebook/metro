@@ -184,3 +184,33 @@ Object {
 }
 `);
 });
+
+test('gives a virtual module anchored at a real file URLs distinct from that file', () => {
+  const virtualFooModule: Module<> = {
+    ...fooModule,
+    path: 'metro-virtual:/root/foo',
+    dependencies: new Map(),
+  };
+  const {added} = hmrJSBundle(
+    {
+      added: new Map([
+        ['root/foo', fooModule],
+        ['metro-virtual:/root/foo', virtualFooModule],
+      ]),
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
+    },
+    graph,
+    options,
+  );
+  expect(
+    added.map(({sourceURL, sourceMappingURL}) => [sourceURL, sourceMappingURL]),
+  ).toEqual([
+    ['http://localhost/foo.bundle', 'http://localhost/foo.map'],
+    [
+      'http://localhost/[metro-virtual]/foo.bundle',
+      'http://localhost/[metro-virtual]/foo.map',
+    ],
+  ]);
+});
