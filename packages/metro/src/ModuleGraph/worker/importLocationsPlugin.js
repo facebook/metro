@@ -19,7 +19,7 @@ type ImportDeclarationLocs = Set<string>;
 type State = {
   importDeclarationLocs: ImportDeclarationLocs,
   file: {
-    metadata?: MetroBabelFileMetadata,
+    metadata: MetroBabelFileMetadata,
     ...
   },
   ...
@@ -62,7 +62,6 @@ function importLocationsPlugin({
         // Initialise state
         state.importDeclarationLocs = new Set();
 
-        // $FlowFixMe[incompatible-type] Babel `File` is not generically typed
         const metroMetadata: MetroBabelFileMetadata = state.file.metadata;
 
         // Set the result on a metadata property
