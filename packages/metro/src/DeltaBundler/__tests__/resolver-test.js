@@ -1649,6 +1649,45 @@ function dep(name: string): TransformResultDependency {
           filePath: p('/root/node_modules/foo/asset.png'),
         });
       });
+
+      test('resolves a package whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            'lodash.zip': {
+              'package.json': JSON.stringify({name: 'lodash.zip'}),
+              'index.js': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          resolver: {assetExts: ['png', 'zip']},
+        });
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('lodash.zip')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/lodash.zip/index.js'),
+        });
+      });
+
+      test('resolves a directory whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          'icons.png': {'index.js': ''},
+        });
+
+        resolver = await createResolver();
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./icons.png')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/icons.png/index.js'),
+        });
+      });
     });
 
     describe('global packages', () => {
