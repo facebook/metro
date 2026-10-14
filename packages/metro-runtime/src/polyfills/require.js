@@ -32,7 +32,7 @@ type DependencyMap = Readonly<
 type InverseDependencyMap = {[key: ModuleID]: Array<ModuleID>, ...};
 type Exports = any;
 type FactoryFn = (
-  global: Object,
+  global: any,
   require: RequireFn,
   metroImportDefault: RequireFn,
   metroImportAll: RequireFn,
