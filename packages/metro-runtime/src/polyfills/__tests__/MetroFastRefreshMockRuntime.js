@@ -21,7 +21,7 @@ import typeof ReactRefreshRuntime from 'react-refresh/runtime';
 import {transformSync} from '@babel/core';
 import fs from 'node:fs';
 
-type RuntimeGlobal = Object;
+type RuntimeGlobal = any;
 
 const runtimeCleanups: Set<() => void> = new Set();
 

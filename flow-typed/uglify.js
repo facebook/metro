@@ -17,7 +17,7 @@ type _Input =
 
 type _Options = {
   // https://github.com/mishoo/UglifyJS2/tree/harmony#compress-options
-  compress?: false | Object,
+  compress?: false | any,
   ie8?: boolean,
   mangle?:
     | boolean
