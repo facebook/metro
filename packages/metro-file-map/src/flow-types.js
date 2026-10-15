@@ -255,6 +255,11 @@ export type FileMapPluginWorker = Readonly<{
     modulePath: string,
     setupArgs: JsonData,
   }>,
+  /**
+   * Whether the worker runs on a given file as it is crawled or changed.
+   * This applies to files under node_modules too, which a plugin may reject
+   * using `isNodeModules`.
+   */
   filter: ({normalPath: string, isNodeModules: boolean}) => boolean,
   /**
    * If true, the worker is not run on files as they are crawled or changed,
