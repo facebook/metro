@@ -26,7 +26,11 @@ import PackageImportNotResolvedError from './errors/PackageImportNotResolvedErro
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import {resolvePackageTargetFromImports} from './PackageImportsResolve';
-import {getPackageEntryPoint, redirectModulePath} from './PackageResolve';
+import {
+  getPackageEntryPoint,
+  matchSubpathFromMainFields,
+  redirectModulePath,
+} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
 import {posixToSystemPath} from './utils/paths';
@@ -110,42 +114,67 @@ export default function resolve(
     }
   }
 
-  const redirectedSpecifier = redirectModulePath(context, specifier);
+  const {originModulePath} = context;
+
+  const closestPackageToOrigin = context.getPackageForModule(originModulePath);
+
+  const maybeRedirectedSpecifier =
+    closestPackageToOrigin != null
+      ? matchSubpathFromMainFields(
+          specifier,
+          closestPackageToOrigin.packageJson,
+          context.mainFields,
+        )
+      : null;
 
   // exclude
-  if (redirectedSpecifier === false) {
+  if (maybeRedirectedSpecifier === false) {
     return {type: 'empty'};
   }
 
-  const {originModulePath} = context;
-
-  const isDirectImport =
-    isRelativeImport(redirectedSpecifier) ||
-    path.isAbsolute(redirectedSpecifier);
-
-  if (isDirectImport) {
-    // derive absolute path /.../node_modules/originModuleDir/redirectedSpecifier
-    const fromModuleParentIdx =
-      originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
-    const originModuleDir = originModulePath.slice(
-      0,
-      originModulePath.indexOf(path.sep, fromModuleParentIdx),
+  // If the specifier was redirected to a relative path
+  if (
+    maybeRedirectedSpecifier != null &&
+    closestPackageToOrigin != null && // Implied by maybeRedirectedSpecifier != null
+    isRelativeImport(maybeRedirectedSpecifier)
+  ) {
+    // Per the "browser" spec: "All paths for browser fields are relative to
+    // the package.json file location". `closestPackageToOrigin` is the package
+    // that provided the redirect, so join relative paths to its `rootPath`.
+    const absPath = path.resolve(
+      closestPackageToOrigin.rootPath,
+      maybeRedirectedSpecifier,
     );
-    const absPath = path.join(originModuleDir, redirectedSpecifier);
     const result = resolveModulePath(context, absPath, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
+  } else if (
+    maybeRedirectedSpecifier != null &&
+    closestPackageToOrigin != null && // Implied by maybeRedirectedSpecifier != null
+    // An absolute path inside the file may not match the system's path separator
+    (path.posix.isAbsolute(maybeRedirectedSpecifier) ||
+      path.win32.isAbsolute(maybeRedirectedSpecifier))
+  ) {
+    throw new InvalidPackageConfigurationError({
+      packagePath: closestPackageToOrigin.rootPath,
+      reason:
+        'Attempted to redirect import to an absolute path. ' +
+        'This is not allowed by the "browser" spec.' +
+        `\n  From: ${originModulePath}` +
+        `\n  Import: ${specifier}` +
+        `\n  Attempted redirect: ${maybeRedirectedSpecifier}`,
+    });
   }
 
-  /**
-   * At this point, redirectedSpecifier is not a "direct" (absolute or relative)
-   * import, so it's a bare specifier - for our purposes either Haste name
-   * or a package specifier.
-   */
-
-  const parsedSpecifier = parseBareSpecifier(redirectedSpecifier);
+  // At this point, maybeRedirectedSpecifier is either null (not redirected),
+  // and `specifier` is still bare, or `maybeRedirectedSpecifier` is a
+  // redirected bare specifier. Supported bare specifiers are either Haste
+  // names, package names, or (rarely) non-package modules under node_modules.
+  const parsedSpecifier = parseBareSpecifier(
+    maybeRedirectedSpecifier ?? specifier,
+  );
 
   if (context.allowHaste) {
     if (parsedSpecifier.isSinglePart) {
@@ -162,9 +191,57 @@ export default function resolve(
     }
   }
 
-  /**
-   * redirectedSpecifier is now a package specifier.
-   */
+  // parsedSpecifier is now a non-Haste bare specifier.
+
+  // PACKAGE_SELF_RESOLVE: if the origin lives inside a package whose `name`
+  // matches the bare specifier and which declares an `exports` field, resolve
+  // the request via that package's `exports`. Per Node.js ESM spec section 6.5
+  // (https://nodejs.org/api/esm.html#resolution-algorithm-specification).
+  if (
+    context.unstable_enablePackageExports &&
+    closestPackageToOrigin != null &&
+    closestPackageToOrigin.packageJson.exports != null &&
+    closestPackageToOrigin.packageJson.name === parsedSpecifier.packageName
+  ) {
+    try {
+      const exportsField = closestPackageToOrigin.packageJson.exports;
+      const packageExportsResult = resolvePackageTargetFromExports(
+        context,
+        closestPackageToOrigin.rootPath,
+        path.join(
+          closestPackageToOrigin.rootPath,
+          parsedSpecifier.posixSubpath,
+        ),
+        // packageRelativePath for the requested subpath, stripping the leading
+        // './' so the empty string represents the package root (matching how
+        // `getPackageForModule` reports `packageRelativePath`).
+        parsedSpecifier.posixSubpath === '.'
+          ? ''
+          : parsedSpecifier.posixSubpath.slice(2),
+        exportsField,
+        platform,
+      );
+      if (packageExportsResult != null) {
+        return packageExportsResult;
+      }
+    } catch (e) {
+      // NB: Falling back is a departure from the spec, but retained for
+      // backwards compatibility. Remove this in a breaking change.
+      if (e instanceof PackagePathNotExportedError) {
+        context.unstable_logWarning(
+          e.message +
+            ' Falling back to hierarchical resolution for backwards compatibility.',
+        );
+      } else if (e instanceof InvalidPackageConfigurationError) {
+        context.unstable_logWarning(
+          e.message +
+            ' Falling back to hierarchical resolution for backwards compatibility.',
+        );
+      } else {
+        throw e;
+      }
+    }
+  }
 
   const {disableHierarchicalLookup} = context;
 

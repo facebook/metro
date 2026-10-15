@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Portions Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,8 @@
  * @format
  * @oncall react_native
  */
+
+// Portions Copyright (c) 2015-present 650 Industries, Inc. (aka Expo), under MIT.
 
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
@@ -85,6 +87,7 @@ const exportAllTemplate = template.statements(`
   var REQUIRED = require(FILE);
 
   for (var KEY in REQUIRED) {
+    if (KEY === "default") continue;
     exports[KEY] = REQUIRED[KEY];
   }
 `);
@@ -167,10 +170,22 @@ export default function importExportPlugin({
         path: NodePath<ExportAllDeclaration>,
         state: State,
       ): void {
+        const loc = path.node.loc;
+        const file = path.node.source;
+
         state.exportAll.push({
-          file: path.node.source.value,
-          loc: path.node.loc,
+          file: file.value,
+          loc,
         });
+
+        withLocation(
+          exportAllTemplate({
+            FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+            REQUIRED: path.scope.generateUidIdentifier(file.value),
+            KEY: path.scope.generateUidIdentifier('key'),
+          }),
+          loc,
+        ).forEach(node => state.imports.push({node}));
 
         path.remove();
       },
@@ -222,40 +237,9 @@ export default function importExportPlugin({
 
         if (declaration) {
           if (isVariableDeclaration(declaration)) {
-            declaration.declarations.forEach(d => {
-              switch (d.id.type) {
-                case 'ObjectPattern':
-                  {
-                    const properties = d.id.properties;
-                    properties.forEach(p => {
-                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
-                      // $FlowFixMe[prop-missing]
-                      const name = p.key.name;
-                      // $FlowFixMe[incompatible-type]
-                      state.exportNamed.push({local: name, remote: name, loc});
-                    });
-                  }
-                  break;
-                case 'ArrayPattern':
-                  {
-                    const elements = d.id.elements;
-                    elements.forEach(e => {
-                      // $FlowFixMe[incompatible-use] Flow error uncovered by typing Babel more strictly
-                      // $FlowFixMe[prop-missing]
-                      const name = e.name;
-                      // $FlowFixMe[incompatible-type]
-                      state.exportNamed.push({local: name, remote: name, loc});
-                    });
-                  }
-                  break;
-                default:
-                  {
-                    const name = d.id.name;
-                    // $FlowFixMe[incompatible-type]
-                    state.exportNamed.push({local: name, remote: name, loc});
-                  }
-                  break;
-              }
+            const bindings = t.getBindingIdentifiers(declaration);
+            Object.keys(bindings).forEach(name => {
+              state.exportNamed.push({local: name, remote: name, loc});
             });
           } else {
             const id = declaration.id || path.scope.generateUidIdentifier();
@@ -274,7 +258,6 @@ export default function importExportPlugin({
         const specifiers = path.node.specifiers;
         if (specifiers) {
           specifiers.forEach(s => {
-            const local = s.local;
             const remote = s.exported;
 
             if (remote.type === 'StringLiteral') {
@@ -284,6 +267,31 @@ export default function importExportPlugin({
               );
             }
 
+            if (s.type === 'ExportNamespaceSpecifier') {
+              const source = nullthrows(path.node.source);
+              const temp = path.scope.generateUidIdentifier(remote.name);
+
+              state.imports.push({
+                node: withLocation(
+                  importTemplate({
+                    IMPORT: t.cloneNode(state.importAll),
+                    FILE: resolvePath(t.cloneNode(source), state.opts.resolve),
+                    LOCAL: temp,
+                  }),
+                  loc,
+                ),
+              });
+
+              state.exportNamed.push({
+                local: temp.name,
+                remote: remote.name,
+                loc,
+              });
+              return;
+            }
+
+            const local = s.local;
+
             if (path.node.source) {
               // $FlowFixMe[incompatible-use]
               const temp = path.scope.generateUidIdentifier(local.name);
@@ -291,8 +299,8 @@ export default function importExportPlugin({
               // $FlowFixMe[incompatible-type]
               // $FlowFixMe[incompatible-use]
               if (local.name === 'default') {
-                path.insertBefore(
-                  withLocation(
+                state.imports.push({
+                  node: withLocation(
                     importTemplate({
                       IMPORT: t.cloneNode(state.importDefault),
                       FILE: resolvePath(
@@ -303,7 +311,7 @@ export default function importExportPlugin({
                     }),
                     loc,
                   ),
-                );
+                });
 
                 state.exportNamed.push({
                   local: temp.name,
@@ -311,8 +319,8 @@ export default function importExportPlugin({
                   loc,
                 });
               } else if (remote.name === 'default') {
-                path.insertBefore(
-                  withLocation(
+                state.imports.push({
+                  node: withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
                         t.cloneNode(nullthrows(path.node.source)),
@@ -323,12 +331,12 @@ export default function importExportPlugin({
                     }),
                     loc,
                   ),
-                );
+                });
 
                 state.exportDefault.push({local: temp.name, loc});
               } else {
-                path.insertBefore(
-                  withLocation(
+                state.imports.push({
+                  node: withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
                         t.cloneNode(nullthrows(path.node.source)),
@@ -339,7 +347,7 @@ export default function importExportPlugin({
                     }),
                     loc,
                   ),
-                );
+                });
 
                 state.exportNamed.push({
                   local: temp.name,
@@ -527,39 +535,6 @@ export default function importExportPlugin({
             body.unshift(e.node);
           });
 
-          state.exportDefault.forEach(
-            (e: {local: string, loc: ?SourceLocation, ...}) => {
-              body.push(
-                withLocation(
-                  exportTemplate({
-                    LOCAL: t.identifier(e.local),
-                    REMOTE: t.identifier('default'),
-                  }),
-                  e.loc,
-                ),
-              );
-            },
-          );
-
-          state.exportAll.forEach(
-            (e: {file: string, loc: ?SourceLocation, ...}) => {
-              body.push(
-                // $FlowFixMe[incompatible-call]
-                ...withLocation(
-                  exportAllTemplate({
-                    FILE: resolvePath(
-                      t.stringLiteral(e.file),
-                      state.opts.resolve,
-                    ),
-                    REQUIRED: path.scope.generateUidIdentifier(e.file),
-                    KEY: path.scope.generateUidIdentifier('key'),
-                  }),
-                  e.loc,
-                ),
-              );
-            },
-          );
-
           state.exportNamed.forEach(
             (e: {local: string, remote: string, loc: ?SourceLocation, ...}) => {
               body.push(
@@ -567,6 +542,20 @@ export default function importExportPlugin({
                   exportTemplate({
                     LOCAL: t.identifier(e.local),
                     REMOTE: t.identifier(e.remote),
+                  }),
+                  e.loc,
+                ),
+              );
+            },
+          );
+
+          state.exportDefault.forEach(
+            (e: {local: string, loc: ?SourceLocation, ...}) => {
+              body.push(
+                withLocation(
+                  exportTemplate({
+                    LOCAL: t.identifier(e.local),
+                    REMOTE: t.identifier('default'),
                   }),
                   e.loc,
                 ),

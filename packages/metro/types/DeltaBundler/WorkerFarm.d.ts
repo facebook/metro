@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<bbd52f1dc5e4a9253455034b585115ac>>
+ * @generated SignedSource<<5839102968c6c59d8eba72a262122453>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/WorkerFarm.js
@@ -45,6 +45,7 @@ declare class WorkerFarm {
     filename: string,
     options: TransformOptions,
     fileBuffer?: Buffer,
+    assetUrlPath?: string,
   ): Promise<TransformerResult>;
   _makeFarm(
     absoluteWorkerPath: string,

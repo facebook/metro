@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<7e880beb8b73f4a072dfd248ff41d7b0>>
+ * @generated SignedSource<<20b836efd67d20258d429521857d8eab>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-resolver/src/PackageResolve.js
@@ -15,7 +15,7 @@
  *   yarn run build-ts-defs (OSS) 
  */
 
-import type {PackageInfo, ResolutionContext} from './types';
+import type {PackageInfo, PackageJson, ResolutionContext} from './types';
 /**
  * Resolve the main entry point subpath for a package.
  *
@@ -45,3 +45,18 @@ export declare function redirectModulePath(
   }>,
   modulePath: string,
 ): string | false;
+/**
+ * Get the mapped replacement for the given subpath defined by matching
+ * `mainFields` entries in the passed `package.json`
+ * (https://github.com/defunctzombie/package-browser-field-spec#replace-specific-files---advanced).
+ *
+ * Returns either:
+ * - A `string` with the matched replacement subpath.
+ * - `false`, indicating the module should be ignored.
+ * - `null` when there is no entry for the subpath.
+ */
+export declare function matchSubpathFromMainFields(
+  subpath: string | ReadonlyArray<string>,
+  pkg: PackageJson,
+  mainFields: ReadonlyArray<string>,
+): string | false | null;

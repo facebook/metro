@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @noformat
- * @generated SignedSource<<99faac6446a910cc70728424f342908c>>
+ * @generated SignedSource<<6297e6ebfbeb2920f00b15cba9acbce2>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-file-map/src/watchers/NativeWatcher.js
@@ -50,6 +50,5 @@ declare class NativeWatcher extends AbstractWatcher {
    * End watching.
    */
   stopWatching(): Promise<void>;
-  _handleEvent(event: string, relativePath: string): Promise<void>;
 }
 export default NativeWatcher;

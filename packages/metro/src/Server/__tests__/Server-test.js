@@ -30,6 +30,9 @@ import MockResponse from 'mock-res';
 const {
   getDefaultConfig: {getDefaultValues},
 } = require('metro-config');
+const {
+  posixToSystemPath: p,
+} = require('metro-resolver/private/__tests__/utils');
 const path = require('path');
 
 jest
@@ -63,6 +66,7 @@ describe('processRequest', () => {
   let getTransformFn;
   let getResolveDependencyFn;
   let getAsset;
+  let getAssetsSerializer;
 
   beforeEach(() => {
     jest.resetModules();
@@ -76,6 +80,7 @@ describe('processRequest', () => {
     getTransformFn = jest.fn();
     getResolveDependencyFn = jest.fn();
     getAsset = jest.fn();
+    getAssetsSerializer = jest.fn().mockResolvedValue([]);
 
     let i = 0;
     jest.doMock('crypto', () => ({
@@ -110,6 +115,11 @@ describe('processRequest', () => {
       .spyOn(DeltaBundler.prototype, 'buildGraph')
       .mockImplementation(buildGraph);
     jest.spyOn(DeltaBundler.prototype, 'getDelta').mockImplementation(getDelta);
+
+    jest.doMock('../../DeltaBundler/Serializers/getAssets', () => ({
+      __esModule: true,
+      default: getAssetsSerializer,
+    }));
 
     Server = require('../../Server').default;
   });
@@ -312,6 +322,7 @@ describe('processRequest', () => {
         load: jest.fn(() => Promise.resolve()),
         getWatcher: jest.fn(() => ({})),
         doesFileExist: jest.fn().mockReturnValue(true),
+        getOrComputeSha1: jest.fn(() => Promise.resolve({sha1: 'abcdef'})),
       }),
     );
 
@@ -844,6 +855,42 @@ describe('processRequest', () => {
       );
     });
 
+    test('should resolve an indexed watch folder asset path', async () => {
+      getAsset.mockResolvedValue(Promise.resolve('i am image'));
+
+      const response = await makeRequest(
+        '/assets/[metro-watchFolders]/0/imgs/a.png?platform=ios',
+      );
+      expect(response._getString()).toBe('i am image');
+
+      expect(getAsset).toBeCalledWith(
+        p('./imgs/a.png'),
+        p('/root'),
+        [p('/root')],
+        'ios',
+        expect.any(Array),
+        expect.any(Function),
+      );
+    });
+
+    test('should resolve a URL-encoded indexed watch folder asset path', async () => {
+      getAsset.mockResolvedValue(Promise.resolve('i am image'));
+
+      const response = await makeRequest(
+        '/assets/%5Bmetro-watchFolders%5D/0/imgs/a.png?platform=ios',
+      );
+      expect(response._getString()).toBe('i am image');
+
+      expect(getAsset).toBeCalledWith(
+        p('./imgs/a.png'),
+        p('/root'),
+        [p('/root')],
+        'ios',
+        expect.any(Array),
+        expect.any(Function),
+      );
+    });
+
     test('should serve range request', async () => {
       const mockData = 'i am image';
       getAsset.mockResolvedValue(mockData);
@@ -898,6 +945,17 @@ describe('processRequest', () => {
       expect(response.getHeader('content-type')).toBe('image/svg+xml');
       expect(response.getHeader('content-length')).toBe(
         String(Buffer.byteLength(mockData)),
+      );
+    });
+
+    test('should return a charset in the content-type header for a text asset', async () => {
+      const mockData = 'ｉ ａｍ ｈｔｍｌ';
+      getAsset.mockResolvedValue(mockData);
+
+      const response = await makeRequest('/assets/docs/a.html?platform=ios');
+
+      expect(response.getHeader('content-type')).toBe(
+        'text/html; charset=utf-8',
       );
     });
 
@@ -961,6 +1019,29 @@ describe('processRequest', () => {
         expect.any(Function),
       );
       expect(response._getString()).toBe('i am image');
+    });
+  });
+
+  describe('source requests', () => {
+    beforeEach(() => {
+      fs.mkdirSync('/root');
+      fs.writeFileSync('/root/foo.js', '// \u3053\u3093\u306b\u3061\u306f\n');
+      fs.writeFileSync('/root/logo.png', 'not really a png');
+    });
+
+    test('serves a source file with a utf-8 charset', async () => {
+      const response = await makeRequest('/[metro-project]/foo.js');
+
+      expect(response.getHeader('content-type')).toBe(
+        'text/javascript; charset=utf-8',
+      );
+      expect(response._getString()).toBe('// \u3053\u3093\u306b\u3061\u306f\n');
+    });
+
+    test('does not add a charset to a binary file', async () => {
+      const response = await makeRequest('/[metro-project]/logo.png');
+
+      expect(response.getHeader('content-type')).toBe('image/png');
     });
   });
 
@@ -1437,6 +1518,27 @@ describe('processRequest', () => {
     );
   });
 
+  describe('asset URL roots', () => {
+    test('anchors asset URLs on projectRoot, not unstable_serverRoot', async () => {
+      // $FlowFixMe[unclear-type] - reaching for a private method under test.
+      const serverRootServer: any = new Server(
+        mergeConfig(config, {
+          server: {unstable_serverRoot: '/'},
+        } as InputConfigT),
+      );
+
+      await serverRootServer._getAssetsFromDependencies(new Map(), 'ios');
+
+      expect(getAssetsSerializer).toBeCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          projectRoot: '/root',
+          watchFolders: ['/root'],
+        }),
+      );
+    });
+  });
+
   describe('watchFolder prefix resolution', () => {
     let watchFolderServer: $FlowFixMe;
 
@@ -1518,5 +1620,32 @@ describe('processRequest', () => {
         '/project/mybundle',
       );
     });
+
+    test.each([
+      [p('/project/imgs/a.png')],
+      [p('/project/nested/deep/b.png')],
+      [p('/external/packages/imgs/c.png')],
+      [p('/external/packages/d.png')],
+    ])(
+      'asset URL path for %s round-trips back to the same file',
+      absolutePath => {
+        const {getAssetUrlPath} = require('../../Assets');
+        const urlPath = getAssetUrlPath(absolutePath, p('/project'), [
+          p('/project'),
+          p('/external/packages'),
+        ]);
+
+        // Mirrors how _processSingleAssetRequest resolves an incoming URL.
+        const resolved = watchFolderServer._resolveWatchFolderPrefix(
+          './' + urlPath,
+        );
+        expect(
+          path.resolve(
+            resolved?.rootDir ?? p('/project'),
+            resolved?.filePath ?? urlPath,
+          ),
+        ).toBe(absolutePath);
+      },
+    );
   });
 });

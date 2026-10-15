@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<b122890ad90539195b3a9805a1a7e02f>>
+ * @generated SignedSource<<cc4f3dbaa30a0fb78500bbf7d032c711>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro-transform-worker/src/utils/assetTransformer.js
@@ -22,4 +22,5 @@ export declare function transform(
   $$PARAM_0$$: BabelTransformerArgs,
   assetRegistryPath: string,
   assetDataPlugins: ReadonlyArray<string>,
+  urlPath?: string,
 ): Promise<{ast: File}>;

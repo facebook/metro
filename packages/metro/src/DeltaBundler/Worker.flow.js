@@ -30,6 +30,7 @@ type TransformerInterface = {
     string,
     Buffer,
     JsTransformOptions,
+    ?string,
   ): Promise<TransformResult<>>,
 };
 
@@ -72,6 +73,7 @@ export const transform = (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
+  assetUrlPath?: string,
 ): Promise<Data> => {
   let data;
 
@@ -87,6 +89,7 @@ export const transform = (
     transformOptions,
     projectRoot,
     transformerConfig,
+    assetUrlPath,
   );
 };
 
@@ -95,11 +98,12 @@ export type Worker = {
 };
 
 async function transformFile(
-  filename: string,
+  projectRelativePath: string,
   data: Buffer,
   transformOptions: JsTransformOptions,
   projectRoot: string,
   transformerConfig: TransformerConfig,
+  assetUrlPath?: string,
 ): Promise<Data> {
   // eslint-disable-next-line no-useless-call
   const Transformer: TransformerInterface = require.call(
@@ -110,7 +114,7 @@ async function transformFile(
   const transformFileStartLogEntry: LogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
-    file_name: filename,
+    file_name: projectRelativePath,
     log_entry_label: 'Transforming file',
     start_timestamp: process.hrtime(),
   };
@@ -120,9 +124,10 @@ async function transformFile(
   const result = await Transformer.transform(
     transformerConfig.transformerConfig,
     projectRoot,
-    filename,
+    projectRelativePath,
     data,
     transformOptions,
+    assetUrlPath,
   );
 
   // The babel cache caches scopes and pathes for already traversed AST nodes.
@@ -135,7 +140,7 @@ async function transformFile(
 
   const transformFileEndLogEntry = getEndLogEntry(
     transformFileStartLogEntry,
-    filename,
+    projectRelativePath,
   );
 
   return {

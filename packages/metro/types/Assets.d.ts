@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<a58b1d0332fe424196b6d106eacdc2fe>>
+ * @generated SignedSource<<66a96f3882bcba8f8bd890828453052a>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/Assets.js
@@ -57,11 +57,27 @@ export type AssetDataPlugin = (
 ) => AssetData | Promise<AssetData>;
 export declare function getAssetData(
   assetPath: string,
-  localPath: string,
+  urlPath: string,
   assetDataPlugins: ReadonlyArray<string>,
   platform: null | undefined | string,
   publicPath: string,
 ): Promise<AssetData>;
+/**
+ * Returns the path used to identify an asset in its development server URL,
+ * relative to publicPath. Assets outside projectRoot use an indexed watch
+ * folder prefix so that the URL unambiguously identifies their configured
+ * root.
+ *
+ * Roots are resolved as Server does when it decodes these paths, so that the
+ * index here and the index it reads back refer to the same directory. The
+ * first root to contain the asset wins, in index order, so that appending a
+ * watch folder never changes the URL of an asset under an existing one.
+ */
+export declare function getAssetUrlPath(
+  assetPath: string,
+  projectRoot: string,
+  watchFolders: ReadonlyArray<string>,
+): string;
 /**
  * Returns all the associated files (for different resolutions) of an asset.
  **/

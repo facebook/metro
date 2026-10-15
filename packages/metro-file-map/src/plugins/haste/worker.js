@@ -30,7 +30,9 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
   ) {
     if (hasteImplModulePath != null) {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      this.#hasteImpl = require(hasteImplModulePath);
+      const mod = require(hasteImplModulePath);
+      this.#hasteImpl =
+        mod.__esModule === true && 'default' in mod ? mod.default : mod;
     }
   }
 

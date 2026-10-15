@@ -290,6 +290,39 @@ describe('HttpStore', () => {
     });
   });
 
+  test('set() retries use the set endpoint config, not the get endpoint', async () => {
+    jest.useRealTimers();
+    // Distinct read/write retry config: reads do not retry, writes retry 503s.
+    const store = new HttpStore({
+      getOptions: {endpoint: 'http://example.com', maxAttempts: 1},
+      setOptions: {
+        endpoint: 'http://example.com',
+        maxAttempts: 2,
+        retryStatuses: [503],
+      },
+    });
+    const {request} = require('http');
+
+    request.mockImplementation((opts, callback) => {
+      if (request.mock.calls.length === 1) {
+        callback(responseHttpError(503));
+      } else {
+        callback(responseHttpOk(''));
+      }
+      return new PassThrough();
+    });
+
+    let error;
+    try {
+      await store.set(Buffer.from('key-set'), {foo: 42});
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeUndefined();
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
   test('sets using the network via PUT method', done => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const promise = store.set(Buffer.from('key-set'), {foo: 42});
@@ -330,6 +363,56 @@ describe('HttpStore', () => {
       expect(err.message).toBe('ENOTFOUND');
       done();
     });
+  });
+
+  test('rejects with a NetworkError when the set request socket errors', async () => {
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 1,
+    });
+    const promise = store.set(Buffer.from('key-set'), {foo: 42});
+    const [opts] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('PUT');
+
+    const err = new Error('read ECONNRESET');
+    err.code = 'ECONNRESET';
+    httpPassThrough.emit('error', err);
+
+    await expect(promise).rejects.toMatchObject({
+      constructor: HttpStore.NetworkError,
+      code: 'ECONNRESET',
+      message: 'read ECONNRESET',
+    });
+  });
+
+  test('set() retries a request socket error when retryNetworkErrors is set', async () => {
+    jest.useRealTimers();
+    const store = new HttpStore({
+      endpoint: 'http://example.com',
+      maxAttempts: 2,
+      retryNetworkErrors: true,
+    });
+    const {request} = require('http');
+
+    request.mockImplementation((opts, callback) => {
+      const req = new PassThrough();
+
+      if (request.mock.calls.length === 1) {
+        const err = new Error('read ECONNRESET');
+        err.code = 'ECONNRESET';
+        process.nextTick(() => req.emit('error', err));
+      } else {
+        callback(responseHttpOk(''));
+        req.resume();
+      }
+
+      return req;
+    });
+
+    await store.set(Buffer.from('key-set'), {foo: 42});
+
+    expect(request).toHaveBeenCalledTimes(2);
   });
 
   test('set() resolves when the HTTP code is in additionalSuccessStatuses', done => {

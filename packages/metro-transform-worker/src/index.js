@@ -130,11 +130,12 @@ export type JsTransformOptions = Readonly<{
   unstable_transformProfile: TransformProfile,
 }>;
 
-opaque type Path = string;
+opaque type AbsolutePath = string;
+opaque type ProjectRelativePath = string;
 
 type BaseFile = Readonly<{
   code: string,
-  filename: Path,
+  filename: ProjectRelativePath,
   inputFileSize: number,
 }>;
 
@@ -159,8 +160,9 @@ type JSONFile = {
 };
 
 type TransformationContext = Readonly<{
+  assetUrlPath: ?string,
   config: JsTransformerConfig,
-  projectRoot: Path,
+  projectRoot: AbsolutePath,
   options: JsTransformOptions,
 }>;
 
@@ -520,6 +522,7 @@ async function transformAsset(
     getBabelTransformArgs(file, context),
     assetRegistryPath,
     assetPlugins,
+    context.assetUrlPath ?? undefined,
   );
 
   const jsFile = {
@@ -542,7 +545,9 @@ async function transformJSWithBabel(
 ): Promise<TransformResponse> {
   const {babelTransformerPath} = context.config;
   // $FlowFixMe[unsupported-syntax] dynamic require
-  const transformer: BabelTransformer = require(babelTransformerPath);
+  const mod = require(babelTransformerPath);
+  const transformer: BabelTransformer =
+    mod.__esModule === true && 'default' in mod ? mod.default : mod;
 
   const transformResult = await transformer.transform(
     getBabelTransformArgs(file, context, [
@@ -628,13 +633,13 @@ async function transformJSON(
 }
 
 function getBabelTransformArgs(
-  file: Readonly<{filename: Path, code: string, ...}>,
+  file: Readonly<{filename: ProjectRelativePath, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {
   const {inlineRequires: _, ...babelTransformerOptions} = options;
   return {
-    filename: file.filename,
+    filename: file.filename, // System-separated, project-root-relative
     options: {
       ...babelTransformerOptions,
       enableBabelRCLookup: config.enableBabelRCLookup,
@@ -652,11 +657,17 @@ function getBabelTransformArgs(
 export const transform = async (
   config: JsTransformerConfig,
   projectRoot: string,
-  filename: string,
+  projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
+  // The asset's path relative to the asset server root (`publicPath`), as
+  // clients will request it. Computed by Metro for assets only, and passed
+  // separately from the options so that it is not spread into
+  // BabelTransformerArgs.
+  assetUrlPath?: string,
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
+    assetUrlPath,
     config,
     options,
     projectRoot,
@@ -685,10 +696,10 @@ export const transform = async (
     }
   }
 
-  if (filename.endsWith('.json')) {
+  if (projectRelativePath.endsWith('.json')) {
     const jsonFile: JSONFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -699,7 +710,7 @@ export const transform = async (
   if (options.type === 'asset') {
     const file: AssetFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -709,7 +720,7 @@ export const transform = async (
 
   const file: JSFile = {
     code: sourceCode,
-    filename,
+    filename: projectRelativePath,
     functionMap: null,
     inputFileSize: data.length,
     type: options.type === 'script' ? 'js/script' : 'js/module',

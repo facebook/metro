@@ -655,6 +655,45 @@ describe('with package exports resolution enabled', () => {
       });
     });
 
+    test.each([
+      ['null', 'internal'],
+      ['no matching condition', 'server'],
+    ])(
+      'exact subpath with %s target does not fall back to a pattern',
+      (_, subpath) => {
+        const logWarning = jest.fn();
+        const context = {
+          ...createResolutionContext({
+            '/root/src/main.js': '',
+            '/root/node_modules/test-pkg/package.json': JSON.stringify({
+              name: 'test-pkg',
+              exports: {
+                './*': './lib/*.js',
+                './internal': null,
+                './server': {browser: './server-browser.js'},
+              },
+            }),
+            '/root/node_modules/test-pkg/lib/internal.js': '',
+            '/root/node_modules/test-pkg/lib/server.js': '',
+            '/root/node_modules/test-pkg/internal.js': '',
+            '/root/node_modules/test-pkg/server.js': '',
+          }),
+          originModulePath: '/root/src/main.js',
+          unstable_enablePackageExports: true,
+          unstable_logWarning: logWarning,
+        };
+
+        expect(Resolver.resolve(context, `test-pkg/${subpath}`, null)).toEqual({
+          type: 'sourceFile',
+          filePath: `/root/node_modules/test-pkg/${subpath}.js`,
+        });
+        expect(logWarning).toHaveBeenCalledTimes(1);
+        expect(logWarning.mock.calls[0][0]).toContain(
+          `"/root/node_modules/test-pkg/${subpath}" which is listed in the "exports"`,
+        );
+      },
+    );
+
     describe('package encapsulation', () => {
       test('[nonstrict] should fall back to "browser" spec resolution and log inaccessible import warning', () => {
         const logWarning = jest.fn();
@@ -1207,6 +1246,99 @@ describe('with package exports resolution enabled', () => {
         type: 'sourceFile',
         filePath:
           '/root/node_modules/@babel/runtime/helpers/interopRequireDefault.js',
+      });
+    });
+  });
+
+  describe('self-referencing imports (PACKAGE_SELF_RESOLVE)', () => {
+    const packageJson = {
+      name: 'self-pkg',
+      main: 'index-main.js',
+      exports: {
+        '.': './index.js',
+        './sub': './lib/sub.js',
+      },
+    };
+    const baseContext = {
+      ...createResolutionContext({
+        '/root/node_modules/self-pkg/package.json': JSON.stringify(packageJson),
+        '/root/node_modules/self-pkg/index.js': '',
+        '/root/node_modules/self-pkg/index-main.js': '',
+        '/root/node_modules/self-pkg/lib/sub.js': '',
+        '/root/node_modules/self-pkg/lib/internal.js': '',
+      }),
+      originModulePath: '/root/node_modules/self-pkg/index.js',
+      unstable_enablePackageExports: true,
+    };
+
+    test('should resolve own package name via its own "exports" field', () => {
+      expect(Resolver.resolve(baseContext, 'self-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/self-pkg/index.js',
+      });
+    });
+
+    test('should resolve a subpath of the own package via "exports"', () => {
+      expect(Resolver.resolve(baseContext, 'self-pkg/sub', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/self-pkg/lib/sub.js',
+      });
+    });
+
+    test('[nonstrict] should warn and fall back when self subpath is not in "exports"', () => {
+      const logWarning = jest.fn();
+      // `./lib/internal.js` is not exported, but exists on disk. We log the
+      // out-of-exports access and fall through to the regular hierarchical
+      // lookup, which finds the file inside `node_modules/self-pkg/`.
+      expect(
+        Resolver.resolve(
+          {...baseContext, unstable_logWarning: logWarning},
+          'self-pkg/lib/internal',
+          null,
+        ),
+      ).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/self-pkg/lib/internal.js',
+      });
+      expect(logWarning).toHaveBeenCalled();
+      expect(logWarning.mock.calls[0][0]).toMatch(
+        /which is not listed in the "exports"/,
+      );
+    });
+
+    test('should not self-resolve when origin package has no name', () => {
+      const noNameContext = {
+        ...baseContext,
+        ...createPackageAccessors({
+          '/root/node_modules/self-pkg/package.json': {
+            main: 'index-main.js',
+            exports: {'.': './index.js'},
+          },
+        }),
+      };
+      // With no `name`, falls through to hierarchical lookup (and finds the
+      // package in node_modules, going through "exports" as a normal import).
+      expect(Resolver.resolve(noNameContext, 'self-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/self-pkg/index.js',
+      });
+    });
+
+    test('should not self-resolve when the package has no "exports" field', () => {
+      const noExportsContext = {
+        ...baseContext,
+        ...createPackageAccessors({
+          '/root/node_modules/self-pkg/package.json': {
+            name: 'self-pkg',
+            main: 'index-main.js',
+          },
+        }),
+      };
+      // Without `exports`, self-resolve does not apply. Falls back to
+      // node_modules lookup, which resolves via "main".
+      expect(Resolver.resolve(noExportsContext, 'self-pkg', null)).toEqual({
+        type: 'sourceFile',
+        filePath: '/root/node_modules/self-pkg/index-main.js',
       });
     });
   });

@@ -13,6 +13,7 @@ import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
+import {getAssetUrlPath} from '../Assets';
 import {normalizePathSeparatorsToPosix} from '../lib/pathUtils';
 import getTransformCacheKey from './getTransformCacheKey';
 import WorkerFarm from './WorkerFarm';
@@ -61,8 +62,6 @@ export default class Transformer {
       transformerConfig,
     };
 
-    this._workerFarm = new WorkerFarm(config, transformerOptions);
-
     const globalCacheKey = this._cache.isDisabled
       ? ''
       : getTransformCacheKey({
@@ -74,6 +73,9 @@ export default class Transformer {
     const baseHashBuffer = stableHash([globalCacheKey]);
     this._baseHash = baseHashBuffer.toString('binary');
     debug('Base hash: %s', baseHashBuffer.toString('hex'));
+
+    // Start workers last - nothing can end them if the constructor throws.
+    this._workerFarm = new WorkerFarm(config, transformerOptions);
   }
 
   async transformFile(
@@ -108,7 +110,21 @@ export default class Transformer {
       }
     }
 
-    const localPath = path.relative(this._config.projectRoot, filePath);
+    const projectRelativePath = path.relative(
+      this._config.projectRoot,
+      filePath,
+    );
+    // Assets are the only modules whose output depends on watchFolders, via
+    // the URL path baked into them, so that dependency enters the cache key
+    // per asset here and not in the base hash.
+    const assetUrlPath =
+      type === 'asset'
+        ? getAssetUrlPath(
+            filePath,
+            this._config.projectRoot,
+            this._config.watchFolders,
+          )
+        : null;
 
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.
@@ -117,7 +133,8 @@ export default class Transformer {
       // Project-relative, posix-separated path for portability. Necessary in
       // addition to content hash because transformers receive path as an
       // input, and may apply e.g. extension-based logic.
-      normalizePathSeparatorsToPosix(localPath),
+      normalizePathSeparatorsToPosix(projectRelativePath),
+      assetUrlPath,
       customTransformOptions,
       dev,
       experimentalImportSupport,
@@ -166,9 +183,10 @@ export default class Transformer {
     }> = result
       ? {result, sha1}
       : await this._workerFarm.transform(
-          localPath,
+          projectRelativePath,
           transformerOptions,
           content,
+          assetUrlPath ?? undefined,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

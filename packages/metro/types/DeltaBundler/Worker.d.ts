@@ -6,7 +6,7 @@
  *
  * @noformat
  * @oncall react_native
- * @generated SignedSource<<36640ae81894592fbdc160fac081bdbf>>
+ * @generated SignedSource<<d7a3e8ee49c1b37154e6d92065e6bd29>>
  *
  * This file was translated from Flow by scripts/generateTypeScriptDefinitions.js
  * Original file: packages/metro/src/DeltaBundler/Worker.flow.js
@@ -39,6 +39,7 @@ export declare const transform: (
   projectRoot: string,
   transformerConfig: TransformerConfig,
   fileBuffer?: Buffer,
+  assetUrlPath?: string,
 ) => Promise<Data>;
 export declare type transform = typeof transform;
 export type Worker = {readonly transform: typeof transform};

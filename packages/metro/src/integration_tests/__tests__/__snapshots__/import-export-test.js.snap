@@ -16,6 +16,17 @@ Object {
   },
   "default": "export-4: FOO",
   "extraData": Object {
+    "arrayFirst": "export-destructuring: ARRAY_FIRST",
+    "arrayRest": Array [
+      "export-destructuring: ARRAY_REST",
+    ],
+    "exportStarDefault": "export-star-overrides: DEFAULT",
+    "exportStarEvaluationOrder": Array [
+      "source module",
+      "barrel body",
+    ],
+    "exportStarOverridden": "export-star-overrides: OVERRIDDEN",
+    "exportStarSourceOnly": "export-star-source: SOURCE_ONLY",
     "foo": "export-null: FOO",
     "importStar": Object {
       "default": "export-2: DEFAULT",
@@ -25,8 +36,14 @@ Object {
     "myDefault": "export-1: DEFAULT",
     "myFoo": "export-1: FOO",
     "myFunction": "export-1: MY_FUNCTION",
+    "namespaceReExportDefault": "export-2: DEFAULT",
+    "namespaceReExportFoo": "export-2: FOO",
+    "objectRest": Object {
+      "remaining": "export-destructuring: OBJECT_REST",
+    },
     "primitiveDefault": "export-primitive-default: DEFAULT",
     "primitiveFoo": "export-primitive-default: FOO",
+    "renamedObject": "export-destructuring: RENAMED_OBJECT",
   },
   "namedDefaultExported": "export-3: DEFAULT",
 }
