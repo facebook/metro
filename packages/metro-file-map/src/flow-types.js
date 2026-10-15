@@ -510,7 +510,9 @@ export interface Observations {
    * Files whose content was observed (including traversed symlinks, whose
    * content is their target) and directories whose immediate entries were
    * enumerated. Invalidated by modification, as well as by addition or
-   * removal.
+   * removal, so a path here may also be in `existence` (eg, after a `lookup`
+   * and a content read of the same file) without changing what invalidates
+   * the result.
    */
   readonly content: Set<CanonicalPath>;
 }

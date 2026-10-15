@@ -317,8 +317,8 @@ export default class TreeFS implements MutableFileSystem {
     }
     const {canonicalPath, node} = result;
     if (observations) {
-      // `content` is invalidated by everything `existence` is, so a path
-      // belongs in only one of them.
+      // `content` is invalidated by everything `existence` is, so a path in
+      // `content` need not also be in `existence`.
       (observeContent && !isDirectory(node)
         ? observations.content
         : observations.existence

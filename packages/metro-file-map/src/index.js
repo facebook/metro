@@ -455,8 +455,9 @@ export default class FileMap extends EventEmitter {
             fileSystem,
           }),
           Promise.all(
-            plugins.map(({plugin, dataIdx}) =>
-              plugin.initialize({
+            plugins.map(({plugin, dataIdx}) => {
+              const isLazy = plugin.getWorker()?.lazy === true;
+              return plugin.initialize({
                 files: {
                   lookup: mixedPath => {
                     const result = fileSystem.lookup(mixedPath);
@@ -495,7 +496,7 @@ export default class FileMap extends EventEmitter {
                   // `undefined` means no worker has run on this file.
                   // eslint-disable-next-line lint/strictly-null
                   if (data === undefined) {
-                    if (plugin.getWorker()?.lazy === true) {
+                    if (isLazy) {
                       data = this.#fileProcessor.processFileForPlugin(
                         result.realPath,
                         result.metadata,
@@ -519,8 +520,8 @@ export default class FileMap extends EventEmitter {
                     data,
                   };
                 },
-              }),
-            ),
+              });
+            }),
           ),
         ]);
 
