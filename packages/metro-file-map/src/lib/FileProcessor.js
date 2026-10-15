@@ -157,8 +157,8 @@ export class FileProcessor {
   /**
    * Synchronously run one plugin's worker on a regular file and store the
    * result as that plugin's data. This is how a lazy plugin's files are
-   * processed, so neither its filter nor the exclusion of node_modules
-   * applies - the plugin asked for this file.
+   * processed, so its filter does not apply - the plugin asked for this
+   * file.
    */
   processFileForPlugin(
     absolutePath: string,
@@ -211,23 +211,6 @@ export class FileProcessor {
 
     if (!computeSha1 && pluginsToRun.length === 0) {
       // Nothing to process
-      return null;
-    }
-
-    // Use a cheaper worker configuration for node_modules files, because
-    // they may never be Haste modules or packages.
-    //
-    // Note that we'd only expect node_modules files to reach this point if
-    // retainAllFiles is true, or they're touched during watch mode.
-    if (isNodeModules) {
-      if (computeSha1) {
-        return {
-          computeSha1: true,
-          filePath: this.#rootPathUtils.normalToAbsolute(normalPath),
-          maybeReturnContent,
-          pluginsToRun,
-        };
-      }
       return null;
     }
 
