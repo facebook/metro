@@ -287,23 +287,6 @@ export default class TreeFS implements MutableFileSystem {
   }
 
   lookup(mixedPath: Path, observations?: ?Observations): LookupResult {
-    return this.#lookup(mixedPath, observations, false);
-  }
-
-  /**
-   * As `lookup`, for a caller that goes on to use what a regular file found
-   * holds. That file is recorded in `observations.content` rather than
-   * `existence`, since a modification can change the caller's answer.
-   */
-  lookupContent(mixedPath: Path, observations?: ?Observations): LookupResult {
-    return this.#lookup(mixedPath, observations, true);
-  }
-
-  #lookup(
-    mixedPath: Path,
-    observations: ?Observations,
-    observeContent: boolean,
-  ): LookupResult {
     const normalPath = this.#normalizePath(mixedPath);
     const result = this.#lookupByNormalPath(normalPath, {
       observations,
@@ -317,16 +300,11 @@ export default class TreeFS implements MutableFileSystem {
     }
     const {canonicalPath, node} = result;
     if (observations) {
-      // `content` is invalidated by everything `existence` is, so a path in
-      // `content` need not also be in `existence`.
-      (observeContent && !isDirectory(node)
-        ? observations.content
-        : observations.existence
-      ).add(canonicalPath);
+      observations.existence.add(canonicalPath);
     }
     const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (isDirectory(node)) {
-      return {exists: true, realPath, type: 'd'};
+      return {exists: true, canonicalPath, realPath, type: 'd'};
     }
     invariant(
       isRegularFile(node),
@@ -334,7 +312,7 @@ export default class TreeFS implements MutableFileSystem {
       mixedPath,
       canonicalPath,
     );
-    return {exists: true, realPath, type: 'f', metadata: node};
+    return {exists: true, canonicalPath, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {

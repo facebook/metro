@@ -445,7 +445,7 @@ describe('FileMap', () => {
     expect(FileMap.H).toBe(require('../constants').default);
   });
 
-  test('getOrComputeFileData records a file found as content, and anything else as existence', async () => {
+  test('getOrComputeFileData records a file found as content, as well as what lookup records', async () => {
     const {dependencyPlugin} = await buildNewFileMap();
     if (dependencyPlugin == null) {
       throw new Error('Expected a DependencyPlugin');
@@ -473,7 +473,11 @@ describe('FileMap', () => {
 
     expect(observations).toEqual({
       content: new Set([path.join('fruits', 'Banana.js')]),
-      existence: new Set(['fruits', path.join('fruits', 'Missing.js')]),
+      existence: new Set([
+        path.join('fruits', 'Banana.js'),
+        'fruits',
+        path.join('fruits', 'Missing.js'),
+      ]),
     });
   });
 

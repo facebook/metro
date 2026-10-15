@@ -471,6 +471,8 @@ export type LookupResult =
     }
   | {
       exists: true,
+      // The directory's path relative to the root, with symlinks resolved.
+      canonicalPath: CanonicalPath,
       // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -479,6 +481,8 @@ export type LookupResult =
     }
   | {
       exists: true,
+      // The file's path relative to the root, with symlinks resolved.
+      canonicalPath: CanonicalPath,
       // The real, normal, absolute path of the file.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return

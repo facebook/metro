@@ -167,6 +167,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),
@@ -214,6 +215,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
           type: 'd',
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
         });
         expect(observations).toEqual({
@@ -222,46 +224,6 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         });
       },
     );
-
-    describe('lookupContent', () => {
-      test('records a file found in content, not existence', () => {
-        const observations = emptyObservations();
-        expect(
-          tfs.lookupContent(p('/project/bar.js'), observations),
-        ).toMatchObject({exists: true, type: 'f'});
-        expect(observations).toEqual({
-          content: new Set([canonical(p('/project/bar.js'))]),
-          existence: new Set(),
-        });
-      });
-
-      test('records the real path of a file found through a symlink, with the link', () => {
-        const observations = emptyObservations();
-        expect(
-          tfs.lookupContent(p('/project/foo/link-to-bar.js'), observations),
-        ).toMatchObject({exists: true, realPath: p('/project/bar.js')});
-        expect(observations).toEqual({
-          content: new Set([
-            canonical(p('/project/foo/link-to-bar.js')),
-            canonical(p('/project/bar.js')),
-          ]),
-          existence: new Set(),
-        });
-      });
-
-      test('records a directory found, or a missing path, in existence', () => {
-        const observations = emptyObservations();
-        tfs.lookupContent(p('/project/foo'), observations);
-        tfs.lookupContent(p('/project/foo/missing.js'), observations);
-        expect(observations).toEqual({
-          content: new Set(),
-          existence: new Set([
-            canonical(p('/project/foo')),
-            canonical(p('/project/foo/missing.js')),
-          ]),
-        });
-      });
-    });
 
     test('traversing the same symlink multiple times does not imply a cycle', () => {
       expect(
@@ -329,6 +291,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(mixedPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),

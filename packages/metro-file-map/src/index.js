@@ -482,16 +482,16 @@ export default class FileMap extends EventEmitter {
                     'metro-file-map: Plugin "%s" has no worker to process files with',
                     plugin.name,
                   );
-                  const result = fileSystem.lookupContent(
-                    mixedPath,
-                    observations,
-                  );
+                  const result = fileSystem.lookup(mixedPath, observations);
                   if (!result.exists) {
                     return {exists: false};
                   }
                   if (result.type === 'd') {
                     return {exists: true, type: 'd'};
                   }
+                  // Plugin data is derived from what the file holds, so it
+                  // changes when the file is modified.
+                  observations?.content.add(result.canonicalPath);
                   let data = result.metadata[dataIdx];
                   // `undefined` means no worker has run on this file.
                   // eslint-disable-next-line lint/strictly-null
