@@ -164,6 +164,7 @@ export type {
   CrawlerOptions,
   CrawlResult,
   DependencyExtractor,
+  FileDataResult,
   FileMapRoot,
   WatcherStatus,
 } from './flow-types';
@@ -459,18 +460,9 @@ export default class FileMap extends EventEmitter {
                 files: {
                   lookup: mixedPath => {
                     const result = fileSystem.lookup(mixedPath);
-                    if (!result.exists) {
-                      return {exists: false};
-                    }
-                    if (result.type === 'd') {
-                      return {exists: true, type: 'd'};
-                    }
-                    return {
-                      exists: true,
-                      type: 'f',
-                      pluginData:
-                        dataIdx != null ? result.metadata[dataIdx] : null,
-                    };
+                    return result.exists
+                      ? {exists: true, type: result.type}
+                      : {exists: false};
                   },
                   fileIterator: opts =>
                     mapIterable(
@@ -483,31 +475,49 @@ export default class FileMap extends EventEmitter {
                     ),
                 },
                 pluginState: initialData?.plugins.get(plugin.name),
-                processFile: mixedPath => {
+                getOrComputeFileData: (mixedPath, observations) => {
                   invariant(
                     dataIdx != null,
                     'metro-file-map: Plugin "%s" has no worker to process files with',
                     plugin.name,
                   );
-                  const result = fileSystem.lookup(mixedPath);
-                  if (!result.exists || result.type !== 'f') {
-                    throw new Error(
-                      `metro-file-map: Cannot process ${mixedPath}, which is not a regular file`,
-                    );
-                  }
-                  const pluginData = this.#fileProcessor.processFileForPlugin(
-                    result.realPath,
-                    result.metadata,
-                    dataIdx - H.PLUGINDATA,
-                  );
-                  debug(
-                    'Lazily processed file for %s: %s',
-                    plugin.name,
+                  const result = fileSystem.lookupContent(
                     mixedPath,
+                    observations,
                   );
-                  // Inform caches that there is new data to save.
-                  this.emit('metadata');
-                  return pluginData;
+                  if (!result.exists) {
+                    return {exists: false};
+                  }
+                  if (result.type === 'd') {
+                    return {exists: true, type: 'd'};
+                  }
+                  let data = result.metadata[dataIdx];
+                  // `undefined` means no worker has run on this file.
+                  // eslint-disable-next-line lint/strictly-null
+                  if (data === undefined) {
+                    if (plugin.getWorker()?.lazy === true) {
+                      data = this.#fileProcessor.processFileForPlugin(
+                        result.realPath,
+                        result.metadata,
+                        dataIdx - H.PLUGINDATA,
+                      );
+                      debug(
+                        'Lazily processed file for %s: %s',
+                        plugin.name,
+                        mixedPath,
+                      );
+                      // Inform caches that there is new data to save.
+                      this.emit('metadata');
+                    } else {
+                      data = null;
+                    }
+                  }
+                  return {
+                    exists: true,
+                    type: 'f',
+                    realPath: result.realPath,
+                    data,
+                  };
                 },
               }),
             ),

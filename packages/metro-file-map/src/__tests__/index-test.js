@@ -445,6 +445,51 @@ describe('FileMap', () => {
     expect(FileMap.H).toBe(require('../constants').default);
   });
 
+  test('getOrComputeFileData records a file found as content, and anything else as existence', async () => {
+    const {dependencyPlugin} = await buildNewFileMap();
+    if (dependencyPlugin == null) {
+      throw new Error('Expected a DependencyPlugin');
+    }
+    const observations = {
+      existence: new Set<string>(),
+      content: new Set<string>(),
+    };
+
+    expect(
+      dependencyPlugin.getOrComputeFileData(
+        p('/project/fruits/Banana.js'),
+        observations,
+      ),
+    ).toMatchObject({exists: true, type: 'f'});
+    expect(
+      dependencyPlugin.getOrComputeFileData(p('/project/fruits'), observations),
+    ).toEqual({exists: true, type: 'd'});
+    expect(
+      dependencyPlugin.getOrComputeFileData(
+        p('/project/fruits/Missing.js'),
+        observations,
+      ),
+    ).toEqual({exists: false});
+
+    expect(observations).toEqual({
+      content: new Set([path.join('fruits', 'Banana.js')]),
+      existence: new Set(['fruits', path.join('fruits', 'Missing.js')]),
+    });
+  });
+
+  test("getOrComputeFileData gives null for a file a non-lazy plugin's worker skipped", async () => {
+    mockFs[p('/project/fruits/Pear.json')] = '{}';
+    const {dependencyPlugin} = await buildNewFileMap({
+      extensions: ['js', 'json'],
+    });
+    if (dependencyPlugin == null) {
+      throw new Error('Expected a DependencyPlugin');
+    }
+    expect(
+      dependencyPlugin.getOrComputeFileData(p('/project/fruits/Pear.json')),
+    ).toMatchObject({exists: true, type: 'f', data: null});
+  });
+
   test('ignores files given a pattern', async () => {
     mockFs[p('/project/fruits/Kiwi.js')] = `
       // Kiwi!
@@ -1643,26 +1688,27 @@ describe('FileMap', () => {
         watch: true,
         plugins: [lazyPlugin],
       });
+      const onMetadata = jest.fn();
       await fileMap.build();
       try {
         const bananaPath = p('/project/fruits/Banana.js');
-        const getPluginData = () => {
-          const result = lazyPlugin.getFileSystem().lookup(bananaPath);
-          if (!result.exists || result.type !== 'f') {
-            throw new Error('Expected a file');
-          }
-          return result.pluginData;
-        };
-        const onMetadata = jest.fn();
         fileMap.on('metadata', onMetadata);
 
-        // The crawl does not run a lazy plugin's worker
-        expect(getPluginData()).toBeUndefined();
-
         const expected = {length: String(mockFs[bananaPath]).length};
-        expect(lazyPlugin.processFile(bananaPath)).toEqual(expected);
-        // The data is stored, and the cache told there is something to save
-        expect(getPluginData()).toEqual(expected);
+        expect(lazyPlugin.getOrComputeFileData(bananaPath)).toEqual({
+          exists: true,
+          type: 'f',
+          realPath: bananaPath,
+          data: expected,
+        });
+        // The crawl did not run the worker, so it ran now, and the cache is
+        // told there is something to save
+        expect(onMetadata).toHaveBeenCalledTimes(1);
+
+        // The data is stored
+        expect(lazyPlugin.getOrComputeFileData(bananaPath)).toMatchObject({
+          data: expected,
+        });
         expect(onMetadata).toHaveBeenCalledTimes(1);
 
         mockFs[bananaPath] = '// A changed banana';
@@ -1673,11 +1719,11 @@ describe('FileMap', () => {
         });
         await waitForItToChange(fileMap);
 
-        // Nor does a change, which leaves the file unprocessed again
-        expect(getPluginData()).toBeUndefined();
-        expect(lazyPlugin.processFile(bananaPath)).toEqual({
-          length: '// A changed banana'.length,
+        // A change leaves the file unprocessed again
+        expect(lazyPlugin.getOrComputeFileData(bananaPath)).toMatchObject({
+          data: {length: '// A changed banana'.length},
         });
+        expect(onMetadata).toHaveBeenCalledTimes(2);
       } finally {
         await fileMap.end();
       }

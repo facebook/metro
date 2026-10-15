@@ -136,7 +136,7 @@ Duplicate manual mock found for \`foo\`:
           throw new Error('should not be used');
         },
       },
-      processFile: () => {
+      getOrComputeFileData: () => {
         throw new Error('Not implemented');
       },
       pluginState: {

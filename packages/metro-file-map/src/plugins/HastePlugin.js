@@ -109,11 +109,11 @@ export default class HastePlugin
       }
     }
     this.#getModuleNameByPath = mixedPath => {
-      const result = files.lookup(mixedPath);
+      const result = opts.getOrComputeFileData(mixedPath);
       return result.exists &&
         result.type === 'f' &&
-        typeof result.pluginData === 'string'
-        ? result.pluginData
+        typeof result.data === 'string'
+        ? result.data
         : null;
     };
     this.#perfLogger?.point('constructHasteMap_end');
