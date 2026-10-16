@@ -283,7 +283,7 @@ export default class FileMap extends EventEmitter {
   readonly #crawler: ?Crawler;
   // Roots added by `addRoot`, mapped to the completion of each addition.
   readonly #dynamicRoots: Map<string, Promise<void>> = new Map();
-  #fileSystem: ?MutableFileSystem;
+  #fileSystem: ?TreeFS;
   // Applies and emits watcher events waiting on the change interval. Set in
   // watch mode.
   #flushPendingChanges: ?() => void;
@@ -591,6 +591,10 @@ export default class FileMap extends EventEmitter {
    * watch mode) watching it for the lifetime of this instance. Resolves once
    * its files are available, after a 'change' event for any that are new.
    *
+   * A root reached through a symlink in the file map is added at the
+   * symlink's target. A path through any other symlink should be given as its
+   * real path.
+   *
    * Added roots are not persisted: a later instance reading this one's cache
    * starts with only its own `roots`.
    */
@@ -600,7 +604,14 @@ export default class FileMap extends EventEmitter {
       buildPromise != null,
       'metro-file-map: addRoot() must be called after build()',
     );
-    const absoluteRoot = path.resolve(root);
+    const fileSystem = this.#fileSystem;
+    if (fileSystem == null) {
+      // Symlinks are resolved against the built file system.
+      return buildPromise.then(() => this.addRoot(root));
+    }
+    // The file system holds only real paths. Crawling a root through a
+    // symlink would replace that symlink with a copy of its target.
+    const absoluteRoot = fileSystem.resolveSymlinks(path.resolve(root));
     const existing = this.#dynamicRoots.get(absoluteRoot);
     if (existing != null) {
       return existing;
@@ -615,8 +626,8 @@ export default class FileMap extends EventEmitter {
     );
     const ready: Promise<unknown> =
       parent != null
-        ? (this.#dynamicRoots.get(parent.absolutePath) ?? buildPromise)
-        : buildPromise.then(() => this.#crawlAndWatchRoot(absoluteRoot));
+        ? (this.#dynamicRoots.get(parent.absolutePath) ?? Promise.resolve())
+        : this.#crawlAndWatchRoot(absoluteRoot);
     const added = ready.then(
       () => {},
       error => {

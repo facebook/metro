@@ -163,6 +163,26 @@ export default class TreeFS implements MutableFileSystem {
     yield* this.#pathsOutsideRoots(this.#rootNode, '', rootPrefixes);
   }
 
+  /**
+   * The absolute path of `mixedPath` with each symlink it passes through in
+   * this file system resolved, whether or not the path itself exists here.
+   * Segments beyond the first missing one are kept as given.
+   */
+  resolveSymlinks(mixedPath: Path): Path {
+    const result = this.#lookupByNormalPath(this.#normalizePath(mixedPath), {
+      followLeaf: true,
+    });
+    if (result.exists) {
+      return this.#pathUtils.normalToAbsolute(result.canonicalPath);
+    }
+    const {canonicalMissingPath, remainingPath} = result;
+    return this.#pathUtils.normalToAbsolute(
+      remainingPath === ''
+        ? canonicalMissingPath
+        : canonicalMissingPath + path.sep + remainingPath,
+    );
+  }
+
   *#pathsOutsideRoots(
     node: DirectoryNode,
     prefix: string,
@@ -659,6 +679,8 @@ export default class TreeFS implements MutableFileSystem {
     | {
         canonicalMissingPath: string,
         missingSegmentName: string,
+        // The normal path following the missing segment, or '' if none.
+        remainingPath: string,
         exists: false,
       } {
     // We'll update the target if we hit a symlink.
@@ -714,6 +736,7 @@ export default class TreeFS implements MutableFileSystem {
               : targetNormalPath.slice(0, fromIdx - 1),
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: targetNormalPath.slice(fromIdx),
           };
         }
         segmentNode = new Map();
@@ -776,6 +799,7 @@ export default class TreeFS implements MutableFileSystem {
             canonicalMissingPath: currentPath,
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: targetNormalPath.slice(fromIdx),
           };
         }
 
@@ -862,6 +886,7 @@ export default class TreeFS implements MutableFileSystem {
             canonicalMissingPath: targetNormalPath,
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: '',
           };
         }
         seen.add(targetNormalPath);

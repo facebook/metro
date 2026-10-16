@@ -550,6 +550,23 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
+  describe('resolveSymlinks', () => {
+    test.each([
+      ['/project/foo', '/project/foo'],
+      ['/project/link-to-foo', '/project/foo'],
+      ['/project/link-to-foo/missing/dir', '/project/foo/missing/dir'],
+      ['/project/abs-link-out/lib', '/outside/lib'],
+      ['/project/link-to-nowhere/dir', '/project/nowhere/dir'],
+      ['/project/root/project/link-to-foo', '/project/foo'],
+      ['/project/missing/link-to-foo', '/project/missing/link-to-foo'],
+      ['/project/bar.js/dir', '/project/bar.js/dir'],
+      ['/project/link-to-self', '/project/link-to-self'],
+      ['/elsewhere/dir', '/elsewhere/dir'],
+    ])('%s -> %s', (mixedPath, expected) => {
+      expect(tfs.resolveSymlinks(p(mixedPath))).toEqual(p(expected));
+    });
+  });
+
   describe('hierarchicalLookup', () => {
     let tfs: TreeFSType;
 

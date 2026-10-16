@@ -25,19 +25,46 @@ jest.useRealTimers();
 
 // Absolute path -> mtime, standing in for the file system seen by the crawler.
 let mockFiles: Map<string, number>;
+// Absolute path -> normal (rootDir-relative, POSIX) symlink target.
+let mockSymlinks: Map<string, string>;
 
 const mockNodeCrawler = jest.fn((options: CrawlerOptions) => {
   const path = require('node:path');
   const files = new Map<string, FileMetadata>();
-  for (const [absolutePath, mtime] of mockFiles) {
-    if (options.roots.some(root => absolutePath.startsWith(root + path.sep))) {
-      files.set(path.relative(options.rootDir, absolutePath), [
-        mtime,
-        42,
-        0,
-        null,
-        0,
-      ]);
+  for (const root of options.roots) {
+    // Like a crawl of the disk, a crawl of a root through a symlink lists its
+    // target's files under the path it was given.
+    let realRoot = root;
+    for (const [link, target] of mockSymlinks) {
+      if (root === link || root.startsWith(link + path.sep)) {
+        realRoot = path.join(options.rootDir, target, root.slice(link.length));
+      }
+    }
+    for (const [absolutePath, mtime] of mockFiles) {
+      if (absolutePath.startsWith(realRoot + path.sep)) {
+        const givenPath = path.join(
+          root,
+          path.relative(realRoot, absolutePath),
+        );
+        files.set(path.relative(options.rootDir, givenPath), [
+          mtime,
+          42,
+          0,
+          null,
+          0,
+        ]);
+      }
+    }
+    for (const [link, target] of mockSymlinks) {
+      if (link.startsWith(root + path.sep)) {
+        files.set(path.relative(options.rootDir, link), [
+          0,
+          0,
+          0,
+          null,
+          target,
+        ]);
+      }
     }
   }
   return Promise.resolve(
@@ -78,7 +105,9 @@ const SRC_DIR = path.join(ROOT_DIR, 'src');
 const EXTERNAL_DIR = path.resolve('/', 'external');
 const EXTERNAL_FILE = path.join(EXTERNAL_DIR, 'lib', 'helper.js');
 
-function createFileMap(opts?: Readonly<{watch?: boolean}>): FileMapT {
+function createFileMap(
+  opts?: Readonly<{enableSymlinks?: boolean, watch?: boolean}>,
+): FileMapT {
   return new FileMap({
     cacheManagerFactory: () => ({
       end: async () => {},
@@ -88,6 +117,7 @@ function createFileMap(opts?: Readonly<{watch?: boolean}>): FileMapT {
       },
     }),
     computeSha1: false,
+    enableSymlinks: opts?.enableSymlinks ?? false,
     extensions: ['js'],
     healthCheck: {
       enabled: false,
@@ -126,6 +156,7 @@ describe('FileMap.addRoot', () => {
       [EXTERNAL_FILE, 1],
       [path.join(EXTERNAL_DIR, 'other.js'), 1],
     ]);
+    mockSymlinks = new Map();
     ({default: FileMap} = require('../'));
     fileMap = createFileMap();
   });
@@ -239,6 +270,35 @@ describe('FileMap.addRoot', () => {
     // A later attempt may succeed.
     await fileMap.addRoot(EXTERNAL_DIR);
     expect(rootPaths(fileMap)).toEqual([SRC_DIR, EXTERNAL_DIR]);
+  });
+
+  test('waits for build() to finish when called during it', async () => {
+    const built = fileMap.build();
+    const added = fileMap.addRoot(EXTERNAL_DIR);
+    const {fileSystem} = await built;
+    await added;
+    expect(rootPaths(fileMap)).toEqual([SRC_DIR, EXTERNAL_DIR]);
+    expect(fileSystem.exists(EXTERNAL_FILE)).toBe(true);
+  });
+
+  test('adds a root reached through a symlink at its target', async () => {
+    const link = path.join(SRC_DIR, 'node_modules', 'lib');
+    const target = path.join(EXTERNAL_DIR, 'lib');
+    mockSymlinks.set(
+      link,
+      path.relative(ROOT_DIR, target).replaceAll(path.sep, '/'),
+    );
+    fileMap = createFileMap({enableSymlinks: true});
+    const {fileSystem} = await fileMap.build();
+
+    await fileMap.addRoot(link);
+
+    expect(rootPaths(fileMap)).toEqual([SRC_DIR, target]);
+    expect(fileSystem.linkStats(link)?.fileType).toBe('l');
+    expect(fileSystem.lookup(path.join(link, 'helper.js'))).toMatchObject({
+      exists: true,
+      realPath: EXTERNAL_FILE,
+    });
   });
 
   test('does not apply or emit a crawl that finishes after end()', async () => {
