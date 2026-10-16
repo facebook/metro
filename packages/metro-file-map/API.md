@@ -151,6 +151,7 @@ export type FileDataResult<PerFileData> =
 
 class FileMap extends EventEmitter {
   constructor(options: InputOptions);
+  addRoot(root: string): Promise<void>;
   build(): Promise<BuildResult>;
   static create(options: InputOptions): FileMap;
   end(): Promise<void>;
