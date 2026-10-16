@@ -241,6 +241,42 @@ describe('FileMap.addRoot', () => {
     expect(rootPaths(fileMap)).toEqual([SRC_DIR, EXTERNAL_DIR]);
   });
 
+  test('does not apply or emit a crawl that finishes after end()', async () => {
+    const {fileSystem} = await fileMap.build();
+    let finishCrawl: () => void = () => {};
+    const crawlStarted = new Promise<void>(resolveStarted => {
+      mockNodeCrawler.mockImplementationOnce(
+        options =>
+          new Promise(resolve => {
+            finishCrawl = () =>
+              resolve(
+                options.previousState.fileSystem.getDifference(
+                  new Map([
+                    [
+                      path.relative(ROOT_DIR, EXTERNAL_FILE),
+                      [1, 42, 0, null, 0],
+                    ],
+                  ]),
+                  {subpath: options.subpath},
+                ),
+              );
+            resolveStarted();
+          }),
+      );
+    });
+    const onChange = jest.fn();
+    fileMap.on('change', onChange);
+
+    const added = fileMap.addRoot(EXTERNAL_DIR);
+    await crawlStarted;
+    await fileMap.end();
+    finishCrawl();
+
+    await expect(added).rejects.toThrow();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(fileSystem.exists(EXTERNAL_FILE)).toBe(false);
+  });
+
   test('added roots do not survive into an instance built from the cache', async () => {
     await fileMap.build();
     await fileMap.addRoot(EXTERNAL_DIR);

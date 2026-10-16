@@ -649,11 +649,15 @@ export default class FileMap extends EventEmitter {
         this.#pathUtils.absoluteToNormal(absoluteRoot),
         fileSystem,
       );
+      // end() may have been called during the crawl or while applying it.
+      const abortSignal = this.#crawlerAbortController.signal;
+      abortSignal.throwIfAborted();
       const changeAggregator = await this.#applyFileDelta(
         fileSystem,
         this.#plugins,
         crawlResult,
       );
+      abortSignal.throwIfAborted();
       if (changeAggregator.getSize() === 0) {
         return;
       }
