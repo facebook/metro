@@ -304,7 +304,7 @@ export default class TreeFS implements MutableFileSystem {
     }
     const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (isDirectory(node)) {
-      return {exists: true, realPath, type: 'd'};
+      return {exists: true, canonicalPath, realPath, type: 'd'};
     }
     invariant(
       isRegularFile(node),
@@ -312,7 +312,7 @@ export default class TreeFS implements MutableFileSystem {
       mixedPath,
       canonicalPath,
     );
-    return {exists: true, realPath, type: 'f', metadata: node};
+    return {exists: true, canonicalPath, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {

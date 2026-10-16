@@ -167,6 +167,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),
@@ -214,6 +215,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
           type: 'd',
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
         });
         expect(observations).toEqual({
@@ -289,6 +291,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(mixedPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),

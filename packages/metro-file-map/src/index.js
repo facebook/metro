@@ -164,6 +164,7 @@ export type {
   CrawlerOptions,
   CrawlResult,
   DependencyExtractor,
+  FileDataResult,
   FileMapRoot,
   WatcherStatus,
 } from './flow-types';
@@ -454,23 +455,15 @@ export default class FileMap extends EventEmitter {
             fileSystem,
           }),
           Promise.all(
-            plugins.map(({plugin, dataIdx}) =>
-              plugin.initialize({
+            plugins.map(({plugin, dataIdx}) => {
+              const isLazy = plugin.getWorker()?.lazy === true;
+              return plugin.initialize({
                 files: {
                   lookup: mixedPath => {
                     const result = fileSystem.lookup(mixedPath);
-                    if (!result.exists) {
-                      return {exists: false};
-                    }
-                    if (result.type === 'd') {
-                      return {exists: true, type: 'd'};
-                    }
-                    return {
-                      exists: true,
-                      type: 'f',
-                      pluginData:
-                        dataIdx != null ? result.metadata[dataIdx] : null,
-                    };
+                    return result.exists
+                      ? {exists: true, type: result.type}
+                      : {exists: false};
                   },
                   fileIterator: opts =>
                     mapIterable(
@@ -483,34 +476,52 @@ export default class FileMap extends EventEmitter {
                     ),
                 },
                 pluginState: initialData?.plugins.get(plugin.name),
-                processFile: mixedPath => {
+                getOrComputeFileData: (mixedPath, observations) => {
                   invariant(
                     dataIdx != null,
                     'metro-file-map: Plugin "%s" has no worker to process files with',
                     plugin.name,
                   );
-                  const result = fileSystem.lookup(mixedPath);
-                  if (!result.exists || result.type !== 'f') {
-                    throw new Error(
-                      `metro-file-map: Cannot process ${mixedPath}, which is not a regular file`,
-                    );
+                  const result = fileSystem.lookup(mixedPath, observations);
+                  if (!result.exists) {
+                    return {exists: false};
                   }
-                  const pluginData = this.#fileProcessor.processFileForPlugin(
-                    result.realPath,
-                    result.metadata,
-                    dataIdx - H.PLUGINDATA,
-                  );
-                  debug(
-                    'Lazily processed file for %s: %s',
-                    plugin.name,
-                    mixedPath,
-                  );
-                  // Inform caches that there is new data to save.
-                  this.emit('metadata');
-                  return pluginData;
+                  if (result.type === 'd') {
+                    return {exists: true, type: 'd'};
+                  }
+                  // Plugin data is derived from what the file holds, so it
+                  // changes when the file is modified.
+                  observations?.content.add(result.canonicalPath);
+                  let data = result.metadata[dataIdx];
+                  // `undefined` means no worker has run on this file.
+                  // eslint-disable-next-line lint/strictly-null
+                  if (data === undefined) {
+                    if (isLazy) {
+                      data = this.#fileProcessor.processFileForPlugin(
+                        result.realPath,
+                        result.metadata,
+                        dataIdx - H.PLUGINDATA,
+                      );
+                      debug(
+                        'Lazily processed file for %s: %s',
+                        plugin.name,
+                        mixedPath,
+                      );
+                      // Inform caches that there is new data to save.
+                      this.emit('metadata');
+                    } else {
+                      data = null;
+                    }
+                  }
+                  return {
+                    exists: true,
+                    type: 'f',
+                    realPath: result.realPath,
+                    data,
+                  };
                 },
-              }),
-            ),
+              });
+            }),
           ),
         ]);
 
