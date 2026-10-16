@@ -27,14 +27,15 @@ export function reduceExportsLikeMap(
   const result = new Map<string, string | null>();
 
   for (const [subpath, value] of exportsLikeMap) {
-    const subpathValue = reduceConditionalExport(value, conditionNames);
+    const subpathValue = reduceConditionalExport(
+      value,
+      conditionNames,
+      createConfigError,
+    );
 
-    // If a subpath has no resolution for the passed `conditionNames`, do not
-    // include it in the result. (This includes only explicit `null` values,
-    // which may conditionally hide higher-specificity subpath patterns.)
-    if (subpathValue !== 'no-match') {
-      result.set(subpath, subpathValue);
-    }
+    // Preserve unmatched subpaths so they still take precedence over less
+    // specific patterns, just like explicit null targets.
+    result.set(subpath, subpathValue ?? null);
   }
 
   for (const value of result.values()) {
@@ -53,7 +54,7 @@ export function reduceExportsLikeMap(
  * Reduce an "exports"-like subpath value after asserting the passed
  * `conditionNames` in any nested conditions.
  *
- * Returns `'no-match'` in the case that none of the asserted `conditionNames`
+ * Returns `undefined` in the case that none of the asserted `conditionNames`
  * are matched.
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports.
@@ -61,30 +62,35 @@ export function reduceExportsLikeMap(
 function reduceConditionalExport(
   subpathValue: Values<ExportsLikeMap>,
   conditionNames: ReadonlySet<string>,
-): string | null | 'no-match' {
-  let reducedValue = subpathValue;
-
-  while (reducedValue != null && typeof reducedValue !== 'string') {
-    let match: typeof subpathValue | 'no-match';
-
-    // when conditions are present and default is not specified
-    // the default condition is implicitly set to null, to allow
-    // for restricting access to unexported internals of a package.
-    if ('default' in reducedValue) {
-      match = 'no-match';
-    } else {
-      match = null;
-    }
-
-    for (const conditionName in reducedValue) {
-      if (conditionNames.has(conditionName)) {
-        match = reducedValue[conditionName];
-        break;
-      }
-    }
-
-    reducedValue = match;
+  createConfigError: (reason: string) => Error,
+): string | null | void {
+  if (subpathValue == null || typeof subpathValue === 'string') {
+    return subpathValue;
+  }
+  if (typeof subpathValue !== 'object') {
+    throw createConfigError(
+      'A conditional target must be a string, an object, or null.',
+    );
+  }
+  // Legacy arrays are normalized earlier; nested arrays remain unsupported.
+  if (Array.isArray(subpathValue)) {
+    return null;
   }
 
-  return reducedValue;
+  for (const conditionName in subpathValue) {
+    if (conditionNames.has(conditionName)) {
+      const resolved = reduceConditionalExport(
+        subpathValue[conditionName],
+        conditionNames,
+        createConfigError,
+      );
+      // Null excludes this entry; only an unmatched condition falls through.
+      // eslint-disable-next-line lint/strictly-null
+      if (resolved !== undefined) {
+        return resolved;
+      }
+    }
+  }
+
+  return undefined;
 }
