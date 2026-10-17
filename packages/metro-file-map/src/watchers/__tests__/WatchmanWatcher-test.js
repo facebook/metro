@@ -86,6 +86,7 @@ describe('WatchmanWatcher', () => {
         watchmanWatcher.subscriptionName,
         {
           defer: ['busy'],
+          empty_on_fresh_instance: true,
           fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
           relative_root: p('subdir/js'),
           since: 'c:1629095304.251049',
@@ -130,6 +131,7 @@ describe('WatchmanWatcher', () => {
         watchmanWatcher.subscriptionName,
         {
           defer: ['busy'],
+          empty_on_fresh_instance: true,
           fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
           relative_root: p('subdir/js'),
           since: 'c:crawl-clock:1',
@@ -175,6 +177,7 @@ describe('WatchmanWatcher', () => {
         watchmanWatcher.subscriptionName,
         {
           defer: ['busy'],
+          empty_on_fresh_instance: true,
           fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
           relative_root: p('subdir/js'),
           since: 'c:fresh-clock:1',
@@ -241,6 +244,30 @@ describe('WatchmanWatcher', () => {
         clock: [p('/project'), 'c:124'],
         metadata: expect.any(Object),
       });
+    });
+
+    test('reports a fresh instance as a recrawl of the root', () => {
+      const handler = jest.fn();
+      watchmanWatcher.onFileEvent(handler);
+      // With `empty_on_fresh_instance`, Watchman sends no files.
+      mockClient.emit('subscription', {
+        unilateral: true,
+        is_fresh_instance: true,
+        files: [],
+        clock: 'c:200',
+        root: '/project',
+        subscription: watchmanWatcher.subscriptionName,
+      });
+      expect(handler.mock.calls).toEqual([
+        [
+          {
+            event: 'recrawl',
+            relativePath: '',
+            root: p('/project/subdir/js'),
+            clock: [p('/project'), 'c:200'],
+          },
+        ],
+      ]);
     });
   });
 

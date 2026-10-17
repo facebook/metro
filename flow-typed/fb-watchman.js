@@ -171,6 +171,9 @@ declare module 'fb-watchman' {
 
   declare type WatchmanQuery = {
     defer?: ReadonlyArray<string>,
+    // Subscriptions only: on a fresh instance, report no files rather than
+    // every file.
+    empty_on_fresh_instance?: boolean,
     expression?: WatchmanExpression,
     fields: ReadonlyArray<string>,
     glob?: ReadonlyArray<string>,

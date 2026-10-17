@@ -334,15 +334,6 @@ export class Watcher extends EventEmitter {
             }
             return;
           }
-          // Watchman handles recrawls internally - receiving a recrawl event
-          // when using Watchman would indicate a bug. Log an error and ignore.
-          if (change.event === 'recrawl' && useWatchman) {
-            this.#options.console.error(
-              'metro-file-map: Received unexpected recrawl event while using ' +
-                'Watchman. Watchman recrawls are not implemented.',
-            );
-            return;
-          }
           const onChange = this.#onChange;
           if (onChange != null) {
             onChange(change);

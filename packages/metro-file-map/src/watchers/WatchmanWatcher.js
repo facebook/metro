@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {WatchmanClockSpec} from '../flow-types';
+import type {ChangeEventClock, WatchmanClockSpec} from '../flow-types';
 import type {WatcherOptions} from './common';
 import type {
   Client,
@@ -35,6 +35,7 @@ import {createHash} from 'node:crypto';
 const debug = debugModule('Metro:WatchmanWatcher');
 
 const DELETE_EVENT = common.DELETE_EVENT;
+const RECRAWL_EVENT = common.RECRAWL_EVENT;
 const TOUCH_EVENT = common.TOUCH_EVENT;
 const SUB_PREFIX = 'metro-file-map';
 
@@ -161,6 +162,8 @@ export default class WatchmanWatcher extends AbstractWatcher {
         fields: ['name', 'exists', 'new', 'type', 'size', 'mtime_ms'],
         since,
         defer: self.#watchmanDeferStates,
+        // A fresh instance is reported as a recrawl, not a list of every file.
+        empty_on_fresh_instance: true,
         relative_root: watchProjectInfo.relativePath,
       };
 
@@ -209,7 +212,16 @@ export default class WatchmanWatcher extends AbstractWatcher {
       'Invalid subscription event.',
     );
 
-    if (Array.isArray(resp.files)) {
+    if (resp.is_fresh_instance) {
+      // Watchman can't say what changed since the clock we subscribed from,
+      // eg because it restarted or the watch was dropped in the meantime.
+      // Have the file map reconcile the whole root instead.
+      this.emitFileEvent({
+        event: RECRAWL_EVENT,
+        clock: this.#toChangeEventClock(resp.clock),
+        relativePath: '',
+      });
+    } else if (Array.isArray(resp.files)) {
       resp.files.forEach(change => this.#handleFileChange(change, resp.clock));
     }
     const {'state-enter': stateEnter, 'state-leave': stateLeave} = resp;
@@ -233,6 +245,14 @@ export default class WatchmanWatcher extends AbstractWatcher {
         stateLeave,
       );
     }
+  }
+
+  #toChangeEventClock(
+    rawClock: WatchmanSubscriptionEvent['clock'],
+  ): ChangeEventClock | void {
+    return typeof rawClock === 'string' && this.#watchProjectInfo != null
+      ? [this.#watchProjectInfo.root, rawClock]
+      : undefined;
   }
 
   /**
@@ -283,10 +303,7 @@ export default class WatchmanWatcher extends AbstractWatcher {
       return;
     }
 
-    const clock =
-      typeof rawClock === 'string' && this.#watchProjectInfo != null
-        ? ([this.#watchProjectInfo.root, rawClock] as [string, string])
-        : undefined;
+    const clock = this.#toChangeEventClock(rawClock);
 
     if (!exists) {
       self.emitFileEvent({event: DELETE_EVENT, clock, relativePath});

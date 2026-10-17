@@ -236,6 +236,25 @@ describe('Watcher backend choice in watch mode', () => {
     expect(mockStartedBackends.map(b => b.kind)).toEqual(['watchman']);
   });
 
+  test("a Watchman backend's recrawl reaches onChange", async () => {
+    mockWatchmanCrawl.mockImplementation(async () => crawlResult([]));
+    const watcher = createWatcher(true, null, true);
+    const onChange = jest.fn<[WatcherBackendChangeEvent], void>();
+    jest.spyOn(console, 'error');
+
+    await watcher.crawl();
+    await watcher.watch(onChange);
+    const recrawl: WatcherBackendChangeEvent = {
+      event: 'recrawl',
+      relativePath: '',
+      root: rootDir,
+    };
+    mockStartedBackends[0].emit(recrawl);
+
+    expect(onChange.mock.calls).toEqual([[recrawl]]);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   test('only the initial Watchman backends subscribe since the crawl clocks', async () => {
     mockWatchmanCrawl.mockImplementation(async () => crawlResult([]));
     const watcher = createWatcher(true, null, true);
