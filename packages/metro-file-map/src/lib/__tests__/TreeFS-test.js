@@ -167,6 +167,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),
@@ -214,6 +215,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         expect(tfs.lookup(givenPath, observations)).toEqual({
           exists: true,
           type: 'd',
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
         });
         expect(observations).toEqual({
@@ -289,6 +291,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         const observations = emptyObservations();
         expect(tfs.lookup(mixedPath, observations)).toEqual({
           exists: true,
+          canonicalPath: canonical(expectedRealPath),
           realPath: expectedRealPath,
           type: 'f',
           metadata: expect.any(Array),
@@ -473,6 +476,97 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
       const withUndefined = tfs.getDifference(newFiles);
 
       expect(withEmpty).toEqual(withUndefined);
+    });
+  });
+
+  describe('pathsOutsideRoots', () => {
+    const build = (rootDir: string, files: ReadonlyArray<string>) =>
+      new TreeFS({
+        rootDir: p(rootDir),
+        files: new Map<CanonicalPath, FileMetadata>(
+          files.map(file => [p(file), [123, 0, 0, null, 0]]),
+        ),
+        processFile: () => {
+          throw new Error('Not implemented');
+        },
+      });
+
+    test.each([
+      [['/root/project'], ['../outside/a.js', '../../far/b.js']],
+      [
+        ['/root/project/src'],
+        ['index.js', '../outside/a.js', '../../far/b.js'],
+      ],
+      [
+        ['/root/project/src', '/root/outside'],
+        ['index.js', '../../far/b.js'],
+      ],
+      [
+        ['/root/project/src/deep'],
+        ['index.js', 'src/a.js', '../outside/a.js', '../../far/b.js'],
+      ],
+      [['/root'], ['../../far/b.js']],
+      [['/root', '/far'], []],
+      [['/'], []],
+      [['/root/project', '/root/outside/a.js'], ['../../far/b.js']],
+      [
+        [],
+        [
+          'index.js',
+          'src/a.js',
+          'src/deep/b.js',
+          '../outside/a.js',
+          '../../far/b.js',
+        ],
+      ],
+    ])('with roots %j', (roots, expected) => {
+      const fs = build('/root/project', [
+        'index.js',
+        'src/a.js',
+        'src/deep/b.js',
+        '../outside/a.js',
+        '../../far/b.js',
+      ]);
+      expect([...fs.pathsOutsideRoots(roots.map(p))].sort()).toEqual(
+        expected.map(p).sort(),
+      );
+    });
+
+    test('includes symlinks and node_modules', () => {
+      expect([...tfs.pathsOutsideRoots([p('/project/foo')])].sort()).toEqual(
+        [
+          '../outside/external.js',
+          'abs-link-out',
+          'bar.js',
+          'link-cycle-1',
+          'link-cycle-2',
+          'link-to-foo',
+          'link-to-nowhere',
+          'link-to-self',
+          'node_modules/pkg/a.js',
+          'node_modules/pkg/package.json',
+          'root',
+        ]
+          .map(p)
+          .sort(),
+      );
+    });
+  });
+
+  describe('resolveSymlinks', () => {
+    test.each([
+      ['/project/foo', '/project/foo'],
+      ['/project/link-to-foo', '/project/foo'],
+      ['/project/link-to-foo/missing/dir', '/project/foo/missing/dir'],
+      ['/project/abs-link-out/lib', '/outside/lib'],
+      ['/project/link-to-nowhere/dir', '/project/nowhere/dir'],
+      ['/project/root/project/link-to-foo', '/project/foo'],
+      ['/project/missing/link-to-foo', '/project/missing/link-to-foo'],
+      ['/project/bar.js/dir', '/project/bar.js/dir'],
+      ['/project/link-to-self', '/project/link-to-self'],
+      ['/elsewhere/dir', '/elsewhere/dir'],
+    ])('%s -> %s', (mixedPath, expected) => {
+      expect(tfs.resolveSymlinks(p(mixedPath))).toEqual(p(expected));
     });
   });
 

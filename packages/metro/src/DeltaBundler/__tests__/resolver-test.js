@@ -175,6 +175,13 @@ function dep(name: string): TransformResultDependency {
 
       jest.requireMock('node:os').tmpdir = () => p('/tmp');
 
+      // Node resolves Metro's own `@babel/runtime` to a path on the host,
+      // which is not valid for the platform under test.
+      jest.doMock('../../lib/metroBabelRuntime', () => ({
+        getMetroBabelRuntimePackageJsonPath: () =>
+          p('/root/node_modules/@babel/runtime/package.json'),
+      }));
+
       fs = jest.requireMock('node:fs');
       originalError = console.error;
       // $FlowFixMe[cannot-write]
@@ -1647,6 +1654,45 @@ function dep(name: string): TransformResultDependency {
         ).toEqual({
           type: 'sourceFile',
           filePath: p('/root/node_modules/foo/asset.png'),
+        });
+      });
+
+      test('resolves a package whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            'lodash.zip': {
+              'package.json': JSON.stringify({name: 'lodash.zip'}),
+              'index.js': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          resolver: {assetExts: ['png', 'zip']},
+        });
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('lodash.zip')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/lodash.zip/index.js'),
+        });
+      });
+
+      test('resolves a directory whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          'icons.png': {'index.js': ''},
+        });
+
+        resolver = await createResolver();
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./icons.png')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/icons.png/index.js'),
         });
       });
     });

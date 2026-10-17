@@ -86,10 +86,12 @@ export type HealthCheckResult =
 
 export class Watcher extends EventEmitter {
   #activeWatcher: ?string;
-  #backends: ReadonlyArray<WatcherBackend> = [];
+  #backends: Array<WatcherBackend> = [];
   // Events received by started backends before watch() is called, to be
   // replayed once it is.
   #bufferedEvents: Array<WatcherBackendChangeEvent> = [];
+  #closed: boolean = false;
+  #createBackend: ?(root: Path) => Promise<WatcherBackend>;
   readonly #instanceId: number;
   #nextHealthCheckId: number = 0;
   #onChange: ?(change: WatcherBackendChangeEvent) => void;
@@ -351,9 +353,28 @@ export class Watcher extends EventEmitter {
       });
     };
 
+    this.#createBackend = createWatcherBackend;
     this.#backends = await Promise.all(
       this.#options.roots.map(createWatcherBackend),
     );
+  }
+
+  /**
+   * Watch a root in addition to those given at construction, reporting its
+   * changes to the `onChange` passed to `watch()`. Does nothing outside watch
+   * mode, i.e. before `watch()`.
+   */
+  async watchRoot(root: Path): Promise<void> {
+    const backend = await this.#createBackend?.(root);
+    if (backend == null) {
+      return;
+    }
+    // `close()` may have been called while the backend was starting.
+    if (this.#closed) {
+      await backend.stopWatching();
+    } else {
+      this.#backends.push(backend);
+    }
   }
 
   #handleHealthCheckObservation(basename: string) {
@@ -365,6 +386,7 @@ export class Watcher extends EventEmitter {
   }
 
   async close() {
+    this.#closed = true;
     await Promise.all(this.#backends.map(watcher => watcher.stopWatching()));
     this.#activeWatcher = null;
   }
