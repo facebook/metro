@@ -36,18 +36,21 @@ jest.mock(
 type MockBackend = {
   kind: 'native' | 'watchman',
   root: string,
+  clocks: ?Map<string, string>,
   emit: (event: WatcherBackendChangeEvent) => void,
 };
 const mockStartedBackends: Array<MockBackend> = [];
 function mockBackendClass(kind: MockBackend['kind']) {
   return class {
     #root: string;
+    #clocks: ?Map<string, string>;
     #listener: ?(event: WatcherBackendChangeEvent) => void;
     static isSupported(): boolean {
       return true;
     }
-    constructor(root: string) {
+    constructor(root: string, opts: {clocks?: ?Map<string, string>, ...}) {
       this.#root = root;
+      this.#clocks = opts.clocks;
     }
     onFileEvent(listener: (event: WatcherBackendChangeEvent) => void) {
       this.#listener = listener;
@@ -56,6 +59,7 @@ function mockBackendClass(kind: MockBackend['kind']) {
       mockStartedBackends.push({
         kind,
         root: this.#root,
+        clocks: this.#clocks,
         emit: event => this.#listener?.(event),
       });
     }
@@ -230,6 +234,23 @@ describe('Watcher backend choice in watch mode', () => {
 
     await watcher.watch(() => {});
     expect(mockStartedBackends.map(b => b.kind)).toEqual(['watchman']);
+  });
+
+  test('only the initial Watchman backends subscribe since the crawl clocks', async () => {
+    mockWatchmanCrawl.mockImplementation(async () => crawlResult([]));
+    const watcher = createWatcher(true, null, true);
+
+    await watcher.crawl();
+    await watcher.watch(() => {}, new Map([['', 'c:crawl-clock:1']]));
+    const addedRoot = path.join(path.sep, 'other');
+    await watcher.watchRoot(addedRoot);
+
+    expect(
+      mockStartedBackends.map(b => [b.root, b.clocks && [...b.clocks]]),
+    ).toEqual([
+      [rootDir, [[rootDir.replaceAll(path.sep, '/'), 'c:crawl-clock:1']]],
+      [addedRoot, null],
+    ]);
   });
 
   test('a failing Watchman crawl starts a native backend before the node crawl, and watch() replays its events', async () => {

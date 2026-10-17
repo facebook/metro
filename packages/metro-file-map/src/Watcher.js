@@ -296,7 +296,10 @@ export class Watcher extends EventEmitter {
       );
     }
 
-    const createWatcherBackend = (root: Path): Promise<WatcherBackend> => {
+    const createWatcherBackend = (
+      root: Path,
+      rootClocks: ?Map<string, WatchmanClockSpec>,
+    ): Promise<WatcherBackend> => {
       const watcherOptions: WatcherBackendOptions = {
         included: {
           extensions: new Set(extensions),
@@ -308,7 +311,7 @@ export class Watcher extends EventEmitter {
         },
         ignored: ignorePatternForWatch,
         watchmanDeferStates: this.#options.watchmanDeferStates,
-        clocks: watchmanClocks,
+        clocks: rootClocks,
       };
       const watcher: WatcherBackend = new WatcherImpl(root, watcherOptions);
 
@@ -353,16 +356,20 @@ export class Watcher extends EventEmitter {
       });
     };
 
-    this.#createBackend = createWatcherBackend;
+    // A root added by watchRoot() is watched before it is crawled, so it
+    // needs no crawl clock.
+    this.#createBackend = root => createWatcherBackend(root, null);
     this.#backends = await Promise.all(
-      this.#options.roots.map(createWatcherBackend),
+      this.#options.roots.map(root =>
+        createWatcherBackend(root, watchmanClocks),
+      ),
     );
   }
 
   /**
    * Watch a root in addition to those given at construction, reporting its
    * changes to the `onChange` passed to `watch()`. Does nothing outside watch
-   * mode, i.e. before `watch()`.
+   * mode, i.e. before the backends for the initial roots have started.
    */
   async watchRoot(root: Path): Promise<void> {
     const backend = await this.#createBackend?.(root);
