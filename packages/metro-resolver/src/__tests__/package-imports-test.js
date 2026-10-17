@@ -169,17 +169,31 @@ describe('import subpath conditional imports resolution', () => {
   });
 
   test.each([
-    ['unmatched condition', {browser: './lib/foo-browser.js'}],
-    ['empty condition object', {}],
+    [
+      'unmatched condition',
+      {require: './lib/foo.js'},
+      {browser: './lib/foo-browser.js'},
+    ],
+    ['empty condition object', {require: './lib/foo.js'}, {}],
     [
       'nested unmatched condition',
+      {require: './lib/foo.js'},
       {require: {browser: './lib/foo-browser.js'}},
     ],
-  ])('should continue parent conditions after %s', (_, nestedConditions) => {
-    for (const fallback of [
-      {require: './lib/foo.js'},
+    [
+      'unmatched condition',
       {default: './lib/foo.js'},
-    ]) {
+      {browser: './lib/foo-browser.js'},
+    ],
+    ['empty condition object', {default: './lib/foo.js'}, {}],
+    [
+      'nested unmatched condition',
+      {default: './lib/foo.js'},
+      {require: {browser: './lib/foo-browser.js'}},
+    ],
+  ])(
+    'should continue parent conditions after %s to %p',
+    (_, fallback, nestedConditions) => {
       const logWarning = jest.fn();
       const context = {
         ...baseContext,
@@ -202,8 +216,8 @@ describe('import subpath conditional imports resolution', () => {
         filePath: p('/root/node_modules/test-pkg/lib/foo.js'),
       });
       expect(logWarning).not.toHaveBeenCalled();
-    }
-  });
+    },
+  );
 
   test.each([
     ['null', null, 'no match was resolved'],
