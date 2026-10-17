@@ -98,11 +98,15 @@ export class Watcher extends EventEmitter {
     /* basename */ string,
     /* resolve */ () => void,
   > = new Map();
+  // Whether watch() uses a Watchman backend. False if the Watchman crawl fell
+  // back to the node crawler, which returns no clock to subscribe `since`.
+  #useWatchmanWatcher: boolean;
 
   constructor(options: WatcherOptions) {
     super();
     this.#options = options;
     this.#instanceId = nextInstanceId++;
+    this.#useWatchmanWatcher = options.useWatchman;
   }
 
   async crawl(): Promise<CrawlResult> {
@@ -113,13 +117,11 @@ export class Watcher extends EventEmitter {
     // already be watching before the crawl begins, and their events buffered,
     // for changes made while crawling not to be missed. Watchman backends are
     // started by watch(), which subscribes `since` the crawl's clock to cover
-    // the same window.
-    if (options.watch && !options.useWatchman) {
-      await this.#startBackends();
-      // end() may have closed us before the backends were set - don't leak them.
-      if (options.abortSignal.aborted) {
-        await this.close();
-      }
+    // the same window. If the Watchman crawl falls back to the node crawler,
+    // there is no clock, so #crawl() starts non-Watchman backends before the
+    // node crawl instead.
+    if (!options.useWatchman) {
+      await this.#startBackendsBeforeCrawl();
     }
 
     const result = await this.#crawl({
@@ -130,6 +132,17 @@ export class Watcher extends EventEmitter {
 
     this.#options.perfLogger?.point('crawl_end');
     return result;
+  }
+
+  async #startBackendsBeforeCrawl(): Promise<void> {
+    if (!this.#options.watch) {
+      return;
+    }
+    await this.#startBackends();
+    // end() may have closed us before the backends were set - don't leak them.
+    if (this.#options.abortSignal.aborted) {
+      await this.close();
+    }
   }
 
   async recrawl(
@@ -200,6 +213,10 @@ export class Watcher extends EventEmitter {
           '  ' +
           firstError.toString(),
       );
+      // Watch with a non-Watchman backend, started before the node crawl so
+      // that changes made during it are not missed.
+      this.#useWatchmanWatcher = false;
+      await this.#startBackendsBeforeCrawl();
       try {
         delta = await nodeCrawl(crawlerOptions);
       } catch (retryError) {
@@ -241,7 +258,8 @@ export class Watcher extends EventEmitter {
   }
 
   async #startBackends(clocks?: WatchmanClocks): Promise<void> {
-    const {extensions, ignorePatternForWatch, useWatchman} = this.#options;
+    const {extensions, ignorePatternForWatch} = this.#options;
+    const useWatchman = this.#useWatchmanWatcher;
 
     // WatchmanWatcher > NativeWatcher > FallbackWatcher
     const WatcherImpl = useWatchman
