@@ -19,6 +19,8 @@ import type {
   NormalizedExportsLikeMap,
 } from '../types';
 
+const NO_MATCH: symbol = Symbol('no-match');
+
 export function reduceExportsLikeMap(
   exportsLikeMap: NormalizedExportsLikeMap,
   conditionNames: ReadonlySet<string>,
@@ -33,9 +35,9 @@ export function reduceExportsLikeMap(
       createConfigError,
     );
 
-    // Preserve unmatched subpaths so they still take precedence over less
-    // specific patterns, just like explicit null targets.
-    result.set(subpath, subpathValue ?? null);
+    // An exact key takes precedence over subpath patterns even when no
+    // condition matches, so retain it as an explicit null.
+    result.set(subpath, typeof subpathValue === 'string' ? subpathValue : null);
   }
 
   for (const value of result.values()) {
@@ -54,7 +56,7 @@ export function reduceExportsLikeMap(
  * Reduce an "exports"-like subpath value after asserting the passed
  * `conditionNames` in any nested conditions.
  *
- * Returns `undefined` in the case that none of the asserted `conditionNames`
+ * Returns `NO_MATCH` in the case that none of the asserted `conditionNames`
  * are matched.
  *
  * See https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports.
@@ -63,7 +65,7 @@ function reduceConditionalExport(
   subpathValue: Values<ExportsLikeMap>,
   conditionNames: ReadonlySet<string>,
   createConfigError: (reason: string) => Error,
-): string | null | void {
+): string | null | symbol {
   if (subpathValue == null || typeof subpathValue === 'string') {
     return subpathValue;
   }
@@ -85,12 +87,11 @@ function reduceConditionalExport(
         createConfigError,
       );
       // Null excludes this entry; only an unmatched condition falls through.
-      // eslint-disable-next-line lint/strictly-null
-      if (resolved !== undefined) {
+      if (resolved !== NO_MATCH) {
         return resolved;
       }
     }
   }
 
-  return undefined;
+  return NO_MATCH;
 }
