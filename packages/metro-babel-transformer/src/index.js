@@ -113,9 +113,9 @@ function transform(
         name: 'metro',
         platform: options.platform,
         inlinePlatform: options.inlinePlatform,
-        // Named for the options of presets such as `@react-native/babel-preset`,
-        // which read them from the caller: a string `enableBabelRuntime` is the
-        // `@babel/runtime` version to target.
+        // Consumers, including `@react-native/babel-preset`, accept a
+        // string-valued `enableBabelRuntime`, which sets the `@babel/runtime`
+        // version to target.
         ...(options.babelRuntimeModuleName != null &&
         options.babelRuntimeVersion != null
           ? {
