@@ -555,7 +555,7 @@ describe('processRegularFile', () => {
     jest.resetModules();
     jest.clearAllMocks();
     jest.unmock('../../worker.js');
-    jest.mock('fs', () => ({
+    jest.mock('node:fs', () => ({
       readFileSync: mockReadFileSync,
     }));
     FileProcessor = require('../FileProcessor').FileProcessor;

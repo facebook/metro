@@ -31,7 +31,6 @@
     "debug": "^4.4.0",
     "error-stack-parser": "^2.0.6",
     "flow-enums-runtime": "^0.0.6",
-    "graceful-fs": "^4.2.4",
     "flow-parser": "0.335.0",
     "invariant": "^2.2.4",
     "jest-worker": "^29.7.0",

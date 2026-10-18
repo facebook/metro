@@ -345,7 +345,7 @@ describe('FileMap', () => {
     // $FlowFixMe[incompatible-type]
     mockChangedFiles = null;
 
-    fs = require('graceful-fs');
+    fs = require('node:fs');
 
     consoleWarn = console.warn;
     consoleError = console.error;

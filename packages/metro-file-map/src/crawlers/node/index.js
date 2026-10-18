@@ -12,7 +12,7 @@
 import type {CrawlerOptions, CrawlResult, FileData} from '../../flow-types';
 
 import {RootPathUtils} from '../../lib/RootPathUtils';
-import * as fs from 'graceful-fs';
+import fs from 'node:fs';
 import * as path from 'node:path';
 
 function find(options: CrawlerOptions): Promise<FileData> {
