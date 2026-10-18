@@ -687,7 +687,9 @@ Whether we should enable CMD+R hotkey for refreshing the bundle.
 
 Type: `(Middleware, MetroServer) => Middleware`
 
-A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. For example:
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Metro logs a deprecation warning when this option is set to anything other than its default. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
+
+For example:
 
 :::tip
 You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a utility to extend the base `metroMiddleware` and to mount additional middleware handlers.
@@ -702,6 +704,42 @@ enhanceMiddleware: (metroMiddleware: Middleware, metroServer: MetroServer) => {
 ```
 
 The `Middleware` type is an alias for [`connect.HandleFunction`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/876b9ec96ba02d0c84b1e49af5890c8f5aa2dfe3/types/connect/index.d.ts#L29).
+
+#### `unstable_middleware` <div class="label experimental">Experimental</div>
+
+Type: `Array<Middleware | [path: string, handler: Middleware]>`
+
+Custom [`connect`](https://www.npmjs.com/package/connect) middleware list allowing integrators to extend Metro's dev server endpoints, mounted in array order. A `[path, handler]` entry mounts the handler with `connect` semantics: it matches the path as a prefix and strips it from `req.url`, keeping the full URL in `req.originalUrl`.
+
+[`runServer`](./API.md#async-runserverconfig-options) also takes an `unstable_middleware` option, which runs after these handlers.
+
+```js
+server: {
+  unstable_middleware: [
+    ['/custom-endpoint', customEndpointMiddleware()],
+    notFoundPage,
+  ],
+  unstable_priorityMiddleware: [corsMiddleware],
+},
+```
+
+#### `unstable_priorityMiddleware` <div class="label experimental">Experimental</div>
+
+Type: `Array<Middleware | [path: string, handler: Middleware]>`
+
+Like [`unstable_middleware`](#unstable_middleware-experimental), but runs before Metro. These handlers see the URL before [`rewriteRequestUrl`](#rewriterequesturl) is applied.
+
+Each priority middleware handler must call `next()` for every request it doesn't fully handle itself. Otherwise the request never reaches Metro, which builds and serves bundles, source maps and assets, symbolicates stack traces, and serves its other dev server endpoints.
+
+[`runServer`](./API.md#async-runserverconfig-options) also takes an `unstable_priorityMiddleware` option, which runs before these handlers.
+
+#### `unstable_onServerCreated` <div class="label experimental">Experimental</div>
+
+Type: `(MetroServer) => void`
+
+Called with Metro's server instance when [`runServer`](./API.md#async-runserverconfig-options) or [`createConnectMiddleware`](./API.md#createconnectmiddlewareconfig-options) creates it, after the bundler is ready when `waitForBundler` is set, and before `runServer` starts the HTTP server.
+
+`runServer` also takes an `unstable_onServerCreated` option, which is called after this one.
 
 #### `rewriteRequestUrl`
 
@@ -829,6 +867,8 @@ Arrays and function based config parameters do not deeply merge and will instead
 This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
 
 :::
+
+`server.unstable_middleware` and `server.unstable_priorityMiddleware` are combined instead: later configs wrap earlier ones, so their `unstable_middleware` runs last and their `unstable_priorityMiddleware` runs first. An entry already in an earlier config, e.g. copied with a spread, is kept once.
 
 #### Merging Example
 

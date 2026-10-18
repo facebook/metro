@@ -152,6 +152,78 @@ export default class TreeFS implements MutableFileSystem {
     return tfs;
   }
 
+  /**
+   * Canonical paths of all files and symlinks outside every given directory.
+   * Does not visit the contents of any directory within one.
+   */
+  *pathsOutsideRoots(mixedRoots: ReadonlyArray<Path>): Iterable<string> {
+    const rootPrefixes = mixedRoots.map(root =>
+      this.#absoluteDirPrefix(this.#normalizePath(root)),
+    );
+    yield* this.#pathsOutsideRoots(this.#rootNode, '', rootPrefixes);
+  }
+
+  /**
+   * The absolute path of `mixedPath` with each symlink it passes through in
+   * this file system resolved, whether or not the path itself exists here.
+   * Segments beyond the first missing one are kept as given.
+   */
+  resolveSymlinks(mixedPath: Path): Path {
+    const result = this.#lookupByNormalPath(this.#normalizePath(mixedPath), {
+      followLeaf: true,
+    });
+    if (result.exists) {
+      return this.#pathUtils.normalToAbsolute(result.canonicalPath);
+    }
+    const {canonicalMissingPath, remainingPath} = result;
+    return this.#pathUtils.normalToAbsolute(
+      remainingPath === ''
+        ? canonicalMissingPath
+        : canonicalMissingPath + path.sep + remainingPath,
+    );
+  }
+
+  *#pathsOutsideRoots(
+    node: DirectoryNode,
+    prefix: string,
+    rootPrefixes: ReadonlyArray<string>,
+  ): Iterable<string> {
+    for (const [name, child] of node) {
+      const childPath = prefix === '' ? name : prefix + path.sep + name;
+      if (name === '..' && isDirectory(child)) {
+        // Past the top of a Windows drive, '..' holds the other drives, which
+        // a root containing its own path does not contain.
+        yield* this.#pathsOutsideRoots(child, childPath, rootPrefixes);
+        continue;
+      }
+      const childPrefix = this.#absoluteDirPrefix(childPath);
+      if (rootPrefixes.some(root => childPrefix.startsWith(root))) {
+        continue;
+      }
+      if (!isDirectory(child)) {
+        yield childPath;
+      } else if (rootPrefixes.some(root => root.startsWith(childPrefix))) {
+        yield* this.#pathsOutsideRoots(child, childPath, rootPrefixes);
+      } else {
+        for (const {canonicalPath} of this.#metadataIterator(
+          child,
+          {includeNodeModules: true, includeSymlinks: true},
+          childPath,
+        )) {
+          yield canonicalPath;
+        }
+      }
+    }
+  }
+
+  // The absolute path of a normal path, with a trailing separator.
+  #absoluteDirPrefix(normalPath: string): string {
+    const absolutePath = this.#pathUtils.normalToAbsolute(normalPath);
+    return absolutePath.endsWith(path.sep)
+      ? absolutePath
+      : absolutePath + path.sep;
+  }
+
   getSize(mixedPath: Path): ?number {
     const fileMetadata = this.#getFileData(mixedPath);
     return (fileMetadata && fileMetadata[H.SIZE]) ?? null;
@@ -304,7 +376,7 @@ export default class TreeFS implements MutableFileSystem {
     }
     const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
     if (isDirectory(node)) {
-      return {exists: true, realPath, type: 'd'};
+      return {exists: true, canonicalPath, realPath, type: 'd'};
     }
     invariant(
       isRegularFile(node),
@@ -312,7 +384,7 @@ export default class TreeFS implements MutableFileSystem {
       mixedPath,
       canonicalPath,
     );
-    return {exists: true, realPath, type: 'f', metadata: node};
+    return {exists: true, canonicalPath, realPath, type: 'f', metadata: node};
   }
 
   getAllFiles(): Array<Path> {
@@ -607,6 +679,8 @@ export default class TreeFS implements MutableFileSystem {
     | {
         canonicalMissingPath: string,
         missingSegmentName: string,
+        // The normal path following the missing segment, or '' if none.
+        remainingPath: string,
         exists: false,
       } {
     // We'll update the target if we hit a symlink.
@@ -662,6 +736,7 @@ export default class TreeFS implements MutableFileSystem {
               : targetNormalPath.slice(0, fromIdx - 1),
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: targetNormalPath.slice(fromIdx),
           };
         }
         segmentNode = new Map();
@@ -724,6 +799,7 @@ export default class TreeFS implements MutableFileSystem {
             canonicalMissingPath: currentPath,
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: targetNormalPath.slice(fromIdx),
           };
         }
 
@@ -810,6 +886,7 @@ export default class TreeFS implements MutableFileSystem {
             canonicalMissingPath: targetNormalPath,
             exists: false,
             missingSegmentName: segmentName,
+            remainingPath: '',
           };
         }
         seen.add(targetNormalPath);
