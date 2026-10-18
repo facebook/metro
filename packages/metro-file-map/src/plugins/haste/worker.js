@@ -13,7 +13,7 @@
 'use strict';
 
 const excludedExtensions = require('../../workerExclusionList');
-const path = require('path');
+const path = require('node:path');
 
 /*::
 import type {MetadataWorker, WorkerMessage, V8Serializable} from '../../flow-types';
@@ -21,8 +21,8 @@ import type {MetadataWorker, WorkerMessage, V8Serializable} from '../../flow-typ
 
 const PACKAGE_JSON = path.sep + 'package.json';
 
-module.exports = class Worker /*:: implements MetadataWorker */ {
-  /*:: + */ #hasteImpl /*: ?Readonly<{getHasteName: string => ?string}>  */ =
+class Worker /*:: implements MetadataWorker */ {
+  /*:: readonly  */ #hasteImpl /*: ?Readonly<{getHasteName: string => ?string}>  */ =
     null;
 
   constructor(
@@ -30,7 +30,9 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
   ) {
     if (hasteImplModulePath != null) {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      this.#hasteImpl = require(hasteImplModulePath);
+      const mod = require(hasteImplModulePath);
+      this.#hasteImpl =
+        mod.__esModule === true && 'default' in mod ? mod.default : mod;
     }
   }
 
@@ -61,4 +63,6 @@ module.exports = class Worker /*:: implements MetadataWorker */ {
     }
     return hasteName;
   }
-};
+}
+
+module.exports = Worker;

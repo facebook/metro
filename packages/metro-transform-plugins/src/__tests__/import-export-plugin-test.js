@@ -17,6 +17,8 @@ const {compare, transformToAst} = require('../__mocks__/test-helpers');
 const importExportPlugin = require('../import-export-plugin');
 // $FlowFixMe[untyped-import] @babel/code-frame
 const {codeFrameColumns} = require('@babel/code-frame');
+const generate = require('@babel/generator').default;
+const vm = require('node:vm');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',
@@ -156,8 +158,8 @@ test('exports members of another module directly from an import (as default)', (
 
     var _foo = require('bar').foo;
     var _baz = require('bar').baz;
-    exports.default = _foo;
     exports.baz = _baz;
+    exports.default = _foo;
   `;
 
   compare([importExportPlugin], code, expected, opts);
@@ -233,8 +235,8 @@ test('allows mixed esm and cjs exports', () => {
     exports.bar = 'bar';
     module.exports.baz = 'baz';
     class _default {}
-    exports.default = _default;
     exports.foo = foo;
+    exports.default = _default;
   `;
 
   compare([importExportPlugin], code, expected, opts);
@@ -248,6 +250,36 @@ test('exports destructured named object members', () => {
   const expected = `
     Object.defineProperty(exports, '__esModule', {value: true});
     const {foo,bar} = {foo: 'bar',bar: 'baz'};
+    exports.foo = foo;
+    exports.bar = bar;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+test('exports destructured renamed object members', () => {
+  const code = `
+    export const {foo: bar, baz} = {foo: 'bar', baz: 'baz'};
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const {foo: bar,baz} = {foo: 'bar', baz: 'baz'};
+    exports.bar = bar;
+    exports.baz = baz;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+test('exports destructured object rest members', () => {
+  const code = `
+    export const {foo, ...bar} = {foo: 'foo', bar: 'bar', baz: 'baz'};
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const {foo,...bar} = {foo: 'foo', bar: 'bar', baz: 'baz'};
     exports.foo = foo;
     exports.bar = bar;
   `;
@@ -270,6 +302,21 @@ test('exports destructured named array members', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
+test('exports destructured array rest members', () => {
+  const code = `
+    export const [foo, ...bar] = ['foo','bar','baz'];
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const [foo,...bar] = ['foo','bar','baz'];
+    exports.foo = foo;
+    exports.bar = bar;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
 test('exports members of another module directly from an import (as all)', () => {
   const code = `
     export * from 'bar';
@@ -278,9 +325,10 @@ test('exports members of another module directly from an import (as all)', () =>
   const expected = `
     Object.defineProperty(exports, '__esModule', {value: true});
 
-    var _bar = require("bar");
+    var _bar = require('bar');
 
     for (var _key in _bar) {
+      if (_key === "default") continue;
       exports[_key] = _bar[_key];
     }
   `;
@@ -292,6 +340,196 @@ test('exports members of another module directly from an import (as all)', () =>
     > 2 |     export * from 'bar';
         |     ^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
   `);
+});
+
+test('exports members of another module directly from an import (as namespace)', () => {
+  const code = `
+    export * as AppleIcons from 'apple-icons';
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+
+    var _AppleIcons = _$$_IMPORT_ALL('apple-icons');
+    exports.AppleIcons = _AppleIcons;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 2 |     export * as AppleIcons from 'apple-icons';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (apple-icons)"
+  `);
+});
+
+test('places export all above explicit exports', () => {
+  const code = `
+    export * from 'foo';
+    export {baz} from 'bar';
+    const bax = 'bax';
+    export default bax;
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+
+    var _foo = require('foo');
+
+    for (var _key in _foo) {
+      if (_key === "default") continue;
+      exports[_key] = _foo[_key];
+    }
+
+    var _baz = require('bar').baz;
+    const bax = 'bax';
+
+    var _default = bax;
+
+    exports.baz = _baz;
+    exports.default = _default;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+test('explicit exports override export all at runtime', () => {
+  const transformedCode = generate(
+    transformToAst(
+      [importExportPlugin],
+      `
+        export * from 'foo';
+        export const overridden = 'explicit named';
+        export default 'explicit default';
+      `,
+      opts,
+    ),
+  ).code;
+  const context = {
+    exports: {} as {[string]: unknown},
+    require: (id: string) => {
+      if (id !== 'foo') {
+        throw new Error(`Unexpected module: ${id}`);
+      }
+      return {
+        default: 'star default',
+        overridden: 'star named',
+        sourceOnly: 'source only',
+      };
+    },
+  };
+
+  vm.runInNewContext(transformedCode, context);
+
+  expect(context.exports.__esModule).toBe(true);
+  expect(context.exports.default).toBe('explicit default');
+  expect(context.exports.overridden).toBe('explicit named');
+  expect(context.exports.sourceOnly).toBe('source only');
+});
+
+test('export all does not re-export the default of the source', () => {
+  const transformedCode = generate(
+    transformToAst(
+      [importExportPlugin],
+      `
+        export * from 'foo';
+      `,
+      opts,
+    ),
+  ).code;
+  const context = {
+    exports: {} as {[string]: unknown},
+    require: (id: string) => {
+      if (id !== 'foo') {
+        throw new Error(`Unexpected module: ${id}`);
+      }
+      return {
+        default: 'star default',
+        named: 'star named',
+      };
+    },
+  };
+
+  vm.runInNewContext(transformedCode, context);
+
+  // Per the ES spec (GetExportedNames) and Node.js, `export *` re-exports
+  // named exports but never the source module's default export.
+  expect(context.exports.named).toBe('star named');
+  expect('default' in context.exports).toBe(false);
+});
+
+test('export all as namespace includes the default of the source', () => {
+  const transformedCode = generate(
+    transformToAst(
+      [importExportPlugin],
+      `
+        export * as ns from 'foo';
+      `,
+      opts,
+    ),
+  ).code;
+  const source = {
+    __esModule: true,
+    default: 'star default',
+    named: 'star named',
+  };
+  // Faithful stand-in for metroImportAll: resolve the module via require,
+  // then expose an ES module's namespace as-is (default included).
+  const requireMock = (id: string) => {
+    if (id !== 'foo') {
+      throw new Error(`Unexpected module: ${id}`);
+    }
+    return source;
+  };
+  const exportsObj: {[string]: unknown} = {};
+  const context: {[string]: unknown} = {
+    exports: exportsObj,
+    require: requireMock,
+  };
+  context[opts.importAll] = (id: string) => {
+    const mod = requireMock(id);
+    return mod.__esModule === true ? mod : {...mod, default: mod};
+  };
+
+  vm.runInNewContext(transformedCode, context);
+
+  // `export * as ns` (ExportNamespaceSpecifier) creates a namespace object,
+  // which per the ES spec DOES expose the source module's default export -
+  // unlike bare `export *`.
+  expect(exportsObj.ns).toEqual({
+    __esModule: true,
+    default: 'star default',
+    named: 'star named',
+  });
+});
+
+test('re-export dependencies evaluate before module body at runtime', () => {
+  const transformedCode = generate(
+    transformToAst(
+      [importExportPlugin],
+      `
+        events.push('body');
+        export {value} from 'foo';
+        export * from 'bar';
+      `,
+      opts,
+    ),
+  ).code;
+  const events = [];
+  const context = {
+    events,
+    exports: {} as {[string]: unknown},
+    require: (id: string) => {
+      events.push(`require ${id}`);
+      return id === 'foo' ? {value: 'foo value'} : {star: 'bar star'};
+    },
+  };
+
+  vm.runInNewContext(transformedCode, context);
+
+  expect(events).toEqual(['require foo', 'require bar', 'body']);
+  expect(context.exports.value).toBe('foo value');
+  expect(context.exports.star).toBe('bar star');
 });
 
 test('enables module exporting when something is exported', () => {

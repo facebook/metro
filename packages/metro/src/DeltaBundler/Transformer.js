@@ -10,20 +10,22 @@
  */
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
+import type {DynamicRoot} from '../lib/dynamicRoots';
 import type {TransformerConfig, TransformOptions} from './Worker';
 import type {ConfigT} from 'metro-config';
 
+import {getAssetUrlPath} from '../Assets';
 import {normalizePathSeparatorsToPosix} from '../lib/pathUtils';
 import getTransformCacheKey from './getTransformCacheKey';
 import WorkerFarm from './WorkerFarm';
-import assert from 'assert';
-import crypto from 'crypto';
-import fs from 'fs';
+import debugModule from 'debug';
 import {Cache, stableHash} from 'metro-cache';
-import path from 'path';
+import assert from 'node:assert';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')('Metro:Transformer');
+const debug = debugModule('Metro:Transformer');
 
 type GetOrComputeSha1Fn = string => Promise<
   Readonly<{content?: Buffer, sha1: string}>,
@@ -33,17 +35,22 @@ export default class Transformer {
   _config: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
+  _getDynamicRoots: () => ReadonlyArray<DynamicRoot>;
   _getSha1: GetOrComputeSha1Fn;
   _workerFarm: WorkerFarm;
 
   constructor(
     config: ConfigT,
-    opts: Readonly<{getOrComputeSha1: GetOrComputeSha1Fn}>,
+    opts: Readonly<{
+      getDynamicRoots?: () => ReadonlyArray<DynamicRoot>,
+      getOrComputeSha1: GetOrComputeSha1Fn,
+    }>,
   ) {
     this._config = config;
 
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
+    this._getDynamicRoots = opts.getDynamicRoots ?? (() => []);
     this._getSha1 = opts.getOrComputeSha1;
 
     // Remove the transformer config params that we don't want to pass to the
@@ -61,8 +68,6 @@ export default class Transformer {
       transformerConfig,
     };
 
-    this._workerFarm = new WorkerFarm(config, transformerOptions);
-
     const globalCacheKey = this._cache.isDisabled
       ? ''
       : getTransformCacheKey({
@@ -74,6 +79,9 @@ export default class Transformer {
     const baseHashBuffer = stableHash([globalCacheKey]);
     this._baseHash = baseHashBuffer.toString('binary');
     debug('Base hash: %s', baseHashBuffer.toString('hex'));
+
+    // Start workers last - nothing can end them if the constructor throws.
+    this._workerFarm = new WorkerFarm(config, transformerOptions);
   }
 
   async transformFile(
@@ -108,7 +116,22 @@ export default class Transformer {
       }
     }
 
-    const localPath = path.relative(this._config.projectRoot, filePath);
+    const projectRelativePath = path.relative(
+      this._config.projectRoot,
+      filePath,
+    );
+    // Assets are the only modules whose output depends on watchFolders and
+    // dynamic roots, via the URL path baked into them, so that dependency
+    // enters the cache key per asset here and not in the base hash.
+    const assetUrlPath =
+      type === 'asset'
+        ? getAssetUrlPath(
+            filePath,
+            this._config.projectRoot,
+            this._config.watchFolders,
+            this._getDynamicRoots(),
+          )
+        : null;
 
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.
@@ -117,7 +140,8 @@ export default class Transformer {
       // Project-relative, posix-separated path for portability. Necessary in
       // addition to content hash because transformers receive path as an
       // input, and may apply e.g. extension-based logic.
-      normalizePathSeparatorsToPosix(localPath),
+      normalizePathSeparatorsToPosix(projectRelativePath),
+      assetUrlPath,
       customTransformOptions,
       dev,
       experimentalImportSupport,
@@ -166,9 +190,10 @@ export default class Transformer {
     }> = result
       ? {result, sha1}
       : await this._workerFarm.transform(
-          localPath,
+          projectRelativePath,
           transformerOptions,
           content,
+          assetUrlPath ?? undefined,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

@@ -10,18 +10,21 @@
  */
 
 import type {AssetData} from '../../Assets';
+import type {DynamicRoot} from '../../lib/dynamicRoots';
 import type {Module, ReadOnlyDependencies} from '../types';
 
-import {getAssetData} from '../../Assets';
+import {getAssetData, getAssetUrlPath} from '../../Assets';
 import {getJsOutput, isJsModule} from './helpers/js';
-import path from 'path';
+import path from 'node:path';
 
 type Options = {
-  +processModuleFilter: (module: Module<>) => boolean,
+  readonly processModuleFilter: (module: Module<>) => boolean,
   assetPlugins: ReadonlyArray<string>,
   platform: ?string,
   projectRoot: string,
   publicPath: string,
+  watchFolders: ReadonlyArray<string>,
+  dynamicRoots?: ReadonlyArray<DynamicRoot>,
 };
 
 export default async function getAssets(
@@ -41,7 +44,12 @@ export default async function getAssets(
       promises.push(
         getAssetData(
           module.path,
-          path.relative(options.projectRoot, module.path),
+          getAssetUrlPath(
+            module.path,
+            options.projectRoot,
+            options.watchFolders,
+            options.dynamicRoots,
+          ),
           options.assetPlugins,
           options.platform,
           options.publicPath,

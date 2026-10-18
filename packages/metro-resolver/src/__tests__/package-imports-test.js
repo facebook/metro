@@ -24,7 +24,6 @@ describe('subpath imports resolution support', () => {
       [p('/root/node_modules/test-pkg/package.json')]: '',
       [p('/root/node_modules/test-pkg/index.js')]: '',
       [p('/root/node_modules/test-pkg/index-main.js')]: '',
-      // $FlowFixMe[incompatible-type] Flow wants a string for some reason
       [p('/root/node_modules/test-pkg/symlink.js')]: {
         realPath: p('/root/node_modules/test-pkg/symlink-target.js'),
       },
@@ -85,6 +84,31 @@ describe('import subpath patterns resolution support', () => {
       filePath: p('/root/node_modules/test-pkg/src/features/foo.js.js'),
     });
   });
+
+  test('exact subpath with a null or unmatched target does not fall back to a pattern', () => {
+    const logWarning = jest.fn();
+    const context = {
+      ...createResolutionContext({
+        [p('/root/node_modules/test-pkg/package.json')]: JSON.stringify({
+          name: 'test-pkg',
+          imports: {
+            '#features/*': './src/features/*.js',
+            '#features/foo': null,
+            '#features/bar': {browser: './src/features/bar.web.js'},
+          },
+        }),
+        [p('/root/node_modules/test-pkg/src/index.js')]: '',
+        [p('/root/node_modules/test-pkg/src/features/foo.js')]: '',
+        [p('/root/node_modules/test-pkg/src/features/bar.js')]: '',
+      }),
+      originModulePath: p('/root/node_modules/test-pkg/src/index.js'),
+      unstable_logWarning: logWarning,
+    };
+
+    expect(() => Resolver.resolve(context, '#features/foo', null)).toThrow();
+    expect(() => Resolver.resolve(context, '#features/bar', null)).toThrow();
+    expect(logWarning).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('import subpath conditional imports resolution', () => {
@@ -143,4 +167,88 @@ describe('import subpath conditional imports resolution', () => {
       filePath: p('/root/node_modules/test-pkg/lib/foo-react-native.mjs'),
     });
   });
+
+  test.each([
+    [
+      'unmatched condition',
+      {require: './lib/foo.js'},
+      {browser: './lib/foo-browser.js'},
+    ],
+    ['empty condition object', {require: './lib/foo.js'}, {}],
+    [
+      'nested unmatched condition',
+      {require: './lib/foo.js'},
+      {require: {browser: './lib/foo-browser.js'}},
+    ],
+    [
+      'unmatched condition',
+      {default: './lib/foo.js'},
+      {browser: './lib/foo-browser.js'},
+    ],
+    ['empty condition object', {default: './lib/foo.js'}, {}],
+    [
+      'nested unmatched condition',
+      {default: './lib/foo.js'},
+      {require: {browser: './lib/foo-browser.js'}},
+    ],
+  ])(
+    'should continue parent conditions after %s to %p',
+    (_, fallback, nestedConditions) => {
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        ...createPackageAccessors({
+          [p('/root/node_modules/test-pkg/package.json')]: {
+            imports: {
+              '#foo': {
+                'react-native': nestedConditions,
+                ...fallback,
+              },
+            },
+          },
+        }),
+        unstable_conditionNames: ['react-native'],
+        unstable_logWarning: logWarning,
+      };
+
+      expect(Resolver.resolve(context, '#foo', null)).toEqual({
+        type: 'sourceFile',
+        filePath: p('/root/node_modules/test-pkg/lib/foo.js'),
+      });
+      expect(logWarning).not.toHaveBeenCalled();
+    },
+  );
+
+  test.each([
+    ['null', null, 'no match was resolved'],
+    ['invalid', 'invalid-target', 'invalid package.json configuration'],
+    ['numeric', 42, 'invalid package.json configuration'],
+    ['boolean', false, 'invalid package.json configuration'],
+    ['unsupported empty array', [], 'no match was resolved'],
+    ['unsupported nested array', ['./lib/foo.js'], 'no match was resolved'],
+  ])(
+    'should not continue parent conditions after a %s target',
+    (_, target, warning) => {
+      const logWarning = jest.fn();
+      const context = {
+        ...baseContext,
+        ...createPackageAccessors({
+          [p('/root/node_modules/test-pkg/package.json')]: JSON.stringify({
+            imports: {
+              '#foo': {
+                'react-native': {require: target},
+                default: './lib/foo.js',
+              },
+            },
+          }),
+        }),
+        unstable_conditionNames: ['react-native'],
+        unstable_logWarning: logWarning,
+      };
+
+      expect(() => Resolver.resolve(context, '#foo', null)).toThrow();
+      expect(logWarning).toHaveBeenCalledTimes(1);
+      expect(logWarning.mock.calls[0][0]).toContain(warning);
+    },
+  );
 });

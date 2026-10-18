@@ -15,10 +15,10 @@ import type {
   BundlerResolution,
   TransformInputOptions,
   TransformResultDependency,
+  VirtualSource,
 } from '../DeltaBundler/types';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ResolverInputOptions} from '../shared/types';
-import type {RequireContext} from './contextModule';
 import type {ConfigT} from 'metro-config';
 import type {Type} from 'metro-transform-worker';
 
@@ -26,8 +26,7 @@ import {getContextModuleTemplate} from './contextModuleTemplates';
 import isAssetFile from 'metro-resolver/private/utils/isAssetFile';
 
 type InlineRequiresRaw =
-  | Readonly<{blockList: Readonly<{[string]: true, ...}>, ...}>
-  | boolean;
+  Readonly<{blockList: Readonly<{[string]: true, ...}>, ...}> | boolean;
 
 type TransformOptionsWithRawInlines = Readonly<{
   ...TransformOptions,
@@ -153,10 +152,11 @@ export async function getTransformFn(
   );
   const assetExts = new Set(config.resolver.assetExts);
 
-  return async (modulePath: string, requireContext: ?RequireContext) => {
-    let templateBuffer: Buffer;
+  return async (modulePath: string, virtualSource: ?VirtualSource) => {
+    let fileBuffer: ?Buffer;
 
-    if (requireContext) {
+    if (virtualSource?.type === 'requireContext') {
+      const {requireContext} = virtualSource;
       const graph = await bundler.getDependencyGraph();
 
       // TODO: Check delta changes to avoid having to look over all files each time
@@ -176,7 +176,7 @@ export async function getTransformFn(
         files,
       );
 
-      templateBuffer = Buffer.from(template);
+      fileBuffer = Buffer.from(template);
     }
 
     return await bundler.transformFile(
@@ -189,7 +189,7 @@ export async function getTransformFn(
         ),
         type: getType(transformOptions.type, modulePath, assetExts),
       },
-      templateBuffer,
+      fileBuffer ?? undefined,
     );
   };
 }
@@ -217,7 +217,7 @@ export async function getResolveDependencyFn(
 ): Promise<
   (from: string, dependency: TransformResultDependency) => BundlerResolution,
 > {
-  const dependencyGraph = await await bundler.getDependencyGraph();
+  const dependencyGraph = await bundler.getDependencyGraph();
 
   return (from: string, dependency: TransformResultDependency) =>
     dependencyGraph.resolveDependency(

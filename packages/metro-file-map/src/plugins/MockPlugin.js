@@ -23,8 +23,8 @@ import normalizePathSeparatorsToPosix from '../lib/normalizePathSeparatorsToPosi
 import normalizePathSeparatorsToSystem from '../lib/normalizePathSeparatorsToSystem';
 import {RootPathUtils} from '../lib/RootPathUtils';
 import getMockName from './mocks/getMockName';
+import path from 'node:path';
 import nullthrows from 'nullthrows';
-import path from 'path';
 
 export const CACHE_VERSION = 2;
 
@@ -39,13 +39,13 @@ export type MockMapOptions = Readonly<{
 export default class MockPlugin
   implements FileMapPlugin<RawMockMap, void>, IMockMap
 {
-  +name: 'mocks' = 'mocks';
+  readonly name: 'mocks' = 'mocks';
 
-  +#mocksPattern: RegExp;
+  readonly #mocksPattern: RegExp;
   #raw: RawMockMap;
-  +#rootDir: Path;
-  +#pathUtils: RootPathUtils;
-  +#console: typeof console;
+  readonly #rootDir: Path;
+  readonly #pathUtils: RootPathUtils;
+  readonly #console: typeof console;
   #throwOnModuleCollision: boolean;
 
   constructor({
@@ -147,13 +147,18 @@ export default class MockPlugin
     const duplicates = this.#raw.duplicates.get(mockName);
     if (duplicates != null) {
       const posixRelativePath = normalizePathSeparatorsToPosix(canonicalPath);
+      const wasActiveMock = this.#raw.mocks.get(mockName) === posixRelativePath;
       duplicates.delete(posixRelativePath);
       if (duplicates.size === 1) {
         this.#raw.duplicates.delete(mockName);
       }
-      // Set the mock to a remaining duplicate. Should never be empty.
-      const remaining = nullthrows(duplicates.values().next().value);
-      this.#raw.mocks.set(mockName, remaining);
+      // Only reassign the active mock if the file we removed *was* the active
+      // one; otherwise a non-active duplicate's removal would clobber it.
+      if (wasActiveMock) {
+        // Set the mock to a remaining duplicate. Should never be empty.
+        const remaining = nullthrows(duplicates.values().next().value);
+        this.#raw.mocks.set(mockName, remaining);
+      }
     } else {
       this.#raw.mocks.delete(mockName);
     }

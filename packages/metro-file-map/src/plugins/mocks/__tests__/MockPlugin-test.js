@@ -12,7 +12,7 @@
 import type MockMapType from '../../MockPlugin';
 
 let mockPathModule;
-jest.mock('path', () => mockPathModule);
+jest.mock('node:path', () => mockPathModule);
 
 describe.each([['win32'], ['posix']])('MockPlugin on %s', platform => {
   const p: string => string = filePath =>
@@ -107,6 +107,25 @@ Duplicate manual mock found for \`foo\`:
     });
   });
 
+  test('removing a non-active duplicate keeps the active mock', () => {
+    onFileAdded(p('a/__mocks__/foo.js'));
+    onFileAdded(p('b/__mocks__/foo.js'));
+    onFileAdded(p('c/__mocks__/foo.js')); // latest wins -> active mock is c
+
+    expect(mockMap.getMockModule('foo')).toBe(p('/root/c/__mocks__/foo.js'));
+
+    // Remove a NON-active duplicate (b); the active mock (c) must be kept.
+    mockMap.onChanged({
+      addedFiles: new Map(),
+      modifiedFiles: new Map(),
+      removedFiles: new Map([[p('b/__mocks__/foo.js'), null]]),
+      addedDirectories: new Set(),
+      removedDirectories: new Set(),
+    });
+
+    expect(mockMap.getMockModule('foo')).toBe(p('/root/c/__mocks__/foo.js'));
+  });
+
   test('loads from a snapshot', async () => {
     await mockMap.initialize({
       files: {
@@ -116,6 +135,9 @@ Duplicate manual mock found for \`foo\`:
         lookup: () => {
           throw new Error('should not be used');
         },
+      },
+      getOrComputeFileData: () => {
+        throw new Error('Not implemented');
       },
       pluginState: {
         mocks: new Map([

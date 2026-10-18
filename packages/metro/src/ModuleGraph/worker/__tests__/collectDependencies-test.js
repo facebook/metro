@@ -19,6 +19,7 @@ import type {
   State,
 } from '../collectDependencies';
 import type {NodePath} from '@babel/traverse';
+import type {File as BabelNodeFile} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import collectDependencies from '../collectDependencies';
@@ -920,7 +921,7 @@ describe('import() prefetching', () => {
     );
   });
 
-  test('distinguishes between import and prefetch dependncies on the same module', () => {
+  test('distinguishes between import and prefetch dependencies on the same module', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       import("some/async/module").then(() => {});
@@ -1124,7 +1125,7 @@ test('exposes a string as `dependencyMapName` even without collecting dependenci
   expect(collectDependencies(ast, opts).dependencyMapName).toEqual(any(String));
 });
 
-test('ignores require functions defined defined by lower scopes', () => {
+test('ignores require functions defined by lower scopes', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     exports.do = () => require("do");
@@ -1133,13 +1134,13 @@ test('ignores require functions defined defined by lower scopes', () => {
     }
     require('do');
     function testA(require) {
-      const b = require('nonExistantModule');
+      const b = require('nonExistentModule');
     }
     {
       const require = function(foo) {
         return;
       }
-      require('nonExistantModule');
+      require('nonExistentModule');
     }
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
@@ -1157,11 +1158,11 @@ test('ignores require functions defined defined by lower scopes', () => {
       }
       require(${dependencyMapName}[1], "do");
       function testA(require) {
-        const b = require('nonExistantModule');
+        const b = require('nonExistentModule');
       }
       {
         const require = function (foo) { return; };
-        require('nonExistantModule');
+        require('nonExistentModule');
       }
     `),
   );
@@ -1471,9 +1472,7 @@ describe('optional dependencies', () => {
           ast: true,
           plugins: [
             importLocationsPlugin,
-            // $FlowFixMe[cannot-resolve-module] Untyped Babel plugin
             require('@babel/plugin-transform-runtime'),
-            // $FlowFixMe[cannot-resolve-module] Untyped Babel plugin in OSS
             require('@babel/plugin-transform-modules-commonjs'),
           ],
         },
@@ -1605,6 +1604,91 @@ describe('optional dependencies', () => {
       {name: 'foo', data: expect.not.objectContaining({isOptional: true})},
     ]);
   });
+
+  describe('dynamic import with rejection handler', () => {
+    test('import().catch(handler) is optional', () => {
+      const ast = astFromCode(`
+        import('optional-async-a').catch(() => {});
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('import().then(handler, onReject) is optional', () => {
+      const ast = astFromCode(`
+        import('optional-async-a').then(() => {}, () => {});
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('import().then(...).then(...).catch(handler) is optional', () => {
+      const ast = astFromCode(`
+        import('optional-async-a')
+          .then(x => x)
+          .then(x => x)
+          .catch(() => {});
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('await import().catch(handler) is optional', () => {
+      const ast = astFromCode(`
+        async function f() {
+          await import('optional-async-a').catch(() => {});
+        }
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('try { await import() } catch {} is optional', () => {
+      const ast = astFromCode(`
+        async function f() {
+          try {
+            await import('optional-async-a');
+          } catch (e) {}
+        }
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('import().then(handler) without onReject is not optional', () => {
+      const ast = astFromCode(`
+        import('not-optional-async-a').then(() => {});
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('import().catch() with no handler argument is not optional', () => {
+      const ast = astFromCode(`
+        import('not-optional-async-a').catch();
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+
+    test('import().then(handler, null) is not optional (null/undefined onReject)', () => {
+      const ast = astFromCode(`
+        import('not-optional-async-a').then(() => {}, null);
+        import('not-optional-async-b').then(() => {}, undefined);
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 3);
+    });
+
+    test('import() detached from chain is not optional', () => {
+      const ast = astFromCode(`
+        const p = import('not-optional-async-a');
+        p.catch(() => {});
+      `);
+      const {dependencies} = collectDependencies(ast, opts);
+      validateDependencies(dependencies, 2);
+    });
+  });
 });
 
 test('uses the dependency transformer specified in the options to transform the dependency calls', () => {
@@ -1669,7 +1753,10 @@ function formatDependencyLocs(
   );
 }
 
-function adjustPosForCodeFrame(pos: {+column: number, +line: number}) {
+function adjustPosForCodeFrame(pos: {
+  readonly column: number,
+  readonly line: number,
+}) {
   return pos ? {...pos, column: pos.column + 1} : pos;
 }
 
@@ -1702,8 +1789,8 @@ function astFromCode(code: string): BabelNodeFile {
 
 // Mock transformer for dependencies. Uses a "readable" format
 // require() -> require(id, module name)
-// import() -> require(async moudle name).async(id, module name)
-// prefetch -> require(async moudle name).prefetch(id, module name)
+// import() -> require(async module name).async(id, module name)
+// prefetch -> require(async module name).prefetch(id, module name)
 const MockDependencyTransformer: DependencyTransformer = {
   transformSyncRequire(
     path: NodePath<>,

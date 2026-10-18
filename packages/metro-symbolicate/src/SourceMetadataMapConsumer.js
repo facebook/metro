@@ -24,17 +24,20 @@ import * as vlq from 'vlq';
 const METADATA_FIELD_FUNCTIONS = 0;
 
 type Position = {
-  +line: number,
-  +column: number,
+  readonly line: number,
+  readonly column: number,
   ...
 };
 type FunctionMapping = {
-  +line: number,
-  +column: number,
-  +name: string,
+  readonly line: number,
+  readonly column: number,
+  readonly name: string,
   ...
 };
-type SourceNameNormalizer = (string, {+sourceRoot?: ?string, ...}) => string;
+type SourceNameNormalizer = (
+  string,
+  {readonly sourceRoot?: ?string, ...},
+) => string;
 type MetadataMap = {[source: string]: ?FBSourceMetadata, ...};
 
 /**
@@ -78,7 +81,7 @@ export default class SourceMetadataMapConsumer {
     line,
     column,
     source,
-  }: Position & {+source: ?string, ...}): ?string {
+  }: Position & {readonly source: ?string, ...}): ?string {
     if (source && line != null && column != null) {
       const mappings = this._getFunctionMappings(source);
       if (mappings) {
@@ -130,7 +133,8 @@ export default class SourceMetadataMapConsumer {
     }
     let parsedFunctionMap = null;
     const metadataBySource = this._getMetadataBySource();
-    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+    /* $FlowFixMe[invalid-this-arg] Error exposed after fixing this typing
+     * unsoundness in flow */
     if (Object.prototype.hasOwnProperty.call(metadataBySource, source)) {
       const metadata = metadataBySource[source] || [];
       parsedFunctionMap = decodeFunctionMap(metadata[METADATA_FIELD_FUNCTIONS]);

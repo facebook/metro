@@ -9,13 +9,13 @@
  * @oncall react_native
  */
 
-import type {ServerOptions as HttpsServerOptions} from 'https';
+import type {ServerOptions as HttpsServerOptions} from 'node:https';
 import type {CommandModule} from 'yargs';
 import typeof Yargs from 'yargs';
 
 import {makeAsyncCommand, watchFile} from '../cli-utils';
 import {loadConfig, resolveConfig} from 'metro-config';
-import {promisify} from 'util';
+import {promisify} from 'node:util';
 
 type Args = Readonly<{
   _: unknown,
@@ -88,7 +88,6 @@ export default (): CommandModule => ({
       if (server) {
         // eslint-disable-next-line no-console
         console.log('Configuration changed. Restarting the server...');
-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         await promisify(server.close).call(server);
       }
 

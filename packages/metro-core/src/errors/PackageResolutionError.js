@@ -19,9 +19,9 @@ export default class PackageResolutionError extends Error {
   targetModuleName: string;
 
   constructor(opts: {
-    +originModulePath: string,
-    +packageError: InvalidPackageError,
-    +targetModuleName: string,
+    readonly originModulePath: string,
+    readonly packageError: InvalidPackageError,
+    readonly targetModuleName: string,
   }) {
     const perr = opts.packageError;
     super(

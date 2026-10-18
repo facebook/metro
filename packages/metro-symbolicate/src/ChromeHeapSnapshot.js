@@ -49,11 +49,11 @@ const CHILDREN_FIELD_TYPE = '__CHILDREN__';
 // the format leaves us no other choice).
 export class ChromeHeapSnapshotProcessor {
   // The raw snapshot data provided to this processor. Mutable.
-  +_snapshotData: ChromeHeapSnapshot;
+  readonly _snapshotData: ChromeHeapSnapshot;
 
   // An adapter for the global string table in the raw snapshot data.
   // This is shared across all the iterators we will create.
-  +_globalStringTable: ChromeHeapSnapshotStringTable;
+  readonly _globalStringTable: ChromeHeapSnapshotStringTable;
 
   constructor(snapshotData: ChromeHeapSnapshot) {
     this._snapshotData = snapshotData;
@@ -130,8 +130,8 @@ export class ChromeHeapSnapshotProcessor {
 // 2. The string table array is always mutated in-place rather than being
 //    copied / replaced with a new array in its containing object.
 class ChromeHeapSnapshotStringTable {
-  +_strings: Array<string>;
-  +_indexCache: Map<string, number>;
+  readonly _strings: Array<string>;
+  readonly _indexCache: Map<string, number>;
 
   constructor(strings: Array<string>) {
     this._strings = strings;
@@ -202,18 +202,18 @@ type DenormalizedRecordInput = Readonly<{
 class ChromeHeapSnapshotRecordAccessor {
   // Fast lookup tables from field names to their offsets (required) and types
   // (optional). These are shared with any child iterators.
-  +_fieldToOffset: ReadonlyMap<string, number>;
-  +_fieldToType: ReadonlyMap<string, ChromeHeapSnapshotFieldType>;
+  readonly _fieldToOffset: ReadonlyMap<string, number>;
+  readonly _fieldToType: ReadonlyMap<string, ChromeHeapSnapshotFieldType>;
 
   // The number of fields in every record (i.e. K).
-  +_recordSize: number;
+  readonly _recordSize: number;
 
   // The raw buffer. Mutable.
-  +_buffer: RawBuffer;
+  readonly _buffer: RawBuffer;
 
   // The global string table. Mutable in the ways allowed by the string table
   // class.
-  +_globalStringTable: ChromeHeapSnapshotStringTable;
+  readonly _globalStringTable: ChromeHeapSnapshotStringTable;
 
   // The current position in the raw buffer.
   _position: number;
@@ -388,7 +388,8 @@ class ChromeHeapSnapshotRecordAccessor {
     let didResizeBuffer = false;
     try {
       for (const field of this._fieldToOffset.keys()) {
-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+        /* $FlowFixMe[invalid-this-arg] Error exposed after fixing this typing
+         * unsoundness in flow */
         if (!Object.prototype.hasOwnProperty.call(record, field)) {
           throw new Error('Missing value for field: ' + field);
         }

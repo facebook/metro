@@ -18,14 +18,14 @@ import type {
 } from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
-import {promises as fsPromises} from 'fs';
-import {tmpdir} from 'os';
-import path from 'path';
-import {Timeout, clearTimeout, setTimeout} from 'timers';
-import {deserialize, serialize} from 'v8';
+import debugModule from 'debug';
+import {promises as fsPromises} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {Timeout, clearTimeout, setTimeout} from 'node:timers';
+import {deserialize, serialize} from 'node:v8';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')('Metro:FileMapCache');
+const debug = debugModule('Metro:FileMapCache');
 
 type AutoSaveOptions = Readonly<{
   debounceMs: number,
@@ -42,18 +42,17 @@ const DEFAULT_DIRECTORY = tmpdir();
 const DEFAULT_AUTO_SAVE_DEBOUNCE_MS = 5000;
 
 export class DiskCacheManager implements CacheManager {
-  +#autoSaveOpts: ?AutoSaveOptions;
-  +#cachePath: string;
+  readonly #autoSaveOpts: ?AutoSaveOptions;
+  readonly #cachePath: string;
   #debounceTimeout: ?Timeout = null;
   #writePromise: Promise<void> = Promise.resolve();
   #hasUnwrittenChanges: boolean = false;
   #tryWrite: ?() => Promise<void>;
   #stopListening: ?() => void;
 
-  constructor(
-    {buildParameters}: CacheManagerFactoryOptions,
-    {autoSave = {}, cacheDirectory, cacheFilePrefix}: DiskCacheConfig,
-  ) {
+  constructor(opts: CacheManagerFactoryOptions, config: DiskCacheConfig) {
+    const {buildParameters} = opts;
+    const {autoSave = {}, cacheDirectory, cacheFilePrefix} = config;
     this.#cachePath = DiskCacheManager.getCacheFilePath(
       buildParameters,
       cacheFilePrefix,
@@ -103,12 +102,9 @@ export class DiskCacheManager implements CacheManager {
 
   async write(
     getSnapshot: () => CacheData,
-    {
-      changedSinceCacheRead,
-      eventSource,
-      onWriteError,
-    }: CacheManagerWriteOptions,
+    opts: CacheManagerWriteOptions,
   ): Promise<void> {
+    const {changedSinceCacheRead, eventSource, onWriteError} = opts;
     // Initialise a writer function using a promise queue to ensure writes are
     // sequenced.
     const tryWrite = (this.#tryWrite = () => {

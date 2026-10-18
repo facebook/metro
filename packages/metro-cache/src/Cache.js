@@ -21,8 +21,8 @@ import {Logger} from 'metro-core';
  * All get/set operations are logged via Metro's logger.
  */
 export default class Cache<T> {
-  +#stores: ReadonlyArray<CacheStore<T>>;
-  +#hits: WeakMap<Buffer, CacheStore<T>> = new WeakMap();
+  readonly #stores: ReadonlyArray<CacheStore<T>>;
+  readonly #hits: WeakMap<Buffer, CacheStore<T>> = new WeakMap();
 
   constructor(stores: ReadonlyArray<CacheStore<T>>) {
     this.#stores = stores;
@@ -48,7 +48,6 @@ export default class Cache<T> {
       try {
         const valueOrPromise = store.get(key);
 
-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         if (valueOrPromise && typeof valueOrPromise.then === 'function') {
           value = await valueOrPromise;
         } else {

@@ -16,11 +16,11 @@ import parsePlatformFilePath from '../node-haste/lib/parsePlatformFilePath';
 import {SourcePathsMode} from '../shared/types';
 import parseCustomResolverOptions from './parseCustomResolverOptions';
 import parseCustomTransformOptions from './parseCustomTransformOptions';
+import debugModule from 'debug';
 import * as jscSafeUrl from 'jsc-safe-url';
-import path from 'path';
+import path from 'node:path';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')(
+const debug = debugModule(
   'Metro:Server:parseBundleOptionsFromBundleRequestUrl',
 );
 

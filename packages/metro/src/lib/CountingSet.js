@@ -11,7 +11,7 @@
 
 export interface ReadOnlyCountingSet<T> extends Iterable<T> {
   has(item: T): boolean;
-  +size: number;
+  readonly size: number;
   count(item: T): number;
   forEach<ThisT>(
     callbackFn: (
@@ -65,33 +65,24 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
     }
   }
 
-  keys(): Iterator<T> {
+  keys(): IteratorObject<T> {
     return this.#map.keys();
   }
 
-  values(): Iterator<T> {
+  values(): IteratorObject<T> {
     return this.#map.keys();
   }
 
-  *entries(): Iterator<[T, T]> {
+  *entries(): IteratorObject<[T, T]> {
     for (const item of this) {
       yield [item, item];
     }
   }
 
   // Iterate over unique entries
-  // $FlowFixMe[unsupported-syntax]
   [Symbol.iterator](): Iterator<T> {
     return this.values();
   }
-
-  /*::
-  // For Flow's benefit
-  // $FlowFixMe[duplicate-class-member]
-  @@iterator(): Iterator<T> {
-    return this.values();
-  }
-  */
 
   // Number of unique entries
   // $FlowFixMe[unsafe-getters-setters]
@@ -112,6 +103,7 @@ export default class CountingSet<T> implements ReadOnlyCountingSet<T> {
     thisArg: ThisT,
   ): void {
     for (const item of this) {
+      // $FlowFixMe[invalid-this-arg]
       callbackFn.call(thisArg, item, item, this);
     }
   }

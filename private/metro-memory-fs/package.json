@@ -11,13 +11,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro.git"
+    "url": "git@github.com:react/metro.git"
   },
   "license": "MIT",
   "dependencies": {
     "flow-enums-runtime": "^0.0.6"
   },
   "engines": {
-    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
+    "node": "^22.13.0 || ^24.3.0 || >= 26.0.0"
   }
 }

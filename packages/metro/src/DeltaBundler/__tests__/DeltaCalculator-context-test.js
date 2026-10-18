@@ -18,9 +18,9 @@ import CountingSet from '../../lib/CountingSet';
 import DeltaCalculator from '../DeltaCalculator';
 import {Graph} from '../Graph';
 import {createEmitChange, createPathNormalizer} from './test-utils';
-import path from 'path';
+import path from 'node:path';
 
-const {EventEmitter} = require('events');
+const {EventEmitter} = require('node:events');
 
 const traverseDependencies = jest.spyOn(
   Graph.prototype,
@@ -68,6 +68,8 @@ describe('DeltaCalculator + require.context', () => {
     fileWatcher = new EventEmitter();
     emitChange = createEmitChange(fileWatcher, p('/'), path.sep);
 
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     markModifiedContextModules.mockImplementation(function <T>(
       this: Graph<T>,
       filePath,
@@ -84,6 +86,8 @@ describe('DeltaCalculator + require.context', () => {
       └─────────┘                                  └──────────────┘     └──────────┘
      */
 
+    /* $FlowFixMe[incompatible-type] Error exposed after fixing this typing
+     * unsoundness in flow */
     initialTraverseDependencies.mockImplementationOnce(async function <T>(
       this: Graph<T>,
       options: Options<T>,
@@ -109,6 +113,8 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([]),
         output: [],
         path: p('/bundle'),
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[incompatible-type]
         getSource: () => Buffer.of(),
       });
       this.dependencies.set(p('/ctx?ctx=xxx'), {
@@ -132,6 +138,8 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([p('/bundle')]),
         output: [],
         path: p('/ctx?ctx=xxx'),
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[incompatible-type]
         getSource: () => Buffer.of(),
       });
       this.dependencies.set(p('/ctx/foo'), {
@@ -139,6 +147,8 @@ describe('DeltaCalculator + require.context', () => {
         inverseDependencies: new CountingSet([p('/ctx?ctx=xxx')]),
         output: [],
         path: p('/ctx/foo'),
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[incompatible-type]
         getSource: () => Buffer.of(),
       });
 
@@ -158,7 +168,6 @@ describe('DeltaCalculator + require.context', () => {
       }),
     );
 
-    // $FlowFixMe[underconstrained-implicit-instantiation]
     deltaCalculator = new DeltaCalculator(
       new Set([p('/bundle')]),
       fileWatcher,

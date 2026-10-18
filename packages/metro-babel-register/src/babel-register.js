@@ -18,8 +18,8 @@ import type {BabelCoreOptions} from '@babel/core';
 */
 
 const escapeRegExp = require('escape-string-regexp');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 let _only /*: ReadonlyArray<RegExp | string> */ = [];
 
@@ -90,7 +90,7 @@ function config(
       {
         test: /\.js$/,
         plugins: [
-          [require('babel-plugin-syntax-hermes-parser').default],
+          [require('flow-parser/babel-plugin')],
           [require('babel-plugin-transform-flow-enums')],
           [require('@babel/plugin-transform-flow-strip-types').default],
         ],

@@ -10,6 +10,7 @@
  */
 
 import type {PluginEntry, Plugins} from '@babel/core';
+import type {File as BabelNodeFile} from '@babel/types';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -20,6 +21,7 @@ import type {
   BasicSourceMap,
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
+  VlqMap,
 } from 'metro-source-map';
 import type {
   ImportExportPluginOptions,
@@ -46,6 +48,9 @@ import {
   functionMapBabelPlugin,
   toBabelSegments,
   toSegmentTuple,
+  tuplesFromBabelDecodedMap,
+  vlqMapFromBabelDecodedMap,
+  vlqMapFromTuples,
 } from 'metro-source-map';
 import metroTransformPlugins from 'metro-transform-plugins';
 import collectDependencies from 'metro/private/ModuleGraph/worker/collectDependencies';
@@ -60,7 +65,7 @@ import nullthrows from 'nullthrows';
 const InternalInvalidRequireCallError =
   collectDependencies.InvalidRequireCallError;
 
-type MinifierConfig = Readonly<{[string]: unknown, ...}>;
+type MinifierConfig = Readonly<{[key: string]: unknown, ...}>;
 
 export type MinifierOptions = {
   code: string,
@@ -77,9 +82,9 @@ export type MinifierResult = {
   ...
 };
 
-export type Minifier = MinifierOptions =>
-  | MinifierResult
-  | Promise<MinifierResult>;
+export type Minifier = (
+  opts: MinifierOptions,
+) => MinifierResult | Promise<MinifierResult>;
 
 export type Type = 'script' | 'module' | 'asset';
 
@@ -108,8 +113,6 @@ export type JsTransformerConfig = Readonly<{
   unstable_memoizeInlineRequires?: boolean,
   /** With inlineRequires, do not memoize these module specifiers */
   unstable_nonMemoizedInlineRequires?: ReadonlyArray<string>,
-  /** Whether to rename scoped `require` functions to `_$$_REQUIRE`, usually an extraneous operation when serializing to iife (default). */
-  unstable_renameRequire?: boolean,
 }>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -130,11 +133,12 @@ export type JsTransformOptions = Readonly<{
   unstable_transformProfile: TransformProfile,
 }>;
 
-opaque type Path = string;
+opaque type AbsolutePath = string;
+opaque type ProjectRelativePath = string;
 
 type BaseFile = Readonly<{
   code: string,
-  filename: Path,
+  filename: ProjectRelativePath,
   inputFileSize: number,
 }>;
 
@@ -159,8 +163,9 @@ type JSONFile = {
 };
 
 type TransformationContext = Readonly<{
+  assetUrlPath: ?string,
   config: JsTransformerConfig,
-  projectRoot: Path,
+  projectRoot: AbsolutePath,
   options: JsTransformOptions,
 }>;
 
@@ -168,7 +173,7 @@ export type JsOutput = Readonly<{
   data: Readonly<{
     code: string,
     lineCount: number,
-    map: Array<MetroSourceMapSegmentTuple>,
+    map: VlqMap,
     functionMap: ?FBSourceFunctionMap,
   }>,
   type: JSFileType,
@@ -339,7 +344,7 @@ async function transformJS(
       babelrc: false,
       // Not-Cloning the input AST here should be safe because other code paths above this call
       // are mutating the AST as well and no code is depending on the original AST.
-      // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/facebook/metro/issues/641
+      // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/react/metro/issues/641
       // either because one of the plugins is doing something funky or Babel messes up some caches.
       // Make sure to test the above mentioned case before flipping the flag back to false.
       cloneInputAst: true,
@@ -423,10 +428,6 @@ async function transformJS(
         importAll,
         dependencyMapName,
         config.globalPrefix,
-        // TODO: This config is optional to allow its introduction in a minor
-        // release. It should be made non-optional in ConfigT or removed in
-        // future.
-        config.unstable_renameRequire === false,
         {
           unstable_useStaticHermesModuleFactory: Boolean(
             options.customTransformOptions
@@ -471,23 +472,41 @@ async function transformJS(
     file.code,
   );
 
-  let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
   let code = result.code;
+  let map: VlqMap;
+  let lineCount: number;
 
   if (minify) {
-    ({map, code} = await minifyCode(
+    // The minifier returns its own map (not Babel's `decodedMap`), so we derive
+    // tuples from Babel's eagerly-computed decoded map, hand them to the
+    // minifier, then re-encode the resulting tuples to a compact VLQ map.
+    let tuples = result.decodedMap
+      ? tuplesFromBabelDecodedMap(result.decodedMap)
+      : [];
+
+    ({map: tuples, code} = await minifyCode(
       config,
       projectRoot,
       file.filename,
       result.code,
       file.code,
-      map,
+      tuples,
       reserved,
     ));
-  }
 
-  let lineCount;
-  ({lineCount, map} = countLinesAndTerminateMap(code, map));
+    ({lineCount, map: tuples} = countLinesAndTerminateMap(code, tuples));
+    map = vlqMapFromTuples(tuples);
+  } else {
+    // Dominant path (e.g. Hermes, which doesn't minify): encode the compact VLQ
+    // map straight from Babel's eagerly-computed decoded map, never
+    // materialising tuples.
+    const {lineCount: lines, lastLineColumn} = countLines(code);
+    lineCount = lines;
+    map = vlqMapFromBabelDecodedMap(
+      result.decodedMap ?? {mappings: [], names: []},
+      [lines, lastLineColumn],
+    );
+  }
 
   const output: Array<JsOutput> = [
     {
@@ -520,6 +539,7 @@ async function transformAsset(
     getBabelTransformArgs(file, context),
     assetRegistryPath,
     assetPlugins,
+    context.assetUrlPath ?? undefined,
   );
 
   const jsFile = {
@@ -542,7 +562,9 @@ async function transformJSWithBabel(
 ): Promise<TransformResponse> {
   const {babelTransformerPath} = context.config;
   // $FlowFixMe[unsupported-syntax] dynamic require
-  const transformer: BabelTransformer = require(babelTransformerPath);
+  const mod = require(babelTransformerPath);
+  const transformer: BabelTransformer =
+    mod.__esModule === true && 'default' in mod ? mod.default : mod;
 
   const transformResult = await transformer.transform(
     getBabelTransformArgs(file, context, [
@@ -614,9 +636,12 @@ async function transformJSON(
 
   let lineCount;
   ({lineCount, map} = countLinesAndTerminateMap(code, map));
+  // The JSON path builds tuples directly (no Babel `decodedMap`), so re-encode
+  // the finished tuples to a compact VLQ map.
+  const outputMap = vlqMapFromTuples(map);
   const output: Array<JsOutput> = [
     {
-      data: {code, functionMap: null, lineCount, map},
+      data: {code, functionMap: null, lineCount, map: outputMap},
       type: jsType,
     },
   ];
@@ -628,13 +653,13 @@ async function transformJSON(
 }
 
 function getBabelTransformArgs(
-  file: Readonly<{filename: Path, code: string, ...}>,
+  file: Readonly<{filename: ProjectRelativePath, code: string, ...}>,
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {
   const {inlineRequires: _, ...babelTransformerOptions} = options;
   return {
-    filename: file.filename,
+    filename: file.filename, // System-separated, project-root-relative
     options: {
       ...babelTransformerOptions,
       enableBabelRCLookup: config.enableBabelRCLookup,
@@ -652,11 +677,17 @@ function getBabelTransformArgs(
 export const transform = async (
   config: JsTransformerConfig,
   projectRoot: string,
-  filename: string,
+  projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
+  // The asset's path relative to the asset server root (`publicPath`), as
+  // clients will request it. Computed by Metro for assets only, and passed
+  // separately from the options so that it is not spread into
+  // BabelTransformerArgs.
+  assetUrlPath?: string,
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
+    assetUrlPath,
     config,
     options,
     projectRoot,
@@ -685,10 +716,10 @@ export const transform = async (
     }
   }
 
-  if (filename.endsWith('.json')) {
+  if (projectRelativePath.endsWith('.json')) {
     const jsonFile: JSONFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -699,7 +730,7 @@ export const transform = async (
   if (options.type === 'asset') {
     const file: AssetFile = {
       code: sourceCode,
-      filename,
+      filename: projectRelativePath,
       inputFileSize: data.length,
       type: options.type,
     };
@@ -709,7 +740,7 @@ export const transform = async (
 
   const file: JSFile = {
     code: sourceCode,
-    filename,
+    filename: projectRelativePath,
     functionMap: null,
     inputFileSize: data.length,
     type: options.type === 'script' ? 'js/script' : 'js/module',
@@ -753,12 +784,9 @@ export const getCacheKey = (
   ].join('$');
 };
 
-function countLinesAndTerminateMap(
-  code: string,
-  map: ReadonlyArray<MetroSourceMapSegmentTuple>,
-): {
+function countLines(code: string): {
   lineCount: number,
-  map: Array<MetroSourceMapSegmentTuple>,
+  lastLineColumn: number,
 } {
   const NEWLINE = /\r\n?|\n|\u2028|\u2029/g;
   let lineCount = 1;
@@ -769,9 +797,19 @@ function countLinesAndTerminateMap(
     lineCount++;
     lastLineStart = match.index + match[0].length;
   }
-  const lastLineLength = code.length - lastLineStart;
+  return {lineCount, lastLineColumn: code.length - lastLineStart};
+}
+
+function countLinesAndTerminateMap(
+  code: string,
+  map: ReadonlyArray<MetroSourceMapSegmentTuple>,
+): {
+  lineCount: number,
+  map: Array<MetroSourceMapSegmentTuple>,
+} {
+  const {lineCount, lastLineColumn} = countLines(code);
   const lastLineIndex1Based = lineCount;
-  const lastLineNextColumn0Based = lastLineLength;
+  const lastLineNextColumn0Based = lastLineColumn;
 
   // If there isn't a mapping at one-past-the-last column of the last line,
   // add one that maps to nothing. This ensures out-of-bounds lookups hit the
@@ -791,14 +829,3 @@ function countLinesAndTerminateMap(
   }
   return {lineCount, map: [...map]};
 }
-
-/**
- * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
- * Do not add to this list.
- *
- * @deprecated Default import from 'metro-transform-worker' is deprecated, use named exports.
- */
-export default {
-  getCacheKey,
-  transform,
-};

@@ -15,10 +15,10 @@ import typeof Yargs from 'yargs';
 
 import {makeAsyncCommand} from '../cli-utils';
 import Server from '../Server';
-import fs from 'fs';
 import {loadConfig} from 'metro-config';
-import path from 'path';
-import {promisify} from 'util';
+import fs from 'node:fs';
+import path from 'node:path';
+import {promisify} from 'node:util';
 
 type Args = Readonly<{
   _: unknown,
@@ -80,8 +80,7 @@ async function dependencies(args: Args, config: ConfigT) {
   }
 
   return args.output != null
-    ? // $FlowFixMe[method-unbinding]
-      promisify(outStream.end).bind(outStream)()
+    ? promisify(outStream.end).bind(outStream)()
     : Promise.resolve();
 }
 

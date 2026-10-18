@@ -12,8 +12,10 @@
 import type {InputConfigT} from '../types';
 */
 
-module.exports = {
+const config /*:  InputConfigT */ = {
   cacheStores: ({FileStore}) => {
     return [new FileStore({root: __dirname})];
   },
-} /*:: as InputConfigT*/;
+};
+
+module.exports = config;

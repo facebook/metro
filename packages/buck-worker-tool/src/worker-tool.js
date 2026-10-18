@@ -9,14 +9,14 @@
  * @oncall react_native
  */
 
-import type {Duplex, Writable} from 'stream';
+import type {Duplex, Writable} from 'node:stream';
 
 import {startProfiling, stopProfilingAndWrite} from './profiling';
 import JSONStream from './third-party/JSONStream';
-import {Console} from 'console';
 import duplexer from 'duplexer';
-import fs from 'fs';
 import invariant from 'invariant';
+import {Console} from 'node:console';
+import fs from 'node:fs';
 
 export type Command = (
   argv: Array<string>,
@@ -50,7 +50,7 @@ type CommandMessage = Message<
   },
 >;
 
-type HandshakeReponse = Message<
+type HandshakeResponse = Message<
   'handshake',
   {
     protocol_version: '0',
@@ -64,7 +64,7 @@ type CommandResponse = Message<'result', {exit_code: 0, ...}>;
 type ErrorResponse = Message<'error', {exit_code: number, ...}>;
 
 type IncomingMessage = HandshakeMessage | CommandMessage;
-type Response = HandshakeReponse | CommandResponse | ErrorResponse;
+type Response = HandshakeResponse | CommandResponse | ErrorResponse;
 type RespondFn = (response: Response) => void;
 
 type JSONReaderDataHandler = IncomingMessage => unknown;

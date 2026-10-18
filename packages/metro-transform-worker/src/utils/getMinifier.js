@@ -17,7 +17,8 @@ export default function getMinifier(minifierPath: string): Minifier {
   // any entry point that accepts them...
   try {
     // $FlowFixMe[unsupported-syntax] TODO t0 cannot do require with literal
-    return require(minifierPath);
+    const mod = require(minifierPath);
+    return mod.__esModule === true && 'default' in mod ? mod.default : mod;
   } catch (e) {
     throw new Error(
       'A problem occurred while trying to fetch the minifier. Path: "' +

@@ -15,7 +15,7 @@ interface ErrnoError extends Error {
   code?: string;
   dest?: string;
   errno?: string | number;
-  info?: Object;
+  info?: any;
   path?: string;
   port?: number;
   syscall?: string;
@@ -71,7 +71,7 @@ declare class Buffer extends Uint8Array {
     sourceStart?: number,
     sourceEnd?: number,
   ): number;
-  entries(): Iterator<[number, number]>;
+  entries(): IteratorObject<[number, number]>;
   equals(otherBuffer: Buffer): boolean;
   fill(
     value: string | Buffer | number,
@@ -91,7 +91,7 @@ declare class Buffer extends Uint8Array {
     encoding?: buffer$Encoding,
   ): number;
   inspect(): string;
-  keys(): Iterator<number>;
+  keys(): IteratorObject<number>;
   lastIndexOf(
     value: string | Buffer | number,
     offsetOrEncoding?: number | buffer$Encoding,
@@ -121,7 +121,7 @@ declare class Buffer extends Uint8Array {
   swap64(): Buffer;
   toJSON(): buffer$ToJSONRet;
   toString(encoding?: buffer$Encoding, start?: number, end?: number): string;
-  values(): Iterator<number>;
+  values(): IteratorObject<number>;
   write(
     string: string,
     offset?: number,
@@ -181,14 +181,13 @@ declare class Buffer extends Uint8Array {
   static compare(buf1: Buffer, buf2: Buffer): number;
   static concat(list: Array<Buffer>, totalLength?: number): Buffer;
 
-  static from(value: Buffer): Buffer;
+  static from(value: ArrayLike<number> | Iterable<number>): Buffer;
   static from(value: string, encoding?: buffer$Encoding): Buffer;
   static from(
     value: ArrayBuffer | SharedArrayBuffer,
     byteOffset?: number,
     length?: number,
   ): Buffer;
-  static from(value: Iterable<number>): this;
   static isBuffer(obj: any): boolean;
   static isEncoding(encoding: string): boolean;
 }
@@ -214,7 +213,7 @@ declare module 'buffer' {
 
   declare function isAscii(input: Buffer | ArrayBuffer | $TypedArray): boolean;
 
-  declare function resolveObjectURL(id: string): Blob | void;
+  declare function resolveObjectURL(id: string): globalThis.Blob | void;
 
   declare var Buffer: Node$Buffer;
   declare var Blob: typeof globalThis.Blob;
@@ -457,20 +456,19 @@ declare class child_process$ChildProcessTyped<
   TStdin extends stream$Writable | null,
   TStdout extends stream$Readable | null,
   TStderr extends stream$Readable | null,
-> extends events$EventEmitter
-{
-  +stdin: TStdin;
-  +stdout: TStdout;
-  +stderr: TStderr;
-  +channel: unknown;
-  +stdio: [TStdin, TStdout, TStderr, ...];
-  +killed: boolean;
-  +pid: number;
-  +connected: boolean;
-  +exitCode: number | null;
-  +signalCode: string | null;
-  +spawnargs: Array<string>;
-  +spawnfile: string;
+> extends events$EventEmitter {
+  readonly stdin: TStdin;
+  readonly stdout: TStdout;
+  readonly stderr: TStderr;
+  readonly channel: unknown;
+  readonly stdio: [TStdin, TStdout, TStderr, ...];
+  readonly killed: boolean;
+  readonly pid: number;
+  readonly connected: boolean;
+  readonly exitCode: number | null;
+  readonly signalCode: string | null;
+  readonly spawnargs: Array<string>;
+  readonly spawnfile: string;
   disconnect(): void;
   kill(signal?: string | number): boolean;
   send(
@@ -578,8 +576,7 @@ declare module 'child_process' {
   declare function execFile(
     file: string,
     argsOrCallback?:
-      | ReadonlyArray<string>
-      | child_process$execFileCallback<string>,
+      ReadonlyArray<string> | child_process$execFileCallback<string>,
     callback?: child_process$execFileCallback<string>,
   ): child_process$ChildProcessTyped<
     stream$Writable,
@@ -734,9 +731,9 @@ declare module 'cluster' {
     isDead(): boolean;
     kill(signal?: string): void;
     send(
-      message: Object,
-      sendHandleOrCallback?: child_process$Handle | Function,
-      callback?: Function,
+      message: any,
+      sendHandleOrCallback?: child_process$Handle | any,
+      callback?: any,
     ): boolean;
   }
 
@@ -748,11 +745,51 @@ declare module 'cluster' {
     workers: {[id: number]: Worker};
 
     disconnect(callback?: () => void): void;
-    fork(env?: Object): Worker;
+    fork(env?: any): Worker;
     setupMaster(settings?: ClusterSettingsOpt): void;
   }
 
   declare module.exports: Cluster;
+}
+
+declare module 'console' {
+  declare function assert(value: any, ...message: any): void;
+  declare function dir(
+    obj: any,
+    options: {
+      showHidden: boolean,
+      depth: number,
+      colors: boolean,
+      ...
+    },
+  ): void;
+  declare function error(...data: any): void;
+  declare function info(...data: any): void;
+  declare function log(...data: any): void;
+  declare function time(label: any): void;
+  declare function timeEnd(label: any): void;
+  declare function trace(first: any, ...rest: any): void;
+  declare function warn(...data: any): void;
+  declare class Console {
+    constructor(stdout: stream$Writable, stdin?: stream$Writable): void;
+    assert(value: any, ...message: any): void;
+    dir(
+      obj: any,
+      options: {
+        showHidden: boolean,
+        depth: number,
+        colors: boolean,
+        ...
+      },
+    ): void;
+    error(...data: any): void;
+    info(...data: any): void;
+    log(...data: any): void;
+    time(label: any): void;
+    timeEnd(label: any): void;
+    trace(first: any, ...rest: any): void;
+    warn(...data: any): void;
+  }
 }
 
 type crypto$createCredentialsDetails = any; // TODO
@@ -927,18 +964,11 @@ type crypto$key =
     };
 
 declare class crypto$KeyObject {
-  +asymmetricKeyType?:
-    | 'rsa'
-    | 'rsa-pss'
-    | 'dsa'
-    | 'ec'
-    | 'ed25519'
-    | 'ed448'
-    | 'x25519'
-    | 'x448';
-  +asymmetricKeySize?: number;
-  +symmetricKeySize?: number;
-  +type: 'secret' | 'public' | 'private';
+  readonly asymmetricKeyType?:
+    'rsa' | 'rsa-pss' | 'dsa' | 'ec' | 'ed25519' | 'ed448' | 'x25519' | 'x448';
+  readonly asymmetricKeySize?: number;
+  readonly symmetricKeySize?: number;
+  readonly type: 'secret' | 'public' | 'private';
 
   export(
     options: Readonly<{
@@ -959,22 +989,22 @@ declare class crypto$KeyObject {
 declare class crypto$X509Certificate {
   constructor(buffer: string | Buffer | $TypedArray | DataView): void;
 
-  +ca: boolean;
-  +fingerprint: string;
-  +fingerprint256: string;
-  +fingerprint512: string;
-  +issuer: string;
-  +issuerCertificate?: crypto$X509Certificate;
-  +keyUsage: Array<string>;
-  +publicKey: crypto$KeyObject;
-  +raw: Buffer;
-  +serialNumber: string;
-  +subject: string;
-  +subjectAltName: string;
-  +validFrom: string;
-  +validTo: string;
-  +validFromDate: Date;
-  +validToDate: Date;
+  readonly ca: boolean;
+  readonly fingerprint: string;
+  readonly fingerprint256: string;
+  readonly fingerprint512: string;
+  readonly issuer: string;
+  readonly issuerCertificate?: crypto$X509Certificate;
+  readonly keyUsage: Array<string>;
+  readonly publicKey: crypto$KeyObject;
+  readonly raw: Buffer;
+  readonly serialNumber: string;
+  readonly subject: string;
+  readonly subjectAltName: string;
+  readonly validFrom: string;
+  readonly validTo: string;
+  readonly validFromDate: Date;
+  readonly validToDate: Date;
 
   checkEmail(
     email: string,
@@ -1388,21 +1418,21 @@ declare class events$EventEmitter {
   static listenerCount(emitter: events$EventEmitter, event: string): number;
   static defaultMaxListeners: number;
 
-  addListener(event: string, listener: Function): this;
+  addListener(event: string, listener: any): this;
   emit(event: string, ...args: Array<any>): boolean;
   eventNames(): Array<string>;
-  listeners(event: string): Array<Function>;
+  listeners(event: string): Array<any>;
   listenerCount(event: string): number;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
+  on(event: string, listener: any): this;
+  once(event: string, listener: any): this;
+  prependListener(event: string, listener: any): this;
+  prependOnceListener(event: string, listener: any): this;
   removeAllListeners(event?: string): this;
-  removeListener(event: string, listener: Function): this;
-  off(event: string, listener: Function): this;
+  removeListener(event: string, listener: any): this;
+  off(event: string, listener: any): this;
   setMaxListeners(n: number): this;
   getMaxListeners(): number;
-  rawListeners(event: string): Array<Function>;
+  rawListeners(event: string): Array<any>;
 }
 
 declare module 'events' {
@@ -1418,13 +1448,13 @@ declare class domain$Domain extends events$EventEmitter {
   members: Array<any>;
 
   add(emitter: events$EventEmitter): void;
-  bind(callback: Function): Function;
+  bind(callback: any): any;
   dispose(): void;
   enter(): void;
   exit(): void;
-  intercept(callback: Function): Function;
+  intercept(callback: any): any;
   remove(emitter: events$EventEmitter): void;
-  run(fn: Function): void;
+  run(fn: any): void;
 }
 
 declare module 'domain' {
@@ -1587,10 +1617,10 @@ declare module 'fs' {
   declare function readlinkSync(path: string): string;
   declare function realpath(
     path: string,
-    cache?: Object,
+    cache?: any,
     callback?: (err: ?ErrnoError, resolvedPath: string) => void,
   ): void;
-  declare function realpathSync(path: string, cache?: Object): string;
+  declare function realpathSync(path: string, cache?: any): string;
   declare function unlink(
     path: string,
     callback?: (err: ?ErrnoError) => void,
@@ -2055,11 +2085,8 @@ declare module 'fs' {
     callback?: (err: ?ErrnoError) => void,
   ): void;
   declare function accessSync(path: string, mode?: number): void;
-  declare function createReadStream(path: string, options?: Object): ReadStream;
-  declare function createWriteStream(
-    path: string,
-    options?: Object,
-  ): WriteStream;
+  declare function createReadStream(path: string, options?: any): ReadStream;
+  declare function createWriteStream(path: string, options?: any): WriteStream;
   declare function fdatasync(
     fd: number,
     callback: (err: ?ErrnoError) => void,
@@ -2246,7 +2273,7 @@ declare module 'fs' {
     ...
   };
   declare class Dir {
-    +path: string;
+    readonly path: string;
     close(): Promise<void>;
     closeSync(): void;
     read(): Promise<?Dirent>;
@@ -2541,7 +2568,7 @@ type http$agentOptions = {
   ...
 };
 
-declare class http$Agent<+SocketT = net$Socket> {
+declare class http$Agent<out SocketT = net$Socket> {
   constructor(options: http$agentOptions): void;
   destroy(): void;
   // $FlowFixMe[incompatible-variance]
@@ -2560,15 +2587,15 @@ declare class http$Agent<+SocketT = net$Socket> {
   sockets: {[name: string]: ReadonlyArray<SocketT>, ...};
 }
 
-declare class http$IncomingMessage<SocketT = net$Socket>
-  extends stream$Readable
-{
-  headers: Object;
+declare class http$IncomingMessage<
+  SocketT = net$Socket,
+> extends stream$Readable {
+  headers: any;
   rawHeaders: Array<string>;
   httpVersion: string;
   method: string;
-  trailers: Object;
-  setTimeout(msecs: number, callback: Function): void;
+  trailers: any;
+  setTimeout(msecs: number, callback: any): void;
   socket: SocketT;
   statusCode: number;
   statusMessage: string;
@@ -2578,20 +2605,20 @@ declare class http$IncomingMessage<SocketT = net$Socket>
   rawTrailers: Array<string>;
 }
 
-declare class http$ClientRequest<+SocketT = net$Socket>
-  extends stream$Writable
-{
+declare class http$ClientRequest<
+  out SocketT = net$Socket,
+> extends stream$Writable {
   abort(): void;
   aborted: boolean;
-  +connection: SocketT | null;
+  readonly connection: SocketT | null;
   flushHeaders(): void;
   getHeader(name: string): string;
   removeHeader(name: string): void;
   setHeader(name: string, value: string | Array<string>): void;
   setNoDelay(noDelay?: boolean): void;
   setSocketKeepAlive(enable?: boolean, initialDelay?: number): void;
-  setTimeout(msecs: number, callback?: Function): void;
-  +socket: SocketT | null;
+  setTimeout(msecs: number, callback?: any): void;
+  readonly socket: SocketT | null;
 }
 
 declare class http$ServerResponse extends stream$Writable {
@@ -2607,7 +2634,7 @@ declare class http$ServerResponse extends stream$Writable {
   removeHeader(name: string): void;
   sendDate: boolean;
   setHeader(name: string, value: string | Array<string>): void;
-  setTimeout(msecs: number, callback?: Function): http$ServerResponse;
+  setTimeout(msecs: number, callback?: any): http$ServerResponse;
   socket: net$Socket;
   statusCode: number;
   statusMessage: string;
@@ -2626,13 +2653,13 @@ declare class http$Server extends net$Server {
     port?: number,
     hostname?: string,
     backlog?: number,
-    callback?: Function,
+    callback?: any,
   ): this;
   // The following signatures are added to allow omitting intermediate arguments
-  listen(port?: number, backlog?: number, callback?: Function): this;
-  listen(port?: number, hostname?: string, callback?: Function): this;
-  listen(port?: number, callback?: Function): this;
-  listen(path: string, callback?: Function): this;
+  listen(port?: number, backlog?: number, callback?: any): this;
+  listen(port?: number, hostname?: string, callback?: any): this;
+  listen(port?: number, callback?: any): this;
+  listen(path: string, callback?: any): this;
   listen(
     handle: {
       port?: number,
@@ -2645,7 +2672,7 @@ declare class http$Server extends net$Server {
       ipv6Only?: boolean,
       ...
     },
-    callback?: Function,
+    callback?: any,
   ): this;
   listening: boolean;
   close(callback?: (error: ?Error) => unknown): this;
@@ -2654,7 +2681,7 @@ declare class http$Server extends net$Server {
   maxHeadersCount: number;
   keepAliveTimeout: number;
   headersTimeout: number;
-  setTimeout(msecs: number, callback: Function): this;
+  setTimeout(msecs: number, callback: any): this;
   timeout: number;
 }
 
@@ -2663,13 +2690,13 @@ declare class https$Server extends tls$Server {
     port?: number,
     hostname?: string,
     backlog?: number,
-    callback?: Function,
+    callback?: any,
   ): this;
   // The following signatures are added to allow omitting intermediate arguments
-  listen(port?: number, backlog?: number, callback?: Function): this;
-  listen(port?: number, hostname?: string, callback?: Function): this;
-  listen(port?: number, callback?: Function): this;
-  listen(path: string, callback?: Function): this;
+  listen(port?: number, backlog?: number, callback?: any): this;
+  listen(port?: number, hostname?: string, callback?: any): this;
+  listen(port?: number, callback?: any): this;
+  listen(path: string, callback?: any): this;
   listen(
     handle: {
       port?: number,
@@ -2682,14 +2709,14 @@ declare class https$Server extends tls$Server {
       ipv6Only?: boolean,
       ...
     },
-    callback?: Function,
+    callback?: any,
   ): this;
   close(callback?: (error: ?Error) => unknown): this;
   closeAllConnections(): void;
   closeIdleConnections(): void;
   keepAliveTimeout: number;
   headersTimeout: number;
-  setTimeout(msecs: number, callback: Function): this;
+  setTimeout(msecs: number, callback: any): this;
   timeout: number;
 }
 
@@ -2715,7 +2742,7 @@ type http$requestOptions = {
   agent?: boolean | http$Agent<net$Socket>,
   createConnection?: (
     options: net$connectOptions,
-    callback?: Function,
+    callback?: any,
   ) => net$Socket,
   ...
 };
@@ -2741,10 +2768,7 @@ declare module 'http' {
 
   declare class Server extends http$Server {}
   declare class Agent extends http$Agent<net$Socket> {
-    createConnection(
-      options: net$connectOptions,
-      callback?: Function,
-    ): net$Socket;
+    createConnection(options: net$connectOptions, callback?: any): net$Socket;
   }
   declare class ClientRequest extends http$ClientRequest<net$Socket> {}
   declare class IncomingMessage extends http$IncomingMessage<net$Socket> {}
@@ -2797,7 +2821,7 @@ type https$requestOptions = {
   agent?: boolean | http$Agent<tls$TLSSocket>,
   createConnection?: (
     options: tls$connectOptions,
-    callback?: Function,
+    callback?: any,
   ) => tls$TLSSocket,
   ...
 };
@@ -2862,7 +2886,7 @@ declare module 'module' {
 }
 
 declare class net$Socket extends stream$Duplex {
-  constructor(options?: Object): void;
+  constructor(options?: any): void;
   address(): net$Socket$address;
   bufferSize: number;
   bytesRead: number;
@@ -2874,14 +2898,11 @@ declare class net$Socket extends stream$Duplex {
     connectListener?: () => unknown,
   ): net$Socket;
   connect(port: number, connectListener?: () => unknown): net$Socket;
-  connect(options: Object, connectListener?: () => unknown): net$Socket;
+  connect(options: any, connectListener?: () => unknown): net$Socket;
   destroyed: boolean;
   end(
     chunkOrEncodingOrCallback?:
-      | Buffer
-      | Uint8Array
-      | string
-      | ((data: any) => void),
+      Buffer | Uint8Array | string | ((data: any) => void),
     encodingOrCallback?: string | ((data: any) => void),
     callback?: (data: any) => void,
   ): this;
@@ -2896,7 +2917,7 @@ declare class net$Socket extends stream$Duplex {
   setEncoding(encoding?: string): this;
   setKeepAlive(enable?: boolean, initialDelay?: number): this;
   setNoDelay(noDelay?: boolean): this;
-  setTimeout(timeout: number, callback?: Function): this;
+  setTimeout(timeout: number, callback?: any): this;
   unref(): this;
   write(
     chunk: Buffer | Uint8Array | string,
@@ -2910,16 +2931,16 @@ declare class net$Server extends events$EventEmitter {
     port?: number,
     hostname?: string,
     backlog?: number,
-    callback?: Function,
+    callback?: any,
   ): net$Server;
-  listen(path: string, callback?: Function): net$Server;
-  listen(handle: Object, callback?: Function): net$Server;
+  listen(path: string, callback?: any): net$Server;
+  listen(handle: any, callback?: any): net$Server;
   listening: boolean;
-  close(callback?: Function): net$Server;
+  close(callback?: any): net$Server;
   address(): net$Socket$address;
   connections: number;
   maxConnections: number;
-  getConnections(callback: Function): void;
+  getConnections(callback: any): void;
   ref(): net$Server;
   unref(): net$Server;
 }
@@ -2932,7 +2953,7 @@ type net$connectOptions = {
   family?: number,
   lookup?: (
     domain: string,
-    options?: ?number | ?Object,
+    options?: ?number | ?any,
     callback?: (err: ?Error, address: string, family: number) => void,
   ) => unknown,
   path?: string,
@@ -3169,18 +3190,18 @@ declare module 'perf_hooks' {
     | 'resource';
 
   declare export interface Histogram {
-    +count: number;
-    +countBigInt: bigint;
-    +exceeds: number;
-    +exceedsBigInt: bigint;
-    +max: number;
-    +maxBigInt: bigint;
-    +mean: number;
-    +min: number;
-    +minBigInt: bigint;
-    +stddev: number;
-    +percentiles: Map<number, number>;
-    +percentilesBigInt: Map<number, bigint>;
+    readonly count: number;
+    readonly countBigInt: bigint;
+    readonly exceeds: number;
+    readonly exceedsBigInt: bigint;
+    readonly max: number;
+    readonly maxBigInt: bigint;
+    readonly mean: number;
+    readonly min: number;
+    readonly minBigInt: bigint;
+    readonly stddev: number;
+    readonly percentiles: Map<number, number>;
+    readonly percentilesBigInt: Map<number, bigint>;
     percentile(percentile: number): number;
     percentileBigInt(percentile: number): bigint;
     reset(): void;
@@ -3197,58 +3218,58 @@ declare module 'perf_hooks' {
   }
 
   declare export class PerformanceEntry {
-    +duration: number;
-    +entryType: EntryType;
-    +name: string;
-    +startTime: number;
-    +detail?: unknown;
+    readonly duration: number;
+    readonly entryType: EntryType;
+    readonly name: string;
+    readonly startTime: number;
+    readonly detail?: unknown;
     toJSON(): unknown;
   }
 
   declare export class PerformanceMark<T = unknown> extends PerformanceEntry {
-    +entryType: 'mark';
-    +duration: 0;
-    +detail?: T;
+    readonly entryType: 'mark';
+    readonly duration: 0;
+    readonly detail?: T;
   }
 
-  declare export class PerformanceMeasure<T = unknown>
-    extends PerformanceEntry
-  {
-    +entryType: 'measure';
-    +detail?: T;
+  declare export class PerformanceMeasure<
+    T = unknown,
+  > extends PerformanceEntry {
+    readonly entryType: 'measure';
+    readonly detail?: T;
   }
 
   declare export class PerformanceNodeEntry extends PerformanceEntry {
-    +entryType: 'node';
+    readonly entryType: 'node';
   }
 
   declare export class PerformanceNodeTiming extends PerformanceEntry {
-    +entryType: 'node';
-    +bootstrapComplete: number;
-    +environment: number;
-    +idleTime: number;
-    +loopExit: number;
-    +loopStart: number;
-    +nodeStart: number;
-    +v8Start: number;
+    readonly entryType: 'node';
+    readonly bootstrapComplete: number;
+    readonly environment: number;
+    readonly idleTime: number;
+    readonly loopExit: number;
+    readonly loopStart: number;
+    readonly nodeStart: number;
+    readonly v8Start: number;
   }
 
   declare export class PerformanceResourceTiming extends PerformanceEntry {
-    +entryType: 'resource';
-    +connectEnd: number;
-    +connectStart: number;
-    +decodedBodySize: number;
-    +domainLookupEnd: number;
-    +domainLookupStart: number;
-    +encodedBodySize: number;
-    +fetchStart: number;
-    +redirectEnd: number;
-    +redirectStart: number;
-    +requestStart: number;
-    +responseEnd: number;
-    +secureConnectionStart: number;
-    +transferSize: number;
-    +workerStart: number;
+    readonly entryType: 'resource';
+    readonly connectEnd: number;
+    readonly connectStart: number;
+    readonly decodedBodySize: number;
+    readonly domainLookupEnd: number;
+    readonly domainLookupStart: number;
+    readonly encodedBodySize: number;
+    readonly fetchStart: number;
+    readonly redirectEnd: number;
+    readonly redirectStart: number;
+    readonly requestStart: number;
+    readonly responseEnd: number;
+    readonly secureConnectionStart: number;
+    readonly transferSize: number;
+    readonly workerStart: number;
   }
 
   declare export class PerformanceObserverEntryList {
@@ -3277,9 +3298,9 @@ declare module 'perf_hooks' {
   }
 
   declare export type EventLoopUtilization = {
-    +utilization: number,
-    +idle: number,
-    +active: number,
+    readonly utilization: number,
+    readonly idle: number,
+    readonly active: number,
   };
 
   declare export type PerformanceMarkOptions<T = unknown> = Readonly<{
@@ -3314,10 +3335,10 @@ declare module 'perf_hooks' {
       startMarkOrOptions?: string | PerformanceMeasureOptions<T>,
       endMark?: string,
     ): PerformanceMeasure<T>;
-    +nodeTiming: PerformanceNodeTiming;
+    readonly nodeTiming: PerformanceNodeTiming;
     now(): number;
     setResourceTimingBufferSize(maxSize: number): void;
-    +timeOrigin: number;
+    readonly timeOrigin: number;
     timerify<TArgs extends Iterable<unknown>, TReturn>(
       fn: (...TArgs) => TReturn,
       options?: Readonly<{histogram?: RecordableHistogram}>,
@@ -3373,7 +3394,7 @@ declare module 'punycode' {
 
 declare module 'querystring' {
   declare function stringify(
-    obj: Object,
+    obj: any,
     separator?: string,
     equal?: string,
     options?: {encodeURIComponent?: (str: string) => string, ...},
@@ -3398,11 +3419,7 @@ declare module 'querystring' {
  */
 declare module 'node:sqlite' {
   declare export type SupportedValueType =
-    | null
-    | number
-    | bigint
-    | string
-    | Uint8Array;
+    null | number | bigint | string | Uint8Array;
 
   declare export type DatabaseSyncOptions = Readonly<{
     open?: boolean,
@@ -3447,7 +3464,7 @@ declare module 'node:sqlite' {
       ...anonymousParameters: ReadonlyArray<SupportedValueType>
     ): Array<any>;
 
-    +expandedSQL: string;
+    readonly expandedSQL: string;
 
     get(...anonymousParameters: ReadonlyArray<SupportedValueType>): any;
     get(
@@ -3474,7 +3491,7 @@ declare module 'node:sqlite' {
     setAllowBareNamedParameters(enabled: boolean): void;
     setReadBigInts(enabled: boolean): void;
 
-    +sourceSQL: string;
+    readonly sourceSQL: string;
   }
 
   declare export class DatabaseSync {
@@ -3505,9 +3522,9 @@ declare module 'node:sqlite' {
   }
 
   declare export var constants: {|
-    +SQLITE_CHANGESET_OMIT: number,
-    +SQLITE_CHANGESET_REPLACE: number,
-    +SQLITE_CHANGESET_ABORT: number,
+    readonly SQLITE_CHANGESET_OMIT: number,
+    readonly SQLITE_CHANGESET_REPLACE: number,
+    readonly SQLITE_CHANGESET_ABORT: number,
   |};
 }
 
@@ -3844,8 +3861,8 @@ declare module 'stream' {
   ): stream$Stream;
 
   declare interface StreamPipelineOptions {
-    +signal?: AbortSignal;
-    +end?: boolean;
+    readonly signal?: AbortSignal;
+    readonly end?: boolean;
   }
 
   declare type StreamPromise = {
@@ -3905,7 +3922,7 @@ declare module 'stream' {
 }
 
 declare class tty$ReadStream extends net$Socket {
-  constructor(fd: number, options?: Object): void;
+  constructor(fd: number, options?: any): void;
   isRaw: boolean;
   setRawMode(mode: boolean): void;
   isTTY: true;
@@ -4000,7 +4017,7 @@ type tls$connectOptions = {
   path?: string,
   lookup?: (
     domain: string,
-    options?: ?number | ?Object,
+    options?: ?number | ?any,
     callback?: (err: ?Error, address: string, family: number) => void,
   ) => unknown,
   requestOCSP?: boolean,
@@ -4086,7 +4103,7 @@ type tls$Certificate = {
 };
 
 declare class tls$TLSSocket extends net$Socket {
-  constructor(socket: net$Socket, options?: Object): void;
+  constructor(socket: net$Socket, options?: any): void;
   authorized: boolean;
   authorizationError: string | null;
   encrypted: true;
@@ -4111,7 +4128,7 @@ declare class tls$TLSSocket extends net$Socket {
   getPeerCertificate(detailed?: boolean): tls$Certificate | null;
   getSession(): ?Buffer;
   getTLSTicket(): Buffer | void;
-  renegotiate(options: Object, callback: Function): boolean | void;
+  renegotiate(options: any, callback: any): boolean | void;
   setMaxSendFragment(size: number): boolean;
 }
 
@@ -4120,12 +4137,12 @@ declare class tls$Server extends net$Server {
     port?: number,
     hostname?: string,
     backlog?: number,
-    callback?: Function,
+    callback?: any,
   ): tls$Server;
-  listen(path: string, callback?: Function): tls$Server;
-  listen(handle: Object, callback?: Function): tls$Server;
-  close(callback?: Function): tls$Server;
-  addContext(hostname: string, context: Object): void;
+  listen(path: string, callback?: any): tls$Server;
+  listen(handle: any, callback?: any): tls$Server;
+  close(callback?: any): tls$Server;
+  addContext(hostname: string, context: any): void;
   getTicketKeys(): Buffer;
   setTicketKeys(keys: Buffer): void;
 }
@@ -4141,14 +4158,14 @@ declare module 'tls' {
   declare function getCiphers(): Array<string>;
   declare function convertNPNProtocols(
     NPNProtocols: Array<string>,
-    out: Object,
+    out: any,
   ): void;
   declare function checkServerIdentity(
     servername: string,
     cert: string,
   ): Error | void;
-  declare function parseCertString(s: string): Object;
-  declare function createSecureContext(details: Object): Object;
+  declare function parseCertString(s: string): any;
+  declare function createSecureContext(details: any): any;
   declare var SecureContext: tls$SecureContext;
   declare var TLSSocket: typeof tls$TLSSocket;
   declare var Server: typeof tls$Server;
@@ -4161,35 +4178,35 @@ declare module 'tls' {
   ): tls$Server;
   declare function connect(
     options: tls$connectOptions,
-    callback?: Function,
+    callback?: any,
   ): tls$TLSSocket;
   declare function connect(
     port: number,
     host?: string,
     options?: tls$connectOptions,
-    callback?: Function,
+    callback?: any,
   ): tls$TLSSocket;
   declare function createSecurePair(
-    context?: Object,
+    context?: any,
     isServer?: boolean,
     requestCert?: boolean,
     rejectUnauthorized?: boolean,
-    options?: Object,
-  ): Object;
+    options?: any,
+  ): any;
 }
 
 type url$urlObject = {
-  +href?: string,
-  +protocol?: string | null,
-  +slashes?: boolean | null,
-  +auth?: string | null,
-  +hostname?: string | null,
-  +port?: string | number | null,
-  +host?: string | null,
-  +pathname?: string | null,
-  +search?: string | null,
-  +query?: Object | null,
-  +hash?: string | null,
+  readonly href?: string,
+  readonly protocol?: string | null,
+  readonly slashes?: boolean | null,
+  readonly auth?: string | null,
+  readonly hostname?: string | null,
+  readonly port?: string | number | null,
+  readonly host?: string | null,
+  readonly pathname?: string | null,
+  readonly search?: string | null,
+  readonly query?: any | null,
+  readonly hash?: string | null,
   ...
 };
 
@@ -4361,13 +4378,13 @@ declare module 'url' {
     host: string;
     hostname: string;
     href: string;
-    +origin: string;
+    readonly origin: string;
     password: string;
     pathname: string;
     port: string;
     protocol: string;
     search: string;
-    +searchParams: URLSearchParams;
+    readonly searchParams: URLSearchParams;
     username: string;
     toString(): string;
     toJSON(): string;
@@ -4413,15 +4430,15 @@ declare module 'url' {
       options?: Readonly<{ignoreCase?: boolean}>,
     ): void;
 
-    +hasRegExpGroups: boolean;
-    +hash: string;
-    +hostname: string;
-    +password: string;
-    +pathname: string;
-    +port: string;
-    +protocol: string;
-    +search: string;
-    +username: string;
+    readonly hasRegExpGroups: boolean;
+    readonly hash: string;
+    readonly hostname: string;
+    readonly password: string;
+    readonly pathname: string;
+    readonly port: string;
+    readonly protocol: string;
+    readonly search: string;
+    readonly username: string;
 
     exec(
       input?: string | url$URLPatternInit,
@@ -4510,17 +4527,14 @@ declare module 'util' {
   declare function isRegExp(object: any): boolean;
   declare function isDate(object: any): boolean;
   declare function isError(object: any): boolean;
-  declare function inherits(
-    constructor: Function,
-    superConstructor: Function,
-  ): void;
-  declare function deprecate(f: Function, string: string): Function;
-  declare function promisify(f: Function): Function;
-  declare function callbackify(f: Function): Function;
+  declare function inherits(constructor: any, superConstructor: any): void;
+  declare function deprecate(f: any, string: string): any;
+  declare function promisify(f: any): any;
+  declare function callbackify(f: any): any;
   declare function stripVTControlCharacters(str: string): string;
 
   declare function parseArgs<
-    TOptions extends {+[string]: util$ParseArgsOption} = {},
+    TOptions extends {readonly [string]: util$ParseArgsOption} = {},
   >(config: {
     args?: Array<string>,
     options?: TOptions,
@@ -4576,8 +4590,8 @@ declare module 'util' {
     constructor(input: string): void;
     type: string;
     subtype: string;
-    +essence: string;
-    +params: MIMEParams;
+    readonly essence: string;
+    readonly params: MIMEParams;
     toString(): string;
   }
 
@@ -4802,7 +4816,7 @@ declare module 'vm' {
     code: string,
     params: string[],
     options: vm$CompileFunctionOptions,
-  ): Function;
+  ): any;
 }
 
 type zlib$options = {
@@ -5170,11 +5184,11 @@ declare module 'assert' {
     deepEqual(actual: any, expected: any, message?: string): void,
     notDeepEqual(actual: any, expected: any, message?: string): void,
     throws(
-      block: Function,
-      error?: Function | RegExp | ((err: any) => boolean),
+      block: any,
+      error?: any | RegExp | ((err: any) => boolean),
       message?: string,
     ): void,
-    doesNotThrow(block: Function, message?: string): void,
+    doesNotThrow(block: any, message?: string): void,
     ifError(value: any): void,
     AssertionError: typeof AssertionError,
     strict: AssertStrict,
@@ -5195,11 +5209,11 @@ declare module 'assert' {
     deepStrictEqual(actual: any, expected: any, message?: string): void,
     notDeepStrictEqual(actual: any, expected: any, message?: string): void,
     throws(
-      block: Function,
-      error?: Function | RegExp | ((err: any) => boolean),
+      block: any,
+      error?: any | RegExp | ((err: any) => boolean),
       message?: string,
     ): void,
-    doesNotThrow(block: Function, message?: string): void,
+    doesNotThrow(block: any, message?: string): void,
     ifError(value: any): void,
     AssertionError: typeof AssertionError,
     strict: AssertStrict,
@@ -5356,12 +5370,9 @@ declare module 'v8' {
    * @since v20.13.0
    * @experimental
    */
+  declare function queryObjects(ctor: any, options?: {format: 'count'}): number;
   declare function queryObjects(
-    ctor: Function,
-    options?: {format: 'count'},
-  ): number;
-  declare function queryObjects(
-    ctor: Function,
+    ctor: any,
     options: {format: 'summary'},
   ): Array<string>;
 
@@ -5372,7 +5383,7 @@ declare module 'v8' {
    */
   declare function getCppHeapStatistics(
     detailLevel?: 'brief' | 'detailed',
-  ): Object;
+  ): any;
 
   /**
    * Checks if a string's internal representation uses one byte per character (Latin-1/ISO-8859-1 encoding).
@@ -5537,9 +5548,9 @@ type repl$DefineCommandOptions = (...args: Array<any>) => void | {
   ...
 };
 
-declare class $SymbolReplModeMagic mixins Symbol {}
-declare class $SymbolReplModeSloppy mixins Symbol {}
-declare class $SymbolReplModeStrict mixins Symbol {}
+declare opaque type $SymbolReplModeMagic: symbol;
+declare opaque type $SymbolReplModeSloppy: symbol;
+declare opaque type $SymbolReplModeStrict: symbol;
 
 declare module 'repl' {
   declare var REPL_MODE_MAGIC: $SymbolReplModeMagic;
@@ -5558,16 +5569,14 @@ declare module 'repl' {
     input?: stream$Readable,
     output?: stream$Writable,
     terminal?: boolean,
-    eval?: Function,
+    eval?: any,
     useColors?: boolean,
     useGlobal?: boolean,
     ignoreUndefined?: boolean,
     writer?: (object: any, options?: util$InspectOptions) => string,
     completer?: readline$InterfaceCompleter,
     replMode?:
-      | $SymbolReplModeMagic
-      | $SymbolReplModeSloppy
-      | $SymbolReplModeStrict,
+      $SymbolReplModeMagic | $SymbolReplModeSloppy | $SymbolReplModeStrict,
     breakEvalOnSigint?: boolean,
     ...
   }): REPLServer;
@@ -5582,7 +5591,7 @@ declare module 'inspector' {
 
   declare function close(): void;
   declare function url(): string | void;
-  declare var console: Object;
+  declare var console: any;
   declare function waitForDebugger(): void;
 
   declare class Session extends events$EventEmitter {
@@ -5590,7 +5599,7 @@ declare module 'inspector' {
     connect(): void;
     connectToMainThread(): void;
     disconnect(): void;
-    post(method: string, params?: Object, callback?: Function): void;
+    post(method: string, params?: any, callback?: any): void;
   }
 }
 
@@ -5608,7 +5617,7 @@ declare class Process extends events$EventEmitter {
   arch: string;
   argv: Array<string>;
   chdir(directory: string): void;
-  config: Object;
+  config: any;
   connected: boolean;
   cpuUsage(previousValue?: process$CPUUsage): process$CPUUsage;
   cwd(): string;
@@ -5647,7 +5656,7 @@ declare class Process extends events$EventEmitter {
   };
   initgroups?: (user: number | string, extra_group: number | string) => void;
   kill(pid: number, signal?: string | number): void;
-  mainModule: Object;
+  mainModule: any;
   memoryUsage: {
     (): {
       arrayBuffers: number,
@@ -5672,8 +5681,8 @@ declare class Process extends events$EventEmitter {
   };
   send?: (
     message: any,
-    sendHandleOrCallback?: net$Socket | net$Server | Function,
-    callback?: Function,
+    sendHandleOrCallback?: net$Socket | net$Server | any,
+    callback?: any,
   ) => void;
   setegid?: (id: number | string) => void;
   seteuid?: (id: number | string) => void;
@@ -5702,8 +5711,8 @@ declare var __dirname: string;
 declare function setImmediate(
   callback: (...args: Array<any>) => unknown,
   ...args: Array<any>
-): Object;
-declare function clearImmediate(immediateObject: any): Object;
+): any;
+declare function clearImmediate(immediateObject: any): any;
 
 declare module 'worker_threads' {
   declare var isMainThread: boolean;
@@ -5712,8 +5721,8 @@ declare module 'worker_threads' {
   declare var workerData: any;
 
   declare class MessageChannel {
-    +port1: MessagePort;
-    +port2: MessagePort;
+    readonly port1: MessagePort;
+    readonly port2: MessagePort;
   }
 
   declare class MessagePort extends events$EventEmitter {
@@ -5772,7 +5781,7 @@ declare module 'worker_threads' {
   }
 
   declare type WorkerOptions = {|
-    env?: Object,
+    env?: any,
     eval?: boolean,
     workerData?: any,
     stdin?: boolean,
@@ -5782,10 +5791,10 @@ declare module 'worker_threads' {
   |};
 
   declare class Worker extends events$EventEmitter {
-    +stdin: stream$Writable | null;
-    +stdout: stream$Readable;
-    +stderr: stream$Readable;
-    +threadId: number;
+    readonly stdin: stream$Writable | null;
+    readonly stdout: stream$Readable;
+    readonly stderr: stream$Readable;
+    readonly threadId: number;
 
     constructor(filename: string, options?: WorkerOptions): void;
 
@@ -5892,6 +5901,11 @@ declare module 'node:assert/strict' {
   declare module.exports: $Exports<'assert'>['strict'];
 }
 
+declare module 'node:buffer' {
+  export type * from 'buffer';
+  declare module.exports: $Exports<'buffer'>;
+}
+
 declare module 'node:child_process' {
   export type * from 'child_process';
   declare module.exports: $Exports<'child_process'>;
@@ -5902,14 +5916,29 @@ declare module 'node:cluster' {
   declare module.exports: $Exports<'cluster'>;
 }
 
+declare module 'node:console' {
+  export type * from 'console';
+  declare module.exports: $Exports<'console'>;
+}
+
 declare module 'node:crypto' {
   export type * from 'crypto';
   declare module.exports: $Exports<'crypto'>;
 }
 
+declare module 'node:dgram' {
+  export type * from 'dgram';
+  declare module.exports: $Exports<'dgram'>;
+}
+
 declare module 'node:dns' {
   export type * from 'dns';
   declare module.exports: $Exports<'dns'>;
+}
+
+declare module 'node:domain' {
+  export type * from 'domain';
+  declare module.exports: $Exports<'domain'>;
 }
 
 declare module 'node:events' {
@@ -5925,6 +5954,31 @@ declare module 'node:fs' {
 declare module 'node:fs/promises' {
   export type * from 'fs/promises';
   declare module.exports: $Exports<'fs'>['promises'];
+}
+
+declare module 'node:http' {
+  export type * from 'http';
+  declare module.exports: $Exports<'http'>;
+}
+
+declare module 'node:https' {
+  export type * from 'https';
+  declare module.exports: $Exports<'https'>;
+}
+
+declare module 'node:inspector' {
+  export type * from 'inspector';
+  declare module.exports: $Exports<'inspector'>;
+}
+
+declare module 'node:module' {
+  export type * from 'module';
+  declare module.exports: $Exports<'module'>;
+}
+
+declare module 'node:net' {
+  export type * from 'net';
+  declare module.exports: $Exports<'net'>;
 }
 
 declare module 'node:os' {
@@ -5947,6 +6001,36 @@ declare module 'node:process' {
   declare module.exports: $Exports<'process'>;
 }
 
+declare module 'node:punycode' {
+  export type * from 'punycode';
+  declare module.exports: $Exports<'punycode'>;
+}
+
+declare module 'node:querystring' {
+  export type * from 'querystring';
+  declare module.exports: $Exports<'querystring'>;
+}
+
+declare module 'node:readline' {
+  export type * from 'readline';
+  declare module.exports: $Exports<'readline'>;
+}
+
+declare module 'node:repl' {
+  export type * from 'repl';
+  declare module.exports: $Exports<'repl'>;
+}
+
+declare module 'node:stream' {
+  export type * from 'stream';
+  declare module.exports: $Exports<'stream'>;
+}
+
+declare module 'node:string_decoder' {
+  export type * from 'string_decoder';
+  declare module.exports: $Exports<'string_decoder'>;
+}
+
 declare module 'node:timers' {
   export type * from 'timers';
   declare module.exports: $Exports<'timers'>;
@@ -5955,6 +6039,16 @@ declare module 'node:timers' {
 declare module 'node:timers/promises' {
   export type * from 'timers/promises';
   declare module.exports: $Exports<'timers/promises'>;
+}
+
+declare module 'node:tls' {
+  export type * from 'tls';
+  declare module.exports: $Exports<'tls'>;
+}
+
+declare module 'node:tty' {
+  export type * from 'tty';
+  declare module.exports: $Exports<'tty'>;
 }
 
 declare module 'node:url' {
@@ -5971,7 +6065,17 @@ declare module 'node:v8' {
   declare module.exports: $Exports<'v8'>;
 }
 
+declare module 'node:vm' {
+  export type * from 'vm';
+  declare module.exports: $Exports<'vm'>;
+}
+
 declare module 'node:worker_threads' {
   export type * from 'worker_threads';
   declare module.exports: $Exports<'worker_threads'>;
+}
+
+declare module 'node:zlib' {
+  export type * from 'zlib';
+  declare module.exports: $Exports<'zlib'>;
 }

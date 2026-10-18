@@ -12,8 +12,8 @@
 import type {Options} from './FileStore';
 
 import FileStore from './FileStore';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 type CleanOptions = Readonly<{
   ...Options,
@@ -30,9 +30,9 @@ type CleanOptions = Readonly<{
  * custom Metro cache that uses watches, hooks get/set, and/or implements LRU.
  */
 export default class AutoCleanFileStore<T> extends FileStore<T> {
-  +#intervalMs: number;
-  +#cleanupThresholdMs: number;
-  +#root: string;
+  readonly #intervalMs: number;
+  readonly #cleanupThresholdMs: number;
+  readonly #root: string;
 
   constructor(opts: CleanOptions) {
     super({root: opts.root});
@@ -61,7 +61,6 @@ export default class AutoCleanFileStore<T> extends FileStore<T> {
       .filter(dirent => dirent.isFile())
       .forEach(dirent => {
         const absolutePath = path.join(
-          // $FlowFixMe[prop-missing] - dirent.parentPath added in Node 20.12
           dirent.parentPath,
           dirent.name.toString(),
         );

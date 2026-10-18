@@ -18,16 +18,16 @@ import type {
 
 export class FileSystemChangeAggregator implements FileSystemListener {
   // Mutually exclusive with removedDirectories
-  +#addedDirectories: Set<CanonicalPath> = new Set();
+  readonly #addedDirectories: Set<CanonicalPath> = new Set();
   // Mutually exclusive with addedDirectories
-  +#removedDirectories: Set<CanonicalPath> = new Set();
+  readonly #removedDirectories: Set<CanonicalPath> = new Set();
 
   // Mutually exclusive with modified and removed files
-  +#addedFiles: Map<CanonicalPath, FileMetadata> = new Map();
+  readonly #addedFiles: Map<CanonicalPath, FileMetadata> = new Map();
   // Mutually exclusive with added and removed files
-  +#modifiedFiles: Map<CanonicalPath, FileMetadata> = new Map();
+  readonly #modifiedFiles: Map<CanonicalPath, FileMetadata> = new Map();
   // Mutually exclusive with added and modified files
-  +#removedFiles: Map<CanonicalPath, FileMetadata> = new Map();
+  readonly #removedFiles: Map<CanonicalPath, FileMetadata> = new Map();
 
   // Removed files must be paired with the file's metadata the last time it was
   // observable by consumers - ie, immediately *before* this batch. To report
@@ -36,7 +36,7 @@ export class FileSystemChangeAggregator implements FileSystemListener {
   // re-added, modified and removed again, we still have the initial metadata.
   // This is particularly important if, say, a regular file is replaced by a
   // symlink, or vice-versa.
-  +#initialMetadata: Map<CanonicalPath, FileMetadata> = new Map();
+  readonly #initialMetadata: Map<CanonicalPath, FileMetadata> = new Map();
 
   directoryAdded(canonicalPath: CanonicalPath): void {
     // Only add to newDirectories if this directory wasn't previously removed
@@ -134,7 +134,7 @@ function mapIterable<T>(
   metadataMapFn: (metadata: FileMetadata) => T,
 ): Iterable<Readonly<[CanonicalPath, T]>> {
   return {
-    *[Symbol.iterator](): Iterator<Readonly<[CanonicalPath, T]>> {
+    *[Symbol.iterator](): IteratorObject<Readonly<[CanonicalPath, T]>> {
       for (const [path, metadata] of map) {
         yield [path, metadataMapFn(metadata)];
       }

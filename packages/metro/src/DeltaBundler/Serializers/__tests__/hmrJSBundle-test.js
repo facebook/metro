@@ -137,7 +137,7 @@ Object {
     Object {
       "module": Array [
         0,
-        "__d(function() {/* code for bar */},0,[],\\"bar\\",{});
+        "__d(function() {/* code for bar */},0,null,\\"bar\\",{});
 //# sourceMappingURL=http://localhost/bar.map
 //# sourceURL=http://localhost/bar.bundle
 ",
@@ -172,7 +172,7 @@ Object {
     Object {
       "module": Array [
         2,
-        "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},2,[],\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\",{});
+        "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},2,null,\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\",{});
 //# sourceMappingURL=http://localhost/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.map
 //# sourceURL=http://localhost/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.bundle
 ",

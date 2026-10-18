@@ -14,6 +14,11 @@
 import type {Context} from '../generateFunctionMap';
 import type {MixedSourceMap} from '../source-map';
 import type {NodePath} from '@babel/traverse';
+import type {
+  File as BabelNodeFile,
+  Node as BabelNode,
+  Standardized as BabelNodeStandardized,
+} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 const {
@@ -24,7 +29,6 @@ const {
 const {transformFromAstSync} = require('@babel/core');
 const {parse} = require('@babel/parser');
 const STANDARDIZED_TYPES: Array<BabelNodeStandardized> =
-  // $FlowFixMe[prop-missing]
   // $FlowFixMe[incompatible-type]
   // $FlowFixMe[missing-export]
   require('@babel/types').STANDARDIZED_TYPES;

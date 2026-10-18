@@ -12,17 +12,19 @@
 
 jest
   .setMock('jest-worker', () => ({}))
-  .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('assert')
+  .mock('node:fs', () => new (require('metro-memory-fs'))())
+  .mock('node:assert')
   .mock('../getTransformCacheKey', () => jest.fn(() => 'hash'))
   .mock('../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 // Must be required after mocks above
 const Transformer = require('../Transformer').default;
-const fs = require('fs');
 const {getDefaultValues} = require('metro-config').getDefaultConfig;
 const {mergeConfig} = require('metro-config/private/loadConfig');
+const path = require('node:path');
+
+const fs = jest.requireMock('node:fs');
 
 describe('Transformer', function () {
   let watchFolders;
@@ -213,5 +215,92 @@ describe('Transformer', function () {
     await transformerInstance.transformFile('./foo.js', {});
 
     expect(require('../getTransformCacheKey')).not.toBeCalled();
+  });
+
+  test('passes an indexed watch folder URL path to asset transforms', async () => {
+    const workerTransform =
+      require('../WorkerFarm').default.prototype.transform;
+    workerTransform.mockClear();
+    workerTransform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+    fs.mkdirSync('/external', {recursive: true});
+
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders: ['/root', '/external'],
+      },
+      {getOrComputeSha1},
+    );
+
+    await transformerInstance.transformFile('/external/imgs/a.png', {
+      type: 'asset',
+    });
+
+    expect(workerTransform).toHaveBeenCalledWith(
+      path.join('..', 'external', 'imgs', 'a.png'),
+      {type: 'asset'},
+      undefined,
+      '[metro-watchFolders]/1/imgs/a.png',
+    );
+  });
+
+  test('passes a dynamic root URL path to asset transforms, reading roots on each transform', async () => {
+    const workerTransform =
+      require('../WorkerFarm').default.prototype.transform;
+    workerTransform.mockClear();
+    workerTransform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+    let dynamicRoots: ReadonlyArray<{id: string, rootDir: string}> = [];
+    const getDynamicRoots = jest.fn(() => dynamicRoots);
+
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders: ['/root'],
+      },
+      {getDynamicRoots, getOrComputeSha1},
+    );
+    dynamicRoots = [{id: '01234567', rootDir: '/other'}];
+
+    await transformerInstance.transformFile('/other/imgs/a.png', {
+      type: 'asset',
+    });
+
+    expect(getDynamicRoots).toHaveBeenCalled();
+    expect(workerTransform).toHaveBeenCalledWith(
+      path.join('..', 'other', 'imgs', 'a.png'),
+      {type: 'asset'},
+      undefined,
+      '[metro-watchFolders]/01234567/imgs/a.png',
+    );
+  });
+
+  test('does not start workers if the transformer cache key throws', () => {
+    const error = new Error("Cannot find module 'babel-preset-expo'");
+    require('../getTransformCacheKey').mockImplementationOnce(() => {
+      throw error;
+    });
+    const WorkerFarm = require('../WorkerFarm').default;
+    WorkerFarm.mockClear();
+
+    expect(
+      () =>
+        new Transformer(
+          {
+            ...commonOptions,
+            cacheStores: [{get: jest.fn(), set: jest.fn()}],
+            watchFolders,
+          },
+          {getOrComputeSha1},
+        ),
+    ).toThrow(error);
+    expect(WorkerFarm).not.toBeCalled();
   });
 });

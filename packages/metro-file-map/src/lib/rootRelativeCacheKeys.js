@@ -13,7 +13,7 @@ import type {BuildParameters} from '../flow-types';
 
 import normalizePathSeparatorsToPosix from './normalizePathSeparatorsToPosix';
 import {RootPathUtils} from './RootPathUtils';
-import {createHash} from 'crypto';
+import {createHash} from 'node:crypto';
 
 export default function rootRelativeCacheKeys(
   buildParameters: BuildParameters,
@@ -39,7 +39,6 @@ export default function rootRelativeCacheKeys(
         case 'extensions':
         case 'computeSha1':
         case 'enableSymlinks':
-        case 'forceNodeFilesystemAPI':
         case 'retainAllFiles':
           return buildParameters[key] ?? null;
         case 'ignorePattern':

@@ -8,16 +8,20 @@
  * @format
  */
 
-import type {FSWatcher} from 'fs';
+import type {
+  WatcherBackendChangeEvent,
+  WatcherIncludedFiles,
+} from '../flow-types';
+import type {FSWatcher} from 'node:fs';
 
 import {AbstractWatcher} from './AbstractWatcher';
-import {includedByGlob, typeFromStat} from './common';
-import {promises as fsPromises, watch} from 'fs';
-import {platform} from 'os';
-import * as path from 'path';
+import {isIncluded, typeFromStat} from './common';
+import debugModule from 'debug';
+import {promises as fsPromises, watch} from 'node:fs';
+import {platform} from 'node:os';
+import * as path from 'node:path';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')('Metro:NativeWatcher');
+const debug = debugModule('Metro:NativeWatcher');
 
 const TOUCH_EVENT = 'touch';
 const DELETE_EVENT = 'delete';
@@ -27,7 +31,7 @@ const RECRAWL_EVENT = 'recrawl';
  * NativeWatcher uses Node's native fs.watch API with recursive: true.
  *
  * Supported on macOS (and potentially Windows), because both natively have a
- * concept of recurisve watching, via FSEvents and ReadDirectoryChangesW
+ * concept of recursive watching, via FSEvents and ReadDirectoryChangesW
  * respectively. Notably Linux lacks this capability at the OS level.
  *
  * Node.js has at times supported the `recursive` option to fs.watch on Linux
@@ -46,6 +50,11 @@ const RECRAWL_EVENT = 'recrawl';
 export default class NativeWatcher extends AbstractWatcher {
   #fsWatcher: ?FSWatcher;
 
+  /**
+   * Promise chain to emit events in the order they were received.
+   */
+  #emitQueue: Promise<void> = Promise.resolve();
+
   static isSupported(): boolean {
     return platform() === 'darwin';
   }
@@ -54,12 +63,11 @@ export default class NativeWatcher extends AbstractWatcher {
     dir: string,
     opts: Readonly<{
       ignored: ?RegExp,
-      globs: ReadonlyArray<string>,
-      dot: boolean,
+      included: ?WatcherIncludedFiles,
       ...
     }>,
   ) {
-    if (!NativeWatcher.isSupported) {
+    if (!NativeWatcher.isSupported()) {
       throw new Error('This watcher can only be used on macOS');
     }
     super(dir, opts);
@@ -76,7 +84,26 @@ export default class NativeWatcher extends AbstractWatcher {
         recursive: true,
       },
       (event, relativePath) => {
-        this._handleEvent(event, relativePath).catch(error => {
+        // Start handling immediately so that stats are gathered concurrently
+        // and as close as possible to the event, but emit in arrival order.
+        const settled = this.#handleEvent(event, relativePath).then(
+          change => ({change, error: null}),
+          (error: Error) => ({change: null, error}),
+        );
+        const emitted = this.#emitQueue.then(() =>
+          settled.then(({change, error}) => {
+            if (error != null) {
+              throw error;
+            }
+            if (change != null) {
+              this.emitFileEvent(change);
+            }
+          }),
+        );
+        // Report failures outside the queue, so that a throwing emitError
+        // (e.g. with no error listener) can't suppress later events.
+        this.#emitQueue = emitted.catch(() => {});
+        emitted.catch(error => {
           this.emitError(error);
         });
       },
@@ -95,7 +122,14 @@ export default class NativeWatcher extends AbstractWatcher {
     }
   }
 
-  async _handleEvent(event: string, relativePath: string) {
+  /**
+   * Resolve a raw `fs.watch` event into the event to emit for it, or `null` if
+   * it should be dropped.
+   */
+  async #handleEvent(
+    event: string,
+    relativePath: string,
+  ): Promise<?Omit<WatcherBackendChangeEvent, 'root'>> {
     const absolutePath = path.resolve(this.root, relativePath);
     if (this.doIgnore(relativePath)) {
       debug(
@@ -104,7 +138,7 @@ export default class NativeWatcher extends AbstractWatcher {
         relativePath,
         this.root,
       );
-      return;
+      return null;
     }
     debug(
       'Handling event "%s" on %s (root: %s)',
@@ -119,31 +153,30 @@ export default class NativeWatcher extends AbstractWatcher {
 
       // Ignore files of an unrecognized type
       if (!type) {
-        return;
+        return null;
       }
 
-      if (!includedByGlob(type, this.globs, this.dot, relativePath)) {
-        return;
+      if (!isIncluded(type, this.included, relativePath)) {
+        return null;
       }
 
       // For directory "rename" events, notify that we need a recrawl since we
-      // wont' receive events for unmodified files underneath a moved (or
+      // won't receive events for unmodified files underneath a moved (or
       // cloned) directory. Renames are fired by the OS on moves, clones, and
-      // creations. We ignore "change" events because they indiciate a change
+      // creations. We ignore "change" events because they indicate a change
       // to directory metadata, rather than its path or existence.
       if (type === 'd' && event === 'rename') {
         debug(
           'Directory rename detected on %s, requesting recrawl',
           relativePath,
         );
-        this.emitFileEvent({
+        return {
           event: RECRAWL_EVENT,
           relativePath,
-        });
-        return;
+        };
       }
 
-      this.emitFileEvent({
+      return {
         event: TOUCH_EVENT,
         relativePath,
         metadata: {
@@ -151,14 +184,13 @@ export default class NativeWatcher extends AbstractWatcher {
           modifiedTime: stat.mtime.getTime(),
           size: stat.size,
         },
-      });
+      };
     } catch (error) {
       if (error?.code !== 'ENOENT') {
-        this.emitError(error);
-        return;
+        throw error;
       }
 
-      this.emitFileEvent({event: DELETE_EVENT, relativePath});
+      return {event: DELETE_EVENT, relativePath};
     }
   }
 }

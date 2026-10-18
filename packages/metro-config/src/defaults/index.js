@@ -17,6 +17,7 @@ import {
   assetExts,
   assetResolutions,
   defaultCreateModuleIdFactory,
+  defaultEnhanceMiddleware,
   noopPerfLoggerFactory,
   platforms,
   sourceExts,
@@ -26,8 +27,8 @@ import getMaxWorkers from './getMaxWorkers';
 import {FileStore} from 'metro-cache';
 import {Terminal} from 'metro-core';
 import TerminalReporter from 'metro/private/lib/TerminalReporter';
-import * as os from 'os';
-import * as path from 'path';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
@@ -38,15 +39,15 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     blockList: exclusionList(),
     dependencyExtractor: undefined,
     disableHierarchicalLookup: false,
-    emptyModulePath: require.resolve(
-      'metro-runtime/src/modules/empty-module.js',
-    ),
+    emptyModulePath:
+      require.resolve('metro-runtime/src/modules/empty-module.js'),
     enableGlobalPackages: false,
     extraNodeModules: {},
     hasteImplModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    schemeResolvers: {},
     unstable_conditionNames: [],
     unstable_conditionsByPlatform: {
       web: ['browser'],
@@ -70,13 +71,21 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     customSerializer: null,
     isThirdPartyModule: module =>
       /(?:^|[/\\])node_modules[/\\]/.test(module.path),
+    unstable_inlineDependencyMap: false,
+    unstable_lazilyDefineModules: false,
   },
 
   server: {
-    enhanceMiddleware: (middleware, _) => middleware,
+    enhanceMiddleware: defaultEnhanceMiddleware,
     forwardClientLogs: true,
     port: 8081,
     rewriteRequestUrl: url => url,
+    // Keep empty to not shadows a Metro builtin or user entry paths
+    // merged with user middleware as [...defaults, ...user]
+    unstable_middleware: [],
+    unstable_onServerCreated: () => {},
+    // merged with user middleware as [...user, ...defaults]
+    unstable_priorityMiddleware: [],
     unstable_serverRoot: null,
     useGlobalHotkey: true,
     verifyConnections: false,
@@ -128,12 +137,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     transformVariants: {default: {}},
     publicPath: '/assets',
-    allowOptionalDependencies: false,
+    allowOptionalDependencies: true,
     unstable_allowRequireContext: false,
     unstable_dependencyMapReservedName: null,
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
-    unstable_renameRequire: true,
     unstable_compactOutput: false,
     unstable_memoizeInlineRequires: false,
     unstable_workerThreads: false,

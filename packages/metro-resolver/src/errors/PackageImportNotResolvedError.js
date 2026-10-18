@@ -18,12 +18,12 @@ export default class PackageImportNotResolvedError extends Error {
    * Either the import specifier read, or the absolute path of the module being
    * resolved (used when import specifier is externally remapped).
    */
-  +importSpecifier: string;
+  readonly importSpecifier: string;
 
   /**
    * The description of the error cause.
    */
-  +reason: string;
+  readonly reason: string;
 
   constructor(
     opts: Readonly<{

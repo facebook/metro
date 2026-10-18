@@ -15,7 +15,7 @@ import CountingSet from '../../../lib/CountingSet';
 import baseJSBundle from '../baseJSBundle';
 import createModuleIdFactory from 'metro-config/private/defaults/createModuleIdFactory';
 
-const path = require('path');
+const path = require('node:path');
 
 const {objectContaining} = expect;
 
@@ -155,7 +155,7 @@ test('should generate a very simple bundle', () => {
         ],
         Array [
           "bar",
-          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+          "__d(function() {/* code for bar */},\\"bar\\",null,\\"bar\\");",
         ],
       ],
       "post": "require(\\"foo\\");
@@ -215,7 +215,7 @@ Object {
   "modules": Array [
     Array [
       "#.js",
-      "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"#.js\\",[],\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\");",
+      "__d(function() {/* code for ascii file with non ascii characters: %30.бундл.Øಚ😁AA */},\\"#.js\\",null,\\"%30.бундл.Øಚ😁AA/src/?/foo=bar/#.js\\");",
     ],
   ],
   "post": "//# sourceMappingURL=http://localhost/root/%2530.%D0%B1%D1%83%D0%BD%D0%B4%D0%BB.%C3%98%E0%B2%9A%F0%9F%98%81AA/src/%3F/foo%3Dbar/%23.map
@@ -250,7 +250,7 @@ test('should add runBeforeMainModule statements if found in the graph', () => {
         modulesOnly: false,
         processModuleFilter: () => true,
         projectRoot: '/root',
-        runBeforeMainModule: ['/root/bar', 'non-existant'],
+        runBeforeMainModule: ['/root/bar', 'non-existent'],
         runModule: true,
         serverRoot: '/root',
         shouldAddToIgnoreList: () => false,
@@ -290,7 +290,7 @@ test('should handle numeric module ids', () => {
         modulesOnly: false,
         processModuleFilter: () => true,
         projectRoot: '/root',
-        runBeforeMainModule: ['/root/bar', 'non-existant'],
+        runBeforeMainModule: ['/root/bar', 'non-existent'],
         runModule: true,
         serverRoot: '/root',
         shouldAddToIgnoreList: () => false,
@@ -307,7 +307,7 @@ test('should handle numeric module ids', () => {
       ],
       Array [
         1,
-        "__d(function() {/* code for bar */},1,[],\\"bar\\");",
+        "__d(function() {/* code for bar */},1,null,\\"bar\\");",
       ],
     ]
   `);
@@ -398,11 +398,29 @@ test('should add an inline source map to a very simple bundle', () => {
       ).toString(),
     ),
   ).toEqual({
-    mappings: '',
-    names: [],
-    sources: ['/root/foo', '/root/bar'],
-    sourcesContent: ['foo-source', 'bar-source'],
     version: 3,
+    sections: [
+      {
+        offset: {line: 1, column: 0},
+        map: {
+          version: 3,
+          sources: ['/root/foo'],
+          sourcesContent: ['foo-source'],
+          names: [],
+          mappings: '',
+        },
+      },
+      {
+        offset: {line: 2, column: 0},
+        map: {
+          version: 3,
+          sources: ['/root/bar'],
+          sourcesContent: ['bar-source'],
+          names: [],
+          mappings: '',
+        },
+      },
+    ],
   });
 });
 
@@ -451,8 +469,30 @@ test('emits x_google_ignoreList based on shouldAddToIgnoreList', () => {
     ),
   ).toEqual(
     objectContaining({
-      sources: ['/root/foo', '/root/bar'],
-      x_google_ignoreList: [0, 1],
+      sections: [
+        {
+          offset: {line: 1, column: 0},
+          map: {
+            version: 3,
+            sources: ['/root/foo'],
+            sourcesContent: ['foo-source'],
+            names: [],
+            mappings: '',
+            x_google_ignoreList: [0],
+          },
+        },
+        {
+          offset: {line: 2, column: 0},
+          map: {
+            version: 3,
+            sources: ['/root/bar'],
+            sourcesContent: ['bar-source'],
+            names: [],
+            mappings: '',
+            x_google_ignoreList: [0],
+          },
+        },
+      ],
     }),
   );
 });
@@ -500,7 +540,7 @@ test('does not add polyfills when `modulesOnly` is used', () => {
         ],
         Array [
           "bar",
-          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+          "__d(function() {/* code for bar */},\\"bar\\",null,\\"bar\\");",
         ],
       ],
       "post": "require(\\"foo\\");
@@ -508,4 +548,64 @@ test('does not add polyfills when `modulesOnly` is used', () => {
       "pre": "",
     }
   `);
+});
+
+test('inlines module ids when unstable_inlineDependencyMap is set', () => {
+  const NAME = 'DEP_MAP_RESERVED';
+  const ref = `${NAME}[0]`;
+  const fooWithRefs: Module<> = {
+    ...fooModule,
+    output: [
+      {
+        type: 'js/module',
+        data: {
+          code: `__d(function(g,r,i,a,m,e,${NAME}){r(${ref})});`,
+          map: [],
+          lineCount: 1,
+        },
+      },
+    ],
+  };
+
+  const bundle = baseJSBundle(
+    '/root/foo',
+    [polyfill],
+    {
+      dependencies: new Map([
+        ['/root/foo', fooWithRefs],
+        ['/root/bar', barModule],
+      ]),
+      entryPoints: new Set(['/root/foo']),
+      transformOptions,
+    },
+    {
+      asyncRequireModulePath: '',
+      createModuleId: createModuleIdFactory(),
+      dev: false,
+      getRunModuleStatement,
+      globalPrefix: '',
+      includeAsyncPaths: false,
+      inlineSourceMap: false,
+      modulesOnly: false,
+      processModuleFilter: () => true,
+      projectRoot: '/root',
+      runBeforeMainModule: [],
+      runModule: true,
+      serverRoot: '/root',
+      shouldAddToIgnoreList: () => false,
+      sourceMapUrl: null,
+      sourceUrl: null,
+      getSourceUrl: null,
+      dependencyMapReservedName: NAME,
+      unstable_inlineDependencyMap: true,
+    },
+  );
+
+  // baseJSBundle pre-assigns sequential ids in graph order: foo=0, bar=1.
+  // foo's DEP_MAP_RESERVED[0] resolves to its first dependency (bar => 1),
+  // inlined and right-padded; the dependency-map array is dropped.
+  expect(bundle.modules).toEqual([
+    [0, `__d(function(g,r,i,a,m,e,${NAME}){r(${'1'.padEnd(ref.length)})},0);`],
+    [1, '__d(function() {/* code for bar */},1);'],
+  ]);
 });

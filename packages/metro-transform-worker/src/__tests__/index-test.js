@@ -30,20 +30,18 @@ jest
 
 import type {JsTransformerConfig, JsTransformOptions} from '../index';
 import typeof * as TransformerType from '../index';
-import typeof FSType from 'fs';
+import typeof FSType from 'node:fs';
 
-const {Buffer} = require('buffer');
-const path = require('path');
+const {
+  posixToSystemPath: p,
+} = require('metro-resolver/private/__tests__/utils');
+const {Buffer} = require('node:buffer');
 
-const babelTransformerPath = require.resolve(
-  '@react-native/metro-babel-transformer',
-);
-
-const transformerContents = (() =>
-  require('fs').readFileSync(babelTransformerPath))();
+const babelTransformerPath =
+  require.resolve('@react-native/metro-babel-transformer');
 
 const HEADER_DEV =
-  '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
+  '__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
 const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 
 let fs: FSType;
@@ -84,16 +82,20 @@ const baseTransformOptions: JsTransformOptions = {
 beforeEach(() => {
   jest.resetModules();
 
-  jest.mock('fs', () => new (require('metro-memory-fs'))());
+  jest.mock(
+    'node:fs',
+    () =>
+      new (require('metro-memory-fs'))({
+        platform: process.platform === 'win32' ? 'win32' : 'posix',
+      }),
+  );
 
-  fs = require('fs');
+  fs = jest.requireMock('node:fs');
   Transformer = require('../');
   // $FlowFixMe[prop-missing] Cannot call `fs.reset` because property `reset` is missing in  module `fs`
   fs.reset();
 
-  fs.mkdirSync('/root/local', {recursive: true});
-  fs.mkdirSync(path.dirname(babelTransformerPath), {recursive: true});
-  fs.writeFileSync(babelTransformerPath, transformerContents);
+  fs.mkdirSync(p('/root/local'), {recursive: true});
 });
 
 test('transforms a simple script', async () => {
@@ -136,6 +138,27 @@ test('transforms a simple module', async () => {
   expect(result.dependencies).toEqual([]);
 });
 
+test('uses the indexed watch folder path for asset URLs', async () => {
+  fs.mkdirSync(p('/root/external'), {recursive: true});
+  fs.writeFileSync(p('/root/external/test.mp4'), 'asset data');
+
+  const result = await Transformer.transform(
+    baseConfig,
+    p('/root'),
+    'external/test.mp4',
+    Buffer.from('asset data'),
+    {
+      ...baseTransformOptions,
+      type: 'asset',
+    },
+    '[metro-watchFolders]/1/test.mp4',
+  );
+
+  expect(result.output[0].data.code).toContain(
+    '"httpServerLocation": "/assets/[metro-watchFolders]/1"',
+  );
+});
+
 test('transforms a module with dependencies', async () => {
   const contents = [
     '"use strict";',
@@ -159,11 +182,11 @@ test('transforms a module with dependencies', async () => {
       HEADER_DEV,
       '  "use strict";',
       '',
-      '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
-      '  var _c = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], "./c"));',
-      '  _$$_REQUIRE(_dependencyMap[2], "./a");',
+      '  var _interopRequireDefault = require(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
+      '  var _c = _interopRequireDefault(require(_dependencyMap[1], "./c"));',
+      '  require(_dependencyMap[2], "./a");',
       '  arbitrary(code);',
-      '  var b = _$$_REQUIRE(_dependencyMap[3], "b");',
+      '  var b = require(_dependencyMap[3], "b");',
       '});',
     ].join('\n'),
   );
@@ -191,7 +214,9 @@ test('transforms an es module with asyncToGenerator', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   expect(result.output[0].data.code).toMatchSnapshot();
-  expect(result.output[0].data.map).toHaveLength(34);
+  const map = result.output[0].data.map;
+  expect(typeof map.mappings).toBe('string');
+  expect(map.mappings.length).toBeGreaterThan(0);
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {
@@ -409,6 +434,51 @@ test('uses a reserved dependency map name and prevents it from being minified', 
   `);
 });
 
+test('emits a compact VlqMap for both the non-minified and minified paths', async () => {
+  const source = Buffer.from(
+    [
+      'function foo(aaa, bbb) {',
+      '  const ccc = aaa + bbb;',
+      '  return ccc * 2;',
+      '}',
+      'export default function entry(items) {',
+      '  return items.map(x => x.value).filter(Boolean);',
+      '}',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+
+  // Non-minified path encodes VLQ straight from Babel's decoded map.
+  const devResult = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    source,
+    {...baseTransformOptions, experimentalImportSupport: true},
+  );
+  // Minified path re-encodes the minifier's tuple output to VLQ.
+  const minifiedResult = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    source,
+    {
+      ...baseTransformOptions,
+      dev: false,
+      minify: true,
+      experimentalImportSupport: true,
+    },
+  );
+
+  for (const result of [devResult, minifiedResult]) {
+    const map = result.output[0].data.map;
+    expect(typeof map.mappings).toBe('string');
+    expect(map.mappings.length).toBeGreaterThan(0);
+    expect(Array.isArray(map.names)).toBe(true);
+  }
+});
+
 test('throws if the reserved dependency map name appears in the input', async () => {
   await expect(
     Transformer.transform(
@@ -435,7 +505,7 @@ test('allows disabling the normalizePseudoGlobals pass when minifying', async ()
     {...baseTransformOptions, dev: false, minify: true},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
-    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+    "__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
       minified(code);
     });"
   `);
@@ -450,7 +520,7 @@ test('allows emitting compact code when not minifying', async () => {
     {...baseTransformOptions, dev: false, minify: false},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(
-    `"__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,_dependencyMap){arbitrary(code);});"`,
+    `"__d(function(global,require,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,_dependencyMap){arbitrary(code);});"`,
   );
 });
 
@@ -468,7 +538,7 @@ test('skips minification in Hermes stable transform profile', async () => {
     },
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
-    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+    "__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
       arbitrary(code);
     });"
   `);
@@ -488,7 +558,7 @@ test('skips minification in Hermes canary transform profile', async () => {
     },
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
-    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+    "__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
       arbitrary(code);
     });"
   `);
@@ -526,7 +596,7 @@ test('outputs comments when `minify: false`', async () => {
     {...baseTransformOptions, dev: false, minify: false},
   );
   expect(result.output[0].data.code).toMatchInlineSnapshot(`
-    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+    "__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
       /*#__PURE__*/arbitrary(code);
     });"
   `);

@@ -10,17 +10,15 @@
  */
 
 import DependencyPlugin from '../../DependencyPlugin';
-import path from 'path';
+import path from 'node:path';
 
 describe('DependencyPlugin', () => {
   let plugin: DependencyPlugin;
-  let mockFiles;
+  let mockGetOrComputeFileData;
 
   beforeEach(() => {
     jest.resetModules();
-    mockFiles = {
-      lookup: jest.fn(),
-    };
+    mockGetOrComputeFileData = jest.fn();
   });
 
   describe('constructor', () => {
@@ -28,21 +26,16 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
     });
 
     test('creates plugin with custom dependency extractor', () => {
-      const extractorPath = path.join(
-        __dirname,
-        '../../__tests__/dependencyExtractor.js',
-      );
+      const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
@@ -52,7 +45,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: false,
-        rootDir: '/project',
       });
 
       expect(plugin.name).toBe('dependencies');
@@ -64,7 +56,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       expect(plugin.getCacheKey()).toBe('default-dependency-extractor');
@@ -80,7 +71,6 @@ describe('DependencyPlugin', () => {
       const plugin1 = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
       const cacheKey1 = plugin1.getCacheKey();
 
@@ -89,7 +79,6 @@ describe('DependencyPlugin', () => {
       const plugin2 = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
       const cacheKey2 = plugin2.getCacheKey();
 
@@ -99,16 +88,18 @@ describe('DependencyPlugin', () => {
       expect(cacheKey2).toContain('bar');
     });
 
-    test('cache key includes extractor path', () => {
+    test('cache key uses extractor getCacheKey result', () => {
       const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
+      // $FlowFixMe[untyped-import]
+      const dependencyExtractor = require('./mockDependencyExtractor');
+      dependencyExtractor.setCacheKey('test-key');
+
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
-      const cacheKey = plugin.getCacheKey();
-      expect(cacheKey).toContain(JSON.stringify(extractorPath));
+      expect(plugin.getCacheKey()).toBe('test-key');
     });
 
     test('handles extractor without getCacheKey method', () => {
@@ -123,11 +114,11 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const cacheKey = plugin.getCacheKey();
-      expect(cacheKey).toContain('null'); // Should include null for extractorKey
+      // Falls back to extractor path when getCacheKey is not available
+      expect(cacheKey).toBe(extractorPath);
 
       // Restore getCacheKey
       dependencyExtractor.getCacheKey = originalGetCacheKey;
@@ -136,14 +127,10 @@ describe('DependencyPlugin', () => {
 
   describe('getWorker', () => {
     test('returns worker configuration with dependency extractor', () => {
-      const extractorPath = path.join(
-        __dirname,
-        '../../__tests__/dependencyExtractor.js',
-      );
+      const extractorPath = path.join(__dirname, 'mockDependencyExtractor.js');
       plugin = new DependencyPlugin({
         dependencyExtractor: extractorPath,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -158,7 +145,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -172,7 +158,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: false,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -186,7 +171,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -203,7 +187,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -221,7 +204,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
 
       const worker = plugin.getWorker();
@@ -240,77 +222,87 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
     });
 
     test('throws error if getDependencies called before initialize', () => {
       expect(() => {
         plugin.getDependencies('src/index.js');
-      }).toThrow(
-        'DependencyPlugin has not been initialized before getDependencies',
-      );
+      }).toThrow('dependencies plugin has not been initialized');
     });
 
     test('returns null for non-existent file', async () => {
-      mockFiles.lookup.mockReturnValue({
+      mockGetOrComputeFileData.mockReturnValue({
         exists: false,
       });
 
-      // $FlowFixMe[unclear-type]
-      await plugin.initialize({files: mockFiles} as any);
+      await plugin.initialize({
+        getOrComputeFileData: mockGetOrComputeFileData,
+        // $FlowFixMe[unclear-type] - Only the init options the plugin reads
+      } as any);
 
       expect(plugin.getDependencies('nonexistent.js')).toBeNull();
     });
 
     test('returns null for directory', async () => {
-      mockFiles.lookup.mockReturnValue({
+      mockGetOrComputeFileData.mockReturnValue({
         exists: true,
         type: 'd',
       });
 
-      // $FlowFixMe[unclear-type]
-      await plugin.initialize({files: mockFiles} as any);
+      await plugin.initialize({
+        getOrComputeFileData: mockGetOrComputeFileData,
+        // $FlowFixMe[unclear-type] - Only the init options the plugin reads
+      } as any);
 
       expect(plugin.getDependencies('src')).toBeNull();
     });
 
     test('returns dependencies from plugin data', async () => {
-      mockFiles.lookup.mockReturnValue({
+      mockGetOrComputeFileData.mockReturnValue({
         exists: true,
         type: 'f',
-        pluginData: ['React', 'lodash', './utils'],
+        realPath: 'src/index.js',
+        data: ['React', 'lodash', './utils'],
       });
 
-      // $FlowFixMe[unclear-type]
-      await plugin.initialize({files: mockFiles} as any);
+      await plugin.initialize({
+        getOrComputeFileData: mockGetOrComputeFileData,
+        // $FlowFixMe[unclear-type] - Only the init options the plugin reads
+      } as any);
 
       const deps = plugin.getDependencies('src/Component.js');
       expect(deps).toEqual(['React', 'lodash', './utils']);
     });
 
     test('returns [] when file exists but plugin data is not set', async () => {
-      mockFiles.lookup.mockReturnValue({
+      mockGetOrComputeFileData.mockReturnValue({
         exists: true,
         type: 'f',
-        pluginData: null,
+        realPath: 'src/index.js',
+        data: null,
       });
 
-      // $FlowFixMe[unclear-type]
-      await plugin.initialize({files: mockFiles} as any);
+      await plugin.initialize({
+        getOrComputeFileData: mockGetOrComputeFileData,
+        // $FlowFixMe[unclear-type] - Only the init options the plugin reads
+      } as any);
 
       expect(plugin.getDependencies('src/index.js')).toEqual([]);
     });
 
     test('handles empty dependencies array', async () => {
-      mockFiles.lookup.mockReturnValue({
+      mockGetOrComputeFileData.mockReturnValue({
         exists: true,
         type: 'f',
-        pluginData: [],
+        realPath: 'src/index.js',
+        data: [],
       });
 
-      // $FlowFixMe[unclear-type]
-      await plugin.initialize({files: mockFiles} as any);
+      await plugin.initialize({
+        getOrComputeFileData: mockGetOrComputeFileData,
+        // $FlowFixMe[unclear-type] - Only the init options the plugin reads
+      } as any);
 
       expect(plugin.getDependencies('src/index.js')).toEqual([]);
     });
@@ -321,7 +313,6 @@ describe('DependencyPlugin', () => {
       plugin = new DependencyPlugin({
         dependencyExtractor: null,
         computeDependencies: true,
-        rootDir: '/project',
       });
     });
 

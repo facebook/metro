@@ -19,6 +19,7 @@ import type {
 
 import FailedToResolveNameError from './errors/FailedToResolveNameError';
 import FailedToResolvePathError from './errors/FailedToResolvePathError';
+import FailedToResolveUnsupportedError from './errors/FailedToResolveUnsupportedError';
 import formatFileCandidates from './errors/formatFileCandidates';
 import InvalidPackageConfigurationError from './errors/InvalidPackageConfigurationError';
 import InvalidPackageError from './errors/InvalidPackageError';
@@ -26,10 +27,15 @@ import PackageImportNotResolvedError from './errors/PackageImportNotResolvedErro
 import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import {resolvePackageTargetFromImports} from './PackageImportsResolve';
-import {getPackageEntryPoint, redirectModulePath} from './PackageResolve';
+import {
+  getPackageEntryPoint,
+  matchSubpathFromMainFields,
+  redirectModulePath,
+} from './PackageResolve';
 import resolveAsset from './resolveAsset';
 import isAssetFile from './utils/isAssetFile';
-import path from 'path';
+import {posixToSystemPath} from './utils/paths';
+import path from 'node:path';
 
 type ParsedBareSpecifier = Readonly<{
   isSinglePart: boolean,
@@ -42,7 +48,7 @@ type ParsedBareSpecifier = Readonly<{
 
 export default function resolve(
   context: ResolutionContext,
-  moduleName: string,
+  specifier: string,
   platform: string | null,
 ): Resolution {
   const resolveRequest = context.resolveRequest;
@@ -53,29 +59,31 @@ export default function resolve(
   ) {
     return resolveRequest(
       Object.freeze({...context, resolveRequest: resolve}),
-      moduleName,
+      specifier,
       platform,
     );
   }
 
-  if (isRelativeImport(moduleName) || path.isAbsolute(moduleName)) {
-    const result = resolveModulePath(context, moduleName, platform);
+  let schemeError: ?FailedToResolveUnsupportedError;
+
+  if (isRelativeImport(specifier) || path.isAbsolute(specifier)) {
+    const result = resolveModulePath(context, specifier, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
-  } else if (isSubpathImport(moduleName)) {
+  } else if (isSubpathImport(specifier)) {
     const pkg = context.getPackageForModule(context.originModulePath);
     const importsField = pkg?.packageJson.imports;
 
     if (pkg == null) {
       throw new PackageImportNotResolvedError({
-        importSpecifier: moduleName,
+        importSpecifier: specifier,
         reason: `Could not find a package.json file relative to module ${context.originModulePath}`,
       });
     } else if (importsField == null) {
       throw new PackageImportNotResolvedError({
-        importSpecifier: moduleName,
+        importSpecifier: specifier,
         reason: `Missing field "imports" in package.json. Check package.json at: ${pkg.rootPath}`,
       });
     } else {
@@ -83,7 +91,7 @@ export default function resolve(
         const packageImportsResult = resolvePackageTargetFromImports(
           context,
           pkg.rootPath,
-          moduleName,
+          specifier,
           importsField,
           platform,
         );
@@ -107,43 +115,104 @@ export default function resolve(
         }
       }
     }
-  }
+  } else if (specifier.indexOf(':') > 0 && URL.canParse(specifier)) {
+    const schemeEnd = specifier.indexOf(':');
+    const scheme = specifier.slice(0, schemeEnd).toLowerCase();
+    const schemeResolvers = context.schemeResolvers;
+    if (schemeResolvers != null && Object.hasOwn(schemeResolvers, scheme)) {
+      try {
+        return schemeResolvers[scheme](
+          Object.freeze({...context, resolveRequest: resolve}),
+          specifier,
+          platform,
+        );
+      } catch (error: unknown) {
+        // A scheme resolver that delegates back into default resolution (via
+        // `context.resolveRequest`) may surface any resolution error. Preserve
+        // those, so callers keep the structured failure (candidate paths, etc).
+        if (isResolutionError(error)) {
+          throw error;
+        }
+        // Otherwise a scheme resolver may throw a plain error to signal an
+        // unsupported specifier (they need not depend on metro-resolver);
+        // surface it as the resolver's typed error.
+        throw new FailedToResolveUnsupportedError(
+          error instanceof Error ? error.message : String(error),
+          {cause: error},
+        );
+      }
+    }
 
-  const realModuleName = redirectModulePath(context, moduleName);
-
-  // exclude
-  if (realModuleName === false) {
-    return {type: 'empty'};
+    // TODO: In a breaking change, we should throw this immediately.
+    // For now, fall through in case the user is using scheme-like specifiers
+    // for Haste, or in extraNodeModules, etc. Throw a scheme-specific error
+    // if nothing else works.
+    schemeError = new FailedToResolveUnsupportedError(
+      `No resolver is registered for the '${scheme}:' URI scheme.`,
+    );
   }
 
   const {originModulePath} = context;
 
-  const isDirectImport =
-    isRelativeImport(realModuleName) || path.isAbsolute(realModuleName);
+  const closestPackageToOrigin = context.getPackageForModule(originModulePath);
 
-  if (isDirectImport) {
-    // derive absolute path /.../node_modules/originModuleDir/realModuleName
-    const fromModuleParentIdx =
-      originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
-    const originModuleDir = originModulePath.slice(
-      0,
-      originModulePath.indexOf(path.sep, fromModuleParentIdx),
+  const maybeRedirectedSpecifier =
+    closestPackageToOrigin != null
+      ? matchSubpathFromMainFields(
+          specifier,
+          closestPackageToOrigin.packageJson,
+          context.mainFields,
+        )
+      : null;
+
+  // exclude
+  if (maybeRedirectedSpecifier === false) {
+    return {type: 'empty'};
+  }
+
+  // If the specifier was redirected to a relative path
+  if (
+    maybeRedirectedSpecifier != null &&
+    closestPackageToOrigin != null && // Implied by maybeRedirectedSpecifier != null
+    isRelativeImport(maybeRedirectedSpecifier)
+  ) {
+    // Per the "browser" spec: "All paths for browser fields are relative to
+    // the package.json file location". `closestPackageToOrigin` is the package
+    // that provided the redirect, so join relative paths to its `rootPath`.
+    const absPath = path.resolve(
+      closestPackageToOrigin.rootPath,
+      maybeRedirectedSpecifier,
     );
-    const absPath = path.join(originModuleDir, realModuleName);
     const result = resolveModulePath(context, absPath, platform);
     if (result.type === 'failed') {
       throw new FailedToResolvePathError(result.candidates);
     }
     return result.resolution;
+  } else if (
+    maybeRedirectedSpecifier != null &&
+    closestPackageToOrigin != null && // Implied by maybeRedirectedSpecifier != null
+    // An absolute path inside the file may not match the system's path separator
+    (path.posix.isAbsolute(maybeRedirectedSpecifier) ||
+      path.win32.isAbsolute(maybeRedirectedSpecifier))
+  ) {
+    throw new InvalidPackageConfigurationError({
+      packagePath: closestPackageToOrigin.rootPath,
+      reason:
+        'Attempted to redirect import to an absolute path. ' +
+        'This is not allowed by the "browser" spec.' +
+        `\n  From: ${originModulePath}` +
+        `\n  Import: ${specifier}` +
+        `\n  Attempted redirect: ${maybeRedirectedSpecifier}`,
+    });
   }
 
-  /**
-   * At this point, realModuleName is not a "direct" (absolute or relative)
-   * import, so it's a bare specifier - for our purposes either Haste name
-   * or a package specifier.
-   */
-
-  const parsedSpecifier = parseBareSpecifier(realModuleName);
+  // At this point, maybeRedirectedSpecifier is either null (not redirected),
+  // and `specifier` is still bare, or `maybeRedirectedSpecifier` is a
+  // redirected bare specifier. Supported bare specifiers are either Haste
+  // names, package names, or (rarely) non-package modules under node_modules.
+  const parsedSpecifier = parseBareSpecifier(
+    maybeRedirectedSpecifier ?? specifier,
+  );
 
   if (context.allowHaste) {
     if (parsedSpecifier.isSinglePart) {
@@ -160,16 +229,204 @@ export default function resolve(
     }
   }
 
-  /**
-   * realModuleName is now a package specifier.
-   */
+  // parsedSpecifier is now a non-Haste bare specifier.
+
+  // PACKAGE_SELF_RESOLVE: if the origin lives inside a package whose `name`
+  // matches the bare specifier and which declares an `exports` field, resolve
+  // the request via that package's `exports`. Per Node.js ESM spec section 6.5
+  // (https://nodejs.org/api/esm.html#resolution-algorithm-specification).
+  if (
+    context.unstable_enablePackageExports &&
+    closestPackageToOrigin != null &&
+    closestPackageToOrigin.packageJson.exports != null &&
+    closestPackageToOrigin.packageJson.name === parsedSpecifier.packageName
+  ) {
+    try {
+      const exportsField = closestPackageToOrigin.packageJson.exports;
+      const packageExportsResult = resolvePackageTargetFromExports(
+        context,
+        closestPackageToOrigin.rootPath,
+        path.join(
+          closestPackageToOrigin.rootPath,
+          parsedSpecifier.posixSubpath,
+        ),
+        // packageRelativePath for the requested subpath, stripping the leading
+        // './' so the empty string represents the package root (matching how
+        // `getPackageForModule` reports `packageRelativePath`).
+        parsedSpecifier.posixSubpath === '.'
+          ? ''
+          : parsedSpecifier.posixSubpath.slice(2),
+        exportsField,
+        platform,
+      );
+      if (packageExportsResult != null) {
+        return packageExportsResult;
+      }
+    } catch (e) {
+      // NB: Falling back is a departure from the spec, but retained for
+      // backwards compatibility. Remove this in a breaking change.
+      if (e instanceof PackagePathNotExportedError) {
+        context.unstable_logWarning(
+          e.message +
+            ' Falling back to hierarchical resolution for backwards compatibility.',
+        );
+      } else if (e instanceof InvalidPackageConfigurationError) {
+        context.unstable_logWarning(
+          e.message +
+            ' Falling back to hierarchical resolution for backwards compatibility.',
+        );
+      } else {
+        throw e;
+      }
+    }
+  }
 
   const {disableHierarchicalLookup} = context;
 
-  const nodeModulesPaths = [];
-  let next = path.dirname(originModulePath);
-
   if (!disableHierarchicalLookup) {
+    const visited: {[string]: ?true, __proto__: null} = Object.create(null);
+    let next = path.dirname(originModulePath);
+    let candidate;
+    do {
+      candidate = next;
+      const nodeModulesPath = candidate.endsWith(path.sep)
+        ? candidate + 'node_modules'
+        : candidate + path.sep + 'node_modules';
+
+      const resolution = resolveFromNodeModulesPath(
+        context,
+        parsedSpecifier,
+        platform,
+        nodeModulesPath,
+      );
+      if (resolution != null) {
+        return resolution;
+      }
+
+      visited[nodeModulesPath] = true;
+      next = path.dirname(candidate);
+    } while (candidate !== next);
+
+    // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
+    // This is done separately from the else branch below to save an allocation and check `visited`
+    for (let i = 0; i < context.nodeModulesPaths.length; i++) {
+      // Skip already checked paths, since this could contain duplicates that we already checked
+      if (visited[context.nodeModulesPaths[i]]) {
+        continue;
+      }
+      const resolution = resolveFromNodeModulesPath(
+        context,
+        parsedSpecifier,
+        platform,
+        context.nodeModulesPaths[i],
+      );
+      if (resolution != null) {
+        return resolution;
+      }
+    }
+  } else {
+    // Only visit `nodeModulesPaths` when hierarchical lookup is disabled
+    for (let i = 0; i < context.nodeModulesPaths.length; i++) {
+      const resolution = resolveFromNodeModulesPath(
+        context,
+        parsedSpecifier,
+        platform,
+        context.nodeModulesPaths[i],
+      );
+      if (resolution != null) {
+        return resolution;
+      }
+    }
+  }
+
+  const {extraNodeModules} = context;
+  let extraNodeModulePath: string | void;
+  if (extraNodeModules && extraNodeModules[parsedSpecifier.packageName]) {
+    const newPackageName = extraNodeModules[parsedSpecifier.packageName];
+    extraNodeModulePath = path.join(
+      newPackageName,
+      parsedSpecifier.posixSubpath,
+    );
+    const resolution = resolveModuleFromTargetPath(
+      context,
+      platform,
+      extraNodeModulePath,
+    );
+    if (resolution != null) {
+      return resolution;
+    }
+  }
+
+  if (schemeError != null) {
+    // The specifier is a scheme we don't recognise and every other resolution
+    // strategy has been exhausted, so fail with a scheme-specific error.
+    throw schemeError;
+  }
+
+  throw buildFailedToResolveNameError(
+    context,
+    extraNodeModulePath != null ? [extraNodeModulePath] : [],
+  );
+}
+
+function resolveFromNodeModulesPath(
+  context: ResolutionContext,
+  parsedSpecifier: ParsedBareSpecifier,
+  platform: string | null,
+  nodeModulesPath: string,
+): Resolution | null {
+  // Insight: The module can only exist if there is a `node_modules` at
+  // this path. Redirections cannot succeed, because we will never look
+  // beyond a node_modules path segment for finding the closest
+  // package.json. Moreover, if the specifier contains a '/' separator,
+  // the first part *must* be a real directory, because it is the
+  // shallowest path that can possibly contain a redirecting package.json.
+  const mustBeDirectory =
+    parsedSpecifier.posixSubpath !== '.' ||
+    parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
+      ? nodeModulesPath + path.sep + parsedSpecifier.firstPart
+      : nodeModulesPath;
+  const lookupResult = context.fileSystemLookup(mustBeDirectory);
+  if (!lookupResult.exists || lookupResult.type !== 'd') {
+    return null;
+  }
+  return resolveModuleFromTargetPath(
+    context,
+    platform,
+    nodeModulesPath +
+      path.sep +
+      posixToSystemPath(parsedSpecifier.normalizedSpecifier),
+  );
+}
+
+function resolveModuleFromTargetPath(
+  context: ResolutionContext,
+  platform: string | null,
+  targetPath: string,
+): Resolution | null {
+  const candidate = redirectModulePath(context, targetPath);
+  if (candidate === false) {
+    return {type: 'empty'};
+  }
+
+  // candidate should be absolute here - we assume that redirectModulePath
+  // always returns an absolute path when given an absolute path.
+  const result = resolvePackage(context, candidate, platform);
+  if (result.type === 'resolved') {
+    return result.resolution;
+  }
+
+  return null;
+}
+
+function buildFailedToResolveNameError(
+  context: ResolutionContext,
+  extraPaths: ReadonlyArray<string>,
+): FailedToResolveNameError {
+  const nodeModulesPaths: string[] = [];
+
+  if (!context.disableHierarchicalLookup) {
+    let next = path.dirname(context.originModulePath);
     let candidate;
     do {
       candidate = next;
@@ -181,55 +438,8 @@ export default function resolve(
     } while (candidate !== next);
   }
 
-  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
   nodeModulesPaths.push(...context.nodeModulesPaths);
-
-  const extraPaths = [];
-
-  const {extraNodeModules} = context;
-  if (extraNodeModules && extraNodeModules[parsedSpecifier.packageName]) {
-    const newPackageName = extraNodeModules[parsedSpecifier.packageName];
-    extraPaths.push(path.join(newPackageName, parsedSpecifier.posixSubpath));
-  }
-
-  const allDirPaths = nodeModulesPaths
-    .map(nodeModulePath => {
-      let lookupResult = null;
-      // Insight: The module can only exist if there is a `node_modules` at
-      // this path. Redirections cannot succeed, because we will never look
-      // beyond a node_modules path segment for finding the closest
-      // package.json. Moreover, if the specifier contains a '/' separator,
-      // the first part *must* be a real directory, because it is the
-      // shallowest path that can possibly contain a redirecting package.json.
-      const mustBeDirectory =
-        parsedSpecifier.posixSubpath !== '.' ||
-        parsedSpecifier.packageName.length > parsedSpecifier.firstPart.length
-          ? nodeModulePath + path.sep + parsedSpecifier.firstPart
-          : nodeModulePath;
-      lookupResult = context.fileSystemLookup(mustBeDirectory);
-      if (!lookupResult.exists || lookupResult.type !== 'd') {
-        return null;
-      }
-      return path.join(nodeModulePath, realModuleName);
-    })
-    .filter(Boolean)
-    .concat(extraPaths);
-  for (let i = 0; i < allDirPaths.length; ++i) {
-    const candidate = redirectModulePath(context, allDirPaths[i]);
-
-    if (candidate === false) {
-      return {type: 'empty'};
-    }
-
-    // candidate should be absolute here - we assume that redirectModulePath
-    // always returns an absolute path when given an absolute path.
-    const result = resolvePackage(context, candidate, platform);
-    if (result.type === 'resolved') {
-      return result.resolution;
-    }
-  }
-
-  throw new FailedToResolveNameError(nodeModulesPaths, extraPaths);
+  return new FailedToResolveNameError(nodeModulesPaths, extraPaths);
 }
 
 function parseBareSpecifier(specifier: string): ParsedBareSpecifier {
@@ -361,10 +571,10 @@ class MissingFileInHastePackageError extends Error {
   pathInModule: string;
 
   constructor(opts: {
-    +candidates: FileAndDirCandidates,
-    +moduleName: string,
-    +packageName: string,
-    +pathInModule: string,
+    readonly candidates: FileAndDirCandidates,
+    readonly moduleName: string,
+    readonly packageName: string,
+    readonly pathInModule: string,
   }) {
     super(
       `While resolving module \`${opts.moduleName}\`, ` +
@@ -639,6 +849,22 @@ function isRelativeImport(filePath: string) {
 
 function isSubpathImport(filePath: string) {
   return filePath.startsWith('#');
+}
+
+/**
+ * Whether an error is one of metro-resolver's own resolution failures, which
+ * carry structured detail that callers rely on for diagnostics.
+ */
+function isResolutionError(error: unknown): boolean {
+  return (
+    error instanceof FailedToResolveNameError ||
+    error instanceof FailedToResolvePathError ||
+    error instanceof FailedToResolveUnsupportedError ||
+    error instanceof InvalidPackageConfigurationError ||
+    error instanceof InvalidPackageError ||
+    error instanceof PackageImportNotResolvedError ||
+    error instanceof PackagePathNotExportedError
+  );
 }
 
 function resolvedAs<TResolution, TCandidates>(

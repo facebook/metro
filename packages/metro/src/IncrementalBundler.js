@@ -25,9 +25,9 @@ import ResourceNotFoundError from './IncrementalBundler/ResourceNotFoundError';
 import getGraphId from './lib/getGraphId';
 import getPrependedScripts from './lib/getPrependedScripts';
 import * as transformHelpers from './lib/transformHelpers';
-import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export opaque type RevisionId: string = string;
 
@@ -41,11 +41,11 @@ type OtherOptions = Readonly<{
 
 export type GraphRevision = {
   // Identifies the last computed revision.
-  +id: RevisionId,
-  +date: Date,
-  +graphId: GraphId,
-  +graph: OutputGraph,
-  +prepend: ReadonlyArray<Module<>>,
+  readonly id: RevisionId,
+  readonly date: Date,
+  readonly graphId: GraphId,
+  readonly graph: OutputGraph,
+  readonly prepend: ReadonlyArray<Module<>>,
 };
 
 export type IncrementalBundlerOptions = Readonly<{
@@ -199,7 +199,10 @@ export default class IncrementalBundler {
       shallow: false,
       lazy: false,
     },
-  ): Promise<{+graph: OutputGraph, +prepend: ReadonlyArray<Module<>>}> {
+  ): Promise<{
+    readonly graph: OutputGraph,
+    readonly prepend: ReadonlyArray<Module<>>,
+  }> {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,

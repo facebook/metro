@@ -11,11 +11,13 @@
 
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
-import type EventEmitter from 'events';
+import type {DynamicRoot} from './lib/dynamicRoots';
 import type {ConfigT} from 'metro-config';
+import type EventEmitter from 'node:events';
 
 import Transformer from './DeltaBundler/Transformer';
 import DependencyGraph from './node-haste/DependencyGraph';
+import nullthrows from 'nullthrows';
 
 export type BundlerOptions = Readonly<{
   hasReducedPerformance?: boolean,
@@ -25,7 +27,7 @@ export type BundlerOptions = Readonly<{
 export default class Bundler {
   _depGraph: DependencyGraph;
   _initializedPromise: Promise<void>;
-  _transformer: Transformer;
+  _transformer: ?Transformer;
 
   constructor(config: ConfigT, options?: BundlerOptions) {
     this._depGraph = new DependencyGraph(config, options);
@@ -35,6 +37,7 @@ export default class Bundler {
       .then(() => {
         config.reporter.update({type: 'transformer_load_started'});
         this._transformer = new Transformer(config, {
+          getDynamicRoots: () => this._depGraph.getDynamicRoots(),
           getOrComputeSha1: filePath =>
             this._depGraph.getOrComputeSha1(filePath),
         });
@@ -46,7 +49,12 @@ export default class Bundler {
           type: 'transformer_load_failed',
           error,
         });
+        throw error;
       });
+
+    // Observe initialization failures immediately so callers can await the
+    // original promise later without triggering an unhandled rejection.
+    this._initializedPromise.catch(() => {});
   }
 
   getWatcher(): EventEmitter {
@@ -54,10 +62,23 @@ export default class Bundler {
   }
 
   async end(): Promise<void> {
-    await this.ready();
+    // Initialization errors are surfaced by ready() and the reporter, and
+    // shouldn't prevent teardown of whatever was started.
+    await this._initializedPromise.catch(() => {});
 
-    await this._transformer.end();
-    await this._depGraph.end();
+    try {
+      await this._transformer?.end();
+    } finally {
+      await this._depGraph.end();
+    }
+  }
+
+  /**
+   * Roots held by the file map in addition to `projectRoot` and
+   * `watchFolders`. Empty until the dependency graph is ready.
+   */
+  getDynamicRoots(): ReadonlyArray<DynamicRoot> {
+    return this._depGraph.getDynamicRoots();
   }
 
   async getDependencyGraph(): Promise<DependencyGraph> {
@@ -76,7 +97,7 @@ export default class Bundler {
     // TODO: Remove this ugly hack!
     await this.ready();
 
-    return this._transformer.transformFile(
+    return nullthrows(this._transformer).transformFile(
       filePath,
       transformOptions,
       fileBuffer,

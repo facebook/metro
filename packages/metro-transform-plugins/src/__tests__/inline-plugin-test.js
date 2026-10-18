@@ -399,6 +399,17 @@ describe('inline constants', () => {
     });
   });
 
+  test('uses the last definition when Platform.select has duplicate keys', () => {
+    const code = `
+      var value = Platform.select({ios: 1, ios: 2});
+    `;
+
+    compare([inlinePlugin], code, 'var value = 2;', {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
   test('inlines Platform.select in the code when using an ObjectMethod', () => {
     const code = `
       function a() {
@@ -704,6 +715,37 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
+  test("doesn't replace Platform.OS in other write targets", () => {
+    const code = `
+      Platform.OS++;
+      delete Platform.OS;
+      [Platform.OS] = values;
+      ({os: Platform.OS} = value);
+      for (Platform.OS in object) {}
+      for ([Platform.OS] in nestedObject) {}
+      for (Platform.OS of values) {}
+      for ([Platform.OS] of nestedValues) {}
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
+  test('replaces Platform.OS when it is read inside a write target', () => {
+    const code = `
+      target[Platform.OS] = value;
+      [target[Platform.OS]] = values;
+      ({[Platform.OS]: target} = value);
+    `;
+
+    compare([inlinePlugin], code, code.replaceAll('Platform.OS', '"ios"'), {
       inlinePlatform: true,
       platform: 'ios',
     });

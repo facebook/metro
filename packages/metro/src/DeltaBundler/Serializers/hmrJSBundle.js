@@ -13,12 +13,12 @@ import type {DeltaResult, Module, ReadOnlyGraph} from '../types';
 import type {HmrModule} from 'metro-runtime/src/modules/types';
 
 import {isJsModule, wrapModule} from './helpers/js';
+import debugModule from 'debug';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {addParamsToDefineCall} from 'metro-transform-plugins';
-import path from 'path';
+import path from 'node:path';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')('Metro:HMR');
+const debug = debugModule('Metro:HMR');
 
 type Options = Readonly<{
   clientUrl: URL,
@@ -104,7 +104,6 @@ function prepareModule(
   // Transform the inverse dependency paths to ids.
   const inverseDependenciesById = Object.create(null);
   Object.keys(inverseDependencies).forEach((path: string) => {
-    // $FlowFixMe[prop-missing]
     // $FlowFixMe[invalid-computed-prop]
     inverseDependenciesById[options.createModuleId(path)] = inverseDependencies[
       path
@@ -114,7 +113,7 @@ function prepareModule(
 }
 
 /**
- * Instead of adding the whole inverseDependncies object into each changed
+ * Instead of adding the whole inverseDependencies object into each changed
  * module (which can be really huge if the dependency graph is big), we only
  * add the needed inverseDependencies for each changed module (we do this by
  * traversing upwards the dependency graph).
@@ -124,7 +123,7 @@ function getInverseDependencies(
   graph: ReadOnlyGraph<>,
   inverseDependencies: {[key: string]: Array<string>, ...} = {},
 ): {[key: string]: Array<string>, ...} {
-  // Dependency alredy traversed.
+  // Dependency already traversed.
   if (path in inverseDependencies) {
     return inverseDependencies;
   }
@@ -148,9 +147,9 @@ export default function hmrJSBundle(
   graph: ReadOnlyGraph<>,
   options: Options,
 ): {
-  +added: ReadonlyArray<HmrModule>,
-  +deleted: ReadonlyArray<number>,
-  +modified: ReadonlyArray<HmrModule>,
+  readonly added: ReadonlyArray<HmrModule>,
+  readonly deleted: ReadonlyArray<number>,
+  readonly modified: ReadonlyArray<HmrModule>,
 } {
   return {
     added: generateModules(delta.added.values(), graph, options),

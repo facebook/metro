@@ -9,7 +9,7 @@
  */
 
 import invariant from 'invariant';
-import * as path from 'path';
+import * as path from 'node:path';
 
 /**
  * This module provides path utility functions - similar to `node:path` -
@@ -45,6 +45,9 @@ const UP_FRAGMENT_SEP = '..' + path.sep;
 const SEP_UP_FRAGMENT = path.sep + '..';
 const UP_FRAGMENT_SEP_LENGTH = UP_FRAGMENT_SEP.length;
 const CURRENT_FRAGMENT = '.' + path.sep;
+
+const IS_WIN32 = path.sep === '\\';
+const ROOT_BASE_IDX = IS_WIN32 ? 0 : 1;
 
 export class RootPathUtils {
   #rootDir: string;
@@ -97,7 +100,6 @@ export class RootPathUtils {
       absolutePath.startsWith(nextPart, endOfMatchingPrefix) &&
       (absolutePath.length === endOfMatchingPrefix + nextLength ||
         absolutePath[endOfMatchingPrefix + nextLength] === path.sep);
-
     ) {
       // Move our matching pointer forward and load the next part.
       endOfMatchingPrefix += nextLength + 1;
@@ -149,6 +151,12 @@ export class RootPathUtils {
     const right = pos === 0 ? normalPath : normalPath.slice(pos);
     if (right.length === 0) {
       return left;
+    } else if (IS_WIN32 && pos > this.#rootDepth * UP_FRAGMENT_SEP_LENGTH) {
+      // On a real file system, navigating to `..` at the top level (posix `/`
+      // or Windows drive) is a no-op, but we can't respect that on Windows
+      // because Metro uses e.g. `..\..\D:\foo` to represent cross-drive
+      // relative paths.
+      return right;
     }
     // left may already end in a path separator only if it is a filesystem root,
     // '/' or 'X:\'.
@@ -166,23 +174,25 @@ export class RootPathUtils {
     );
   }
 
-  // If a path is a direct ancestor of the project root (or the root itself),
-  // return a number with the degrees of separation, e.g. root=0, parent=1,..
-  // or null otherwise.
-  getAncestorOfRootIdx(normalPath: string): ?number {
-    if (normalPath === '') {
-      return 0;
-    }
-    if (normalPath === '..') {
-      return 1;
-    }
-    // Otherwise a *normal* path is only a root ancestor if it is a sequence of
-    // '../' segments followed by '..', so the length tells us the number of
-    // up fragments.
-    if (normalPath.endsWith(SEP_UP_FRAGMENT)) {
-      return (normalPath.length + 1) / 3;
-    }
-    return null;
+  resolveSymlinkToNormal(
+    symlinkNormalPath: string,
+    readlinkResult: string,
+  ): string {
+    // Lexically resolves the target against the symlink's directory. This is
+    // string manipulation only: symlinks within the target are not followed,
+    // and the target need not exist, so the result is not a real path.
+    //
+    // readlink returns whatever the link was created with, which need not be
+    // well-formed (e.g. '..', 'a/./b', 'a//b', or '/' separators on Windows),
+    // so resolve with node:path. This runs once per symlink, when its node is
+    // populated, not on traversal.
+    const normal = this.absoluteToNormal(
+      path.resolve(this.#rootDir, symlinkNormalPath, '..', readlinkResult),
+    );
+    // Normalization keeps a trailing separator when the result is the root or
+    // an ancestor of it (e.g. a link to '/'), and readlink itself may return
+    // one. A stored symlink target never has one.
+    return normal.endsWith(path.sep) ? normal.slice(0, -1) : normal;
   }
 
   // Takes a normal and relative path, and joins them efficiently into a normal
@@ -198,7 +208,9 @@ export class RootPathUtils {
     if (relativePath === '') {
       return {collapsedSegments: 0, normalPath};
     }
-    const left = normalPath + path.sep;
+    const left = normalPath.endsWith(path.sep)
+      ? normalPath
+      : normalPath + path.sep;
     const rawPath = left + relativePath;
     if (normalPath === '..' || normalPath.endsWith(SEP_UP_FRAGMENT)) {
       const collapsed = this.#tryCollapseIndirectionsInSuffix(rawPath, 0, 0);
@@ -280,7 +292,7 @@ export class RootPathUtils {
           totalUpIndirections >= this.#rootParts.length - 1
         ) {
           // If we have no right side (or an indirection that would take us
-          // below the root), just ensure we don't include a trailing separtor.
+          // below the root), just ensure we don't include a trailing separator.
           return {
             collapsedPath: UP_FRAGMENT_SEP.repeat(totalUpIndirections).slice(
               0,
@@ -299,9 +311,10 @@ export class RootPathUtils {
         };
       }
 
-      // Cap the number of indirections at the total number of root segments.
-      // File systems treat '..' at the root as '.'.
-      if (totalUpIndirections < this.#rootParts.length - 1) {
+      // Cap the number of indirections at the total number of root parts.
+      // File systems treat '..' at the root as '.'. For Windows, cross-device
+      // paths need to survive this.
+      if (totalUpIndirections < this.#rootParts.length - ROOT_BASE_IDX) {
         totalUpIndirections++;
       }
 

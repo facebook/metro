@@ -10,7 +10,7 @@
 
 'use strict';
 
-const path = require('path');
+const path = require('node:path');
 
 const ROOT_PATH = path.resolve(__dirname, 'basic_bundle');
 
@@ -27,12 +27,10 @@ module.exports = {
   },
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
-    asyncRequireModulePath: require.resolve(
-      'metro-runtime/src/modules/asyncRequire',
-    ),
-    babelTransformerPath: require.resolve(
-      '@react-native/metro-babel-transformer',
-    ),
+    asyncRequireModulePath:
+      require.resolve('metro-runtime/src/modules/asyncRequire'),
+    babelTransformerPath:
+      require.resolve('@react-native/metro-babel-transformer'),
     enableBabelRCLookup: false,
     enableBabelRuntime: false,
     getTransformOptions: async entryFiles => ({

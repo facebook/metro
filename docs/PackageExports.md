@@ -9,7 +9,7 @@ Introduced in Node.js 12.7.0, Package Exports is a modern approach for npm packa
 
 `exports` also supports different targets for a given subpath dependent on [*conditions*](https://nodejs.org/api/packages.html#conditional-exports), such as whether building for a browser or Node.js, and whether `import` or `require` is used by the consumer.
 
-Package Exports support has been enabled by default in Metro since [0.82](https://github.com/facebook/metro/releases/tag/v0.82.0) (or React Native 0.79).
+Package Exports support has been enabled by default in Metro since [0.82](https://github.com/react/metro/releases/tag/v0.82.0) (or React Native 0.79).
 
 - [Node.js spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points)
 - [RFC for Package Exports in Metro](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md)
@@ -172,7 +172,7 @@ The Node.js spec gives guidance on migrating to `"exports"` in a non-breaking ma
 
 Each subpath is an exact specifier ([see section in RFC](https://github.com/react-native-community/discussions-and-proposals/blob/main/proposals/0534-metro-package-exports-support.md#exact-path-specifiers)).
 
-We recommend continuing to use **extensionless specifiers** for subpaths in packages targeting React Native — or **defining both extensioned and extensionless specifiers**. This will match matching existing user expectations.
+We recommend continuing to use **extensionless specifiers** for subpaths in packages targeting React Native — or **defining both extensioned and extensionless specifiers**. This will match existing user expectations.
 
 ```json
   "exports": {
@@ -262,7 +262,7 @@ Using subpath patterns can be a convenient method to export many assets. We reco
 
 ## Troubleshooting
 
-### Package/ESM incompatibilites
+### Package/ESM incompatibilities
 Some issues that can come from Metro resolving to a file not designed for React Native include:
  - *"`import.meta` can not be used outside a module"*. `import.meta` support is coming.
  - Errors relating to `document` or other web globals in your mobile app.

@@ -19,8 +19,8 @@ import getAppendScripts from '../../lib/getAppendScripts';
 import getTransitiveDependencies from './helpers/getTransitiveDependencies';
 import {isJsModule, wrapModule} from './helpers/js';
 import {sourceMapObject} from './sourceMapObject';
+import path from 'node:path';
 import nullthrows from 'nullthrows';
-import path from 'path';
 
 type Options = Readonly<{
   ...SerializerOptions,
@@ -157,10 +157,7 @@ async function _getRamOptions(
   const {preloadedModules, ramGroups} = await getTransformOptions(
     [entryFile],
     {dev: options.dev, hot: true, platform: options.platform},
-    /* $FlowFixMe[incompatible-type](>=0.99.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.99 was deployed. To see the error, delete this
-     * comment and run Flow. */
-    async (x: string) => Array.from(getDependencies),
+    async (x: string) => Array.from(getDependencies(x)),
   );
 
   return {

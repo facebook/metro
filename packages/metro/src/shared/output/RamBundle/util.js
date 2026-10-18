@@ -118,8 +118,6 @@ function combineMaps(
       'Random Access Bundle source maps cannot be built from raw mappings',
     );
     sections.push(
-      /* $FlowFixMe[incompatible-exact] Natural Inference rollout. See
-       * https://fburl.com/gdoc/y8dn025u */
       // $FlowFixMe[incompatible-type]
       Section(line, column, map || lineToLineSourceMap(code, name)),
     );
@@ -135,8 +133,10 @@ function combineMaps(
   return sections;
 }
 
-const joinModules = (modules: ReadonlyArray<{+code: string, ...}>): string =>
-  modules.map((m: {+code: string, ...}) => m.code).join('\n');
+const joinModules = (
+  modules: ReadonlyArray<{readonly code: string, ...}>,
+): string =>
+  modules.map((m: {readonly code: string, ...}) => m.code).join('\n');
 
 export {
   combineSourceMaps,

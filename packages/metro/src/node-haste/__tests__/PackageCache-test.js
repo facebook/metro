@@ -9,12 +9,14 @@
  * @oncall react_native
  */
 
-import {sep} from 'path';
+import {sep} from 'node:path';
 
 const {PackageCache} = require('../PackageCache');
 
 const mockReadFileSync = jest.fn();
-jest.mock('fs', () => ({readFileSync: (...args) => mockReadFileSync(...args)}));
+jest.mock('node:fs', () => ({
+  readFileSync: (...args) => mockReadFileSync(...args),
+}));
 
 type ClosestPackageMap = Map<
   string,
@@ -398,5 +400,48 @@ describe('PackageCache', () => {
         'orphan-pkg',
       );
     });
+  });
+});
+
+describe('readPackageJson option', () => {
+  const INJECTED_ROOT = sep + ['project', 'injected'].join(sep);
+  const INJECTED_PKG_PATH = INJECTED_ROOT + sep + 'package.json';
+  const INJECTED_MODULE = INJECTED_ROOT + sep + 'index.js';
+
+  test('is used in place of reading the filesystem', () => {
+    const readPackageJson = jest.fn<[string], {name: string}>(() => ({
+      name: 'in-memory-pkg',
+    }));
+    const cache = new PackageCache({
+      getClosestPackage: () => ({
+        packageJsonPath: INJECTED_PKG_PATH,
+        packageRelativePath: 'index.js',
+      }),
+      readPackageJson,
+    });
+
+    expect(cache.getPackageForModule(INJECTED_MODULE)?.packageJson.name).toBe(
+      'in-memory-pkg',
+    );
+    expect(readPackageJson).toHaveBeenCalledWith(INJECTED_PKG_PATH);
+    expect(mockReadFileSync).not.toHaveBeenCalled();
+  });
+
+  test('results are cached per package.json path', () => {
+    const readPackageJson = jest.fn<[string], {name: string}>(() => ({
+      name: 'in-memory-pkg',
+    }));
+    const cache = new PackageCache({
+      getClosestPackage: () => ({
+        packageJsonPath: INJECTED_PKG_PATH,
+        packageRelativePath: 'index.js',
+      }),
+      readPackageJson,
+    });
+
+    cache.getPackage(INJECTED_PKG_PATH);
+    cache.getPackage(INJECTED_PKG_PATH);
+
+    expect(readPackageJson).toHaveBeenCalledTimes(1);
   });
 });

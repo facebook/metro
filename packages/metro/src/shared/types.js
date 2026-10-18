@@ -25,8 +25,7 @@ import type {
 } from 'metro-transform-worker';
 
 type MetroSourceMapOrMappings =
-  | MixedSourceMap
-  | Array<MetroSourceMapSegmentTuple>;
+  MixedSourceMap | Array<MetroSourceMapSegmentTuple>;
 
 export enum SourcePathsMode {
   /* Use absolute paths for source files in source maps (default). */
@@ -47,24 +46,24 @@ export type ReadonlySourceLocation = Readonly<{
 }>;
 
 export type BundleOptions = {
-  +customResolverOptions: CustomResolverOptions,
+  readonly customResolverOptions: CustomResolverOptions,
   customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
-  +excludeSource: boolean,
-  +inlineSourceMap: boolean,
-  +lazy: boolean,
+  readonly excludeSource: boolean,
+  readonly inlineSourceMap: boolean,
+  readonly lazy: boolean,
   minify: boolean,
-  +modulesOnly: boolean,
+  readonly modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => unknown,
-  +platform: ?string,
-  +runModule: boolean,
-  +shallow: boolean,
+  readonly platform: ?string,
+  readonly runModule: boolean,
+  readonly shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
-  +unstable_transformProfile: TransformProfile,
-  +sourcePaths: SourcePathsMode,
+  readonly unstable_transformProfile: TransformProfile,
+  readonly sourcePaths: SourcePathsMode,
 };
 
 export type BuildOptions = Readonly<{
@@ -77,18 +76,18 @@ export type ResolverInputOptions = Readonly<{
 }>;
 
 export type SerializerOptions = {
-  +sourceMapUrl: ?string,
-  +sourceUrl: ?string,
-  +runModule: boolean,
-  +excludeSource: boolean,
-  +inlineSourceMap: boolean,
-  +modulesOnly: boolean,
-  +sourcePaths: SourcePathsMode,
+  readonly sourceMapUrl: ?string,
+  readonly sourceUrl: ?string,
+  readonly runModule: boolean,
+  readonly excludeSource: boolean,
+  readonly inlineSourceMap: boolean,
+  readonly modulesOnly: boolean,
+  readonly sourcePaths: SourcePathsMode,
 };
 
 export type GraphOptions = {
-  +lazy: boolean,
-  +shallow: boolean,
+  readonly lazy: boolean,
+  readonly shallow: boolean,
 };
 
 // Stricter representation of BundleOptions.
@@ -108,24 +107,24 @@ export type ModuleGroups = {
 };
 
 export type ModuleTransportLike = {
-  +code: string,
-  +id: number,
-  +map: ?MetroSourceMapOrMappings,
-  +name?: string,
-  +sourcePath: string,
+  readonly code: string,
+  readonly id: number,
+  readonly map: ?MetroSourceMapOrMappings,
+  readonly name?: string,
+  readonly sourcePath: string,
   ...
 };
 export type ModuleTransportLikeStrict = {
-  +code: string,
-  +id: number,
-  +map: ?MetroSourceMapOrMappings,
-  +name?: string,
-  +sourcePath: string,
+  readonly code: string,
+  readonly id: number,
+  readonly map: ?MetroSourceMapOrMappings,
+  readonly name?: string,
+  readonly sourcePath: string,
 };
 export type RamModuleTransport = {
   ...ModuleTransportLikeStrict,
-  +source: string,
-  +type: string,
+  readonly source: string,
+  readonly type: string,
 };
 
 export type OutputOptions = {

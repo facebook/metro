@@ -11,9 +11,14 @@
 import type {ReadonlySourceLocation} from '../../shared/types';
 import type {NodePath} from '@babel/traverse';
 import type {
+  ArgumentPlaceholder,
   CallExpression,
-  File as BabelNodeFile,
+  Expression,
+  File,
   Identifier,
+  Node,
+  Program,
+  SpreadElement,
   StringLiteral,
 } from '@babel/types';
 import type {
@@ -26,8 +31,8 @@ import template from '@babel/template';
 import traverse from '@babel/traverse';
 import * as types from '@babel/types';
 import {isImport, isProgram} from '@babel/types';
-import crypto from 'crypto';
 import invariant from 'invariant';
+import crypto from 'node:crypto';
 import nullthrows from 'nullthrows';
 
 type ImportDependencyOptions = Readonly<{
@@ -108,7 +113,7 @@ export type Options = Readonly<{
 }>;
 
 export type CollectedDependencies = Readonly<{
-  ast: BabelNodeFile,
+  ast: File,
   dependencyMapName: string,
   dependencies: ReadonlyArray<Dependency>,
 }>;
@@ -149,10 +154,10 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  * The second argument is only provided for debugging purposes.
  */
 export default function collectDependencies(
-  ast: BabelNodeFile,
+  ast: File,
   options: Options,
 ): CollectedDependencies {
-  const visited = new WeakSet<BabelNodeCallExpression>();
+  const visited = new WeakSet<CallExpression>();
 
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
@@ -169,10 +174,7 @@ export default function collectDependencies(
   };
 
   const visitor = {
-    CallExpression(
-      path: NodePath<BabelNodeCallExpression>,
-      state: State,
-    ): void {
+    CallExpression(path: NodePath<CallExpression>, state: State): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -272,7 +274,7 @@ export default function collectDependencies(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: NodePath<BabelNodeProgram>, state: State) {
+    Program(path: NodePath<Program>, state: State) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -470,7 +472,7 @@ function collectImports(path: NodePath<>, state: State): void {
     invariant(
       path.node.source.type === 'StringLiteral',
       `Expected import source to be a string. Maybe you're using 'createImportExpressions', which is not currently supported.
-See: https://github.com/facebook/metro/pull/1343`,
+See: https://github.com/react/metro/pull/1343`,
     );
 
     registerDependency(
@@ -569,7 +571,7 @@ function processRequireCall(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?ReadonlySourceLocation {
-  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
+  let current: ?(NodePath<> | NodePath<Node>) = path;
   while (
     current &&
     !current.node.loc &&
@@ -630,9 +632,18 @@ function isOptionalDependency(
     return false;
   }
 
+  // Treat dynamic imports as optional when a rejection handler is attached
+  // close to the import call, e.g.
+  //   import('x').catch(handler)
+  //   import('x').then(handler, onReject)
+  //   import('x').then(...).catch(handler)
+  if (isInPromiseChainWithRejectionHandler(path)) {
+    return true;
+  }
+
   // Valid statement stack for single-level try-block: expressionStatement -> blockStatement -> tryStatement
   let sCount = 0;
-  let p: ?(NodePath<> | NodePath<BabelNode>) = path;
+  let p: ?(NodePath<> | NodePath<Node>) = path;
   while (p && sCount < 3) {
     if (p.isStatement()) {
       if (p.node.type === 'BlockStatement') {
@@ -650,6 +661,64 @@ function isOptionalDependency(
   }
 
   return false;
+}
+
+// Walk up a chain of `.then(...)` / `.catch(...)` member calls starting from
+// `path` (typically an `import()` CallExpression) and return true if any
+// chained call provides a rejection handler — either `.catch(handler)` or
+// `.then(_, handler)`. The chain must be unbroken: as soon as the parent is
+// not a member call applied to the previous expression, we stop. This keeps
+// the heuristic local to the import, matching the behaviour of the
+// try/catch heuristic above.
+function isInPromiseChainWithRejectionHandler(path: NodePath<>): boolean {
+  let current: NodePath<> = path;
+  while (current.parentPath != null) {
+    const member = current.parentPath;
+    if (
+      member.node.type !== 'MemberExpression' ||
+      member.node.object !== current.node ||
+      member.node.computed ||
+      member.node.property.type !== 'Identifier' ||
+      member.parentPath == null
+    ) {
+      return false;
+    }
+    const call = member.parentPath;
+    if (
+      call.node.type !== 'CallExpression' ||
+      call.node.callee !== member.node
+    ) {
+      return false;
+    }
+    const propertyName = member.node.property.name;
+    const args = call.node.arguments;
+    if (
+      propertyName === 'catch' &&
+      args.length >= 1 &&
+      isNonNullishCallbackArg(args[0])
+    ) {
+      return true;
+    }
+    if (
+      propertyName === 'then' &&
+      args.length >= 2 &&
+      isNonNullishCallbackArg(args[1])
+    ) {
+      return true;
+    }
+    current = call;
+  }
+  return false;
+}
+
+function isNonNullishCallbackArg(arg: Node): boolean {
+  if (arg.type === 'NullLiteral') {
+    return false;
+  }
+  if (arg.type === 'Identifier' && arg.name === 'undefined') {
+    return false;
+  }
+  return true;
 }
 
 function getModuleNameFromCallArgs(path: NodePath<CallExpression>): ?string {
@@ -739,9 +808,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
     path.node.arguments = [moduleIDExpression] as Array<
-      | BabelNodeExpression
-      | BabelNodeSpreadElement
-      | BabelNodeArgumentPlaceholder,
+      Expression | SpreadElement | ArgumentPlaceholder,
     >;
     // Always add the debug name argument last
     if (state.keepRequireNames) {
@@ -830,7 +897,7 @@ const DefaultDependencyTransformer: DependencyTransformer = {
 function createModuleIDExpression(
   dependency: InternalDependency,
   state: State,
-): BabelNodeExpression {
+): Expression {
   return types.memberExpression(
     nullthrows(state.dependencyMapIdentifier),
     types.numericLiteral(dependency.index),

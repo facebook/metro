@@ -33,10 +33,10 @@ import createConsumer from './createConsumer';
  * `createConsumer`).
  */
 export default class DelegatingConsumer implements IConsumer {
-  static +GENERATED_ORDER: IterationOrder = GENERATED_ORDER;
-  static +ORIGINAL_ORDER: IterationOrder = ORIGINAL_ORDER;
-  static +GREATEST_LOWER_BOUND: LookupBias = GREATEST_LOWER_BOUND;
-  static +LEAST_UPPER_BOUND: LookupBias = LEAST_UPPER_BOUND;
+  static readonly GENERATED_ORDER: IterationOrder = GENERATED_ORDER;
+  static readonly ORIGINAL_ORDER: IterationOrder = ORIGINAL_ORDER;
+  static readonly GREATEST_LOWER_BOUND: LookupBias = GREATEST_LOWER_BOUND;
+  static readonly LEAST_UPPER_BOUND: LookupBias = LEAST_UPPER_BOUND;
 
   _rootConsumer: IConsumer;
 

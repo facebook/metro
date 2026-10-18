@@ -9,18 +9,22 @@
  * @oncall react_native
  */
 
-import type {ConfigT, InputConfigT, YargArguments} from './types';
+import type {
+  ConfigT,
+  InputConfigT,
+  ServerMiddleware,
+  YargArguments,
+} from './types';
 
 import getDefaultConfig from './defaults';
 import validConfig from './defaults/validConfig';
-import * as fs from 'fs';
 import {validate} from 'jest-validate';
 import * as MetroCache from 'metro-cache';
-import {homedir} from 'os';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import {homedir} from 'node:os';
+import * as path from 'node:path';
 // eslint-disable-next-line no-restricted-imports
-import {pathToFileURL} from 'url';
-import {parse as parseYaml} from 'yaml';
+import {pathToFileURL} from 'node:url';
 
 type ResolveConfigResult = {
   filepath: string,
@@ -57,20 +61,16 @@ const SEARCH_PLACES = [
   'package.json',
 ];
 
-const JS_EXTENSIONS = new Set([
-  ...SEARCH_JS_EXTS,
-  '.es6', // Deprecated
-]);
+const JS_EXTENSIONS = new Set(SEARCH_JS_EXTS);
 const TS_EXTENSIONS = new Set(SEARCH_TS_EXTS);
-const YAML_EXTENSIONS = new Set(['.yml', '.yaml', '']); // Deprecated
 
 const PACKAGE_JSON = path.sep + 'package.json';
 const PACKAGE_JSON_PROP_NAME = 'metro';
 
-const isFile = (filePath: string) =>
+const isFile = (filePath: string): boolean =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
-const resolve = (filePath: string) => {
+const resolve = (filePath: string): string => {
   // Attempt to resolve the path with the node resolution algorithm but fall back to resolving
   // the file relative to the current working directory if the input is not an absolute path.
   try {
@@ -98,7 +98,7 @@ async function resolveConfig(
     // No config file found, return a default
     return {
       isEmpty: true,
-      filepath: path.join(cwd || process.cwd(), 'metro.config.stub.js'),
+      filepath: path.join(cwd ?? process.cwd(), 'metro.config.stub.js'),
       config: {},
     };
   }
@@ -131,6 +131,11 @@ function mergeConfigObjects<T extends InputConfigT>(
       ...(overrides.resolver?.hasteImplModulePath != null
         ? {hasteImplModulePath: resolve(overrides.resolver.hasteImplModulePath)}
         : null),
+      schemeResolvers: {
+        // $FlowFixMe[exponential-spread]
+        ...base.resolver?.schemeResolvers,
+        ...overrides.resolver?.schemeResolvers,
+      },
     },
     serializer: {
       ...base.serializer,
@@ -139,7 +144,6 @@ function mergeConfigObjects<T extends InputConfigT>(
     },
     transformer: {
       ...base.transformer,
-      // $FlowFixMe[exponential-spread]
       ...overrides.transformer,
       // $FlowFixMe[exponential-spread]
       ...(overrides.transformer?.babelTransformerPath != null
@@ -153,6 +157,7 @@ function mergeConfigObjects<T extends InputConfigT>(
     server: {
       ...base.server,
       ...overrides.server,
+      ...mergeServerHandlers(base.server, overrides.server),
       // $FlowFixMe[exponential-spread]
       ...(base.server?.tls != null ? {tls: base.server?.tls} : null),
       // only override base tls config with false or an object
@@ -162,7 +167,7 @@ function mergeConfigObjects<T extends InputConfigT>(
             typeof overrides.server?.tls === 'object'
           ? {
               tls: {
-                ...(base.server?.tls || {}),
+                ...(base.server?.tls ?? {}),
                 ...overrides.server?.tls,
               },
             }
@@ -194,6 +199,48 @@ function mergeConfigObjects<T extends InputConfigT>(
       },
     },
   };
+}
+
+// Later configs wrap earlier ones: their `unstable_middleware` runs last and
+// their `unstable_priorityMiddleware` runs first.
+function mergeServerHandlers(
+  base: InputConfigT['server'],
+  overrides: InputConfigT['server'],
+): {
+  unstable_middleware?: ReadonlyArray<ServerMiddleware>,
+  unstable_priorityMiddleware?: ReadonlyArray<ServerMiddleware>,
+} {
+  const merged: {
+    unstable_middleware?: ReadonlyArray<ServerMiddleware>,
+    unstable_priorityMiddleware?: ReadonlyArray<ServerMiddleware>,
+  } = {};
+  const middleware = concatUnique(
+    base?.unstable_middleware,
+    overrides?.unstable_middleware,
+  );
+  if (middleware != null) {
+    merged.unstable_middleware = middleware;
+  }
+  const priorityMiddleware = concatUnique(
+    overrides?.unstable_priorityMiddleware,
+    base?.unstable_priorityMiddleware,
+  );
+  if (priorityMiddleware != null) {
+    merged.unstable_priorityMiddleware = priorityMiddleware;
+  }
+  return merged;
+}
+
+// An entry in both lists (e.g. copied by spreading the base config) is kept
+// once, at its first position.
+function concatUnique<T>(
+  first: ?ReadonlyArray<T>,
+  second: ?ReadonlyArray<T>,
+): ?ReadonlyArray<T> {
+  if (first == null || second == null) {
+    return first ?? second;
+  }
+  return [...new Set([...first, ...second])];
 }
 
 async function mergeConfigAsync<T extends InputConfigT>(
@@ -244,7 +291,12 @@ function mergeConfig<
       typeof next === 'function' ? next(currentConfig) : next;
     if (nextConfig instanceof Promise) {
       // $FlowFixMe[incompatible-type] Not clear why Flow doesn't like this
-      return mergeConfigAsync(nextConfig, reversedConfigs.toReversed());
+      return mergeConfigAsync(
+        nextConfig.then(resolved =>
+          mergeConfigObjects(currentConfig, resolved),
+        ),
+        ...reversedConfigs.toReversed(),
+      );
     }
     currentConfig = mergeConfigObjects(currentConfig, nextConfig) as T;
   }
@@ -255,7 +307,7 @@ function mergeConfig<
 async function loadMetroConfigFromDisk(
   pathToLoad?: string,
   cwd?: string,
-  defaultConfigOverrides: InputConfigT,
+  defaultConfigOverrides: InputConfigT = {},
 ): Promise<ConfigT> {
   const resolvedConfigResults: ResolveConfigResult = await resolveConfig(
     pathToLoad,
@@ -330,7 +382,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv['max-workers'] != null || argv.maxWorkers != null) {
-    output.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
+    output.maxWorkers = Number(argv['max-workers'] ?? argv.maxWorkers);
   }
 
   if (argv.transformer != null) {
@@ -374,11 +426,7 @@ async function loadConfig(
   validate(configuration, {
     exampleConfig: await validConfig(),
     recursiveDenylist: ['reporter', 'resolver', 'transformer'],
-    deprecatedConfig: {
-      blacklistRE: () =>
-        `Warning: Metro config option \`blacklistRE\` is deprecated.
-         Please use \`blockList\` instead.`,
-    },
+    deprecatedConfig: {},
   });
 
   // Override the configuration with cli parameters
@@ -394,8 +442,8 @@ async function loadConfig(
 export async function loadConfigFile(
   absolutePath: string,
 ): Promise<ResolveConfigResult> {
-  // Config should be JSON, CommonJS, ESM or YAML (deprecated)
-  let config;
+  // Config should be JSON, CommonJS, or ESM
+  let config: unknown;
   const extension = path.extname(absolutePath);
 
   if (JS_EXTENSIONS.has(extension) || TS_EXTENSIONS.has(extension)) {
@@ -436,15 +484,14 @@ export async function loadConfigFile(
         throw error;
       }
     }
-  } else if (YAML_EXTENSIONS.has(extension)) {
-    console.warn(
-      'YAML config is deprecated, please migrate to JavaScript config (e.g. metro.config.js)',
+  } else if (extension === '.yaml' || extension === '.yml') {
+    throw new Error(
+      'YAML config is no longer supported, please migrate to JavaScript config (e.g. metro.config.js)',
     );
-    config = parseYaml(fs.readFileSync(absolutePath, 'utf8'));
   } else {
     throw new Error(
       `Unsupported config file extension: ${extension}. ` +
-        `Supported extensions are ${[...JS_EXTENSIONS, ...TS_EXTENSIONS, ...YAML_EXTENSIONS].map(ext => (ext === '' ? 'none' : `${ext}`)).join()})}.`,
+        `Supported extensions are ${[...JS_EXTENSIONS, ...TS_EXTENSIONS].map(ext => (ext === '' ? 'none' : `${ext}`)).join()})}.`,
     );
   }
 

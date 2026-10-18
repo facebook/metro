@@ -8,9 +8,11 @@
  * @flow strict
  */
 
-'use strict';
+import type {Node as BabelNode} from '@babel/types';
 
 const t = require('@babel/types');
+
+('use strict');
 
 module.exports = function validateOutputAst(ast: BabelNode) {
   const seenNodes = new Set<BabelNode>();

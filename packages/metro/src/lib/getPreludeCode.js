@@ -16,11 +16,11 @@ export default function getPreludeCode({
   requireCycleIgnorePatterns,
   unstable_forceFullRefreshPatterns,
 }: {
-  +extraVars?: {[string]: unknown, ...},
-  +isDev: boolean,
-  +globalPrefix: string,
-  +requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
-  +unstable_forceFullRefreshPatterns: ReadonlyArray<RegExp>,
+  readonly extraVars?: {[string]: unknown, ...},
+  readonly isDev: boolean,
+  readonly globalPrefix: string,
+  readonly requireCycleIgnorePatterns: ReadonlyArray<RegExp>,
+  readonly unstable_forceFullRefreshPatterns: ReadonlyArray<RegExp>,
 }): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime

@@ -12,6 +12,7 @@
 'use strict';
 
 import type {BabelCoreOptions, EntryOptions, PluginEntry} from '@babel/core';
+import type {File as BabelNodeFile, Node as BabelNode} from '@babel/types';
 
 const {transformSync} = require('@babel/core');
 const generate = require('@babel/generator').default;

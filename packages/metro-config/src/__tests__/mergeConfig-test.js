@@ -9,14 +9,16 @@
  * @oncall react_native
  */
 
-import type {InputConfigT} from '../types';
+import type {InputConfigT, ServerMiddleware} from '../types';
+import type {CustomResolver} from 'metro-resolver';
 
 import {mergeConfig} from '../loadConfig';
+import path from 'node:path';
 
 describe('mergeConfig', () => {
   test('can merge empty configs', () => {
     expect(mergeConfig({}, {})).toStrictEqual({
-      resolver: {},
+      resolver: {schemeResolvers: {}},
       serializer: {},
       server: {},
       symbolicator: {},
@@ -27,6 +29,20 @@ describe('mergeConfig', () => {
         watchman: {},
       },
     });
+  });
+
+  test('applies trailing overrides after an async config function', async () => {
+    const base: InputConfigT = {server: {port: 8081}};
+    const asyncOverride = (): Promise<InputConfigT> =>
+      Promise.resolve({transformer: {assetPlugins: ['async-plugin']}});
+    const trailing: InputConfigT = {resolver: {sourceExts: ['ts']}};
+
+    const result = await mergeConfig(base, asyncOverride, trailing);
+
+    // The base and every config in the chain must survive the async branch.
+    expect(result.server?.port).toBe(8081);
+    expect(result.transformer?.assetPlugins).toEqual(['async-plugin']);
+    expect(result.resolver?.sourceExts).toEqual(['ts']);
   });
 
   describe('server.tls merging', () => {
@@ -138,7 +154,6 @@ describe('mergeConfig', () => {
 
       test('override tls: undefined (explicit) keeps base tls: object', () => {
         const base: InputConfigT = {server: {tls: {key: 'key', cert: 'cert'}}};
-        // $FlowExpectedError[incompatible-type] - testing explicit undefined
         const override: InputConfigT = {server: {tls: undefined}};
         const result = mergeConfig(base, override);
         expect(result.server?.tls).toStrictEqual({key: 'key', cert: 'cert'});
@@ -153,7 +168,6 @@ describe('mergeConfig', () => {
 
       test('override tls: undefined (explicit) keeps base tls: false', () => {
         const base: InputConfigT = {server: {tls: false}};
-        // $FlowExpectedError[incompatible-type] - testing untyped runtime behavior
         const override: InputConfigT = {server: {tls: undefined}};
         const result = mergeConfig(base, override);
         expect(result.server?.tls).toBe(false);
@@ -183,13 +197,144 @@ describe('mergeConfig', () => {
       });
 
       test('both tls undefined (explicit) results in no tls property', () => {
-        // $FlowExpectedError[incompatible-type] - testing untyped runtime behavior
         const base: InputConfigT = {server: {tls: undefined}};
-        // $FlowExpectedError[incompatible-type] - testing untyped runtime behavior
         const override: InputConfigT = {server: {tls: undefined}};
         const result = mergeConfig(base, override);
         expect(result.server?.tls).toBeUndefined();
       });
+    });
+  });
+
+  describe('server middleware merging', () => {
+    const a: ServerMiddleware = (req, res, next) => next();
+    const b: ServerMiddleware = (req, res, next) => next();
+    const c: ServerMiddleware = ['/c', (req, res, next) => next()];
+
+    test('later configs wrap earlier ones', () => {
+      const result = mergeConfig(
+        {server: {unstable_priorityMiddleware: [a], unstable_middleware: [a]}},
+        {server: {unstable_priorityMiddleware: [b], unstable_middleware: [b]}},
+      );
+      expect(result.server?.unstable_priorityMiddleware).toEqual([b, a]);
+      expect(result.server?.unstable_middleware).toEqual([a, b]);
+    });
+
+    test('keeps entries copied from the base config once', () => {
+      const result = mergeConfig(
+        {server: {unstable_priorityMiddleware: [a, c]}},
+        (config: InputConfigT) => ({
+          server: {
+            unstable_priorityMiddleware: [
+              b,
+              ...(config.server?.unstable_priorityMiddleware ?? []),
+            ],
+          },
+        }),
+      );
+      expect(result.server?.unstable_priorityMiddleware).toEqual([b, a, c]);
+    });
+  });
+
+  describe('resolver path resolution', () => {
+    // `resolve()` maps a module specifier to an absolute path, relative to
+    // metro-config. Without it, these paths are later `require`d from
+    // unrelated modules (e.g. metro-file-map's Haste worker) and fail.
+    test('resolves hasteImplModulePath and dependencyExtractor to absolute paths', () => {
+      const base: InputConfigT = {};
+      const override: InputConfigT = {
+        resolver: {
+          hasteImplModulePath: 'metro-core',
+          dependencyExtractor: 'metro-cache',
+        },
+      };
+      const result = mergeConfig(base, override);
+
+      expect(path.isAbsolute(result.resolver?.hasteImplModulePath ?? '')).toBe(
+        true,
+      );
+      expect(path.isAbsolute(result.resolver?.dependencyExtractor ?? '')).toBe(
+        true,
+      );
+    });
+
+    test('leaves resolver paths unset when the override does not specify them', () => {
+      const base: InputConfigT = {};
+      const override: InputConfigT = {resolver: {}};
+      const result = mergeConfig(base, override);
+
+      expect(result.resolver?.hasteImplModulePath).toBeUndefined();
+      expect(result.resolver?.dependencyExtractor).toBeUndefined();
+    });
+  });
+
+  describe('resolver.schemeResolvers merging', () => {
+    const resolverA: CustomResolver = () => ({type: 'empty'});
+    const resolverB: CustomResolver = () => ({type: 'empty'});
+    const resolverC: CustomResolver = () => ({type: 'empty'});
+
+    test('deep merges override schemes into base schemes', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({
+        a: resolverA,
+        b: resolverB,
+      });
+    });
+
+    test('override scheme replaces base scheme with the same key', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverC}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers?.a).toBe(resolverC);
+    });
+
+    test('keeps base schemeResolvers when override.resolver sets other fields', () => {
+      const base: InputConfigT = {
+        resolver: {schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {resolver: {sourceExts: ['ts']}};
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({a: resolverA});
+    });
+
+    test('applies override schemeResolvers when base has none', () => {
+      const base: InputConfigT = {resolver: {}};
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({b: resolverB});
+    });
+
+    test('other resolver properties are preserved when schemeResolvers is merged', () => {
+      const base: InputConfigT = {
+        resolver: {sourceExts: ['js'], schemeResolvers: {a: resolverA}},
+      };
+      const override: InputConfigT = {
+        resolver: {schemeResolvers: {b: resolverB}},
+      };
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.sourceExts).toEqual(['js']);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({
+        a: resolverA,
+        b: resolverB,
+      });
+    });
+
+    test('results in empty schemeResolvers when neither side sets it', () => {
+      const base: InputConfigT = {resolver: {}};
+      const override: InputConfigT = {resolver: {}};
+      const result = mergeConfig(base, override);
+      expect(result.resolver?.schemeResolvers).toStrictEqual({});
     });
   });
 });

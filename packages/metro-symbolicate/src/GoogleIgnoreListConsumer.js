@@ -13,7 +13,10 @@ import type {BasicSourceMap, IndexMap, MixedSourceMap} from 'metro-source-map';
 
 import {normalizeSourcePath} from 'metro-source-map';
 
-type SourceNameNormalizer = (string, {+sourceRoot?: ?string, ...}) => string;
+type SourceNameNormalizer = (
+  string,
+  {readonly sourceRoot?: ?string, ...},
+) => string;
 
 /**
   * Consumes the `x_google_ignoreList` metadata field from a source map and
@@ -50,7 +53,7 @@ export default class GoogleIgnoreListConsumer {
    * `SourceMapConsumer#originalPositionFor` to retrieve a source location,
    * then pass that location to `isIgnored`.
    */
-  isIgnored({source}: {+source: ?string, ...}): boolean {
+  isIgnored({source}: {readonly source: ?string, ...}): boolean {
     return source != null && this._getIgnoredSourceSet().has(source);
   }
 

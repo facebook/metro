@@ -16,8 +16,8 @@ import {add, add0, add1, neg} from 'ob1';
 
 export function shiftPositionByOffset<
   T extends {
-    +line: ?Number1,
-    +column: ?Number0,
+    readonly line: ?Number1,
+    readonly column: ?Number0,
     ...
   },
 >(pos: T, offset: GeneratedOffset): T {
@@ -30,8 +30,8 @@ export function shiftPositionByOffset<
 
 export function subtractOffsetFromPosition<
   T extends {
-    +line: ?Number1,
-    +column: ?Number0,
+    readonly line: ?Number1,
+    readonly column: ?Number0,
     ...
   },
 >(pos: T, offset: GeneratedOffset): T {

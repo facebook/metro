@@ -22,9 +22,9 @@ import invariant from 'invariant';
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
 export default class AbstractConsumer implements IConsumer {
-  _sourceMap: {+file?: string, ...};
+  _sourceMap: {readonly file?: string, ...};
 
-  constructor(sourceMap: {+file?: string, ...}) {
+  constructor(sourceMap: {readonly file?: string, ...}) {
     this._sourceMap = sourceMap;
   }
 

@@ -12,17 +12,6 @@
 
 'use strict';
 
-jest.mock('chalk', () => {
-  const bold = _ => _;
-  return {
-    inverse: {
-      red: {bold},
-      white: {bold},
-      yellow: {bold},
-    },
-  };
-});
-
 let log;
 
 beforeEach(() => {
@@ -38,16 +27,32 @@ test('invoke native console methods', () => {
   log(console, 'warn', 'Kiwi');
   jest.runAllTimers();
 
-  expect(console.log).toHaveBeenNthCalledWith(1, ' LOG ', 'Banana');
-  expect(console.log).toHaveBeenNthCalledWith(2, ' WARN ', 'Apple');
-  expect(console.log).toHaveBeenNthCalledWith(3, ' WARN ', 'Kiwi');
+  expect(console.log).toHaveBeenNthCalledWith(
+    1,
+    expect.stringContaining(' LOG '),
+    'Banana',
+  );
+  expect(console.log).toHaveBeenNthCalledWith(
+    2,
+    expect.stringContaining(' WARN '),
+    'Apple',
+  );
+  expect(console.log).toHaveBeenNthCalledWith(
+    3,
+    expect.stringContaining(' WARN '),
+    'Kiwi',
+  );
 });
 
 test('removes excess whitespace', () => {
   log(console, 'log', 'Banana\n   ');
   jest.runAllTimers();
 
-  expect(console.log).toHaveBeenNthCalledWith(1, ' LOG ', 'Banana');
+  expect(console.log).toHaveBeenNthCalledWith(
+    1,
+    expect.stringContaining(' LOG '),
+    'Banana',
+  );
 });
 
 test('ignore `groupCollapsed` calls', () => {
@@ -63,14 +68,17 @@ test('warn if `groupCollapsed` and `groupEnd` are not balanced', () => {
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenCalledWith(
-    ' WARN ',
+    expect.stringContaining(' WARN '),
     'Expected `console.groupEnd` to be called after `console.groupCollapsed`.',
   );
 
   // Ensure that the console resets the state and will accept new logs
   log(console, 'warn', 'Apple');
   jest.runAllTimers();
-  expect(console.log).toHaveBeenCalledWith(' WARN ', 'Apple');
+  expect(console.log).toHaveBeenCalledWith(
+    expect.stringContaining(' WARN '),
+    'Apple',
+  );
 });
 
 test('can deal with nested `group` and `groupCollapsed` calls', () => {
@@ -112,5 +120,8 @@ test('can deal with nested `group` and `groupCollapsed` calls', () => {
   jest.runAllTimers();
 
   expect(console.log).toHaveBeenCalledTimes(2);
-  expect(console.log).toHaveBeenCalledWith(' LOG ', 'Banana');
+  expect(console.log).toHaveBeenCalledWith(
+    expect.stringContaining(' LOG '),
+    'Banana',
+  );
 });

@@ -19,7 +19,6 @@ export type BuildParameters = Readonly<{
   computeSha1: boolean,
   enableSymlinks: boolean,
   extensions: ReadonlyArray<string>,
-  forceNodeFilesystemAPI: boolean,
   ignorePattern: RegExp,
   plugins: ReadonlyArray<InputFileMapPlugin>,
   retainAllFiles: boolean,
@@ -67,7 +66,7 @@ export interface CacheManager {
 }
 
 export interface CacheManagerEventSource {
-  onChange(listener: () => void): () => void /* unsubscribe */;
+  onChange(listener: () => void): () => void; /* unsubscribe */
 }
 
 export type CacheManagerFactory = (
@@ -90,13 +89,27 @@ export type CacheManagerWriteOptions = Readonly<{
 //  - Real (no symlinks in path, though the path itself may be a symlink)
 export type CanonicalPath = string;
 
+/**
+ * A directory whose files a file map holds.
+ */
+export type FileMapRoot = Readonly<{
+  absolutePath: string,
+  // Relative to `rootDir`, in the form of other paths relative to it, which
+  // reaches a root on another Windows drive as if the drive were a top-level
+  // directory, e.g. `..\..\D:\foo`. Empty for `rootDir` itself.
+  rootRelativePath: string,
+  // Whether the root was added after construction, rather than given in
+  // `roots`.
+  dynamic: boolean,
+}>;
+
 export type ChangedFileMetadata = Readonly<{
   isSymlink: boolean,
   modifiedTime?: ?number,
 }>;
 
 export type ChangeEvent = Readonly<{
-  logger: ?RootPerfLogger,
+  logger?: ?RootPerfLogger,
   changes: ReadonlyFileSystemChanges<Readonly<ChangedFileMetadata>>,
   rootDir: string,
 }>;
@@ -110,11 +123,10 @@ export type ChangeEventMetadata = {
 export type Console = typeof global.console;
 
 export type CrawlerOptions = {
-  abortSignal: ?AbortSignal,
+  abortSignal?: ?AbortSignal,
   computeSha1: boolean,
   console: Console,
   extensions: ReadonlyArray<string>,
-  forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
   includeSymlinks: boolean,
   perfLogger?: ?PerfLogger,
@@ -141,6 +153,37 @@ export type CrawlResult =
       removedFiles: Set<Path>,
     };
 
+/**
+ * Discovers files under `roots`, as a delta against `previousState`. This is
+ * the contract implemented by the built-in Watchman and node crawlers, and by
+ * any crawler supplied to `Watcher`.
+ */
+export type Crawler = (options: CrawlerOptions) => Promise<CrawlResult>;
+
+export type CrawlerFactoryOptions = Readonly<{
+  buildParameters: BuildParameters,
+
+  /**
+   * Maps a plugin's `name` to the index within `FileMetadata` reserved for its
+   * per-file data. Plugins that declare no worker have no reserved slot and are
+   * absent from this map.
+   *
+   * A crawler that can supply plugin data itself - rather than leaving it to
+   * the plugin's worker - writes it at these indices.
+   */
+  pluginDataIndices: ReadonlyMap<string, number>,
+}>;
+
+/**
+ * Replaces the built-in Watchman/node crawlers. Called once per `FileMap`,
+ * before the first crawl, with context that is fixed for that `FileMap`'s
+ * lifetime; the returned `Crawler` is called for the initial crawl and for any
+ * subsequent re-crawl.
+ *
+ * Only crawling is replaced. Watch mode, if enabled, still uses the built-in
+ * watcher backends.
+ */
+export type CrawlerFactory = (options: CrawlerFactoryOptions) => Crawler;
 export type DependencyExtractor = {
   extract: (
     content: string,
@@ -171,8 +214,8 @@ export type DuplicatesSet = Map<string, /* type */ number>;
 export type DuplicatesIndex = Map<string, Map<string, DuplicatesSet>>;
 
 export type FileMapPluginInitOptions<
-  +SerializableState,
-  +PerFileData = void,
+  out SerializableState,
+  out PerFileData = void,
 > = Readonly<{
   files: Readonly<{
     fileIterator(
@@ -183,41 +226,82 @@ export type FileMapPluginInitOptions<
     ): Iterable<{
       baseName: string,
       canonicalPath: string,
-      +pluginData: ?PerFileData,
+      readonly pluginData: ?PerFileData,
     }>,
     lookup(
       mixedPath: string,
-    ):
-      | {exists: false}
-      | {exists: true, type: 'f', +pluginData: PerFileData}
-      | {exists: true, type: 'd'},
+    ): {exists: false} | {exists: true, type: 'f' | 'd'},
   }>,
   pluginState: ?SerializableState,
+  /**
+   * This plugin's data for the regular file at `mixedPath`. Throws if the
+   * plugin has no worker.
+   *
+   * A lazy plugin's worker is run on a file, synchronously and in-band, the
+   * first time its data is asked for, and again after the file changes. The
+   * result is stored, with `undefined` replaced by `null`.
+   *
+   * A non-lazy plugin's worker has already run on every file it can give
+   * non-null data for, so a file it has not run on (eg, one its filter
+   * excludes) has `null` data, without running it.
+   *
+   * If `observations` is given, records what the result depends upon: a
+   * regular file found in `content`, since its data is derived from what it
+   * holds, and otherwise as `FileSystem.lookup` does. This is the same whether
+   * the data was stored or computed.
+   */
+  getOrComputeFileData: (
+    mixedPath: string,
+    observations?: ?Observations,
+  ) => FileDataResult<PerFileData>,
 }>;
+
+export type FileDataResult<out PerFileData> =
+  | Readonly<{exists: false}>
+  | Readonly<{exists: true, type: 'd'}>
+  | Readonly<{
+      exists: true,
+      type: 'f',
+      // The real, absolute path of the file.
+      realPath: string,
+      data: ?PerFileData,
+    }>;
 
 export type FileMapPluginWorker = Readonly<{
   worker: Readonly<{
     modulePath: string,
     setupArgs: JsonData,
   }>,
+  /**
+   * Whether the worker runs on a given file as it is crawled or changed.
+   * This applies to files under node_modules too, which a plugin may reject
+   * using `isNodeModules`.
+   */
   filter: ({normalPath: string, isNodeModules: boolean}) => boolean,
+  /**
+   * If true, the worker is not run on files as they are crawled or changed,
+   * and `filter` is not consulted. It runs only on the files the plugin asks
+   * for, through the `getOrComputeFileData` it is given on initialization. Use this
+   * where a small, unpredictable subset of matching files is ever needed.
+   */
+  lazy?: boolean,
 }>;
 
-export type V8Serializable =
-  | string
-  | number
-  | boolean
-  | null
+type V8SerializablePrimitive = string | number | boolean | null;
+
+type V8SerializableCollection =
   | ReadonlyArray<V8Serializable>
   | ReadonlySet<V8Serializable>
   | ReadonlyMap<string, V8Serializable>
   | Readonly<{[key: string]: V8Serializable}>;
 
+export type V8Serializable = V8SerializablePrimitive | V8SerializableCollection;
+
 export interface FileMapPlugin<
-  -SerializableState extends void | V8Serializable = void | V8Serializable,
-  -PerFileData extends void | V8Serializable = void | V8Serializable,
+  in SerializableState extends void | V8Serializable = void | V8Serializable,
+  in PerFileData extends void | V8Serializable = void | V8Serializable,
 > {
-  +name: string;
+  readonly name: string;
   initialize(
     initOptions: FileMapPluginInitOptions<SerializableState, PerFileData>,
   ): Promise<void>;
@@ -263,8 +347,10 @@ export type FileMetadata = [
   /* size */ number,
   /* visited */ 0 | 1,
   /* sha1 */ ?string,
-  /* symlink */ 0 | 1 | string, // string specifies target, if known
-  /* plugindata */
+  // A string is the symlink's target, lexically resolved to a normal path with
+  // POSIX separators, if known. The target need not exist.
+  /* symlink */ 0 | 1 | string,
+  /* plugindata - one slot per plugin with a worker, `undefined` until run */
   ...
 ];
 
@@ -317,8 +403,7 @@ export interface FileSystem {
    *   X = dirname(X)
    * while X !== dirname(X)
    *
-   * If opts.invalidatedBy is given, collects all absolute, real paths that if
-   * added or removed may invalidate this result.
+   * If `observations` is given, records the paths this result depends upon.
    *
    * Useful for finding the closest package scope (subpath: package.json,
    * type f, breakOnSegment: node_modules) or closest potential package root
@@ -328,10 +413,10 @@ export interface FileSystem {
     mixedStartPath: string,
     subpath: string,
     opts: {
-      breakOnSegment: ?string,
-      invalidatedBy: ?Set<string>,
+      breakOnSegment?: ?string,
       subpathType: 'f' | 'd',
     },
+    observations?: ?Observations,
   ): ?{
     absolutePath: string,
     containerRelativePath: string,
@@ -346,8 +431,12 @@ export interface FileSystem {
   /**
    * Return information about the given path, whether a directory or file.
    * Always follow symlinks, and return a real path if it exists.
+   *
+   * If `observations` is given, records the paths this result depends upon:
+   * any symlink traversed, and either the real path found or the first path
+   * segment that did not exist.
    */
-  lookup(mixedPath: Path): LookupResult;
+  lookup(mixedPath: Path, observations?: ?Observations): LookupResult;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
@@ -365,8 +454,6 @@ export interface FileSystem {
   }): Iterable<Path>;
 }
 
-export type Glob = string;
-
 export type JsonData =
   | string
   | number
@@ -381,16 +468,11 @@ export type LookupResult =
       // could indicate an unwatched path, or a directory containing no watched
       // files).
       exists: false,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
-      // The real, normal, absolute path of the first path segment
-      // encountered that does not exist, or cannot be navigated through.
-      missing: string,
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
+      // The directory's path relative to the root, with symlinks resolved.
+      canonicalPath: CanonicalPath,
       // The real, normal, absolute path of the directory.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -399,8 +481,8 @@ export type LookupResult =
     }
   | {
       exists: true,
-      // The real, normal, absolute paths of any symlinks traversed.
-      links: ReadonlySet<string>,
+      // The file's path relative to the root, with symlinks resolved.
+      canonicalPath: CanonicalPath,
       // The real, normal, absolute path of the file.
       realPath: string,
       // Currently lookup always follows symlinks, so can only return
@@ -409,6 +491,35 @@ export type LookupResult =
       // The file's metadata tuple. Must only be mutated via FileProcessor.
       metadata: FileMetadata,
     };
+
+/**
+ * A mutable record of what a query observed of the file system, sufficient to
+ * decide later whether its answer may have changed.
+ *
+ * The parameter is optional and may be omitted for performance.
+ */
+export interface Observations {
+  /**
+   * Paths that were observed to exist, or not to exist. Invalidated by added or
+   * removed files or directories.
+   *
+   * Non-existence is always recorded against the *topmost* missing path, not
+   * the path asked for, so an absent directory collapses every query beneath
+   * it to one entry: a missing `node_modules` is one path invalidating every
+   * package resolution under it, rather than one per package.
+   */
+  readonly existence: Set<CanonicalPath>;
+
+  /**
+   * Files whose content was observed (including traversed symlinks, whose
+   * content is their target) and directories whose immediate entries were
+   * enumerated. Invalidated by modification, as well as by addition or
+   * removal, so a path here may also be in `existence` (eg, after a `lookup`
+   * and a content read of the same file) without changing what invalidates
+   * the result.
+   */
+  readonly content: Set<CanonicalPath>;
+}
 
 export interface MockMap {
   getMockModule(name: string): ?Path;
@@ -461,13 +572,13 @@ export interface FileSystemListener {
   fileRemoved(canonicalPath: CanonicalPath, data: FileMetadata): void;
 }
 
-export interface ReadonlyFileSystemChanges<+T = FileMetadata> {
-  +addedDirectories: Iterable<CanonicalPath>;
-  +removedDirectories: Iterable<CanonicalPath>;
+export interface ReadonlyFileSystemChanges<out T = FileMetadata> {
+  readonly addedDirectories: Iterable<CanonicalPath>;
+  readonly removedDirectories: Iterable<CanonicalPath>;
 
-  +addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
-  +modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
-  +removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly addedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly modifiedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
+  readonly removedFiles: Iterable<Readonly<[CanonicalPath, T]>>;
 }
 
 export interface MutableFileSystem extends FileSystem {
@@ -546,14 +657,22 @@ export type WatcherBackendChangeEvent =
 
 export type WatcherBackendOptions = Readonly<{
   ignored: ?RegExp,
-  globs: ReadonlyArray<string>,
-  dot: boolean,
+  included: ?WatcherIncludedFiles,
   ...
 }>;
 
+/**
+ * Regular files a watcher reports changes to: those matching any of the
+ * extensions (without a leading dot), basenames, or basename prefixes.
+ */
+export type WatcherIncludedFiles = Readonly<{
+  extensions: ReadonlySet<string>,
+  basenames: ReadonlySet<string>,
+  basenamePrefixes: ReadonlyArray<string>,
+}>;
+
 export type WatchmanClockSpec =
-  | string
-  | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
+  string | Readonly<{scm: Readonly<{'mergebase-with': string}>}>;
 export type WatchmanClocks = Map<Path, WatchmanClockSpec>;
 
 export type WorkerMessage = Readonly<{

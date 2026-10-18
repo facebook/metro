@@ -11,11 +11,12 @@
 
 import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
-export type Result<+TResolution, +TCandidates> =
-  | {+type: 'resolved', +resolution: TResolution}
-  | {+type: 'failed', +candidates: TCandidates};
+export type Result<out TResolution, out TCandidates> =
+  | {readonly type: 'resolved', readonly resolution: TResolution}
+  | {readonly type: 'failed', readonly candidates: TCandidates};
 
-export type Resolution = FileResolution | {+type: 'empty'};
+export type Resolution =
+  FileResolution | VirtualResolution | {readonly type: 'empty'};
 
 export type SourceFileResolution = Readonly<{
   type: 'sourceFile',
@@ -28,9 +29,20 @@ export type AssetResolution = Readonly<{
 }>;
 export type FileResolution = AssetResolution | SourceFileResolution;
 
+/**
+ * A JS module whose contents are provided out-of-band rather than read from a file
+ * on disk.
+ *
+ * NOTE: Resolving to a virtual module is not yet implemented. This is a reservation.
+ */
+export type VirtualResolution = Readonly<{
+  type: 'virtualModule',
+  ...
+}>;
+
 export type FileAndDirCandidates = {
-  +dir: ?FileCandidates,
-  +file: ?FileCandidates,
+  readonly dir: ?FileCandidates,
+  readonly file: ?FileCandidates,
 };
 
 /**
@@ -40,14 +52,14 @@ export type FileAndDirCandidates = {
  */
 export type FileCandidates =
   // We only tried to resolve a specific asset.
-  | {+type: 'asset', +name: string}
+  | {readonly type: 'asset', readonly name: string}
   // We attempted to resolve a name as being a source file (ex. JavaScript,
   // JSON...), in which case there can be several extensions we tried, for
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
   | {
-      +type: 'sourceFile',
+      readonly type: 'sourceFile',
       filePathPrefix: string,
-      +candidateExts: ReadonlyArray<string>,
+      readonly candidateExts: ReadonlyArray<string>,
     };
 
 export type ExportsLikeMap = Readonly<{
@@ -140,7 +152,7 @@ export type ResolutionContext = Readonly<{
    * @deprecated, prefer `fileSystemLookup`
    */
   doesFileExist: DoesFileExist,
-  extraNodeModules: ?{[string]: string, ...},
+  extraNodeModules: ?{[packageName: string]: string, ...},
 
   /** Is resolving for a development bundle. */
   dev: boolean,
@@ -155,7 +167,7 @@ export type ResolutionContext = Readonly<{
    * for a given absolute candidate path (which need not exist), or null if
    * there is no package.json closer than the nearest node_modules directory.
    *
-   * @deprecated See https://github.com/facebook/metro/commit/29c77bff31e2475a086bc3f04073f485da8f9ff0
+   * @deprecated See https://github.com/react/metro/commit/29c77bff31e2475a086bc3f04073f485da8f9ff0
    */
   getPackageForModule: (absoluteModulePath: string) => ?PackageForModule,
 
@@ -178,7 +190,7 @@ export type ResolutionContext = Readonly<{
   isESMImport?: boolean,
 
   /**
-   * Synchonously returns information about a given absolute path, including
+   * Synchronously returns information about a given absolute path, including
    * whether it exists, whether it is a file or directory, and its absolute
    * real path.
    */
@@ -216,6 +228,18 @@ export type ResolutionContext = Readonly<{
   resolveHastePackage: (name: string) => ?string,
 
   resolveRequest?: ?CustomResolver,
+
+  /**
+   * Resolvers for specifiers prefixed with a URI scheme, keyed by the
+   * lowercased scheme (the part before the first ':', without the colon). The
+   * scheme parsed from a specifier is lowercased before lookup, so keys must be
+   * lowercase (both `Foo:` and `foo:` match the `'foo'` key). When a
+   * specifier's scheme matches a key, the corresponding resolver is invoked
+   * instead of the default algorithm, receiving the full specifier and a
+   * context whose `resolveRequest` delegates to default resolution.
+   */
+  schemeResolvers?: Readonly<{[scheme: string]: CustomResolver}>,
+
   sourceExts: ReadonlyArray<string>,
   unstable_conditionNames: ReadonlyArray<string>,
   unstable_conditionsByPlatform: Readonly<{
@@ -239,6 +263,6 @@ export type CustomResolver = (
 
 export type CustomResolverOptions = {
   __proto__: null,
-  +[string]: unknown,
+  readonly [key: string]: unknown,
   ...
 };

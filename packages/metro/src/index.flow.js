@@ -13,21 +13,22 @@ import type {AssetData} from './Assets';
 import type {ReadOnlyGraph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
 import type {BuildOptions, OutputOptions, RequestOptions} from './shared/types';
-import type {HandleFunction} from 'connect';
-import type {Server as HttpServer} from 'http';
-import type {
-  Server as HttpsServer,
-  ServerOptions as HttpsServerOptions,
-} from 'https';
+import type {HandleFunction, Server as ConnectServer} from 'connect';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   ConfigT,
   InputConfigT,
   MetroConfig,
   Middleware,
+  ServerMiddleware,
 } from 'metro-config';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
+import type {Server as HttpServer} from 'node:http';
+import type {
+  Server as HttpsServer,
+  ServerOptions as HttpsServerOptions,
+} from 'node:https';
 import type {Server as WebSocketServer} from 'ws';
 import typeof Yargs from 'yargs';
 
@@ -37,22 +38,24 @@ import makeServeCommand from './commands/serve';
 import MetroHmrServer from './HmrServer';
 import IncrementalBundler from './IncrementalBundler';
 import createWebsocketServer from './lib/createWebsocketServer';
+import getSchemeResolvers from './lib/getSchemeResolvers';
 import JsonReporter from './lib/JsonReporter';
 import TerminalReporter from './lib/TerminalReporter';
 import MetroServer from './Server';
 import * as outputBundle from './shared/output/bundle';
-import chalk from 'chalk';
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
 import {
   getDefaultConfig,
   loadConfig,
   mergeConfig,
   resolveConfig,
 } from 'metro-config';
+import {defaultEnhanceMiddleware} from 'metro-config/private/defaults/defaults';
 import {Terminal} from 'metro-core';
-import net from 'net';
+import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
+import net from 'node:net';
+import util from 'node:util';
 import nullthrows from 'nullthrows';
 
 const DEFAULTS = MetroServer.DEFAULT_BUNDLE_OPTIONS;
@@ -72,14 +75,20 @@ export type RunMetroOptions = {
 export type RunServerOptions = Readonly<{
   hasReducedPerformance?: boolean,
   host?: string,
-  onError?: (Error & {code?: string}) => void,
+  onError?: (err: Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
   onClose?: () => void,
   secureServerOptions?: HttpsServerOptions,
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
-  unstable_extraMiddleware?: ReadonlyArray<HandleFunction>,
+  unstable_extraMiddleware?: ReadonlyArray<HandleFunction>, // deprecated
+  // Runs after `config.server.unstable_middleware`.
+  unstable_middleware?: ReadonlyArray<ServerMiddleware>,
+  // Called after `config.server.unstable_onServerCreated`.
+  unstable_onServerCreated?: (metroServer: MetroServer) => void,
+  // Runs before `config.server.unstable_priorityMiddleware`.
+  unstable_priorityMiddleware?: ReadonlyArray<ServerMiddleware>,
   waitForBundler?: boolean,
   watch?: boolean,
   websocketEndpoints?: Readonly<{
@@ -114,9 +123,9 @@ export type RunBuildOptions = {
   minify?: boolean,
   output?: Readonly<{
     build: (
-      MetroServer,
-      RequestOptions,
-      void | BuildOptions,
+      server: MetroServer,
+      requestOptions: RequestOptions,
+      buildOptions?: BuildOptions,
     ) => Promise<{
       code: string,
       map: string,
@@ -124,13 +133,13 @@ export type RunBuildOptions = {
       ...
     }>,
     save: (
-      {
+      output: {
         code: string,
         map: string,
         ...
       },
-      OutputOptions,
-      (logMessage: string) => void,
+      opts: OutputOptions,
+      logger: (logMessage: string) => void,
     ) => Promise<unknown>,
     ...
   }>,
@@ -153,7 +162,7 @@ type BuildCommandOptions = Readonly<{[string]: unknown}> | null;
 type ServeCommandOptions = Readonly<{[string]: unknown}> | null;
 type DependenciesCommandOptions = Readonly<{[string]: unknown}> | null;
 
-export {Terminal, JsonReporter, TerminalReporter};
+export {Terminal, JsonReporter, TerminalReporter, getSchemeResolvers};
 
 export type {AssetData} from './Assets';
 export type {
@@ -234,11 +243,20 @@ export const createConnectMiddleware = async function (
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
+  config.server.unstable_onServerCreated(metroServer);
 
   let enhancedMiddleware: Middleware = metroServer.processRequest;
 
   // Enhance the resulting middleware using the config options
   if (config.server.enhanceMiddleware) {
+    if (config.server.enhanceMiddleware !== defaultEnhanceMiddleware) {
+      logDeprecationWarning(
+        'The `server.enhanceMiddleware` config option is deprecated and will be ' +
+          'removed in a later release. Please use `server.unstable_middleware` ' +
+          'or `server.unstable_priorityMiddleware` instead, and ' +
+          '`server.unstable_onServerCreated` to access the Metro server instance.',
+      );
+    }
     enhancedMiddleware = config.server.enhanceMiddleware(
       enhancedMiddleware,
       metroServer,
@@ -266,7 +284,11 @@ export const createConnectMiddleware = async function (
       });
     },
     metroServer,
-    middleware: enhancedMiddleware,
+    middleware: composeMiddleware(
+      config.server.unstable_priorityMiddleware,
+      enhancedMiddleware,
+      config.server.unstable_middleware,
+    ),
     async end(): Promise<void> {
       await metroServer.end();
     },
@@ -275,7 +297,9 @@ export const createConnectMiddleware = async function (
 
 export const runServer = async (
   config: ConfigT,
-  {
+  opts: RunServerOptions = {},
+): Promise<RunServerResult> => {
+  const {
     hasReducedPerformance = false,
     host,
     onError,
@@ -285,29 +309,23 @@ export const runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
-    unstable_extraMiddleware,
+    unstable_extraMiddleware = [], // deprecated
+    unstable_middleware = [],
+    unstable_onServerCreated,
+    unstable_priorityMiddleware = [],
     waitForBundler = false,
     websocketEndpoints: userWebsocketEndpoints = {},
     watch,
-  }: RunServerOptions = {},
-): Promise<RunServerResult> => {
+  } = opts;
   await earlyPortCheck(host, config.server.port);
 
   if (secure != null || secureCert != null || secureKey != null) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      chalk.inverse.yellow.bold(' DEPRECATED '),
+    logDeprecationWarning(
       'The `secure`, `secureCert`, and `secureKey` options are now deprecated. ' +
         'Please use the `secureServerOptions` object instead to pass options to ' +
         "Metro's https development server, or `config.server.tls` in Metro's configuration",
     );
   }
-  // Lazy require
-  // eslint-disable-next-line import/no-commonjs
-  const connect = require('connect');
-
-  const serverApp = connect();
-
   const {
     middleware,
     end: endMiddleware,
@@ -318,11 +336,13 @@ export const runServer = async (
     watch,
   });
 
-  for (const handler of unstable_extraMiddleware ?? []) {
-    serverApp.use(handler);
-  }
+  unstable_onServerCreated?.(metroServer);
 
-  serverApp.use(middleware);
+  const serverApp = composeMiddleware(
+    [...unstable_extraMiddleware, ...unstable_priorityMiddleware],
+    middleware,
+    unstable_middleware,
+  );
 
   let httpServer;
 
@@ -421,7 +441,9 @@ export const runServer = async (
 
 export const runBuild = async (
   config: ConfigT,
-  {
+  opts: RunBuildOptions,
+): Promise<RunBuildResult> => {
+  const {
     assets = false,
     customResolverOptions = DEFAULTS.customResolverOptions,
     customTransformOptions = DEFAULTS.customTransformOptions,
@@ -439,8 +461,7 @@ export const runBuild = async (
     sourceMap = false,
     sourceMapUrl,
     unstable_transformProfile = DEFAULTS.unstable_transformProfile,
-  }: RunBuildOptions,
-): Promise<RunBuildResult> => {
+  } = opts;
   const metroServer = await runMetro(config, {
     watch: false,
   });
@@ -512,16 +533,16 @@ export const runBuild = async (
 
 export const buildGraph = async function (
   config: InputConfigT,
-  {
+  opts: BuildGraphOptions,
+): Promise<ReadOnlyGraph<>> {
+  const {
     customTransformOptions = Object.create(null),
     dev = false,
     entries,
     minify = false,
-    onProgress,
     platform = 'web',
     type = 'module',
-  }: BuildGraphOptions,
-): Promise<ReadOnlyGraph<>> {
+  } = opts;
   const mergedConfig = await getConfig(config);
 
   const bundler = new IncrementalBundler(mergedConfig);
@@ -588,22 +609,29 @@ async function earlyPortCheck(host: void | string, port: number) {
   }
 }
 
-/**
- * Backwards-compatibility with CommonJS consumers using interopRequireDefault.
- * Do not add to this list.
- *
- * @deprecated Default import from 'metro' is deprecated, use named exports.
- */
-export default {
-  attachMetroCli,
-  runServer,
-  Terminal,
-  JsonReporter,
-  TerminalReporter,
-  loadConfig,
-  mergeConfig,
-  resolveConfig,
-  createConnectMiddleware,
-  runBuild,
-  buildGraph,
-};
+function logDeprecationWarning(message: string): void {
+  // eslint-disable-next-line no-console
+  console.warn(
+    util.styleText(['inverse', 'yellow', 'bold'], ' DEPRECATED '),
+    message,
+  );
+}
+
+function composeMiddleware(
+  before: ReadonlyArray<ServerMiddleware>,
+  inner: Middleware,
+  after: ReadonlyArray<ServerMiddleware>,
+): ConnectServer {
+  // Lazy require
+  // eslint-disable-next-line import/no-commonjs
+  const connect = require('connect');
+  const app = connect();
+  for (const entry of [...before, inner, ...after]) {
+    if (typeof entry === 'function') {
+      app.use(entry);
+    } else {
+      app.use(entry[0], entry[1]);
+    }
+  }
+  return app;
+}

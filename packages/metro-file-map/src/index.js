@@ -22,11 +22,14 @@ import type {
   ChangeEventClock,
   ChangeEventMetadata,
   Console,
+  Crawler,
+  CrawlerFactory,
   CrawlerOptions,
   CrawlResult,
   FileData,
   FileMapPlugin,
   FileMapPluginWorker,
+  FileMapRoot,
   FileMetadata,
   FileSystem,
   HasteMapData,
@@ -52,14 +55,14 @@ import normalizePathSeparatorsToSystem from './lib/normalizePathSeparatorsToSyst
 import {RootPathUtils} from './lib/RootPathUtils';
 import TreeFS from './lib/TreeFS';
 import {Watcher} from './Watcher';
-import EventEmitter from 'events';
-import {promises as fsPromises} from 'fs';
+import debugModule from 'debug';
 import invariant from 'invariant';
-import * as path from 'path';
-import {performance} from 'perf_hooks';
+import EventEmitter from 'node:events';
+import {promises as fsPromises} from 'node:fs';
+import * as path from 'node:path';
+import {performance} from 'node:perf_hooks';
 
-// eslint-disable-next-line import/no-commonjs
-const debug = require('debug')('Metro:FileMap');
+const debug = debugModule('Metro:FileMap');
 
 export type {
   BuildParameters,
@@ -78,7 +81,6 @@ export type InputOptions = Readonly<{
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
   extensions: ReadonlyArray<string>,
-  forceNodeFilesystemAPI?: ?boolean,
   ignorePattern?: ?RegExp,
   plugins?: ReadonlyArray<InputFileMapPlugin>,
   retainAllFiles: boolean,
@@ -87,6 +89,11 @@ export type InputOptions = Readonly<{
 
   cacheManagerFactory?: ?CacheManagerFactory,
   console?: Console,
+  /**
+   * Replaces the built-in Watchman/node crawlers. Watch mode, if enabled, still
+   * uses the built-in watcher backends.
+   */
+  crawlerFactory?: ?CrawlerFactory,
   healthCheck: HealthCheckOptions,
   maxFilesPerWorker?: ?number,
   maxWorkers: number,
@@ -134,7 +141,10 @@ type InternalEnqueuedEvent = Readonly<
 >;
 
 export {DiskCacheManager} from './cache/DiskCacheManager';
+export {NoopCacheManager} from './cache/NoopCacheManager';
 export {default as DependencyPlugin} from './plugins/DependencyPlugin';
+export {default as FileDataPlugin} from './plugins/FileDataPlugin';
+export type {FileDataPluginOptions} from './plugins/FileDataPlugin';
 export type {DependencyPluginOptions} from './plugins/DependencyPlugin';
 export {DuplicateHasteCandidatesError} from './plugins/haste/DuplicateHasteCandidatesError';
 export {HasteConflictsError} from './plugins/haste/HasteConflictsError';
@@ -148,14 +158,21 @@ export type {
   CacheManagerFactoryOptions,
   CacheManagerWriteOptions,
   ChangeEvent,
+  Crawler,
+  CrawlerFactory,
+  CrawlerFactoryOptions,
+  CrawlerOptions,
+  CrawlResult,
   DependencyExtractor,
+  FileDataResult,
+  FileMapRoot,
   WatcherStatus,
 } from './flow-types';
 
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
 // filesystem state and build parameters).
-const CACHE_BREAKER = '11';
+const CACHE_BREAKER = '13';
 
 const CHANGE_INTERVAL = 30;
 
@@ -205,7 +222,8 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  *   visited: boolean, // whether the file has been parsed or not.
  *   dependencies: Array<string>, // all relative dependencies of this file.
  *   sha1: ?string, // SHA-1 of the file, if requested via options.
- *   symlink: ?(1 | 0 | string), // Truthy if symlink, string is target
+ *   symlink: ?(1 | 0 | string), // Truthy if symlink, string is the target,
+ *                               // lexically resolved to a normal POSIX path
  * };
  *
  * // Modules can be targeted to a specific platform based on the file name.
@@ -249,18 +267,29 @@ const WATCHMAN_REQUIRED_CAPABILITIES = [
  */
 export default class FileMap extends EventEmitter {
   #buildPromise: ?Promise<BuildResult>;
-  +#cacheManager: CacheManager;
+  readonly #cacheManager: CacheManager;
   #canUseWatchmanPromise: Promise<boolean>;
   #changeID: number;
-  #changeInterval: ?IntervalID;
-  +#console: Console;
-  +#crawlerAbortController: AbortController;
-  +#fileProcessor: FileProcessor;
-  #healthCheckInterval: ?IntervalID;
-  +#options: InternalOptions;
-  +#pathUtils: RootPathUtils;
-  +#plugins: ReadonlyArray<IndexedPlugin>;
-  +#startupPerfLogger: ?PerfLogger;
+  // Serializes changes to the built file system: watcher events and roots
+  // added by `addRoot`.
+  #changeQueue: Promise<null | void> = Promise.resolve();
+  #changeInterval: ?ReturnType<typeof setInterval>;
+  readonly #console: Console;
+  readonly #crawlerAbortController: AbortController;
+  readonly #fileProcessor: FileProcessor;
+  #healthCheckInterval: ?ReturnType<typeof setInterval>;
+  readonly #options: InternalOptions;
+  #roots: ReadonlyArray<FileMapRoot>;
+  readonly #pathUtils: RootPathUtils;
+  readonly #crawler: ?Crawler;
+  // Roots added by `addRoot`, mapped to the completion of each addition.
+  readonly #dynamicRoots: Map<string, Promise<void>> = new Map();
+  #fileSystem: ?TreeFS;
+  // Applies and emits watcher events waiting on the change interval. Set in
+  // watch mode.
+  #flushPendingChanges: ?() => void;
+  readonly #plugins: ReadonlyArray<IndexedPlugin>;
+  readonly #startupPerfLogger: ?PerfLogger;
   #watcher: ?Watcher;
 
   static create(options: InputOptions): FileMap {
@@ -300,13 +329,23 @@ export default class FileMap extends EventEmitter {
 
     const indexedPlugins: Array<IndexedPlugin> = [];
     const pluginWorkers: Array<FileMapPluginWorker> = [];
+    const pluginDataIndices = new Map<string, number>();
     const plugins = options.plugins ?? [];
     for (const plugin of plugins) {
       const maybeWorker = plugin.getWorker();
-      indexedPlugins.push({
-        plugin,
-        dataIdx: maybeWorker != null ? dataSlot++ : null,
-      });
+      const dataIdx = maybeWorker != null ? dataSlot++ : null;
+      indexedPlugins.push({plugin, dataIdx});
+      if (dataIdx != null) {
+        // Crawlers address plugin data by name, so names must be unique among
+        // plugins holding a slot - otherwise a crawler would silently write to
+        // the shadowed plugin's slot.
+        invariant(
+          !pluginDataIndices.has(plugin.name),
+          'metro-file-map: Duplicate plugin name: %s',
+          plugin.name,
+        );
+        pluginDataIndices.set(plugin.name, dataIdx);
+      }
       if (maybeWorker != null) {
         pluginWorkers.push(maybeWorker);
       }
@@ -318,7 +357,6 @@ export default class FileMap extends EventEmitter {
       computeSha1: options.computeSha1 || false,
       enableSymlinks: options.enableSymlinks || false,
       extensions: options.extensions,
-      forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
       ignorePattern,
       plugins,
       retainAllFiles: options.retainAllFiles,
@@ -335,6 +373,10 @@ export default class FileMap extends EventEmitter {
       watch: !!options.watch,
       watchmanDeferStates: options.watchmanDeferStates ?? [],
     };
+
+    this.#crawler = options.crawlerFactory
+      ? options.crawlerFactory.call(null, {buildParameters, pluginDataIndices})
+      : null;
 
     const cacheFactoryOptions: CacheManagerFactoryOptions = {
       buildParameters,
@@ -353,6 +395,11 @@ export default class FileMap extends EventEmitter {
 
     this.#buildPromise = null;
     this.#pathUtils = new RootPathUtils(options.rootDir);
+    this.#roots = this.#options.roots.map(absolutePath => ({
+      absolutePath,
+      rootRelativePath: this.#pathUtils.absoluteToNormal(absolutePath),
+      dynamic: false,
+    }));
     this.#startupPerfLogger?.point('constructor_end');
     this.#crawlerAbortController = new AbortController();
     this.#changeID = 0;
@@ -417,23 +464,15 @@ export default class FileMap extends EventEmitter {
             fileSystem,
           }),
           Promise.all(
-            plugins.map(({plugin, dataIdx}) =>
-              plugin.initialize({
+            plugins.map(({plugin, dataIdx}) => {
+              const isLazy = plugin.getWorker()?.lazy === true;
+              return plugin.initialize({
                 files: {
                   lookup: mixedPath => {
                     const result = fileSystem.lookup(mixedPath);
-                    if (!result.exists) {
-                      return {exists: false};
-                    }
-                    if (result.type === 'd') {
-                      return {exists: true, type: 'd'};
-                    }
-                    return {
-                      exists: true,
-                      type: 'f',
-                      pluginData:
-                        dataIdx != null ? result.metadata[dataIdx] : null,
-                    };
+                    return result.exists
+                      ? {exists: true, type: result.type}
+                      : {exists: false};
                   },
                   fileIterator: opts =>
                     mapIterable(
@@ -446,10 +485,65 @@ export default class FileMap extends EventEmitter {
                     ),
                 },
                 pluginState: initialData?.plugins.get(plugin.name),
-              }),
-            ),
+                getOrComputeFileData: (mixedPath, observations) => {
+                  invariant(
+                    dataIdx != null,
+                    'metro-file-map: Plugin "%s" has no worker to process files with',
+                    plugin.name,
+                  );
+                  const result = fileSystem.lookup(mixedPath, observations);
+                  if (!result.exists) {
+                    return {exists: false};
+                  }
+                  if (result.type === 'd') {
+                    return {exists: true, type: 'd'};
+                  }
+                  // Plugin data is derived from what the file holds, so it
+                  // changes when the file is modified.
+                  observations?.content.add(result.canonicalPath);
+                  let data = result.metadata[dataIdx];
+                  // `undefined` means no worker has run on this file.
+                  // eslint-disable-next-line lint/strictly-null
+                  if (data === undefined) {
+                    if (isLazy) {
+                      data = this.#fileProcessor.processFileForPlugin(
+                        result.realPath,
+                        result.metadata,
+                        dataIdx - H.PLUGINDATA,
+                      );
+                      debug(
+                        'Lazily processed file for %s: %s',
+                        plugin.name,
+                        mixedPath,
+                      );
+                      // Inform caches that there is new data to save.
+                      this.emit('metadata');
+                    } else {
+                      data = null;
+                    }
+                  }
+                  return {
+                    exists: true,
+                    type: 'f',
+                    realPath: result.realPath,
+                    data,
+                  };
+                },
+              });
+            }),
           ),
         ]);
+
+        // The cache key does not include roots added by `addRoot`, so the
+        // cache may hold files from an earlier instance's added roots. Drop
+        // them, including from plugins.
+        if (initialData != null) {
+          for (const canonicalPath of fileSystem.pathsOutsideRoots(
+            this.#options.roots,
+          )) {
+            fileDelta.removedFiles.add(canonicalPath);
+          }
+        }
 
         // Update `fileSystem` and plugins based on the file delta.
         const actualChanges = await this.#applyFileDelta(
@@ -473,6 +567,7 @@ export default class FileMap extends EventEmitter {
         debug('Finished mapping files (%d changes).', changeSize);
 
         await this.#watch(fileSystem, watchmanClocks, plugins);
+        this.#fileSystem = fileSystem;
         return {fileSystem};
       })();
     }
@@ -480,6 +575,123 @@ export default class FileMap extends EventEmitter {
       this.#startupPerfLogger?.point('build_end');
       return result;
     });
+  }
+
+  /**
+   * The directories whose files this file map holds: the `roots` it was
+   * constructed with, followed by any added with `addRoot`, in the order they
+   * were added. The same array is returned until the roots change.
+   */
+  getRoots(): ReadonlyArray<FileMapRoot> {
+    return this.#roots;
+  }
+
+  #updateRoots(): void {
+    this.#roots = [
+      ...this.#roots.filter(root => !root.dynamic),
+      ...Array.from(this.#dynamicRoots.keys(), absolutePath => ({
+        absolutePath,
+        rootRelativePath: this.#pathUtils.absoluteToNormal(absolutePath),
+        dynamic: true,
+      })),
+    ];
+  }
+
+  /**
+   * Add a directory to the file map after `build()`, crawling it and (in
+   * watch mode) watching it for the lifetime of this instance. Resolves once
+   * its files are available, after a 'change' event for any that are new.
+   *
+   * A root reached through a symlink in the file map is added at the
+   * symlink's target. A path through any other symlink should be given as its
+   * real path.
+   *
+   * Added roots are not persisted: a later instance reading this one's cache
+   * starts with only its own `roots`.
+   */
+  addRoot(root: string): Promise<void> {
+    const buildPromise = this.#buildPromise;
+    invariant(
+      buildPromise != null,
+      'metro-file-map: addRoot() must be called after build()',
+    );
+    const fileSystem = this.#fileSystem;
+    if (fileSystem == null) {
+      // Symlinks are resolved against the built file system.
+      return buildPromise.then(() => this.addRoot(root));
+    }
+    // The file system holds only real paths. Crawling a root through a
+    // symlink would replace that symlink with a copy of its target.
+    const absoluteRoot = fileSystem.resolveSymlinks(path.resolve(root));
+    const existing = this.#dynamicRoots.get(absoluteRoot);
+    if (existing != null) {
+      return existing;
+    }
+    if (this.#roots.some(r => path.resolve(r.absolutePath) === absoluteRoot)) {
+      return Promise.resolve();
+    }
+    // A root within an existing one has nothing of its own to crawl or watch,
+    // and is ready when that root is.
+    const parent = this.#roots.find(r =>
+      absoluteRoot.startsWith(path.resolve(r.absolutePath) + path.sep),
+    );
+    const ready: Promise<unknown> =
+      parent != null
+        ? (this.#dynamicRoots.get(parent.absolutePath) ?? Promise.resolve())
+        : this.#crawlAndWatchRoot(absoluteRoot);
+    const added = ready.then(
+      () => {},
+      error => {
+        this.#dynamicRoots.delete(absoluteRoot);
+        this.#updateRoots();
+        throw error;
+      },
+    );
+    this.#dynamicRoots.set(absoluteRoot, added);
+    this.#updateRoots();
+    return added;
+  }
+
+  async #crawlAndWatchRoot(absoluteRoot: string): Promise<void> {
+    const watcher = this.#watcher;
+    const fileSystem = this.#fileSystem;
+    invariant(
+      watcher != null && fileSystem != null,
+      'Expected build() to have set #watcher and #fileSystem',
+    );
+    // Watch before crawling, so that a change made during the crawl is still
+    // reported.
+    await watcher.watchRoot(absoluteRoot);
+
+    const crawled = this.#changeQueue.then(async () => {
+      // Apply pending watcher events first, so that the crawl is compared with
+      // the current file system.
+      this.#flushPendingChanges?.();
+      const crawlResult = await watcher.recrawl(
+        this.#pathUtils.absoluteToNormal(absoluteRoot),
+        fileSystem,
+      );
+      // end() may have been called during the crawl or while applying it.
+      const abortSignal = this.#crawlerAbortController.signal;
+      abortSignal.throwIfAborted();
+      const changeAggregator = await this.#applyFileDelta(
+        fileSystem,
+        this.#plugins,
+        crawlResult,
+      );
+      abortSignal.throwIfAborted();
+      if (changeAggregator.getSize() === 0) {
+        return;
+      }
+      const changeEvent: ChangeEvent = {
+        changes: changeAggregator.getMappedView(toPublicMetadata),
+        logger: null,
+        rootDir: this.#options.rootDir,
+      };
+      this.emit('change', changeEvent);
+    });
+    this.#changeQueue = crawled.catch(() => {});
+    await crawled;
   }
 
   /**
@@ -515,7 +727,6 @@ export default class FileMap extends EventEmitter {
       computeSha1,
       enableSymlinks,
       extensions,
-      forceNodeFilesystemAPI,
       ignorePattern,
       retainAllFiles,
       roots,
@@ -528,9 +739,9 @@ export default class FileMap extends EventEmitter {
       abortSignal: this.#crawlerAbortController.signal,
       computeSha1,
       console: this.#console,
+      crawl: this.#crawler,
       enableSymlinks,
       extensions,
-      forceNodeFilesystemAPI,
       healthCheckFilePrefix: this.#options.healthCheck.filePrefix,
       // TODO: Refactor out the two different ignore strategies here.
       ignoreForCrawl: filePath => {
@@ -544,7 +755,9 @@ export default class FileMap extends EventEmitter {
       previousState,
       rootDir,
       roots,
-      useWatchman: await this.#shouldUseWatchman(),
+      // A supplied crawler makes the Watchman capability probe - which spawns
+      // watchman - pointless.
+      useWatchman: this.#crawler == null && (await this.#shouldUseWatchman()),
       watch,
       watchmanDeferStates,
     });
@@ -565,7 +778,9 @@ export default class FileMap extends EventEmitter {
         .readlink(this.#pathUtils.normalToAbsolute(normalPath))
         .then(symlinkTarget => {
           fileMetadata[H.VISITED] = 1;
-          fileMetadata[H.SYMLINK] = symlinkTarget;
+          fileMetadata[H.SYMLINK] = normalizePathSeparatorsToPosix(
+            this.#pathUtils.resolveSymlinkToNormal(normalPath, symlinkTarget),
+          );
         });
     }
     return null;
@@ -601,7 +816,7 @@ export default class FileMap extends EventEmitter {
 
     for (const [normalFilePath, fileData] of changedFiles) {
       // A crawler may preserve the H.VISITED flag to indicate that the file
-      // contents are unchaged and it doesn't need visiting again.
+      // contents are unchanged and it doesn't need visiting again.
       if (fileData[H.VISITED] === 1) {
         continue;
       }
@@ -794,13 +1009,6 @@ export default class FileMap extends EventEmitter {
         );
       });
 
-      const toPublicMetadata = (
-        metadata: Readonly<FileMetadata>,
-      ): ChangedFileMetadata => ({
-        isSymlink: metadata[H.SYMLINK] !== 0,
-        modifiedTime: metadata[H.MTIME] ?? null,
-      });
-
       const changesWithMetadata =
         changeAggregator.getMappedView(toPublicMetadata);
 
@@ -824,8 +1032,6 @@ export default class FileMap extends EventEmitter {
       this.emit('change', changeEvent);
       nextEmit = null;
     };
-
-    let changeQueue: Promise<null | void> = Promise.resolve();
 
     const onChange = (change: WatcherBackendChangeEvent) => {
       // Recrawl events bypass normal filtering - they trigger a full subdirectory scan
@@ -868,7 +1074,7 @@ export default class FileMap extends EventEmitter {
         nextEmit.events.push(event);
       };
 
-      changeQueue = changeQueue
+      this.#changeQueue = this.#changeQueue
         .then(async () => {
           // If we get duplicate events for the same file, ignore them.
           if (
@@ -901,7 +1107,6 @@ export default class FileMap extends EventEmitter {
               0,
               null,
               change.metadata.type === 'l' ? 1 : 0,
-              null,
             ];
 
             try {
@@ -981,13 +1186,6 @@ export default class FileMap extends EventEmitter {
             }
 
             // Emit changes directly
-            const toPublicMetadata = (
-              metadata: Readonly<FileMetadata>,
-            ): ChangedFileMetadata => ({
-              isSymlink: metadata[H.SYMLINK] !== 0,
-              modifiedTime: metadata[H.MTIME] ?? null,
-            });
-
             const changesWithMetadata =
               recrawlChangeAggregator.getMappedView(toPublicMetadata);
 
@@ -1011,13 +1209,14 @@ export default class FileMap extends EventEmitter {
         });
     };
 
+    this.#flushPendingChanges = emitChange;
     this.#changeInterval = setInterval(emitChange, CHANGE_INTERVAL);
 
     invariant(
       this.#watcher != null,
       'Expected #watcher to have been initialised by build()',
     );
-    await this.#watcher.watch(onChange);
+    await this.#watcher.watch(onChange, clocks);
 
     if (this.#options.healthCheck.enabled) {
       const performHealthCheck = () => {
@@ -1106,8 +1305,18 @@ export default class FileMap extends EventEmitter {
   static H: HType = H;
 }
 
+const toPublicMetadata = (
+  metadata: Readonly<FileMetadata>,
+): ChangedFileMetadata => ({
+  isSymlink: metadata[H.SYMLINK] !== 0,
+  modifiedTime: metadata[H.MTIME] ?? null,
+});
+
 // TODO: Replace with it.map() from Node 22+
-const mapIterable: <T, S>(Iterable<T>, (T) => S) => Iterator<S> = (it, fn) =>
+const mapIterable: <T, S>(Iterable<T>, (T) => S) => IteratorObject<S> = (
+  it,
+  fn,
+) =>
   (function* mapped() {
     for (const item of it) {
       yield fn(item);

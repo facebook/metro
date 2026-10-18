@@ -15,36 +15,48 @@ import {
   translateFlowDefToTSDef,
   translateFlowToFlowDef,
 } from 'flow-api-translator';
-import fs from 'fs';
+import {parse} from 'flow-parser';
+import fs from 'node:fs';
+import path from 'node:path';
 import nullthrows from 'nullthrows';
-import path from 'path';
 import * as prettier from 'prettier';
 // $FlowFixMe[untyped-import] in OSS only
 import SignedSource from 'signedsource';
-// $FlowFixMe[untyped-import] in OSS only
-import {globSync} from 'tinyglobby';
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
 const TYPES_DIR = 'types';
 const SRC_DIR = 'src';
 
+type LintMessage = {
+  readonly ruleId: ?string,
+  readonly message: string,
+  readonly line: number,
+  ...
+};
+
+type LogFn = (typeof console)['log'];
+export interface Logger {
+  readonly log: LogFn;
+  readonly warn: LogFn;
+  readonly error: LogFn;
+}
+
 export const AUTO_GENERATED_PATTERNS: ReadonlyArray<string> = ['packages/**'];
 
 // Globs of paths for which we do not generate TypeScript definitions,
-// matched against candidate .js files
+// matched during glob traversal. A directory match ignores all contents.
 const IGNORED_PATTERNS = [
-  '**/__tests__/**',
-  '**/__flowtests__/**',
-  '**/__mocks__/**',
-  '**/__fixtures__/**',
-  '**/node_modules/**',
-  'packages/metro-babel-register/**',
-  'packages/*/build/**',
+  '**/__tests__',
+  '**/__flowtests__',
+  '**/__mocks__',
+  '**/__fixtures__',
+  '**/node_modules',
+  'packages/metro-babel-register',
+  'packages/*/build',
   'packages/metro/src/cli.js',
-  'packages/**/third-party/**',
-  'packages/metro/src/integration_tests/**',
-  'packages/metro-runtime/**/!(types*).js',
+  'packages/**/third-party',
+  'packages/metro/src/integration_tests',
 ];
 
 function isSourceTSDeclaration(filePath: string): boolean {
@@ -59,13 +71,39 @@ function isExistingTSDeclaration(filePath: string): boolean {
 
 export async function generateTsDefsForJsGlobs(
   globPattern: string | ReadonlyArray<string>,
-  opts: Readonly<{
-    verifyOnly: boolean,
-  }> = {verifyOnly: false},
+  opts?: Readonly<{
+    verifyOnly?: boolean,
+    logger?: Logger,
+    mungeUnderscores?: boolean,
+  }>,
 ) {
+  const {verifyOnly = false, logger, mungeUnderscores = false} = opts ?? {};
   const linter = new ESLint({
     fix: true,
     cwd: WORKSPACE_ROOT,
+    overrideConfig: {
+      rules: {
+        // Off when linting the repo, because a declaration exported via
+        // `typeof` is reported as unused - but the generator relies on it to
+        // drop declarations left unused by translation, and acts only on
+        // "is defined but never used".
+        '@typescript-eslint/no-unused-vars': 'error',
+      },
+      parserOptions: {
+        // typescript-eslint writes its "version of TypeScript which is not
+        // officially supported" warning straight to `console.log`, bypassing
+        // `logger`. Metro tracks TypeScript ahead of the range typescript-eslint
+        // declares, so this fires on every run. Route it through the caller's
+        // logger, and disable it outright for callers that pass none — notably
+        // the Jest test, where it is pure noise in the report.
+        //
+        // Note that passing a function also lifts typescript-eslint's own
+        // `process.stdout.isTTY` gate on the message, so a piped or redirected
+        // run now reports it where it used to be dropped.
+        loggerFn:
+          logger != null ? (message: string) => logger.warn(message) : false,
+      },
+    },
   });
 
   const prettierConfig = await resolvePrettierConfig();
@@ -78,18 +116,39 @@ export async function generateTsDefsForJsGlobs(
     Array.from(
       globPatterns
         .flatMap(pattern =>
-          globSync(pattern, {
-            ignore: IGNORED_PATTERNS,
-            cwd: WORKSPACE_ROOT,
-          }),
+          fs
+            .globSync(pattern, {
+              exclude: dirent =>
+                IGNORED_PATTERNS.some(ignorePattern =>
+                  path.matchesGlob(
+                    path.relative(
+                      WORKSPACE_ROOT,
+                      path.resolve(dirent.parentPath, dirent.name.toString()),
+                    ),
+                    ignorePattern,
+                  ),
+                ),
+              cwd: WORKSPACE_ROOT,
+              withFileTypes: true as true,
+            })
+            .filter(dirent => dirent.isFile())
+            .map(dirent =>
+              path.relative(
+                WORKSPACE_ROOT,
+                path.resolve(dirent.parentPath, dirent.name.toString()),
+              ),
+            ),
         )
-        .reduce((toProcess, posixFilePath) => {
-          const filePath = path.normalize(posixFilePath);
+        .reduce((toProcess, filePath) => {
           if (filePath.endsWith('.flow.js')) {
             // For .flow.js files, record the `.flow.js` as the source for the
             // corresponding `.js` file, which is enforced to be a transparent
             // entry file that only registers Babel and re-exports the module.
             toProcess.set(filePath.replace(/\.flow\.js$/, '.js'), filePath);
+          } else if (filePath.endsWith('.js.flow')) {
+            // A .js.flow declaration file is the Flow source of truth for the
+            // adjacent .js file, which may be untyped (e.g. vendored code).
+            toProcess.set(filePath.replace(/\.flow$/, ''), filePath);
           } else if (filePath.endsWith('.js') && !toProcess.has(filePath)) {
             toProcess.set(filePath, filePath);
           } else if (isSourceTSDeclaration(filePath)) {
@@ -109,19 +168,32 @@ export async function generateTsDefsForJsGlobs(
     absoluteTsFile: string,
     sourceFile: string,
   ) {
-    // Lint and fix the generated output
-    const [lintResult] = await linter.lintText(sourceContent, {
+    // Lint and fix the generated output. `lintText` returns no result at all
+    // for a path .eslintignore covers - `**/vendor/**`, for one - in which case
+    // the output stands unlinted.
+    let [lintResult] = await linter.lintText(sourceContent, {
       filePath: absoluteTsFile,
     });
+    let lintedOutput = lintResult?.output ?? sourceContent;
 
-    if (lintResult.messages.length > 0) {
-      console.warn(sourceFile, lintResult.messages);
+    const withoutUnusedGeneratedDeclarations =
+      removeUnusedGeneratedDeclarations(
+        lintedOutput,
+        lintResult?.messages ?? [],
+      );
+
+    if (withoutUnusedGeneratedDeclarations !== lintedOutput) {
+      [lintResult] = await linter.lintText(withoutUnusedGeneratedDeclarations, {
+        filePath: absoluteTsFile,
+      });
+      lintedOutput = lintResult?.output ?? withoutUnusedGeneratedDeclarations;
     }
 
-    const formattedOutput = await prettier.format(
-      lintResult.output ?? sourceContent,
-      prettierConfig,
-    );
+    if (logger && lintResult != null && lintResult.messages.length > 0) {
+      logger.warn(sourceFile, lintResult.messages);
+    }
+
+    const formattedOutput = await prettier.format(lintedOutput, prettierConfig);
 
     // Add signedsource (generated) token to the header
     const withToken = formattedOutput
@@ -143,7 +215,7 @@ export async function generateTsDefsForJsGlobs(
 
     existingDefs.delete(absoluteTsFile);
 
-    if (opts.verifyOnly) {
+    if (verifyOnly) {
       let existingFile = null;
       try {
         existingFile = await fs.promises.readFile(absoluteTsFile, 'utf-8');
@@ -167,13 +239,16 @@ export async function generateTsDefsForJsGlobs(
   await Promise.all(
     filesToProcess.map(async ([jsFile, sourceFile]) => {
       const absoluteTsFile = getTSDeclAbsolutePath(jsFile);
-      const sourceTSDeclationPath = absoluteTsFile.replace(TYPES_DIR, SRC_DIR);
+      const sourceTSDeclarationPath = absoluteTsFile.replace(
+        TYPES_DIR,
+        SRC_DIR,
+      );
       const absoluteSourceFile = path.resolve(WORKSPACE_ROOT, sourceFile);
 
       // If a source .d.ts file exists, copy it directly.
-      if (sourceDefs.has(sourceTSDeclationPath)) {
+      if (sourceDefs.has(sourceTSDeclarationPath)) {
         const source = await fs.promises.readFile(
-          sourceTSDeclationPath,
+          sourceTSDeclarationPath,
           'utf-8',
         );
         await writeOutputFile(source, absoluteTsFile, sourceFile);
@@ -189,25 +264,20 @@ export async function generateTsDefsForJsGlobs(
         return;
       }
       try {
-        const flowDef = await translateFlowToFlowDef(source);
-        if (flowDef.includes('declare module.exports')) {
-          errors.push({
-            sourceFile,
-            error: new Error(
-              'module.exports is not supported by TypeScript auto-generation',
-            ),
-          });
-        } else {
-          const tsDef = await translateFlowDefToTSDef(flowDef);
+        const flowDef = await translateFlowToFlowDef(
+          expandFlowCommentTypes(source),
+          {},
+          {mungeUnderscores},
+        );
+        const tsDef = await translateFlowDefToTSDef(flowDef);
 
-          const beforeLint = tsDef
-            // Fix up gap left in license header by removal of atflow
-            .replace('\n *\n *\n', '\n *\n')
-            // TypeScript has no analogue for __proto__: null
-            .replace(/__proto__: null[,;]?/g, '');
+        const beforeLint = tsDef
+          // Fix up gap left in license header by removal of atflow
+          .replace('\n *\n *\n', '\n *\n')
+          // TypeScript has no analogue for __proto__: null
+          .replace(/__proto__: null[,;]?/g, '');
 
-          await writeOutputFile(beforeLint, absoluteTsFile, sourceFile);
-        }
+        await writeOutputFile(beforeLint, absoluteTsFile, sourceFile);
       } catch (error) {
         errors.push({sourceFile, error});
       }
@@ -216,7 +286,7 @@ export async function generateTsDefsForJsGlobs(
 
   if (existingDefs.size > 0) {
     const orphanedDefs = Array.from(existingDefs);
-    if (opts.verifyOnly) {
+    if (verifyOnly) {
       orphanedDefs.forEach(sourceFile => {
         errors.push({
           error: new Error('.d.ts appears to be orphaned'),
@@ -239,6 +309,150 @@ export async function generateTsDefsForJsGlobs(
   }
 }
 
+// Files that run in Node without a Babel transform (e.g. worker entry points)
+// carry their types in Flow comment syntax, which the translator doesn't see.
+// Rewrite them as regular Flow syntax, per
+// https://flow.org/en/docs/types/comments/:
+//   `/*: T */` -> `: T`
+//   `/*:: code */` and `/*flow-include code */` -> `code`
+function expandFlowCommentTypes(source: string): string {
+  // Splice from the end so earlier comment ranges stay valid.
+  return parse(source, {flow: 'all'}).comments.reduceRight(
+    (code, {type, value, range: [start, end]}) => {
+      const marker =
+        type === 'Block' ? /^(::|flow-include|:)/.exec(value)?.[1] : null;
+      if (marker == null) {
+        return code;
+      }
+      const content = value.slice(marker.length);
+      return (
+        code.slice(0, start) +
+        (marker === ':' ? ':' + content : content) +
+        code.slice(end)
+      );
+    },
+    source,
+  );
+}
+
+function removeUnusedGeneratedDeclarations(
+  sourceContent: string,
+  messages: ReadonlyArray<LintMessage>,
+): string {
+  const lines = sourceContent.split('\n');
+
+  for (const message of messages) {
+    if (message.ruleId !== '@typescript-eslint/no-unused-vars') {
+      continue;
+    }
+
+    const name = message.message.match(
+      /^'([^']+)' is defined but never used/,
+    )?.[1];
+    if (name == null || message.line == null) {
+      continue;
+    }
+
+    const lineIndex = message.line - 1;
+
+    if (
+      removeSingleBindingImportAtLine(lines, lineIndex, name) ||
+      removeDeclareConstAtLine(lines, lineIndex, name)
+    ) {
+      continue;
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function removeSingleBindingImportAtLine(
+  lines: Array<string>,
+  lineIndex: number,
+  name: string,
+): boolean {
+  const start = findBlockStart(lines, lineIndex, line =>
+    /^\s*import\s/.test(line),
+  );
+  if (start == null) {
+    return false;
+  }
+
+  const end = findBlockEnd(lines, start);
+  if (end == null) {
+    return false;
+  }
+
+  const statement = lines.slice(start, end + 1).join('\n');
+  if (!isSingleBindingImport(statement, name)) {
+    return false;
+  }
+
+  lines.splice(start, end - start + 1);
+  return true;
+}
+
+function removeDeclareConstAtLine(
+  lines: Array<string>,
+  lineIndex: number,
+  name: string,
+): boolean {
+  const declarationPattern = new RegExp(
+    `^\\s*declare const ${escapeRegExp(name)}\\b`,
+  );
+  const start = findBlockStart(lines, lineIndex, line =>
+    declarationPattern.test(line),
+  );
+  if (start == null) {
+    return false;
+  }
+
+  const end = findBlockEnd(lines, start);
+  if (end == null) {
+    return false;
+  }
+
+  lines.splice(start, end - start + 1);
+  return true;
+}
+
+function findBlockStart(
+  lines: ReadonlyArray<string>,
+  lineIndex: number,
+  predicate: string => boolean,
+): ?number {
+  for (let i = lineIndex; i >= 0; i--) {
+    if (predicate(lines[i])) {
+      return i;
+    }
+  }
+  return null;
+}
+
+function findBlockEnd(lines: ReadonlyArray<string>, start: number): ?number {
+  for (let i = start; i < lines.length; i++) {
+    if (/;\s*$/.test(lines[i])) {
+      return i;
+    }
+  }
+  return null;
+}
+
+function isSingleBindingImport(statement: string, name: string): boolean {
+  const escapedName = escapeRegExp(name);
+  const compact = statement.replace(/\s+/g, ' ').trim();
+  return (
+    new RegExp(`^import ${escapedName} from `).test(compact) ||
+    new RegExp(`^import \\* as ${escapedName} from `).test(compact) ||
+    new RegExp(`^import \\{ ${escapedName} \\} from `).test(compact) ||
+    new RegExp(`^import \\{${escapedName}\\} from `).test(compact)
+  );
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getTSDeclAbsolutePath(jsRelativePath: string) {
   const parts = jsRelativePath.split(path.sep);
   if (parts[2] !== 'src') {
@@ -257,6 +471,7 @@ async function resolvePrettierConfig() {
   return {
     ...(await prettier.resolveConfig(fakeTsDecl)),
     filepath: fakeTsDecl,
+    printWidth: 200,
   };
 }
 
@@ -266,6 +481,7 @@ if (process.mainModule === module) {
   // Omit globs to use hardcoded defaults.
   generateTsDefsForJsGlobs(
     process.argv.length >= 3 ? process.argv.slice(2) : AUTO_GENERATED_PATTERNS,
+    {logger: console},
   ).catch(error => {
     process.exitCode = 1;
     console.error(error);

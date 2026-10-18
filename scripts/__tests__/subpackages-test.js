@@ -9,16 +9,8 @@
  * @oncall react_native
  */
 
-import fs from 'fs';
-import path from 'path';
-// TODO: Replace with fs.globSync once Flow knows about it
-// $FlowFixMe[untyped-import] glob in OSS
-import {glob, globSync} from 'tinyglobby';
-
-const globAsync = glob;
-
-// For promisified glob
-jest.useRealTimers();
+import fs from 'node:fs';
+import path from 'node:path';
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../..');
 
@@ -32,13 +24,18 @@ const ALL_PACKAGES: ReadonlySet<string> = new Set(
   Array.isArray(workspaceRootPackageJson.workspaces)
     ? workspaceRootPackageJson.workspaces
         .flatMap(relativeGlob =>
-          globSync(relativeGlob, {
+          fs.globSync(relativeGlob, {
             cwd: WORKSPACE_ROOT,
-            onlyDirectories: true,
+            withFileTypes: true as true,
           }),
         )
-        // Glob returns posix separators, we want system-native
-        .map(relativePath => path.normalize(relativePath))
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent =>
+          path.relative(
+            WORKSPACE_ROOT,
+            path.join(dirent.parentPath, dirent.name),
+          ),
+        )
     : [],
 );
 
@@ -121,16 +118,18 @@ describe.each([...ALL_PACKAGES])('%s', packagePath => {
   });
 
   test('all .flow.js files have an adjacent babel-registering entry point', async () => {
-    const flowFiles: Array<string> = await globAsync('src/**/*.flow.js', {
-      absolute: true,
-      cwd: path.resolve(WORKSPACE_ROOT, packagePath),
-      ignore: ['node_modules'],
-    });
-
-    const filePaths = flowFiles.map(flowFilePath => ({
-      entryFilePath: flowFilePath.replace(/\.flow\.js$/, '.js'),
-      flowFilePath,
-    }));
+    const absolutePackageRoot = path.resolve(WORKSPACE_ROOT, packagePath);
+    const filePaths = [];
+    for await (const relativeFlowFile of fs.promises.glob('src/**/*.flow.js', {
+      cwd: absolutePackageRoot,
+      exclude: basename => basename === 'node_modules',
+    })) {
+      const flowFilePath = path.resolve(absolutePackageRoot, relativeFlowFile);
+      filePaths.push({
+        entryFilePath: flowFilePath.replace(/\.flow\.js$/, '.js'),
+        flowFilePath,
+      });
+    }
 
     const unmatchedFlowFiles = filePaths
       .filter(({flowFilePath, entryFilePath}) => !fs.existsSync(entryFilePath))
@@ -216,7 +215,7 @@ module.exports = require('./${flowFileBaseName}');
     test('has a repository field with correct format', () => {
       expect(packageJson.repository).toEqual({
         type: 'git',
-        url: 'git+https://github.com/facebook/metro.git',
+        url: 'git+https://github.com/react/metro.git',
         directory: packagePath.split(path.sep).filter(Boolean).join('/'),
       });
     });

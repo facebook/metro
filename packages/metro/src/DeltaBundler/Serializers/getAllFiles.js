@@ -16,7 +16,7 @@ import {getJsOutput, isJsModule} from './helpers/js';
 
 type Options = {
   platform: ?string,
-  +processModuleFilter: (module: Module<>) => boolean,
+  readonly processModuleFilter: (module: Module<>) => boolean,
 };
 
 export default async function getAllFiles(

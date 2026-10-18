@@ -44,7 +44,6 @@ export default function inlinePlugin(
   options: Options,
 ): PluginObj<State> {
   const {
-    isAssignmentExpression,
     isIdentifier,
     isMemberExpression,
     isObjectExpression,
@@ -69,10 +68,46 @@ export default function inlinePlugin(
     return !binding || isFlowDeclared(binding);
   }
 
-  const isLeftHandSideOfAssignmentExpression = (
-    node: Node,
-    parent: Node,
-  ): boolean => isAssignmentExpression(parent) && parent.left === node;
+  function isWriteTarget(path: NodePath<MemberExpression>): boolean {
+    let child: Node = path.node;
+    let parentPath = path.parentPath;
+
+    while (parentPath != null) {
+      const parent = parentPath.node;
+      if (
+        (parent.type === 'AssignmentExpression' ||
+          parent.type === 'ForInStatement' ||
+          parent.type === 'ForOfStatement') &&
+        parent.left === child
+      ) {
+        return true;
+      }
+      if (parent.type === 'UpdateExpression' && parent.argument === child) {
+        return true;
+      }
+      if (
+        parent.type === 'UnaryExpression' &&
+        parent.operator === 'delete' &&
+        parent.argument === child
+      ) {
+        return true;
+      }
+
+      const nestedWriteTarget =
+        parent.type === 'ArrayPattern' ||
+        parent.type === 'ObjectPattern' ||
+        (parent.type === 'ObjectProperty' && parent.value === child) ||
+        (parent.type === 'RestElement' && parent.argument === child) ||
+        (parent.type === 'AssignmentPattern' && parent.left === child);
+      if (!nestedWriteTarget) {
+        return false;
+      }
+
+      child = parent;
+      parentPath = parentPath.parentPath;
+    }
+    return false;
+  }
 
   const isProcessEnvNodeEnv = (node: MemberExpression, scope: Scope): boolean =>
     isIdentifier(node.property, nodeEnv) &&
@@ -90,9 +125,9 @@ export default function inlinePlugin(
     key: string,
     fallback: () => Node,
   ): Node {
-    let value = null;
-
-    for (const p of objectExpression.properties) {
+    // Object literal evaluation keeps the last definition of a duplicate key.
+    for (let i = objectExpression.properties.length - 1; i >= 0; i--) {
+      const p = objectExpression.properties[i];
       if (!isObjectProperty(p) && !isObjectMethod(p)) {
         continue;
       }
@@ -101,16 +136,14 @@ export default function inlinePlugin(
         (isStringLiteral(p.key) && p.key.value === key)
       ) {
         if (isObjectProperty(p)) {
-          value = p.value;
-          break;
+          return p.value;
         } else if (isObjectMethod(p)) {
-          value = t.toExpression(p);
-          break;
+          return t.toExpression(p);
         }
       }
     }
 
-    return value ?? fallback();
+    return fallback();
   }
 
   function hasStaticProperties(objectExpression: ObjectExpression): boolean {
@@ -138,7 +171,7 @@ export default function inlinePlugin(
         const scope = path.scope;
         const opts = state.opts;
 
-        if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
+        if (!isWriteTarget(path)) {
           if (
             opts.inlinePlatform &&
             isPlatformNode(node, scope, !!opts.isWrapped)

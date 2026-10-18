@@ -20,9 +20,10 @@ declare var __METRO_GLOBAL_PREFIX__: string;
 // A simpler $ArrayLike<T>. Not iterable and doesn't have a `length`.
 // This is compatible with actual arrays as well as with objects that look like
 // {0: 'value', 1: '...'}
-type ArrayIndexable<T> = interface {
-  +[indexer: number]: T,
-};
+type ArrayIndexable<T> = Readonly<{
+  [indexer: number]: T,
+  ...
+}>;
 type DependencyMap = Readonly<
   ArrayIndexable<ModuleID> & {
     paths?: {[id: ModuleID]: string},
@@ -31,7 +32,7 @@ type DependencyMap = Readonly<
 type InverseDependencyMap = {[key: ModuleID]: Array<ModuleID>, ...};
 type Exports = any;
 type FactoryFn = (
-  global: Object,
+  global: any,
   require: RequireFn,
   metroImportDefault: RequireFn,
   metroImportAll: RequireFn,
@@ -482,7 +483,7 @@ function loadModuleImplementation(
     }
     moduleObject.id = moduleId;
 
-    // keep args in sync with with defineModuleCode in
+    // keep args in sync with defineModuleCode in
     // metro/src/Resolver/index.js
     // and metro/src/ModuleGraph/worker.js
     factory(
@@ -575,7 +576,24 @@ if (__DEV__) {
     return hot;
   };
 
-  let reactRefreshTimeout: null | TimeoutID = null;
+  let reactRefreshTimeout: null | ReturnType<typeof setTimeout> = null;
+
+  // When a module is defined lazily via a segment definer, modules that
+  // have not been required yet are absent from `modules`, and can't be walked
+  // by Fast Refresh. This materialises an absent module definition on demand
+  // by invoking its segment definer, which only *defines* the module
+  // (registers its factory) without executing it. No-op if already defined.
+  const ensureModuleRegistered = function (moduleId: ModuleID): void {
+    if (modules.has(moduleId) || moduleDefinersBySegmentID.length === 0) {
+      return;
+    }
+    const segmentId = definingSegmentByModuleID.get(moduleId) ?? 0;
+    const definer = moduleDefinersBySegmentID[segmentId];
+    if (definer != null) {
+      definer(moduleId);
+      definingSegmentByModuleID.delete(moduleId);
+    }
+  };
 
   const metroHotUpdateModule = function (
     id: ModuleID,
@@ -650,6 +668,9 @@ if (__DEV__) {
       updatedModuleIDs = topologicalSort(
         [id], // Start with the changed module and go upwards
         pendingID => {
+          // Modules delivered by a lazy segment definer are not present in
+          // `modules` until first required - ensure they are defined.
+          ensureModuleRegistered(pendingID);
           const pendingModule = modules.get(pendingID);
           if (pendingModule == null) {
             // Nothing to do.
@@ -778,6 +799,7 @@ if (__DEV__) {
           // Schedule all parent refresh boundaries to re-run in this loop.
           for (let j = 0; j < parentIDs.length; j++) {
             const parentID = parentIDs[j];
+            ensureModuleRegistered(parentID);
             const parentMod = modules.get(parentID);
             if (parentMod == null) {
               throw new Error('[Refresh] Expected to find parent module.');
@@ -933,7 +955,6 @@ if (__DEV__) {
     if (
       typeof window !== 'undefined' &&
       window.location != null &&
-      // $FlowFixMe[method-unbinding]
       typeof window.location.reload === 'function'
     ) {
       window.location.reload();

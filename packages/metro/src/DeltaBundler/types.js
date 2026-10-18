@@ -17,9 +17,19 @@ import type {JsTransformOptions} from 'metro-transform-worker';
 
 import CountingSet from '../lib/CountingSet';
 
+// Valid inputs to JSON.stringify, as used to encode literals into transform
+// output.
+export type ReadonlyJsonData =
+  | null
+  | boolean
+  | number
+  | string
+  | ReadonlyArray<?ReadonlyJsonData>
+  | Readonly<{[string]: ?ReadonlyJsonData}>;
+
 export type MixedOutput = {
-  +data: unknown,
-  +type: string,
+  readonly data: unknown,
+  readonly type: string,
 };
 
 export type AsyncDependencyType = 'async' | 'maybeSync' | 'prefetch' | 'weak';
@@ -80,9 +90,20 @@ export type Module<T = MixedOutput> = Readonly<{
   unstable_transformResultKey?: ?string,
 }>;
 
+/**
+ * How the transform obtains the source of a module that has no file, as
+ * supplied by the resolution that produced it. A `require.context` module
+ * arrives as the parameters the transform expands by enumerating the file map.
+ */
+export type VirtualSource = Readonly<{
+  type: 'requireContext',
+  requireContext: RequireContext,
+}>;
+
 export type ModuleData<T = MixedOutput> = Readonly<{
   dependencies: ReadonlyMap<string, Dependency>,
-  resolvedContexts: ReadonlyMap<string, RequireContext>,
+  /** Keyed by dependency key, for the dependencies that resolved to a module with no file. */
+  virtualSources: ReadonlyMap<string, VirtualSource>,
   output: ReadonlyArray<T>,
   getSource: () => Buffer,
   unstable_transformResultKey?: ?string,
@@ -106,10 +127,10 @@ export type GraphInputOptions = Readonly<{
 }>;
 
 export interface ReadOnlyGraph<T = MixedOutput> {
-  +entryPoints: ReadonlySet<string>;
+  readonly entryPoints: ReadonlySet<string>;
   // Unused in core but useful for custom serializers / experimentalSerializerHook
-  +transformOptions: Readonly<TransformInputOptions>;
-  +dependencies: ReadOnlyDependencies<T>;
+  readonly transformOptions: Readonly<TransformInputOptions>;
+  readonly dependencies: ReadOnlyDependencies<T>;
 }
 
 export type {Graph};
@@ -127,7 +148,7 @@ export type TransformResultWithSource<T = MixedOutput> = Readonly<{
 
 export type TransformFn<T = MixedOutput> = (
   string,
-  ?RequireContext,
+  ?VirtualSource,
 ) => Promise<TransformResultWithSource<T>>;
 
 export type ResolveFn = (
@@ -136,11 +157,10 @@ export type ResolveFn = (
 ) => BundlerResolution;
 
 export type AllowOptionalDependenciesWithOptions = {
-  +exclude: Array<string>,
+  readonly exclude: Array<string>,
 };
 export type AllowOptionalDependencies =
-  | boolean
-  | AllowOptionalDependenciesWithOptions;
+  boolean | AllowOptionalDependenciesWithOptions;
 
 export type BundlerResolution = Readonly<{
   type: 'sourceFile',
@@ -160,15 +180,16 @@ export type Options<T = MixedOutput> = Readonly<{
 }>;
 
 export type DeltaResult<T = MixedOutput> = {
-  +added: Map<string, Module<T>>,
-  +modified: Map<string, Module<T>>,
-  +deleted: Set<string>,
-  +reset: boolean,
+  readonly added: Map<string, Module<T>>,
+  readonly modified: Map<string, Module<T>>,
+  readonly deleted: Set<string>,
+  readonly reset: boolean,
 };
 
 export type SerializerOptions = Readonly<{
   asyncRequireModulePath: string,
-  createModuleId: string => number,
+  createModuleId: (absolutePath: string) => number,
+  dependencyMapReservedName?: ?string,
   dev: boolean,
   getRunModuleStatement: (
     moduleId: number | string,
@@ -176,15 +197,20 @@ export type SerializerOptions = Readonly<{
   ) => string,
   globalPrefix: string,
   includeAsyncPaths: boolean,
-  inlineSourceMap: ?boolean,
+  inlineSourceMap?: ?boolean,
   modulesOnly: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   projectRoot: string,
   runBeforeMainModule: ReadonlyArray<string>,
   runModule: boolean,
   serverRoot: string,
-  shouldAddToIgnoreList: (Module<>) => boolean,
-  sourceMapUrl: ?string,
-  sourceUrl: ?string,
-  getSourceUrl: ?(Module<>) => string,
+  shouldAddToIgnoreList: (module: Module<>) => boolean,
+  sourceMapUrl?: ?string,
+  sourceUrl?: ?string,
+  getSourceUrl?: ?(module: Module<>) => string,
+  unstable_inlineDependencyMap?: boolean,
+  unstable_getAsyncDependencyPath?: (
+    dependency: ResolvedDependency,
+    options: unknown,
+  ) => ?ReadonlyJsonData,
 }>;

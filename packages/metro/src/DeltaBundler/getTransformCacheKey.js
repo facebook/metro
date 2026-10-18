@@ -12,8 +12,8 @@
 import type {TransformerConfig} from './Worker';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 
-import crypto from 'crypto';
 import {getCacheKey} from 'metro-cache-key';
+import crypto from 'node:crypto';
 
 // eslint-disable-next-line import/no-commonjs
 const VERSION = require('../../package.json').version;
@@ -26,9 +26,9 @@ type CacheKeyProvider = {
 };
 
 export default function getTransformCacheKey(opts: {
-  +cacheVersion: string,
-  +projectRoot: string,
-  +transformerConfig: TransformerConfig,
+  readonly cacheVersion: string,
+  readonly projectRoot: string,
+  readonly transformerConfig: TransformerConfig,
 }): string {
   const {transformerPath, transformerConfig} = opts.transformerConfig;
 

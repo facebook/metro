@@ -12,15 +12,15 @@
 export type ModuleMap = ReadonlyArray<[number, string]>;
 
 export type Bundle = {
-  +modules: ModuleMap,
-  +post: string,
-  +pre: string,
+  readonly modules: ModuleMap,
+  readonly post: string,
+  readonly pre: string,
 };
 
 export type DeltaBundle = {
-  +added: ModuleMap,
-  +modified: ModuleMap,
-  +deleted: ReadonlyArray<number>,
+  readonly added: ModuleMap,
+  readonly modified: ModuleMap,
+  readonly deleted: ReadonlyArray<number>,
 };
 
 export type BundleVariant =
@@ -28,49 +28,49 @@ export type BundleVariant =
   | Readonly<{...DeltaBundle, base: false, revisionId: string}>;
 
 export type BundleMetadata = {
-  +pre: number,
-  +post: number,
-  +modules: ReadonlyArray<[number, number]>,
+  readonly pre: number,
+  readonly post: number,
+  readonly modules: ReadonlyArray<[number, number]>,
 };
 
 export type FormattedError = {
-  +type: string,
-  +message: string,
-  +errors: Array<{description: string, ...}>,
+  readonly type: string,
+  readonly message: string,
+  readonly errors: Array<{description: string, ...}>,
 };
 
 export type HmrModule = {
-  +module: [number, string],
-  +sourceMappingURL: string,
-  +sourceURL: string,
+  readonly module: [number, string],
+  readonly sourceMappingURL: string,
+  readonly sourceURL: string,
 };
 
 export type HmrUpdate = {
-  +added: ReadonlyArray<HmrModule>,
-  +deleted: ReadonlyArray<number>,
-  +isInitialUpdate: boolean,
-  +modified: ReadonlyArray<HmrModule>,
-  +revisionId: string,
+  readonly added: ReadonlyArray<HmrModule>,
+  readonly deleted: ReadonlyArray<number>,
+  readonly isInitialUpdate: boolean,
+  readonly modified: ReadonlyArray<HmrModule>,
+  readonly revisionId: string,
 };
 
 export type HmrUpdateMessage = {
-  +type: 'update',
-  +body: HmrUpdate,
+  readonly type: 'update',
+  readonly body: HmrUpdate,
 };
 
 export type HmrErrorMessage = {
-  +type: 'error',
-  +body: FormattedError,
+  readonly type: 'error',
+  readonly body: FormattedError,
 };
 
 export type HmrClientMessage =
   | {
-      +type: 'register-entrypoints',
-      +entryPoints: Array<string>,
+      readonly type: 'register-entrypoints',
+      readonly entryPoints: Array<string>,
     }
   | {
-      +type: 'log',
-      +level:
+      readonly type: 'log',
+      readonly level:
         | 'trace'
         | 'info'
         | 'warn'
@@ -79,31 +79,31 @@ export type HmrClientMessage =
         | 'groupCollapsed'
         | 'groupEnd'
         | 'debug',
-      +data: Array<unknown>,
+      readonly data: Array<unknown>,
     }
   | {
-      +type: 'log-opt-in',
+      readonly type: 'log-opt-in',
     }
   | {
-      +type: 'heartbeat',
+      readonly type: 'heartbeat',
     };
 
 export type HmrMessage =
   | {
-      +type: 'bundle-registered',
+      readonly type: 'bundle-registered',
     }
   | {
-      +type: 'update-start',
-      +body: {
-        +isInitialUpdate: boolean,
+      readonly type: 'update-start',
+      readonly body: {
+        readonly isInitialUpdate: boolean,
       },
     }
   | {
-      +type: 'update-done',
-      +body?: {+changeId?: string},
+      readonly type: 'update-done',
+      readonly body?: {readonly changeId?: string},
     }
   | HmrUpdateMessage
   | HmrErrorMessage
   | {
-      +type: 'heartbeat',
+      readonly type: 'heartbeat',
     };

@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {Writable} from 'stream';
+import type {Writable} from 'node:stream';
 
 export type SerializedError = {
   message: string,
@@ -19,19 +19,22 @@ export type SerializedError = {
   ...
 };
 
-export type SerializedEvent<TEvent extends {+[string]: unknown, ...}> =
-  TEvent extends {
-    error: Error,
-    ...
-  }
-    ? {
-        ...Omit<TEvent, 'error'>,
-        error: SerializedError,
-        ...
-      }
-    : TEvent;
+export type SerializedEvent<
+  TEvent extends {readonly [prop: string]: unknown, ...},
+> = TEvent extends {
+  error: Error,
+  ...
+}
+  ? {
+      ...Omit<TEvent, 'error'>,
+      error: SerializedError,
+      ...
+    }
+  : TEvent;
 
-export default class JsonReporter<TEvent extends {+[string]: unknown, ...}> {
+export default class JsonReporter<
+  TEvent extends {readonly [prop: string]: unknown, ...},
+> {
   _stream: Writable;
 
   constructor(stream: Writable) {

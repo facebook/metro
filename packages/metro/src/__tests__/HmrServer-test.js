@@ -18,8 +18,9 @@ import DeltaBundler from '../DeltaBundler';
 import HmrServer from '../HmrServer';
 import IncrementalBundler from '../IncrementalBundler';
 import getGraphId from '../lib/getGraphId';
-import EventEmitter from 'events';
 import {mergeConfig} from 'metro-config';
+import {posixToSystemPath as p} from 'metro-resolver/private/__tests__/utils';
+import EventEmitter from 'node:events';
 
 const {
   getDefaultConfig: {getDefaultValues},
@@ -29,7 +30,7 @@ jest.mock('../lib/transformHelpers', () => ({
   getResolveDependencyFn:
     () => (from: string, to: TransformResultDependency) => ({
       type: 'sourceFile',
-      filePath: `${require('path').resolve(from, to.name)}.js`,
+      filePath: `${require('node:path').resolve(from, to.name)}.js`,
     }),
 }));
 
@@ -51,7 +52,7 @@ describe('HmrServer', () => {
   const hiModule = {
     dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
     inverseDependencies: new Set<$FlowFixMe>(),
-    path: '/root/hi',
+    path: p('/root/hi'),
     getSource: () => "alert('hi');",
     output: [
       {
@@ -84,7 +85,7 @@ describe('HmrServer', () => {
   beforeEach(() => {
     mockedGraph = {
       dependencies: new Map<$FlowFixMe, $FlowFixMe>(),
-      entryPoint: '/root/EntryPoint.js',
+      entryPoint: p('/root/EntryPoint.js'),
     };
     changeHandlerPromises.clear();
 
@@ -123,13 +124,14 @@ describe('HmrServer', () => {
       },
     });
 
-    const config = mergeConfig(getDefaultValues('/root'), {
+    const config = mergeConfig(getDefaultValues(p('/root')), {
       serializer: {experimentalSerializerHook: () => {}},
       reporter: {update: jest.fn()},
       transformer: {
         unstable_allowRequireContext: false,
       },
       resolver: {platforms: []},
+      watchFolders: [p('/external/node_modules')],
       server: {
         rewriteRequestUrl(requrl) {
           const rewritten = requrl.replace(
@@ -163,8 +165,7 @@ describe('HmrServer', () => {
 
     id = config.serializer.createModuleIdFactory();
 
-    // $FlowFixMe[underconstrained-implicit-instantiation]
-    hmrServer = new HmrServer(incrementalBundlerMock, id, config);
+    hmrServer = new HmrServer<Client>(incrementalBundlerMock, id, config);
 
     connect = async (
       relativeUrl: string,
@@ -205,7 +206,7 @@ describe('HmrServer', () => {
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
       getGraphId(
-        '/root/EntryPoint.js',
+        p('/root/EntryPoint.js'),
         {
           customTransformOptions: {},
           dev: true,
@@ -243,7 +244,7 @@ describe('HmrServer', () => {
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
       getGraphId(
-        '/root/EntryPoint.js',
+        p('/root/EntryPoint.js'),
         {
           customTransformOptions: {},
           dev: true,
@@ -271,7 +272,7 @@ describe('HmrServer', () => {
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
       getGraphId(
-        '/root/EntryPoint.js',
+        p('/root/EntryPoint.js'),
         {
           customTransformOptions: {},
           dev: true,
@@ -299,7 +300,7 @@ describe('HmrServer', () => {
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
       getGraphId(
-        '/root/EntryPoint.js',
+        p('/root/EntryPoint.js'),
         {
           customTransformOptions: {},
           dev: true,
@@ -327,7 +328,7 @@ describe('HmrServer', () => {
     await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);
 
     const expectedMessage = `The graph \`${getGraphId(
-      '/root/EntryPoint.js',
+      p('/root/EntryPoint.js'),
       {
         customTransformOptions: {},
         dev: true,
@@ -366,7 +367,7 @@ describe('HmrServer', () => {
       delta: {
         added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
-        deleted: new Set(['/root/bye']),
+        deleted: new Set([p('/root/bye')]),
       },
     });
 
@@ -385,10 +386,10 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                id('/root/hi'),
+                id(p('/root/hi')),
                 '__d(function() { alert("hi"); },' +
-                  id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  id(p('/root/hi')) +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
@@ -398,7 +399,7 @@ describe('HmrServer', () => {
                 'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: [id('/root/bye')],
+          deleted: [id(p('/root/bye'))],
         },
       },
       {
@@ -449,7 +450,7 @@ describe('HmrServer', () => {
       delta: {
         added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
-        deleted: new Set(['/root/bye']),
+        deleted: new Set([p('/root/bye')]),
       },
     });
     await emitChangeEvent();
@@ -469,10 +470,10 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                id('/root/hi'),
+                id(p('/root/hi')),
                 '__d(function() { alert("hi"); },' +
-                  id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  id(p('/root/hi')) +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
@@ -483,7 +484,7 @@ describe('HmrServer', () => {
                 'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: [id('/root/bye')],
+          deleted: [id(p('/root/bye'))],
         },
       },
       {
@@ -508,7 +509,7 @@ describe('HmrServer', () => {
       delta: {
         added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
-        deleted: new Set(['/root/bye']),
+        deleted: new Set([p('/root/bye')]),
       },
     });
 
@@ -528,10 +529,10 @@ describe('HmrServer', () => {
           modified: [
             {
               module: [
-                id('/root/hi'),
+                id(p('/root/hi')),
                 '__d(function() { alert("hi"); },' +
-                  id('/root/hi') +
-                  ',[],"hi",{});\n' +
+                  id(p('/root/hi')) +
+                  ',null,"hi",{});\n' +
                   '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
                   '//# sourceURL=http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
               ],
@@ -539,7 +540,7 @@ describe('HmrServer', () => {
                 'http://localhost/hi.bundle//&platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: [id('/root/bye')],
+          deleted: [id(p('/root/bye'))],
         },
       },
       {
@@ -566,7 +567,7 @@ describe('HmrServer', () => {
       delta: {
         added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
-        deleted: new Set(['/root/bye']),
+        deleted: new Set([p('/root/bye')]),
       },
     });
 
@@ -590,7 +591,7 @@ describe('HmrServer', () => {
                 'http://localhost/hi.bundle//&platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: [id('/root/bye')],
+          deleted: [id(p('/root/bye'))],
         },
       },
       {
@@ -617,7 +618,7 @@ describe('HmrServer', () => {
       delta: {
         added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
-        deleted: new Set(['/root/bye']),
+        deleted: new Set([p('/root/bye')]),
       },
     });
 
@@ -641,13 +642,67 @@ describe('HmrServer', () => {
                 'http://localhost/hi.bundle//&platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
-          deleted: [id('/root/bye')],
+          deleted: [id(p('/root/bye'))],
         },
       },
       {
         type: 'update-done',
       },
     ]);
+  });
+
+  test('should resolve [metro-watchFolders] prefix in entry point', async () => {
+    await connect(
+      '/hot?bundleEntry=./[metro-watchFolders]/0/expo-router/entry.js&platform=ios',
+    );
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        p('/external/node_modules/expo-router/entry.js'),
+        {
+          customTransformOptions: {},
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {
+          shallow: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {
+            dev: true,
+          },
+        },
+      ),
+    );
+  });
+
+  test('should resolve [metro-project] prefix in entry point', async () => {
+    await connect('/hot?bundleEntry=./[metro-project]/src/App.js&platform=ios');
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        p('/root/src/App.js'),
+        {
+          customTransformOptions: {},
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {
+          shallow: false,
+          lazy: false,
+          unstable_allowRequireContext: false,
+          resolverOptions: {
+            dev: true,
+          },
+        },
+      ),
+    );
   });
 
   test('should return error messages when there is a transform error', async () => {
@@ -695,6 +750,6 @@ describe('HmrServer', () => {
 });
 
 class TransformError extends SyntaxError {
-  +type: string = 'TransformError';
+  readonly type: string = 'TransformError';
   filename: string;
 }

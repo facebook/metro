@@ -13,13 +13,13 @@ import type {Module} from '../types';
 
 import getSourceMapInfo from './helpers/getSourceMapInfo';
 import {isJsModule} from './helpers/js';
-import {fromRawMappings, fromRawMappingsNonBlocking} from 'metro-source-map';
+import {fromRawMappingsIndexed} from 'metro-source-map';
 
 export type SourceMapGeneratorOptions = Readonly<{
   excludeSource: boolean,
   processModuleFilter: (module: Module<>) => boolean,
   shouldAddToIgnoreList: (module: Module<>) => boolean,
-  getSourceUrl: ?(module: Module<>) => string,
+  getSourceUrl?: ?(module: Module<>) => string,
 }>;
 
 function getSourceMapInfosImpl(
@@ -78,7 +78,7 @@ function getSourceMapInfosImpl(
 function sourceMapGenerator(
   modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
-): ReturnType<typeof fromRawMappings> {
+): ReturnType<typeof fromRawMappingsIndexed> {
   let sourceMapInfos;
   getSourceMapInfosImpl(
     true,
@@ -93,19 +93,21 @@ function sourceMapGenerator(
       'Expected getSourceMapInfosImpl() to finish synchronously.',
     );
   }
-  return fromRawMappings(sourceMapInfos);
+  return fromRawMappingsIndexed(sourceMapInfos);
 }
 
 async function sourceMapGeneratorNonBlocking(
   modules: ReadonlyArray<Module<>>,
   options: SourceMapGeneratorOptions,
-): ReturnType<typeof fromRawMappingsNonBlocking> {
+): Promise<ReturnType<typeof fromRawMappingsIndexed>> {
   const sourceMapInfos = await new Promise<
     ReadonlyArray<ReturnType<typeof getSourceMapInfo>>,
   >(resolve => {
     getSourceMapInfosImpl(false, resolve, modules, options);
   });
-  return fromRawMappingsNonBlocking(sourceMapInfos);
+  // Building an index map is a cheap synchronous passthrough (VLQ maps carry
+  // over verbatim); only gathering the per-module info above needs to yield.
+  return fromRawMappingsIndexed(sourceMapInfos);
 }
 
 export {sourceMapGenerator, sourceMapGeneratorNonBlocking};

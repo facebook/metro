@@ -9,7 +9,12 @@
  * @oncall react_native
  */
 
-import type {MixedOutput, Module} from '../../types';
+import type {
+  MixedOutput,
+  Module,
+  ReadonlyJsonData,
+  ResolvedDependency,
+} from '../../types';
 import type {JsOutput} from 'metro-transform-worker';
 
 import {isResolvedDependency} from '../../../lib/isResolvedDependency';
@@ -17,7 +22,7 @@ import {normalizePathSeparatorsToPosix} from '../../../lib/pathUtils';
 import invariant from 'invariant';
 import * as jscSafeUrl from 'jsc-safe-url';
 import {addParamsToDefineCall} from 'metro-transform-plugins';
-import path from 'path';
+import path from 'node:path';
 
 export type Options = Readonly<{
   createModuleId: string => number | string,
@@ -26,6 +31,24 @@ export type Options = Readonly<{
   projectRoot: string,
   serverRoot: string,
   sourceUrl: ?string,
+  // When set (and `unstable_inlineDependencyMap` is true), resolved module IDs are
+  // inlined into each module body in place of `<dependencyMapReservedName>[i]`
+  // references, instead of being appended as a dependency-map array argument.
+  dependencyMapReservedName?: ?string,
+  unstable_inlineDependencyMap?: boolean,
+  // Overrides how the value stored in the `__d(...)` `paths` object for an
+  // async dependency is computed. Called once per async dependency, only after
+  // `isResolvedDependency` has narrowed the dep. Default builds a `.bundle?`
+  // URL from `sourceUrl` + `serverRoot` (see `getDefaultAsyncDependencyPath`).
+  // The returned value is treated as opaque by the serializer and forwarded to
+  // `__loadBundleAsync` at runtime; the shape is a contract between the
+  // customSerializer and the on-device runtime. It must be JSON-serializable
+  // since it is embedded into the bundle via `JSON.stringify`.
+  // Returning nullish omits the value from `paths`.
+  unstable_getAsyncDependencyPath?: (
+    dependency: ResolvedDependency,
+    options: Options,
+  ) => ?ReadonlyJsonData,
   ...
 }>;
 
@@ -36,18 +59,83 @@ export function wrapModule(module: Module<>, options: Options): string {
     return output.data.code;
   }
 
+  if (
+    options.unstable_inlineDependencyMap === true &&
+    options.dependencyMapReservedName != null
+  ) {
+    return wrapModuleWithInlinedDependencyIds(
+      module,
+      output.data.code,
+      options.dependencyMapReservedName,
+      options,
+    );
+  }
+
   const params = getModuleParams(module, options);
   return addParamsToDefineCall(output.data.code, ...params);
 }
 
-export function getModuleParams(
+function getModuleVerboseName(module: Module<>, options: Options): string {
+  // The relative path of the module, to make debugging easier. This is mapped
+  // to `module.verboseName` in `require.js`.
+  return normalizePathSeparatorsToPosix(
+    path.relative(options.projectRoot, module.path),
+  );
+}
+
+// Default value stored in the `__d(...)` `paths` object for an async
+// dependency: a server-relative `.bundle?` URL propagating most search params
+// from the main bundle's URL. Overridable via
+// `options.unstable_getAsyncDependencyPath`.
+function getDefaultAsyncDependencyPath(
+  dependency: ResolvedDependency,
+  options: Options,
+): string {
+  invariant(
+    options.sourceUrl != null,
+    'sourceUrl is required when includeAsyncPaths is true',
+  );
+
+  // TODO: Only include path if the target is not in the bundle
+
+  // Construct a server-relative URL for the split bundle, propagating
+  // most parameters from the main bundle's URL.
+
+  const {searchParams} = new URL(jscSafeUrl.toNormalUrl(options.sourceUrl));
+  searchParams.set('modulesOnly', 'true');
+  searchParams.set('runModule', 'false');
+
+  const bundlePath = path.relative(options.serverRoot, dependency.absolutePath);
+  return (
+    '/' +
+    normalizePathSeparatorsToPosix(
+      path.join(
+        // TODO: This is not the proper Metro URL encoding of a file path
+        path.dirname(bundlePath),
+        // Strip the file extension
+        path.basename(bundlePath, path.extname(bundlePath)),
+      ),
+    ) +
+    '.bundle?' +
+    searchParams.toString()
+  );
+}
+
+function getModuleDependencies(
   module: Module<>,
   options: Options,
-): Array<unknown> {
+): {
+  moduleId: number | string,
+  dependencyMapArray: Array<number | string | null>,
+  paths: {[moduleID: number | string]: ReadonlyJsonData},
+  hasPaths: boolean,
+} {
   const moduleId = options.createModuleId(module.path);
 
-  const paths: {[moduleID: number | string]: unknown} = {};
+  const paths: {[moduleID: number | string]: ReadonlyJsonData} = {};
   let hasPaths = false;
+  const getAsyncDependencyPath =
+    options.unstable_getAsyncDependencyPath ?? getDefaultAsyncDependencyPath;
   const dependencyMapArray = Array.from(module.dependencies.values()).map(
     dependency => {
       if (!isResolvedDependency(dependency)) {
@@ -58,63 +146,165 @@ export function getModuleParams(
       const id = options.createModuleId(dependency.absolutePath);
       if (options.includeAsyncPaths && dependency.data.data.asyncType != null) {
         hasPaths = true;
-        invariant(
-          options.sourceUrl != null,
-          'sourceUrl is required when includeAsyncPaths is true',
-        );
-
-        // TODO: Only include path if the target is not in the bundle
-
-        // Construct a server-relative URL for the split bundle, propagating
-        // most parameters from the main bundle's URL.
-
-        const {searchParams} = new URL(
-          jscSafeUrl.toNormalUrl(options.sourceUrl),
-        );
-        searchParams.set('modulesOnly', 'true');
-        searchParams.set('runModule', 'false');
-
-        const bundlePath = path.relative(
-          options.serverRoot,
-          dependency.absolutePath,
-        );
-        paths[id] =
-          '/' +
-          path.join(
-            // TODO: This is not the proper Metro URL encoding of a file path
-            path.dirname(bundlePath),
-            // Strip the file extension
-            path.basename(bundlePath, path.extname(bundlePath)),
-          ) +
-          '.bundle?' +
-          searchParams.toString();
+        const asyncDependencyPath = getAsyncDependencyPath(dependency, options);
+        if (asyncDependencyPath != null) {
+          paths[id] = asyncDependencyPath;
+        }
       }
       return id;
     },
   );
 
-  const params = [
-    moduleId,
-    hasPaths
-      ? {
-          // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
-          ...dependencyMapArray,
-          paths,
-        }
-      : dependencyMapArray,
-  ];
+  return {moduleId, dependencyMapArray, paths, hasPaths};
+}
+
+export function getModuleParams(
+  module: Module<>,
+  options: Options,
+): Array<unknown> {
+  const {moduleId, dependencyMapArray, paths, hasPaths} = getModuleDependencies(
+    module,
+    options,
+  );
+
+  const params: Array<unknown> = [moduleId];
+
+  // As an optimisation: we only emit an argument for the dependency map if
+  // it is non-empty. This is safe because either `dependencyMapReservedName`
+  // is set and we have enforced there are no string occurrences of that name,
+  // or we have used `generateUid` to generate an unbound name for it.
+  if (hasPaths) {
+    params.push({
+      // $FlowFixMe[not-an-object] Intentionally spreading an array into an object
+      ...dependencyMapArray,
+      paths,
+    });
+  } else if (dependencyMapArray.length > 0) {
+    params.push(dependencyMapArray);
+  } else if (options.dev) {
+    // In dev we have one more argument (below), so emit a null to preserve its
+    // position.
+    params.push(null);
+  }
 
   if (options.dev) {
-    // Add the relative path of the module to make debugging easier.
-    // This is mapped to `module.verboseName` in `require.js`.
-    params.push(
-      normalizePathSeparatorsToPosix(
-        path.relative(options.projectRoot, module.path),
-      ),
-    );
+    params.push(getModuleVerboseName(module, options));
   }
 
   return params;
+}
+
+// Wraps a module after inlining resolved module IDs into its body (via
+// `inlineModuleIdReferences`). Because synchronous `<dependencyMap>[i]`
+// references are replaced with literal IDs, the dependency-map array argument is
+// redundant and dropped. Async requires still read `<dependencyMap>.paths`, so a
+// `{paths}` object is passed in the dependency-map argument slot when needed. In
+// dev, an empty array keeps that slot occupied so the verbose-name argument
+// stays in position.
+function wrapModuleWithInlinedDependencyIds(
+  module: Module<>,
+  code: string,
+  dependencyMapReservedName: string,
+  options: Options,
+): string {
+  const {moduleId, dependencyMapArray, paths, hasPaths} = getModuleDependencies(
+    module,
+    options,
+  );
+
+  const inlinedCode = inlineModuleIdReferences(
+    code,
+    dependencyMapReservedName,
+    dependencyMapArray.map(id => (id == null ? 'null' : id)),
+  );
+
+  const params: Array<unknown> = [moduleId];
+  if (hasPaths) {
+    params.push({paths});
+  } else if (options.dev) {
+    params.push(null);
+  }
+  if (options.dev) {
+    params.push(getModuleVerboseName(module, options));
+  }
+
+  return addParamsToDefineCall(inlinedCode, ...params);
+}
+
+/**
+ * Fast path for inlining module IDs as a cheap string operation, requiring
+ * neither parsing nor any adjustment to the source map.
+ *
+ * Assumptions:
+ * 1. `dependencyMapReservedName` is a globally reserved string; there are
+ *    no false positives.
+ * 2. The longest module ID in the bundle does not exceed a length of
+ *    `dependencyMapReservedName.length + 3`. (We assert this below.)
+ * 3. False negatives (failing to inline occasionally if an assumption
+ *    isn't met) are rare to nonexistent, but safe if they do occur.
+ *
+ * Syntax definitions:
+ * 1. A dependency map reference is a member expression which, if parsed,
+ *    would have the form:
+ *      MemberExpression
+ *      ├──object: Identifier (name = dependencyMapReservedName)
+ *      ├──property: NumericLiteral (value = some integer)
+ *      └──computed: true
+ * 2. The concrete form of a dependency map reference may contain embedded
+ *    tabs or spaces, but no newlines (which would complicate source maps),
+ *    parens (which would complicate detection) or comments (likewise).
+ * 3. The numeric literal in a dependency map reference is a base-10
+ *    integer printed as a simple sequence of digits.
+ */
+export function inlineModuleIdReferences(
+  code: string,
+  dependencyMapReservedName: string,
+  dependencyIds: ReadonlyArray<number | string>,
+  {
+    ignoreMissingDependencyMapReference = false,
+  }: Readonly<{ignoreMissingDependencyMapReference?: boolean}> = {},
+): string {
+  if (!dependencyIds.length) {
+    // Nothing to inline in this module.
+    return code;
+  }
+
+  if (!code.includes(dependencyMapReservedName)) {
+    if (ignoreMissingDependencyMapReference) {
+      return code;
+    }
+
+    // If we're here, the module was probably generated by some code that
+    // doesn't make the dependency map name externally configurable, or a
+    // mock that needs to be updated.
+    throw new Error(
+      `Module has dependencies but does not use the preconfigured dependency map name '${dependencyMapReservedName}'\n` +
+        'This is an internal error in Metro.',
+    );
+  }
+  const WS = '[\t ]*';
+  const depMapReferenceRegex = new RegExp(
+    escapeRegex(dependencyMapReservedName) + `${WS}\\[${WS}([0-9]+)${WS}\\]`,
+    'g',
+  );
+  const inlinedCode = code.replace(depMapReferenceRegex, (match, depIndex) => {
+    const idStr = dependencyIds[Number.parseInt(depIndex, 10)].toString();
+    if (idStr.length > match.length) {
+      // Stop the build rather than silently emit an incorrect source map.
+      throw new Error(
+        `Module ID doesn't fit in available space; add ${
+          idStr.length - match.length
+        } more characters to 'dependencyMapReservedName'.`,
+      );
+    }
+    return idStr.padEnd(match.length);
+  });
+  return inlinedCode;
+}
+
+function escapeRegex(str: string): string {
+  // From http://stackoverflow.com/questions/14076210/
+  return str.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
 }
 
 export function getJsOutput(

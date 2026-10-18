@@ -11,22 +11,22 @@
 /* eslint-disable no-console */
 
 import type {Terminal} from 'metro-core';
+import type {BackgroundColors, ForegroundColors, Modifiers} from 'node:util';
 
-import chalk from 'chalk';
-import util from 'util';
+import util from 'node:util';
 
 const groupStack = [];
 let collapsedGuardTimer;
 
 export default (terminal: Terminal, level: string, ...data: Array<unknown>) => {
-  // $FlowFixMe[invalid-computed-prop]
+  // $FlowFixMe[prop-missing]
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
-  const color =
+  const color: ReadonlyArray<ForegroundColors | BackgroundColors | Modifiers> =
     level === 'error'
-      ? chalk.inverse.red
+      ? ['inverse', 'red']
       : level === 'warn'
-        ? chalk.inverse.yellow
-        : chalk.inverse.white;
+        ? ['inverse', 'yellow']
+        : ['inverse', 'white'];
 
   if (level === 'group') {
     groupStack.push(level);
@@ -37,7 +37,7 @@ export default (terminal: Terminal, level: string, ...data: Array<unknown>) => {
     collapsedGuardTimer = setTimeout(() => {
       if (groupStack.includes('groupCollapsed')) {
         terminal.log(
-          chalk.inverse.yellow.bold(' WARN '),
+          util.styleText(['inverse', 'yellow', 'bold'], ' WARN '),
           'Expected `console.groupEnd` to be called after `console.groupCollapsed`.',
         );
         groupStack.length = 0;
@@ -60,7 +60,7 @@ export default (terminal: Terminal, level: string, ...data: Array<unknown>) => {
     }
 
     terminal.log(
-      color.bold(` ${logFunction.toUpperCase()} `) +
+      util.styleText([...color, 'bold'], ` ${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.

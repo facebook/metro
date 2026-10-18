@@ -3,13 +3,21 @@ id: configuration
 title: Configuring Metro
 ---
 
-A Metro config can be created in these three ways (ordered by priority):
+A Metro config can be created in the following file formats (ordered by priority):
 
-1.  `metro.config.js`
-2.  `metro.config.json`
-3.  The `metro` field in `package.json`
+1.  `metro.config.js` / `metro.config.cjs` / `metro.config.mjs` (CommonJS or ESM)
+2.  `metro.config.ts` / `metro.config.cts` / `metro.config.mts` (TypeScript)
+3.  `metro.config.json`
+4.  `.config/metro.js` / `.config/metro.cjs` / `.config/metro.mjs` / `.config/metro.ts` / `.config/metro.cts` / `.config/metro.mts` / `.config/metro.json`
+5.  The `metro` field in `package.json`
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
+
+:::info TypeScript Config Support
+
+Metro uses Node.js native TypeScript support to load `.*ts` config files. For Node.js 22.18.0 and later or 24.0.0 later, _erasable_ TypeScript is supported out of the box. For Node.js < 22.18.0, use the `--experimental-strip-types` flag. See https://nodejs.org/learn/typescript/run-natively.
+
+:::
 
 :::note
 
@@ -20,10 +28,13 @@ See the [React Native repository](https://github.com/facebook/react-native/blob/
 
 ## Configuration Structure
 
-The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A common configuration structure in Metro looks like this:
+The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A basic configuration structure in Metro looks like this:
 
-```js
-module.exports = {
+```typescript
+// metro.config.mts
+import type {MetroConfig} from 'metro-config';
+
+const config: MetroConfig = {
   /* general options */
 
   resolver: {
@@ -45,10 +56,17 @@ module.exports = {
     }
   }
 };
+
+export default config;
 ```
 
-### General Options
+:::note
 
+See [Merging Configurations](#merging-configurations) below for more advanced forms.
+
+:::
+
+### General Options
 
 #### `cacheStores`
 
@@ -117,7 +135,7 @@ Type: `string`
 
 The absolute path of a module (or a package name resolvable from the `metro` package) that implements a transformer.
 
-See the implementation of Metro's default transformer ([`metro-transform-worker`](https://github.com/facebook/metro/blob/main/packages/metro-transform-worker/src/index.js)) for more information about the transformer interface.
+See the implementation of Metro's default transformer ([`metro-transform-worker`](https://github.com/react/metro/blob/main/packages/metro-transform-worker/src/index.js)) for more information about the transformer interface.
 
 #### `reporter`
 
@@ -125,7 +143,7 @@ Type: `{update: (event: ReportableEvent) => void}`
 
 Used to report the status of the bundler during the bundling process. The default implementation prints most events to the terminal.
 
-See also the [definition of `ReportableEvent`](https://github.com/facebook/metro/blob/main/packages/metro/src/lib/reporting.js) in Metro's source code.
+See also the [definition of `ReportableEvent`](https://github.com/react/metro/blob/main/packages/metro/src/lib/reporting.js) in Metro's source code.
 
 #### `resetCache`
 
@@ -180,11 +198,11 @@ function unstable_perfLoggerFactory(
 };
 ```
 
-* **`type`** Type of event being logged, e.g. `'STARTUP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/facebook/metro/blob/main/packages/metro-config/src/types.js) for a full list of event types.
+* **`type`** Type of event being logged, e.g. `'STARTUP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/react/metro/blob/main/packages/metro-config/src/types.js) for a full list of event types.
 * **`opts`**
   * **`key`**: An opaque identifier to distinguish between instances of an event type (e.g. multiple, possibly concurrent, HMR requests).
 
-`unstable_perfLoggerFactory` should return an object implementing the [RootPerfLogger](https://github.com/facebook/metro/blob/main/packages/metro-config/src/types.js) interface. For example, a factory function returning a no-op RootPerfLogger could be implemented as follows:
+`unstable_perfLoggerFactory` should return an object implementing the [RootPerfLogger](https://github.com/react/metro/blob/main/packages/metro-config/src/types.js) interface. For example, a factory function returning a no-op RootPerfLogger could be implemented as follows:
 
 
 ```javascript
@@ -213,7 +231,13 @@ const unstable_perfLoggerFactory = (type, factoryOpts) => {
 
 Type: `Array<string>`
 
-The list of asset file extensions to include in the bundle. For example, including `'ttf'` allows Metro bundles to reference `.ttf` files. This is used primarily to enable React Native's [image asset support](https://reactnative.dev/docs/images). The default list includes many common image, video and audio file extensions. See [Metro's source code](https://github.com/facebook/metro/blob/main/packages/metro-config/src/defaults/defaults.js#L16) for the full list.
+The list of asset file extensions to include in the bundle. For example, including `'ttf'` allows Metro bundles to reference `.ttf` files. This is used primarily to enable React Native's [image asset support](https://reactnative.dev/docs/images). The default list includes many common image, video and audio file extensions. See [Metro's source code](https://github.com/react/metro/blob/main/packages/metro-config/src/defaults/defaults.js#L16) for the full list.
+
+#### `assetResolutions`
+
+Type: `Array<string>` (default: `['1', '1.5', '2', '3', '4']`)
+
+The list of asset density suffixes Metro will look for when resolving an asset. For each entry, the default `resolveAsset` implementation tries `${assetName}@${resolution}x${extension}` alongside the unsuffixed file, so `icon.png` also matches `icon@2x.png` and `icon@3x.png`.
 
 #### `sourceExts`
 
@@ -292,6 +316,44 @@ resolveRequest: (context, moduleName, platform) => {
 
 For more information on customizing the resolver, see [Module Resolution](https://metrobundler.dev/docs/resolution).
 
+#### `schemeResolvers`
+
+Type: `?{[scheme: string]: `[`CustomResolver`](./Resolution.md#resolverequest-customresolver)`}`
+
+An object of custom resolvers for import specifiers prefixed with a URI scheme, keyed by lowercase scheme name (the prefix before the first `:`, without the colon). When Metro's default resolution encounters a specifier whose scheme matches a registered key (for example `my-scheme:foo` matching `'my-scheme'`), the corresponding resolver is invoked with the full specifier.
+
+```javascript
+schemeResolvers: {
+  'my-scheme': (context, specifier, platform) => {
+    // `specifier` is the full 'my-scheme:...' string.
+    // Resolve it to a file, or delegate back to the default resolver via
+    // `context.resolveRequest(context, someOtherName, platform)`.
+    return {
+      type: 'sourceFile',
+      filePath: '/absolute/path/to/file.js',
+    };
+  },
+},
+```
+
+This differs from [`resolveRequest`](#resolverequest) in a few ways:
+
+- Scheme resolvers run *within* Metro's default resolution rather than replacing it. A user [`resolveRequest`](#resolverequest) still takes precedence, and can delegate back into default resolution (via `context.resolveRequest`), at which point scheme resolvers apply.
+- Only specifiers matching a registered scheme are dispatched. Relative (`./`, `../`) and subpath (`#…`) imports are resolved first and are never treated as schemes.
+- The resolver receives a `context` whose [`resolveRequest`](./Resolution.md#resolverequest-customresolver) delegates to Metro's default resolution, for easy chaining.
+
+The scheme parsed from a specifier is lowercased before lookup, so keys must be lowercase — both `Foo:` and `foo:` match the `'foo'` key. When multiple configs are combined with `mergeConfig`, `schemeResolvers` are merged per scheme, so a later config replaces an earlier resolver only when it reuses the same (lowercase) key.
+
+:::note Backwards compatibility
+
+`schemeResolvers` itself is not deprecated. However, when a specifier's scheme has *no* registered resolver, Metro currently falls back to its other resolution methods (Haste, `node_modules`, [`extraNodeModules`](#extranodemodules)) before failing, in case a project already uses scheme-like specifiers with those. This fallback is deprecated and will be removed in a later release, after which an unregistered scheme will fail immediately.
+
+:::
+
+Metro registers its own built-in scheme resolvers (currently `metro:`) when it builds a resolution context. Those are applied *beneath* this option, so an entry here overrides a built-in that uses the same scheme key.
+
+Defaults to `{}`.
+
 #### `useWatchman`
 
 Type: `boolean`
@@ -352,13 +414,15 @@ This setting will take effect when [`unstable_enablePackageExports`](#unstable_e
 
 The set of [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to assert globally when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
 
-Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors. The `default` condition is always matched.
+Conditions may be any string value and are resolved in the order specified by each package. Node.js documents a number of [community conditions](https://nodejs.org/docs/latest-v18.x/api/packages.html#community-conditions-definitions) which are commonly used by package authors.
 
-Defaults to `['require']`.
+Metro always asserts `default`, plus `import` or `require` according to the syntax of each import - an `import` statement asserts `import`, a `require()` call asserts `require`. Neither needs to be listed here, and listing one would assert it for every import regardless of syntax.
+
+Defaults to `[]`.
 
 :::note
 
-When using React Native, `unstable_conditionNames` defaults to `['require', 'react-native']`.
+When using React Native, `unstable_conditionNames` defaults to `['react-native']`.
 
 :::
 
@@ -374,7 +438,7 @@ This setting will take effect when [`unstable_enablePackageExports`](#unstable_e
 
 The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) to dynamically assert by platform (see [`platforms`](#platforms)) when interpreting the [`"exports"` field](https://nodejs.org/docs/latest-v18.x/api/packages.html#exports) in package.json.
 
-Matched conditions are merged with [`unstable_conditionNames`](#unstable-conditionnames) before resolution. With the defaults for both options, the conditions `new Set(['require', 'browser'])` will be asserted when requesting a `web` bundle, and `new Set(['require'])` otherwise. Again, these are resolved in the order specified by each package.
+Matched conditions are merged with [`unstable_conditionNames`](#unstable_conditionnames-experimental) before resolution. Under React Native's defaults for both options, a `require()` call site asserts `new Set(['default', 'require', 'react-native', 'browser'])` when requesting a `web` bundle, and `new Set(['default', 'require', 'react-native'])` otherwise. Again, these are resolved in the order specified by each package.
 
 Defaults to `‌{ web: ['browser'] }`.
 
@@ -408,7 +472,7 @@ In a future release of Metro, this option will be removed.
 
 Type: `string`
 
-The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to [`metro-runtime/src/modules/asyncRequire`](https://github.com/facebook/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js).
+The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to [`metro-runtime/src/modules/asyncRequire`](https://github.com/react/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js).
 
 :::note
 The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) relative to the module containing the original `import()` call. In particular, assuming the default value of `asyncRequireModulePath` is in use, the project must have a compatible version of `metro-runtime` installed in `node_modules`.
@@ -519,7 +583,7 @@ Type: `string`
 
 The name of a module that compiles code with Babel, returning an AST and optional metadata. Defaults to `metro-babel-transformer`.
 
-Refer to the source code of [`metro-babel-transformer`](https://github.com/facebook/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`@react-native/metro-babel-transformer`](https://github.com/facebook/react-native/blob/main/packages/react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
+Refer to the source code of [`metro-babel-transformer`](https://github.com/react/metro/blob/main/packages/metro-babel-transformer/src/index.js) and [`@react-native/metro-babel-transformer`](https://github.com/facebook/react-native/blob/main/packages/react-native-babel-transformer/src/index.js) for details on implementing a custom Babel transformer.
 
 :::note
 This option only has an effect under the default [`transformerPath`](#transformerpath). Custom transformers may ignore it.
@@ -551,7 +615,7 @@ This option only works under the default settings for React Native. It may have 
 
 Type: `boolean`
 
-Whether to use the [`hermes-parser`](https://www.npmjs.com/package/hermes-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
+Whether to use the [`flow-parser`](https://www.npmjs.com/package/flow-parser) package to parse JavaScript source files, instead of Babel. Defaults to `false`.
 
 :::note
 This option only has an effect under the default [`transformerPath`](#transformerpath) and the [Babel transformers](#babeltransformerpath) built into Metro. Custom transformers and custom [Babel transformers](#babeltransformerpath) may ignore it.
@@ -623,7 +687,9 @@ Whether we should enable CMD+R hotkey for refreshing the bundle.
 
 Type: `(Middleware, MetroServer) => Middleware`
 
-A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. For example:
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Metro logs a deprecation warning when this option is set to anything other than its default. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
+
+For example:
 
 :::tip
 You can use [`connect()`](https://www.npmjs.com/package/connect#mount-middleware) as a utility to extend the base `metroMiddleware` and to mount additional middleware handlers.
@@ -638,6 +704,42 @@ enhanceMiddleware: (metroMiddleware: Middleware, metroServer: MetroServer) => {
 ```
 
 The `Middleware` type is an alias for [`connect.HandleFunction`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/876b9ec96ba02d0c84b1e49af5890c8f5aa2dfe3/types/connect/index.d.ts#L29).
+
+#### `unstable_middleware` <div class="label experimental">Experimental</div>
+
+Type: `Array<Middleware | [path: string, handler: Middleware]>`
+
+Custom [`connect`](https://www.npmjs.com/package/connect) middleware list allowing integrators to extend Metro's dev server endpoints, mounted in array order. A `[path, handler]` entry mounts the handler with `connect` semantics: it matches the path as a prefix and strips it from `req.url`, keeping the full URL in `req.originalUrl`.
+
+[`runServer`](./API.md#async-runserverconfig-options) also takes an `unstable_middleware` option, which runs after these handlers.
+
+```js
+server: {
+  unstable_middleware: [
+    ['/custom-endpoint', customEndpointMiddleware()],
+    notFoundPage,
+  ],
+  unstable_priorityMiddleware: [corsMiddleware],
+},
+```
+
+#### `unstable_priorityMiddleware` <div class="label experimental">Experimental</div>
+
+Type: `Array<Middleware | [path: string, handler: Middleware]>`
+
+Like [`unstable_middleware`](#unstable_middleware-experimental), but runs before Metro. These handlers see the URL before [`rewriteRequestUrl`](#rewriterequesturl) is applied.
+
+Each priority middleware handler must call `next()` for every request it doesn't fully handle itself. Otherwise the request never reaches Metro, which builds and serves bundles, source maps and assets, symbolicates stack traces, and serves its other dev server endpoints.
+
+[`runServer`](./API.md#async-runserverconfig-options) also takes an `unstable_priorityMiddleware` option, which runs before these handlers.
+
+#### `unstable_onServerCreated` <div class="label experimental">Experimental</div>
+
+Type: `(MetroServer) => void`
+
+Called with Metro's server instance when [`runServer`](./API.md#async-runserverconfig-options) or [`createConnectMiddleware`](./API.md#createconnectmiddlewareconfig-options) creates it, after the bundler is ready when `waitForBundler` is set, and before `runServer` starts the HTTP server.
+
+`runServer` also takes an `unstable_onServerCreated` option, which is called after this one.
 
 #### `rewriteRequestUrl`
 
@@ -655,7 +757,7 @@ The input may be either an absolute URL (e.g. `https://example.com/foo/bar?baz=q
 
 Type: `boolean`
 
-Enable forwarding of `client_log` events (when client logs are [configured](https://github.com/facebook/metro/blob/614ad14a85b22958129ee94e04376b096f03ccb1/packages/metro/src/lib/createWebsocketServer.js#L20)) to the reporter. Defaults to `true`.
+Enable forwarding of `client_log` events (when client logs are [configured](https://github.com/react/metro/blob/614ad14a85b22958129ee94e04376b096f03ccb1/packages/metro/src/lib/createWebsocketServer.js#L20)) to the reporter. Defaults to `true`.
 
 #### `tls`
 
@@ -672,7 +774,7 @@ key?: string | Buffer,     // Private key (contents, not path)
 requestCert?: boolean,     // Whether to authenticate the remote peer by requesting a certificate
 ```
 
-Notice that when overriding the base config, object tls configs extend the base tls config, false overrides the base tls configs, and `null` and `undefined` are ignored.
+Notice that when overriding the base config, object `tls` configs extend the base `tls` config, `false` overrides the base `tls` configs, and `null` and `undefined` are ignored.
 
 When running Metro with `Metro.runServer` with the `secureServerOptions` property Metro will likewise start an HTTPS server merging with the `config.server.tls` object if provided, overriding it.
 
@@ -766,52 +868,27 @@ This allows overriding and removing default config parameters such as `platforms
 
 :::
 
+`server.unstable_middleware` and `server.unstable_priorityMiddleware` are combined instead: later configs wrap earlier ones, so their `unstable_middleware` runs last and their `unstable_priorityMiddleware` runs first. An entry already in an earlier config, e.g. copied with a spread, is kept once.
+
 #### Merging Example
 
-```js
-// metro.config.js
-const { mergeConfig } = require('metro-config');
+```typescript
+// metro.config.ts
+import type {ConfigT} from 'metro-config';
+import {mergeConfig} from 'metro-config';
 
-const configA = {
-  /* general options */
-
-  resolver: {
-    /* resolver options */
-  },
-  transformer: {
-    /* transformer options */
-  },
-  serializer: {
-    /* serializer options */
-  },
-  server: {
-    /* server options */
-  }
-};
-
-const configB = {
-  /* general options */
-
-  resolver: {
-    /* resolver options */
-  },
-  transformer: {
-    /* transformer options */
-  },
-  serializer: {
-    /* serializer options */
-  },
-  server: {
-    /* server options */
-  }
-};
-
-// Function forms may be used to access the previous configuration
-configCFn = (previousConfig /* result of mergeConfig(configA, configB) */) => {
-  return {
-    watchFolders: [...previousConfig.watchFolders, 'my-watch-folder'],
-  }
-}
-
-module.exports = mergeConfig(configA, configB, configCFn);
+export default (defaults: ConfigT) =>
+  mergeConfig(
+    defaults,
+    // Function form: extends the default additionalExts
+    config => ({
+      watcher: {additionalExts: [...config.watcher.additionalExts, 'mts', 'cts']},
+    }),
+    // Plain object form
+    {transformer: {minifierPath: 'metro-minify-terser'}},
+    // Function form: additionalExts already includes 'mts' and 'cts' from above
+    config => ({
+      watcher: {additionalExts: [...config.watcher.additionalExts, 'css']},
+    }),
+  );
 ```

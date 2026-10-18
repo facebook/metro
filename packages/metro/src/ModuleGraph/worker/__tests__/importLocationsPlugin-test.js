@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import type {File as BabelNodeFile} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import collectDependencies from '../collectDependencies';
@@ -16,11 +17,11 @@ import nullthrows from 'nullthrows';
 
 const {importLocationsPlugin, locToKey} = require('../importLocationsPlugin');
 const {transformFromAstSync} = require('@babel/core');
-const {parse: hermesParse} = require('hermes-parser');
+const {parse: flowParse} = require('flow-parser');
 
 function parse(code: string) {
   // $FlowExpectedError[incompatible-exact] - we don't care about the AST structure
-  return hermesParse(code, {
+  return flowParse(code, {
     babel: true,
     sourceType: 'module',
     reactRuntimeTarget: '19',

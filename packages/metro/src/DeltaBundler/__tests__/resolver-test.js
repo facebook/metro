@@ -21,16 +21,16 @@ const {
   DuplicateHasteCandidatesError,
   default: {H: Haste},
 } = require('metro-file-map');
-const path = require('path');
+const path = require('node:path');
 
 const mockPlatform = process.platform;
 
 jest.useRealTimers();
 jest
   // It's noticeably faster to prevent running watchman from FileWatcher.
-  .mock('child_process', () => ({}))
-  .mock('os', () => ({
-    ...jest.requireActual('os'),
+  .mock('node:child_process', () => ({}))
+  .mock('node:os', () => ({
+    ...jest.requireActual('node:os'),
     platform: () => 'test',
     tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
@@ -78,13 +78,13 @@ function dep(name: string): TransformResultDependency {
     for (const entName in desc) {
       const ent = desc[entName];
 
-      const entPath = require('path').join(dirPath, entName);
+      const entPath = jest.requireMock('node:path').join(dirPath, entName);
       if (typeof ent === 'string') {
         fs.writeFileSync(entPath, ent);
         continue;
       }
       if (typeof ent !== 'object') {
-        throw new Error(require('util').format('invalid entity:', ent));
+        throw new Error(require('node:util').format('invalid entity:', ent));
       }
       fs.mkdirSync(entPath);
       mockDir(entPath, ent);
@@ -161,20 +161,27 @@ function dep(name: string): TransformResultDependency {
 
       if (osPlatform === 'win32') {
         const mockPath = jest.requireActual<{win32: unknown}>('path');
-        jest.mock('path', () => mockPath.win32);
+        jest.mock('node:path', () => mockPath.win32);
         jest.mock(
-          'fs',
+          'node:fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),
         );
       } else {
-        jest.mock('path', () => jest.requireActual('path'));
-        jest.mock('fs', () => new (require('metro-memory-fs'))());
+        const mockPath = jest.requireActual<{posix: unknown}>('path');
+        jest.mock('node:path', () => mockPath.posix);
+        jest.mock('node:fs', () => new (require('metro-memory-fs'))());
       }
 
-      // $FlowFixMe[cannot-write]
-      require('os').tmpdir = () => p('/tmp');
+      jest.requireMock('node:os').tmpdir = () => p('/tmp');
 
-      fs = require('fs');
+      // Node resolves Metro's own `@babel/runtime` to a path on the host,
+      // which is not valid for the platform under test.
+      jest.doMock('../../lib/metroBabelRuntime', () => ({
+        getMetroBabelRuntimePackageJsonPath: () =>
+          p('/root/node_modules/@babel/runtime/package.json'),
+      }));
+
+      fs = jest.requireMock('node:fs');
       originalError = console.error;
       // $FlowFixMe[cannot-write]
       console.error = jest.fn((...args) => {
@@ -185,6 +192,7 @@ function dep(name: string): TransformResultDependency {
         ) {
           return;
         }
+        // $FlowFixMe[incompatible-type]
         originalError(...args);
       });
     });
@@ -547,7 +555,7 @@ function dep(name: string): TransformResultDependency {
         });
       });
 
-      test('finds the appropiate node_modules folder', async () => {
+      test('finds the appropriate node_modules folder', async () => {
         setMockFileSystem({
           node_modules: {
             foo: {
@@ -1647,6 +1655,45 @@ function dep(name: string): TransformResultDependency {
           filePath: p('/root/node_modules/foo/asset.png'),
         });
       });
+
+      test('resolves a package whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          node_modules: {
+            'lodash.zip': {
+              'package.json': JSON.stringify({name: 'lodash.zip'}),
+              'index.js': '',
+            },
+          },
+        });
+
+        resolver = await createResolver({
+          resolver: {assetExts: ['png', 'zip']},
+        });
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('lodash.zip')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/node_modules/lodash.zip/index.js'),
+        });
+      });
+
+      test('resolves a directory whose name ends in an asset extension', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          'icons.png': {'index.js': ''},
+        });
+
+        resolver = await createResolver();
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('./icons.png')),
+        ).toEqual({
+          type: 'sourceFile',
+          filePath: p('/root/icons.png/index.js'),
+        });
+      });
     });
 
     describe('global packages', () => {
@@ -2565,7 +2612,7 @@ function dep(name: string): TransformResultDependency {
       beforeEach(() => {
         resolveRequest = jest.fn().mockReturnValue({
           type: 'sourceFile',
-          filePath: p('/root/overriden.js'),
+          filePath: p('/root/overridden.js'),
         });
       });
 
@@ -2573,18 +2620,18 @@ function dep(name: string): TransformResultDependency {
         setMockFileSystem({
           'index.js': '',
           myFolder: {'foo.js': ''},
-          'overriden.js': '',
+          'overridden.js': '',
         });
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
         expect(
           resolver.resolve(p('/root/index.js'), dep('./myFolder/foo')),
-        ).toEqual({type: 'sourceFile', filePath: p('/root/overriden.js')});
+        ).toEqual({type: 'sourceFile', filePath: p('/root/overridden.js')});
         expect(resolver.resolve(p('/root/index.js'), dep('./invalid'))).toEqual(
           {
             type: 'sourceFile',
-            filePath: p('/root/overriden.js'),
+            filePath: p('/root/overridden.js'),
           },
         );
       });
@@ -2598,14 +2645,14 @@ function dep(name: string): TransformResultDependency {
               'index.js': '',
             },
           },
-          'overriden.js': '',
+          'overridden.js': '',
         });
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
         expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
-          filePath: p('/root/overriden.js'),
+          filePath: p('/root/overridden.js'),
         });
       });
 
@@ -2616,14 +2663,14 @@ function dep(name: string): TransformResultDependency {
             'package.json': JSON.stringify({name: 'aPackage'}),
             'index.js': '',
           },
-          'overriden.js': '',
+          'overridden.js': '',
         });
 
         resolver = await createResolver({resolver: {resolveRequest}});
 
         expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
-          filePath: p('/root/overriden.js'),
+          filePath: p('/root/overridden.js'),
         });
       });
 
@@ -2631,7 +2678,7 @@ function dep(name: string): TransformResultDependency {
         setMockFileSystem({
           'index.js': '',
           'aPackage.js': '@providesModule aPackage',
-          'overriden.js': '',
+          'overridden.js': '',
         });
 
         resolver = await createResolver({
@@ -2646,7 +2693,7 @@ function dep(name: string): TransformResultDependency {
 
         expect(resolver.resolve(p('/root/index.js'), dep('aPackage'))).toEqual({
           type: 'sourceFile',
-          filePath: p('/root/overriden.js'),
+          filePath: p('/root/overridden.js'),
         });
       });
 
@@ -2654,7 +2701,7 @@ function dep(name: string): TransformResultDependency {
         setMockFileSystem({
           'index.js': '',
           'foo.js': '',
-          'overriden.js': '',
+          'overridden.js': '',
         });
 
         resolver = await createResolver({resolver: {resolveRequest}}, 'ios');
@@ -2844,6 +2891,62 @@ function dep(name: string): TransformResultDependency {
           }),
         ).toEqual({type: 'sourceFile', filePath: p('/target1.js')});
         expect(resolveRequest).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('schemeResolvers', () => {
+      test('config schemeResolvers are applied to scheme-prefixed specifiers', async () => {
+        setMockFileSystem({'index.js': '', 'a.js': ''});
+
+        resolver = await createResolver({
+          resolver: {
+            schemeResolvers: {
+              'my-scheme': (context, specifier, platform) =>
+                context.resolveRequest(context, './a', platform),
+            },
+          },
+        });
+
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('my-scheme:anything')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/a.js')});
+        // The built-in is still registered.
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toThrow(/Unsupported 'metro:' pathname/);
+      });
+
+      test('registers built-in scheme resolvers without any configuration', async () => {
+        setMockFileSystem({'index.js': ''});
+
+        resolver = await createResolver();
+
+        // `metro:` is registered by Metro when it builds the resolution
+        // context, not via metro-config's defaults. An unsupported `metro:`
+        // pathname therefore surfaces the built-in resolver's own error
+        // rather than a generic resolution failure.
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toThrow(/Unsupported 'metro:' pathname/);
+      });
+
+      test('config schemeResolvers override a built-in for the same scheme', async () => {
+        setMockFileSystem({'index.js': '', 'a.js': ''});
+
+        resolver = await createResolver({
+          resolver: {
+            schemeResolvers: {
+              metro: (context, specifier, platform) =>
+                context.resolveRequest(context, './a', platform),
+            },
+          },
+        });
+
+        // Would throw "Unsupported 'metro:' pathname" if the built-in were
+        // still registered for this scheme.
+        expect(
+          resolver.resolve(p('/root/index.js'), dep('metro:not-a-thing')),
+        ).toEqual({type: 'sourceFile', filePath: p('/root/a.js')});
       });
     });
   });

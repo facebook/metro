@@ -11,16 +11,15 @@
 
 import type {WorkerMessage, WorkerMetadata} from '../flow-types';
 import typeof TWorker from '../worker';
-import typeof FS from 'fs';
+import typeof FS from 'node:fs';
 
 import {HastePlugin} from '..';
 import {Worker} from '../worker';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as vm from 'vm';
+import * as path from 'node:path';
+import * as vm from 'node:vm';
 
-jest.mock('fs', () => {
-  const path = require('path');
+jest.mock('node:fs', () => {
+  const path = require('node:path');
   const mockFs = {
     [path.join('/project', 'fruits', 'Banana.js')]: `
         const Strawberry = require("Strawberry");
@@ -48,7 +47,7 @@ jest.mock('fs', () => {
   };
 
   return {
-    ...jest.createMockFromModule('fs'),
+    ...jest.createMockFromModule('node:fs'),
     readFileSync: jest.fn((path, options) => {
       const entry = mockFs[path];
       if (entry) {
@@ -64,6 +63,8 @@ jest.mock('fs', () => {
     }),
   };
 });
+
+const fs: FS = jest.requireMock('node:fs');
 
 const defaults: WorkerMessage = {
   computeSha1: false,
@@ -239,7 +240,7 @@ describe('worker', () => {
 
   test('can be loaded directly without transpilation', async () => {
     const code = await jest
-      .requireActual<FS>('fs')
+      .requireActual<FS>('node:fs')
       .promises.readFile(require.resolve('../worker.js'), 'utf8');
     expect(() => new vm.Script(code)).not.toThrow();
   });

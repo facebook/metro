@@ -23,27 +23,30 @@ import type {
 
 'use strict';
 
-const {createHash} = require('crypto');
-const fs = require('fs');
+const {createHash} = require('node:crypto');
+const fs = require('node:fs');
 
 function sha1hex(content /*: string | Buffer */) /*: string */ {
   return createHash('sha1').update(content).digest('hex');
 }
 
 class Worker {
+  // prettier-ignore
   #plugins /*: ReadonlyArray<MetadataWorker> */;
 
   constructor({plugins = []} /*: WorkerSetupArgs */) {
     this.#plugins = plugins.map(({modulePath, setupArgs}) => {
       // $FlowFixMe[unsupported-syntax] - dynamic require
-      const PluginWorker = require(modulePath);
+      const mod = require(modulePath);
+      const PluginWorker =
+        mod.__esModule === true && 'default' in mod ? mod.default : mod;
       return new PluginWorker(setupArgs);
     });
   }
 
   processFile(data /*: WorkerMessage */) /*: WorkerMetadata */ {
-    let content /*: ?Buffer */;
-    let sha1 /*: WorkerMetadata['sha1'] */;
+    let content;
+    let sha1;
 
     const {computeSha1, filePath, pluginsToRun} = data;
 

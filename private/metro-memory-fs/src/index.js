@@ -14,9 +14,9 @@
 /* eslint-disable no-bitwise */
 
 // $FlowFixMe[cannot-resolve-module]: not defined by Flow
-const constants = require('constants');
-const {EventEmitter} = require('events');
-const stream = require('stream');
+const constants = require('node:constants');
+const {EventEmitter} = require('node:events');
+const stream = require('node:stream');
 
 type NodeBase = {
   gid: number,
@@ -64,19 +64,19 @@ type Encoding =
   | 'utf8';
 
 type Resolution = {
-  +basename: string,
-  +dirNode: DirectoryNode,
-  +dirPath: Array<[string, EntityNode]>,
-  +drive: string,
-  +node: ?EntityNode,
-  +realpath: string,
+  readonly basename: string,
+  readonly dirNode: DirectoryNode,
+  readonly dirPath: Array<[string, EntityNode]>,
+  readonly drive: string,
+  readonly node: ?EntityNode,
+  readonly realpath: string,
 };
 
 type Descriptor = {
-  +nodePath: Array<[string, EntityNode]>,
-  +node: FileNode,
-  +readable: boolean,
-  +writable: boolean,
+  readonly nodePath: Array<[string, EntityNode]>,
+  readonly node: FileNode,
+  readonly readable: boolean,
+  readonly writable: boolean,
   position: number,
 };
 
@@ -104,7 +104,6 @@ const FLAGS_SPECS: {
   wx: {exclusive: true, truncate: true, writable: true},
   'w+': {readable: true, truncate: true, writable: true},
   'wx+': {exclusive: true, readable: true, truncate: true, writable: true},
-  // $FlowFixMe[invalid-computed-prop]: Symbol support is incomplete
   [kWritableMustExist]: {mustExist: true, writable: true},
 };
 
@@ -334,35 +333,29 @@ class MemoryFs {
     }
     const filePathStr = pathStr(filePath);
     if ((mode & constants.R_OK) !== 0) {
-      if (
-        !(
-          (stats.mode & constants.S_IROTH) !== 0 ||
-          ((stats.mode & constants.S_IRGRP) !== 0 && stats.gid === getgid()) ||
-          ((stats.mode & constants.S_IRUSR) !== 0 && stats.uid === getuid())
-        )
-      ) {
+      if (!(
+        (stats.mode & constants.S_IROTH) !== 0 ||
+        ((stats.mode & constants.S_IRGRP) !== 0 && stats.gid === getgid()) ||
+        ((stats.mode & constants.S_IRUSR) !== 0 && stats.uid === getuid())
+      )) {
         throw makeError('EPERM', filePathStr, 'file cannot be read');
       }
     }
     if ((mode & constants.W_OK) !== 0) {
-      if (
-        !(
-          (stats.mode & constants.S_IWOTH) !== 0 ||
-          ((stats.mode & constants.S_IWGRP) !== 0 && stats.gid === getgid()) ||
-          ((stats.mode & constants.S_IWUSR) !== 0 && stats.uid === getuid())
-        )
-      ) {
+      if (!(
+        (stats.mode & constants.S_IWOTH) !== 0 ||
+        ((stats.mode & constants.S_IWGRP) !== 0 && stats.gid === getgid()) ||
+        ((stats.mode & constants.S_IWUSR) !== 0 && stats.uid === getuid())
+      )) {
         throw makeError('EPERM', filePathStr, 'file cannot be written to');
       }
     }
     if ((mode & constants.X_OK) !== 0) {
-      if (
-        !(
-          (stats.mode & constants.S_IXOTH) !== 0 ||
-          ((stats.mode & constants.S_IXGRP) !== 0 && stats.gid === getgid()) ||
-          ((stats.mode & constants.S_IXUSR) !== 0 && stats.uid === getuid())
-        )
-      ) {
+      if (!(
+        (stats.mode & constants.S_IXOTH) !== 0 ||
+        ((stats.mode & constants.S_IXGRP) !== 0 && stats.gid === getgid()) ||
+        ((stats.mode & constants.S_IXUSR) !== 0 && stats.uid === getuid())
+      )) {
         throw makeError('EPERM', filePathStr, 'file cannot be executed');
       }
     }
@@ -1137,7 +1130,6 @@ class MemoryFs {
     const ffd = fd;
     const rst = new WriteFileStream({
       fd,
-      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       writeSync: this._write.bind(this),
       filePath,
       start,
@@ -1272,8 +1264,8 @@ class MemoryFs {
   }
 
   _parsePath(filePath: string): {
-    +drive: ?string,
-    +entNames: Array<string>,
+    readonly drive: ?string,
+    readonly entNames: Array<string>,
   } {
     let drive;
     const sep = this._platform === 'win32' ? /[\\/]/ : /\//;
@@ -1297,8 +1289,8 @@ class MemoryFs {
   }
 
   _parsePathWithCwd(filePath: string): {
-    +drive: string,
-    +entNames: Array<string>,
+    readonly drive: string,
+    readonly entNames: Array<string>,
   } {
     let {drive, entNames} = this._parsePath(filePath);
     if (drive == null) {
@@ -1701,7 +1693,7 @@ class FSWatcher extends EventEmitter {
   _encoding: Encoding;
   _node: EntityNode;
   _nodeWatcher: NodeWatcher;
-  _persistIntervalId: IntervalID;
+  _persistIntervalId: ReturnType<typeof setInterval>;
 
   constructor(
     node: EntityNode,
@@ -1744,8 +1736,8 @@ class FSWatcher extends EventEmitter {
 }
 
 class Dirent {
-  +_stats: Stats;
-  +name: string | Buffer;
+  readonly _stats: Stats;
+  readonly name: string | Buffer;
 
   /**
    * Don't keep a reference to the node as it may get mutated over time.

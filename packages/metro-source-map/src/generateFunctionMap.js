@@ -12,7 +12,21 @@
 import type {FBSourceFunctionMap} from './source-map';
 import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
-import type {Node as BabelNode} from '@babel/types';
+import type {
+  CallExpression as BabelNodeCallExpression,
+  Class as BabelNodeClass,
+  Function as BabelNodeFunction,
+  Identifier as BabelNodeIdentifier,
+  JSXIdentifier as BabelNodeJSXIdentifier,
+  JSXMemberExpression as BabelNodeJSXMemberExpression,
+  MemberExpression as BabelNodeMemberExpression,
+  NewExpression as BabelNodeNewExpression,
+  Node as BabelNode,
+  OptionalCallExpression as BabelNodeOptionalCallExpression,
+  OptionalMemberExpression as BabelNodeOptionalMemberExpression,
+  Program as BabelNodeProgram,
+  SourceLocation as BabelNodeSourceLocation,
+} from '@babel/types';
 import type {MetroBabelFileMetadata} from 'metro-babel-transformer';
 
 import B64Builder from './B64Builder';
@@ -42,8 +56,8 @@ import {
   isVariableDeclarator,
 } from '@babel/types';
 import invariant from 'invariant';
+import fsPath from 'node:path';
 import nullthrows from 'nullthrows';
-import fsPath from 'path';
 
 type Position = {
   line: number,
@@ -57,16 +71,14 @@ type RangeMapping = {
 };
 type FunctionMapVisitor = {
   enter: (
-    path:
-      | NodePath<BabelNodeProgram>
-      | NodePath<BabelNodeFunction>
-      | NodePath<BabelNodeClass>,
+    path: | NodePath<BabelNodeProgram>
+    | NodePath<BabelNodeFunction>
+    | NodePath<BabelNodeClass>,
   ) => void,
   exit: (
-    path:
-      | NodePath<BabelNodeProgram>
-      | NodePath<BabelNodeFunction>
-      | NodePath<BabelNodeClass>,
+    path: | NodePath<BabelNodeProgram>
+    | NodePath<BabelNodeFunction>
+    | NodePath<BabelNodeClass>,
   ) => void,
 };
 export type Context = {filename?: ?string, ...};
@@ -121,8 +133,6 @@ function functionMapBabelPlugin(): PluginObj<> {
         path && t.isProgram(path.node),
         'path missing or not a program node',
       );
-      // $FlowFixMe[prop-missing] checked above
-      // $FlowFixMe[incompatible-type-arg] checked above
       const programPath: NodePath<BabelNodeProgram> = path as $FlowFixMe;
 
       visitor.enter(programPath);

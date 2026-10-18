@@ -11,13 +11,18 @@
 
 import type {PackageJson} from 'metro-resolver/private/types';
 
-import {readFileSync} from 'fs';
-import {dirname, sep} from 'path';
+import {readFileSync} from 'node:fs';
+import {dirname, sep} from 'node:path';
 
 type GetClosestPackageFn = (absoluteFilePath: string) => ?{
   packageJsonPath: string,
   packageRelativePath: string,
 };
+
+type ReadPackageJsonFn = (absolutePackageJsonPath: string) => PackageJson;
+
+const readPackageJsonSync: ReadPackageJsonFn = absolutePackageJsonPath =>
+  JSON.parse(readFileSync(absolutePackageJsonPath, 'utf8'));
 
 type PackageForModule = Readonly<{
   packageJson: PackageJson,
@@ -27,6 +32,7 @@ type PackageForModule = Readonly<{
 
 export class PackageCache {
   #getClosestPackage: GetClosestPackageFn;
+  #readPackageJson: ReadPackageJsonFn;
   #packageCache: Map<
     string,
     {
@@ -41,8 +47,13 @@ export class PackageCache {
   // Module paths that resolved to no package.json (null), for invalidation
   #modulePathsWithNoPackage: Set<string>;
 
-  constructor(options: {getClosestPackage: GetClosestPackageFn, ...}) {
+  constructor(options: {
+    getClosestPackage: GetClosestPackageFn,
+    readPackageJson?: ReadPackageJsonFn,
+    ...
+  }) {
     this.#getClosestPackage = options.getClosestPackage;
+    this.#readPackageJson = options.readPackageJson ?? readPackageJsonSync;
     this.#packageCache = new Map();
     this.#resultByModulePath = new Map();
     this.#modulePathsByPackagePath = new Map();
@@ -57,7 +68,7 @@ export class PackageCache {
     if (cached == null) {
       cached = {
         rootPath: dirname(filePath),
-        packageJson: JSON.parse(readFileSync(filePath, 'utf8')),
+        packageJson: this.#readPackageJson(filePath),
       };
       this.#packageCache.set(filePath, cached);
     }

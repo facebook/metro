@@ -1,6 +1,6 @@
 {
   "name": "metro-file-map",
-  "version": "0.84.2",
+  "version": "0.87.1",
   "description": "[Experimental] - 🚇 File crawling, watching and mapping for Metro",
   "main": "src/index.js",
   "exports": {
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/metro.git",
+    "url": "git+https://github.com/react/metro.git",
     "directory": "packages/metro-file-map"
   },
   "scripts": {
@@ -24,14 +24,12 @@
     "flow-enums-runtime": "^0.0.6",
     "invariant": "^2.2.4",
     "jest-worker": "^29.7.0",
-    "micromatch": "^4.0.4",
-    "nullthrows": "^1.1.1",
-    "walker": "^1.0.7"
+    "nullthrows": "^1.1.1"
   },
   "devDependencies": {
     "slash": "^3.0.0"
   },
   "engines": {
-    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
+    "node": "^22.13.0 || ^24.3.0 || >= 26.0.0"
   }
 }

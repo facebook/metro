@@ -13,9 +13,9 @@
 import getDefaultConfig from '../defaults';
 
 const {loadConfig} = require('../loadConfig');
-const path = require('path');
+const path = require('node:path');
 const prettyFormat = require('pretty-format');
-const util = require('util');
+const util = require('node:util');
 
 const FIXTURES = path.resolve(__dirname, '../__fixtures__');
 
@@ -108,11 +108,11 @@ describe('loadConfig', () => {
   });
 
   test('can load the config with no config present', async () => {
-    jest.mock('fs', () => ({
+    jest.mock('node:fs', () => ({
       existsSync: jest.fn(() => false),
     }));
     const result = await loadConfig({cwd: process.cwd()});
-    jest.unmock('fs');
+    jest.unmock('node:fs');
 
     let defaultConfig = await getDefaultConfig(process.cwd());
     defaultConfig = {
@@ -156,16 +156,6 @@ describe('loadConfig', () => {
     );
   });
 
-  test('supports loading YAML (deprecated)', async () => {
-    const result = await loadConfig({
-      config: path.resolve(FIXTURES, 'yaml-extensionless'),
-    });
-    expect(console.warn).toHaveBeenCalledWith(
-      'YAML config is deprecated, please migrate to JavaScript config (e.g. metro.config.js)',
-    );
-    expect(result.cacheVersion).toEqual('yaml-extensionless');
-  });
-
   describe('given a search directory', () => {
     const HOME = process.platform === 'win32' ? 'C:\\Home' : '/home';
     const mockHomeDir = jest.fn().mockReturnValue(HOME);
@@ -174,11 +164,11 @@ describe('loadConfig', () => {
 
     beforeAll(() => {
       jest.resetModules();
-      jest.mock('os', () => ({
-        ...jest.requireActual('os'),
+      jest.mock('node:os', () => ({
+        ...jest.requireActual('node:os'),
         homedir: mockHomeDir,
       }));
-      jest.mock('fs', () => ({
+      jest.mock('node:fs', () => ({
         existsSync: mockExistsSync,
       }));
       // Reload after mocking above

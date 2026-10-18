@@ -16,13 +16,13 @@ import RevisionNotFoundError from '../IncrementalBundler/RevisionNotFoundError';
 import {UnableToResolveError} from '../node-haste/DependencyGraph/ModuleResolution';
 import {codeFrameColumns} from '@babel/code-frame';
 import ErrorStackParser from 'error-stack-parser';
-import fs from 'fs';
 import {AmbiguousModuleResolutionError} from 'metro-core';
+import fs from 'node:fs';
 import serializeError from 'serialize-error';
 
 export type CustomError = Error &
   interface {
-    +type?: string,
+    readonly type?: string,
     filename?: string,
     lineNumber?: number,
     errors?: Array<{
@@ -77,21 +77,18 @@ export default function formatBundlingError(
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
-      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof GraphNotFoundError) {
     return {
       type: 'GraphNotFoundError',
-      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };
   } else if (error instanceof RevisionNotFoundError) {
     return {
       type: 'RevisionNotFoundError',
-      // $FlowFixMe[incompatible-type]
       errors: [],
       message: error.message,
     };

@@ -17,7 +17,38 @@ type MetroRequire = {
 
 declare var require: MetroRequire;
 
-type DependencyMapPaths = ?Readonly<{[moduleID: number | string]: unknown}>;
+// When using `unstable_getAsyncDependencyPath`, path values may be any
+// JSON-serialisable value. By default, they are string URLs - otherwise a
+// custom `__loadBundleAsync` implementation must be provided.
+type ReadonlyJsonData =
+  | null
+  | boolean
+  | number
+  | string
+  | ReadonlyArray<ReadonlyJsonData>
+  | Readonly<{[string]: ReadonlyJsonData}>;
+
+type DependencyMapPaths = ?Readonly<{
+  [moduleID: number | string]: ReadonlyJsonData,
+}>;
+
+type AsyncRequire = {
+  <T>(
+    moduleID: number,
+    paths: DependencyMapPaths,
+    moduleName?: string,
+  ): Promise<T>,
+  unstable_importMaybeSync<T>(
+    moduleID: number,
+    paths: DependencyMapPaths,
+  ): Promise<T> | T,
+  prefetch(
+    moduleID: number,
+    paths: DependencyMapPaths,
+    moduleName?: string,
+  ): void,
+  ...
+};
 
 declare var __METRO_GLOBAL_PREFIX__: string;
 
@@ -84,4 +115,5 @@ asyncRequire.prefetch = function (
   );
 };
 
-module.exports = asyncRequire;
+// The explicit type carries the statics through to generated type definitions.
+module.exports = asyncRequire as AsyncRequire;

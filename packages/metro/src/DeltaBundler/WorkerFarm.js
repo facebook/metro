@@ -12,7 +12,7 @@
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config';
-import type {Readable} from 'stream';
+import type {Readable} from 'node:stream';
 
 import {Worker as JestWorker} from 'jest-worker';
 import {Logger} from 'metro-core';
@@ -76,6 +76,7 @@ export default class WorkerFarm {
     filename: string,
     options: TransformOptions,
     fileBuffer?: Buffer,
+    assetUrlPath?: string,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -84,6 +85,7 @@ export default class WorkerFarm {
         this._config.projectRoot,
         this._transformerConfig,
         fileBuffer,
+        assetUrlPath,
       );
 
       Logger.log(data.transformFileStartLogEntry);
@@ -115,8 +117,7 @@ export default class WorkerFarm {
 
     return new JestWorker<Worker>(absoluteWorkerPath, {
       computeWorkerKey: this._config.stickyWorkers
-        ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-          // $FlowFixMe[incompatible-type]
+        ? // $FlowFixMe[incompatible-type]
           this._computeWorkerKey
         : undefined,
       exposedMethods,

@@ -37,10 +37,10 @@ export default class InvalidPackageError extends Error {
   packageJsonPath: string;
 
   constructor(opts: {
-    +fileCandidates: FileCandidates,
-    +indexCandidates: FileCandidates,
-    +mainModulePath: string,
-    +packageJsonPath: string,
+    readonly fileCandidates: FileCandidates,
+    readonly indexCandidates: FileCandidates,
+    readonly mainModulePath: string,
+    readonly packageJsonPath: string,
   }) {
     super(
       `The package \`${opts.packageJsonPath}\` is invalid because it ` +

@@ -9,11 +9,10 @@
  * @oncall react_native
  */
 
-import type EventEmitter from 'events';
+import type EventEmitter from 'node:events';
 
 export type FileEntry =
-  | string
-  | [string, {isSymlink?: boolean, modifiedTime?: number}];
+  string | [string, {isSymlink?: boolean, modifiedTime?: number}];
 
 export type ChangeEventInput = {
   addedFiles?: ReadonlyArray<FileEntry>,

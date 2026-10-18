@@ -11,7 +11,7 @@
 'use strict';
 
 const {getDefaultConfig} = require('metro-config');
-const {Readable} = require('stream');
+const {Readable} = require('node:stream');
 
 describe('Worker Farm', function () {
   let api;
@@ -23,10 +23,10 @@ describe('Worker Farm', function () {
   beforeEach(async function () {
     jest
       .resetModules()
-      .mock('fs', () => ({writeFileSync: jest.fn()}))
+      .mock('node:fs', () => ({writeFileSync: jest.fn()}))
       .mock('jest-worker', () => ({__esModule: true, Worker: jest.fn()}));
 
-    const fs = require('fs');
+    const fs = jest.requireMock('node:fs');
     const jestWorker = require('jest-worker');
     config = await getDefaultConfig();
 
@@ -76,6 +76,30 @@ describe('Worker Farm', function () {
       config.projectRoot,
       transformerConfig,
       undefined,
+      undefined,
+    );
+  });
+
+  test('passes the asset URL path through to the worker', async () => {
+    const transformerConfig = {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    };
+
+    await new WorkerFarm(config, transformerConfig).transform(
+      fileName,
+      {type: 'asset'},
+      undefined,
+      '[metro-watchFolders]/1/imgs/a.png',
+    );
+
+    expect(api.transform).toBeCalledWith(
+      fileName,
+      {type: 'asset'},
+      config.projectRoot,
+      transformerConfig,
+      undefined,
+      '[metro-watchFolders]/1/imgs/a.png',
     );
   });
 
@@ -97,6 +121,7 @@ describe('Worker Farm', function () {
       '/foo',
       transformerConfig,
       undefined,
+      undefined,
     );
 
     await farm.kill();
@@ -112,6 +137,7 @@ describe('Worker Farm', function () {
       {},
       '/bar',
       transformerConfig,
+      undefined,
       undefined,
     );
   });

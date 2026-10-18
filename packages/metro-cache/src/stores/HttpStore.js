@@ -14,10 +14,10 @@ import type {HttpsProxyAgentOptions} from 'https-proxy-agent';
 import HttpError from './HttpError';
 import NetworkError from './NetworkError';
 import {backOff} from 'exponential-backoff';
-import http from 'http';
-import https from 'https';
 import {HttpsProxyAgent} from 'https-proxy-agent';
-import zlib from 'zlib';
+import http from 'node:http';
+import https from 'node:https';
+import zlib from 'node:zlib';
 
 export type Options =
   | EndpointOptions // Uses the same options for both reads and writes
@@ -369,8 +369,20 @@ export default class HttpStore<T> {
         res.resume();
       });
 
+      // Without this listener a socket-level failure mid-upload (e.g. the peer
+      // resetting a pooled keep-alive connection) is emitted as an unhandled
+      // 'error' and takes down the whole process instead of rejecting, which
+      // also makes #withRetries unable to retry the write.
+      req.on('error', err => {
+        reject(new NetworkError(err.message, err.code));
+      });
+
       req.on('timeout', () => {
         req.destroy(new Error('Request timed out'));
+      });
+
+      gzip.on('error', err => {
+        reject(err);
       });
 
       gzip.pipe(req);
@@ -396,14 +408,12 @@ export default class HttpStore<T> {
     return backOff(fn, {
       jitter: 'full',
       maxDelay: 30000,
-      numOfAttempts: this.#getEndpoint.maxAttempts || Number.POSITIVE_INFINITY,
+      numOfAttempts: endpoint.maxAttempts || Number.POSITIVE_INFINITY,
       retry: (e: Error) => {
         if (e instanceof HttpError) {
-          return this.#getEndpoint.retryStatuses.has(e.code);
+          return endpoint.retryStatuses.has(e.code);
         }
-        return (
-          e instanceof NetworkError && this.#getEndpoint.retryNetworkErrors
-        );
+        return e instanceof NetworkError && endpoint.retryNetworkErrors;
       },
     });
   }

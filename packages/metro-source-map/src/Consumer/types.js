@@ -13,7 +13,10 @@ import type {IterationOrder, LookupBias} from './constants';
 import type {Number0, Number1} from 'ob1';
 
 export type {IterationOrder, LookupBias};
-export type GeneratedOffset = {+lines: Number0, +columns: Number0};
+export type GeneratedOffset = {
+  readonly lines: Number0,
+  readonly columns: Number0,
+};
 export type SourcePosition = {
   source: ?string,
   line: ?Number1,
@@ -22,14 +25,14 @@ export type SourcePosition = {
   ...
 };
 export type GeneratedPosition = {
-  +line: Number1,
-  +column: Number0,
+  readonly line: Number1,
+  readonly column: Number0,
   ...
 };
 export type GeneratedPositionLookup = {
-  +line: ?Number1,
-  +column: ?Number0,
-  +bias?: LookupBias,
+  readonly line: ?Number1,
+  readonly column: ?Number0,
+  readonly bias?: LookupBias,
   ...
 };
 

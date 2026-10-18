@@ -14,8 +14,11 @@ import type {HealthCheckResult, WatcherStatus} from 'metro-file-map';
 import type {CustomResolverOptions} from 'metro-resolver';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 
-import chalk from 'chalk';
-import util from 'util';
+import tty from 'node:tty';
+import util from 'node:util';
+
+const supportsColor = (): boolean =>
+  process.stdout instanceof tty.WriteStream && process.stdout.hasColors();
 
 export type BundleDetails = {
   bundleType: string,
@@ -165,7 +168,7 @@ export type ReportableEvent =
  *
  *   1. ad-hoc, embedded into another tool, in which case we do not want to
  *   pollute that tool's own output. The tool is free to present the
- *   warnings/progress we generate any way they want, by specifing a custom
+ *   warnings/progress we generate any way they want, by specifying a custom
  *   reporter.
  *   2. run as a background process from another tool, in which case we want
  *   to expose updates in a way that is easily machine-readable, for example
@@ -190,7 +193,11 @@ export function logWarning(
   ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s %s', chalk.yellow.inverse.bold(' WARN '), str);
+  terminal.log(
+    '%s %s',
+    util.styleText(['yellow', 'inverse', 'bold'], ' WARN '),
+    str,
+  );
 }
 
 /**
@@ -203,13 +210,13 @@ export function logError(
 ): void {
   terminal.log(
     '%s %s',
-    chalk.red.inverse.bold(' ERROR '),
+    util.styleText(['red', 'inverse', 'bold'], ' ERROR '),
     // Syntax errors may have colors applied for displaying code frames
     // in various places outside of where Metro is currently running.
     // If the current terminal does not support color, we'll strip the colors
     // here.
     util.format(
-      chalk.supportsColor ? format : util.stripVTControlCharacters(format),
+      supportsColor() ? format : util.stripVTControlCharacters(format),
       ...args,
     ),
   );
@@ -224,7 +231,11 @@ export function logInfo(
   ...args: Array<unknown>
 ): void {
   const str = util.format(format, ...args);
-  terminal.log('%s %s', chalk.cyan.inverse.bold(' INFO '), str);
+  terminal.log(
+    '%s %s',
+    util.styleText(['cyan', 'inverse', 'bold'], ' INFO '),
+    str,
+  );
 }
 
 /**
