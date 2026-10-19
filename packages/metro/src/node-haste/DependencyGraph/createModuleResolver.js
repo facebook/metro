@@ -12,7 +12,7 @@
 import type {PackageCache} from '../PackageCache';
 import type {ConfigT} from 'metro-config';
 import type {FileSystem, HasteMap} from 'metro-file-map';
-import type {FileSystemLookup} from 'metro-resolver';
+import type {FileSystemLookup, FileSystemOpenDir} from 'metro-resolver';
 
 import getSchemeResolvers from '../../lib/getSchemeResolvers';
 import {ModuleResolver} from './ModuleResolution';
@@ -43,6 +43,31 @@ export default function createModuleResolver({
     return {exists: false};
   };
 
+  const openDir = fileSystem.openDir?.bind(fileSystem);
+  const fileSystemOpenDir: FileSystemOpenDir | void =
+    openDir != null
+      ? filePath => {
+          const opened = openDir(filePath);
+          if (opened == null) {
+            return null;
+          }
+          return {
+            realPath: opened.realPath,
+            lookup(basename) {
+              const result = opened.lookup(basename);
+              if (result.exists) {
+                return {
+                  exists: true,
+                  realPath: result.realPath,
+                  type: result.type,
+                };
+              }
+              return {exists: false};
+            },
+          };
+        }
+      : undefined;
+
   return new ModuleResolver({
     assetExts: new Set(config.resolver.assetExts),
     disableHierarchicalLookup: config.resolver.disableHierarchicalLookup,
@@ -50,6 +75,7 @@ export default function createModuleResolver({
     emptyModulePath: config.resolver.emptyModulePath,
     extraNodeModules: config.resolver.extraNodeModules,
     fileSystemLookup,
+    fileSystemOpenDir,
     getHasteModulePath: (name, platform) =>
       hasteMap.getModule(name, platform, true),
     getHastePackagePath: (name, platform) =>
