@@ -264,6 +264,173 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
     });
   });
 
+  describe('openDir', () => {
+    test.each([
+      p('/project/bar.js'),
+      p('/project/foo/another.js'),
+      p('/project/foo/link-to-bar.js'),
+      p('/project/foo/link-to-another.js'),
+      p('/project/link-to-foo/another.js'),
+      p('/project/link-to-foo/link-to-another.js'),
+      p('/project/link-to-foo/missing.js'),
+      p('/project/foo/missing.js'),
+      p('/outside/external.js'),
+      p('/project'),
+      p('/project/foo/..'),
+    ])('lookup(%s) matches openDir(dirname).lookup(basename)', fullPath => {
+      const directObservations = emptyObservations();
+      const childObservations = emptyObservations();
+      const direct = tfs.lookup(fullPath, directObservations);
+      const opened = tfs.openDir(mockPathModule.dirname(fullPath));
+      expect(opened).not.toBeNull();
+      if (opened == null) {
+        return;
+      }
+      expect(
+        opened.lookup(mockPathModule.basename(fullPath), childObservations),
+      ).toEqual(direct);
+      expect(childObservations).toEqual(directObservations);
+    });
+
+    test('child observations exclude unrelated observations from opening', () => {
+      const openObservations = emptyObservations();
+      openObservations.content.add(p('unrelated-before'));
+      const opened = tfs.openDir(p('/project/link-to-foo'), openObservations);
+      openObservations.content.add(p('unrelated-after'));
+      const childObservations = emptyObservations();
+      const directObservations = emptyObservations();
+      expect(opened?.lookup('another.js', childObservations)).toEqual(
+        tfs.lookup(p('/project/link-to-foo/another.js'), directObservations),
+      );
+      expect(childObservations).toEqual(directObservations);
+      expect(openObservations.content).toEqual(
+        new Set([
+          p('unrelated-before'),
+          p('link-to-foo'),
+          p('unrelated-after'),
+        ]),
+      );
+    });
+
+    test.each([
+      [p('cycle-link'), '', p('/project/cycle.js')],
+      [p('foo/cycle.js'), 'bar.js', p('/project/bar.js')],
+    ])(
+      'cycle observations track changes to %s',
+      (changedPath, target, realPath) => {
+        tfs.addOrModify(p('cycle.js'), [0, 0, 0, null, 0, null]);
+        tfs.addOrModify(p('cycle-link'), [0, 0, 0, null, 'foo', null]);
+        tfs.addOrModify(p('foo/cycle.js'), [
+          0,
+          0,
+          0,
+          null,
+          'cycle-link/cycle.js',
+          null,
+        ]);
+        const directObservations = emptyObservations();
+        const childObservations = emptyObservations();
+        expect(
+          tfs.lookup(p('/project/cycle-link/cycle.js'), directObservations),
+        ).toEqual({exists: false});
+        expect(
+          tfs
+            .openDir(p('/project/cycle-link'))
+            ?.lookup('cycle.js', childObservations),
+        ).toEqual({exists: false});
+        // Cycle detection can record different missing paths. Both lookups must
+        // observe the symlinks whose modification can break the cycle.
+        for (const observations of [directObservations, childObservations]) {
+          expect(observations.content).toEqual(
+            new Set([p('cycle-link'), p('foo/cycle.js')]),
+          );
+          expect(observations.content.has(changedPath)).toBe(true);
+        }
+
+        tfs.addOrModify(changedPath, [0, 0, 0, null, target, null]);
+        expect(tfs.lookup(p('/project/cycle-link/cycle.js'))).toMatchObject({
+          exists: true,
+          realPath,
+        });
+        // Reopen after mutation; existing handles are no longer valid.
+        expect(
+          tfs.openDir(p('/project/cycle-link'))?.lookup('cycle.js'),
+        ).toEqual(tfs.lookup(p('/project/cycle-link/cycle.js')));
+      },
+    );
+
+    test.each([
+      [p('/project/foo'), p('/project/foo')],
+      [p('/project/foo/'), p('/project/foo')],
+      [p('/project/link-to-foo'), p('/project/foo')],
+      [p('/project'), p('/project')],
+    ])('openDir(%s) agrees with lookup', (givenPath, realPath) => {
+      const lookupObservations = emptyObservations();
+      const openObservations = emptyObservations();
+      expect(tfs.lookup(givenPath, lookupObservations)).toMatchObject({
+        exists: true,
+        type: 'd',
+        realPath,
+      });
+      const opened = tfs.openDir(givenPath, openObservations);
+      expect(opened).not.toBeNull();
+      expect(opened?.realPath).toBe(realPath);
+      expect(openObservations).toEqual(lookupObservations);
+    });
+
+    test.each([
+      p('/project/bar.js'),
+      p('/project/link-to-nowhere'),
+      p('/project/not/exists'),
+      p('/project/missing.js'),
+    ])(
+      'openDir(%s) is null and records the same observations as lookup',
+      givenPath => {
+        const lookupObservations = emptyObservations();
+        const openObservations = emptyObservations();
+        const lookedUp = tfs.lookup(givenPath, lookupObservations);
+        expect(lookedUp.exists && lookedUp.type === 'd').toBe(false);
+        expect(tfs.openDir(givenPath, openObservations)).toBeNull();
+        expect(openObservations).toEqual(lookupObservations);
+      },
+    );
+
+    test('root lookup finds a direct child', () => {
+      const opened = tfs.openDir(p('/project'));
+      expect(opened).not.toBeNull();
+      expect(opened?.lookup('bar.js')).toEqual(
+        tfs.lookup(p('/project/bar.js')),
+      );
+      expect(opened?.lookup('nope.js')).toEqual({exists: false});
+    });
+
+    test.each([p('/data'), p('/data/nested')])(
+      'ancestor handles can look back toward project root %s',
+      rootDir => {
+        const tree = new TreeFS({
+          rootDir,
+          files: new Map([[p('file.js'), [0, 0, 0, null, 0, null]]]),
+          processFile: () => {
+            throw new Error('Not implemented');
+          },
+        });
+        let childPath = rootDir;
+        while (mockPathModule.dirname(childPath) !== childPath) {
+          const parentPath = mockPathModule.dirname(childPath);
+          const directObservations = emptyObservations();
+          const childObservations = emptyObservations();
+          expect(
+            tree
+              .openDir(parentPath)
+              ?.lookup(mockPathModule.basename(childPath), childObservations),
+          ).toEqual(tree.lookup(childPath, directObservations));
+          expect(childObservations).toEqual(directObservations);
+          childPath = parentPath;
+        }
+      },
+    );
+  });
+
   describe('symlinks to an ancestor of the project root', () => {
     beforeEach(() => {
       tfs.addOrModify(p('foo/link-up-2'), [0, 0, 0, null, '..', null]);

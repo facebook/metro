@@ -438,6 +438,25 @@ export interface FileSystem {
    */
   lookup(mixedPath: Path, observations?: ?Observations): LookupResult;
 
+  /**
+   * Resolve `mixedPath` to a directory. Always follow symlinks, and return an
+   * `OpenedDir` when it exists, mirroring `lookup`. Returns `null` when the
+   * path is missing or not a directory.
+   *
+   * This is an optional method for optimization. The returned handle checks
+   * direct children without repeating the directory traversal.
+   * It must not be reused after filesystem mutations.
+   *
+   * Observations passed to `openDir` match `lookup` of the directory.
+   * Child lookups record sufficient observations to invalidate their results,
+   * including symlinks followed to reach the directory.
+   */
+  readonly openDir?: (
+    this: this,
+    mixedPath: Path,
+    observations?: ?Observations,
+  ) => ?OpenedDir;
+
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */
     filter?: RegExp | null,
@@ -491,6 +510,20 @@ export type LookupResult =
       // The file's metadata tuple. Must only be mutated via FileProcessor.
       metadata: FileMetadata,
     };
+
+/**
+ * A directory handle resolved by `FileSystem.openDir`. Valid only while the
+ * filesystem is unchanged during use. `lookup` checks one direct basename and
+ * returns the same result as `FileSystem.lookup` of that child through the
+ * original directory path.
+ *
+ * Observations include symlinks followed to reach the directory, but aren't
+ * necessarily identical to those of a full lookup.
+ */
+export type OpenedDir = {
+  realPath: string,
+  lookup(basename: string, observations?: ?Observations): LookupResult,
+};
 
 /**
  * A mutable record of what a query observed of the file system, sufficient to

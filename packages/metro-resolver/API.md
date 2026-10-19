@@ -46,7 +46,14 @@ export type FileCandidates =
 
 export type FileResolution = AssetResolution | SourceFileResolution;
 
+export type FileSystemDir = {
+  realPath: string;
+  lookup(basename: string): {exists: false} | {exists: true; type: 'f' | 'd'; realPath: string};
+};
+
 export type FileSystemLookup = (absoluteOrProjectRelativePath: string) => {exists: false} | {exists: true; type: 'f' | 'd'; realPath: string};
+
+export type FileSystemOpenDir = (absoluteOrProjectRelativePath: string) => null | undefined | FileSystemDir;
 
 export function formatFileCandidates(candidates: FileCandidates): string;
 
@@ -73,6 +80,7 @@ export type ResolutionContext = Readonly<{
   dependency?: TransformResultDependency | undefined;
   isESMImport?: boolean | undefined;
   fileSystemLookup: FileSystemLookup;
+  fileSystemOpenDir: FileSystemOpenDir;
   mainFields: ReadonlyArray<string>;
   originModulePath: string;
   nodeModulesPaths: ReadonlyArray<string>;

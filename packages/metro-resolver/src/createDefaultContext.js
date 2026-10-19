@@ -13,10 +13,12 @@ import type {ResolutionContext} from './types';
 import type {TransformResultDependency} from 'metro/private/DeltaBundler/types';
 
 import {redirectModulePath} from './PackageResolve';
+import path from 'node:path';
 
 type PartialContext = Readonly<{
   ...ResolutionContext,
   redirectModulePath?: ResolutionContext['redirectModulePath'],
+  fileSystemOpenDir?: ResolutionContext['fileSystemOpenDir'],
 }>;
 
 /**
@@ -33,5 +35,21 @@ export default function createDefaultContext(
       redirectModulePath(context, modulePath),
     dependency,
     ...context,
+    // NOTE: `fileSystemOpenDir` is currently not required for backwards-compatibility, but
+    // can be cleanly implemented with a fallback performing individual fileSystemLookup calls again
+    fileSystemOpenDir:
+      context.fileSystemOpenDir ??
+      (directory => {
+        const result = context.fileSystemLookup(directory);
+        if (!result.exists || result.type !== 'd') {
+          return null;
+        }
+        const {realPath} = result;
+        return {
+          realPath,
+          lookup: basename =>
+            context.fileSystemLookup(path.join(realPath, basename)),
+        };
+      }),
   };
 }
