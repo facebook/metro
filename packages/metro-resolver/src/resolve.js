@@ -12,6 +12,8 @@
 import type {
   FileAndDirCandidates,
   FileCandidates,
+  FileSystemDir,
+  FileSystemLookup,
   Resolution,
   ResolutionContext,
   Result,
@@ -28,6 +30,7 @@ import PackagePathNotExportedError from './errors/PackagePathNotExportedError';
 import {resolvePackageTargetFromExports} from './PackageExportsResolve';
 import {resolvePackageTargetFromImports} from './PackageImportsResolve';
 import {
+  createDirectoryRedirector,
   getPackageEntryPoint,
   matchSubpathFromMainFields,
   redirectModulePath,
@@ -743,7 +746,17 @@ function resolveFile(
 
   const candidateExts: Array<string> = [];
   const filePathPrefix = path.join(dirPath, fileName);
-  const sfContext = {...context, candidateExts, filePathPrefix};
+  // Share one directory walk across platform and extension candidates
+  const directory = path.dirname(filePathPrefix);
+  const openedDir = context.fileSystemOpenDir(directory);
+  const sfContext: SourceFileContext = {
+    ...context,
+    candidateExts,
+    filePathPrefix,
+    openedDir,
+    openedFrom: directory,
+    redirectCandidate: createDirectoryRedirector(context, directory),
+  };
   const sourceFileResolution = resolveSourceFile(sfContext, platform);
   if (sourceFileResolution != null) {
     if (typeof sourceFileResolution === 'string') {
@@ -758,6 +771,9 @@ type SourceFileContext = Readonly<{
   ...ResolutionContext,
   candidateExts: Array<string>,
   filePathPrefix: string,
+  openedDir: ?FileSystemDir,
+  openedFrom: string,
+  redirectCandidate: (absolutePath: string) => string | false,
 }>;
 
 // Either a full path, or a restricted subset of Resolution.
@@ -829,18 +845,53 @@ function resolveSourceFileForExt(
   extension: string,
 ): SourceFileResolution {
   const filePath = `${context.filePathPrefix}${extension}`;
-  const redirectedPath =
-    // Any redirections for the bare path have already happened
-    extension !== '' ? redirectModulePath(context, filePath) : filePath;
-  if (redirectedPath === false) {
-    return {type: 'empty'};
+  let lookupResult = lookupCandidate(context, filePath);
+  // NOTE: Plain paths without an extension already had redirections handled,
+  // so only candidates with an extension need to check for redirections here
+  if (extension !== '') {
+    const redirectedPath =
+      lookupResult.exists && lookupResult.type === 'd'
+        ? redirectModulePath(context, filePath)
+        : context.redirectCandidate(filePath);
+    if (redirectedPath === false) {
+      return {type: 'empty'};
+    }
+    if (redirectedPath !== filePath) {
+      lookupResult = lookupCandidate(context, redirectedPath);
+    }
   }
-  const lookupResult = context.fileSystemLookup(redirectedPath);
   if (lookupResult.exists && lookupResult.type === 'f') {
     return lookupResult.realPath;
   }
   context.candidateExts.push(extension);
   return null;
+}
+
+/**
+ * Use the opened directory for direct children, falling back for other paths.
+ */
+function lookupCandidate(
+  context: SourceFileContext,
+  absolutePath: string,
+): ReturnType<FileSystemLookup> {
+  // Browser-field redirects can leave this directory. Only direct children
+  // can use its opened handle; other paths need a full filesystem lookup.
+  const directory = context.openedFrom;
+  // A filesystem root already ends in a separator.
+  const prefix = directory.endsWith(path.sep)
+    ? directory
+    : directory + path.sep;
+  if (!absolutePath.startsWith(prefix)) {
+    return context.fileSystemLookup(absolutePath);
+  }
+  const basename = absolutePath.slice(prefix.length);
+  if (basename.length === 0 || basename.includes(path.sep)) {
+    return context.fileSystemLookup(absolutePath);
+  } else if (context.openedDir == null) {
+    return {exists: false};
+  } else {
+    return context.openedDir.lookup(basename);
+  }
 }
 
 function isRelativeImport(filePath: string) {

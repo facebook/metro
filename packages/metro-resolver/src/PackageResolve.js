@@ -143,6 +143,71 @@ export function redirectModulePath(
 }
 
 /**
+ * Reuse the containing package for non-directory candidates in one directory.
+ * Initialize lazily so bare hits avoid a package lookup.
+ */
+export function createDirectoryRedirector(
+  context: ResolutionContext,
+  directory: string,
+): (absolutePath: string) => string | false {
+  let redirect: ?(absolutePath: string) => string | false = null;
+  return (absolutePath: string): string | false => {
+    if (redirect == null) {
+      redirect = createCandidateRedirect(context, directory);
+    }
+    return redirect(absolutePath);
+  };
+}
+
+function createCandidateRedirect(
+  context: ResolutionContext,
+  directory: string,
+): (absolutePath: string) => string | false {
+  // Probe a file in this directory, avoiding nested candidate packages.
+  const probe = directory.endsWith(path.sep)
+    ? directory + 'package.json'
+    : directory + path.sep + 'package.json';
+  const owning = context.getPackageForModule(probe);
+  if (
+    owning == null ||
+    !hasReplacementMap(owning.packageJson, context.mainFields)
+  ) {
+    return (absolutePath: string) => absolutePath;
+  }
+  const rootPrefix = owning.rootPath.endsWith(path.sep)
+    ? owning.rootPath
+    : owning.rootPath + path.sep;
+  return (absolutePath: string): string | false => {
+    if (!absolutePath.startsWith(rootPrefix)) {
+      return redirectModulePath(context, absolutePath);
+    }
+    return redirectPackageSubpath(
+      context,
+      absolutePath,
+      owning,
+      absolutePath.slice(rootPrefix.length),
+    );
+  };
+}
+
+function hasReplacementMap(
+  packageJson: PackageJson,
+  mainFields: ResolutionContext['mainFields'],
+): boolean {
+  if (packageJson == null) {
+    return false;
+  }
+  for (let idx = 0; idx < mainFields.length; idx++) {
+    // $FlowFixMe[invalid-computed-prop] mainFields are package.json keys
+    const value = packageJson[mainFields[idx]];
+    if (value != null && typeof value !== 'string') {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * `redirectModulePath` for a module path whose containing package is already
  * known. `packageRelativePath` is the path of the module relative to the
  * package root, with system separators. Returns `false` if the module should
