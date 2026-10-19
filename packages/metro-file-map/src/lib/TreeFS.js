@@ -28,6 +28,10 @@ import {RootPathUtils} from './RootPathUtils';
 import invariant from 'invariant';
 import path from 'node:path';
 
+interface ContentObservations {
+  readonly content: Observations['content'];
+}
+
 type DirectoryNode = Map<string, MixedNode>;
 type FileNode = FileMetadata;
 type MixedNode = FileNode | DirectoryNode;
@@ -394,7 +398,11 @@ export default class TreeFS implements MutableFileSystem {
    * replayed onto each child lookup: the child path is canonical, so a fresh
    * `lookup` of that path would not traverse those links again.
    */
-  openDir(mixedPath: Path, observations?: ?Observations): ?OpenedDir {
+  openDir(
+    this: TreeFS,
+    mixedPath: Path,
+    observations?: ?Observations,
+  ): ?OpenedDir {
     const symlinkPaths = new Set<string>();
     const normalPath = this.#normalizePath(mixedPath);
     const result = this.#lookupByNormalPath(normalPath, {
@@ -767,10 +775,7 @@ export default class TreeFS implements MutableFileSystem {
       }>,
       // Record into which the canonical paths of traversed symlinks will be
       // added, as `content`. Omit for performance if not needed.
-      observations?: ?Readonly<{
-        content: Observations['content'],
-        ...
-      }>,
+      observations?: ?ContentObservations,
 
       // Low-level callbacks called on mutations of TreeFS data.
       // Omit for performance if not needed.

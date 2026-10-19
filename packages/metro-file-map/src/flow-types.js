@@ -451,7 +451,11 @@ export interface FileSystem {
    * Child lookups record sufficient observations to invalidate their results,
    * including symlinks followed to reach the directory.
    */
-  openDir?: (mixedPath: Path, observations?: ?Observations) => ?OpenedDir;
+  readonly openDir?: (
+    this: this,
+    mixedPath: Path,
+    observations?: ?Observations,
+  ) => ?OpenedDir;
 
   matchFiles(opts: {
     /* Filter relative paths against a pattern. */

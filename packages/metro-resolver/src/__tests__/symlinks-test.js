@@ -9,7 +9,7 @@
  * @oncall react_native
  */
 
-import type {ResolutionContext} from '../index';
+import type {FileSystemLookup, ResolutionContext} from '../index';
 import type {MockFileMap} from './utils';
 
 import createDefaultContext from '../createDefaultContext';
@@ -83,17 +83,30 @@ test.each([true, false])(
       },
       readPackageJson: () => packageJson,
     });
-    const fileSystemLookup = filePath => {
+    const fileSystemLookup: FileSystemLookup = filePath => {
       const result = tree.lookup(filePath);
       return result.exists
         ? {exists: true, type: result.type, realPath: result.realPath}
         : {exists: false};
     };
-    const context = {
+    const context: ResolutionContext = {
       ...base,
       originModulePath: p('/project/origin.js'),
       fileSystemLookup,
-      fileSystemOpenDir: directory => tree.openDir(directory),
+      fileSystemOpenDir: directory => {
+        const opened = tree.openDir(directory);
+        return opened == null
+          ? null
+          : {
+              realPath: opened.realPath,
+              lookup: basename => {
+                const result = opened.lookup(basename);
+                return result.exists
+                  ? {exists: true, type: result.type, realPath: result.realPath}
+                  : {exists: false};
+              },
+            };
+      },
       getPackageForModule: filePath =>
         packageCache.getPackageForModule(filePath),
     };

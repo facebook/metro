@@ -10,13 +10,14 @@
  */
 
 import type {ResolutionContext} from '../index';
+import type {MockFileMap} from './utils';
 
 import createDefaultContext from '../createDefaultContext';
 import FailedToResolvePathError from '../errors/FailedToResolvePathError';
 import * as Resolver from '../index';
 import {createResolutionContext, posixToSystemPath as p} from './utils';
 
-const fileMap = {
+const fileMap: MockFileMap = {
   [p('/root/project/foo.js')]: '',
   [p('/root/project/bar.js')]: '',
   [p('/root/project/bar.ios.js')]: '',
