@@ -9,7 +9,7 @@ This page includes tips for developers working on Metro itself, including how to
 
 When developing Metro, running your iterations against a local target project can be a great way to test the impact of your changes end-to-end.
 
-Our recommended workflow is to use [`yarn link`][1] to register local `metro` packages within your development clone and then hot-switch to these versions in the consuming project. These instructions cover linking a local Metro clone with a bare workflow React Native app (i.e. having run `npx react-native init MetroTestApp`).
+Our recommended workflow is to use [`yarn link`][1] to register local `metro` packages within your development clone and then hot-switch to these versions in the consuming project. These instructions cover linking a local Metro clone with a bare workflow React Native app (i.e. having run `npx @react-native-community/cli init MetroTestApp`).
 
 ```sh
 .
@@ -39,7 +39,7 @@ Our recommended workflow is to use [`yarn link`][1] to register local `metro` pa
 
 3. **Configure Metro `watchFolders` to work with our linked packages**
 
-    Because `yarn link` has included files outside of the immediate React Native project folder, we need to inform Metro that this set of files exists (as it will not automatically follow the symlinks). Add the following to your `metro.config.js`:
+    Because `yarn link` has included files outside of the immediate React Native project folder, we need to inform Metro that this set of files exists (Metro follows symlinks, but their targets must be within `watchFolders`). Add the following to your `metro.config.js`:
 
     ```diff
     + const path = require('path');
