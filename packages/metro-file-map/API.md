@@ -199,6 +199,7 @@ interface FileSystem_2 {
     recursive?: boolean | undefined;
     rootDir?: Path | null | undefined;
   }): Iterable<Path>;
+  readonly openDir?: ((this: this, mixedPath: Path, observations?: null | undefined | Observations) => null | undefined | OpenedDir) | undefined;
 }
 export {FileSystem_2 as FileSystem};
 
@@ -296,6 +297,11 @@ export class NoopCacheManager implements CacheManager {
   read(): Promise<null | undefined | CacheData>;
   write(): Promise<void>;
 }
+
+export type OpenedDir = {
+  realPath: string;
+  lookup(basename: string, observations?: null | undefined | Observations): LookupResult;
+};
 
 export type WatcherStatus =
   | {
