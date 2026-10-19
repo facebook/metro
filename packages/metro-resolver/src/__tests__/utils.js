@@ -10,7 +10,7 @@
  */
 
 import type {ResolutionContext} from '../index';
-import type {PackageJson} from '../types';
+import type {FileSystemLookup, PackageJson} from '../types';
 
 import path from 'node:path';
 
@@ -41,6 +41,29 @@ export function createResolutionContext(
     } while (currentDir !== prevDir);
   }
 
+  const fileSystemLookup: FileSystemLookup = inputPath => {
+    // Normalise and remove any trailing slash.
+    const filePath = path.resolve(inputPath);
+    const candidate = fileMap[filePath];
+    if (typeof candidate === 'string') {
+      return {exists: true, type: 'f', realPath: filePath};
+    }
+    if (candidate == null) {
+      if (directorySet.has(filePath)) {
+        return {exists: true, type: 'd', realPath: filePath};
+      }
+      return {exists: false};
+    }
+    if (candidate.realPath == null) {
+      return {exists: false};
+    }
+    return {
+      exists: true,
+      type: 'f',
+      realPath: candidate.realPath,
+    };
+  };
+
   return {
     dev: true,
     allowHaste: true,
@@ -54,26 +77,18 @@ export function createResolutionContext(
       (typeof fileMap[filePath] === 'string' ||
         typeof fileMap[filePath].realPath === 'string'),
     extraNodeModules: null,
-    fileSystemLookup: inputPath => {
-      // Normalise and remove any trailing slash.
-      const filePath = path.resolve(inputPath);
-      const candidate = fileMap[filePath];
-      if (typeof candidate === 'string') {
-        return {exists: true, type: 'f', realPath: filePath};
+    fileSystemLookup,
+    fileSystemOpenDir: inputPath => {
+      const opened = fileSystemLookup(inputPath);
+      if (!opened.exists || opened.type !== 'd') {
+        return null;
       }
-      if (candidate == null) {
-        if (directorySet.has(filePath)) {
-          return {exists: true, type: 'd', realPath: filePath};
-        }
-        return {exists: false};
-      }
-      if (candidate.realPath == null) {
-        return {exists: false};
-      }
+      const {realPath} = opened;
       return {
-        exists: true,
-        type: 'f',
-        realPath: candidate.realPath,
+        realPath,
+        lookup(basename) {
+          return fileSystemLookup(path.join(realPath, basename));
+        },
       };
     },
     isESMImport: false,
