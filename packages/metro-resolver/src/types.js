@@ -129,6 +129,25 @@ export type FileSystemLookup = (
 ) => {exists: false} | {exists: true, type: 'f' | 'd', realPath: string};
 
 /**
+ * A directory opened by `fileSystemOpenDir`. `lookup` checks one direct child
+ * and matches `fileSystemLookup` of `realPath` joined with that basename.
+ */
+export type FileSystemDir = {
+  realPath: string,
+  lookup(
+    basename: string,
+  ): {exists: false} | {exists: true, type: 'f' | 'd', realPath: string},
+};
+
+/**
+ * Open a directory handle allowing many files in it to be checked without repeating
+ * filesystem traversal. Returns null when the path is not an existing directory.
+ */
+export type FileSystemOpenDir = (
+  absoluteOrProjectRelativePath: string,
+) => ?FileSystemDir;
+
+/**
  * Given a directory path and the base asset name, return a list of all the
  * asset file names that match the given base name in that directory. Return
  * null if there's no such named asset. `platform` is used to identify
@@ -195,6 +214,13 @@ export type ResolutionContext = Readonly<{
    * real path.
    */
   fileSystemLookup: FileSystemLookup,
+
+  /**
+   * Synchronously returns a handle to a directory, speeding up parallel file
+   * lookups by basename. `createDefaultContext` supplies a fallback using
+   * `fileSystemLookup` when omitted.
+   */
+  fileSystemOpenDir: FileSystemOpenDir,
 
   /**
    * The ordered list of fields to read in `package.json` to resolve a main
