@@ -17,6 +17,7 @@ import type {
   LookupResult,
   MutableFileSystem,
   Observations,
+  OpenedDir,
   Path,
   ProcessFileFunction,
 } from '../flow-types';
@@ -387,6 +388,130 @@ export default class TreeFS implements MutableFileSystem {
     return {exists: true, canonicalPath, realPath, type: 'f', metadata: node};
   }
 
+  /**
+   * See `FileSystem.openDir`. The walk stops at the directory node so later
+   * basename checks do not repeat it. Symlinks followed to get here are
+   * replayed onto each child lookup: the child path is canonical, so a fresh
+   * `lookup` of that path would not traverse those links again.
+   */
+  openDir(mixedPath: Path, observations?: ?Observations): ?OpenedDir {
+    const symlinkPaths = new Set<string>();
+    const normalPath = this.#normalizePath(mixedPath);
+    const result = this.#lookupByNormalPath(normalPath, {
+      observations: {content: symlinkPaths},
+      followLeaf: true,
+    });
+    if (observations) {
+      for (const symlinkPath of symlinkPaths) {
+        observations.content.add(symlinkPath);
+      }
+    }
+    if (!result.exists) {
+      if (observations) {
+        observations.existence.add(result.canonicalMissingPath);
+      }
+      return null;
+    }
+    const {canonicalPath, node, ancestorOfRootIdx} = result;
+    if (observations) {
+      observations.existence.add(canonicalPath);
+    }
+    if (!isDirectory(node)) {
+      return null;
+    }
+    const realPath = this.#pathUtils.normalToAbsolute(canonicalPath);
+    // Ancestor Maps omit the child leading back toward the project root.
+    // Use normal lookup for that child so normalization finds its node.
+    const childBasenameTowardRoot =
+      ancestorOfRootIdx != null && ancestorOfRootIdx > 0
+        ? this.#pathUtils.getBasenameOfNthAncestor(ancestorOfRootIdx - 1)
+        : null;
+    return {
+      realPath,
+      lookup: (
+        basename: string,
+        childObservations?: ?Observations,
+      ): LookupResult => {
+        if (childObservations != null && symlinkPaths.size > 0) {
+          for (const symlinkPath of symlinkPaths) {
+            childObservations.content.add(symlinkPath);
+          }
+        }
+        if (basename === childBasenameTowardRoot) {
+          return this.lookup(
+            canonicalPath === ''
+              ? basename
+              : canonicalPath + path.sep + basename,
+            childObservations,
+          );
+        }
+        return this.#lookupInOpenedDir(
+          node,
+          canonicalPath,
+          basename,
+          childObservations,
+        );
+      },
+    };
+  }
+
+  #lookupInOpenedDir(
+    directoryNode: DirectoryNode,
+    canonicalDir: string,
+    basename: string,
+    observations: ?Observations,
+  ): LookupResult {
+    // Empty names, '.', '..', and nested paths are not Map keys in a directory.
+    // Fall back to preserve `lookup`'s normalization and '..' handling.
+    if (
+      basename === '' ||
+      basename === '.' ||
+      basename === '..' ||
+      basename.includes(path.sep) ||
+      basename.includes('/')
+    ) {
+      return this.lookup(
+        canonicalDir === '' ? basename : canonicalDir + path.sep + basename,
+        observations,
+      );
+    }
+
+    const segmentNode = directoryNode.get(basename);
+    const canonicalPath =
+      canonicalDir === '' ? basename : canonicalDir + path.sep + basename;
+    if (segmentNode == null) {
+      if (observations) {
+        observations.existence.add(canonicalPath);
+      }
+      return {exists: false};
+    } else if (isDirectory(segmentNode)) {
+      if (observations) {
+        observations.existence.add(canonicalPath);
+      }
+      return {
+        exists: true,
+        canonicalPath,
+        realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
+        type: 'd',
+      };
+    } else if (isRegularFile(segmentNode)) {
+      if (observations) {
+        observations.existence.add(canonicalPath);
+      }
+      return {
+        exists: true,
+        canonicalPath,
+        realPath: this.#pathUtils.normalToAbsolute(canonicalPath),
+        type: 'f',
+        metadata: segmentNode,
+      };
+    } else {
+      // The full traversal handles cycles and nested links for symlink leaves.
+      // Directory symlinks were already recorded by the caller.
+      return this.lookup(canonicalPath, observations);
+    }
+  }
+
   getAllFiles(): Array<Path> {
     return Array.from(
       this.metadataIterator({
@@ -627,7 +752,9 @@ export default class TreeFS implements MutableFileSystem {
    * fails, we automatically have the real path of the first non-existent node.
    *
    * Note that this code is extremely hot during resolution, being the most
-   * expensive part of a file existence check. Benchmark any modifications!
+   * expensive part of a file existence check. Callers that probe many
+   * basenames in one directory should use `openDir` so the walk happens
+   * once. Benchmark any modifications!
    */
   #lookupByNormalPath(
     requestedNormalPath: string,
@@ -640,7 +767,10 @@ export default class TreeFS implements MutableFileSystem {
       }>,
       // Record into which the canonical paths of traversed symlinks will be
       // added, as `content`. Omit for performance if not needed.
-      observations?: ?Observations,
+      observations?: ?Readonly<{
+        content: Observations['content'],
+        ...
+      }>,
 
       // Low-level callbacks called on mutations of TreeFS data.
       // Omit for performance if not needed.
