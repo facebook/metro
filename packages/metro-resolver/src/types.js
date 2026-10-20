@@ -167,6 +167,18 @@ export type ResolutionContext = Readonly<{
    * for a given absolute candidate path (which need not exist), or null if
    * there is no package.json closer than the nearest node_modules directory.
    *
+   * A path through a symlinked directory checks the link's target, then
+   * continues up from the link's parent. A symlinked file is scoped by where
+   * the link is.
+   *
+   * A missing path takes the scope of its deepest existing ancestor, or null
+   * if the first missing segment is `node_modules`.
+   *
+   * For the scope of every file in a directory, the resolver asks about its
+   * `package.json` (which needn't exist).
+   *
+   * The resolver calls this a few times per resolution, so it should be cheap.
+   *
    * @deprecated See https://github.com/react/metro/commit/29c77bff31e2475a086bc3f04073f485da8f9ff0
    */
   getPackageForModule: (absoluteModulePath: string) => ?PackageForModule,
