@@ -141,6 +141,10 @@ describe("Metro's own metro-runtime outside every configured root", () => {
         disableHierarchicalLookup: true,
         nodeModulesPaths: [],
       },
+      transformer: {
+        ...baseConfig.transformer,
+        asyncRequireModulePath: 'metro:runtime/modules/asyncRequire',
+      },
       watchFolders: [baseConfig.projectRoot],
     };
   });
@@ -151,7 +155,7 @@ describe("Metro's own metro-runtime outside every configured root", () => {
     }
   });
 
-  test('builds and runs a bundle that uses import() with the default asyncRequireModulePath', async () => {
+  test('builds and runs a bundle that uses import() with asyncRequireModulePath from metro:runtime', async () => {
     const result = await Metro.runBuild(config, {
       entry: 'metro-runtime/index.js',
     });
