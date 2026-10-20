@@ -944,7 +944,8 @@ export default class TreeFS implements MutableFileSystem {
     absolutePath: string,
     containerRelativePath: string,
   } {
-    // Only a single path segment can be looked up on a candidate's own node.
+    // Only a single path segment (e.g. `package.json`, but not
+    // `node_modules/pkg`) can be looked up on a candidate's own node.
     const isBasename =
       subpath !== '' &&
       subpath !== '.' &&
