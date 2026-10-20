@@ -30,6 +30,7 @@ import type {
 
 import {getDynamicRoots} from '../lib/dynamicRoots';
 import {getMetroBabelRuntimePackageJsonPath} from '../lib/metroBabelRuntime';
+import {getMetroRuntimePackageJsonPath} from '../lib/metroRuntime';
 import createFileMap from './DependencyGraph/createFileMap';
 import createModuleResolver from './DependencyGraph/createModuleResolver';
 import {PackageCache} from './PackageCache';
@@ -123,7 +124,7 @@ export default class DependencyGraph extends EventEmitter {
     this._haste.on('status', status => this._onWatcherStatus(status));
 
     this._initializedPromise = fileMap.build().then(async ({fileSystem}) => {
-      await this._addMetroBabelRuntimeRoot();
+      await this._addMetroRuntimeRoots();
       log(createActionEndEntry(initializingMetroLogEntry));
       config.reporter.update({type: 'dep_graph_loaded'});
 
@@ -145,19 +146,26 @@ export default class DependencyGraph extends EventEmitter {
   }
 
   /**
-   * `metro:babel-runtime` resolves into the `@babel/runtime` that
-   * metro-runtime depends on, wherever it is installed, so its files must be
-   * in the file map even when no configured root contains them.
+   * `metro:runtime` and `metro:babel-runtime` resolve into the metro-runtime
+   * that Metro depends on and its `@babel/runtime`, wherever they are
+   * installed, so their files must be in the file map even when no configured
+   * root contains them. metro-runtime is added first, so that an
+   * `@babel/runtime` nested within it needs no root of its own.
    */
-  async _addMetroBabelRuntimeRoot(): Promise<void> {
-    let packageJsonPath;
-    try {
-      packageJsonPath = getMetroBabelRuntimePackageJsonPath();
-    } catch {
-      // Reported by the `metro:` scheme resolver, if it is ever used.
-      return;
+  async _addMetroRuntimeRoots(): Promise<void> {
+    for (const getPackageJsonPath of [
+      getMetroRuntimePackageJsonPath,
+      getMetroBabelRuntimePackageJsonPath,
+    ]) {
+      let packageJsonPath;
+      try {
+        packageJsonPath = getPackageJsonPath();
+      } catch {
+        // Reported by the `metro:` scheme resolver, if it is ever used.
+        continue;
+      }
+      await this._haste.addRoot(path.dirname(packageJsonPath));
     }
-    await this._haste.addRoot(path.dirname(packageJsonPath));
   }
 
   /**

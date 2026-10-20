@@ -472,10 +472,10 @@ In a future release of Metro, this option will be removed.
 
 Type: `string`
 
-The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to [`metro-runtime/src/modules/asyncRequire`](https://github.com/react/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js).
+The name of a module that provides the `asyncRequire` function, which is used to implement [dynamic `import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) at runtime. Defaults to `metro:runtime/modules/asyncRequire`, which Metro's built-in [`metro:` scheme resolver](#schemeresolvers) resolves to [`asyncRequire`](https://github.com/react/metro/blob/main/packages/metro-runtime/src/modules/asyncRequire.js) in the `metro-runtime` that Metro itself depends on.
 
 :::note
-The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) relative to the module containing the original `import()` call. In particular, assuming the default value of `asyncRequireModulePath` is in use, the project must have a compatible version of `metro-runtime` installed in `node_modules`.
+The module named by `asyncRequireModulePath` is [resolved](./Resolution.md) relative to each module containing an `import()` call, including modules in `node_modules`. A custom value must be resolvable from all of them. The default always is, because a `metro:` specifier resolves to the same file from any importer.
 :::
 
 :::info

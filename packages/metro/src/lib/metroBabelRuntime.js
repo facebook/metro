@@ -9,6 +9,7 @@
  * @oncall react_native
  */
 
+import {getMetroRuntimePackageJsonPath} from './metroRuntime';
 import * as path from 'node:path';
 
 /**
@@ -29,9 +30,7 @@ let version: ?string = null;
  */
 export function getMetroBabelRuntimePackageJsonPath(): string {
   if (packageJsonPath == null) {
-    const metroRuntimeDir = path.dirname(
-      require.resolve('metro-runtime/package.json'),
-    );
+    const metroRuntimeDir = path.dirname(getMetroRuntimePackageJsonPath());
     packageJsonPath = require.resolve('@babel/runtime/package.json', {
       paths: [metroRuntimeDir],
     });
