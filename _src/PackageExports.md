@@ -19,9 +19,9 @@ Package Exports support has been enabled by default in Metro since [0.82](https:
 
 | Option | Description |
 | --- | --- |
-| [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental) | Enable/disable Package Exports support. |
-| [`resolver.unstable_conditionNames`](/docs/configuration/#unstable_conditionnames-experimental) | The set of condition names to assert when resolving conditional exports. |
-| [`resolver.unstable_conditionsByPlatform`](/docs/configuration/#unstable_conditionsbyplatform-experimental) | The additional condition names to assert when resolving for a given platform target. |
+| [`resolver.unstable_enablePackageExports`](./Configuration.md#unstable_enablepackageexports-experimental) | Enable/disable Package Exports support. |
+| [`resolver.unstable_conditionNames`](./Configuration.md#unstable_conditionnames-experimental) | The set of condition names to assert when resolving conditional exports. |
+| [`resolver.unstable_conditionsByPlatform`](./Configuration.md#unstable_conditionsbyplatform-experimental) | The additional condition names to assert when resolving for a given platform target. |
 
 ## How Metro applies `import`/`require` exports conditions
 
@@ -87,9 +87,9 @@ If present in a `package.json` file, `"exports"` will be the first field consult
 - **Fallback**: If the requested subpath is not matched in `"exports"`, Metro will try to resolve it again, considering the above fields.
 
 Subpaths matched in `"exports"` (including via [subpath patterns](https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns)) will use the exact target file path specified by a package.
-  - Metro will not expand [`sourceExts`](/docs/configuration/#sourceexts) against the import specifier.
+  - Metro will not expand [`sourceExts`](./Configuration.md#sourceexts) against the import specifier.
   - Metro will not resolve [platform-specific extensions](https://reactnative.dev/docs/platform-specific-code) against the target file.
-  - **Unchanged**: Metro will expand [asset densities](/docs/configuration#assetresolutions) (e.g. `icon.png` → `icon@2x.png`) if the target file [is an asset](/docs/configuration/#assetexts).
+  - **Unchanged**: Metro will expand [asset densities](./Configuration.md#assetresolutions) (e.g. `icon.png` → `icon@2x.png`) if the target file [is an asset](./Configuration.md#assetexts).
 
 #### Example
 
@@ -141,9 +141,10 @@ In Node.js, it is an error to import package subpaths that aren't explicitly lis
 Instead of throwing an error, Metro will log a warning and fall back to file-based resolution.
 
 ```sh
-warn: You have imported the module "foo/private/fn.js" which is not listed in
-the "exports" of "foo". Consider updating your call site or asking the package
-maintainer(s) to expose this API.
+warn: Attempted to import the module "/path/to/node_modules/foo/private/fn.js" which
+is not listed in the "exports" of "/path/to/node_modules/foo" under the requested
+subpath "./private/fn.js". Falling back to file-based resolution. Consider updating
+the call site or asking the package maintainer(s) to expose this API.
 ```
 
 :::note
@@ -240,7 +241,7 @@ We chose not to introduce `"android"` and `"ios"` conditions, due to the prevale
 
 const FooComponent = Platform.select({
   android: require('./FooComponentAndroid.js'),
-  ios: require('FooComponentIOS.js'),
+  ios: require('./FooComponentIOS.js'),
 });
 
 export default FooComponent;
@@ -248,7 +249,7 @@ export default FooComponent;
 
 ### Asset files
 
-As with source files, assets must be listed in `"exports"` to be imported without warnings. Asset files with [multiple densities](/docs/configuration#assetresolutions), e.g. `icon.png` and `icon@2x.png`, will continue to work without being listed individually.
+As with source files, assets must be listed in `"exports"` to be imported without warnings. Asset files with [multiple densities](./Configuration.md#assetresolutions), e.g. `icon.png` and `icon@2x.png`, will continue to work without being listed individually.
 
 Using subpath patterns can be a convenient method to export many assets. We recommend specifying asset subpaths **with their file extension**.
 
@@ -269,7 +270,7 @@ Some issues that can come from Metro resolving to a file not designed for React 
 
 In these cases, **React Native developers** can:
  - Use `require()` for that dependency to try to get the CommonJS version.
- - Disable `exports` support entirely by setting [`resolver.unstable_enablePackageExports`](/docs/configuration/#unstable_enablepackageexports-experimental) to `false` in your Metro config.
+ - Disable `exports` support entirely by setting [`resolver.unstable_enablePackageExports`](./Configuration.md#unstable_enablepackageexports-experimental) to `false` in your Metro config.
  - (Advanced) use a custom resolver to tweak the behaviour for specific packages, see below.
 
 #### Example: Custom resolver
@@ -291,26 +292,25 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  */
 const config = {
   resolver: {
-    resolveRequest: () => {
-      (context, moduleImport, platform) {
-        // Use the browser version of the package for React Native 
-        if (moduleImport === 'some-pkg' || moduleImport.startsWith('some-pkg/')) {
-          return context.resolveRequest(
-            {
-              ...context,
-              unstable_conditionNames: ['browser'],
-              // Alternatively, disable exports for this package
-              // unstable_enablePackageExports: false
-            },
-            moduleImport,
-            platform,
-          );
-        }
+    resolveRequest: (context, moduleImport, platform) => {
+      // Use the browser version of the package for React Native
+      if (moduleImport === 'some-pkg' || moduleImport.startsWith('some-pkg/')) {
+        return context.resolveRequest(
+          {
+            ...context,
+            unstable_conditionNames: ['browser'],
+            // Alternatively, disable exports for this package
+            // unstable_enablePackageExports: false
+          },
+          moduleImport,
+          platform,
+        );
+      }
 
-        // Fall back to normal resolution for everything else.
-        return context.resolveRequest(context, moduleImport, platform);
-    }
-  }
+      // Fall back to normal resolution for everything else.
+      return context.resolveRequest(context, moduleImport, platform);
+    },
+  },
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);

@@ -65,19 +65,23 @@ Parameters: (*context*, *moduleName*, *platform*)
     1. Return the result of the custom resolver.
 2. If *moduleName* is an absolute path, or equal to `'.'` or `'..'`, or begins `'./'` or `'../'`
     1. Let *absoluteModuleName* be *moduleName* if it is an absolute path, otherwise the result of prepending the current directory (i.e. parent of [`context.originModulePath`](#originmodulepath-string)) with *moduleName*.
-    2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *absoluteModuleName*, *platform*), or continue.
-3. If *moduleName* begins `'#'`
-    1. Throw an error. This will be replaced with subpath imports support in a non-breaking future release.
+    2. Return the result of [**RESOLVE_MODULE**](#resolve_module)(*context*, *absoluteModuleName*, *platform*), or throw a resolution failure error.
+3. If *moduleName* begins `'#'` (a [subpath import](https://nodejs.org/api/packages.html#subpath-imports)), then
+    1. Find the closest `package.json` to [`context.originModulePath`](#originmodulepath-string). If none is found, or it has no `"imports"` field, throw an error.
+    2. Resolve *moduleName* against the `"imports"` field, asserting the same condition names as [**RESOLVE_PACKAGE_EXPORTS**](#resolve_package_exports). If resolved, return the result.
+    3. Otherwise, log a warning and continue from step 5.
 4. If *moduleName* parses as a URL, let *scheme* be the lowercased scheme (the prefix before `':'`), then
     1. If [`context.schemeResolvers`](#schemeresolvers-readonlyscheme-string-customresolver) has a resolver registered for *scheme*, return the result of calling it with (*context*, *moduleName*, *platform*), where *context.resolveRequest* is set to the default resolver for chaining.
     2. Otherwise, continue to the following steps, but if none of them resolve *moduleName*, throw a scheme-specific error at step 11 rather than a generic resolution failure. (This fallback exists for backwards compatibility with projects using scheme-like specifiers via Haste or [`extraNodeModules`](#extranodemodules-string-string), and is deprecated.)
-5. Apply [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. If this is `false`:
-    1. Return the empty module.
+5. Apply [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*.
+    1. If this is `false`, return the empty module.
+    2. If the result is a relative path, return the result of [**RESOLVE_MODULE**](#resolve_module) for it relative to the directory of the `package.json` that provided the redirection, or throw a resolution failure error.
+    3. If the result is an absolute path, throw an `InvalidPackageConfigurationError`.
 6. If [Haste resolutions are allowed](#allowhaste-boolean), then
     1. Get the result of [**RESOLVE_HASTE**](#resolve_haste)(*context*, *moduleName*, *platform*).
     2. If resolved as a Haste package path, then
-        1. Perform the algorithm for resolving a path (step 2 above). Throw an error if this resolution fails.
-            For example, if the Haste package path for `'a/b'` is `foo/package.json`, perform step 2 as if _moduleName_ was `foo/c`.
+        1. Return the result of [**RESOLVE_PACKAGE**](#resolve_package)(*context*, *packageDir* + *relativePath*, *platform*). Throw an error if this resolution fails.
+            For example, if the Haste package path for `'@a/b'` is `foo/package.json`, resolve `'@a/b/c'` as `foo/c`.
 7. If [`context.unstable_enablePackageExports`](./Configuration.md#unstable_enablepackageexports-experimental) is enabled, then
     1. Get the result of [**PACKAGE_SELF_RESOLVE**](#package_self_resolve)(*context*, *moduleName*, *platform*).
     2. If resolved, return result.
@@ -99,9 +103,11 @@ Parameters: (*context*, *moduleName*, *platform*)
 Parameters: (*context*, *moduleName*, *platform*)
 
 1. Let *filePath* be the result of applying [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection) to *moduleName*. This may locate a replacement subpath from a containing `package.json` file based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec).
-2. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *filePath*, *platform*), or continue.
-3. Otherwise, let *dirPath* be the directory path of *filePath*.
-4. If a file *dirPath* + `'package.json'` exists, resolve based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec):
+    1. If this is `false`, return the empty module.
+2. Unless *filePath* ends with a path separator, return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *filePath*, *platform*), or continue.
+3. Otherwise, let *dirPath* be *filePath*. If *dirPath* is not an existing directory, throw an error.
+4. If a file *dirPath* + `'/package.json'` does not exist, return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *dirPath* + `'/index'`, *platform*), or throw an error.
+5. Otherwise, resolve based on the [`browser` field spec](https://github.com/defunctzombie/package-browser-field-spec):
     1. Let *mainModulePath* be the result of reading the package's entry path using [`context.mainFields`](#mainfields-readonlyarraystring).
     2. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *mainModulePath*, *platform*), or continue.
     3. Return the result of [**RESOLVE_FILE**](#resolve_file)(*context*, *mainModulePath* + `'/index'`, *platform*).
@@ -132,13 +138,13 @@ Parameters: (*context*, *moduleName*, *platform*)
 
 Parameters: (*context*, *packagePath*, *filePath*, *exportsField*, *platform*)
 
-> Resolves a package subpath based on the [Package Entry Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points) (the `"exports"` field), when [`resolver.unstable_enablePackageExports`](./configuration#unstable_enablepackageexports-experimental) is enabled.
+> Resolves a package subpath based on the [Package Entry Points spec](https://nodejs.org/docs/latest-v19.x/api/packages.html#package-entry-points) (the `"exports"` field), when [`resolver.unstable_enablePackageExports`](./Configuration.md#unstable_enablepackageexports-experimental) is enabled.
 
 1. Let *subpath* be the relative path from *packagePath* to *filePath*, or `'.'`.
 2. If *exportsField* contains an invalid configuration or values, raise an `InvalidPackageConfigurationError`.
 3. If *subpath* is not defined by *exportsField*, raise a `PackagePathNotExportedError`.
 4. Let *target* be the result of matching *subpath* in *exportsField* after applying any [conditional exports](https://nodejs.org/docs/latest-v19.x/api/packages.html#conditional-exports) and/or substituting a [subpath pattern match](https://nodejs.org/docs/latest-v19.x/api/packages.html#subpath-patterns).
-    1. Condition names will be asserted from the union of `'default'`, `'import'` OR `'require'` according to `context.isESMImport`, `context.unstable_conditionNames` and `context.unstable_conditionNamesByPlatform` for *platform*, in the order defined by *exportsField*.
+    1. Condition names will be asserted from the union of `'default'`, `'import'` OR `'require'` according to `context.isESMImport`, [`context.unstable_conditionNames`](#unstable_conditionnames-readonlyarraystring) and [`context.unstable_conditionsByPlatform`](#unstable_conditionsbyplatform-platform-string-readonlyarraystring) for *platform*, in the order defined by *exportsField*.
 5. If *target* refers to an [asset](#assetexts-readonlysetstring), then
     1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *target*, *platform*).
 6. Return *target* as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
@@ -149,7 +155,8 @@ Parameters: (*context*, *filePath*, *platform*)
 
 1. If the path refers to an [asset](#assetexts-readonlysetstring), then
     1. Return the result of [**RESOLVE_ASSET**](#resolve_asset)(*context*, *filePath*, *platform*).
-2. Otherwise, if the path [exists](#doesfileexist-string--boolean-deprecated), then
+2. Otherwise, if the path [exists](#doesfileexist-string--boolean-deprecated) as a file, return a [source file resolution](#source-file) for it.
+3. Otherwise:
     1. Try all platform and extension variants in sequence. Return a [source file resolution](#source-file) for the first one that [exists](#doesfileexist-string--boolean-deprecated) after applying [**BROWSER_SPEC_REDIRECTION**](#browser_spec_redirection). For example, if _platform_ is `android` and [`context.sourceExts`](#sourceexts-readonlyarraystring) is `['js', 'jsx']`, try this sequence of potential file names:
         1. _moduleName_ + `'.android.js'`
         2. _moduleName_ + `'.native.js'` (if [`context.preferNativePlatform`](#prefernativeplatform-boolean) is `true`)
@@ -169,14 +176,11 @@ Parameters: (*context*, *filePath*, *platform*)
 
 Parameters: (*context*, *moduleName*, *platform*)
 
-1. Try resolving _moduleName_ as a [Haste module](#resolvehastemodule-string--string).
+1. If _moduleName_ contains no `'/'`, try resolving it as a [Haste module](#resolvehastemodule-string--string).
    If found, then
    1. Return result as a [source file resolution](#source-file) **without** applying redirections or trying any platform or extension variants.
-2. Try resolving _moduleName_ as a [Haste (global) package](#resolvehastepackage-string--string), or a path *relative* to a Haste package.
-   For example, if _moduleName_ is `'a/b/c'`, try the following potential Haste package names:
-   1. `'a/b/c'`, relative path `''`
-   2. `'a/b'`, relative path `'./c'`
-   3. `'a'`, with relative path `'./b/c'`
+2. Split _moduleName_ into a package name (including an optional [scope](https://docs.npmjs.com/cli/v8/using-npm/scope)) and relative path, and try resolving the package name as a [Haste (global) package](#resolvehastepackage-string--string).
+   For example, `'a/b/c'` tries package `'a'` with relative path `'./b/c'`, and `'@a/b/c'` tries package `'@a/b'` with relative path `'./c'`.
 
 #### BROWSER_SPEC_REDIRECTION
 
@@ -190,9 +194,9 @@ Based on [`defunctzombie/package-browser-field-spec`](https://github.com/defunct
     1. If *moduleName* begins `'.'`, consider it relative to [`context.originModulePath`](#originmodulepath-string) and let *subpath* be the same path relative to *packageScope*, prefixed `'./'`.
     2. Else if *moduleName* is absolute, let *subpath* be *moduleName* relative to *packageScope*, prefixed `'./'`.
     3. Else let *subpath* be *moduleName*.
-4. Taking each of [`context.mainFields`](#mainfields-readonlyarraystring) as a key, let *mainFieldValue* be the value at that key within the `package.json` at *packageScope*.
-    1. If *mainFieldValue* is an object, let *expandedSubPath* range over *subpath*, *subpath* + `'.js'` and *subpath* + `'.json'`.
-        1. If *mainFieldValue* has the key *expandedSubpath*, let *redirectedPath* be its value, else continue.
+4. Merge the object values of each of [`context.mainFields`](#mainfields-readonlyarraystring) in the `package.json` at *packageScope* into a single map *mainFieldsMap*, with earlier fields taking precedence. Let *expandedSubpath* range over *subpath*, *subpath* + `'.js'` and *subpath* + `'.json'`.
+    1. For each *expandedSubpath*:
+        1. If *mainFieldsMap* has the key *expandedSubpath*, let *redirectedPath* be its value, else continue.
         2. If *moduleName* is absolute or begins `'.'`, and *redirectedPath* is a string:
             1. If *redirectedPath* is an absolute path, return *redirectedPath*.
             2. Return *packageScope* joined with *redirectedPath*.
@@ -219,7 +223,7 @@ The default implementation wraps [`fileSystemLookup`](#filesystemlookup-string--
 
 *Added in v0.81.0*
 
-Return information about the given absolute or project-relative path, following symlinks. A file "exists" if and only if it is watched, and a directory must be non-empty. The returned `realPath` is real and absolute.
+Return information about the given absolute or project-relative path, following symlinks. A file "exists" if and only if it is within the [project root or watch folders](./Configuration.md#watchfolders), and a directory must be non-empty. The returned `realPath` is real and absolute.
 
 By default, Metro implements this by consulting an in-memory map of the filesystem that has been prepared in advance. This approach avoids disk I/O during module resolution and performs realpath resolution at negligible additional cost.
 
@@ -241,7 +245,7 @@ Metro's default resolver does not call this function, instead using the [**BROWS
 
 #### `resolveAsset: (dirPath: string, assetName: string, extension: string) => ?$ReadOnlyArray<string>`
 
-Given a directory path, the base asset name and an extension, returns a list of all the asset file names that match the given base name in that directory, or `null` if no such files are found. The default implementation considers each of [`resolver.assetResolutions`](./Configuration.md#assetresolutions) and uses the `${assetName}@${resolution}${extension}` format for asset variant file names.
+Given a directory path, the base asset name and an extension, returns a list of all the asset file names that match the given base name in that directory, or `null` if no such files are found. The default implementation considers `${assetName}${extension}` and, for each of [`resolver.assetResolutions`](./Configuration.md#assetresolutions), `${assetName}@${resolution}x${extension}`.
 
 See also [Static Image Resources](https://reactnative.dev/docs/images#static-image-resources) in the React Native docs.
 
@@ -253,11 +257,11 @@ The list of file extensions to try, in order, when resolving a module path that 
 
 The ordered list of fields in `package.json` that should be read to resolve a package's main entry point (and any subpath file replacements) per the ["browser" field spec](https://github.com/defunctzombie/package-browser-field-spec). Defaults to [`resolver.resolverMainFields`](./Configuration.md#resolvermainfields).
 
-#### `getPackage: string => PackageJson`
+#### `getPackage: string => ?PackageJson`
 
-Given the path to a `package.json` file, returns the parsed file contents.
+Given the path to a `package.json` file, returns the parsed file contents, or `null` if the file does not exist or is malformed.
 
-#### `getPackageForModule: (absoluteModulePath: string) => ?PackageInfo` <div class="label deprecated">Deprecated</div>
+#### `getPackageForModule: (absoluteModulePath: string) => ?PackageForModule` <div class="label deprecated">Deprecated</div>
 
 Given a candidate absolute module path that may exist under a package, locates and returns the closest package root (working upwards from the given path, stopping at the nearest `node_modules`), parsed `package.json` contents, and the package-relative path of the given path.
 
@@ -328,11 +332,23 @@ Inside a custom resolver, `resolveRequest` is set to the default resolver functi
 
 #### `schemeResolvers: Readonly<{[scheme: string]: CustomResolver}>`
 
-An object of [custom resolvers](#resolverequest-customresolver) for import specifiers prefixed with a URI scheme, keyed by lowercased scheme name (the part before the first `':'`, without the colon). The scheme parsed from a specifier is lowercased before lookup, so keys must be lowercase (both `Foo:` and `foo:` match the `'foo'` key). Defaults to [`resolver.schemeResolvers`](./Configuration.md#schemeresolvers).
+An object of [custom resolvers](#resolverequest-customresolver) for import specifiers prefixed with a URI scheme, keyed by lowercased scheme name (the part before the first `':'`, without the colon). The scheme parsed from a specifier is lowercased before lookup, so keys must be lowercase (both `Foo:` and `foo:` match the `'foo'` key). Defaults to Metro's built-in scheme resolvers (currently `metro:`) merged with [`resolver.schemeResolvers`](./Configuration.md#schemeresolvers), which take precedence.
 
 When the default resolver encounters a specifier whose scheme matches a key — for example `my-scheme:foo` matching `'my-scheme'` — it invokes the corresponding resolver with the full specifier. The resolver is passed a `context` whose [`resolveRequest`](#resolverequest-customresolver) is the default resolver, so it can chain back into default resolution (e.g. to resolve a relative path).
 
 Relative (`./`, `../`) and subpath (`#…`) imports are handled before scheme dispatch and are never treated as schemes. See [**RESOLVE**](#resolve) step 4 for how scheme dispatch fits into the algorithm, and [`resolver.schemeResolvers`](./Configuration.md#schemeresolvers) for precedence relative to [`resolveRequest`](#resolverequest-customresolver).
+
+#### `unstable_conditionNames: $ReadOnlyArray<string>`
+
+Additional condition names asserted when resolving the `"exports"` and `"imports"` fields. Defaults to [`resolver.unstable_conditionNames`](./Configuration.md#unstable_conditionnames-experimental).
+
+#### `unstable_conditionsByPlatform: {[platform: string]: $ReadOnlyArray<string>}`
+
+Additional condition names asserted for a given platform when resolving the `"exports"` and `"imports"` fields. Defaults to [`resolver.unstable_conditionsByPlatform`](./Configuration.md#unstable_conditionsbyplatform-experimental).
+
+#### `unstable_enablePackageExports: boolean`
+
+Whether the `"exports"` field is used for resolution. Defaults to [`resolver.unstable_enablePackageExports`](./Configuration.md#unstable_enablepackageexports-experimental).
 
 #### `dependency: ?Dependency`
 
@@ -352,7 +368,7 @@ type Dependency = {
     // this dependency was encountered. This may be an empty array.
     locs: $ReadOnlyArray<BabelSourceLocation>,
 
-    asyncType: 'async' | 'prefetch' | 'weak' | null,
+    asyncType: 'async' | 'maybeSync' | 'prefetch' | 'weak' | null,
 
     // Other properties are considered internal and may change in the future.
     ...
@@ -367,6 +383,8 @@ Resolver results may be cached under the following conditions:
 1. For given origin module paths _A_ and _B_ and target module name _M_, the resolution for _M_ may be reused if **all** of the following conditions hold:
     1. _A_ and _B_ are in the same directory.
     2. The contents of [`dev`](#dev-boolean) and [`customResolverOptions`](#customresolveroptions-string-mixed) are equivalent ( = serialize to JSON the same) in both calls to the resolver.
+    3. The `platform` is the same in both calls.
+    4. [`isESMImport`](#isesmimport-boolean) is the same in both calls.
 2. Any cache of resolutions must be invalidated if any file in the project has changed.
 
 Custom resolvers must adhere to these assumptions, e.g. they may not return different resolutions for origin modules in the same directory under the same `customResolverOptions`.
