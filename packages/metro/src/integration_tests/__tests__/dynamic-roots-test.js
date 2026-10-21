@@ -15,6 +15,7 @@ const {getDynamicRootId} = require('../../lib/dynamicRoots');
 const {
   getMetroBabelRuntimePackageJsonPath,
 } = require('../../lib/metroBabelRuntime');
+const {getMetroRuntimePackageJsonPath} = require('../../lib/metroRuntime');
 const execBundle = require('../execBundle');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -120,5 +121,44 @@ describe("Metro's own @babel/runtime outside every configured root", () => {
   test('serves a dynamic root source request made before any build', async () => {
     const sourceResponse = await fetchAndClose(urlOf(helperUrlPathname));
     expect(sourceResponse.status).toBe(200);
+  });
+});
+
+describe("Metro's own metro-runtime outside every configured root", () => {
+  const metroRuntimeDir = path.dirname(getMetroRuntimePackageJsonPath());
+  let config;
+
+  beforeEach(async () => {
+    const baseConfig = await Metro.loadConfig({
+      config: require.resolve('../metro.config.js'),
+    });
+    config = {
+      ...baseConfig,
+      resolver: {
+        ...baseConfig.resolver,
+        // metro-runtime is not resolvable from the importer as a bare
+        // specifier, as for library code under an isolated layout.
+        disableHierarchicalLookup: true,
+        nodeModulesPaths: [],
+      },
+      transformer: {
+        ...baseConfig.transformer,
+        asyncRequireModulePath: 'metro:runtime/modules/asyncRequire',
+      },
+      watchFolders: [baseConfig.projectRoot],
+    };
+  });
+
+  test('the fixture has metro-runtime outside projectRoot and watchFolders', () => {
+    for (const root of config.watchFolders) {
+      expect(metroRuntimeDir.startsWith(root + path.sep)).toBe(false);
+    }
+  });
+
+  test('builds and runs a bundle that uses import() with asyncRequireModulePath from metro:runtime', async () => {
+    const result = await Metro.runBuild(config, {
+      entry: 'metro-runtime/index.js',
+    });
+    await expect(execBundle(result.code).lazyValue).resolves.toBe('lazy');
   });
 });

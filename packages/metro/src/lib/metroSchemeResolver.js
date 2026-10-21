@@ -12,13 +12,16 @@
 import type {CustomResolver} from 'metro-resolver';
 
 import {getMetroBabelRuntimePackageJsonPath} from './metroBabelRuntime';
+import {getMetroRuntimePackageJsonPath} from './metroRuntime';
 
 const BABEL_RUNTIME_SPECIFIER = 'babel-runtime';
 const BABEL_RUNTIME_PACKAGE = '@babel/runtime';
+const RUNTIME_SPECIFIER = 'runtime';
+const RUNTIME_PACKAGE = 'metro-runtime';
 
 /**
- * Resolver used for Metro's own `metro:` URI scheme, currently handling only
- * metro:babel-runtime and subpaths.
+ * Resolver used for Metro's own `metro:` URI scheme, handling
+ * metro:babel-runtime, metro:runtime and their subpaths.
  */
 export default ((context, specifier, platform) => {
   const {protocol, pathname} = new URL(specifier);
@@ -38,6 +41,30 @@ export default ((context, specifier, platform) => {
     return context.resolveRequest(
       {...context, originModulePath: getMetroBabelRuntimePackageJsonPath()},
       BABEL_RUNTIME_PACKAGE + subpath,
+      platform,
+    );
+  }
+
+  // Maps `metro:runtime/<subpath>` (e.g. `metro:runtime/modules/asyncRequire`)
+  // to the metro-runtime that Metro depends on, so that modules Metro injects
+  // into transformed code resolve from any importer, including library code
+  // that cannot see metro-runtime under an isolated `node_modules` layout.
+  // The subpath is resolved as a package self-reference, like
+  // `metro:babel-runtime`. Subpaths such as `modules/asyncRequire` exist only
+  // in metro-runtime's `exports`, so package exports are enabled here
+  // regardless of the project's `unstable_enablePackageExports` setting.
+  if (
+    pathname === RUNTIME_SPECIFIER ||
+    pathname.startsWith(RUNTIME_SPECIFIER + '/')
+  ) {
+    const subpath = pathname.slice(RUNTIME_SPECIFIER.length);
+    return context.resolveRequest(
+      {
+        ...context,
+        originModulePath: getMetroRuntimePackageJsonPath(),
+        unstable_enablePackageExports: true,
+      },
+      RUNTIME_PACKAGE + subpath,
       platform,
     );
   }
