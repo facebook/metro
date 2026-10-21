@@ -16,7 +16,7 @@ const jsonData = require('./path/data.json');
 const {View} = require('react-native');
 ```
 
-The argument to `require()` must be a compile-time constant. The [`dynamicDepsInPackages`](./Configuration.md#dynamicdepsinpackages) config option controls whether calling `require()` with a non-constant argument will fail at build time or at runtime.
+The argument to `require()` must be a compile-time constant. Calling `require()` with a non-constant argument fails at build time, except in files inside `node_modules`, where the [`dynamicDepsInPackages`](./Configuration.md#dynamicdepsinpackages) config option controls whether it fails at build time or at runtime.
 
 ### Advanced usage: `require` at runtime
 

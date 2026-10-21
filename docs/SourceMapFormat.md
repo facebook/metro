@@ -51,7 +51,7 @@ The presence of a 3-tuple `(column, nameIndex, line)` means that the _local func
 The value of the `mappings` field is described by the _Mappings_ production of the grammar detailed below.
 
 1. `Mappings =  [ ";" ] LineMappings { ";" { ";" } LineMappings }`
-2. `LineMappings =  FirstColumnMapping "," ColumnMapping`
+2. `LineMappings =  FirstColumnMapping { "," ColumnMapping }`
 3. `FirstColumnMapping =  VLQ VLQ VLQ`
 4. `ColumnMapping =  VLQ VLQ [ VLQ ]`
 5. `VLQ =` _A single Base64-encoded variable-length quantity, as defined in the [source map specification](https://tc39.es/ecma426/#sec-base64-vlq)_.

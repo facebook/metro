@@ -6,16 +6,16 @@ title: Configuring Metro
 A Metro config can be created in the following file formats (ordered by priority):
 
 1.  `metro.config.js` / `metro.config.cjs` / `metro.config.mjs` (CommonJS or ESM)
-2.  `metro.config.ts` / `metro.config.cts` / `metro.config.mts` (TypeScript)
-3.  `metro.config.json`
-4.  `.config/metro.js` / `.config/metro.cjs` / `.config/metro.mjs` / `.config/metro.ts` / `.config/metro.cts` / `.config/metro.mts` / `.config/metro.json`
+2.  `metro.config.json`
+3.  `metro.config.ts` / `metro.config.cts` / `metro.config.mts` (TypeScript)
+4.  `.config/metro.js` / `.config/metro.cjs` / `.config/metro.mjs` / `.config/metro.json` / `.config/metro.ts` / `.config/metro.cts` / `.config/metro.mts`
 5.  The `metro` field in `package.json`
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
 
 :::info TypeScript Config Support
 
-Metro uses Node.js native TypeScript support to load `.*ts` config files. For Node.js 22.18.0 and later or 24.0.0 later, _erasable_ TypeScript is supported out of the box. For Node.js < 22.18.0, use the `--experimental-strip-types` flag. See https://nodejs.org/learn/typescript/run-natively.
+Metro uses Node.js native TypeScript support to load `.*ts` config files. For Node.js 22.18.0 and later or 24.0.0 and later, _erasable_ TypeScript is supported out of the box. For Node.js 22.6.0 to 22.17.x, use the `--experimental-strip-types` flag. See https://nodejs.org/learn/typescript/run-natively.
 
 :::
 
@@ -48,6 +48,9 @@ const config: MetroConfig = {
   },
   server: {
     /* server options */
+  },
+  symbolicator: {
+    /* symbolicator options */
   },
   watcher: {
     /* watcher options */
@@ -161,12 +164,11 @@ If `true`, Metro will use a stable mapping from files to transformer workers, so
 
 Type: `number`
 
-The number of workers to use for parallel processing in Metro. Defaults to approximately half of the number of cores available on the machine, as reported by [`os.availableParallelism()`](https://nodejs.org/api/os.html#osavailableparallelism).
+The number of workers to use for parallel processing in Metro. Defaults to roughly 75% of the cores available on the machine (as reported by [`os.availableParallelism()`](https://nodejs.org/api/os.html#osavailableparallelism)) for up to 8 cores, falling to 50% for 48 or more, e.g. 6 workers on 8 cores, 10 on 16 and 32 on 64.
 
 :::note
-1. Values exceeding the number of available cores have no effect.
-2. If `maxWorkers` is set to 1 or lower, worker code will run in the main Metro process instead of concurrently.
-3. Metro has two separate worker pools - one for transformation and one for building the file map. Each pool has its worker count set to `maxWorkers` independently.
+1. If `maxWorkers` is set to 1 or lower, worker code will run in the main Metro process instead of concurrently.
+2. Metro has two separate worker pools - one for transformation and one for building the file map. Each pool has its worker count set to `maxWorkers` independently.
 :::
 
 #### `fileMapCacheDirectory`
@@ -189,16 +191,16 @@ A logger factory function that can be used to get insights about Metro performan
 
 ```flow
 function unstable_perfLoggerFactory(
-  type: string,
-  opts: $ReadOnly<{
-    key?: string
+  type: 'START_UP' | 'BUNDLING_REQUEST' | 'HMR',
+  opts?: $ReadOnly<{
+    key?: number
   }>,
 ): RootPerfLogger {
   // ...
 };
 ```
 
-* **`type`** Type of event being logged, e.g. `'STARTUP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/react/metro/blob/main/packages/metro-config/src/types.js) for a full list of event types.
+* **`type`** Type of event being logged, e.g. `'START_UP'`, `'BUNDLING_REQUEST'`, `'HMR'`. See type definition of [PerfLoggerFactory](https://github.com/react/metro/blob/main/packages/metro-config/src/types.js) for a full list of event types.
 * **`opts`**
   * **`key`**: An opaque identifier to distinguish between instances of an event type (e.g. multiple, possibly concurrent, HMR requests).
 
@@ -318,7 +320,7 @@ For more information on customizing the resolver, see [Module Resolution](https:
 
 #### `schemeResolvers`
 
-Type: `?{[scheme: string]: `[`CustomResolver`](./Resolution.md#resolverequest-customresolver)`}`
+Type: `{[scheme: string]: `[`CustomResolver`](./Resolution.md#resolverequest-customresolver)`}`
 
 An object of custom resolvers for import specifiers prefixed with a URI scheme, keyed by lowercase scheme name (the prefix before the first `:`, without the colon). When Metro's default resolution encounters a specifier whose scheme matches a registered key (for example `my-scheme:foo` matching `'my-scheme'`), the corresponding resolver is invoked with the full specifier.
 
@@ -366,6 +368,8 @@ Type: `RegExp` or `Array<RegExp>`
 
 A regular expression (or list of regular expressions) defining which paths to exclude from Metro's file map. Files whose absolute paths match these patterns are effectively hidden from Metro and cannot be resolved or imported in the current project. Additionally, blocked files cannot be served via the `/assets/` endpoint.
 
+Defaults to a pattern that hides `__tests__` directories. Setting `blockList` replaces this default.
+
 #### `hasteImplModulePath`
 
 Type: `?string`
@@ -379,10 +383,38 @@ module.exports = {
   getHasteName(filePath: string): ?string {
     // ...
   },
+  getCacheKey(): string {
+    // ...
+  },
 };
 ```
 
 `getHasteName` should return a short, globally unique name for the module whose path is `filePath`, or `null` if the module should not be accessible via Haste.
+
+`getCacheKey` should return a string that changes whenever the output of `getHasteName` may change. It is used to invalidate the file map cache.
+
+#### `dependencyExtractor`
+
+Type: `?string`
+
+The path to a module that extracts the dependencies of each file for the file map. These are stored as file map metadata and are not used for bundling.
+
+Metro expects this module to have the following signature:
+
+```flow
+module.exports = {
+  extract(
+    content: string,
+    absoluteFilePath: string,
+    defaultExtractor: (content: string) => Set<string>,
+  ): Set<string> {
+    // ...
+  },
+  getCacheKey(): string {
+    // ...
+  },
+};
+```
 
 #### `platforms`
 
@@ -440,7 +472,7 @@ The set of additional [condition names](https://nodejs.org/docs/latest-v18.x/api
 
 Matched conditions are merged with [`unstable_conditionNames`](#unstable_conditionnames-experimental) before resolution. Under React Native's defaults for both options, a `require()` call site asserts `new Set(['default', 'require', 'react-native', 'browser'])` when requesting a `web` bundle, and `new Set(['default', 'require', 'react-native'])` otherwise. Again, these are resolved in the order specified by each package.
 
-Defaults to `‌{ web: ['browser'] }`.
+Defaults to `{ web: ['browser'] }`.
 
 #### `unstable_enablePackageExports` <div class="label experimental">Experimental</div>
 
@@ -460,8 +492,6 @@ Defaults to `true` since Metro 0.82.0.
 In a future release of Metro, this option will be removed.
 
 :::
-
----
 
 ### Transformer Options
 
@@ -486,7 +516,7 @@ In older versions of Metro, a custom `asyncRequireModulePath` could be used as p
 
 Type: `'throwAtRuntime' | 'reject'`
 
-Controls how Metro handles dependencies that cannot be statically analyzed at build time. For example, `require('./' + someFunction() + '.js')` cannot be resolved without knowing what `someFunction()` will return.
+Controls how Metro handles dependencies inside `node_modules` that cannot be statically analyzed at build time. For example, `require('./' + someFunction() + '.js')` cannot be resolved without knowing what `someFunction()` will return. Such dependencies outside `node_modules` are always rejected.
 
 * **`'throwAtRuntime'`** (the default): Metro does not stop bundling, but the `require` call will throw at runtime.
 * **`'reject'`**: Metro will stop bundling and report an error to the user.
@@ -504,7 +534,7 @@ function getTransformOptions(
   entryPoints: $ReadOnlyArray<string>,
   options: {
     dev: boolean,
-    hot: boolean,
+    hot: true,
     platform: ?string,
   },
   getDependenciesOf: (path: string) => Promise<Array<string>>,
@@ -529,6 +559,7 @@ type ExtraTransformOptions = {
   preloadedModules?: {[path: string]: true} | false,
   ramGroups?: Array<string>,
   transform?: {
+    experimentalImportSupport?: boolean,
     inlineRequires?: {blockList: {[string]: true}} | boolean,
     nonInlinedRequires?: $ReadOnlyArray<string>,
   },
@@ -538,10 +569,11 @@ type ExtraTransformOptions = {
 * **`preloadedModules`**: A plain object whose keys represent a set of absolute paths. When serializing an [indexed RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires#enable-the-ram-format), the modules in this set will be marked for eager evaluation at runtime.
 * **`ramGroups`**: An array of absolute paths. When serializing an [indexed RAM bundle](https://reactnative.dev/docs/ram-bundles-inline-requires#enable-the-ram-format), each of the listed modules will be serialized along with its transitive dependencies. At runtime, the modules will all be parsed together as soon as any one of them is evaluated.
 * **`transform`**: Advanced options for the transformer.
+  * **`experimentalImportSupport`**: Whether to transform ES module `import`/`export` statements with Metro's own import/export plugin.
   * **`inlineRequires`**:
     * If `inlineRequires` is a boolean, it controls whether [inline requires](https://reactnative.dev/docs/optimizing-javascript-loading#advanced-automatically-inline-require-calls) are enabled in this bundle.
     * If `inlineRequires` is an object, inline requires are enabled in all modules, except ones whose absolute paths appear as keys of `inlineRequires.blockList`.
-  * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled.
+  * **`nonInlinedRequires`**: An array of unresolved module specifiers (e.g. `react`, `react-native`) to never inline, even when inline requires are enabled. Defaults to `['React', 'react', 'react/jsx-dev-runtime', 'react/jsx-runtime', 'react-compiler-runtime', 'react-native']`.
 
 #### `minifierPath`
 
@@ -561,6 +593,24 @@ Type: `number`
 
 Define a threshold (in bytes) to disable some expensive optimizations for big files.
 
+#### `globalPrefix`
+
+Type: `string`
+
+A prefix for the global names used by Metro's module system, e.g. `${globalPrefix}__d`. Defaults to `''`.
+
+#### `allowOptionalDependencies`
+
+Type: `boolean | {exclude: Array<string>}`
+
+Whether to treat dependencies that are required inside a `try` block (or dynamic `import()` calls with a rejection handler) as optional, so that failing to resolve them does not fail the build. If an object, specifiers listed in `exclude` are never treated as optional. Defaults to `true`.
+
+#### `publicPath`
+
+Type: `string`
+
+The URL path prefix written into each asset's `httpServerLocation`, which the app uses to request the asset. Metro's own server only serves assets under `/assets`, so with a different value you need to route those requests yourself, e.g. with [`rewriteRequestUrl`](#rewriterequesturl). Defaults to `'/assets'`.
+
 #### React Native Only
 
 #### `assetPlugins`
@@ -573,7 +623,7 @@ List of modules to call to modify Asset data
 
 Type: `string`
 
-Where to fetch the assets from.
+The module (path or package name) that generated asset modules `require()` and call `registerAsset(descriptor)` on. React Native sets this to its `AssetRegistry`.
 
 ### Babel-specific transformer options
 
@@ -630,7 +680,7 @@ This option only has an effect under the default [`transformerPath`](#transforme
 
 Type: `(moduleId: number | string, globalPrefix: string) => string`
 
-Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.
+Specify the format of the initial require statements that are appended at the end of the bundle. By default is `` `__r(${JSON.stringify(moduleId)});` ``.
 
 #### `createModuleIdFactory`
 
@@ -642,7 +692,7 @@ Used to generate the module id for `require` statements.
 
 Type: `({platform: ?string}) => $ReadOnlyArray<string>`
 
-An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...
+An optional list of polyfills to include in the bundle. Defaults to `[]`.
 
 #### `getModulesRunBeforeMainModule`
 
@@ -652,7 +702,7 @@ An array of modules to be required before the entry point. It should contain the
 
 #### `processModuleFilter`
 
-Type: `(module: Array<Module>) => boolean`
+Type: `(module: Module) => boolean`
 
 A filter function to discard specific modules from the output.
 
@@ -668,7 +718,24 @@ Defaults to returning `true` for modules with a path component named `node_modul
 In addition to modules marked as ignored by `isThirdPartyModule`, Metro will also automatically add modules generated by the bundler itself to the ignore list.
 :::
 
----
+#### `polyfillModuleNames`
+
+Type: `Array<string>`
+
+Absolute paths of additional polyfills to include in the bundle, after those returned by [`getPolyfills`](#getpolyfills). Defaults to `[]`.
+
+#### `customSerializer`
+
+Type: `?(entryPoint: string, preModules: $ReadOnlyArray<Module>, graph: ReadOnlyGraph, options: SerializerOptions) => Promise<string | {code: string, map: string}>`
+
+A function that replaces Metro's default bundle serializer. Defaults to `null`.
+
+#### `experimentalSerializerHook`
+
+Type: `(graph: ReadOnlyGraph, delta: DeltaResult) => mixed`
+
+A function called with the dependency graph and the changes since the previous build, each time a graph is built or updated.
+
 ### Server Options
 
 These options are used when Metro serves the content.
@@ -677,17 +744,17 @@ These options are used when Metro serves the content.
 
 Type: `number`
 
-Which port to listen on.
+Which port to listen on. Defaults to `8081`.
 
 #### `useGlobalHotkey`
 
 Type: `boolean`
 
-Whether we should enable CMD+R hotkey for refreshing the bundle.
+Has no effect.
 
 #### `enhanceMiddleware` <div class="label deprecated">Deprecated</div>
 
-Type: `(Middleware, MetroServer) => Middleware`
+Type: `(Middleware, MetroServer) => Middleware | connect.Server`
 
 A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Metro logs a deprecation warning when this option is set to anything other than its default. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
 
@@ -747,7 +814,7 @@ Called with Metro's server instance when [`runServer`](./API.md#async-runserverc
 
 Type: `string => string`
 
-A function that will be called every time Metro processes a "URL" (see note), after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
+A function that will be called every time Metro processes a "URL" (see note), after normalization of non-standard query-string delimiters using [`jsc-safe-url`](https://www.npmjs.com/package/jsc-safe-url). Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests that reach Metro (after [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental); [`unstable_middleware`](#unstable_middleware-experimental) handlers see the rewritten URL), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
 
 :::note
 
@@ -778,7 +845,25 @@ requestCert?: boolean,     // Whether to authenticate the remote peer by request
 
 Notice that when overriding the base config, object `tls` configs extend the base `tls` config, `false` overrides the base `tls` configs, and `null` and `undefined` are ignored.
 
-When running Metro with `Metro.runServer` with the `secureServerOptions` property Metro will likewise start an HTTPS server merging with the `config.server.tls` object if provided, overriding it.
+When running Metro with `Metro.runServer` with the `secureServerOptions` property, Metro will likewise start an HTTPS server. `secureServerOptions` is merged over the `config.server.tls` object, so its values take precedence.
+
+---
+
+### Symbolicator Options
+
+These options customize stack traces symbolicated through the `/symbolicate` endpoint.
+
+#### `customizeFrame`
+
+Type: `(frame: {file: ?string, lineNumber: ?number, column: ?number, methodName: ?string, ...}) => ?{collapse?: boolean} | Promise<?{collapse?: boolean}>`
+
+Called for each symbolicated stack frame. The returned properties are merged into the frame; e.g. returning `{collapse: true}` collapses frames that are not relevant to users. Defaults to a no-op.
+
+#### `customizeStack`
+
+Type: `(stack: Array<StackFrame>, extraData: mixed) => Array<StackFrame> | Promise<Array<StackFrame>>`
+
+Called with the whole symbolicated stack (after `customizeFrame`), and the `extraData` sent in the `/symbolicate` request. Returns the stack to respond with. Defaults to returning `stack` unchanged.
 
 ---
 
@@ -859,13 +944,13 @@ Using the `metro-config` package it is possible to merge multiple configurations
 | --------------------------------------- | ----------------------------------------------------------------------------------- |
 | `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects or functions. |
 
-`configs` may be any combination of (promises resolving to) configuration objects or functions. Functions are called with the merged config of all configs to the left, which may be useful for complex merges with the previous config.
+The first argument must be a configuration object, or a function returning one. Subsequent arguments may be any combination of (promises resolving to) configuration objects or functions. Functions are called with the merged config of all configs to the left, which may be useful for complex merges with the previous config.
 
 If any arguments are promises or async functions, `mergeConfig` will return a `Promise`, otherwise it will return the merged config synchronously.
 
 :::note
 
-Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
+Merging is one level deep: within `resolver`, `transformer`, `serializer`, `server`, `symbolicator` and `watcher`, each option you set replaces the earlier value. Arrays, functions and nested objects (e.g. `resolver.extraNodeModules`) are not merged, except `resolver.schemeResolvers`, `server.tls`, `watcher.watchman` and `watcher.healthCheck`, which are merged key by key, and the middleware options described below.
 This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
 
 :::
