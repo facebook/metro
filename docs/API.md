@@ -64,7 +64,7 @@ Creates a Metro server based on the config and returns it. Its `processRequest` 
 
 **Required options:** `entry`
 
-**Basic options:** `out`, `bundleOut`, `sourceMapOut`, `dev`, `minify`, `platform`, `sourceMap`, `sourceMapUrl`, `assets`, `onBegin`, `onProgress`, `onComplete`, `customResolverOptions`, `customTransformOptions`, `output`
+**Basic options:** `out`, `bundleOut`, `sourceMapOut`, `dev`, `minify`, `platform`, `sourceMap`, `sourceMapUrl`, `assets`, `onBegin`, `onProgress`, `onComplete`, `customResolverOptions`, `customTransformOptions`, `unstable_transformProfile`, `output`
 
 Bundles `entry` for the given `platform` (defaults to `'web'`). If `out` or `bundleOut` is given, saves the bundle to `bundleOut`, or to `out` with a `.js` extension. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined, in which case `sourceMapUrl` is used as the bundle's `sourceMappingURL`. When saving to disk, the source map is also written to `sourceMapOut`, or to `out` with a `.map` extension. If `assets` is `true`, an array of `AssetData` will be generated and returned in the `assets` property of the result object.
 

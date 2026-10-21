@@ -145,6 +145,7 @@ Given a configuration and a set of options that you would typically pass to a se
 * `sourceMap (boolean)`: Whether Metro should generate source maps.
 * `sourceMapOut (string)`: Where to save the source map, if `sourceMap == true`. No extension will be added.
 * `sourceMapUrl (string)`: URL where the source map can be found, written as the bundle's `sourceMappingURL`. If `sourceMap` is `true` and `sourceMapUrl` is not set, the source map is inlined into the bundle.
+* `unstable_transformProfile ('default' | 'hermes-stable' | 'hermes-canary')`: Passed to the Babel transformer, which can use it to target a specific JavaScript engine.
 
 ```js
 const config = await Metro.loadConfig();
@@ -214,6 +215,7 @@ Any JS file can be used as the root for a bundle request. The file will be looke
 * `runModule`: whether to end the bundle with the statements that run the entry point. Defaults to `true`.
 * `shallow`: whether to include only the entry module itself, without its dependencies. Defaults to `false`.
 * `sourcePaths`: how source files are referenced in the source map: as absolute file paths (`absolute`), or as URL paths on the server (`url-server`). Defaults to `absolute`.
+* `unstable_transformProfile`: passed to the Babel transformer (`default`, `hermes-stable` or `hermes-canary`). Defaults to `default`.
 * `resolver.<key>` and `transform.<key>`: [custom resolver options](./Resolution.md#customresolveroptions-string-mixed) and custom transform options, e.g. `transform.foo=bar` passes `{foo: 'bar'}` to the transformer.
 
 For instance, requesting `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` will create a bundle out of `foo/bar/baz.js` for iOS in development mode.
@@ -228,7 +230,7 @@ The JavaScript transformer ([`babelTransformerPath`](./Configuration.md#babeltra
 
 ### Method `transform(module)`
 
-Mandatory method that will transform code. The object received has the module's `filename` (relative to the project root), its source code `src`, transformation `options` (e.g. `dev`, `platform`, `minify`, `projectRoot`, `customTransformOptions`), and Babel `plugins` that Metro wants applied. The returned object has to contain an `ast` key that is the AST representation of the transformed code, and may contain the Babel `metadata`. A minimal transformer only parses the code to AST:
+Mandatory method that will transform code. The object received has the module's `filename` (relative to the project root), its source code `src`, transformation `options` (e.g. `dev`, `platform`, `minify`, `projectRoot`, `customTransformOptions`, `unstable_transformProfile`), and Babel `plugins` that Metro wants applied. The returned object has to contain an `ast` key that is the AST representation of the transformed code, and may contain the Babel `metadata`. A minimal transformer only parses the code to AST:
 
 ```js
 const babylon = require('@babel/parser');
