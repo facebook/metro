@@ -58,11 +58,15 @@ export type State = {
  *     g(require('foo').bar);
  *
  * Destructuring also works the same way. For instance:
- *     const {Baz} = require('foo');
- *     h(Baz);
+ *     const {Baz, qux: Qux} = require('foo');
+ *     h(Baz, Qux);
  *
  * Is also successfully inlined into:
- *     g(require('foo').Baz);
+ *     h(require('foo').Baz, require('foo').qux);
+ *
+ * With `memoizeCalls`, destructured properties share one memoized module.
+ * Destructuring with defaults, rest elements, nesting or computed keys is not
+ * inlined.
  */
 export default ({types: t, traverse}: Babel): PluginObj<State> => ({
   name: 'inline-requires',
@@ -89,10 +93,146 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
         if (programNode.type !== 'Program') {
           return;
         }
+        const program: Program = programNode;
+
+        // Inlines `const {a, b: c} = require('m')` by replacing each reference
+        // to `a` or `c` with `require('m').a` or `require('m').b`. When calls
+        // are memoized, all properties share one memoized module, so each
+        // scope requires `m` at most once.
+        function inlineDestructuredRequire(
+          {
+            declarationPath,
+            moduleName,
+            requireFnName,
+            properties,
+          }: InlineableDestructuring,
+          state: State,
+        ): void {
+          const references: Array<{key: string, referencePath: NodePath<>}> =
+            [];
+          for (const {key, localName} of properties) {
+            const binding = declarationPath.scope.getBinding(localName);
+            if (
+              binding == null ||
+              binding.constantViolations.length > 0 ||
+              isExcludedMemberAssignment(moduleName, key, state)
+            ) {
+              return;
+            }
+            for (const referencePath of binding.referencePaths) {
+              references.push({key, referencePath});
+            }
+          }
+          // A memoized require is only assigned by the first reference in a
+          // scope, so references are replaced in source order.
+          references.sort(
+            (a, b) =>
+              (a.referencePath.node.start ?? 0) -
+              (b.referencePath.node.start ?? 0),
+          );
+
+          const declarator = declarationPath.node;
+          const initPath = declarationPath.get('init');
+          if (
+            declarator.type !== 'VariableDeclarator' ||
+            declarator.init == null ||
+            Array.isArray(initPath)
+          ) {
+            return;
+          }
+          const init: Expression = declarator.init;
+          const initLoc = getNearestLocFromPath(initPath);
+          deleteLocation(init);
+          traverse(init, {
+            noScope: true,
+            enter: path => deleteLocation(path.node),
+          });
+
+          const getRequireExpr = () => {
+            const refExpr = t.cloneDeep(init);
+            // $FlowFixMe[prop-missing]
+            refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
+            return refExpr;
+          };
+          const getMember = (object: Expression, key: string) =>
+            t.isValidIdentifier(key)
+              ? t.memberExpression(object, t.identifier(key))
+              : t.memberExpression(object, t.stringLiteral(key), true);
+
+          let memoVarName: ?string = null;
+          if (
+            memoizeCalls &&
+            references.length > 0 &&
+            !nonMemoizedModules.has(moduleName)
+          ) {
+            const name = path.scope.generateUid(moduleName);
+            declarationPath.remove();
+            if (
+              addStmtToBlock(
+                program,
+                t.variableDeclaration('var', [
+                  t.variableDeclarator(t.identifier(name)),
+                ]),
+                0,
+              )
+            ) {
+              memoVarName = name;
+            }
+          }
+
+          let thrown = false;
+          const scopesWithInlinedRequire = new Set<Scope>();
+          for (const {key, referencePath} of references) {
+            try {
+              referencePath.scope.rename(requireFnName);
+              if (memoVarName == null) {
+                referencePath.replaceWith(getMember(getRequireExpr(), key));
+                continue;
+              }
+              referencePath.scope.rename(memoVarName);
+              const memoOrCall = t.logicalExpression(
+                '||',
+                t.identifier(memoVarName),
+                t.assignmentExpression(
+                  '=',
+                  t.identifier(memoVarName),
+                  getRequireExpr(),
+                ),
+              );
+              // Reuse the memoized module directly once this scope has
+              // assigned it, as for identifier aliases above.
+              if (!isDirectlyEnclosedByBlock(t, referencePath)) {
+                referencePath.replaceWith(getMember(memoOrCall, key));
+              } else if (scopesWithInlinedRequire.has(referencePath.scope)) {
+                referencePath.replaceWith(
+                  getMember(t.identifier(memoVarName), key),
+                );
+              } else {
+                referencePath.replaceWith(getMember(memoOrCall, key));
+                scopesWithInlinedRequire.add(referencePath.scope);
+              }
+            } catch (error) {
+              thrown = true;
+            }
+          }
+
+          // If a replacement failed (e.g. replacing a type annotation),
+          // avoid removing the initial require just to be safe.
+          if (!thrown && declarationPath.node != null) {
+            declarationPath.remove();
+          }
+        }
+
         path.scope.crawl();
         path.traverse<State>(
           {
             CallExpression(path, state) {
+              const destructuring = parseInlineableDestructuring(path, state);
+              if (destructuring != null) {
+                inlineDestructuredRequire(destructuring, state);
+                return;
+              }
+
               const parseResult =
                 parseInlineableAlias(path, state) ||
                 parseInlineableMemberAlias(path, state);
@@ -387,6 +527,62 @@ function parseInlineableMemberAlias(
         requireFnName,
         identifierName: identifier.name,
       };
+}
+
+type InlineableDestructuring = {
+  declarationPath: NodePath<Node>,
+  moduleName: string,
+  requireFnName: string,
+  properties: ReadonlyArray<{key: string, localName: string}>,
+};
+
+// Matches a top-level `const {a, 'b': c} = require('m')`. Patterns with
+// defaults, rest elements, nesting or computed keys are left alone.
+function parseInlineableDestructuring(
+  path: NodePath<CallExpression>,
+  state: State,
+): ?InlineableDestructuring {
+  const module = getInlineableModule(path, state);
+  if (module == null) {
+    return null;
+  }
+  const declarationPath = path.parentPath;
+  if (
+    declarationPath == null ||
+    declarationPath.node.type !== 'VariableDeclarator' ||
+    declarationPath.node.id.type !== 'ObjectPattern' ||
+    declarationPath.parent.type !== 'VariableDeclaration' ||
+    declarationPath.parentPath?.parent.type !== 'Program'
+  ) {
+    return null;
+  }
+
+  const properties: Array<{key: string, localName: string}> = [];
+  for (const property of declarationPath.node.id.properties) {
+    if (
+      property.type !== 'ObjectProperty' ||
+      property.computed === true ||
+      property.value.type !== 'Identifier'
+    ) {
+      return null;
+    }
+    let key;
+    if (property.key.type === 'Identifier') {
+      key = property.key.name;
+    } else if (property.key.type === 'StringLiteral') {
+      key = property.key.value;
+    } else {
+      return null;
+    }
+    properties.push({key, localName: property.value.name});
+  }
+
+  return {
+    declarationPath,
+    moduleName: module.moduleName,
+    requireFnName: module.requireFnName,
+    properties,
+  };
 }
 
 function getInlineableModule(
