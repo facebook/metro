@@ -191,9 +191,12 @@ export default class Transformer {
       ? {result, sha1}
       : await this._workerFarm.transform(
           projectRelativePath,
-          transformerOptions,
+          // In the options, rather than an argument of its own, so that it
+          // reaches the worker through custom transformers that wrap it.
+          assetUrlPath != null
+            ? {...transformerOptions, assetUrlPath}
+            : transformerOptions,
           content,
-          assetUrlPath ?? undefined,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

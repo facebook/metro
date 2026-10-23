@@ -242,9 +242,8 @@ describe('Transformer', function () {
 
     expect(workerTransform).toHaveBeenCalledWith(
       path.join('..', 'external', 'imgs', 'a.png'),
-      {type: 'asset'},
+      {type: 'asset', assetUrlPath: '[metro-watchFolders]/1/imgs/a.png'},
       undefined,
-      '[metro-watchFolders]/1/imgs/a.png',
     );
   });
 
@@ -276,9 +275,8 @@ describe('Transformer', function () {
     expect(getDynamicRoots).toHaveBeenCalled();
     expect(workerTransform).toHaveBeenCalledWith(
       path.join('..', 'other', 'imgs', 'a.png'),
-      {type: 'asset'},
+      {type: 'asset', assetUrlPath: '[metro-watchFolders]/01234567/imgs/a.png'},
       undefined,
-      '[metro-watchFolders]/01234567/imgs/a.png',
     );
   });
 

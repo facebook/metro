@@ -123,6 +123,9 @@ export type JsTransformerConfig = Readonly<{
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
 export type JsTransformOptions = Readonly<{
+  // The asset's path relative to the asset server root (`publicPath`), as
+  // clients will request it. Set by Metro for assets only.
+  assetUrlPath?: ?string,
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
@@ -168,7 +171,6 @@ type JSONFile = {
 };
 
 type TransformationContext = Readonly<{
-  assetUrlPath: ?string,
   config: JsTransformerConfig,
   projectRoot: AbsolutePath,
   options: JsTransformOptions,
@@ -544,7 +546,7 @@ async function transformAsset(
     getBabelTransformArgs(file, context),
     assetRegistryPath,
     assetPlugins,
-    context.assetUrlPath ?? undefined,
+    context.options.assetUrlPath ?? undefined,
   );
 
   const jsFile = {
@@ -662,7 +664,11 @@ function getBabelTransformArgs(
   {options, config, projectRoot}: TransformationContext,
   plugins?: Plugins = [],
 ): BabelTransformerArgs {
-  const {inlineRequires: _, ...babelTransformerOptions} = options;
+  const {
+    assetUrlPath: _assetUrlPath,
+    inlineRequires: _inlineRequires,
+    ...babelTransformerOptions
+  } = options;
   return {
     filename: file.filename, // System-separated, project-root-relative
     options: {
@@ -691,14 +697,8 @@ export const transform = async (
   projectRelativePath: string,
   data: Buffer,
   options: JsTransformOptions,
-  // The asset's path relative to the asset server root (`publicPath`), as
-  // clients will request it. Computed by Metro for assets only, and passed
-  // separately from the options so that it is not spread into
-  // BabelTransformerArgs.
-  assetUrlPath?: string,
 ): Promise<TransformResponse> => {
   const context: TransformationContext = {
-    assetUrlPath,
     config,
     options,
     projectRoot,

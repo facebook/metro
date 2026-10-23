@@ -154,9 +154,9 @@ test('uses the indexed watch folder path for asset URLs', async () => {
     Buffer.from('asset data'),
     {
       ...baseTransformOptions,
+      assetUrlPath: '[metro-watchFolders]/1/test.mp4',
       type: 'asset',
     },
-    '[metro-watchFolders]/1/test.mp4',
   );
 
   expect(result.output[0].data.code).toContain(

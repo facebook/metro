@@ -76,30 +76,6 @@ describe('Worker Farm', function () {
       config.projectRoot,
       transformerConfig,
       undefined,
-      undefined,
-    );
-  });
-
-  test('passes the asset URL path through to the worker', async () => {
-    const transformerConfig = {
-      transformerPath: config.transformerPath,
-      transformerConfig: config.transformer,
-    };
-
-    await new WorkerFarm(config, transformerConfig).transform(
-      fileName,
-      {type: 'asset'},
-      undefined,
-      '[metro-watchFolders]/1/imgs/a.png',
-    );
-
-    expect(api.transform).toBeCalledWith(
-      fileName,
-      {type: 'asset'},
-      config.projectRoot,
-      transformerConfig,
-      undefined,
-      '[metro-watchFolders]/1/imgs/a.png',
     );
   });
 
@@ -121,7 +97,6 @@ describe('Worker Farm', function () {
       '/foo',
       transformerConfig,
       undefined,
-      undefined,
     );
 
     await farm.kill();
@@ -137,7 +112,6 @@ describe('Worker Farm', function () {
       {},
       '/bar',
       transformerConfig,
-      undefined,
       undefined,
     );
   });
