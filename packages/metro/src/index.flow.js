@@ -242,7 +242,8 @@ export const createConnectMiddleware = async function (
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
-  config.server.unstable_onServerCreated(metroServer);
+  // Absent from configs built by older metro-config versions.
+  config.server.unstable_onServerCreated?.(metroServer);
 
   let enhancedMiddleware: Middleware = metroServer.processRequest;
 
@@ -276,9 +277,9 @@ export const createConnectMiddleware = async function (
     },
     metroServer,
     middleware: composeMiddleware(
-      config.server.unstable_priorityMiddleware,
+      config.server.unstable_priorityMiddleware ?? [],
       enhancedMiddleware,
-      config.server.unstable_middleware,
+      config.server.unstable_middleware ?? [],
     ),
     async end(): Promise<void> {
       await metroServer.end();
