@@ -162,6 +162,30 @@ test('uses the indexed watch folder path for asset URLs', async () => {
   expect(result.output[0].data.code).toContain(
     '"httpServerLocation": "/assets/[metro-watchFolders]/1"',
   );
+  expect(result.output[0].data.unstable_assetUrlPath).toBe(
+    '[metro-watchFolders]/1/test.mp4',
+  );
+});
+
+test('reports the project-relative URL path of an asset given no URL path', async () => {
+  fs.mkdirSync(p('/root/external'), {recursive: true});
+  fs.writeFileSync(p('/root/external/test.mp4'), 'asset data');
+
+  const result = await Transformer.transform(
+    baseConfig,
+    p('/root'),
+    'external/test.mp4',
+    Buffer.from('asset data'),
+    {
+      ...baseTransformOptions,
+      type: 'asset',
+    },
+  );
+
+  expect(result.output[0].data.code).toContain(
+    '"httpServerLocation": "/assets/external"',
+  );
+  expect(result.output[0].data.unstable_assetUrlPath).toBe('external/test.mp4');
 });
 
 test('transforms a module with dependencies', async () => {

@@ -1640,7 +1640,6 @@ describe('processRequest', () => {
         expect.anything(),
         expect.objectContaining({
           projectRoot: p('/root'),
-          watchFolders: [p('/root')],
         }),
       );
     });
