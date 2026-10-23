@@ -271,6 +271,11 @@ const TEST_CASES: TestCases = {
     snapshot: true,
   },
 
+  'ignores empty destructured requires': {
+    code: ['const {} = require("foo");'].join('\n'),
+    snapshot: false,
+  },
+
   'ignores destructured requires with defaults': {
     code: ['const {', '  a = 1', '} = require("foo");', 'a();'].join('\n'),
     snapshot: false,

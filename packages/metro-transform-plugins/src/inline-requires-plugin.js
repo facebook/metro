@@ -559,7 +559,8 @@ type InlineableDestructuring = {
 };
 
 // Matches a top-level `const {a, 'b': c} = require('m')`. Patterns with
-// defaults, rest elements, nesting or computed keys are left alone.
+// defaults, rest elements, nesting or computed keys are left alone, as are
+// empty patterns, whose require is kept for its side effects.
 function parseInlineableDestructuring(
   path: NodePath<CallExpression>,
   state: State,
@@ -597,6 +598,9 @@ function parseInlineableDestructuring(
       return null;
     }
     properties.push({key, localName: property.value.name});
+  }
+  if (properties.length === 0) {
+    return null;
   }
 
   return {
