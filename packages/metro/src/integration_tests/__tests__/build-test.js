@@ -35,6 +35,37 @@ test('builds a simple bundle', async () => {
   expect(result.assets).toBeUndefined();
 });
 
+test.each([
+  ['Metro transformer', null],
+  ['custom transformer wrapping Metro transformer', 'wrapper-transformer.js'],
+])(
+  'agrees with getAssets on the URL of an asset outside projectRoot (%s)',
+  async (_name, transformer) => {
+    const projectRoot = path.join(INPUT_PATH, 'external-asset');
+    const baseConfig = await Metro.loadConfig({
+      config: require.resolve('../metro.config.js'),
+    });
+    const config = MetroConfig.mergeConfig(baseConfig, {
+      projectRoot,
+      ...(transformer != null
+        ? {transformerPath: path.join(projectRoot, transformer)}
+        : null),
+    });
+
+    const result = await Metro.runBuild(config, {
+      entry: 'index.js',
+      assets: true,
+    });
+
+    // $FlowFixMe[incompatible-use] - the bundle evaluates to the asset data
+    const {httpServerLocation} = execBundle(result.code);
+    expect(httpServerLocation).toMatch(/^\/assets\/\[metro-watchFolders\]\//);
+    expect(result.assets?.map(asset => asset.httpServerLocation)).toEqual([
+      httpServerLocation,
+    ]);
+  },
+);
+
 test('build a simple bundle with polyfills', async () => {
   const baseConfig = await Metro.loadConfig({
     config: require.resolve('../metro.config.js'),
