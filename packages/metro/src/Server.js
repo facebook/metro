@@ -444,8 +444,6 @@ export default class Server {
       platform,
       projectRoot: this._config.projectRoot,
       publicPath: this._config.transformer.publicPath,
-      watchFolders: this._config.watchFolders,
-      dynamicRoots: this._bundler.getBundler().getDynamicRoots(),
     });
   }
 

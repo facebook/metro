@@ -180,6 +180,9 @@ export type JsOutput = Readonly<{
     lineCount: number,
     map: VlqMap,
     functionMap: ?FBSourceFunctionMap,
+    // Assets only: the URL path the code was generated with. A temporary
+    // migration helper, to be removed.
+    unstable_assetUrlPath?: string,
   }>,
   type: JSFileType,
 }>;
@@ -539,12 +542,13 @@ async function transformAsset(
   context: TransformationContext,
 ): Promise<TransformResponse> {
   const {assetRegistryPath, assetPlugins} = context.config;
+  const urlPath = context.assetUrlPath ?? file.filename;
 
   const result = await assetTransformer.transform(
     getBabelTransformArgs(file, context),
     assetRegistryPath,
     assetPlugins,
-    context.assetUrlPath ?? undefined,
+    urlPath,
   );
 
   const jsFile = {
@@ -554,7 +558,14 @@ async function transformAsset(
     type: 'js/module/asset' as const,
   };
 
-  return transformJS(jsFile, context);
+  const response = await transformJS(jsFile, context);
+  return {
+    ...response,
+    output: response.output.map(output => ({
+      ...output,
+      data: {...output.data, unstable_assetUrlPath: urlPath},
+    })),
+  };
 }
 
 /**

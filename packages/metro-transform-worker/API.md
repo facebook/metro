@@ -18,6 +18,7 @@ export type JsOutput = Readonly<{
     lineCount: number;
     map: VlqMap;
     functionMap: null | undefined | FBSourceFunctionMap;
+    unstable_assetUrlPath?: string | undefined;
   }>;
   type: JSFileType;
 }>;
