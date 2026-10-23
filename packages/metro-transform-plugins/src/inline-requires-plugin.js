@@ -17,7 +17,6 @@ import type {
   MemberExpression,
   Node,
   Program,
-  Statement,
 } from '@babel/types';
 
 type Types = Babel['types'];
@@ -95,6 +94,28 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
         }
         const program: Program = programNode;
 
+        // Positions of identifiers in program order, the order in which
+        // `scope.crawl()` collects references. Built on first use, and rebuilt
+        // if a reference created since is missing.
+        let identifierOrder: ?Map<Node, number> = null;
+        function getIdentifierOrder(
+          nodes: ReadonlyArray<Node>,
+        ): Map<Node, number> {
+          if (
+            identifierOrder == null ||
+            nodes.some(node => !identifierOrder?.has(node))
+          ) {
+            const order = new Map<Node, number>();
+            path.traverse({
+              Identifier(identifierPath) {
+                order.set(identifierPath.node, order.size);
+              },
+            });
+            identifierOrder = order;
+          }
+          return identifierOrder;
+        }
+
         // Inlines `const {a, b: c} = require('m')` by replacing each reference
         // to `a` or `c` with `require('m').a` or `require('m').b`. When calls
         // are memoized, all properties share one memoized module, so each
@@ -123,12 +144,24 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
               references.push({key, referencePath});
             }
           }
+          if (
+            !references.every(({referencePath}) =>
+              canInlineAt(t, referencePath),
+            )
+          ) {
+            return;
+          }
           // A memoized require is only assigned by the first reference in a
-          // scope, so references are replaced in source order.
+          // scope, so references are replaced in program order. Source
+          // positions can't be used for this, because nodes inserted by
+          // earlier plugins (e.g. `exports.a = a`) have none.
+          const order = getIdentifierOrder(
+            references.map(({referencePath}) => referencePath.node),
+          );
           references.sort(
             (a, b) =>
-              (a.referencePath.node.start ?? 0) -
-              (b.referencePath.node.start ?? 0),
+              (order.get(a.referencePath.node) ?? 0) -
+              (order.get(b.referencePath.node) ?? 0),
           );
 
           const declarator = declarationPath.node;
@@ -165,62 +198,46 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
             references.length > 0 &&
             !nonMemoizedModules.has(moduleName)
           ) {
-            const name = path.scope.generateUid(moduleName);
-            declarationPath.remove();
-            if (
-              addStmtToBlock(
-                program,
-                t.variableDeclaration('var', [
-                  t.variableDeclarator(t.identifier(name)),
-                ]),
-                0,
-              )
-            ) {
-              memoVarName = name;
-            }
+            memoVarName = path.scope.generateUid(moduleName);
+            program.body.unshift(
+              t.variableDeclaration('var', [
+                t.variableDeclarator(t.identifier(memoVarName)),
+              ]),
+            );
           }
 
-          let thrown = false;
           const scopesWithInlinedRequire = new Set<Scope>();
           for (const {key, referencePath} of references) {
-            try {
-              referencePath.scope.rename(requireFnName);
-              if (memoVarName == null) {
-                referencePath.replaceWith(getMember(getRequireExpr(), key));
-                continue;
-              }
-              referencePath.scope.rename(memoVarName);
-              const memoOrCall = t.logicalExpression(
-                '||',
+            referencePath.scope.rename(requireFnName);
+            if (memoVarName == null) {
+              referencePath.replaceWith(getMember(getRequireExpr(), key));
+              continue;
+            }
+            referencePath.scope.rename(memoVarName);
+            const memoOrCall = t.logicalExpression(
+              '||',
+              t.identifier(memoVarName),
+              t.assignmentExpression(
+                '=',
                 t.identifier(memoVarName),
-                t.assignmentExpression(
-                  '=',
-                  t.identifier(memoVarName),
-                  getRequireExpr(),
-                ),
+                getRequireExpr(),
+              ),
+            );
+            // Reuse the memoized module directly once this scope has
+            // assigned it, as for identifier aliases below.
+            if (!isDirectlyEnclosedByBlock(t, referencePath)) {
+              referencePath.replaceWith(getMember(memoOrCall, key));
+            } else if (scopesWithInlinedRequire.has(referencePath.scope)) {
+              referencePath.replaceWith(
+                getMember(t.identifier(memoVarName), key),
               );
-              // Reuse the memoized module directly once this scope has
-              // assigned it, as for identifier aliases above.
-              if (!isDirectlyEnclosedByBlock(t, referencePath)) {
-                referencePath.replaceWith(getMember(memoOrCall, key));
-              } else if (scopesWithInlinedRequire.has(referencePath.scope)) {
-                referencePath.replaceWith(
-                  getMember(t.identifier(memoVarName), key),
-                );
-              } else {
-                referencePath.replaceWith(getMember(memoOrCall, key));
-                scopesWithInlinedRequire.add(referencePath.scope);
-              }
-            } catch (error) {
-              thrown = true;
+            } else {
+              referencePath.replaceWith(getMember(memoOrCall, key));
+              scopesWithInlinedRequire.add(referencePath.scope);
             }
           }
 
-          // If a replacement failed (e.g. replacing a type annotation),
-          // avoid removing the initial require just to be safe.
-          if (!thrown && declarationPath.node != null) {
-            declarationPath.remove();
-          }
+          declarationPath.remove();
         }
 
         path.scope.crawl();
@@ -256,6 +273,16 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
               ) {
                 return;
               }
+              for (const referencePath of binding.referencePaths) {
+                excludeMemberAssignment(moduleName, referencePath, state);
+              }
+              if (
+                !binding.referencePaths.every(referencePath =>
+                  canInlineAt(t, referencePath),
+                )
+              ) {
+                return;
+              }
               const init: Expression = maybeInit;
               const initPath = declarationPath.get('init');
 
@@ -271,7 +298,6 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
                 enter: path => deleteLocation(path.node),
               });
 
-              let thrown = false;
               const memoVarName = parseResult.identifierName;
 
               // Whether the module has a "var foo" at program scope, used to
@@ -290,9 +316,12 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
                 const varInitStmt = t.variableDeclaration('var', [
                   t.variableDeclarator(t.identifier(memoVarName)),
                 ]);
-                // Must remove the declaration path
+                // The declaration must be removed before references are
+                // rewritten, so that renaming any shadowing bindings to
+                // `memoVarName` doesn't rename the original binding.
                 declarationPath.remove();
-                hasMemoVar = addStmtToBlock(programNode, varInitStmt, 0);
+                program.body.unshift(varInitStmt);
+                hasMemoVar = true;
               }
 
               function getMemoOrCallExpr() {
@@ -312,41 +341,34 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
 
               const scopesWithInlinedRequire = new Set<Scope>();
               for (const referencePath of binding.referencePaths) {
-                excludeMemberAssignment(moduleName, referencePath, state);
-                try {
-                  referencePath.scope.rename(requireFnName);
-                  if (hasMemoVar) {
-                    referencePath.scope.rename(memoVarName);
-                    // Swap the local reference with (v || v = require(m)),
-                    // unless it is directly enclosed.
-                    if (!isDirectlyEnclosedByBlock(t, referencePath)) {
-                      referencePath.replaceWith(getMemoOrCallExpr());
-                      continue;
-                    }
-                    // if the current scope already has a (v || v = require(m))
-                    // expression for module m, use identifier reference v
-                    // instead. Else use the full (v || v = require(m)) and
-                    // register the current scope for subsequent references.
-                    if (scopesWithInlinedRequire.has(referencePath.scope)) {
-                      referencePath.replaceWith(t.identifier(memoVarName));
-                    } else {
-                      referencePath.replaceWith(getMemoOrCallExpr());
-                      scopesWithInlinedRequire.add(referencePath.scope);
-                    }
-                  } else {
-                    const refExpr = t.cloneDeep(init);
-                    // $FlowFixMe[prop-missing]
-                    refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
-                    referencePath.replaceWith(refExpr);
+                referencePath.scope.rename(requireFnName);
+                if (hasMemoVar) {
+                  referencePath.scope.rename(memoVarName);
+                  // Swap the local reference with (v || v = require(m)),
+                  // unless it is directly enclosed.
+                  if (!isDirectlyEnclosedByBlock(t, referencePath)) {
+                    referencePath.replaceWith(getMemoOrCallExpr());
+                    continue;
                   }
-                } catch (error) {
-                  thrown = true;
+                  // if the current scope already has a (v || v = require(m))
+                  // expression for module m, use identifier reference v
+                  // instead. Else use the full (v || v = require(m)) and
+                  // register the current scope for subsequent references.
+                  if (scopesWithInlinedRequire.has(referencePath.scope)) {
+                    referencePath.replaceWith(t.identifier(memoVarName));
+                  } else {
+                    referencePath.replaceWith(getMemoOrCallExpr());
+                    scopesWithInlinedRequire.add(referencePath.scope);
+                  }
+                } else {
+                  const refExpr = t.cloneDeep(init);
+                  // $FlowFixMe[prop-missing]
+                  refExpr.METRO_INLINE_REQUIRES_INIT_LOC = initLoc;
+                  referencePath.replaceWith(refExpr);
                 }
               }
 
-              // If a replacement failed (e.g. replacing a type annotation),
-              // avoid removing the initial require just to be safe.
-              if (!thrown && declarationPath.node != null) {
+              if (declarationPath.node != null) {
                 declarationPath.remove();
               }
             },
@@ -679,18 +701,22 @@ function isDirectlyEnclosedByBlock(t: Types, path: NodePath<Node>) {
   return true;
 }
 
-// insert statement to the beginning of the scope block
-function addStmtToBlock(block: Program, stmt: Statement, idx: number): boolean {
-  const scopeBody = block.body;
-  if (Array.isArray(scopeBody)) {
-    // if the code is inside global scope
-    scopeBody.splice(idx, 0, stmt);
+// Whether an expression such as `require('m').a` can replace the reference at
+// `referencePath`. It can't in an `export {a}` specifier or a type annotation,
+// for instance. This runs Babel's own check for `replaceWith`, before anything
+// is rewritten.
+function canInlineAt(t: Types, referencePath: NodePath<>): boolean {
+  if (referencePath.inList) {
     return true;
-  } else if (scopeBody && Array.isArray(scopeBody.body)) {
-    // if the code is inside function scope
-    scopeBody.body.splice(idx, 0, stmt);
+  }
+  try {
+    t.validate(
+      referencePath.parent,
+      String(referencePath.key),
+      t.memberExpression(t.identifier('m'), t.identifier('a')),
+    );
     return true;
-  } else {
+  } catch (error) {
     return false;
   }
 }
