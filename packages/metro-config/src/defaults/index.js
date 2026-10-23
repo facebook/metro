@@ -17,7 +17,6 @@ import {
   assetExts,
   assetResolutions,
   defaultCreateModuleIdFactory,
-  defaultEnhanceMiddleware,
   noopPerfLoggerFactory,
   platforms,
   sourceExts,
@@ -76,7 +75,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   },
 
   server: {
-    enhanceMiddleware: defaultEnhanceMiddleware,
+    enhanceMiddleware: (middleware, _) => middleware,
     forwardClientLogs: true,
     port: 8081,
     rewriteRequestUrl: url => url,
