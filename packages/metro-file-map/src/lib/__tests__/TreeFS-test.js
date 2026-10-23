@@ -590,6 +590,7 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
               [p('a/b/c/d/link-to-C'), [0, 0, 0, null, '', null]],
               [p('a/b/c/d/link-to-B'), [0, 0, 0, null, '..', null]],
               [p('a/b/c/d/link-to-A'), [0, 0, 0, null, '../..', null]],
+              [p('link-to-B'), [0, 0, 0, null, '..', null]],
               [
                 p('n_m/workspace/link-to-pkg'),
                 [0, 0, 0, null, '../workspace-pkg', null],
@@ -759,6 +760,14 @@ describe.each([['win32'], ['posix']])('TreeFS on %s', platform => {
         'B/C/foo.js',
         ['/A/B/C/foo.js', '/A/B/C/package.json', '/A/B/package.json'],
         ['/A/B/C/a/b/c/d/link-to-A'],
+      ],
+      // A symlink in the root to an ancestor of the root
+      [
+        '/A/B/C/link-to-B/foo.js',
+        '/A/package.json',
+        'B/foo.js',
+        ['/A/B/foo.js', '/A/B/package.json'],
+        ['/A/B/C/link-to-B'],
       ],
       [
         '/A/B/C/a/1/foo.js',
