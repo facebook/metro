@@ -789,7 +789,7 @@ Has no effect.
 
 Type: `(Middleware, MetroServer) => Middleware | connect.Server`
 
-A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Metro logs a deprecation warning when this option is set to anything other than its default. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
 
 For example:
 
