@@ -306,9 +306,12 @@ export default class DeltaCalculator<T> extends EventEmitter {
 
     // An added file that already has a module in the graph was deleted and
     // recreated while a build was in flight. The graph never saw the deletion,
-    // so the module it holds is stale and needs revisiting.
+    // so the module it holds is stale and needs revisiting. It moves to
+    // modified, so that if this build fails and the file is then deleted, the
+    // deletion is not cancelled out against the addition.
     addedFiles.forEach((filePath: string) => {
       if (this._graph.dependencies.has(filePath)) {
+        addedFiles.delete(filePath);
         modifiedFiles.add(filePath);
       }
     });
