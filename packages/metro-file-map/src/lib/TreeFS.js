@@ -39,6 +39,20 @@ function isRegularFile(node: FileNode): boolean {
   return node[H.SYMLINK] === 0;
 }
 
+// The normal path relative to an ancestor normal path ('' for the root), or
+// null if it is not within it.
+function relativeToAncestor(
+  normalPath: string,
+  ancestorNormalPath: string,
+): ?string {
+  if (ancestorNormalPath === '' || normalPath === ancestorNormalPath) {
+    return ancestorNormalPath === '' ? normalPath : '';
+  }
+  return normalPath.startsWith(ancestorNormalPath + path.sep)
+    ? normalPath.slice(ancestorNormalPath.length + 1)
+    : null;
+}
+
 type DeserializedSnapshotInput = {
   rootDir: string,
   fileSystemData: DirectoryNode,
@@ -1073,10 +1087,29 @@ export default class TreeFS implements MutableFileSystem {
 
     // Phase 2: Consider the common root and its ancestors
 
-    // This will be '', '..', '../..', etc.
+    // The canonical path of the common root: '', '..', '../..', etc.
     let candidateNormalPath =
-      commonRootDepth > 0 ? normalPath.slice(0, 3 * commonRootDepth - 1) : '';
-    const remainingNormalPath = normalPath.slice(commonRootDepth * 3);
+      commonRootDepth > 0
+        ? '..' + (path.sep + '..').repeat(commonRootDepth - 1)
+        : '';
+    // The start path relative to the common root. A start path that reaches
+    // the common root through a symlink, rather than by beginning with it, is
+    // made relative by its real path instead.
+    const remainingNormalPath =
+      relativeToAncestor(normalPath, candidateNormalPath) ??
+      relativeToAncestor(
+        closestLookup.exists
+          ? closestLookup.canonicalPath
+          : closestLookup.remainingPath === ''
+            ? closestLookup.canonicalMissingPath
+            : closestLookup.canonicalMissingPath +
+              path.sep +
+              closestLookup.remainingPath,
+        candidateNormalPath,
+      );
+    if (remainingNormalPath == null) {
+      return null;
+    }
 
     let nextNode: ?MixedNode = commonRoot;
     let depthBelowCommonRoot = 0;

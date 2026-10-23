@@ -101,7 +101,10 @@ function find(options: CrawlerOptions): Promise<FileData> {
       });
     }
 
-    for (const root of roots) {
+    for (const givenRoot of roots) {
+      // Paths are built by concatenating names onto the root, so it must have
+      // no trailing separator or '..' segments of its own.
+      const root = path.resolve(givenRoot);
       const rootNormal = pathUtils.absoluteToNormal(root);
       const isWithinRoot =
         rootNormal !== '..' && !rootNormal.startsWith('..' + path.sep);
