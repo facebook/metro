@@ -94,28 +94,6 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
         }
         const program: Program = programNode;
 
-        // Positions of identifiers in program order, the order in which
-        // `scope.crawl()` collects references. Built on first use, and rebuilt
-        // if a reference created since is missing.
-        let identifierOrder: ?Map<Node, number> = null;
-        function getIdentifierOrder(
-          nodes: ReadonlyArray<Node>,
-        ): Map<Node, number> {
-          if (
-            identifierOrder == null ||
-            nodes.some(node => !identifierOrder?.has(node))
-          ) {
-            const order = new Map<Node, number>();
-            path.traverse({
-              Identifier(identifierPath) {
-                order.set(identifierPath.node, order.size);
-              },
-            });
-            identifierOrder = order;
-          }
-          return identifierOrder;
-        }
-
         // Inlines `const {a, b: c} = require('m')` by replacing each reference
         // to `a` or `c` with `require('m').a` or `require('m').b`. When calls
         // are memoized, all properties share one memoized module, so each
@@ -155,13 +133,17 @@ export default ({types: t, traverse}: Babel): PluginObj<State> => ({
           // scope, so references are replaced in program order. Source
           // positions can't be used for this, because nodes inserted by
           // earlier plugins (e.g. `exports.a = a`) have none.
-          const order = getIdentifierOrder(
-            references.map(({referencePath}) => referencePath.node),
+          const positions = new Map(
+            references.map(({referencePath}) => [
+              referencePath,
+              getTreePosition(t, referencePath),
+            ]),
           );
-          references.sort(
-            (a, b) =>
-              (order.get(a.referencePath.node) ?? 0) -
-              (order.get(b.referencePath.node) ?? 0),
+          references.sort((a, b) =>
+            compareTreePositions(
+              positions.get(a.referencePath) ?? [],
+              positions.get(b.referencePath) ?? [],
+            ),
           );
 
           const declarator = declarationPath.node;
@@ -703,6 +685,46 @@ function isDirectlyEnclosedByBlock(t: Types, path: NodePath<Node>) {
     curPath = curPath.parentPath;
   }
   return true;
+}
+
+// The position of `path` in the tree, as the index of each step's field in
+// Babel's visitor keys, followed by its index in a list. Comparing positions
+// orders paths as Babel traverses them, and as `scope.crawl()` collects
+// references.
+function getTreePosition(t: Types, path: NodePath<>): Array<number> {
+  const visitorKeys: {readonly [type: string]: ReadonlyArray<string>} =
+    // VISITOR_KEYS is missing from flow-typed's @babel/types.
+    // $FlowFixMe[prop-missing]
+    // $FlowFixMe[incompatible-type]
+    t.VISITOR_KEYS;
+  const position: Array<number> = [];
+  for (const current of path.getAncestry()) {
+    if (current.parentPath == null) {
+      break;
+    }
+    if (current.listKey != null) {
+      position.push(Number(current.key));
+    }
+    position.push(
+      visitorKeys[current.parent.type].indexOf(
+        // $FlowFixMe[incompatible-type] Only the root path has a null key.
+        current.listKey ?? current.key,
+      ),
+    );
+  }
+  return position.reverse();
+}
+
+function compareTreePositions(
+  a: ReadonlyArray<number>,
+  b: ReadonlyArray<number>,
+): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] !== b[i]) {
+      return a[i] - b[i];
+    }
+  }
+  return a.length - b.length;
 }
 
 // Whether an expression such as `require('m').a` can replace the reference at
