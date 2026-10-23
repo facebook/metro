@@ -96,6 +96,20 @@ describe('runServer custom middleware', () => {
     ]);
   });
 
+  test('serves with a config that lacks the newer server options', async () => {
+    const config = await loadConfig();
+    // As from an older metro-config.
+    const {
+      unstable_middleware: _middleware,
+      unstable_onServerCreated: _onServerCreated,
+      unstable_priorityMiddleware: _priorityMiddleware,
+      ...server
+    } = config.server;
+    await startServer({...config, server});
+
+    expect((await request(BUNDLE_PATH)).status).toBe(200);
+  });
+
   test('mounts deprecated unstable_extraMiddleware before unstable_priorityMiddleware', async () => {
     const calls = [];
     await startServer(await loadConfig(), {
