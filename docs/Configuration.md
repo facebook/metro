@@ -493,6 +493,14 @@ In a future release of Metro, this option will be removed.
 
 :::
 
+#### `unstable_forceFullRefreshPatterns` <div class="label experimental">Experimental</div>
+
+Type: `Array<RegExp>`
+
+Modules that should trigger a full reload instead of a Fast Refresh update when they change, e.g. modules with side effects (such as style registration) that don't re-run correctly when hot reloaded. Patterns are tested against module paths relative to [`projectRoot`](#projectroot). Only applies to development bundles. Defaults to `[]`.
+
+---
+
 ### Transformer Options
 
 <!-- Keep old links to `asyncRequireModulePath` working -->
@@ -610,6 +618,18 @@ Whether to treat dependencies that are required inside a `try` block (or dynamic
 Type: `string`
 
 The URL path prefix written into each asset's `httpServerLocation`, which the app uses to request the asset. Metro's own server only serves assets under `/assets`, so with a different value you need to route those requests yourself, e.g. with [`rewriteRequestUrl`](#rewriterequesturl). Defaults to `'/assets'`.
+
+#### `unstable_allowRequireContext` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Enables `require.context()`, which imports all the files in a directory that match a pattern. Defaults to `false`.
+
+#### `unstable_workerThreads` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Whether to run transformer workers as worker threads instead of child processes. Defaults to `false`.
 
 #### React Native Only
 
@@ -736,6 +756,13 @@ Type: `(graph: ReadOnlyGraph, delta: DeltaResult) => mixed`
 
 A function called with the dependency graph and the changes since the previous build, each time a graph is built or updated.
 
+#### `unstable_lazilyDefineModules` <div class="label experimental">Experimental</div>
+
+Type: `boolean`
+
+Whether the default serializer defines each module lazily, on its first `require`, instead of running every `__d(...)` call at startup. This reduces startup cost and peak memory use for large bundles. Does not affect Fast Refresh updates. Defaults to `false`.
+
+---
 ### Server Options
 
 These options are used when Metro serves the content.
@@ -745,6 +772,12 @@ These options are used when Metro serves the content.
 Type: `number`
 
 Which port to listen on. Defaults to `8081`.
+
+#### `unstable_serverRoot` <div class="label experimental">Experimental</div>
+
+Type: `?string`
+
+The directory that bundle URLs and entry files are resolved against, instead of [`projectRoot`](#projectroot). Defaults to `null` (use `projectRoot`).
 
 #### `useGlobalHotkey`
 
@@ -756,7 +789,7 @@ Has no effect.
 
 Type: `(Middleware, MetroServer) => Middleware | connect.Server`
 
-A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Metro logs a deprecation warning when this option is set to anything other than its default. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
+A function that allows attaching custom [`connect`](https://www.npmjs.com/package/connect) middleware to Metro. Use [`unstable_middleware`](#unstable_middleware-experimental) or [`unstable_priorityMiddleware`](#unstable_prioritymiddleware-experimental) instead, and [`unstable_onServerCreated`](#unstable_onservercreated-experimental) to access the Metro server instance.
 
 For example:
 
