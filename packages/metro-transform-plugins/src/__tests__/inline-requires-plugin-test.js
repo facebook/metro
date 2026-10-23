@@ -238,6 +238,97 @@ const TEST_CASES: TestCases = {
     code: ['const a = require("Foo", "Bar", 47);', '', 'a();'].join('\n'),
     snapshot: true,
   },
+
+  'inlines destructured requires': {
+    code: [
+      'const {a, b: c, "d-e": de} = require("foo");',
+      'a();',
+      'c.x();',
+      'de();',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'inlines destructured requires referenced across scopes': {
+    code: [
+      'const {a, b} = require("foo");',
+      'function f() {',
+      '  return a() + b();',
+      '}',
+      'function g() {',
+      '  if (b()) {',
+      '    a();',
+      '  }',
+      '}',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'deletes unused destructured requires': {
+    code: ['const {a} = require("foo");'].join('\n'),
+    snapshot: true,
+  },
+
+  'ignores destructured requires with defaults': {
+    code: ['const {', '  a = 1', '} = require("foo");', 'a();'].join('\n'),
+    snapshot: false,
+  },
+
+  'ignores destructured requires with rest elements': {
+    code: [
+      'const {',
+      '  a,',
+      '  ...rest',
+      '} = require("foo");',
+      'a(rest);',
+    ].join('\n'),
+    snapshot: false,
+  },
+
+  'ignores nested destructured requires': {
+    code: [
+      'const {',
+      '  a: {',
+      '    b',
+      '  }',
+      '} = require("foo");',
+      'b();',
+    ].join('\n'),
+    snapshot: false,
+  },
+
+  'ignores destructured requires with computed keys': {
+    code: ['const {', '  [key]: a', '} = require("foo");', 'a();'].join('\n'),
+    snapshot: false,
+  },
+
+  'ignores destructured requires that are re-assigned': {
+    code: [
+      'let {',
+      '  a,',
+      '  b',
+      '} = require("foo");',
+      'b = 1;',
+      'a(b);',
+    ].join('\n'),
+    snapshot: false,
+  },
+
+  'ignores destructured properties that are re-assigned': {
+    code: [
+      'var X = require("X");',
+      'const {a} = require("X");',
+      'X.a = function() {',
+      '  a();',
+      '};',
+    ].join('\n'),
+    snapshot: true,
+  },
+
+  'ignores destructured requires in `ignoredRequires`': {
+    code: ['const {', '  a', '} = require("CommonFoo");', 'a();'].join('\n'),
+    snapshot: false,
+  },
 };
 
 describe.each([true, false])('memoizeCalls=%s:', memoizeCalls => {
